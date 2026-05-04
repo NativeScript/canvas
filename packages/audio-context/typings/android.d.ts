@@ -81,6 +81,7 @@ declare module org {
 				public copyToChannel(i: androidNative.Array<number>, byteIndex: number, v: number): void;
 				public getLength(): number;
 				public copyFromChannel(i: java.nio.FloatBuffer, s: number, i: number): void;
+				public getChannelDataRaw(channel: number): java.nio.ByteBuffer;
 				public constructor(this_: number, length: number, numberOfChannels: number);
 				public getSampleRate(): number;
 				public getNumberOfChannels(): number;
@@ -136,7 +137,9 @@ declare module org {
 				public createBiquad(context: org.nativescript.audiocontext.AudioContextInstance, type: string, frequency: number, Q: number, gain: number): org.nativescript.audiocontext.AudioBiquadNode;
 				public copyFromChannel(this_: string, id: androidNative.Array<number>, dest: number, channel: number): void;
 				public suspend(): void;
+				public setPannerPartitionSize(panner: org.nativescript.audiocontext.AudioPannerNode, partitionSize: number): void;
 				public createExternalPcmSource(sampleRate: number, channels: number): string;
+				public createChannelSplitter(context: org.nativescript.audiocontext.AudioContextInstance, numberOfOutputs: number): org.nativescript.audiocontext.ChannelSplitterNode;
 				public setPannerParams(panner: org.nativescript.audiocontext.AudioPannerNode, positionX: number, positionY: number, positionZ: number, orientationX: number, orientationY: number, orientationZ: number, pan: number, distanceModel: number, panningModel: number, refDistance: number, maxDistance: number, rolloffFactor: number, coneInnerAngle: number, coneOuterAngle: number, coneOuterGain: number): void;
 				public copyFromChannel(id: string, dest: java.nio.ByteBuffer, channel: number, startInChannel: number): void;
 				public constructor();
@@ -162,6 +165,7 @@ declare module org {
 				public createBufferSource(context: org.nativescript.audiocontext.AudioContextInstance, buffer: org.nativescript.audiocontext.AudioBuffer): org.nativescript.audiocontext.AudioBufferSourceNode;
 				public removeEndedListener(trackId: string, listener: org.nativescript.audiocontext.AudioContext.EndedListener): void;
 				public renderOfflineAsync(trackIds: androidNative.Array<string>, frames: number, sampleRate: number, channels: number, cb: org.nativescript.audiocontext.DecodeCallback): void;
+				public createChannelMerger(context: org.nativescript.audiocontext.AudioContextInstance, numberOfInputs: number): org.nativescript.audiocontext.ChannelMergerNode;
 				public createPeriodicWave(context: org.nativescript.audiocontext.AudioContextInstance, real: java.nio.FloatBuffer, imag: java.nio.FloatBuffer, disableNormalization: boolean): org.nativescript.audiocontext.PeriodicWave;
 				public getAnalyserByteTimeDomainDataDirect(slice: string, this_: java.nio.ByteBuffer): boolean;
 				public decodeAudioDataFromFile(len: string): org.nativescript.audiocontext.AudioBuffer;
@@ -176,12 +180,14 @@ declare module org {
 				public copyToChannel(id: string, source: java.nio.FloatBuffer, channel: number, startInChannel: number): void;
 				public getAnalyserFloatTimeDomainData(id: string, count: number): androidNative.Array<number>;
 				public copyToChannel(i: string, byteIndex: androidNative.Array<number>, v: number, i: number): void;
+				public createDynamicsCompressor(context: org.nativescript.audiocontext.AudioContextInstance): org.nativescript.audiocontext.DynamicsCompressorNode;
 				public getAnalyserByteFrequencyDataDirect(slice: string, this_: java.nio.ByteBuffer, id: number, dest: number): boolean;
 				public getContextStartNanos(contextId: string): number;
 				public decodeAudioDataFromFileAsync(path: string, context: org.nativescript.audiocontext.AudioContextInstance, cb: org.nativescript.audiocontext.DecodeCallback): void;
 				public startBufferSource(trackId: string, loop: boolean): void;
 				public createPanner(context: org.nativescript.audiocontext.AudioContextInstance): org.nativescript.audiocontext.AudioPannerNode;
 				public decodeAudioDataFromBuffer(slice: java.nio.ByteBuffer): org.nativescript.audiocontext.AudioBuffer;
+				public configureExternalPcmSource(trackId: string, sampleRate: number, channels: number): void;
 				public registerContextTrack(contextId: string, trackId: string): void;
 				public createWaveShaper(context: org.nativescript.audiocontext.AudioContextInstance): org.nativescript.audiocontext.WaveShaperNode;
 				public createIIR(context: org.nativescript.audiocontext.AudioContextInstance, feedforward: androidNative.Array<number>, feedback: androidNative.Array<number>): org.nativescript.audiocontext.AudioIIRNode;
@@ -404,6 +410,7 @@ declare module org {
 				public getPositionYParam(): org.nativescript.audiocontext.AudioParam;
 				public getOrientationZParam(): org.nativescript.audiocontext.AudioParam;
 				public setMaxDistance(v: number): void;
+				public setHRTFPartitionSize(size: number): void;
 				public getConeOuterAngle(): number;
 				public constructor(id: string);
 				public setPan(p: number): void;
@@ -417,6 +424,7 @@ declare module org {
 				public release(): void;
 				public setRolloffFactor(v: number): void;
 				public disconnect(sources: org.nativescript.audiocontext.AudioNode, context: number, destId: number): void;
+				public setHRTF(left: java.nio.FloatBuffer, right: java.nio.FloatBuffer): void;
 				public getPositionZParam(): org.nativescript.audiocontext.AudioParam;
 				public getPanningModel(): number;
 				public getPan(): org.nativescript.audiocontext.AudioParam;
@@ -509,6 +517,58 @@ declare module org {
 				public disconnect(output: number): void;
 				public disconnect(node: org.nativescript.audiocontext.AudioNode, output: number, input: number): void;
 				public constructor(id: string);
+			}
+		}
+	}
+}
+
+declare module org {
+	export module nativescript {
+		export module audiocontext {
+			export class ChannelMergerNode implements org.nativescript.audiocontext.NativeObject, org.nativescript.audiocontext.AudioNode {
+				public static class: java.lang.Class<org.nativescript.audiocontext.ChannelMergerNode>;
+				public connect(node: org.nativescript.audiocontext.AudioNode, output: number): void;
+				public connect(param0: org.nativescript.audiocontext.AudioNode): void;
+				public disconnect(param0: org.nativescript.audiocontext.AudioNode): void;
+				public getId(): string;
+				public release(): void;
+				public connect(node: org.nativescript.audiocontext.AudioNode, output: number, input: number): void;
+				public getNumberOfInputs(): number;
+				public connect(node: org.nativescript.audiocontext.AudioNode): void;
+				public disconnect(node: org.nativescript.audiocontext.AudioNode, output: number): void;
+				public connect(sources: org.nativescript.audiocontext.AudioNode, context: number, object: number): void;
+				public disconnect(sources: org.nativescript.audiocontext.AudioNode): void;
+				public disconnect(sources: org.nativescript.audiocontext.AudioNode, context: number): void;
+				public disconnect(): void;
+				public disconnect(output: number): void;
+				public disconnect(node: org.nativescript.audiocontext.AudioNode, output: number, input: number): void;
+				public disconnect(sources: org.nativescript.audiocontext.AudioNode, context: number, object: number): void;
+			}
+		}
+	}
+}
+
+declare module org {
+	export module nativescript {
+		export module audiocontext {
+			export class ChannelSplitterNode implements org.nativescript.audiocontext.NativeObject, org.nativescript.audiocontext.AudioNode {
+				public static class: java.lang.Class<org.nativescript.audiocontext.ChannelSplitterNode>;
+				public connect(node: org.nativescript.audiocontext.AudioNode, output: number): void;
+				public connect(param0: org.nativescript.audiocontext.AudioNode): void;
+				public disconnect(param0: org.nativescript.audiocontext.AudioNode): void;
+				public getId(): string;
+				public getNumberOfOutputs(): number;
+				public release(): void;
+				public connect(sourceOutput: org.nativescript.audiocontext.AudioNode, sources: number, context: number): void;
+				public connect(node: org.nativescript.audiocontext.AudioNode, output: number, input: number): void;
+				public disconnect(sourceOutput: org.nativescript.audiocontext.AudioNode, sources: number, context: number): void;
+				public connect(node: org.nativescript.audiocontext.AudioNode): void;
+				public disconnect(node: org.nativescript.audiocontext.AudioNode, output: number): void;
+				public disconnect(sources: org.nativescript.audiocontext.AudioNode): void;
+				public disconnect(): void;
+				public disconnect(output: number): void;
+				public disconnect(node: org.nativescript.audiocontext.AudioNode, output: number, input: number): void;
+				public disconnect(sourceOutput: org.nativescript.audiocontext.AudioNode, sources: number): void;
 			}
 		}
 	}
@@ -617,6 +677,37 @@ declare module org {
 declare module org {
 	export module nativescript {
 		export module audiocontext {
+			export class DynamicsCompressorNode implements org.nativescript.audiocontext.NativeObject, org.nativescript.audiocontext.AudioNode {
+				public static class: java.lang.Class<org.nativescript.audiocontext.DynamicsCompressorNode>;
+				public connect(node: org.nativescript.audiocontext.AudioNode, output: number): void;
+				public connect(param0: org.nativescript.audiocontext.AudioNode): void;
+				public disconnect(param0: org.nativescript.audiocontext.AudioNode): void;
+				public getId(): string;
+				public release(): void;
+				public getKnee(): org.nativescript.audiocontext.AudioParam;
+				public getThreshold(): org.nativescript.audiocontext.AudioParam;
+				public getReduction(): org.nativescript.audiocontext.AudioParam;
+				public getRelease(): org.nativescript.audiocontext.AudioParam;
+				public connect(node: org.nativescript.audiocontext.AudioNode, output: number, input: number): void;
+				public connect(node: org.nativescript.audiocontext.AudioNode): void;
+				public disconnect(node: org.nativescript.audiocontext.AudioNode, output: number): void;
+				public connect(sources: org.nativescript.audiocontext.AudioNode, context: number, object: number): void;
+				public disconnect(sources: org.nativescript.audiocontext.AudioNode): void;
+				public getAttack(): org.nativescript.audiocontext.AudioParam;
+				public disconnect(sources: org.nativescript.audiocontext.AudioNode, context: number): void;
+				public disconnect(): void;
+				public disconnect(output: number): void;
+				public getRatio(): org.nativescript.audiocontext.AudioParam;
+				public disconnect(node: org.nativescript.audiocontext.AudioNode, output: number, input: number): void;
+				public disconnect(sources: org.nativescript.audiocontext.AudioNode, context: number, object: number): void;
+			}
+		}
+	}
+}
+
+declare module org {
+	export module nativescript {
+		export module audiocontext {
 			export class ExternalPcmSourceNode extends org.nativescript.audiocontext.AudioScheduledSourceNode {
 				public static class: java.lang.Class<org.nativescript.audiocontext.ExternalPcmSourceNode>;
 				public connect(node: org.nativescript.audiocontext.AudioNode, output: number): void;
@@ -629,6 +720,7 @@ declare module org {
 				public getPlaybackRateParam(): org.nativescript.audiocontext.AudioParam;
 				public connect(node: org.nativescript.audiocontext.AudioNode, output: number, input: number): void;
 				public connect(destId: org.nativescript.audiocontext.AudioNode, this_: number, node: number): void;
+				public configureFormat(sampleRate: number, channels: number): void;
 				public disconnect(node: org.nativescript.audiocontext.AudioNode, output: number): void;
 				public disconnect(destId: org.nativescript.audiocontext.AudioNode, this_: number): void;
 				public constructor(id: string, sampleRate: number, channels: number);

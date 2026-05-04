@@ -51,6 +51,13 @@ static inline void NSCAnalyser_appendToRing(float *ring,
     }
 }
 
+static inline NSUInteger NSCAnalyserNormalizeFloatByteOffset(NSInteger byteOffset, NSUInteger length) {
+    NSUInteger offset = byteOffset > 0 ? (NSUInteger)byteOffset : 0;
+    if (offset > length) offset = length;
+    offset -= (offset % sizeof(float));
+    return offset;
+}
+
 @implementation NSCAnalyserNode {
     AVAudioMixerNode *_mixer;
 
@@ -330,10 +337,17 @@ static inline void NSCAnalyser_appendToRing(float *ring,
 }
 
 - (void)getFloatTimeDomainData:(NSMutableData *)data {
+    [self getFloatTimeDomainDataWithByteOffset:data :0];
+}
+
+- (void)getFloatTimeDomainDataWithByteOffset:(NSMutableData *)data :(NSInteger)byteOffset {
     if (!data) return;
-    float *dst = (float *)data.mutableBytes;
-    if (!dst) return;
-    NSInteger n = MIN((NSInteger)(data.length / sizeof(float)), _fftSize);
+    NSUInteger offsetBytes = NSCAnalyserNormalizeFloatByteOffset(byteOffset, data.length);
+    if (offsetBytes >= data.length) return;
+    uint8_t *bytes = (uint8_t *)data.mutableBytes;
+    if (!bytes) return;
+    float *dst = (float *)(bytes + offsetBytes);
+    NSInteger n = MIN((NSInteger)((data.length - offsetBytes) / sizeof(float)), _fftSize);
     if (n <= 0) return;
     [self copyLatestTimeSamplesInto:dst count:n];
 }
@@ -409,11 +423,18 @@ static inline void NSCAnalyser_appendToRing(float *ring,
 }
 
 - (void)getFloatFrequencyData:(NSMutableData *)data {
+    [self getFloatFrequencyDataWithByteOffset:data :0];
+}
+
+- (void)getFloatFrequencyDataWithByteOffset:(NSMutableData *)data :(NSInteger)byteOffset {
     if (!data) return;
-    float *dst = (float *)data.mutableBytes;
-    if (!dst) return;
+    NSUInteger offsetBytes = NSCAnalyserNormalizeFloatByteOffset(byteOffset, data.length);
+    if (offsetBytes >= data.length) return;
+    uint8_t *bytes = (uint8_t *)data.mutableBytes;
+    if (!bytes) return;
+    float *dst = (float *)(bytes + offsetBytes);
     [self computeMagnitudeSpectrumSmoothed];
-    NSInteger n = MIN((NSInteger)(data.length / sizeof(float)), _smoothedMagCount);
+    NSInteger n = MIN((NSInteger)((data.length - offsetBytes) / sizeof(float)), _smoothedMagCount);
     if (n <= 0) return;
     [_magLock lock];
     [self ensureDbCacheLocked];

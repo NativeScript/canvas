@@ -1,6 +1,6 @@
-import { AnalyserOptions, AudioContextOptions, AudioContextState, BaseAudioContext, ConstantSourceOptions, ConvolverOptions, DelayOptions, DistanceModelType, IIRFilterOptions, LatencyHint, MediaElementLike, MediaElementTapProvider, PanningModelType, PannerOptions, PeriodicWaveOptions, StereoPannerOptions, WaveShaperOptions } from './common';
+import { AnalyserOptions, AudioBufferCopyOptions, AudioContextOptions, AudioContextState, BaseAudioContext, ChannelMergerOptions, ChannelSplitterOptions, ConstantSourceOptions, ConvolverOptions, DelayOptions, DistanceModelType, DynamicsCompressorOptions, IIRFilterOptions, LatencyHint, MediaElementLike, MediaElementTapProvider, PanningModelType, PannerOptions, PeriodicWaveOptions, StereoPannerOptions, WaveShaperOptions } from './common';
 
-export { AnalyserOptions, AudioContextOptions, AudioContextState, ConstantSourceOptions, ConvolverOptions, DelayOptions, DistanceModelType, IIRFilterOptions, LatencyHint, MediaElementLike, MediaElementTapProvider, PanningModelType, PannerOptions, PeriodicWaveOptions, StereoPannerOptions, WaveShaperOptions };
+export { AnalyserOptions, AudioBufferCopyOptions, AudioContextOptions, AudioContextState, ChannelMergerOptions, ChannelSplitterOptions, ConstantSourceOptions, ConvolverOptions, DelayOptions, DistanceModelType, DynamicsCompressorOptions, IIRFilterOptions, LatencyHint, MediaElementLike, MediaElementTapProvider, PanningModelType, PannerOptions, PeriodicWaveOptions, StereoPannerOptions, WaveShaperOptions };
 
 export declare class AudioParam {
 	value: number;
@@ -61,9 +61,9 @@ export declare class AudioBuffer {
 
 	getChannelData(channel: number): Float32Array | null;
 
-	copyFromChannel(dest: Float32Array, channel: number, startInChannel?: number);
+	copyFromChannel(dest: Float32Array, channel: number, startInChannel?: number | AudioBufferCopyOptions);
 
-	copyToChannel(source: Float32Array, channel: number, startInChannel?: number);
+	copyToChannel(source: Float32Array, channel: number, startInChannel?: number | AudioBufferCopyOptions);
 }
 
 export declare class GainNode extends AudioNode {
@@ -178,6 +178,26 @@ export declare class ConvolverNode extends AudioNode {
 	normalize: boolean;
 }
 
+export declare class DynamicsCompressorNode extends AudioNode {
+	constructor(context: BaseAudioContext, options?: DynamicsCompressorOptions);
+	readonly threshold: AudioParam;
+	readonly knee: AudioParam;
+	readonly ratio: AudioParam;
+	readonly attack: AudioParam;
+	readonly release: AudioParam;
+	readonly reduction: AudioParam;
+}
+
+export declare class ChannelSplitterNode extends AudioNode {
+	constructor(context: BaseAudioContext, options?: ChannelSplitterOptions);
+	readonly numberOfOutputs: number;
+}
+
+export declare class ChannelMergerNode extends AudioNode {
+	constructor(context: BaseAudioContext, options?: ChannelMergerOptions);
+	readonly numberOfInputs: number;
+}
+
 export declare class PeriodicWave {
 	constructor(context: BaseAudioContext, options?: PeriodicWaveOptions);
 }
@@ -207,6 +227,9 @@ export declare class AudioContext extends BaseAudioContext {
 	createWaveShaper(options?: WaveShaperOptions): WaveShaperNode;
 	createIIRFilter(feedforward: number[], feedback: number[]): IIRFilterNode;
 	createConvolver(options?: ConvolverOptions): ConvolverNode;
+	createDynamicsCompressor(options?: DynamicsCompressorOptions): DynamicsCompressorNode;
+	createChannelSplitter(options?: ChannelSplitterOptions): ChannelSplitterNode;
+	createChannelMerger(options?: ChannelMergerOptions): ChannelMergerNode;
 	createPeriodicWave(real: Float32Array | number[], imag: Float32Array | number[], options?: { disableNormalization?: boolean }): PeriodicWave;
 	createMediaElementSource(mediaElement: MediaElementLike): MediaElementAudioSourceNode;
 
@@ -246,6 +269,9 @@ export declare class OfflineAudioContext extends BaseAudioContext {
 	createWaveShaper(options?: WaveShaperOptions): WaveShaperNode;
 	createIIRFilter(feedforward: number[], feedback: number[]): IIRFilterNode;
 	createConvolver(options?: ConvolverOptions): ConvolverNode;
+	createDynamicsCompressor(options?: DynamicsCompressorOptions): DynamicsCompressorNode;
+	createChannelSplitter(options?: ChannelSplitterOptions): ChannelSplitterNode;
+	createChannelMerger(options?: ChannelMergerOptions): ChannelMergerNode;
 	createPeriodicWave(real: Float32Array | number[], imag: Float32Array | number[], options?: { disableNormalization?: boolean }): PeriodicWave;
 
 	decodeAudioData(source: string | ArrayBuffer | ArrayBufferView, successCallback?: (buffer: AudioBuffer) => void, errorCallback?: (error: Error) => void): Promise<AudioBuffer>;

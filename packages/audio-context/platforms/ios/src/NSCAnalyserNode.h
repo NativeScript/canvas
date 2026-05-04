@@ -18,8 +18,10 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)initWithContext:(NSCAudioContext *)context node:(nullable AVAudioNode *)node NS_UNAVAILABLE;
 
 - (void)getFloatTimeDomainData:(NSMutableData *)data;
+- (void)getFloatTimeDomainDataWithByteOffset:(NSMutableData *)data :(NSInteger)byteOffset;
 - (void)getByteTimeDomainData:(NSMutableData *)data;
 - (void)getFloatFrequencyData:(NSMutableData *)data;
+- (void)getFloatFrequencyDataWithByteOffset:(NSMutableData *)data :(NSInteger)byteOffset;
 - (void)getByteFrequencyData:(NSMutableData *)data;
 - (void)appendBufferToRing:(AVAudioPCMBuffer *)buffer;
 

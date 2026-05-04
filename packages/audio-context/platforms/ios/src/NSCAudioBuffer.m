@@ -4,6 +4,16 @@
 
 static void *bufferKey = &bufferKey;
 
+static inline NSUInteger NSCNormalizeByteOffset(NSInteger byteOffset) {
+    return byteOffset > 0 ? (NSUInteger)byteOffset : 0;
+}
+
+static inline NSUInteger NSCResolveByteLength(NSInteger byteLength, NSUInteger availableLength) {
+    if (byteLength <= 0) return availableLength;
+    NSUInteger requested = (NSUInteger)byteLength;
+    return requested < availableLength ? requested : availableLength;
+}
+
 @implementation NSCAudioBuffer {
     NSCAudioContext *_context;
     AVAudioPCMBuffer *_buffer;
@@ -39,6 +49,11 @@ static void *bufferKey = &bufferKey;
     return _buffer;
 }
 
+- (NSString *)getPCMBufferAddress {
+    if (!_buffer) return nil;
+    return [NSString stringWithFormat:@"%p", _buffer];
+}
+
 - (float)sampleRate {
     if (_buffer) return (float)_buffer.format.sampleRate;
     return (float)_storedSampleRate;
@@ -66,15 +81,32 @@ static void *bufferKey = &bufferKey;
     if (!fdata) return nil;
     NSInteger channels = (NSInteger)_buffer.format.channelCount;
     if (channel < 0 || channel >= channels) return nil;
+
     AVAudioFrameCount frames = _buffer.frameLength;
     float *ptr = fdata[channel];
     NSUInteger byteCount = (NSUInteger)frames * sizeof(float);
     NSMutableData *data = [NSMutableData dataWithBytesNoCopy:ptr length:byteCount freeWhenDone:NO];
     objc_setAssociatedObject(data, bufferKey, _buffer, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-    return data;
+    return [NSCAudioContext marshalMutableData:data];
 }
 
 - (void)copyFromChannel:(id)destination :(NSInteger)channel :(NSInteger)startInChannel {
+    [self copyFromChannelWithByteOffset:destination :channel :startInChannel :0];
+}
+
+- (void)copyFromChannelWithByteOffset:(id)destination :(NSInteger)channel :(NSInteger)startInChannel :(NSInteger)byteOffset {
+    [self copyFromChannelWithByteOffsetByteLength:destination
+                                                 :channel
+                                                 :startInChannel
+                                                 :byteOffset
+                                                 :-1];
+}
+
+- (void)copyFromChannelWithByteOffsetByteLength:(id)destination
+                                                :(NSInteger)channel
+                                                :(NSInteger)startInChannel
+                                                :(NSInteger)byteOffset
+                                                :(NSInteger)byteLength {
     if (!_buffer || !destination) return;
     float * const *fdata = _buffer.floatChannelData;
     if (!fdata) return;
@@ -99,22 +131,48 @@ static void *bufferKey = &bufferKey;
     }
 
     if ([destination isKindOfClass:[NSData class]]) {
-        NSMutableData *md = (NSMutableData *)destination;
-        float *dst = (float *)md.mutableBytes;
-        if (!dst) {
-            const void *raw = ((NSData *)destination).bytes;
-            dst = (float *)(void *)raw;
+        NSData *dataObj = (NSData *)destination;
+        NSUInteger offsetBytes = NSCNormalizeByteOffset(byteOffset);
+        if (offsetBytes > dataObj.length) offsetBytes = dataObj.length;
+        NSUInteger availableBytes = dataObj.length - offsetBytes;
+        NSUInteger segmentBytes = NSCResolveByteLength(byteLength, availableBytes);
+        if (segmentBytes == 0) return;
+
+        uint8_t *dstBytes = nil;
+        if ([destination isKindOfClass:[NSMutableData class]]) {
+            dstBytes = (uint8_t *)((NSMutableData *)destination).mutableBytes;
         }
-        if (!dst) return;
-        NSUInteger destFloats = md.length / sizeof(float);
+        if (!dstBytes) {
+            dstBytes = (uint8_t *)(void *)dataObj.bytes;
+        }
+        if (!dstBytes) return;
+
+        dstBytes += offsetBytes;
+        NSUInteger destFloats = segmentBytes / sizeof(float);
         NSUInteger count = MIN(srcFloats, destFloats);
         if (count == 0) return;
-        memcpy(dst, src, count * sizeof(float));
+        memcpy(dstBytes, src, count * sizeof(float));
         return;
     }
 }
 
 - (void)copyToChannel:(id)source :(NSInteger)channel :(NSInteger)startInChannel {
+    [self copyToChannelWithByteOffset:source :channel :startInChannel :0];
+}
+
+- (void)copyToChannelWithByteOffset:(id)source :(NSInteger)channel :(NSInteger)startInChannel :(NSInteger)byteOffset {
+    [self copyToChannelWithByteOffsetByteLength:source
+                                               :channel
+                                               :startInChannel
+                                               :byteOffset
+                                               :-1];
+}
+
+- (void)copyToChannelWithByteOffsetByteLength:(id)source
+                                               :(NSInteger)channel
+                                               :(NSInteger)startInChannel
+                                               :(NSInteger)byteOffset
+                                               :(NSInteger)byteLength {
     if (!_buffer) return;
     float * const *fdata = _buffer.floatChannelData;
     if (!fdata) return;
@@ -142,19 +200,27 @@ static void *bufferKey = &bufferKey;
     
     if ([source isKindOfClass:[NSData class]] || [source isKindOfClass:[NSMutableData class]]) {
         NSData *raw = (NSData *)source;
+        NSUInteger offsetBytes = NSCNormalizeByteOffset(byteOffset);
+        if (offsetBytes > raw.length) offsetBytes = raw.length;
+        const uint8_t *rawBytes = (const uint8_t *)raw.bytes;
+        if (!rawBytes) return;
+        const uint8_t *srcBytes = rawBytes + offsetBytes;
+        NSUInteger rawAvailable = raw.length - offsetBytes;
+        NSUInteger rawLength = NSCResolveByteLength(byteLength, rawAvailable);
+        if (rawLength == 0) return;
         NSUInteger available = (NSUInteger)capacity - (NSUInteger)start;
-        if (raw.length >= 4) {
-            NSUInteger floats = raw.length / 4;
+        if (rawLength >= 4) {
+            NSUInteger floats = rawLength / 4;
             NSUInteger n = MIN(floats, available);
-            [raw getBytes:(ptr + start) length:n * sizeof(float)];
+            memcpy(ptr + start, srcBytes, n * sizeof(float));
             NSUInteger newLen = MAX((NSUInteger)_buffer.frameLength, (NSUInteger)start + n);
             _buffer.frameLength = (AVAudioFrameCount)newLen;
             return;
         }
-        if (raw.length >= 2) {
-            NSUInteger shorts = raw.length / 2;
+        if (rawLength >= 2) {
+            NSUInteger shorts = rawLength / 2;
             NSUInteger n = MIN(shorts, available);
-            const int16_t *iptr = (const int16_t *)raw.bytes;
+            const int16_t *iptr = (const int16_t *)srcBytes;
             float *dst = ptr + start;
             vDSP_vflt16(iptr, 1, dst, 1, (vDSP_Length)n);
             float scale = 1.0f / 32768.0f;

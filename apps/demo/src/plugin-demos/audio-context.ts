@@ -100,6 +100,101 @@ export function positionSweepTap(args: EventData) {
 	})();
 }
 
+export function splitCompressMergeTap(args: EventData) {
+	(async () => {
+		try {
+			const page = (<any>args.object).page as Page;
+			const demo = page.bindingContext as DemoSharedAudioContext;
+			const duration = 2.4;
+			await demo.initAudio();
+			const ctx = demo.ctx as AudioContext;
+			if (!ctx) return;
+			if (demo.source) demo.stop();
+
+			const sampleRate = ctx.sampleRate || 44100;
+			const length = Math.max(1, Math.floor(sampleRate * duration));
+			const buffer = ctx.createBuffer({ length, numberOfChannels: 2, sampleRate });
+			const leftNative = buffer.getChannelData(0);
+			const rightNative = buffer.getChannelData(1);
+			if (!leftNative || !rightNative) return;
+			const left = leftNative;
+			const right = rightNative;
+
+			for (let i = 0; i < length; i++) {
+				const t = i / sampleRate;
+				const fadeIn = Math.min(1, i / (sampleRate * 0.02));
+				const fadeOut = Math.min(1, (length - i) / (sampleRate * 0.05));
+				const envelope = Math.min(fadeIn, fadeOut);
+				left[i] = envelope * (Math.sin(2 * Math.PI * 220 * t) * 0.92 + Math.sin(2 * Math.PI * 440 * t) * 0.32);
+				right[i] = envelope * Math.sin(2 * Math.PI * 660 * t) * 0.24;
+			}
+
+			const src = ctx.createBufferSource();
+			src.buffer = buffer;
+
+			const splitter = ctx.createChannelSplitter({ numberOfOutputs: 2 });
+			const compressor = ctx.createDynamicsCompressor({
+				threshold: -36,
+				knee: 24,
+				ratio: 12,
+				attack: 0.003,
+				release: 0.2,
+			});
+			const merger = ctx.createChannelMerger({ numberOfInputs: 2 });
+
+			const now = typeof ctx.currentTime === 'number' ? ctx.currentTime : Date.now() / 1000;
+			compressor.threshold.setValueAtTime(-36, now);
+			compressor.threshold.linearRampToValueAtTime(-24, now + duration * 0.75);
+			compressor.knee.setValueAtTime(24, now);
+			compressor.ratio.setValueAtTime(12, now);
+			compressor.attack.setValueAtTime(0.003, now);
+			compressor.release.setValueAtTime(0.2, now);
+
+			src.connect(splitter);
+			splitter.connect(compressor, 0, 0);
+			compressor.connect(merger, 0, 0);
+			splitter.connect(merger, 1, 1);
+			merger.connect(demo.gainNode || ctx.destination);
+
+			const cleanup = () => {
+				try {
+					src.disconnect && src.disconnect();
+				} catch (e) {}
+				try {
+					splitter.disconnect && splitter.disconnect();
+				} catch (e) {}
+				try {
+					compressor.disconnect && compressor.disconnect();
+				} catch (e) {}
+				try {
+					merger.disconnect && merger.disconnect();
+				} catch (e) {}
+			};
+
+			const ok = await demo.startSourceSafe(src);
+			if (!ok) {
+				cleanup();
+				console.warn('splitCompressMergeTap: source failed to start');
+				return;
+			}
+
+			demo.source = src;
+			demo.isPlaying = true;
+			src.onended = () => {
+				cleanup();
+				demo.source = null;
+				demo.isPlaying = false;
+				demo.stopVisualizer();
+			};
+
+			if (demo.analyser && demo.visualizerCanvas && !demo.rafId) demo.startVisualizer();
+		} catch (error) {
+			console.warn('splitCompressMergeTap failed:', error);
+		}
+		return;
+	})();
+}
+
 export function testPanLeft(args: EventData) {
 	(async () => {
 		const page = (<any>args.object).page as Page;

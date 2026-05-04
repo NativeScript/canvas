@@ -397,6 +397,17 @@ void NativeEngine::configureStream(int sampleRate, double latencyHintSec) {
 #endif
 }
 
+int NativeEngine::getStreamSampleRate() {
+#ifdef HAS_OBOE
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    if (streamSampleRate_ > 0) return streamSampleRate_;
+    if (desiredSampleRate_ > 0) return desiredSampleRate_;
+    return 48000;
+#else
+    return desiredSampleRate_ > 0 ? desiredSampleRate_ : 48000;
+#endif
+}
+
 void NativeEngine::resume() {
 #ifdef HAS_OBOE
     std::lock_guard<std::recursive_mutex> lock(mutex_);
@@ -479,6 +490,38 @@ NativeEngine::createBufferSourceFromDirect(const void *ptr, size_t byteLen, int 
     cmd.bytesPerSample = bytesPerSample > 0 ? bytesPerSample : 4;
     cmd.sampleRate = sampleRate > 0 ? sampleRate : 48000;
     cmd.channels = channels > 0 ? channels : 1;
+    enqueueCommand(std::move(cmd));
+    return id;
+}
+
+std::string
+NativeEngine::createBufferSourceFromPlanar(const std::vector<const float *> &channelPtrs,
+                                           int frameCount,
+                                           int sampleRate,
+                                           int channels) {
+    if (channelPtrs.empty() || frameCount <= 0) return {};
+
+    int resolvedChannels = channels > 0 ? channels : static_cast<int>(channelPtrs.size());
+    resolvedChannels = std::min(resolvedChannels, static_cast<int>(channelPtrs.size()));
+    if (resolvedChannels <= 0) return {};
+
+    std::vector<const float *> packed;
+    packed.reserve(static_cast<size_t>(resolvedChannels));
+    for (int i = 0; i < resolvedChannels; i++) {
+        const float *ptr = channelPtrs[static_cast<size_t>(i)];
+        if (!ptr) return {};
+        packed.push_back(ptr);
+    }
+
+    std::string id = genId();
+    NativeEngine::Command cmd;
+    cmd.type = NativeEngine::CMD_CREATE_BUFFER_PLANAR;
+    cmd.id = id;
+    cmd.planarPtrs = std::make_shared<std::vector<const float *>>(std::move(packed));
+    cmd.planarFrames = frameCount;
+    cmd.bytesPerSample = 4;
+    cmd.sampleRate = sampleRate > 0 ? sampleRate : 48000;
+    cmd.channels = resolvedChannels;
     enqueueCommand(std::move(cmd));
     return id;
 }

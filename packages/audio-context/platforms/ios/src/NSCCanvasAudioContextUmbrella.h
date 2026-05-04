@@ -1,5 +1,6 @@
 #import <Foundation/Foundation.h>
 #import "NSCAudioContext.h"
+#import "AudioModule.h"
 
 #import "NSCAnalyserNode.h"
 #import "NSCAudioBufferSourceNode.h"
@@ -17,6 +18,9 @@
 #import "NSCWaveShaperNode.h"
 #import "NSCIIRFilterNode.h"
 #import "NSCConvolverNode.h"
+#import "NSCDynamicsCompressorNode.h"
+#import "NSCChannelSplitterNode.h"
+#import "NSCChannelMergerNode.h"
 #import "NSCPeriodicWave.h"
 #import "NSCMediaElementSourceTap.h"
 #import "NSCAudioLog.h"

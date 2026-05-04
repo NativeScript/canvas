@@ -106,6 +106,11 @@ export interface AudioContextOptions {
 	latencyHint?: LatencyHint;
 }
 
+export interface AudioBufferCopyOptions {
+	startInChannel?: number;
+	byteOffset?: number;
+}
+
 const LATENCY_HINT_SECONDS = {
 	interactive: 0.005,
 	balanced: 0.012,
@@ -200,6 +205,19 @@ export interface IIRFilterOptions {
 }
 export interface ConvolverOptions {
 	disableNormalization?: boolean;
+}
+export interface DynamicsCompressorOptions {
+	threshold?: number;
+	knee?: number;
+	ratio?: number;
+	attack?: number;
+	release?: number;
+}
+export interface ChannelSplitterOptions {
+	numberOfOutputs?: number;
+}
+export interface ChannelMergerOptions {
+	numberOfInputs?: number;
 }
 export interface PeriodicWaveOptions {
 	real?: Float32Array | number[];

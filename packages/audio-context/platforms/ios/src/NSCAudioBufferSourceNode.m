@@ -187,7 +187,7 @@
   }
 
   BOOL isConnected = NO;
-  SEL ocpSel = NSSelectorFromString(@"outputConnectionPointsForNode:bus:");
+  SEL ocpSel = NSSelectorFromString(@"outputConnectionPointsForNode:outputBus:");
   if (eng && [eng respondsToSelector:ocpSel]) {
     @try {
       typedef NSArray *(*MsgSendFn)(id, SEL, id, AVAudioNodeBus);
@@ -278,8 +278,8 @@
           return;
         BOOL nowConnected = NO;
         @try {
-          SEL ocpSel2 =
-              NSSelectorFromString(@"outputConnectionPointsForNode:bus:");
+            SEL ocpSel2 =
+              NSSelectorFromString(@"outputConnectionPointsForNode:outputBus:");
           if (eng && [eng respondsToSelector:ocpSel2]) {
             typedef NSArray *(*MsgSendFn)(id, SEL, id, AVAudioNodeBus);
             MsgSendFn fn = (MsgSendFn)objc_msgSend;
@@ -428,7 +428,7 @@
                           }
                         }
                         SEL ocpSel = NSSelectorFromString(
-                            @"outputConnectionPointsForNode:bus:");
+                          @"outputConnectionPointsForNode:outputBus:");
                         if (e && [e respondsToSelector:ocpSel]) {
                           typedef NSArray *(*MsgSendFn)(id, SEL, id,
                                                         AVAudioNodeBus);
@@ -512,8 +512,8 @@
                             e);
                     }
                   }
-                  SEL ocpSel = NSSelectorFromString(
-                      @"outputConnectionPointsForNode:bus:");
+                    SEL ocpSel = NSSelectorFromString(
+                      @"outputConnectionPointsForNode:outputBus:");
                   if (e && [e respondsToSelector:ocpSel]) {
                     typedef NSArray *(*MsgSendFn)(id, SEL, id, AVAudioNodeBus);
                     MsgSendFn fn = (MsgSendFn)objc_msgSend;
@@ -606,7 +606,7 @@
       return;
     BOOL nowConnected = NO;
     @try {
-      SEL ocpSel3 = NSSelectorFromString(@"outputConnectionPointsForNode:bus:");
+      SEL ocpSel3 = NSSelectorFromString(@"outputConnectionPointsForNode:outputBus:");
       if (eng && [eng respondsToSelector:ocpSel3]) {
         typedef NSArray *(*MsgSendFn)(id, SEL, id, AVAudioNodeBus);
         MsgSendFn fn = (MsgSendFn)objc_msgSend;
@@ -735,7 +735,7 @@
                       }
                     }
                     SEL ocpSel = NSSelectorFromString(
-                        @"outputConnectionPointsForNode:bus:");
+                      @"outputConnectionPointsForNode:outputBus:");
                     if (e && [e respondsToSelector:ocpSel]) {
                       typedef NSArray *(*MsgSendFn)(id, SEL, id,
                                                     AVAudioNodeBus);
@@ -805,8 +805,8 @@
                         e);
                 }
               }
-              SEL ocpSel =
-                  NSSelectorFromString(@"outputConnectionPointsForNode:bus:");
+                SEL ocpSel =
+                  NSSelectorFromString(@"outputConnectionPointsForNode:outputBus:");
               if (e && [e respondsToSelector:ocpSel]) {
                 typedef NSArray *(*MsgSendFn)(id, SEL, id, AVAudioNodeBus);
                 MsgSendFn fn = (MsgSendFn)objc_msgSend;

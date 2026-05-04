@@ -21,9 +21,14 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)init NS_UNAVAILABLE;
 
 - (nullable AVAudioPCMBuffer *)getBuffer;
+- (nullable NSString *)getPCMBufferAddress;
 - (nullable NSMutableData *)getChannelData:(NSInteger)channel;
-- (void)copyFromChannel:(NSMutableArray *)destination :(NSInteger)channel :(NSInteger)startInChannel;
+- (void)copyFromChannel:(id)destination :(NSInteger)channel :(NSInteger)startInChannel;
+- (void)copyFromChannelWithByteOffset:(id)destination :(NSInteger)channel :(NSInteger)startInChannel :(NSInteger)byteOffset;
+- (void)copyFromChannelWithByteOffsetByteLength:(id)destination :(NSInteger)channel :(NSInteger)startInChannel :(NSInteger)byteOffset :(NSInteger)byteLength;
 - (void)copyToChannel:(id)source :(NSInteger)channel :(NSInteger)startInChannel;
+- (void)copyToChannelWithByteOffset:(id)source :(NSInteger)channel :(NSInteger)startInChannel :(NSInteger)byteOffset;
+- (void)copyToChannelWithByteOffsetByteLength:(id)source :(NSInteger)channel :(NSInteger)startInChannel :(NSInteger)byteOffset :(NSInteger)byteLength;
 
 @end
 

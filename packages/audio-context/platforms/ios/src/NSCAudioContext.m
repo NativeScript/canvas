@@ -21,6 +21,10 @@
 #import "NSCStereoPannerNode.h"
 #import "NSCDelayNode.h"
 #import "NSCConstantSourceNode.h"
+#import "NSCDynamicsCompressorNode.h"
+#import "NSCChannelSplitterNode.h"
+#import "NSCChannelMergerNode.h"
+#import "AudioModule.h"
 
 static void *bufferKey = &bufferKey;
 void *NSCProducerTokenKey = &NSCProducerTokenKey;
@@ -124,6 +128,10 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
 
 - (instancetype)initWithSampleRate:(double)sampleRate latencyHint:(double)latencyHint {
     if (self = [super init]) {
+        @try {
+            [AudioModule install];
+        } @catch (NSException *e) {}
+
         _engine = [[AVAudioEngine alloc] init];
         _environmentNode = nil;
         _destination = nil;
@@ -604,6 +612,9 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
 - (NSCWaveShaperNode *)createWaveShaperNode { return [[NSCWaveShaperNode alloc] initWithContext:self]; }
 - (NSCIIRFilterNode *)createIIRFilterNode:(NSArray<NSNumber *> *)feedforward feedback:(NSArray<NSNumber *> *)feedback { return [[NSCIIRFilterNode alloc] initWithContext:self feedforward:feedforward feedback:feedback]; }
 - (NSCConvolverNode *)createConvolverNode { return [[NSCConvolverNode alloc] initWithContext:self]; }
+- (NSCDynamicsCompressorNode *)createDynamicsCompressorNode { return [[NSCDynamicsCompressorNode alloc] initWithContext:self]; }
+- (NSCChannelSplitterNode *)createChannelSplitterNode:(NSInteger)numberOfOutputs { return [[NSCChannelSplitterNode alloc] initWithContext:self numberOfOutputs:numberOfOutputs]; }
+- (NSCChannelMergerNode *)createChannelMergerNode:(NSInteger)numberOfInputs { return [[NSCChannelMergerNode alloc] initWithContext:self numberOfInputs:numberOfInputs]; }
 
 - (nullable NSCAudioNode *)createSourceNodeFromMediaPlayer:(AVPlayer *)player {
     if (!player) return nil;

@@ -60,6 +60,45 @@ Java_org_nativescript_audiocontext_AudioContext_nativeCreateGain(JNIEnv *env, jo
 }
 
 extern "C" JNIEXPORT void JNICALL
+Java_org_nativescript_audiocontext_AudioContext_nativeCreateDynamicsCompressor(
+        JNIEnv *env,
+        jobject thiz,
+        jstring jnodeId,
+        jstring jthresholdId,
+        jstring jkneeId,
+        jstring jratioId,
+        jstring jattackId,
+        jstring jreleaseId,
+        jstring jreductionId) {
+    const char *nid = jnodeId ? env->GetStringUTFChars(jnodeId, nullptr) : nullptr;
+    const char *tid = jthresholdId ? env->GetStringUTFChars(jthresholdId, nullptr) : nullptr;
+    const char *kid = jkneeId ? env->GetStringUTFChars(jkneeId, nullptr) : nullptr;
+    const char *rid = jratioId ? env->GetStringUTFChars(jratioId, nullptr) : nullptr;
+    const char *aid = jattackId ? env->GetStringUTFChars(jattackId, nullptr) : nullptr;
+    const char *relid = jreleaseId ? env->GetStringUTFChars(jreleaseId, nullptr) : nullptr;
+    const char *redid = jreductionId ? env->GetStringUTFChars(jreductionId, nullptr) : nullptr;
+
+    NativeEngine::Command cmd;
+    cmd.type = NativeEngine::CMD_CREATE_DYNAMICS_COMPRESSOR;
+    cmd.id = nid ? nid : std::string();
+    cmd.compressorThresholdId = tid ? tid : std::string();
+    cmd.compressorKneeId = kid ? kid : std::string();
+    cmd.compressorRatioId = rid ? rid : std::string();
+    cmd.compressorAttackId = aid ? aid : std::string();
+    cmd.compressorReleaseId = relid ? relid : std::string();
+    cmd.compressorReductionId = redid ? redid : std::string();
+    NativeEngine::getInstance().enqueueCommand(std::move(cmd));
+
+    if (nid) env->ReleaseStringUTFChars(jnodeId, nid);
+    if (tid) env->ReleaseStringUTFChars(jthresholdId, tid);
+    if (kid) env->ReleaseStringUTFChars(jkneeId, kid);
+    if (rid) env->ReleaseStringUTFChars(jratioId, rid);
+    if (aid) env->ReleaseStringUTFChars(jattackId, aid);
+    if (relid) env->ReleaseStringUTFChars(jreleaseId, relid);
+    if (redid) env->ReleaseStringUTFChars(jreductionId, redid);
+}
+
+extern "C" JNIEXPORT void JNICALL
 Java_org_nativescript_audiocontext_AudioContext_nativeSetGain(JNIEnv *env, jobject thiz,
                                                               jstring jgainId, jdouble value) {
     const char *gid = env->GetStringUTFChars(jgainId, nullptr);
@@ -1412,6 +1451,51 @@ Java_org_nativescript_audiocontext_AudioContext_nativeCreateBufferSourceDirect(J
     return env->NewStringUTF(id.c_str());
 }
 
+extern "C" JNIEXPORT jstring JNICALL
+Java_org_nativescript_audiocontext_AudioContext_nativeCreateBufferSourcePlanar(JNIEnv *env,
+                                                                                jobject thiz,
+                                                                                jobjectArray channelBuffers,
+                                                                                jint sampleRate,
+                                                                                jint channels) {
+    if (channelBuffers == nullptr) return nullptr;
+
+    jsize channelCount = env->GetArrayLength(channelBuffers);
+    if (channelCount <= 0) return nullptr;
+
+    std::vector<const float *> channelPtrs;
+    channelPtrs.reserve(static_cast<size_t>(channelCount));
+    int frameCount = -1;
+
+    for (jsize i = 0; i < channelCount; i++) {
+        jobject bufObj = env->GetObjectArrayElement(channelBuffers, i);
+        if (bufObj == nullptr) {
+            if (bufObj) env->DeleteLocalRef(bufObj);
+            return nullptr;
+        }
+
+        void *addr = env->GetDirectBufferAddress(bufObj);
+        jlong cap = env->GetDirectBufferCapacity(bufObj);
+        env->DeleteLocalRef(bufObj);
+
+        if (!addr || cap <= 0) return nullptr;
+
+        int channelFrames = static_cast<int>(cap / static_cast<jlong>(sizeof(float)));
+        if (channelFrames <= 0) return nullptr;
+        if (frameCount < 0 || channelFrames < frameCount) frameCount = channelFrames;
+
+        channelPtrs.push_back(reinterpret_cast<const float *>(addr));
+    }
+
+    if (channelPtrs.empty() || frameCount <= 0) return nullptr;
+
+    std::string id = NativeEngine::getInstance().createBufferSourceFromPlanar(channelPtrs,
+                                                                               frameCount,
+                                                                               sampleRate,
+                                                                               channels);
+    if (id.empty()) return nullptr;
+    return env->NewStringUTF(id.c_str());
+}
+
 extern "C" JNIEXPORT jboolean JNICALL
 Java_org_nativescript_audiocontext_AudioContext_nativeHasBuffer(JNIEnv *env, jobject thiz,
                                                                 jstring jid) {
@@ -1438,6 +1522,14 @@ Java_org_nativescript_audiocontext_AudioContext_nativeGetAudioTimeNanos(JNIEnv *
     (void) env;
     (void) thiz;
     return static_cast<jlong>(g_audioTimeNanos.load(std::memory_order_relaxed));
+}
+
+extern "C" JNIEXPORT jint JNICALL
+Java_org_nativescript_audiocontext_AudioContext_nativeGetStreamSampleRate(JNIEnv *env,
+                                                                          jobject thiz) {
+    (void) env;
+    (void) thiz;
+    return static_cast<jint>(NativeEngine::getInstance().getStreamSampleRate());
 }
 
 extern "C" JNIEXPORT jstring JNICALL

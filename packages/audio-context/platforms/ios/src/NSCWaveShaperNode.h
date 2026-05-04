@@ -13,6 +13,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)initWithContext:(NSCAudioContext *)context node:(nullable AVAudioNode *)node NS_UNAVAILABLE;
 
 - (void)setCurveFromData:(nullable NSData *)floatData;
+- (void)setCurveFromDataWithByteOffset:(nullable NSData *)floatData :(NSInteger)byteOffset;
 - (nullable NSData *)curve;
 
 @end

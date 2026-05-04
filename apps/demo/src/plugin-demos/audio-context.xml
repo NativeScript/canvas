@@ -9,6 +9,7 @@
       <Button text="Stop" tap="stopTap" class="btn btn-secondary" />
       <Button text="Pan Sweep" tap="panSweepTap" class="btn btn-secondary" />
       <Button text="Position Sweep" tap="positionSweepTap" class="btn btn-secondary" />
+      <Button text="Split + Compress + Merge" tap="splitCompressMergeTap" class="btn btn-secondary" />
       <Button text="Pan Left" tap="testPanLeft" class="btn btn-secondary" />
       <Button text="Pan Right" tap="testPanRight" class="btn btn-secondary" />
     </StackLayout>
@@ -20,7 +21,7 @@
     </StackLayout>
 
     <StackLayout row="3" padding="8">
-      <Label text="Realtime graphic EQ is disabled, visualizer only." class="muted" />
+      <Label text="Try Split + Compress + Merge to exercise ChannelSplitterNode, DynamicsCompressorNode, and ChannelMergerNode." class="muted" />
     </StackLayout>
   </GridLayout>
 </Page>

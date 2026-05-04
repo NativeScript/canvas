@@ -39,6 +39,12 @@ private:
     NativeEngine *engine;
 };
 
+static inline int64_t monotonicNowNs() {
+    timespec ts{};
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return static_cast<int64_t>(ts.tv_sec) * 1000000000LL + static_cast<int64_t>(ts.tv_nsec);
+}
+
 void NativeEngine::ensureStream() {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
     if (stream_) return;
@@ -81,6 +87,32 @@ void NativeEngine::ensureStream() {
 
     streamSampleRate_ = stream_->getSampleRate();
     streamChannels_ = stream_->getChannelCount();
+
+    int32_t framesPerBurst = stream_->getFramesPerBurst();
+    int32_t capacityFrames = stream_->getBufferCapacityInFrames();
+    if (framesPerBurst > 0 && capacityFrames > 0) {
+        int32_t requestedFrames = std::min(capacityFrames, framesPerBurst * 4);
+        if (desiredLatencyHintSec_ > 0.0 && streamSampleRate_ > 0) {
+            int32_t hintedFrames = static_cast<int32_t>(
+                    desiredLatencyHintSec_ * static_cast<double>(streamSampleRate_));
+            if (hintedFrames > 0) {
+                requestedFrames = std::min(capacityFrames,
+                                           std::max(requestedFrames, hintedFrames));
+            }
+        }
+
+        auto bufferResult = stream_->setBufferSizeInFrames(requestedFrames);
+        if (bufferResult) {
+            __android_log_print(ANDROID_LOG_INFO, TAG,
+                                "Oboe buffer size set to %d frames (burst=%d cap=%d)",
+                                bufferResult.value(), framesPerBurst, capacityFrames);
+        } else {
+            __android_log_print(ANDROID_LOG_WARN, TAG,
+                                "Oboe setBufferSizeInFrames(%d) failed: %d",
+                                requestedFrames, static_cast<int>(bufferResult.error()));
+        }
+    }
+
     __android_log_print(ANDROID_LOG_INFO, TAG, "Oboe stream opened (rate=%d channels=%d)",
                         streamSampleRate_, streamChannels_);
     stream_->requestStart();
@@ -89,9 +121,11 @@ void NativeEngine::ensureStream() {
 void NativeEngine::stopStream() {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
     if (!stream_) return;
+
     stream_->requestStop();
     stream_->close();
     stream_.reset();
+
     if (callback_) {
         delete callback_;
         callback_ = nullptr;
@@ -231,13 +265,11 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                 auto frameTs = tsRes.value();
                 g_audioTimeNanos.store(frameTs.timestamp, std::memory_order_relaxed);
             } else {
-                int64_t nowNs = std::chrono::duration_cast<std::chrono::nanoseconds>(
-                        std::chrono::steady_clock::now().time_since_epoch()).count();
+                int64_t nowNs = monotonicNowNs();
                 g_audioTimeNanos.store(nowNs, std::memory_order_relaxed);
             }
         } else {
-            int64_t nowNs = std::chrono::duration_cast<std::chrono::nanoseconds>(
-                    std::chrono::steady_clock::now().time_since_epoch()).count();
+            int64_t nowNs = monotonicNowNs();
             g_audioTimeNanos.store(nowNs, std::memory_order_relaxed);
         }
     }
@@ -325,6 +357,31 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                 }
                 break;
             }
+            case NativeEngine::CMD_CREATE_BUFFER_PLANAR: {
+                BufferData bd;
+                bd.isDirect = true;
+                bd.isPlanar = true;
+                if (c.planarPtrs) {
+                    bd.planarPtrs = *c.planarPtrs;
+                }
+                bd.planarFrames = c.planarFrames > 0 ? c.planarFrames : 0;
+                bd.bytesPerSample = 4;
+                bd.sampleRate = c.sampleRate > 0 ? c.sampleRate : 48000;
+                bd.channels = c.channels > 0
+                              ? c.channels
+                              : static_cast<int>(bd.planarPtrs.size());
+                if (bd.channels <= 0) bd.channels = 1;
+                if (bd.planarFrames > 0) {
+                    bd.byteLength = static_cast<size_t>(bd.planarFrames) *
+                                    static_cast<size_t>(bd.channels) * 4;
+                }
+                bd.nativeOwned = false;
+                audioBuffers_[c.id] = std::move(bd);
+                audioThreadLog(ANDROID_LOG_INFO,
+                               "CMD: create planar buffer %s sr=%d ch=%d frames=%d",
+                               c.id.c_str(), c.sampleRate, c.channels, c.planarFrames);
+                break;
+            }
             case NativeEngine::CMD_CREATE_BUFFER_COPY: {
                 BufferData bd;
                 bd.pcm = std::move(*c.pcm);
@@ -363,22 +420,46 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                                c.id.c_str(), gains_[c.id]);
                 break;
             }
+            case NativeEngine::CMD_CREATE_DYNAMICS_COMPRESSOR: {
+                NativeEngine::DynamicsCompressor compressor;
+                compressor.thresholdId = c.compressorThresholdId;
+                compressor.kneeId = c.compressorKneeId;
+                compressor.ratioId = c.compressorRatioId;
+                compressor.attackId = c.compressorAttackId;
+                compressor.releaseId = c.compressorReleaseId;
+                compressor.reductionId = c.compressorReductionId;
+                compressor.envelopeByChannel.assign(static_cast<size_t>(std::max(1, channels)),
+                                                    0.0f);
+                compressor.reductionDbByChannel.assign(static_cast<size_t>(std::max(1, channels)),
+                                                       0.0f);
+                compressors_[c.id] = std::move(compressor);
+
+                auto ensureGainDefault = [&](const std::string &gid, double value) {
+                    if (gid.empty()) return;
+                    if (gains_.find(gid) == gains_.end()) gains_[gid] = value;
+                };
+                ensureGainDefault(c.compressorThresholdId, -24.0);
+                ensureGainDefault(c.compressorKneeId, 30.0);
+                ensureGainDefault(c.compressorRatioId, 12.0);
+                ensureGainDefault(c.compressorAttackId, 0.003);
+                ensureGainDefault(c.compressorReleaseId, 0.25);
+                ensureGainDefault(c.compressorReductionId, 0.0);
+
+                audioThreadLog(ANDROID_LOG_INFO,
+                               "CMD: create dynamics-compressor %s threshold=%s knee=%s ratio=%s attack=%s release=%s reduction=%s",
+                               c.id.c_str(), c.compressorThresholdId.c_str(),
+                               c.compressorKneeId.c_str(), c.compressorRatioId.c_str(),
+                               c.compressorAttackId.c_str(),
+                               c.compressorReleaseId.c_str(),
+                               c.compressorReductionId.c_str());
+                break;
+            }
             case NativeEngine::CMD_SET_GAIN: {
                 double v = c.gainValue;
                 gains_[c.id] = v;
                 for (auto &kv: audioVoices_) {
                     if (kv.second.gainId == c.id) {
                         kv.second.gain = v;
-                    }
-                }
-
-                for (const auto &vgKv: voiceGainByOutput_) {
-                    const std::string &voiceId = vgKv.first;
-                    for (const auto &entry: vgKv.second) {
-                        if (entry.second == c.id) {
-                            auto vit2 = audioVoices_.find(voiceId);
-                            if (vit2 != audioVoices_.end()) vit2->second.gain = v;
-                        }
                     }
                 }
                 audioThreadLog(ANDROID_LOG_INFO, "CMD: set gain %s value=%f",
@@ -412,10 +493,6 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                 bool voiceExists = vit != audioVoices_.end();
                 if (vit != audioVoices_.end()) {
                     prevGainId = vit->second.gainId;
-                    vit->second.gainId = c.gainId;
-                    auto git = gains_.find(c.gainId);
-                    if (git != gains_.end()) vit->second.gain = git->second;
-                    else vit->second.gain = 1.0;
                 }
 
                 if (!c.gainId.empty()) {
@@ -425,6 +502,26 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                     if (vgIt != voiceGainByOutput_.end()) {
                         vgIt->second.erase(c.outputIndex);
                         if (vgIt->second.empty()) voiceGainByOutput_.erase(vgIt);
+                    }
+                }
+
+                if (vit != audioVoices_.end()) {
+                    std::string resolvedGainId;
+                    auto vgResolved = voiceGainByOutput_.find(c.id);
+                    if (vgResolved != voiceGainByOutput_.end() && !vgResolved->second.empty()) {
+                        auto mapIt = vgResolved->second.find(0);
+                        if (mapIt == vgResolved->second.end()) mapIt = vgResolved->second.begin();
+                        if (mapIt != vgResolved->second.end()) {
+                            resolvedGainId = mapIt->second;
+                        }
+                    }
+
+                    vit->second.gainId = resolvedGainId;
+                    auto git = gains_.find(resolvedGainId);
+                    if (!resolvedGainId.empty() && git != gains_.end()) {
+                        vit->second.gain = git->second;
+                    } else {
+                        vit->second.gain = 1.0;
                     }
                 }
 
@@ -521,6 +618,8 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                 size_t mappedRefsBefore = countMappedRefs(voiceGainByOutput_, c.id);
                 bool hadGain = gains_.find(c.id) != gains_.end();
                 bool hadWaveShaper = waveShapers_.find(c.id) != waveShapers_.end();
+                auto compressorIt = compressors_.find(c.id);
+                bool hadCompressor = compressorIt != compressors_.end();
                 if (traceEnabled && !hadGain) {
                     audioThreadLog(ANDROID_LOG_WARN,
                                    "GRAPH_TRACE seq=%llu FREE_GAIN_DUPLICATE gain=%s mappedRefsBefore=%zu fieldRefsBefore=%zu",
@@ -536,6 +635,19 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                 }
 
                 waveShapers_.erase(c.id);
+                if (hadCompressor) {
+                    auto eraseCompressorParam = [&](const std::string &paramId) {
+                        if (paramId.empty()) return;
+                        gains_.erase(paramId);
+                    };
+                    eraseCompressorParam(compressorIt->second.thresholdId);
+                    eraseCompressorParam(compressorIt->second.kneeId);
+                    eraseCompressorParam(compressorIt->second.ratioId);
+                    eraseCompressorParam(compressorIt->second.attackId);
+                    eraseCompressorParam(compressorIt->second.releaseId);
+                    eraseCompressorParam(compressorIt->second.reductionId);
+                    compressors_.erase(compressorIt);
+                }
                 audioThreadLog(ANDROID_LOG_INFO, "CMD: free gain %s", c.id.c_str());
                 if (traceEnabled) {
                     size_t fieldRefsAfter = countVoiceFieldRefs(c.id,
@@ -544,10 +656,11 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                                                                 });
                     size_t mappedRefsAfter = countMappedRefs(voiceGainByOutput_, c.id);
                     audioThreadLog(ANDROID_LOG_INFO,
-                                   "GRAPH_TRACE seq=%llu FREE_GAIN gain=%s hadGain=%d hadWaveShaper=%d fieldRefsBefore=%zu fieldRefsAfter=%zu mappedRefsBefore=%zu mappedRefsAfter=%zu",
+                                   "GRAPH_TRACE seq=%llu FREE_GAIN gain=%s hadGain=%d hadWaveShaper=%d hadCompressor=%d fieldRefsBefore=%zu fieldRefsAfter=%zu mappedRefsBefore=%zu mappedRefsAfter=%zu",
                                    traceSeq, c.id.c_str(), hadGain ? 1 : 0,
-                                   hadWaveShaper ? 1 : 0, fieldRefsBefore, fieldRefsAfter,
-                                   mappedRefsBefore, mappedRefsAfter);
+                                   hadWaveShaper ? 1 : 0, hadCompressor ? 1 : 0,
+                                   fieldRefsBefore, fieldRefsAfter, mappedRefsBefore,
+                                   mappedRefsAfter);
                 }
                 break;
             }
@@ -1267,6 +1380,8 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                         it->second.pcm.clear();
                         it->second.pcm.shrink_to_fit();
                     }
+                    it->second.planarPtrs.clear();
+                    it->second.planarFrames = 0;
                     it->second.directPtr = nullptr;
                     it->second.byteLength = 0;
                     it->second.javaBufferId.clear();
@@ -1540,12 +1655,30 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
     std::unordered_map<std::string, std::unordered_map<int, std::vector<double>>> scheduledListenerEnvelopes;
     if ((!scheduledSnapshot.empty() || !scheduledPannerSnapshot.empty()) && !localVoices.empty()) {
         std::unordered_set<std::string> usedGains;
+        auto addCompressorParamGains = [&](const std::string &gainId) {
+            if (gainId.empty()) return;
+            auto cit = compressors_.find(gainId);
+            if (cit == compressors_.end()) return;
+            const auto &comp = cit->second;
+            if (!comp.thresholdId.empty()) usedGains.insert(comp.thresholdId);
+            if (!comp.kneeId.empty()) usedGains.insert(comp.kneeId);
+            if (!comp.ratioId.empty()) usedGains.insert(comp.ratioId);
+            if (!comp.attackId.empty()) usedGains.insert(comp.attackId);
+            if (!comp.releaseId.empty()) usedGains.insert(comp.releaseId);
+            if (!comp.reductionId.empty()) usedGains.insert(comp.reductionId);
+        };
         for (const auto &v: localVoices) {
-            if (!v.gainId.empty()) usedGains.insert(v.gainId);
+            if (!v.gainId.empty()) {
+                usedGains.insert(v.gainId);
+                addCompressorParamGains(v.gainId);
+            }
             auto vgIt = voiceGainByOutput_.find(v.id);
             if (vgIt != voiceGainByOutput_.end()) {
                 for (const auto &kv2: vgIt->second) {
-                    if (!kv2.second.empty()) usedGains.insert(kv2.second);
+                    if (!kv2.second.empty()) {
+                        usedGains.insert(kv2.second);
+                        addCompressorParamGains(kv2.second);
+                    }
                 }
             }
             if (!v.playbackRateId.empty()) usedGains.insert(v.playbackRateId);
@@ -1810,19 +1943,123 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
         }
     }
 
+    auto resolveGainValueForFrame = [&](const std::string &gainId,
+                                        double fallback,
+                                        int frameIndex) -> double {
+        if (gainId.empty()) return fallback;
+        auto eit = scheduledEnvelopes.find(gainId);
+        if (eit != scheduledEnvelopes.end()) {
+            const auto &env = eit->second;
+            if (!env.empty()) {
+                size_t idx = static_cast<size_t>(std::max(0, frameIndex));
+                if (idx >= env.size()) idx = env.size() - 1;
+                return env[idx];
+            }
+        }
+        auto git = gains_.find(gainId);
+        if (git != gains_.end()) return git->second;
+        return fallback;
+    };
+
+    auto applyDynamicsCompressorForGain = [&](const std::string &gainId,
+                                               int channelIndex,
+                                               int frameIndex,
+                                               float inputSample) -> float {
+        if (gainId.empty()) return inputSample;
+
+        auto cit = compressors_.find(gainId);
+        if (cit == compressors_.end()) return inputSample;
+
+        auto &compressor = cit->second;
+        size_t safeChannel = static_cast<size_t>(std::max(0, channelIndex));
+        size_t requiredChannels = static_cast<size_t>(std::max(1, channels));
+        if (compressor.envelopeByChannel.size() < requiredChannels) {
+            compressor.envelopeByChannel.resize(requiredChannels, 0.0f);
+        }
+        if (compressor.reductionDbByChannel.size() < requiredChannels) {
+            compressor.reductionDbByChannel.resize(requiredChannels, 0.0f);
+        }
+        if (safeChannel >= requiredChannels) safeChannel = requiredChannels - 1;
+
+        double thresholdDb = resolveGainValueForFrame(compressor.thresholdId, -24.0,
+                                                      frameIndex);
+        double kneeDb = resolveGainValueForFrame(compressor.kneeId, 30.0, frameIndex);
+        double ratio = resolveGainValueForFrame(compressor.ratioId, 12.0, frameIndex);
+        double attackSec = resolveGainValueForFrame(compressor.attackId, 0.003,
+                                                    frameIndex);
+        double releaseSec = resolveGainValueForFrame(compressor.releaseId, 0.25,
+                                                     frameIndex);
+
+        if (ratio < 1.0) ratio = 1.0;
+        if (kneeDb < 0.0) kneeDb = 0.0;
+
+        double sr = streamSampleRate_ > 0 ? static_cast<double>(streamSampleRate_) : 48000.0;
+        if (attackSec <= 0.0) attackSec = 1.0 / sr;
+        if (releaseSec <= 0.0) releaseSec = 1.0 / sr;
+
+        double absIn = std::max(1.0e-12, std::fabs(static_cast<double>(inputSample)));
+        double levelDb = 20.0 * std::log10(absIn);
+        double overThresholdDb = levelDb - thresholdDb;
+
+        double compressedLevelDb = levelDb;
+        if (kneeDb > 0.0) {
+            double halfKnee = 0.5 * kneeDb;
+            if (overThresholdDb <= -halfKnee) {
+                compressedLevelDb = levelDb;
+            } else if (overThresholdDb >= halfKnee) {
+                compressedLevelDb = thresholdDb + overThresholdDb / ratio;
+            } else {
+                double t = overThresholdDb + halfKnee;
+                compressedLevelDb = levelDb +
+                                    (1.0 / ratio - 1.0) * (t * t) / (2.0 * kneeDb);
+            }
+        } else if (overThresholdDb > 0.0) {
+            compressedLevelDb = thresholdDb + overThresholdDb / ratio;
+        }
+
+        double targetReductionDb = std::max(0.0, levelDb - compressedLevelDb);
+        double currentReductionDb = static_cast<double>(
+                compressor.reductionDbByChannel[safeChannel]);
+        double attackCoeff = std::exp(-1.0 / (attackSec * sr));
+        double releaseCoeff = std::exp(-1.0 / (releaseSec * sr));
+        if (targetReductionDb > currentReductionDb) {
+            currentReductionDb = attackCoeff * currentReductionDb +
+                                 (1.0 - attackCoeff) * targetReductionDb;
+        } else {
+            currentReductionDb = releaseCoeff * currentReductionDb +
+                                 (1.0 - releaseCoeff) * targetReductionDb;
+        }
+
+        compressor.envelopeByChannel[safeChannel] = static_cast<float>(absIn);
+        compressor.reductionDbByChannel[safeChannel] =
+                static_cast<float>(currentReductionDb);
+
+        if (!compressor.reductionId.empty()) {
+            double maxReductionDb = 0.0;
+            for (float value: compressor.reductionDbByChannel) {
+                if (value > maxReductionDb) maxReductionDb = value;
+            }
+            gains_[compressor.reductionId] = -maxReductionDb;
+        }
+
+        double gainLinear = std::pow(10.0, -currentReductionDb / 20.0);
+        return static_cast<float>(static_cast<double>(inputSample) * gainLinear);
+    };
+
     std::unordered_map<std::string, double> pannerCutoffByBiquad;
     pannerCutoffByBiquad.reserve(localVoices.size());
 
+    std::unordered_map<std::string, std::array<float, 2>> stereoInputCache;
+    std::unordered_map<std::string, std::array<float, 2>> hrtfOutputCache;
+    stereoInputCache.reserve(localVoices.size());
+    hrtfOutputCache.reserve(localVoices.size());
+
     for (int frame = 0; frame < numFrames; ++frame) {
         pannerCutoffByBiquad.clear();
-        std::unordered_map<std::string, std::array<float, 2>> stereoInputCache;
-        stereoInputCache.reserve(localVoices.size());
-        std::unordered_map<std::string, std::array<float, 2>> hrtfOutputCache;
-        hrtfOutputCache.reserve(localVoices.size());
+        stereoInputCache.clear();
+        hrtfOutputCache.clear();
         for (int ch = 0; ch < channels; ++ch) {
             float mixed = 0.0f;
-            int64_t sampleTimeNs = static_cast<int64_t>(audioStartNs + static_cast<double>(frame) *
-                                                                       sampleDurationNs);
             for (auto &v: localVoices) {
                 if (!v.playing) continue;
                 if (v.voiceType == Voice::Oscillator) {
@@ -1980,7 +2217,10 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                         }
                         double monoGain = 0.5 * (leftGain + rightGain) * distanceAtt *
                                           static_cast<double>(scheduled);
-                        mixed += static_cast<float>(s * monoGain);
+                        float voiceOut = static_cast<float>(s * monoGain);
+                        voiceOut = applyDynamicsCompressorForGain(effGainId, ch, frame,
+                                                                   voiceOut);
+                        mixed += voiceOut;
                     } else {
                         std::string effGainId2;
                         auto vgIt2 = voiceGainByOutput_.find(v.id);
@@ -2001,11 +2241,22 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                             }
                         }
                         double g = static_cast<double>(scheduled2) * distanceAtt;
-                        if (ch == 0) mixed += static_cast<float>(s * g * leftGain);
-                        else if (ch == 1) mixed += static_cast<float>(s * g * rightGain);
-                        else {
+                        if (ch == 0) {
+                            float voiceOut = static_cast<float>(s * g * leftGain);
+                            voiceOut = applyDynamicsCompressorForGain(effGainId2, ch, frame,
+                                                                       voiceOut);
+                            mixed += voiceOut;
+                        } else if (ch == 1) {
+                            float voiceOut = static_cast<float>(s * g * rightGain);
+                            voiceOut = applyDynamicsCompressorForGain(effGainId2, ch, frame,
+                                                                       voiceOut);
+                            mixed += voiceOut;
+                        } else {
                             double avg = 0.5 * (leftGain + rightGain);
-                            mixed += static_cast<float>(s * g * avg);
+                            float voiceOut = static_cast<float>(s * g * avg);
+                            voiceOut = applyDynamicsCompressorForGain(effGainId2, ch, frame,
+                                                                       voiceOut);
+                            mixed += voiceOut;
                         }
                     }
                     if (ch == channels - 1) {
@@ -2029,7 +2280,9 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                         const BufferData &bd = bit->second;
                         bd_dbg = &bd;
                         bufChannels = bd.channels > 0 ? bd.channels : 1;
-                        if (bd.isDirect) {
+                        if (bd.isPlanar && bd.planarFrames > 0) {
+                            bufFrames = bd.planarFrames;
+                        } else if (bd.isDirect) {
                             bufFrames = static_cast<int>((bd.byteLength / bd.bytesPerSample) /
                                                          (bufChannels ? bufChannels : 1));
                         } else {
@@ -2053,7 +2306,21 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                         idx1_dbg = idx1;
                         float fs0 = 0.0f;
                         float fs1 = 0.0f;
-                        if (bd.isDirect && bd.directPtr) {
+                        if (bd.isPlanar && !bd.planarPtrs.empty() && bd.planarFrames > 0) {
+                            int planarChannel = std::max(0, std::min(
+                                    static_cast<int>(bd.planarPtrs.size()) - 1,
+                                    chIdx));
+                            const float *fptr = bd.planarPtrs[static_cast<size_t>(planarChannel)];
+                            if (fptr) {
+                                int maxIndex = bd.planarFrames - 1;
+                                int sample0 = i0 % bufFrames;
+                                int sample1 = (i0 + 1) % bufFrames;
+                                int safe0 = std::max(0, std::min(maxIndex, sample0));
+                                int safe1 = std::max(0, std::min(maxIndex, sample1));
+                                fs0 = fptr[safe0];
+                                fs1 = fptr[safe1];
+                            }
+                        } else if (bd.isDirect && bd.directPtr) {
                             if (bd.bytesPerSample == 4) {
                                 const auto *fptr = reinterpret_cast<const float *>(bd.directPtr);
                                 int maxIndex = static_cast<int>((bd.byteLength / 4) - 1);
@@ -2185,7 +2452,22 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                             int idx1 = ((i0 + 1) % bufFrames) * bufChannels + inputChannelIndex;
                             float fs0 = 0.0f;
                             float fs1 = 0.0f;
-                            if (bd.isDirect && bd.directPtr) {
+                            if (bd.isPlanar && !bd.planarPtrs.empty() && bd.planarFrames > 0) {
+                                int planarChannel = std::max(0, std::min(
+                                        static_cast<int>(bd.planarPtrs.size()) - 1,
+                                        inputChannelIndex));
+                                const float *fptr =
+                                        bd.planarPtrs[static_cast<size_t>(planarChannel)];
+                                if (fptr) {
+                                    int maxIndex = bd.planarFrames - 1;
+                                    int sample0 = i0 % bufFrames;
+                                    int sample1 = (i0 + 1) % bufFrames;
+                                    int safe0 = std::max(0, std::min(maxIndex, sample0));
+                                    int safe1 = std::max(0, std::min(maxIndex, sample1));
+                                    fs0 = fptr[safe0];
+                                    fs1 = fptr[safe1];
+                                }
+                            } else if (bd.isDirect && bd.directPtr) {
                                 if (bd.bytesPerSample == 4) {
                                     const auto *fptr = reinterpret_cast<const float *>(bd.directPtr);
                                     int maxIndex = static_cast<int>((bd.byteLength / 4) - 1);
@@ -2244,6 +2526,7 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
 
                     double leftGain = 1.0, rightGain = 1.0, distanceAtt = 1.0;
                     bool steerLeftOrCenter = true;
+                    bool hasResolvedPanner = false;
                     std::string effPanId2 = v.panId;
                     auto vpIt2 = voicePannerByOutput_.find(v.id);
                     if (vpIt2 != voicePannerByOutput_.end()) {
@@ -2253,6 +2536,7 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                     if (!effPanId2.empty()) {
                         auto pit = panners_.find(effPanId2);
                         if (pit != panners_.end()) {
+                            hasResolvedPanner = true;
                             NativeEngine::Panner resolvedPanner = resolvePannerForFrame(
                                     pit->second, scheduledPannerEnvelopes, effPanId2, frame);
                             hrtfModel = resolvedPanner.panningModel == NativeEngine::PANNING_HRTF;
@@ -2289,8 +2573,7 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                         sample = 0.5f * (inputLeft + inputRight);
                     }
 
-                    if (v.voiceType == Voice::BufferSource && bd_dbg &&
-                        g_audioThreadLoggingEnabled.load(std::memory_order_relaxed)) {
+                    if (v.voiceType == Voice::BufferSource && bd_dbg && traceEnabled) {
                         if (debugLoggedVoices_.find(v.id) == debugLoggedVoices_.end()) {
                             debugLoggedVoices_.insert(v.id);
                             const BufferData &bd = *bd_dbg;
@@ -2306,7 +2589,22 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                             int idx0Other = (i0 % bufFrames) * bufChannels + chIdxOther;
                             int idx1Other = ((i0 + 1) % bufFrames) * bufChannels + chIdxOther;
                             float fs0Other = 0.0f, fs1Other = 0.0f, sampleOther = 0.0f;
-                            if (bd.isDirect && bd.directPtr) {
+                            if (bd.isPlanar && !bd.planarPtrs.empty() && bd.planarFrames > 0) {
+                                int planarChannel = std::max(0, std::min(
+                                        static_cast<int>(bd.planarPtrs.size()) - 1,
+                                        chIdxOther));
+                                const float *fptr =
+                                        bd.planarPtrs[static_cast<size_t>(planarChannel)];
+                                if (fptr) {
+                                    int maxIndex = bd.planarFrames - 1;
+                                    int sample0 = i0 % bufFrames;
+                                    int sample1 = (i0 + 1) % bufFrames;
+                                    int safe0 = std::max(0, std::min(maxIndex, sample0));
+                                    int safe1 = std::max(0, std::min(maxIndex, sample1));
+                                    fs0Other = fptr[safe0];
+                                    fs1Other = fptr[safe1];
+                                }
+                            } else if (bd.isDirect && bd.directPtr) {
                                 if (bd.bytesPerSample == 4) {
                                     const auto *fptr = reinterpret_cast<const float *>(bd.directPtr);
                                     int maxIndex = static_cast<int>((bd.byteLength / 4) - 1);
@@ -2372,7 +2670,10 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                         }
                         double monoGain = 0.5 * (leftGain + rightGain) * distanceAtt *
                                           static_cast<double>(scheduled);
-                        mixed += static_cast<float>(sample * monoGain);
+                        float voiceOut = static_cast<float>(sample * monoGain);
+                        voiceOut = applyDynamicsCompressorForGain(effGainId3, ch, frame,
+                                                                   voiceOut);
+                        mixed += voiceOut;
                     } else {
                         double scheduled = v.gain;
                         if (!effGainId3.empty()) {
@@ -2387,22 +2688,40 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                         double g = static_cast<double>(scheduled) * distanceAtt;
                         if (stereoInput && !treatStereoAsMono) {
                             if (ch == 0) {
-                                double outputL = steerLeftOrCenter
-                                                 ? inputLeft + inputRight * leftGain
-                                                 : inputLeft * leftGain;
-                                mixed += static_cast<float>(outputL * g);
+                                double outputL = inputLeft;
+                                if (hasResolvedPanner) {
+                                    outputL = steerLeftOrCenter
+                                              ? inputLeft + inputRight * leftGain
+                                              : inputLeft * leftGain;
+                                }
+                                float voiceOut = static_cast<float>(outputL * g);
+                                voiceOut = applyDynamicsCompressorForGain(effGainId3, ch,
+                                                                           frame, voiceOut);
+                                mixed += voiceOut;
                             } else if (ch == 1) {
-                                double outputR = steerLeftOrCenter
-                                                 ? inputRight * rightGain
-                                                 : inputRight + inputLeft * rightGain;
-                                mixed += static_cast<float>(outputR * g);
+                                double outputR = inputRight;
+                                if (hasResolvedPanner) {
+                                    outputR = steerLeftOrCenter
+                                              ? inputRight * rightGain
+                                              : inputRight + inputLeft * rightGain;
+                                }
+                                float voiceOut = static_cast<float>(outputR * g);
+                                voiceOut = applyDynamicsCompressorForGain(effGainId3, ch,
+                                                                           frame, voiceOut);
+                                mixed += voiceOut;
                             } else {
                                 double avg = 0.5 * (leftGain + rightGain);
-                                mixed += static_cast<float>(sample * g * avg);
+                                float voiceOut = static_cast<float>(sample * g * avg);
+                                voiceOut = applyDynamicsCompressorForGain(effGainId3, ch,
+                                                                           frame, voiceOut);
+                                mixed += voiceOut;
                             }
                         } else if (useHrtfConvolution) {
                             if (ch <= 1) {
-                                mixed += static_cast<float>(sample * g);
+                                float voiceOut = static_cast<float>(sample * g);
+                                voiceOut = applyDynamicsCompressorForGain(effGainId3, ch,
+                                                                           frame, voiceOut);
+                                mixed += voiceOut;
                             } else {
                                 auto hrtfIt = hrtfOutputCache.find(v.id);
                                 float hrtfAvg = sample;
@@ -2410,13 +2729,27 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                                     hrtfAvg =
                                             0.5f * (hrtfIt->second[0] + hrtfIt->second[1]);
                                 }
-                                mixed += static_cast<float>(hrtfAvg * g);
+                                float voiceOut = static_cast<float>(hrtfAvg * g);
+                                voiceOut = applyDynamicsCompressorForGain(effGainId3, ch,
+                                                                           frame, voiceOut);
+                                mixed += voiceOut;
                             }
-                        } else if (ch == 0) mixed += static_cast<float>(sample * g * leftGain);
-                        else if (ch == 1) mixed += static_cast<float>(sample * g * rightGain);
-                        else {
+                        } else if (ch == 0) {
+                            float voiceOut = static_cast<float>(sample * g * leftGain);
+                            voiceOut = applyDynamicsCompressorForGain(effGainId3, ch, frame,
+                                                                       voiceOut);
+                            mixed += voiceOut;
+                        } else if (ch == 1) {
+                            float voiceOut = static_cast<float>(sample * g * rightGain);
+                            voiceOut = applyDynamicsCompressorForGain(effGainId3, ch, frame,
+                                                                       voiceOut);
+                            mixed += voiceOut;
+                        } else {
                             double avg = 0.5 * (leftGain + rightGain);
-                            mixed += static_cast<float>(sample * g * avg);
+                            float voiceOut = static_cast<float>(sample * g * avg);
+                            voiceOut = applyDynamicsCompressorForGain(effGainId3, ch, frame,
+                                                                       voiceOut);
+                            mixed += voiceOut;
                         }
                     }
 

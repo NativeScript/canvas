@@ -55,6 +55,8 @@ public:
 
     void configureStream(int sampleRate, double latencyHintSec);
 
+    int getStreamSampleRate();
+
     void setOutputDeviceId(int deviceId);
 
     int getOutputDeviceId() const { return desiredDeviceId_; }
@@ -65,6 +67,10 @@ public:
     std::string
     createBufferSourceFromDirect(const void *ptr, size_t byteLen, int sampleRate, int channels,
                                  int bytesPerSample, JNIEnv *env, jobject byteBuffer);
+
+    std::string
+    createBufferSourceFromPlanar(const std::vector<const float *> &channelPtrs, int frameCount,
+                                 int sampleRate, int channels);
 
     void freeBuffer(const std::string &id);
 
@@ -102,8 +108,11 @@ private:
     struct BufferData {
         std::vector<int16_t> pcm;
         bool isDirect = false;
+        bool isPlanar = false;
         std::string javaBufferId;
         const void *directPtr = nullptr;
+        std::vector<const float *> planarPtrs;
+        int planarFrames = 0;
         size_t byteLength = 0;
         // bytes per sample (2 = int16, 4 = float32)
         int bytesPerSample = 4;
@@ -179,10 +188,12 @@ public:
         CMD_START_OSC,
         CMD_STOP_TRACK,
         CMD_CREATE_BUFFER_DIRECT,
+        CMD_CREATE_BUFFER_PLANAR,
         CMD_CREATE_BUFFER_COPY,
         CMD_START_BUFFER,
         CMD_FREE_BUFFER,
         CMD_CREATE_GAIN,
+        CMD_CREATE_DYNAMICS_COMPRESSOR,
         CMD_SET_GAIN,
         CMD_ATTACH_GAIN,
         CMD_DETACH_GAIN,
@@ -225,6 +236,12 @@ public:
         std::string waveform;
         double frequency = 0.0;
         std::string gainId;
+        std::string compressorThresholdId;
+        std::string compressorKneeId;
+        std::string compressorRatioId;
+        std::string compressorAttackId;
+        std::string compressorReleaseId;
+        std::string compressorReductionId;
         std::string playbackRateId;
         double gainValue = 1.0;
         std::string biquadId;
@@ -258,6 +275,8 @@ public:
         double pannerConeOuterAngle = 360.0;
         double pannerConeOuterGain = 0.0;
         const void *directPtr = nullptr;
+        std::shared_ptr<std::vector<const float *>> planarPtrs;
+        int planarFrames = 0;
         size_t byteLen = 0;
         int bytesPerSample = 4;
         int sampleRate = 0;
@@ -291,6 +310,18 @@ private:
     std::mutex commandMutex_;
 
     std::unordered_map<std::string, double> gains_;
+
+    struct DynamicsCompressor {
+        std::string thresholdId;
+        std::string kneeId;
+        std::string ratioId;
+        std::string attackId;
+        std::string releaseId;
+        std::string reductionId;
+        std::vector<float> envelopeByChannel;
+        std::vector<float> reductionDbByChannel;
+    };
+    std::unordered_map<std::string, DynamicsCompressor> compressors_;
 
 public:
     enum AutomationRate {

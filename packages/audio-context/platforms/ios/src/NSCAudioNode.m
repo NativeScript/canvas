@@ -1,5 +1,6 @@
 #import "NSCAudioContext.h"
 #import "NSCAudioLog.h"
+#import <objc/message.h>
 
 @interface NSCAudioNode ()
 @property (nonatomic, readwrite) AVAudioNode *avNode;
@@ -116,9 +117,89 @@
       dispatch_sync(dispatch_get_main_queue(), connectBlock);
   } else {
     void (^connectBlock)(void) = ^{
+      BOOL destinationIsMixer =
+          [destinationNode isKindOfClass:[AVAudioMixerNode class]];
+      AVAudioFormat *sourceFormat = nil;
+      @try {
+        sourceFormat = [sourceNode outputFormatForBus:fromBus];
+      } @catch (NSException *e) {
+        sourceFormat = nil;
+      }
+      if (!destinationIsMixer) {
+        @try {
+          [engine connect:sourceNode
+                       to:destinationNode
+                  fromBus:fromBus
+                    toBus:toBus
+                   format:nil];
+          connectOk = YES;
+        } @catch (NSException *e) {
+          NSCLogDebug(@"NSCAudioNode: direct connect with nil format threw: %@; "
+                      @"trying ctx.format",
+                      e);
+          @try {
+            [engine connect:sourceNode
+                         to:destinationNode
+                    fromBus:fromBus
+                      toBus:toBus
+                     format:ctx ? ctx.format : nil];
+            connectOk = YES;
+          } @catch (NSException *e2) {
+            NSCLogDebug(@"NSCAudioNode: direct connect with ctx.format also "
+                        @"threw: %@; trying source format",
+                        e2);
+            @try {
+              [engine connect:sourceNode
+                           to:destinationNode
+                      fromBus:fromBus
+                        toBus:toBus
+                       format:sourceFormat];
+              connectOk = YES;
+            } @catch (NSException *e3) {
+              NSCLogDebug(@"NSCAudioNode: direct connect with source format "
+                          @"also threw: %@",
+                          e3);
+            }
+          }
+        }
+        return;
+      }
+
+      NSMutableArray<AVAudioConnectionPoint *> *targetPoints =
+          [NSMutableArray array];
+      SEL pointsSelector =
+          NSSelectorFromString(@"outputConnectionPointsForNode:outputBus:");
+      if (engine && [engine respondsToSelector:pointsSelector]) {
+        @try {
+          typedef NSArray *(*MsgSendFn)(id, SEL, id, AVAudioNodeBus);
+          MsgSendFn fn = (MsgSendFn)objc_msgSend;
+          NSArray *existingPoints =
+              fn(engine, pointsSelector, sourceNode, fromBus);
+          if (existingPoints.count > 0) {
+            [targetPoints addObjectsFromArray:existingPoints];
+          }
+        } @catch (NSException *e) {
+          NSCLogDebug(@"NSCAudioNode: read existing connection points threw: %@",
+                      e);
+        }
+      }
+
+      BOOL hasDestination = NO;
+      for (AVAudioConnectionPoint *point in targetPoints) {
+        if (point.node == destinationNode && point.bus == toBus) {
+          hasDestination = YES;
+          break;
+        }
+      }
+      if (!hasDestination) {
+        [targetPoints addObject:destPoint];
+      }
+      NSArray<AVAudioConnectionPoint *> *pointsToConnect =
+          targetPoints.count > 0 ? [targetPoints copy] : @[ destPoint ];
+
       @try {
         [engine connect:sourceNode
-            toConnectionPoints:@[ destPoint ]
+            toConnectionPoints:pointsToConnect
                        fromBus:fromBus
                         format:nil];
         connectOk = YES;
@@ -128,13 +209,46 @@
                     e);
         @try {
           [engine connect:sourceNode
-              toConnectionPoints:@[ destPoint ]
+              toConnectionPoints:pointsToConnect
                          fromBus:fromBus
                           format:ctx ? ctx.format : nil];
           connectOk = YES;
         } @catch (NSException *e2) {
-          NSCLogDebug(@"NSCAudioNode: connect with ctx.format also threw: %@",
+          NSCLogDebug(@"NSCAudioNode: connect with ctx.format also threw: %@; "
+                      @"retrying with destination-only point",
                       e2);
+          @try {
+            [engine connect:sourceNode
+                toConnectionPoints:@[ destPoint ]
+                           fromBus:fromBus
+                            format:nil];
+            connectOk = YES;
+          } @catch (NSException *e3) {
+            NSCLogDebug(@"NSCAudioNode: destination-only nil-format connect "
+                        @"threw: %@; trying source format",
+                        e3);
+            @try {
+              [engine connect:sourceNode
+                  toConnectionPoints:@[ destPoint ]
+                             fromBus:fromBus
+                              format:sourceFormat];
+              connectOk = YES;
+            } @catch (NSException *e4) {
+              NSCLogDebug(@"NSCAudioNode: destination-only source-format "
+                          @"connect threw: %@; trying ctx.format",
+                          e4);
+              @try {
+                [engine connect:sourceNode
+                    toConnectionPoints:@[ destPoint ]
+                               fromBus:fromBus
+                                format:ctx ? ctx.format : nil];
+                connectOk = YES;
+              } @catch (NSException *e5) {
+                NSCLogDebug(@"NSCAudioNode: destination-only connect also threw: %@",
+                            e5);
+              }
+            }
+          }
         }
       }
     };

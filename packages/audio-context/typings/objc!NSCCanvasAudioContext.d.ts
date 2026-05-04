@@ -23,7 +23,11 @@ declare class NSCAnalyserNode extends NSCAudioNode {
 
 	getFloatFrequencyData(data: NSMutableData): void;
 
+	getFloatFrequencyDataWithByteOffset(data: NSMutableData, byteOffset: number): void;
+
 	getFloatTimeDomainData(data: NSMutableData): void;
+
+	getFloatTimeDomainDataWithByteOffset(data: NSMutableData, byteOffset: number): void;
 
 	initWithContext(context: NSCAudioContext): this;
 
@@ -49,11 +53,21 @@ declare class NSCAudioBuffer extends NSObject {
 
 	constructor(o: { length: number; numberOfChannels: number; sampleRate: number });
 
-	copyFromChannel(destination: NSMutableArray<any>, channel: number, startInChannel: number): void;
+	copyFromChannel(destination: any, channel: number, startInChannel: number): void;
+
+	copyFromChannelWithByteOffset(destination: any, channel: number, startInChannel: number, byteOffset: number): void;
+
+	copyFromChannelWithByteOffsetByteLength(destination: any, channel: number, startInChannel: number, byteOffset: number, byteLength: number): void;
 
 	copyToChannel(source: any, channel: number, startInChannel: number): void;
 
+	copyToChannelWithByteOffset(source: any, channel: number, startInChannel: number, byteOffset: number): void;
+
+	copyToChannelWithByteOffsetByteLength(source: any, channel: number, startInChannel: number, byteOffset: number, byteLength: number): void;
+
 	getBuffer(): AVAudioPCMBuffer;
+
+	getPCMBufferAddress(): string;
 
 	getChannelData(channel: number): NSMutableData;
 
@@ -121,11 +135,17 @@ declare class NSCAudioContext extends NSObject {
 
 	createBufferSourceNode(buffer: NSCAudioBuffer): NSCAudioBufferSourceNode;
 
+	createChannelMergerNode(numberOfInputs: number): NSCChannelMergerNode;
+
+	createChannelSplitterNode(numberOfOutputs: number): NSCChannelSplitterNode;
+
 	createConstantSourceNode(offset: number): NSCConstantSourceNode;
 
 	createConvolverNode(): NSCConvolverNode;
 
 	createDelayNodeMaxDelayTime(delayTime: number, maxDelayTime: number): NSCDelayNode;
+
+	createDynamicsCompressorNode(): NSCDynamicsCompressorNode;
 
 	createGainNode(): NSCGainNode;
 
@@ -434,6 +454,30 @@ declare class NSCBiquadNode extends NSCAudioNode {
 	setType(type: string): void;
 }
 
+declare class NSCChannelMergerNode extends NSCAudioNode {
+	static alloc(): NSCChannelMergerNode; // inherited from NSObject
+
+	static new(): NSCChannelMergerNode; // inherited from NSObject
+
+	readonly numberOfInputs: number;
+
+	constructor(o: { context: NSCAudioContext; numberOfInputs: number });
+
+	initWithContextNumberOfInputs(context: NSCAudioContext, numberOfInputs: number): this;
+}
+
+declare class NSCChannelSplitterNode extends NSCAudioNode {
+	static alloc(): NSCChannelSplitterNode; // inherited from NSObject
+
+	static new(): NSCChannelSplitterNode; // inherited from NSObject
+
+	readonly numberOfOutputs: number;
+
+	constructor(o: { context: NSCAudioContext; numberOfOutputs: number });
+
+	initWithContextNumberOfOutputs(context: NSCAudioContext, numberOfOutputs: number): this;
+}
+
 declare class NSCConstantSourceNode extends NSCAudioScheduledSourceNode {
 	static alloc(): NSCConstantSourceNode; // inherited from NSObject
 
@@ -474,6 +518,28 @@ declare class NSCDelayNode extends NSCAudioNode {
 	initWithContextDelayTimeMaxDelayTime(context: NSCAudioContext, delayTime: number, maxDelayTime: number): this;
 }
 
+declare class NSCDynamicsCompressorNode extends NSCAudioNode {
+	static alloc(): NSCDynamicsCompressorNode; // inherited from NSObject
+
+	static new(): NSCDynamicsCompressorNode; // inherited from NSObject
+
+	readonly attackParam: NSCAudioParam;
+
+	readonly kneeParam: NSCAudioParam;
+
+	readonly ratioParam: NSCAudioParam;
+
+	readonly reductionParam: NSCAudioParam;
+
+	readonly releaseParam: NSCAudioParam;
+
+	readonly thresholdParam: NSCAudioParam;
+
+	constructor(o: { context: NSCAudioContext });
+
+	initWithContext(context: NSCAudioContext): this;
+}
+
 declare class NSCGainNode extends NSCAudioNode {
 	static alloc(): NSCGainNode; // inherited from NSObject
 
@@ -497,6 +563,8 @@ declare class NSCIIRFilterNode extends NSCAudioNode {
 
 	getFrequencyResponseMagResponsePhaseResponse(frequencyHzData: NSData, magResponse: NSMutableData, phaseResponse: NSMutableData): void;
 
+	getFrequencyResponseMagResponsePhaseResponseWithByteOffsets(frequencyHzData: NSData, frequencyHzByteOffset: number, magResponse: NSMutableData, magResponseByteOffset: number, phaseResponse: NSMutableData, phaseResponseByteOffset: number): void;
+
 	initWithContextFeedforwardFeedback(context: NSCAudioContext, feedforward: NSArray<number> | number[], feedback: NSArray<number> | number[]): this;
 }
 
@@ -509,9 +577,9 @@ declare class NSCMediaElementSourceTap extends NSObject {
 
 	readonly context: NSCAudioContext;
 
-	readonly player: AVPlayer;
-
 	readonly outputNode: AVAudioNode;
+
+	readonly player: AVPlayer;
 
 	readonly sourceNode: AVAudioSourceNode;
 
@@ -549,7 +617,11 @@ declare class NSCPeriodicWave extends NSObject {
 
 	constructor(o: { real: NSData; imag: NSData; disableNormalization: boolean });
 
+	constructor(o: { real: NSData; imag: NSData; disableNormalization: boolean; realByteOffset: number; imagByteOffset: number });
+
 	initWithRealImagDisableNormalization(real: NSData, imag: NSData, disableNormalization: boolean): this;
+
+	initWithRealImagDisableNormalizationRealByteOffsetImagByteOffset(real: NSData, imag: NSData, disableNormalization: boolean, realByteOffset: number, imagByteOffset: number): this;
 }
 
 declare var NSCProducerTokenKey: interop.Pointer | interop.Reference<any>;
@@ -580,4 +652,6 @@ declare class NSCWaveShaperNode extends NSCAudioNode {
 	initWithContext(context: NSCAudioContext): this;
 
 	setCurveFromData(floatData: NSData): void;
+
+	setCurveFromDataWithByteOffset(floatData: NSData, byteOffset: number): void;
 }

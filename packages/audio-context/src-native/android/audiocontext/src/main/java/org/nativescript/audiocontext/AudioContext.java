@@ -117,6 +117,7 @@ public class AudioContext {
 
 	private final ConcurrentHashMap<String, Long> contextStartNanos = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<String, java.nio.ByteBuffer> directBuffers = new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<String, java.nio.ByteBuffer[]> planarBuffers = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<String, AtomicInteger> directRefCounts = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<String, Integer> bufferChannels = new ConcurrentHashMap<>();
 
@@ -233,7 +234,9 @@ public class AudioContext {
 		}
 		if (nativeAvailable) {
 			try {
-				nativeConfigureStream(sampleRate, latencyHintSec);
+				nativeConfigureStream(sr, latencyHintSec);
+				int nativeSr = nativeGetStreamSampleRate();
+				if (nativeSr > 0) sr = nativeSr;
 			} catch (Throwable ignored) {
 			}
 		}
@@ -601,11 +604,13 @@ public class AudioContext {
 			if (v <= 0) {
 				directRefCounts.remove(id);
 				directBuffers.remove(id);
+				planarBuffers.remove(id);
 				sampleRates.remove(id);
 				bufferChannels.remove(id);
 			}
 		} else {
 			directBuffers.remove(id);
+			planarBuffers.remove(id);
 			sampleRates.remove(id);
 			bufferChannels.remove(id);
 		}
@@ -641,6 +646,8 @@ public class AudioContext {
 
 	private native long nativeGetAudioTimeNanos();
 
+	private native int nativeGetStreamSampleRate();
+
 	private native long nativeGetMonotonicTimeNanos();
 
 	private native void nativeRegisterContextStart(String contextId, long startNanos);
@@ -663,6 +670,8 @@ public class AudioContext {
 
 	private native String nativeCreateBufferSourceDirect(java.nio.ByteBuffer buffer, int sampleRate, int channels, int bytesPerSample);
 
+	private native String nativeCreateBufferSourcePlanar(java.nio.Buffer[] channelBuffers, int sampleRate, int channels);
+
 	private native boolean nativeHasBuffer(String id);
 
 	private native void nativeStartBufferSource(String trackId, boolean loop);
@@ -670,6 +679,8 @@ public class AudioContext {
 	private native String nativeRenderOffline(String[] trackIds, int frames, int sampleRate, int channels);
 
 	private native String nativeCreateGain();
+
+	private native void nativeCreateDynamicsCompressor(String nodeId, String thresholdId, String kneeId, String ratioId, String attackId, String releaseId, String reductionId);
 
 	private native void nativeSetGain(String gainId, double value);
 
@@ -1308,7 +1319,19 @@ public class AudioContext {
 	public int getSampleRate(String id) {
 		if (id == null) return 0;
 		Integer sr = contextSampleRates.get(id);
-		if (sr != null) return sr;
+		if (sr != null) {
+			if (nativeAvailable) {
+				try {
+					int nativeSr = nativeGetStreamSampleRate();
+					if (nativeSr > 0 && nativeSr != sr) {
+						contextSampleRates.put(id, nativeSr);
+						sr = nativeSr;
+					}
+				} catch (Throwable ignored) {
+				}
+			}
+			return sr;
+		}
 		sr = sampleRates.get(id);
 		return sr != null ? sr : 48000;
 	}
@@ -1528,6 +1551,7 @@ public class AudioContext {
 
 		directRefCounts.remove(id);
 		directBuffers.remove(id);
+		planarBuffers.remove(id);
 		sampleRates.remove(id);
 		bufferChannels.remove(id);
 	}
@@ -1731,6 +1755,27 @@ public class AudioContext {
 		return new GainNode(id);
 	}
 
+	private String createGainBackedNodeId(double initialValue) {
+		String id = null;
+		if (nativeAvailable) {
+			try {
+				id = nativeCreateGain();
+			} catch (Throwable ignored) {
+			}
+		}
+		if (id == null) {
+			id = UUID.randomUUID().toString();
+		}
+		setGain(id, initialValue);
+		return id;
+	}
+
+	private void registerGainForContext(String contextId, String gainId) {
+		if (contextId == null || gainId == null || gainId.isEmpty()) return;
+		addToContextSet(contextGains, contextId, gainId);
+		gainContexts.put(gainId, contextId);
+	}
+
 	public GainNode getDestination(AudioContextInstance context) {
 		return getDestination(context.getId());
 	}
@@ -1753,6 +1798,49 @@ public class AudioContext {
 
 	public ConvolverNode createConvolver(AudioContextInstance context) {
 		return new ConvolverNode(createConvolver(context.getId()));
+	}
+
+	public DynamicsCompressorNode createDynamicsCompressor(AudioContextInstance context) {
+		String contextId = context != null ? context.getId() : null;
+
+		String id = createGainBackedNodeId(1.0);
+		String thresholdId = createGainBackedNodeId(-24.0);
+		String kneeId = createGainBackedNodeId(30.0);
+		String ratioId = createGainBackedNodeId(12.0);
+		String attackId = createGainBackedNodeId(0.003);
+		String releaseId = createGainBackedNodeId(0.25);
+		String reductionId = createGainBackedNodeId(0.0);
+
+		if (nativeAvailable) {
+			try {
+				nativeCreateDynamicsCompressor(id, thresholdId, kneeId, ratioId, attackId, releaseId, reductionId);
+			} catch (Throwable ignored) {
+			}
+		}
+
+		registerGainForContext(contextId, id);
+		registerGainForContext(contextId, thresholdId);
+		registerGainForContext(contextId, kneeId);
+		registerGainForContext(contextId, ratioId);
+		registerGainForContext(contextId, attackId);
+		registerGainForContext(contextId, releaseId);
+		registerGainForContext(contextId, reductionId);
+
+		return new DynamicsCompressorNode(id, thresholdId, kneeId, ratioId, attackId, releaseId, reductionId);
+	}
+
+	public ChannelSplitterNode createChannelSplitter(AudioContextInstance context, int numberOfOutputs) {
+		String contextId = context != null ? context.getId() : null;
+		String id = createGainBackedNodeId(1.0);
+		registerGainForContext(contextId, id);
+		return new ChannelSplitterNode(id, numberOfOutputs);
+	}
+
+	public ChannelMergerNode createChannelMerger(AudioContextInstance context, int numberOfInputs) {
+		String contextId = context != null ? context.getId() : null;
+		String id = createGainBackedNodeId(1.0);
+		registerGainForContext(contextId, id);
+		return new ChannelMergerNode(id, numberOfInputs);
 	}
 
 	String createConvolver(String contextId) {
@@ -2549,7 +2637,18 @@ public class AudioContext {
 				map.remove(output);
 				if (map.isEmpty()) voiceGainMapByOutput.remove(voiceId);
 			}
-			if (output == 0) voiceGainMap.remove(voiceId);
+			ConcurrentHashMap<Integer, String> current = voiceGainMapByOutput.get(voiceId);
+			if (current != null && !current.isEmpty()) {
+				String resolved = current.get(0);
+				if (resolved == null) {
+					java.util.Iterator<String> it = current.values().iterator();
+					resolved = it.hasNext() ? it.next() : null;
+				}
+				if (resolved != null) voiceGainMap.put(voiceId, resolved);
+				else voiceGainMap.remove(voiceId);
+			} else {
+				voiceGainMap.remove(voiceId);
+			}
 			return;
 		}
 		ConcurrentHashMap<Integer, String> map = voiceGainMapByOutput.get(voiceId);
@@ -2558,8 +2657,9 @@ public class AudioContext {
 			voiceGainMapByOutput.put(voiceId, map);
 		}
 		map.put(output, gainId);
-
-		voiceGainMap.put(voiceId, gainId);
+		if (output == 0 || !voiceGainMap.containsKey(voiceId)) {
+			voiceGainMap.put(voiceId, gainId);
+		}
 	}
 
 	void attachPlaybackRateToVoice(String voiceId, String playbackRateId) {
@@ -2672,21 +2772,102 @@ public class AudioContext {
 	private native void nativeEndExternalPcmSource(String trackId);
 
 	@Nullable
+	private java.nio.ByteBuffer buildMonoBufferFromPlanar(@Nullable java.nio.ByteBuffer[] channelData) {
+		if (channelData == null || channelData.length == 0) return null;
+		java.nio.ByteBuffer firstChannel = channelData[0];
+		if (firstChannel == null) return null;
+
+		java.nio.ByteBuffer src = firstChannel.duplicate().order(ByteOrder.LITTLE_ENDIAN);
+		src.position(0);
+		int frames = src.remaining() / 4;
+		if (frames <= 0) return null;
+
+		java.nio.ByteBuffer mono = java.nio.ByteBuffer.allocateDirect(frames * 4).order(ByteOrder.LITTLE_ENDIAN);
+		for (int i = 0; i < frames; i++) {
+			mono.putFloat(src.getFloat(i * 4));
+		}
+		mono.position(0);
+		return mono;
+	}
+
+	@Nullable
+	private java.nio.ByteBuffer buildMonoBufferFromInterleaved(@Nullable java.nio.ByteBuffer src, int srcChannels) {
+		if (src == null) return null;
+
+		int channels = srcChannels > 0 ? srcChannels : 1;
+		int byteLen = src.capacity();
+		int bytesPerSample = (byteLen % 4 == 0) ? 4 : 2;
+		int frames = (byteLen / bytesPerSample) / channels;
+		if (frames <= 0) return null;
+
+		java.nio.ByteBuffer mono = java.nio.ByteBuffer.allocateDirect(frames * 4).order(ByteOrder.LITTLE_ENDIAN);
+		java.nio.ByteBuffer dup = src.duplicate().order(ByteOrder.LITTLE_ENDIAN);
+		if (bytesPerSample == 4) {
+			for (int i = 0; i < frames; i++) {
+				mono.putFloat(dup.getFloat((i * channels) * 4));
+			}
+		} else {
+			for (int i = 0; i < frames; i++) {
+				mono.putFloat(dup.getShort((i * channels) * 2) / 32768.0f);
+			}
+		}
+		mono.position(0);
+		return mono;
+	}
+
+	@Nullable
+	private java.nio.ByteBuffer buildMonoBufferForFallback(@Nullable AudioBuffer buffer,
+												 @Nullable String bufferId,
+												 @Nullable java.nio.ByteBuffer src) {
+		java.nio.ByteBuffer[] channelData = buffer != null ? buffer.getAllChannelDataRaw() : null;
+		java.nio.ByteBuffer mono = buildMonoBufferFromPlanar(channelData);
+		if (mono != null) return mono;
+
+		int channels = 1;
+		if (bufferId != null && bufferChannels.containsKey(bufferId)) {
+			channels = bufferChannels.get(bufferId);
+		} else if (buffer != null) {
+			channels = buffer.getNumberOfChannels();
+		}
+		return buildMonoBufferFromInterleaved(src, channels);
+	}
+
+	@Nullable
 	String switchBufferSource(String trackId, @Nullable AudioBuffer buffer) {
 		if (trackId == null) return null;
 		stopTrack(trackId);
 
 		if (buffer == null) {
 			directBuffers.remove(trackId + "::buffer");
+			planarBuffers.remove(trackId + "::buffer");
 			return null;
 		}
 
 		if (nativeAvailable) {
-			java.nio.ByteBuffer src = directBuffers.get(buffer.id);
-			if (src == null) return null;
 			try {
 				int sampleRate = sampleRates.containsKey(buffer.id) ? sampleRates.get(buffer.id) : 48000;
 				int channels = bufferChannels.containsKey(buffer.id) ? bufferChannels.get(buffer.id) : 1;
+
+				java.nio.ByteBuffer[] channelData = buffer.getAllChannelDataRaw();
+				if (channelData != null && channelData.length > 0) {
+					int resolvedChannels = channels > 0 ? channels : channelData.length;
+					resolvedChannels = Math.min(resolvedChannels, channelData.length);
+					if (resolvedChannels > 0) {
+						String newId = nativeCreateBufferSourcePlanar(channelData, sampleRate, resolvedChannels);
+						if (newId != null && !newId.isEmpty()) {
+							java.nio.ByteBuffer src = directBuffers.get(buffer.id);
+							if (src != null) directBuffers.put(newId, src);
+							planarBuffers.put(newId, channelData);
+							getOrCreate(newId).incrementAndGet();
+							sampleRates.put(newId, sampleRate);
+							bufferChannels.put(newId, resolvedChannels);
+							return newId;
+						}
+					}
+				}
+
+				java.nio.ByteBuffer src = directBuffers.get(buffer.id);
+				if (src == null) return null;
 				int byteLen = src.capacity();
 				int bytesPerSample = (byteLen % 4 == 0) ? 4 : 2;
 				java.nio.ByteBuffer srcView = src.duplicate();
@@ -2705,26 +2886,11 @@ public class AudioContext {
 			}
 		}
 
-		java.nio.ByteBuffer src = directBuffers.get(buffer.id);
-		if (src == null) return null;
 		String bufferId = buffer.id;
 		int sampleRate = sampleRates.containsKey(bufferId) ? sampleRates.get(bufferId) : 48000;
-		int srcChannels = bufferChannels.containsKey(bufferId) ? bufferChannels.get(bufferId) : 1;
-		int byteLen = src.capacity();
-		int bytesPerSample = (byteLen % 4 == 0) ? 4 : 2;
-		int frames = (byteLen / bytesPerSample) / srcChannels;
-		java.nio.ByteBuffer monoBb = java.nio.ByteBuffer.allocateDirect(frames * 4).order(ByteOrder.LITTLE_ENDIAN);
-		java.nio.ByteBuffer dup = src.duplicate().order(ByteOrder.LITTLE_ENDIAN);
-		if (bytesPerSample == 4) {
-			for (int i = 0; i < frames; i++) {
-				monoBb.putFloat(dup.getFloat((i * srcChannels) * 4));
-			}
-		} else {
-			for (int i = 0; i < frames; i++) {
-				monoBb.putFloat(dup.getShort((i * srcChannels) * 2) / 32768.0f);
-			}
-		}
-		monoBb.position(0);
+		java.nio.ByteBuffer src = directBuffers.get(buffer.id);
+		java.nio.ByteBuffer monoBb = buildMonoBufferForFallback(buffer, bufferId, src);
+		if (monoBb == null) return null;
 		directBuffers.put(trackId + "::buffer", monoBb);
 		sampleRates.put(trackId, sampleRate);
 		return null;
@@ -2736,15 +2902,40 @@ public class AudioContext {
 			bufferId = buffer.id;
 		}
 		java.nio.ByteBuffer src = directBuffers.get(bufferId);
-		if (nativeAvailable && nativeHasBuffer(bufferId)) {
+		if (nativeAvailable && buffer != null && nativeHasBuffer(bufferId) && !buffer.hasChannelDataCache()) {
 			addToContextSet(contextBuffers, contextId, bufferId);
 			addToContextSet(contextTracksMap, contextId, bufferId);
 			return bufferId;
 		}
-		if (nativeAvailable && src != null) {
+		if (nativeAvailable && buffer != null) {
 			try {
 				int sampleRate = sampleRates.containsKey(bufferId) ? sampleRates.get(bufferId) : 48000;
 				int channels = bufferChannels.containsKey(bufferId) ? bufferChannels.get(bufferId) : 1;
+
+				java.nio.ByteBuffer[] channelData = buffer.getAllChannelDataRaw();
+				if (channelData != null && channelData.length > 0) {
+					int resolvedChannels = channels > 0 ? channels : channelData.length;
+					resolvedChannels = Math.min(resolvedChannels, channelData.length);
+					if (resolvedChannels > 0) {
+						String id = nativeCreateBufferSourcePlanar(channelData, sampleRate, resolvedChannels);
+						if (id != null) {
+							if (src != null) directBuffers.put(id, src);
+							planarBuffers.put(id, channelData);
+							getOrCreate(id).incrementAndGet();
+							sampleRates.put(id, sampleRate);
+							bufferChannels.put(id, resolvedChannels);
+							addToContextSet(contextBuffers, contextId, id);
+							addToContextSet(contextTracksMap, contextId, id);
+							return id;
+						}
+					}
+				}
+
+				src = directBuffers.get(bufferId);
+				if (src == null) {
+					return null;
+				}
+
 				int byteLen = src.capacity();
 				int bytesPerSample = (byteLen % 4 == 0) ? 4 : 2;
 				java.nio.ByteBuffer srcView = src.duplicate();
@@ -2764,6 +2955,7 @@ public class AudioContext {
 			} catch (Throwable ignored) {
 			}
 		}
+		if (buffer != null) src = directBuffers.get(bufferId);
 		int sampleRate = 48000;
 		if (sampleRates.containsKey(bufferId)) sampleRate = sampleRates.get(bufferId);
 		else if (contextId != null && contextSampleRates.containsKey(contextId))
@@ -2772,26 +2964,8 @@ public class AudioContext {
 		AudioTrack track = new AudioTrack(AudioManager.STREAM_MUSIC, sampleRate, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT, Math.max(bufferSize, 2048), AudioTrack.MODE_STREAM);
 		String id = UUID.randomUUID().toString();
 		tracks.put(id, track);
-		java.nio.ByteBuffer monoBb;
-		if (src != null) {
-			int byteLen = src.capacity();
-			int bytesPerSample = (byteLen % 4 == 0) ? 4 : 2;
-			int srcChannels = bufferChannels.containsKey(bufferId) ? bufferChannels.get(bufferId) : 1;
-			int frames = (byteLen / bytesPerSample) / srcChannels;
-			monoBb = java.nio.ByteBuffer.allocateDirect(frames * 4).order(ByteOrder.LITTLE_ENDIAN);
-			java.nio.ByteBuffer dup = src.duplicate().order(ByteOrder.LITTLE_ENDIAN);
-			if (bytesPerSample == 4) {
-				for (int i = 0; i < frames; i++) {
-					float f = dup.getFloat((i * srcChannels) * 4);
-					monoBb.putFloat(f);
-				}
-			} else {
-				for (int i = 0; i < frames; i++) {
-					short s = dup.getShort((i * srcChannels) * 2);
-					monoBb.putFloat((float) s / 32768.0f);
-				}
-			}
-			monoBb.position(0);
+		java.nio.ByteBuffer monoBb = buildMonoBufferForFallback(buffer, bufferId, src);
+		if (monoBb != null) {
 			directBuffers.put(id + "::buffer", monoBb);
 		}
 		if (contextId != null) {

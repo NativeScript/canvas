@@ -15,6 +15,12 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)getFrequencyResponse:(NSData *)frequencyHzData
                     magResponse:(NSMutableData *)magResponse
                   phaseResponse:(NSMutableData *)phaseResponse;
+- (void)getFrequencyResponseMagResponsePhaseResponseWithByteOffsets:(NSData *)frequencyHzData
+                                            :(NSInteger)frequencyHzByteOffset
+                                            :(NSMutableData *)magResponse
+                                            :(NSInteger)magResponseByteOffset
+                                            :(NSMutableData *)phaseResponse
+                                            :(NSInteger)phaseResponseByteOffset;
 
 @end
 

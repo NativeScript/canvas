@@ -1,6 +1,13 @@
 #import <math.h>
 #import "NSCAudioContext.h"
 
+static inline NSUInteger NSCIIRNormalizeFloatByteOffset(NSInteger byteOffset, NSUInteger length) {
+    NSUInteger offset = byteOffset > 0 ? (NSUInteger)byteOffset : 0;
+    if (offset > length) offset = length;
+    offset -= (offset % sizeof(float));
+    return offset;
+}
+
 @implementation NSCIIRFilterNode {
     NSArray<NSNumber *> *_feedforward;
     NSArray<NSNumber *> *_feedback;
@@ -23,14 +30,38 @@
 - (void)getFrequencyResponse:(NSData *)frequencyHzData
                                  magResponse:(NSMutableData *)magResponse
                              phaseResponse:(NSMutableData *)phaseResponse {
+    [self getFrequencyResponseMagResponsePhaseResponseWithByteOffsets:frequencyHzData
+                                                                     :0
+                                                                     :magResponse
+                                                                     :0
+                                                                     :phaseResponse
+                                                                     :0];
+}
+
+- (void)getFrequencyResponseMagResponsePhaseResponseWithByteOffsets:(NSData *)frequencyHzData
+                                                                     :(NSInteger)frequencyHzByteOffset
+                                                                     :(NSMutableData *)magResponse
+                                                                     :(NSInteger)magResponseByteOffset
+                                                                     :(NSMutableData *)phaseResponse
+                                                                     :(NSInteger)phaseResponseByteOffset {
     if (!frequencyHzData || !magResponse || !phaseResponse) return;
-    const float *freqs = (const float *)frequencyHzData.bytes;
-    float *mag = (float *)magResponse.mutableBytes;
-    float *phase = (float *)phaseResponse.mutableBytes;
+    NSUInteger freqOffset = NSCIIRNormalizeFloatByteOffset(frequencyHzByteOffset, frequencyHzData.length);
+    NSUInteger magOffset = NSCIIRNormalizeFloatByteOffset(magResponseByteOffset, magResponse.length);
+    NSUInteger phaseOffset = NSCIIRNormalizeFloatByteOffset(phaseResponseByteOffset, phaseResponse.length);
+    if (freqOffset >= frequencyHzData.length || magOffset >= magResponse.length || phaseOffset >= phaseResponse.length) return;
+
+    const uint8_t *freqBytes = (const uint8_t *)frequencyHzData.bytes;
+    uint8_t *magBytes = (uint8_t *)magResponse.mutableBytes;
+    uint8_t *phaseBytes = (uint8_t *)phaseResponse.mutableBytes;
+    if (!freqBytes || !magBytes || !phaseBytes) return;
+
+    const float *freqs = (const float *)(freqBytes + freqOffset);
+    float *mag = (float *)(magBytes + magOffset);
+    float *phase = (float *)(phaseBytes + phaseOffset);
     if (!freqs || !mag || !phase) return;
-    NSInteger n = frequencyHzData.length / sizeof(float);
-    NSInteger maxOut = MIN((NSInteger)(magResponse.length / sizeof(float)),
-                                                 (NSInteger)(phaseResponse.length / sizeof(float)));
+    NSInteger n = (NSInteger)((frequencyHzData.length - freqOffset) / sizeof(float));
+    NSInteger maxOut = MIN((NSInteger)((magResponse.length - magOffset) / sizeof(float)),
+                                                 (NSInteger)((phaseResponse.length - phaseOffset) / sizeof(float)));
     n = MIN(n, maxOut);
     if (n <= 0) return;
 

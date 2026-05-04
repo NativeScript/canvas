@@ -17,6 +17,9 @@
 #import "NSCWaveShaperNode.h"
 #import "NSCIIRFilterNode.h"
 #import "NSCConvolverNode.h"
+#import "NSCDynamicsCompressorNode.h"
+#import "NSCChannelSplitterNode.h"
+#import "NSCChannelMergerNode.h"
 #import "NSCPeriodicWave.h"
 
 NS_ASSUME_NONNULL_BEGIN
@@ -105,6 +108,9 @@ NS_ASSUME_NONNULL_BEGIN
 - (NSCWaveShaperNode *)createWaveShaperNode;
 - (NSCIIRFilterNode *)createIIRFilterNode:(NSArray<NSNumber *> *)feedforward feedback:(NSArray<NSNumber *> *)feedback;
 - (NSCConvolverNode *)createConvolverNode;
+- (NSCDynamicsCompressorNode *)createDynamicsCompressorNode;
+- (NSCChannelSplitterNode *)createChannelSplitterNode:(NSInteger)numberOfOutputs;
+- (NSCChannelMergerNode *)createChannelMergerNode:(NSInteger)numberOfInputs;
 - (nullable NSCAudioNode *)createSourceNodeFromMediaPlayer:(AVPlayer *)player;
 - (void)detachSource:(NSCAudioNode *)source;
 

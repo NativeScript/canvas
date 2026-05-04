@@ -1,16 +1,20 @@
 import {
 	AnalyserOptions,
+	AudioBufferCopyOptions,
 	AudioContextOptions,
 	AudioNodeBase,
 	AudioParamBase,
 	AudioParamHooks,
 	BaseAudioContext,
+	ChannelMergerOptions,
+	ChannelSplitterOptions,
 	ConstantSourceOptions,
 	ConvolverOptions,
 	DelayOptions,
 	distanceModelFromNumber,
 	distanceModelToNumber,
 	DistanceModelType,
+	DynamicsCompressorOptions,
 	IIRFilterOptions,
 	MediaElementLike,
 	panningModelFromNumber,
@@ -37,41 +41,29 @@ import {
 
 type NativeBaseAudioContext = BaseAudioContext & { native: NSCAudioContext };
 
-const dataMap: WeakMap<ArrayBufferLike, Map<string, Uint8Array>> = new WeakMap();
-
-function spansEntireBuffer(data: ArrayBufferView): boolean {
-	return data.byteOffset === 0 && data.byteLength === data.buffer.byteLength;
+function normalizeCopyByteOffset(view: ArrayBufferView, byteOffset?: number): number {
+	let offset = typeof byteOffset === 'number' && Number.isFinite(byteOffset) ? byteOffset : view.byteOffset;
+	offset = Math.max(0, offset | 0);
+	if (offset > view.buffer.byteLength) offset = view.buffer.byteLength;
+	const align = ((view as any).BYTES_PER_ELEMENT as number) || 1;
+	return offset - (offset % align);
 }
 
-function getScratchBuffer(view: ArrayBufferView): Uint8Array {
-	const underlying = view.buffer;
-	let map = dataMap.get(underlying);
-	if (!map) {
-		map = new Map<string, Uint8Array>();
-		dataMap.set(underlying, map);
+function resolveAudioBufferCopyOptions(view: ArrayBufferView, startOrOptions?: number | AudioBufferCopyOptions): { startInChannel: number; byteOffset: number } {
+	let startInChannel = 0;
+	let byteOffset: number | undefined;
+	if (typeof startOrOptions === 'number') {
+		startInChannel = startOrOptions;
+	} else if (startOrOptions) {
+		if (typeof startOrOptions.startInChannel === 'number') startInChannel = startOrOptions.startInChannel;
+		if (typeof startOrOptions.byteOffset === 'number') byteOffset = startOrOptions.byteOffset;
 	}
-	const key = `${view.byteOffset}:${view.byteLength}`;
-	const existing = map.get(key);
-	if (existing && existing.byteLength === view.byteLength) return existing;
-
-	const arr = new Uint8Array(underlying, view.byteOffset, view.byteLength);
-	map.set(key, arr);
-
-	return arr;
-}
-
-function withWriteableNativeBuffer(data: ArrayBufferView, call: (buffer: any) => void): void {
-	if (spansEntireBuffer(data)) {
-		call(data);
-		return;
-	}
-	const scratch = getScratchBuffer(data);
-	call(scratch);
-}
-
-function getReadableNativeBuffer(data: ArrayBufferView): any {
-	if (spansEntireBuffer(data)) return data.buffer;
-	return getScratchBuffer(data);
+	if (!Number.isFinite(startInChannel)) startInChannel = 0;
+	startInChannel = Math.max(0, startInChannel | 0);
+	return {
+		startInChannel,
+		byteOffset: normalizeCopyByteOffset(view, byteOffset),
+	};
 }
 
 function makeIOSHooks(native: NSCAudioParam): AudioParamHooks {
@@ -198,24 +190,39 @@ export class AudioBuffer {
 	}
 
 	getChannelData(channel: number): Float32Array | null {
-		const nsdata: any = this.native.getChannelData(channel);
-		if (nsdata) {
-			const buf = interop.bufferFromData(nsdata);
-			if (buf) return new Float32Array(buf as ArrayBuffer);
+		if (channel < 0 || channel >= this.numberOfChannels) return null;
+		const native = this.native as any;
+		const audioModule = (globalThis as any)?.AudioModule;
+
+		if (audioModule) {
+			try {
+				const address = native.getPCMBufferAddress();
+				if (typeof address === 'string' && address.length > 0) {
+					const value = audioModule.createFloat32ArrayFromPCMBufferAddress(address, channel);
+					if (value instanceof Float32Array) {
+						return value;
+					}
+				}
+			} catch (e) {}
 		}
-		return null;
+
+		const data = new Float32Array(this.length);
+		native.copyFromChannelWithByteOffsetByteLength(data.buffer as any, channel, 0, 0, data.byteLength);
+		return data;
 	}
 
-	copyFromChannel(dest: Float32Array, channel: number, startInChannel: number = 0) {
+	copyFromChannel(dest: Float32Array, channel: number, startInChannel: number | AudioBufferCopyOptions = 0) {
 		if (!dest) return;
 		const native = this.native;
-		const start = startInChannel ?? 0;
-		withWriteableNativeBuffer(dest, (raw) => native.copyFromChannel(raw, channel, start));
+		const options = resolveAudioBufferCopyOptions(dest, startInChannel);
+		native.copyFromChannelWithByteOffsetByteLength(dest.buffer as any, channel, options.startInChannel, options.byteOffset, dest.byteLength);
 	}
 
-	copyToChannel(source: Float32Array, channel: number, startInChannel: number = 0) {
+	copyToChannel(source: Float32Array, channel: number, startInChannel: number | AudioBufferCopyOptions = 0) {
 		if (!source) return;
-		this.native.copyToChannel(getReadableNativeBuffer(source), channel, startInChannel ?? 0);
+		const native = this.native;
+		const options = resolveAudioBufferCopyOptions(source, startInChannel);
+		native.copyToChannelWithByteOffsetByteLength(source.buffer as any, channel, options.startInChannel, options.byteOffset, source.byteLength);
 	}
 }
 
@@ -463,7 +470,7 @@ export class OscillatorNode extends AudioScheduledSourceNode {
 
 	setPeriodicWave(wave: PeriodicWave) {
 		if (!wave) return;
-		(this.native as any).setPeriodicWave(wave.native);
+		this.native.setPeriodicWave(wave.native);
 	}
 }
 
@@ -568,27 +575,33 @@ export class AnalyserNode extends AudioNode {
 	}
 	getFloatTimeDomainData(dest: Float32Array) {
 		if (!dest || dest.length === 0) return;
-		const native = this.native;
-		withWriteableNativeBuffer(dest, (raw) => native.getFloatTimeDomainData(raw));
+		const native: any = this.native;
+		const byteOffset = normalizeCopyByteOffset(dest);
+		if (byteOffset === 0) {
+			native.getFloatTimeDomainData(dest as any);
+			return;
+		}
+		native.getFloatTimeDomainDataWithByteOffset(dest as any, byteOffset);
 	}
 	getByteTimeDomainData(dest: Uint8Array) {
 		if (!dest || dest.length === 0) return;
 		const native = this.native;
-		withWriteableNativeBuffer(dest, (raw) => native.getByteTimeDomainData(raw));
+		native.getByteTimeDomainData(dest as never);
 	}
 	getFloatFrequencyData(dest: Float32Array) {
 		if (!dest || dest.length === 0) return;
-		const native = this.native;
-		withWriteableNativeBuffer(dest, (raw) => native.getFloatFrequencyData(raw));
+		const native: any = this.native;
+		const byteOffset = normalizeCopyByteOffset(dest);
+		if (byteOffset === 0) {
+			native.getFloatFrequencyData(dest as any);
+			return;
+		}
+		native.getFloatFrequencyDataWithByteOffset(dest as any, byteOffset);
 	}
 	getByteFrequencyData(dest: Uint8Array) {
 		if (!dest || dest.length === 0) return;
 		const native = this.native;
-		if (dest instanceof NSMutableData) {
-			native.getByteFrequencyData(dest as never);
-			return;
-		}
-		withWriteableNativeBuffer(dest, (raw) => native.getByteFrequencyData(raw));
+		native.getByteFrequencyData(dest as never);
 	}
 }
 
@@ -613,7 +626,16 @@ export class WaveShaperNode extends AudioNode {
 			this.native.setCurveFromData(null as never);
 			return;
 		}
-		this.native.setCurveFromData(getReadableNativeBuffer(v));
+		const byteOffset = normalizeCopyByteOffset(v);
+		if (byteOffset === 0) {
+			if (v.byteOffset === 0 && v.byteLength === v.buffer.byteLength) {
+				this.native.setCurveFromData(v.buffer as any);
+				return;
+			}
+			this.native.setCurveFromData(v as any);
+			return;
+		}
+		this.native.setCurveFromDataWithByteOffset(v as any, byteOffset);
 	}
 	get oversample() {
 		return this.native.oversample as 'none' | '2x' | '4x';
@@ -637,13 +659,15 @@ export class IIRFilterNode extends AudioNode {
 	}
 	getFrequencyResponse(frequencyHz: Float32Array, magResponse: Float32Array, phaseResponse: Float32Array) {
 		if (!frequencyHz || !magResponse || !phaseResponse) return;
-		const hz = getReadableNativeBuffer(frequencyHz);
-		const native = this.native;
-		withWriteableNativeBuffer(magResponse, (mag) => {
-			withWriteableNativeBuffer(phaseResponse, (phase) => {
-				native.getFrequencyResponseMagResponsePhaseResponse(hz, mag, phase);
-			});
-		});
+		const native: any = this.native;
+		const frequencyHzByteOffset = normalizeCopyByteOffset(frequencyHz);
+		const magResponseByteOffset = normalizeCopyByteOffset(magResponse);
+		const phaseResponseByteOffset = normalizeCopyByteOffset(phaseResponse);
+		if (frequencyHzByteOffset === 0 && magResponseByteOffset === 0 && phaseResponseByteOffset === 0) {
+			native.getFrequencyResponseMagResponsePhaseResponse(frequencyHz as any, magResponse as any, phaseResponse as any);
+			return;
+		}
+		native.getFrequencyResponseMagResponsePhaseResponseWithByteOffsets(frequencyHz as any, frequencyHzByteOffset, magResponse as any, magResponseByteOffset, phaseResponse as any, phaseResponseByteOffset);
 	}
 }
 
@@ -673,16 +697,115 @@ export class ConvolverNode extends AudioNode {
 	}
 }
 
+export class DynamicsCompressorNode extends AudioNode {
+	[native_]: NSCDynamicsCompressorNode;
+	private _threshold: AudioParam | null = null;
+	private _knee: AudioParam | null = null;
+	private _ratio: AudioParam | null = null;
+	private _attack: AudioParam | null = null;
+	private _release: AudioParam | null = null;
+	private _reduction: AudioParam | null = null;
+
+	constructor(context: NativeBaseAudioContext, options: DynamicsCompressorOptions = {}) {
+		super(context);
+		this[native_] = context.native.createDynamicsCompressorNode();
+
+		if (typeof options.threshold === 'number') this.threshold.value = options.threshold;
+		if (typeof options.knee === 'number') this.knee.value = options.knee;
+		if (typeof options.ratio === 'number') this.ratio.value = options.ratio;
+		if (typeof options.attack === 'number') this.attack.value = options.attack;
+		if (typeof options.release === 'number') this.release.value = options.release;
+	}
+
+	get native() {
+		return this[native_];
+	}
+
+	get threshold() {
+		return this._threshold || (this._threshold = new AudioParam(nativeCtor_, this.native.thresholdParam));
+	}
+
+	get knee() {
+		return this._knee || (this._knee = new AudioParam(nativeCtor_, this.native.kneeParam));
+	}
+
+	get ratio() {
+		return this._ratio || (this._ratio = new AudioParam(nativeCtor_, this.native.ratioParam));
+	}
+
+	get attack() {
+		return this._attack || (this._attack = new AudioParam(nativeCtor_, this.native.attackParam));
+	}
+
+	get release() {
+		return this._release || (this._release = new AudioParam(nativeCtor_, this.native.releaseParam));
+	}
+
+	get reduction() {
+		return this._reduction || (this._reduction = new AudioParam(nativeCtor_, this.native.reductionParam));
+	}
+}
+
+export class ChannelSplitterNode extends AudioNode {
+	[native_]: NSCChannelSplitterNode;
+	private _numberOfOutputs: number;
+
+	constructor(context: NativeBaseAudioContext, options: ChannelSplitterOptions = {}) {
+		super(context);
+		this._numberOfOutputs = Math.max(1, options.numberOfOutputs ?? 6);
+		this[native_] = context.native.createChannelSplitterNode(this._numberOfOutputs);
+	}
+
+	get native() {
+		return this[native_];
+	}
+
+	get numberOfOutputs() {
+		const value = this.native?.numberOfOutputs;
+		if (typeof value === 'number' && Number.isFinite(value)) return value;
+		return this._numberOfOutputs;
+	}
+}
+
+export class ChannelMergerNode extends AudioNode {
+	[native_]: NSCChannelMergerNode;
+	private _numberOfInputs: number;
+
+	constructor(context: NativeBaseAudioContext, options: ChannelMergerOptions = {}) {
+		super(context);
+		this._numberOfInputs = Math.max(1, options.numberOfInputs ?? 6);
+		this[native_] = context.native.createChannelMergerNode(this._numberOfInputs);
+	}
+
+	get native() {
+		return this[native_];
+	}
+
+	get numberOfInputs() {
+		const value = this.native?.numberOfInputs;
+		if (typeof value === 'number' && Number.isFinite(value)) return value;
+		return this._numberOfInputs;
+	}
+}
+
 export class PeriodicWave {
 	[native_]: NSCPeriodicWave;
 	constructor(_context: NativeBaseAudioContext, options: PeriodicWaveOptions = {}) {
 		const real = options.real ? (options.real instanceof Float32Array ? options.real : Float32Array.from(options.real)) : new Float32Array(2);
 		const imag = options.imag ? (options.imag instanceof Float32Array ? options.imag : Float32Array.from(options.imag)) : new Float32Array(real.length);
+		const realByteOffset = normalizeCopyByteOffset(real);
+		const imagByteOffset = normalizeCopyByteOffset(imag);
 
-		const realData = getReadableNativeBuffer(real);
-		const imagData = getReadableNativeBuffer(imag);
+		if (realByteOffset === 0 && imagByteOffset === 0) {
+			if (real.byteOffset === 0 && real.byteLength === real.buffer.byteLength && imag.byteOffset === 0 && imag.byteLength === imag.buffer.byteLength) {
+				this[native_] = NSCPeriodicWave.alloc().initWithRealImagDisableNormalization(real.buffer as any, imag.buffer as any, !!options.disableNormalization);
+				return;
+			}
+			this[native_] = NSCPeriodicWave.alloc().initWithRealImagDisableNormalization(real as any, imag as any, !!options.disableNormalization);
+			return;
+		}
 
-		this[native_] = NSCPeriodicWave.alloc().initWithRealImagDisableNormalization(realData, imagData, !!options.disableNormalization);
+		this[native_] = NSCPeriodicWave.alloc().initWithRealImagDisableNormalizationRealByteOffsetImagByteOffset(real as any, imag as any, !!options.disableNormalization, realByteOffset, imagByteOffset);
 	}
 	get native() {
 		return this[native_];
@@ -886,6 +1009,15 @@ export class AudioContext extends BaseAudioContext {
 	createConvolver(options?: ConvolverOptions) {
 		return new ConvolverNode(this, options ?? {});
 	}
+	createDynamicsCompressor(options?: DynamicsCompressorOptions) {
+		return new DynamicsCompressorNode(this, options ?? {});
+	}
+	createChannelSplitter(options?: ChannelSplitterOptions) {
+		return new ChannelSplitterNode(this, options ?? {});
+	}
+	createChannelMerger(options?: ChannelMergerOptions) {
+		return new ChannelMergerNode(this, options ?? {});
+	}
 	createPeriodicWave(real: Float32Array | number[], imag: Float32Array | number[], options?: { disableNormalization?: boolean }) {
 		return new PeriodicWave(this, { real, imag, disableNormalization: options?.disableNormalization });
 	}
@@ -1058,6 +1190,15 @@ export class OfflineAudioContext extends BaseAudioContext {
 	}
 	createConvolver(options?: ConvolverOptions) {
 		return new ConvolverNode(this, options ?? {});
+	}
+	createDynamicsCompressor(options?: DynamicsCompressorOptions) {
+		return new DynamicsCompressorNode(this, options ?? {});
+	}
+	createChannelSplitter(options?: ChannelSplitterOptions) {
+		return new ChannelSplitterNode(this, options ?? {});
+	}
+	createChannelMerger(options?: ChannelMergerOptions) {
+		return new ChannelMergerNode(this, options ?? {});
 	}
 	createPeriodicWave(real: Float32Array | number[], imag: Float32Array | number[], options?: { disableNormalization?: boolean }) {
 		return new PeriodicWave(this, { real, imag, disableNormalization: options?.disableNormalization });

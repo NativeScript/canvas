@@ -1,17 +1,21 @@
 import { Utils } from '@nativescript/core';
 import {
 	AnalyserOptions,
+	AudioBufferCopyOptions,
 	AudioContextOptions,
 	AudioNodeBase,
 	AudioParamBase,
 	AudioParamHooks,
 	BaseAudioContext,
+	ChannelMergerOptions,
+	ChannelSplitterOptions,
 	ConstantSourceOptions,
 	ConvolverOptions,
 	DelayOptions,
 	distanceModelFromNumber,
 	distanceModelToNumber,
 	DistanceModelType,
+	DynamicsCompressorOptions,
 	IIRFilterOptions,
 	MediaElementLike,
 	panningModelFromNumber,
@@ -38,6 +42,40 @@ import {
 } from './common';
 
 type NativeBaseAudioContext = BaseAudioContext & { native: org.nativescript.audiocontext.AudioContextInstance };
+
+function normalizeCopyByteOffset(view: ArrayBufferView, byteOffset?: number): number {
+	let offset = typeof byteOffset === 'number' && Number.isFinite(byteOffset) ? byteOffset : view.byteOffset;
+	offset = Math.max(0, offset | 0);
+	if (offset > view.buffer.byteLength) offset = view.buffer.byteLength;
+	const align = ((view as any).BYTES_PER_ELEMENT as number) || 1;
+	return offset - (offset % align);
+}
+
+function resolveAudioBufferCopyOptions(view: ArrayBufferView, startOrOptions?: number | AudioBufferCopyOptions): { startInChannel: number; byteOffset: number } {
+	let startInChannel = 0;
+	let byteOffset: number | undefined;
+	if (typeof startOrOptions === 'number') {
+		startInChannel = startOrOptions;
+	} else if (startOrOptions) {
+		if (typeof startOrOptions.startInChannel === 'number') startInChannel = startOrOptions.startInChannel;
+		if (typeof startOrOptions.byteOffset === 'number') byteOffset = startOrOptions.byteOffset;
+	}
+	if (!Number.isFinite(startInChannel)) startInChannel = 0;
+	startInChannel = Math.max(0, startInChannel | 0);
+	return {
+		startInChannel,
+		byteOffset: normalizeCopyByteOffset(view, byteOffset),
+	};
+}
+
+function viewAtByteOffset(view: Float32Array, byteOffset: number): Float32Array {
+	if (byteOffset === view.byteOffset) return view;
+	if (byteOffset >= view.buffer.byteLength) return new Float32Array(0);
+	const availableBytes = view.buffer.byteLength - byteOffset;
+	const length = Math.floor(availableBytes / Float32Array.BYTES_PER_ELEMENT);
+	if (length <= 0) return new Float32Array(0);
+	return new Float32Array(view.buffer, byteOffset, length);
+}
 
 function makeAndroidHooks(native: org.nativescript.audiocontext.AudioParam): AudioParamHooks {
 	return {
@@ -175,19 +213,25 @@ export class AudioBuffer {
 	}
 
 	getChannelData(channel: number): Float32Array | null {
-		const data = this.native.getChannelData(channel);
+		const data = this.native.getChannelDataRaw(channel);
 		if (!data) return null;
 		return new Float32Array((ArrayBuffer as any).from(data));
 	}
 
-	copyFromChannel(dest: Float32Array, channel: number, startInChannel: number = 0) {
+	copyFromChannel(dest: Float32Array, channel: number, startInChannel: number | AudioBufferCopyOptions = 0) {
 		if (!dest) return;
-		this.native.copyFromChannel(dest as any, channel, startInChannel ?? 0);
+		const options = resolveAudioBufferCopyOptions(dest, startInChannel);
+		const target = viewAtByteOffset(dest, options.byteOffset);
+		if (target.length === 0) return;
+		this.native.copyFromChannel(target as any, channel, options.startInChannel);
 	}
 
-	copyToChannel(source: Float32Array, channel: number, startInChannel: number = 0) {
+	copyToChannel(source: Float32Array, channel: number, startInChannel: number | AudioBufferCopyOptions = 0) {
 		if (!source) return;
-		this.native.copyToChannel(source, channel, startInChannel ?? 0);
+		const options = resolveAudioBufferCopyOptions(source, startInChannel);
+		const input = viewAtByteOffset(source, options.byteOffset);
+		if (input.length === 0) return;
+		this.native.copyToChannel(input, channel, options.startInChannel);
 	}
 }
 
@@ -395,7 +439,7 @@ export class AudioScheduledSourceNode extends AudioNode {
 		if (this._nativeEndedWired) return;
 		this._nativeEndedWired = true;
 		try {
-			this._javaEndedListener = new (org.nativescript.audiocontext.AudioContext as any).EndedListener({
+			this._javaEndedListener = new org.nativescript.audiocontext.AudioContext.EndedListener({
 				onEnded: () => this._fireEnded(),
 			});
 			this.native.addEndedListener(this._javaEndedListener);
@@ -593,6 +637,15 @@ export class OfflineAudioContext extends BaseAudioContext {
 	createConvolver(options?: ConvolverOptions) {
 		return new ConvolverNode(this as never, options ?? {});
 	}
+	createDynamicsCompressor(options?: DynamicsCompressorOptions) {
+		return new DynamicsCompressorNode(this as never, options ?? {});
+	}
+	createChannelSplitter(options?: ChannelSplitterOptions) {
+		return new ChannelSplitterNode(this as never, options ?? {});
+	}
+	createChannelMerger(options?: ChannelMergerOptions) {
+		return new ChannelMergerNode(this as never, options ?? {});
+	}
 	createPeriodicWave(real: Float32Array | number[], imag: Float32Array | number[], options?: { disableNormalization?: boolean }) {
 		return new PeriodicWave(this as never, { real, imag, disableNormalization: options?.disableNormalization });
 	}
@@ -749,6 +802,15 @@ export class AudioContext extends BaseAudioContext {
 	}
 	createConvolver(options?: ConvolverOptions) {
 		return new ConvolverNode(this as never, options ?? {});
+	}
+	createDynamicsCompressor(options?: DynamicsCompressorOptions) {
+		return new DynamicsCompressorNode(this as never, options ?? {});
+	}
+	createChannelSplitter(options?: ChannelSplitterOptions) {
+		return new ChannelSplitterNode(this as never, options ?? {});
+	}
+	createChannelMerger(options?: ChannelMergerOptions) {
+		return new ChannelMergerNode(this as never, options ?? {});
 	}
 	createPeriodicWave(real: Float32Array | number[], imag: Float32Array | number[], options?: { disableNormalization?: boolean }) {
 		return new PeriodicWave(this as never, { real, imag, disableNormalization: options?.disableNormalization });
@@ -1140,6 +1202,103 @@ export class ConvolverNode extends AudioNode {
 	}
 	set normalize(value: boolean) {
 		this.native.setNormalize(value);
+	}
+}
+
+export class DynamicsCompressorNode extends AudioNode {
+	[native_]: org.nativescript.audiocontext.DynamicsCompressorNode;
+	private _threshold: AudioParam | null = null;
+	private _knee: AudioParam | null = null;
+	private _ratio: AudioParam | null = null;
+	private _attack: AudioParam | null = null;
+	private _release: AudioParam | null = null;
+	private _reduction: AudioParam | null = null;
+
+	constructor(context: NativeBaseAudioContext, options: DynamicsCompressorOptions = {}) {
+		super(context);
+		this[native_] = AudioContext.getInstance().createDynamicsCompressor(context.native);
+
+		if (typeof options.threshold === 'number') this.threshold.value = options.threshold;
+		if (typeof options.knee === 'number') this.knee.value = options.knee;
+		if (typeof options.ratio === 'number') this.ratio.value = options.ratio;
+		if (typeof options.attack === 'number') this.attack.value = options.attack;
+		if (typeof options.release === 'number') this.release.value = options.release;
+	}
+
+	get native() {
+		return this[native_];
+	}
+
+	get threshold() {
+		return this._threshold || (this._threshold = new AudioParam(nativeCtor_, this.native.getThreshold()));
+	}
+
+	get knee() {
+		return this._knee || (this._knee = new AudioParam(nativeCtor_, this.native.getKnee()));
+	}
+
+	get ratio() {
+		return this._ratio || (this._ratio = new AudioParam(nativeCtor_, this.native.getRatio()));
+	}
+
+	get attack() {
+		return this._attack || (this._attack = new AudioParam(nativeCtor_, this.native.getAttack()));
+	}
+
+	get release() {
+		return this._release || (this._release = new AudioParam(nativeCtor_, this.native.getRelease()));
+	}
+
+	get reduction() {
+		return this._reduction || (this._reduction = new AudioParam(nativeCtor_, this.native.getReduction()));
+	}
+}
+
+export class ChannelSplitterNode extends AudioNode {
+	[native_]: org.nativescript.audiocontext.ChannelSplitterNode;
+	private _numberOfOutputs: number;
+
+	constructor(context: NativeBaseAudioContext, options: ChannelSplitterOptions = {}) {
+		super(context);
+		this._numberOfOutputs = Math.max(1, options.numberOfOutputs ?? 6);
+		this[native_] = AudioContext.getInstance().createChannelSplitter(context.native, this._numberOfOutputs);
+	}
+
+	get native() {
+		return this[native_];
+	}
+
+	get numberOfOutputs() {
+		const native = this.native as org.nativescript.audiocontext.ChannelSplitterNode;
+		if (native && typeof native.getNumberOfOutputs === 'function') {
+			const value = native.getNumberOfOutputs();
+			if (typeof value === 'number' && Number.isFinite(value)) return value;
+		}
+		return this._numberOfOutputs;
+	}
+}
+
+export class ChannelMergerNode extends AudioNode {
+	[native_]: org.nativescript.audiocontext.ChannelMergerNode;
+	private _numberOfInputs: number;
+
+	constructor(context: NativeBaseAudioContext, options: ChannelMergerOptions = {}) {
+		super(context);
+		this._numberOfInputs = Math.max(1, options.numberOfInputs ?? 6);
+		this[native_] = AudioContext.getInstance().createChannelMerger(context.native, this._numberOfInputs);
+	}
+
+	get native() {
+		return this[native_];
+	}
+
+	get numberOfInputs() {
+		const native = this.native as org.nativescript.audiocontext.ChannelMergerNode;
+		if (native && typeof native.getNumberOfInputs === 'function') {
+			const value = native.getNumberOfInputs();
+			if (typeof value === 'number' && Number.isFinite(value)) return value;
+		}
+		return this._numberOfInputs;
 	}
 }
 

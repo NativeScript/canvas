@@ -10,7 +10,12 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (instancetype)initWithReal:(NSData *)real
                         imag:(NSData *)imag
-        disableNormalization:(BOOL)disableNormalization NS_DESIGNATED_INITIALIZER;
+          disableNormalization:(BOOL)disableNormalization;
+- (instancetype)initWithReal:(NSData *)real
+                                imag:(NSData *)imag
+          disableNormalization:(BOOL)disableNormalization
+                  realByteOffset:(NSInteger)realByteOffset
+                  imagByteOffset:(NSInteger)imagByteOffset NS_DESIGNATED_INITIALIZER;
 - (instancetype)init NS_UNAVAILABLE;
 
 @end

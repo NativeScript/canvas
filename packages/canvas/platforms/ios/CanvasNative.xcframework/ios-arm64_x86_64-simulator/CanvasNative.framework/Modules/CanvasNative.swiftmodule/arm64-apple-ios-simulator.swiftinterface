@@ -40,6 +40,7 @@ import _SwiftConcurrencyShims
   @objc public static func presentDrawable(_ context: Swift.Int64)
   @objc public static func flushWebGL(_ context: Swift.Int64) -> Swift.Bool
   @objc public static func releaseWebGL(_ context: Swift.Int64)
+  @objc public static func release2DContext(_ context: Swift.Int64)
   @objc public static func create2DContext(_ view: CanvasNative.NSCCanvas, _ width: Swift.Int32, _ height: Swift.Int32, _ alpha: Swift.Bool, _ density: Swift.Float, _ fontColor: Swift.Int32, _ ppi: Swift.Float, _ direction: Swift.Int32, _ colorSpace: Swift.Int32) -> Swift.Int64
   @objc public static func create2DContextMetal(_ view: CanvasNative.NSCCanvas, _ alpha: Swift.Bool, _ density: Swift.Float, _ fontColor: Swift.Int32, _ ppi: Swift.Float, _ direction: Swift.Int32, _ colorSpace: Swift.Int32) -> Swift.Int64
   @objc public static func updateWebGLSurfaceWithView(_ view: Swift.Int64, _ width: Swift.Int32, _ height: Swift.Int32, _ context: Swift.Int64)

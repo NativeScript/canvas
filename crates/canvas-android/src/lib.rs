@@ -18,7 +18,7 @@ use log::LevelFilter;
 // #[cfg(feature = "vulkan")]
 use crate::jni_compat::org_nativescript_canvas_NSCCanvas::{nativeCreate2dContextVulkan, nativeGetVulkanVersion, nativeContext2DSetRenderFunc, nativeContext2DClearRenderFunc};
 
-use crate::jni_compat::org_nativescript_canvas_NSCCanvas::{nativeContext2DPathTest, nativeContext2DPathTestNormal, nativeContext2DRender, nativeContext2DTest, nativeContext2DTestNormal, nativeCreate2DContext, nativeCustomWithBitmapFlush, nativeInitWebGL, nativeInitWebGLNoSurface, nativeInitWebGPU, nativeMakeWebGLCurrent, nativeMakeWebGLCurrentNormal, nativeReleaseWebGL, nativeReleaseWebGLNormal, nativeResizeWebGPU, nativeUpdate2DSurface, nativeUpdate2DSurfaceNoSurface, nativeUpdate2DSurfaceNoSurfaceNormal, nativeUpdateGLNoSurface, nativeUpdateWebGLNoSurfaceNormal, nativeUpdateWebGLSurface, nativeWebGLC2DRender, nativeWriteCurrentWebGLContextToBitmap, nativeContext2DConicTest};
+use crate::jni_compat::org_nativescript_canvas_NSCCanvas::{nativeContext2DPathTest, nativeContext2DPathTestNormal, nativeContext2DRender, nativeContext2DTest, nativeContext2DTestNormal, nativeCreate2DContext, nativeCustomWithBitmapFlush, nativeInitWebGL, nativeInitWebGLNoSurface, nativeInitWebGPU, nativeMakeWebGLCurrent, nativeMakeWebGLCurrentNormal, nativeRelease2DContext, nativeRelease2DContextNormal, nativeReleaseWebGL, nativeReleaseWebGLNormal, nativeResizeWebGPU, nativeUpdate2DSurface, nativeUpdate2DSurfaceNoSurface, nativeUpdate2DSurfaceNoSurfaceNormal, nativeUpdateGLNoSurface, nativeUpdateWebGLNoSurfaceNormal, nativeUpdateWebGLSurface, nativeWebGLC2DRender, nativeWriteCurrentWebGLContextToBitmap, nativeContext2DConicTest};
 use crate::jni_compat::org_nativescript_canvas_NSCCanvasRenderingContext2D::{nativeCreatePattern, nativeDrawAtlasWithBitmap, nativeDrawImageDxDyDwDhWithAsset, nativeDrawImageDxDyDwDhWithBitmap, nativeDrawImageDxDyWithAsset, nativeDrawImageDxDyWithBitmap, nativeDrawImageWithAsset, nativeDrawImageWithBitmap, nativeScale};
 use crate::jni_compat::org_nativescript_canvas_NSCImageAsset::{nativeCreateImageAsset, nativeDestroyImageAsset, nativeGetDimensions, nativeGetError, nativeLoadFromBitmap, nativeLoadFromBuffer, nativeLoadFromBytes, nativeLoadFromEncodedBuffer, nativeLoadFromEncodedBytes, nativeLoadFromPath, nativeLoadFromUrl};
 use crate::jni_compat::org_nativescript_canvas_NSCImageBitmap::{nativeLoadBitmapFromBuffer, nativeLoadBitmapFromBufferOptions, nativeLoadBitmapFromBufferRectOptions, nativeLoadBitmapFromBytes, nativeLoadBitmapFromBytesOptions, nativeLoadBitmapFromBytesRectOptions};
@@ -83,6 +83,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                 "nativeUpdate2DSurfaceNoSurface",
                 "nativeUpdateWebGLNoSurface",
                 "nativeReleaseWebGL",
+                "nativeRelease2DContext",
                 "nativeMakeWebGLCurrent",
                 "nativeWriteCurrentWebGLContextToBitmap",
                 "nativeInitContextWithCustomSurface",
@@ -113,6 +114,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                     "(Landroid/view/Surface;IIJ)V",
                     "(IIJ)V",
                     "(IIJ)V",
+                    "(J)V",
                     "(J)V",
                     "(J)Z",
                     "(JLandroid/graphics/Bitmap;)V",
@@ -146,6 +148,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                     "!(Landroid/view/Surface;IIJ)V",
                     "!(IIJ)V",
                     "!(IIJ)V",
+                    "!(J)V",
                     "!(J)V",
                     "!(J)Z",
                     "!(JLandroid/graphics/Bitmap;)V",
@@ -183,6 +186,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                     nativeUpdate2DSurfaceNoSurface as *mut c_void,
                     nativeUpdateGLNoSurface as *mut c_void,
                     nativeReleaseWebGL as *mut c_void,
+                    nativeRelease2DContext as *mut c_void,
                     nativeMakeWebGLCurrent as *mut c_void,
                     nativeWriteCurrentWebGLContextToBitmap as *mut c_void,
                     nativeInitContextWithCustomSurface as *mut c_void,
@@ -206,6 +210,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                     nativeUpdate2DSurfaceNoSurfaceNormal as *mut c_void,
                     nativeUpdateWebGLNoSurfaceNormal as *mut c_void,
                     nativeReleaseWebGLNormal as *mut c_void,
+                    nativeRelease2DContextNormal as *mut c_void,
                     nativeMakeWebGLCurrentNormal as *mut c_void,
                     nativeWriteCurrentWebGLContextToBitmap as *mut c_void,
                     nativeInitContextWithCustomSurfaceNormal as *mut c_void,

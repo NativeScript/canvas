@@ -483,6 +483,22 @@ pub extern "system" fn nativeReleaseWebGLNormal(_env: JNIEnv, _: JClass, context
 }
 
 #[no_mangle]
+pub extern "system" fn nativeRelease2DContext(context: jlong) {
+    if context == 0 {
+        return;
+    }
+    canvas_c::canvas_native_context_release(context as *mut canvas_c::CanvasRenderingContext2D);
+}
+
+#[no_mangle]
+pub extern "system" fn nativeRelease2DContextNormal(_env: JNIEnv, _: JClass, context: jlong) {
+    if context == 0 {
+        return;
+    }
+    canvas_c::canvas_native_context_release(context as *mut canvas_c::CanvasRenderingContext2D);
+}
+
+#[no_mangle]
 pub extern "system" fn nativeMakeWebGLCurrent(gl_context: jlong) -> jboolean {
     if gl_context == 0 {
         return 0;

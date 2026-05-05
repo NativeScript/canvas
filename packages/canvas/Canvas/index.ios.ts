@@ -469,11 +469,11 @@ export class Canvas extends CanvasBase {
 	}
 
 	private _syncNativeFit(frame: CGRect = this._canvas?.frame) {
-		// if (!this._canvas || !frame) {
-		// 	return;
-		// }
-		// const { fit } = this._getFit(frame);
-		// this._canvas.fit = fit;
+		if (!this._canvas || !frame) {
+			return;
+		}
+		const { fit } = this._getFit(frame);
+		this._canvas.fit = fit;
 	}
 
 	_setNativeViewFrame(nativeView: any, currentFrame: CGRect): void {

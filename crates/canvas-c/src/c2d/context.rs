@@ -311,7 +311,9 @@ pub extern "C" fn canvas_native_raf_release(value: *mut crate::Raf) {
     if value.is_null() {
         return;
     }
-    canvas_native_raf_stop_and_clear(value, 100);
+    let raf = unsafe { &*value };
+    raf.0.stop();
+    raf.0.clear_callback();
     unsafe {
         drop(Box::from_raw(value));
     }

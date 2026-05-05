@@ -520,7 +520,7 @@ v8::CFunction CanvasRenderingContext2DImpl::fast_reset_transform_(
 
 
 CanvasRenderingContext2DImpl::CanvasRenderingContext2DImpl(
-        CanvasRenderingContext2D *context) : context_(context) {
+    CanvasRenderingContext2D *context, bool ownsContext) : context_(context), ownsContext_(ownsContext) {
 
     auto ctx_ptr = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t *>(this));
     auto raf_callback = new OnRafCallback(ctx_ptr, 0);
@@ -3591,12 +3591,14 @@ CanvasRenderingContext2DImpl::__ToDataURL(const v8::FunctionCallbackInfo<v8::Val
 }
 
 CanvasRenderingContext2DImpl::~CanvasRenderingContext2DImpl() {
-    auto raf = this->raf_.get();
-    if (raf != nullptr) {
-        canvas_native_raf_stop_and_clear(raf->GetRaf(), 100);
-    }
+    // RafImpl cleanup performs stop + callback clear + release.
+    // Reset here to ensure RAF is fully torn down before context release.
+    this->raf_.reset();
 
-    canvas_native_context_release(this->GetContext());
+    auto *context = this->GetContext();
+    if (context != nullptr && this->ownsContext_) {
+        canvas_native_context_release(context);
+    }
     this->context_ = nullptr;
 }
 

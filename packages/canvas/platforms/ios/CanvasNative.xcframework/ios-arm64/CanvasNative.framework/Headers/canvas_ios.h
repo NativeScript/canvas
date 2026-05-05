@@ -53,6 +53,8 @@ void canvas_native_ios_update_webgl_surface(int64_t view,
 
 void canvas_native_ios_release_webgl(int64_t context);
 
+void canvas_native_ios_release_2d_context(int64_t context);
+
 void canvas_native_ios_gl_make_current(int64_t context);
 
 bool canvas_native_ios_image_asset_load_from_bytes(int64_t asset, uint8_t *bytes, uintptr_t size);

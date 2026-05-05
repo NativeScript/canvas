@@ -36,9 +36,10 @@ class NSCCanvas : FrameLayout {
 
 	var fit = CanvasFit.FitX
 		set(value) {
+			if (field == value) return
 			field = value
+			scaleSurface()
 			invalidate()
-			//	scaleSurface()
 		}
 
 
@@ -200,15 +201,29 @@ class NSCCanvas : FrameLayout {
 	protected fun finalize() {
 		when (engine) {
 			Engine.None -> {}
-			Engine.CPU -> {}
+			Engine.CPU -> {
+				if (nativeContext != 0L) {
+					nativeContext2DClearRenderFunc(nativeContext)
+					nativeRelease2DContext(nativeContext)
+					nativeContext = 0
+				}
+			}
 			Engine.GL -> {
 				if (nativeContext != 0L) {
-					nativeReleaseWebGL(nativeContext)
+					if (is2D) {
+						nativeRelease2DContext(nativeContext)
+					} else {
+						nativeReleaseWebGL(nativeContext)
+					}
 					nativeContext = 0
 				}
 			}
 
 			Engine.GPU -> {
+				if (is2D && nativeContext != 0L) {
+					nativeRelease2DContext(nativeContext)
+					nativeContext = 0
+				}
 			}
 		}
 		textureView.surfaceTexture?.release()
@@ -700,72 +715,118 @@ class NSCCanvas : FrameLayout {
 		isAttachedToWindow = true
 	}
 
+	private fun activeSurfaceView(): View {
+		if (is2D && willReadFrequently) {
+			return cpuView
+		}
+
+		return when (surfaceType) {
+			SurfaceType.Texture -> textureView
+			SurfaceType.Surface -> surfaceView
+		}
+	}
+
+	private fun resetSurfaceTransforms() {
+		cpuView.matrix.reset()
+		cpuView.pivotX = 0f
+		cpuView.pivotY = 0f
+		cpuView.scaleX = 1f
+		cpuView.scaleY = 1f
+		cpuView.translationX = 0f
+		cpuView.translationY = 0f
+
+		surfaceView.pivotX = 0f
+		surfaceView.pivotY = 0f
+		surfaceView.scaleX = 1f
+		surfaceView.scaleY = 1f
+		surfaceView.translationX = 0f
+		surfaceView.translationY = 0f
+
+		textureView.pivotX = 0f
+		textureView.pivotY = 0f
+		textureView.scaleX = 1f
+		textureView.scaleY = 1f
+		textureView.translationX = 0f
+		textureView.translationY = 0f
+		textureView.setTransform(identityTextureTransform)
+	}
+
+	private fun applySurfaceTransform(
+		view: View,
+		scaleX: Float,
+		scaleY: Float,
+		dx: Float,
+		dy: Float
+	) {
+		view.pivotX = 0f
+		view.pivotY = 0f
+		view.scaleX = scaleX
+		view.scaleY = scaleY
+		view.translationX = dx
+		view.translationY = dy
+	}
+
 	private fun scaleSurface() {
 		val frameWidth: Int = width
 		val frameHeight: Int = height
+		val contentWidth = surfaceWidth
+		val contentHeight = surfaceHeight
 
-		var scaleX: Float = (frameWidth.toFloat() / surfaceWidth.toFloat())
-		var scaleY: Float = (frameHeight.toFloat() / surfaceHeight.toFloat())
+		if (frameWidth <= 0 || frameHeight <= 0 || contentWidth <= 0 || contentHeight <= 0) {
+			resetSurfaceTransforms()
+			return
+		}
 
-		var newWidth = 0
-		var newHeight = 0
+		var scaleX = frameWidth.toFloat() / contentWidth.toFloat()
+		var scaleY = frameHeight.toFloat() / contentHeight.toFloat()
 
-		var dx = 0F
-		var dy = 0F
+		var newWidth = contentWidth.toFloat()
+		var newHeight = contentHeight.toFloat()
+
+		var dx = 0f
+		var dy = 0f
 
 		when (fit) {
 			CanvasFit.None -> {
-				newWidth = surfaceWidth
-				newHeight = surfaceHeight
 				scaleX = 1.0f
 				scaleY = 1.0f
+				newWidth = contentWidth.toFloat()
+				newHeight = contentHeight.toFloat()
 			}
 
 			CanvasFit.Fill -> {
-				newWidth = frameWidth
-				newHeight = frameHeight
+				newWidth = frameWidth.toFloat()
+				newHeight = frameHeight.toFloat()
 			}
 
 			CanvasFit.FitX -> {
-				newWidth = frameWidth
-				newHeight = (surfaceHeight * scaleX).toInt()
+				newWidth = frameWidth.toFloat()
+				newHeight = contentHeight.toFloat() * scaleX
 				scaleY = scaleX
 			}
 
 			CanvasFit.FitY -> {
-				newWidth = (surfaceWidth * scaleY).toInt()
-				newHeight = frameHeight
+				newWidth = contentWidth.toFloat() * scaleY
+				newHeight = frameHeight.toFloat()
 				scaleX = scaleY
 			}
 
 			CanvasFit.ScaleDown -> {
 				val scale = min(min(scaleX, scaleY), 1.0f)
-				newWidth = (surfaceWidth * scale).toInt()
-				newHeight = (surfaceHeight * scale).toInt()
+				newWidth = contentWidth.toFloat() * scale
+				newHeight = contentHeight.toFloat() * scale
 				scaleX = scale
 				scaleY = scale
 			}
 		}
 
-		if (is2D && willReadFrequently) {
-			cpuView.matrix.reset()
-			cpuView.matrix.preScale(scaleX, scaleY)
-			cpuView.matrix.postTranslate(dx, dy)
-		} else {
-			if (surfaceType == SurfaceType.Surface) {
-				dx = (newWidth - surfaceWidth) / 2f
-				dy = (newHeight - surfaceHeight) / 2f
-				surfaceView.scaleX = scaleX
-				surfaceView.scaleY = scaleY
-				surfaceView.translationX = dx
-				surfaceView.translationY = dy
-			} else {
-				val matrix = Matrix()
-				matrix.preScale(scaleX, scaleY)
-				matrix.postTranslate(dx, dy)
-				textureView.setTransform(matrix)
-			}
+		if (fit != CanvasFit.None) {
+			dx = (frameWidth - newWidth) / 2f
+			dy = (frameHeight - newHeight) / 2f
 		}
+
+		resetSurfaceTransforms()
+		applySurfaceTransform(activeSurfaceView(), scaleX, scaleY, dx, dy)
 	}
 
 	internal fun resize() {
@@ -844,6 +905,7 @@ class NSCCanvas : FrameLayout {
 	private val defaultMatrix = Matrix()
 	private val invertMatrix = Matrix()
 	private val invertFlipMatrix = Matrix()
+	private val identityTextureTransform = Matrix()
 
 	init {
 		defaultMatrix.postScale(-1f, 1f)
@@ -1035,11 +1097,13 @@ class NSCCanvas : FrameLayout {
 				rootParams.height = 1
 			}
 
+			view.layoutParams = rootParams
+
 			val w = MeasureSpec.makeMeasureSpec(rootParams.width, MeasureSpec.EXACTLY)
 			val h = MeasureSpec.makeMeasureSpec(rootParams.height, MeasureSpec.EXACTLY)
 
 			view.measure(w, h)
-			view.layout(0, 0, width, height)
+			view.layout(0, 0, rootParams.width, rootParams.height)
 
 		}
 
@@ -1198,6 +1262,12 @@ class NSCCanvas : FrameLayout {
 		@JvmStatic
 		@CriticalNative
 		external fun nativeReleaseWebGL(
+			context: Long
+		)
+
+		@JvmStatic
+		@CriticalNative
+		external fun nativeRelease2DContext(
 			context: Long
 		)
 

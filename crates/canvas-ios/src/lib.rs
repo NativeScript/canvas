@@ -201,6 +201,15 @@ pub extern "C" fn canvas_native_ios_release_webgl(context: i64) {
 }
 
 #[no_mangle]
+pub extern "C" fn canvas_native_ios_release_2d_context(context: i64) {
+    if context == 0 {
+        return;
+    }
+    let context = context as *mut CanvasRenderingContext2D;
+    let _ = unsafe { Box::from_raw(context) };
+}
+
+#[no_mangle]
 pub extern "C" fn canvas_native_ios_gl_make_current(context: i64) {
     if context == 0 {
         return;

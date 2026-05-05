@@ -415,7 +415,7 @@ void CanvasJSIModule::Create2DContext(const v8::FunctionCallbackInfo<v8::Value> 
 	auto context_2d = static_cast<CanvasRenderingContext2D *>((void *) ptr);
 	
 	auto ret = CanvasRenderingContext2DImpl::NewInstance(isolate, new CanvasRenderingContext2DImpl(
-																																																 context_2d));
+																				 context_2d, true));
 	
 	args.GetReturnValue().Set(ret);
 }
@@ -772,7 +772,7 @@ void CanvasJSIModule::Create2DContextWithPointer(const v8::FunctionCallbackInfo<
 	auto context_2d = canvas_native_context_create_with_pointer(ptr);
 	
 	auto ret = CanvasRenderingContext2DImpl::NewInstance(isolate, new CanvasRenderingContext2DImpl(
-																																																 context_2d));
+																				 context_2d, false));
 	args.GetReturnValue().Set(ret);
 }
 

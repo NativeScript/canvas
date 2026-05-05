@@ -73,10 +73,14 @@ public class NSCCanvas: UIView {
 	
 	public var weblikeScale = false {
 		didSet {
-			if(!weblikeScale){
-				glkView.layer.transform = CATransform3DIdentity
-				mtlView.layer.transform = CATransform3DIdentity
-			}
+			CATransaction.begin()
+			CATransaction.setDisableActions(true)
+			glkView.layer.transform = CATransform3DIdentity
+			mtlView.layer.transform = CATransform3DIdentity
+			cpuView.layer.transform = CATransform3DIdentity
+			CATransaction.commit()
+			lastScaledSurfaceFrame = .null
+			lastScaledSurfaceTransform = CATransform3DIdentity
 			scaleSurface()
 		}
 	}
@@ -802,6 +806,14 @@ public class NSCCanvas: UIView {
 	
 	private func scaleSurface(){
 		guard let transform = makeSurfaceTransform() else {
+			CATransaction.begin()
+			CATransaction.setDisableActions(true)
+			glkView.layer.transform = CATransform3DIdentity
+			mtlView.layer.transform = CATransform3DIdentity
+			cpuView.layer.transform = CATransform3DIdentity
+			CATransaction.commit()
+			lastScaledSurfaceFrame = .null
+			lastScaledSurfaceTransform = CATransform3DIdentity
 			return
 		}
 		
@@ -882,11 +894,13 @@ public class NSCCanvas: UIView {
 	}
 	
 	deinit {
-		if(engine == .GL){
-			if(nativeContext != 0){
+		if(nativeContext != 0){
+			if(is2D){
+				CanvasHelpers.release2DContext(nativeContext)
+			}else if(engine == .GL){
 				CanvasHelpers.releaseWebGL(nativeContext)
-				nativeContext = 0
 			}
+			nativeContext = 0
 		}
 		
 		if(glPtr != nil){

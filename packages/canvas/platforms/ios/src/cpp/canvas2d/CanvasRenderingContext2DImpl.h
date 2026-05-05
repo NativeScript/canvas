@@ -130,7 +130,7 @@ public:
     static v8::CFunction fast_draw_atlas_;
 
 
-    CanvasRenderingContext2DImpl(CanvasRenderingContext2D *context);
+    CanvasRenderingContext2DImpl(CanvasRenderingContext2D *context, bool ownsContext = true);
 
     void StartRaf();
 
@@ -1533,6 +1533,8 @@ public:
 
 private:
     CanvasRenderingContext2D *context_;
+
+    bool ownsContext_ = true;
 
     int invalidateState_ = static_cast<int>(InvalidateState::InvalidateStateNone);
 

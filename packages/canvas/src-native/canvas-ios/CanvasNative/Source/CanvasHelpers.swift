@@ -167,6 +167,10 @@ public class CanvasHelpers: NSObject {
     public static func releaseWebGL(_ context: Int64) {
         canvas_native_ios_release_webgl(context)
     }
+
+    public static func release2DContext(_ context: Int64) {
+        canvas_native_ios_release_2d_context(context)
+    }
     
     public static func create2DContext(
                         _ view: NSCCanvas,

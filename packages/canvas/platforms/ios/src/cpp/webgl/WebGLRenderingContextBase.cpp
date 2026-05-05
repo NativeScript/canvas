@@ -137,11 +137,7 @@ WebGLRenderingVersion WebGLRenderingContextBase::GetVersion() const {
 }
 
 WebGLRenderingContextBase::~WebGLRenderingContextBase() {
-    auto _raf = this->GetRaf();
-    if (_raf != nullptr) {
-        canvas_native_raf_stop_and_clear(_raf->GetRaf(), 100);
-    }
-    this->raf_ = nullptr;
+    this->raf_.reset();
     canvas_native_webgl_state_destroy(this->GetState());
     this->state_ = nullptr;
 }

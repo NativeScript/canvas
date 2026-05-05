@@ -15,6 +15,8 @@ class ObjectWrapperImpl {
 public:
     NativeType type_ = NativeType::None;
 
+    virtual ~ObjectWrapperImpl() = default;
+
     static void Finalizer(const v8::WeakCallbackInfo<ObjectWrapperImpl> &data) {
         auto *pThis = data.GetParameter();
         pThis->weakHandle_.Reset();

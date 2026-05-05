@@ -425,6 +425,7 @@ SWIFT_CLASS_NAMED("CanvasHelpers")
 + (void)presentDrawable:(int64_t)context;
 + (BOOL)flushWebGL:(int64_t)context SWIFT_WARN_UNUSED_RESULT;
 + (void)releaseWebGL:(int64_t)context;
++ (void)release2DContext:(int64_t)context;
 + (int64_t)create2DContext:(NSCCanvas * _Nonnull)view :(int32_t)width :(int32_t)height :(BOOL)alpha :(float)density :(int32_t)fontColor :(float)ppi :(int32_t)direction :(int32_t)colorSpace SWIFT_WARN_UNUSED_RESULT;
 + (int64_t)create2DContextMetal:(NSCCanvas * _Nonnull)view :(BOOL)alpha :(float)density :(int32_t)fontColor :(float)ppi :(int32_t)direction :(int32_t)colorSpace SWIFT_WARN_UNUSED_RESULT;
 + (void)updateWebGLSurfaceWithView:(int64_t)view :(int32_t)width :(int32_t)height :(int64_t)context;
@@ -1117,6 +1118,7 @@ SWIFT_CLASS_NAMED("CanvasHelpers")
 + (void)presentDrawable:(int64_t)context;
 + (BOOL)flushWebGL:(int64_t)context SWIFT_WARN_UNUSED_RESULT;
 + (void)releaseWebGL:(int64_t)context;
++ (void)release2DContext:(int64_t)context;
 + (int64_t)create2DContext:(NSCCanvas * _Nonnull)view :(int32_t)width :(int32_t)height :(BOOL)alpha :(float)density :(int32_t)fontColor :(float)ppi :(int32_t)direction :(int32_t)colorSpace SWIFT_WARN_UNUSED_RESULT;
 + (int64_t)create2DContextMetal:(NSCCanvas * _Nonnull)view :(BOOL)alpha :(float)density :(int32_t)fontColor :(float)ppi :(int32_t)direction :(int32_t)colorSpace SWIFT_WARN_UNUSED_RESULT;
 + (void)updateWebGLSurfaceWithView:(int64_t)view :(int32_t)width :(int32_t)height :(int64_t)context;

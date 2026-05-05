@@ -235,12 +235,14 @@ export class Canvas extends CanvasBase {
 				const h = this._pendingHeight;
 				this._pendingHeight = undefined;
 				this._canvas.setSurfaceSize(px, h);
+				updateFit(this);
 			} else {
 				this._pendingWidth = px;
 				microtask(() => {
 					if (this._pendingWidth !== undefined) {
 						this._canvas.setSurfaceWidth(this._pendingWidth);
 						this._pendingWidth = undefined;
+						updateFit(this);
 					}
 				});
 			}
@@ -276,12 +278,14 @@ export class Canvas extends CanvasBase {
 				const w = this._pendingWidth;
 				this._pendingWidth = undefined;
 				this._canvas.setSurfaceSize(w, px);
+				updateFit(this);
 			} else {
 				this._pendingHeight = px;
 				microtask(() => {
 					if (this._pendingHeight !== undefined) {
 						this._canvas.setSurfaceHeight(this._pendingHeight);
 						this._pendingHeight = undefined;
+						updateFit(this);
 					}
 				});
 			}
@@ -350,6 +354,8 @@ export class Canvas extends CanvasBase {
 					},
 				});
 			}
+
+			updateFit(this);
 		});
 		this._canvas.setListener(
 			new org.nativescript.canvas.NSCCanvas.Listener({

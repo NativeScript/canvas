@@ -51,10 +51,7 @@ public:
 	}
 	
 	~GPUCanvasContextImpl() {
-		auto raf = this->raf_.get();
-		if (raf != nullptr) {
-				canvas_native_raf_stop(raf->GetRaf());
-		}
+		this->raf_.reset();
 		canvas_native_webgpu_context_release(this->context_);
 	}
 	

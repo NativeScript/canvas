@@ -1,4 +1,5 @@
 #import "NSCAudioContext.h"
+#include <stdlib.h>
 
 typedef NS_ENUM(NSInteger, ParamEventType) {
     ParamEventTypeSet = 0,
@@ -22,6 +23,12 @@ typedef NS_ENUM(NSInteger, ParamEventType) {
     return self;
 }
 @end
+
+typedef struct {
+    ParamEventType type;
+    double time;
+    double value;
+} NSCParamEventSnapshot;
 
 @implementation NSCAudioParam {
     __strong NSCAudioContext *_context;
@@ -182,7 +189,18 @@ static inline void NSCAudioParam_insertSorted(NSMutableArray<ParamEvent *> *even
         return NO;
     }
 
-    struct { ParamEventType type; double time; double value; } evts[evtCount];
+    const NSUInteger kStackSnapshotCapacity = 64;
+    NSCParamEventSnapshot stackEvents[kStackSnapshotCapacity];
+    NSCParamEventSnapshot *evts = stackEvents;
+    if (evtCount > kStackSnapshotCapacity) {
+        evts = (NSCParamEventSnapshot *)malloc(sizeof(NSCParamEventSnapshot) * evtCount);
+        if (!evts) {
+            double cur = _currentValueInternal;
+            [_lock unlock];
+            for (NSInteger i = 0; i < frameCount; ++i) outValues[i] = cur;
+            return NO;
+        }
+    }
     for (NSUInteger i = 0; i < evtCount; ++i) {
         ParamEvent *e = _events[i];
         evts[i].type = e.type;
@@ -214,6 +232,7 @@ static inline void NSCAudioParam_insertSorted(NSMutableArray<ParamEvent *> *even
             }
         }
         for (NSInteger i = 0; i < frameCount; ++i) outValues[i] = v;
+        if (evts != stackEvents) free(evts);
         return YES;
     }
 
@@ -244,77 +263,20 @@ static inline void NSCAudioParam_insertSorted(NSMutableArray<ParamEvent *> *even
         }
         outValues[i] = value;
     }
+    if (evts != stackEvents) free(evts);
     return YES;
 }
 
 - (NSArray<NSNumber *> *)getValuesForRange:(double)startTime :(double)sampleRate :(NSInteger)frameCount {
-    [_lock lock];
-    NSArray<ParamEvent *> *evts = [_events copy];
-    double def = _defaultValue;
-    [_lock unlock];
-    
+    if (frameCount <= 0) return @[];
+
+    NSMutableData *scratch = [NSMutableData dataWithLength:sizeof(double) * (NSUInteger)frameCount];
+    double *values = (double *)scratch.mutableBytes;
+    [self fillValuesForRange:startTime sampleRate:sampleRate frameCount:frameCount into:values];
+
     NSMutableArray<NSNumber *> *out = [NSMutableArray arrayWithCapacity:frameCount];
-    if ([_automationRate isEqualToString:@"k-rate"]) {
-        double v = def;
-        if (evts.count == 0) {
-            v = def;
-        } else {
-            NSUInteger idx = [evts indexOfObjectPassingTest:^BOOL(ParamEvent *obj, NSUInteger idx, BOOL *stop) {
-                return obj.time > startTime;
-            }];
-            if (idx == NSNotFound) {
-                v = evts.lastObject.value;
-            } else if (idx == 0) {
-                v = def;
-            } else {
-                ParamEvent *prev = evts[idx - 1];
-                ParamEvent *next = evts[idx];
-                if (next.type == ParamEventTypeLinearRamp) {
-                    double t0 = prev.time;
-                    double t1 = next.time;
-                    if (t1 <= t0) v = next.value;
-                    else {
-                        double ratio = fmax(0.0, fmin(1.0, (startTime - t0) / (t1 - t0)));
-                        v = prev.value + (next.value - prev.value) * ratio;
-                    }
-                } else {
-                    v = prev.value;
-                }
-            }
-        }
-        for (NSInteger i = 0; i < frameCount; ++i) [out addObject:@(v)];
-        return out;
-    }
-    
-    NSInteger nextEventIndex = 0;
-    NSInteger previousEventIndex = -1;
     for (NSInteger i = 0; i < frameCount; ++i) {
-        double t = startTime + (double)i / sampleRate;
-        while (nextEventIndex < evts.count && evts[nextEventIndex].time <= t) {
-            previousEventIndex = nextEventIndex;
-            nextEventIndex += 1;
-        }
-        double value;
-        if (previousEventIndex < 0) {
-            value = def;
-        } else if (nextEventIndex >= evts.count) {
-            value = evts[previousEventIndex].value;
-        } else {
-            ParamEvent *prev = evts[previousEventIndex];
-            ParamEvent *next = evts[nextEventIndex];
-            if (next.type == ParamEventTypeLinearRamp) {
-                double t0 = prev.time;
-                double t1 = next.time;
-                if (t1 <= t0) value = next.value;
-                else {
-                    double ratio = fmax(0.0, fmin(1.0, (t - t0) / (t1 - t0)));
-                    value = prev.value + (next.value - prev.value) * ratio;
-                }
-            } else {
-                value = prev.value;
-            }
-        }
-        [out addObject:@(value)];
+        [out addObject:@(values[i])];
     }
     return out;
 }

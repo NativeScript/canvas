@@ -1618,43 +1618,111 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
         }
     }
 
-    std::vector<Voice> localVoices;
-    std::unordered_map<std::string, BufferData> localBuffers;
+    static constexpr int kRouteCacheChannels = 8;
+
+    struct ActiveVoiceView {
+        Voice *voice;
+        const BufferData *bufferData;
+        const std::unordered_map<int, std::string> *gainRoute;
+        const std::unordered_map<int, std::string> *filterRoute;
+        const std::unordered_map<int, std::string> *pannerRoute;
+        const std::unordered_map<int, std::string> *playbackRateRoute;
+        std::array<const std::string *, kRouteCacheChannels> gainIdByOutput{};
+        std::array<const std::string *, kRouteCacheChannels> filterIdByOutput{};
+        std::array<const std::string *, kRouteCacheChannels> pannerIdByOutput{};
+        std::array<const NativeEngine::Panner *, kRouteCacheChannels> pannerNodeByOutput{};
+        const std::string *playbackRatePrimaryId = nullptr;
+    };
+
+    std::vector<ActiveVoiceView> localVoices;
+    localVoices.reserve(audioVoices_.size());
     for (auto &kv: audioVoices_) {
-        if (kv.second.playing) {
-            localVoices.push_back(kv.second);
-            if (kv.second.voiceType == Voice::BufferSource) {
-                auto it = audioBuffers_.find(kv.second.bufferId);
-                if (it != audioBuffers_.end()) localBuffers[kv.second.bufferId] = it->second;
+        Voice &voice = kv.second;
+        if (!voice.playing) continue;
+
+        const BufferData *bufferData = nullptr;
+        if (voice.voiceType == Voice::BufferSource) {
+            auto it = audioBuffers_.find(voice.bufferId);
+            if (it != audioBuffers_.end()) bufferData = &it->second;
+        }
+
+        const std::unordered_map<int, std::string> *gainRoute = nullptr;
+        const std::unordered_map<int, std::string> *filterRoute = nullptr;
+        const std::unordered_map<int, std::string> *pannerRoute = nullptr;
+        const std::unordered_map<int, std::string> *playbackRateRoute = nullptr;
+
+        auto gainRouteIt = voiceGainByOutput_.find(voice.id);
+        if (gainRouteIt != voiceGainByOutput_.end()) gainRoute = &gainRouteIt->second;
+
+        auto filterRouteIt = voiceFilterByOutput_.find(voice.id);
+        if (filterRouteIt != voiceFilterByOutput_.end()) filterRoute = &filterRouteIt->second;
+
+        auto pannerRouteIt = voicePannerByOutput_.find(voice.id);
+        if (pannerRouteIt != voicePannerByOutput_.end()) pannerRoute = &pannerRouteIt->second;
+
+        auto playbackRateRouteIt = voicePlaybackRateByOutput_.find(voice.id);
+        if (playbackRateRouteIt != voicePlaybackRateByOutput_.end()) {
+            playbackRateRoute = &playbackRateRouteIt->second;
+        }
+
+        ActiveVoiceView view{
+                &voice,
+                bufferData,
+                gainRoute,
+                filterRoute,
+                pannerRoute,
+                playbackRateRoute,
+        };
+
+        for (int out = 0; out < kRouteCacheChannels; ++out) {
+            const std::string *gainId = &voice.gainId;
+            if (gainRoute) {
+                auto it = gainRoute->find(out);
+                if (it != gainRoute->end()) gainId = &it->second;
+            }
+            view.gainIdByOutput[out] = gainId;
+
+            const std::string *filterId = &voice.filterId;
+            if (filterRoute) {
+                auto it = filterRoute->find(out);
+                if (it != filterRoute->end()) filterId = &it->second;
+            }
+            view.filterIdByOutput[out] = filterId;
+
+            const std::string *pannerId = &voice.panId;
+            if (pannerRoute) {
+                auto it = pannerRoute->find(out);
+                if (it != pannerRoute->end()) pannerId = &it->second;
+            }
+            view.pannerIdByOutput[out] = pannerId;
+
+            const NativeEngine::Panner *pannerNode = nullptr;
+            if (pannerId && !pannerId->empty()) {
+                auto pit = panners_.find(*pannerId);
+                if (pit != panners_.end()) pannerNode = &pit->second;
+            }
+            view.pannerNodeByOutput[out] = pannerNode;
+        }
+
+        const std::string *playbackRateId = &voice.playbackRateId;
+        if (playbackRateRoute && !playbackRateRoute->empty()) {
+            auto mapIt = playbackRateRoute->find(0);
+            if (mapIt == playbackRateRoute->end()) mapIt = playbackRateRoute->begin();
+            if (mapIt != playbackRateRoute->end() && !mapIt->second.empty()) {
+                playbackRateId = &mapIt->second;
             }
         }
+        view.playbackRatePrimaryId = playbackRateId;
+
+        localVoices.push_back(std::move(view));
     }
 
     std::fill(out, out + (numFrames * channels), 0.0f);
 
-    std::unordered_map<std::string, std::vector<NativeEngine::ParamEvent>> scheduledSnapshot;
-    std::unordered_map<std::string, std::unordered_map<int, std::vector<NativeEngine::ParamEvent>>> scheduledPannerSnapshot;
-    std::unordered_map<std::string, std::unordered_map<int, std::vector<NativeEngine::ParamEvent>>> scheduledListenerSnapshot;
-    {
-        std::lock_guard<std::mutex> lk(scheduledEventsMutex_);
-        for (const auto &kv: scheduledGainEvents_) scheduledSnapshot.emplace(kv.first, kv.second);
-        for (const auto &kv: scheduledPannerEvents_)
-            scheduledPannerSnapshot.emplace(kv.first, kv.second);
-        for (const auto &kv: scheduledListenerEvents_)
-            scheduledListenerSnapshot.emplace(kv.first, kv.second);
-    }
-
-    int64_t audioStartNs = g_audioTimeNanos.load(std::memory_order_relaxed);
-    double sampleDurationNs =
-            streamSampleRate_ > 0 ? (1000000000.0 / static_cast<double>(streamSampleRate_)) : (
-                    1000000000.0 / 48000.0);
-
-
-    std::unordered_map<std::string, std::vector<double>> scheduledEnvelopes;
-    std::unordered_map<std::string, std::unordered_map<int, std::vector<double>>> scheduledPannerEnvelopes;
-    std::unordered_map<std::string, std::unordered_map<int, std::vector<double>>> scheduledListenerEnvelopes;
-    if ((!scheduledSnapshot.empty() || !scheduledPannerSnapshot.empty()) && !localVoices.empty()) {
-        std::unordered_set<std::string> usedGains;
+    std::unordered_set<std::string> usedGains;
+    std::unordered_set<std::string> usedPanners;
+    std::unordered_set<std::string> usedContexts;
+    if (!localVoices.empty()) {
         auto addCompressorParamGains = [&](const std::string &gainId) {
             if (gainId.empty()) return;
             auto cit = compressors_.find(gainId);
@@ -1667,14 +1735,15 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
             if (!comp.releaseId.empty()) usedGains.insert(comp.releaseId);
             if (!comp.reductionId.empty()) usedGains.insert(comp.reductionId);
         };
-        for (const auto &v: localVoices) {
+
+        for (const auto &voiceView: localVoices) {
+            const Voice &v = *voiceView.voice;
             if (!v.gainId.empty()) {
                 usedGains.insert(v.gainId);
                 addCompressorParamGains(v.gainId);
             }
-            auto vgIt = voiceGainByOutput_.find(v.id);
-            if (vgIt != voiceGainByOutput_.end()) {
-                for (const auto &kv2: vgIt->second) {
+            if (voiceView.gainRoute) {
+                for (const auto &kv2: *voiceView.gainRoute) {
                     if (!kv2.second.empty()) {
                         usedGains.insert(kv2.second);
                         addCompressorParamGains(kv2.second);
@@ -1682,13 +1751,63 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                 }
             }
             if (!v.playbackRateId.empty()) usedGains.insert(v.playbackRateId);
-            auto vprIt = voicePlaybackRateByOutput_.find(v.id);
-            if (vprIt != voicePlaybackRateByOutput_.end()) {
-                for (const auto &kv2: vprIt->second) {
+            if (voiceView.playbackRateRoute) {
+                for (const auto &kv2: *voiceView.playbackRateRoute) {
                     if (!kv2.second.empty()) usedGains.insert(kv2.second);
                 }
             }
+
+            if (!v.panId.empty()) usedPanners.insert(v.panId);
+            if (voiceView.pannerRoute) {
+                for (const auto &kv2: *voiceView.pannerRoute) {
+                    if (!kv2.second.empty()) usedPanners.insert(kv2.second);
+                }
+            }
         }
+
+        for (const auto &pid: usedPanners) {
+            auto pit = panners_.find(pid);
+            if (pit != panners_.end() && !pit->second.contextId.empty()) {
+                usedContexts.insert(pit->second.contextId);
+            }
+        }
+    }
+
+    std::unordered_map<std::string, std::vector<NativeEngine::ParamEvent>> scheduledSnapshot;
+    std::unordered_map<std::string, std::unordered_map<int, std::vector<NativeEngine::ParamEvent>>> scheduledPannerSnapshot;
+    std::unordered_map<std::string, std::unordered_map<int, std::vector<NativeEngine::ParamEvent>>> scheduledListenerSnapshot;
+    {
+        std::lock_guard<std::mutex> lk(scheduledEventsMutex_);
+        for (const auto &gainId: usedGains) {
+            auto it = scheduledGainEvents_.find(gainId);
+            if (it != scheduledGainEvents_.end()) {
+                scheduledSnapshot.emplace(gainId, it->second);
+            }
+        }
+        for (const auto &pannerId: usedPanners) {
+            auto it = scheduledPannerEvents_.find(pannerId);
+            if (it != scheduledPannerEvents_.end()) {
+                scheduledPannerSnapshot.emplace(pannerId, it->second);
+            }
+        }
+        for (const auto &contextId: usedContexts) {
+            auto it = scheduledListenerEvents_.find(contextId);
+            if (it != scheduledListenerEvents_.end()) {
+                scheduledListenerSnapshot.emplace(contextId, it->second);
+            }
+        }
+    }
+
+    int64_t audioStartNs = g_audioTimeNanos.load(std::memory_order_relaxed);
+    double sampleDurationNs =
+            streamSampleRate_ > 0 ? (1000000000.0 / static_cast<double>(streamSampleRate_)) : (
+                    1000000000.0 / 48000.0);
+
+
+    std::unordered_map<std::string, std::vector<double>> scheduledEnvelopes;
+    std::unordered_map<std::string, std::unordered_map<int, std::vector<double>>> scheduledPannerEnvelopes;
+    std::unordered_map<std::string, std::unordered_map<int, std::vector<double>>> scheduledListenerEnvelopes;
+    if ((!scheduledSnapshot.empty() || !scheduledPannerSnapshot.empty()) && !localVoices.empty()) {
 
         for (const auto &kv: scheduledSnapshot) {
             const std::string &gainId = kv.first;
@@ -1743,17 +1862,6 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
             }
 
             scheduledEnvelopes.emplace(gainId, std::move(env));
-        }
-
-        std::unordered_set<std::string> usedPanners;
-        for (const auto &v: localVoices) {
-            if (!v.panId.empty()) usedPanners.insert(v.panId);
-            auto vpIt = voicePannerByOutput_.find(v.id);
-            if (vpIt != voicePannerByOutput_.end()) {
-                for (const auto &kv2: vpIt->second) {
-                    if (!kv2.second.empty()) usedPanners.insert(kv2.second);
-                }
-            }
         }
 
         for (const auto &kv: scheduledPannerSnapshot) {
@@ -1841,12 +1949,6 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                 paramMap.emplace(paramType, std::move(env));
             }
             scheduledPannerEnvelopes.emplace(pannerId, std::move(paramMap));
-        }
-
-        std::unordered_set<std::string> usedContexts;
-        for (const auto &pid: usedPanners) {
-            auto pit = panners_.find(pid);
-            if (pit != panners_.end()) usedContexts.insert(pit->second.contextId);
         }
 
         for (const auto &ctxId: usedContexts) {
@@ -2046,8 +2148,130 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
         return static_cast<float>(static_cast<double>(inputSample) * gainLinear);
     };
 
+    auto resolveOutputMappedId = [](const std::unordered_map<int, std::string> *route,
+                                    int outputIndex,
+                                    const std::string &fallback) -> const std::string & {
+        if (!route) return fallback;
+        auto it = route->find(outputIndex);
+        return it != route->end() ? it->second : fallback;
+    };
+
+    struct FilterRef {
+        const NativeEngine::BiquadCoeffs *biquad = nullptr;
+        const NativeEngine::IIRData *iir = nullptr;
+    };
+
+    std::unordered_map<std::string, FilterRef> filterRefCache;
+    filterRefCache.reserve(localVoices.size() * 2);
+    auto resolveFilterRef = [&](const std::string &filterId) -> FilterRef {
+        if (filterId.empty()) return {};
+        auto fit = filterRefCache.find(filterId);
+        if (fit != filterRefCache.end()) return fit->second;
+
+        FilterRef ref;
+        auto bcit = biquads_.find(filterId);
+        if (bcit != biquads_.end()) {
+            ref.biquad = &bcit->second;
+        } else {
+            auto iit = iirs_.find(filterId);
+            if (iit != iirs_.end()) ref.iir = &iit->second;
+        }
+        filterRefCache.emplace(filterId, ref);
+        return ref;
+    };
+
     std::unordered_map<std::string, double> pannerCutoffByBiquad;
     pannerCutoffByBiquad.reserve(localVoices.size());
+
+    struct PannerFrameData {
+        bool hasPanner = false;
+        bool hrtfModel = false;
+        HRTFConvolver *hrtfConvolver = nullptr;
+        double leftGain = 1.0;
+        double rightGain = 1.0;
+        double distanceAtt = 1.0;
+        bool steerLeftOrCenter = true;
+        double leftGainStereo = 1.0;
+        double rightGainStereo = 1.0;
+        double distanceAttStereo = 1.0;
+        bool steerLeftOrCenterStereo = true;
+        std::string biquadId;
+        bool cutoffEvaluated = false;
+    };
+
+    std::unordered_map<const NativeEngine::Panner *, PannerFrameData> pannerFrameCache;
+    pannerFrameCache.reserve(std::max(localVoices.size(), usedPanners.size()));
+    auto resolvePannerFrameData = [&](const std::string &pannerId,
+                                      const NativeEngine::Panner *pannerNode,
+                                      int frameIndex,
+                                      bool evaluateCutoff) -> const PannerFrameData * {
+        if (pannerId.empty()) return nullptr;
+
+        const NativeEngine::Panner *panner = pannerNode;
+        if (!panner) {
+            auto pit = panners_.find(pannerId);
+            if (pit == panners_.end()) return nullptr;
+            panner = &pit->second;
+        }
+
+        auto cacheIt = pannerFrameCache.find(panner);
+        if (cacheIt == pannerFrameCache.end()) {
+            PannerFrameData frameData;
+            frameData.hasPanner = true;
+            frameData.hrtfConvolver = panner->hrtf;
+            frameData.biquadId = panner->biquadId;
+
+            NativeEngine::Panner resolvedPanner = resolvePannerForFrame(
+                    *panner, scheduledPannerEnvelopes, pannerId, frameIndex);
+            NativeEngine::Listener resolvedListener = resolveListenerForFrame(
+                    panner->contextId, listener_, listeners_,
+                    scheduledListenerEnvelopes, frameIndex);
+            frameData.hrtfModel = resolvedPanner.panningModel == NativeEngine::PANNING_HRTF;
+
+            computePannerGains(resolvedPanner, resolvedListener, false,
+                               frameData.leftGain, frameData.rightGain,
+                               frameData.distanceAtt, &frameData.steerLeftOrCenter);
+            computePannerGains(resolvedPanner, resolvedListener, true,
+                               frameData.leftGainStereo, frameData.rightGainStereo,
+                               frameData.distanceAttStereo,
+                               &frameData.steerLeftOrCenterStereo);
+
+            cacheIt = pannerFrameCache.emplace(panner, std::move(frameData)).first;
+        }
+
+        if (evaluateCutoff && !cacheIt->second.cutoffEvaluated &&
+            !cacheIt->second.biquadId.empty()) {
+            double lowFreq = 800.0;
+            double highFreq = 22050.0;
+            double g = cacheIt->second.distanceAtt;
+            if (g < 0.0) g = 0.0;
+            if (g > 1.0) g = 1.0;
+            double cutoff = lowFreq + (highFreq - lowFreq) * std::pow(g, 0.5);
+
+            auto cacheCutoffIt = pannerCutoffByBiquad.find(cacheIt->second.biquadId);
+            const bool shouldUpdate =
+                    cacheCutoffIt == pannerCutoffByBiquad.end() ||
+                    std::fabs(cacheCutoffIt->second - cutoff) >= 1.0;
+            if (shouldUpdate) {
+                auto bit = biquads_.find(cacheIt->second.biquadId);
+                if (bit != biquads_.end()) {
+                    bit->second = computeBiquadCoeffs(
+                            "lowpass",
+                            cutoff,
+                            0.707,
+                            0.0,
+                            streamSampleRate_ > 0 ? streamSampleRate_ : 48000);
+                    pannerCutoffByBiquad[cacheIt->second.biquadId] = cutoff;
+                    audioThreadLog(ANDROID_LOG_INFO,
+                                   "PANNER_CUTOFF panner=%s gain=%f cutoff=%f",
+                                   pannerId.c_str(), g, cutoff);
+                }
+            }
+            cacheIt->second.cutoffEvaluated = true;
+        }
+
+        return &cacheIt->second;
+    };
 
     std::unordered_map<std::string, std::array<float, 2>> stereoInputCache;
     std::unordered_map<std::string, std::array<float, 2>> hrtfOutputCache;
@@ -2056,11 +2280,18 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
 
     for (int frame = 0; frame < numFrames; ++frame) {
         pannerCutoffByBiquad.clear();
+        pannerFrameCache.clear();
         stereoInputCache.clear();
         hrtfOutputCache.clear();
         for (int ch = 0; ch < channels; ++ch) {
             float mixed = 0.0f;
-            for (auto &v: localVoices) {
+            for (const auto &voiceView: localVoices) {
+                Voice &v = *voiceView.voice;
+                const BufferData *voiceBuffer = voiceView.bufferData;
+                const auto *gainRoute = voiceView.gainRoute;
+                const auto *filterRoute = voiceView.filterRoute;
+                const auto *pannerRoute = voiceView.pannerRoute;
+                const std::string *playbackRatePrimaryId = voiceView.playbackRatePrimaryId;
                 if (!v.playing) continue;
                 if (v.voiceType == Voice::Oscillator) {
                     double s = 0.0;
@@ -2104,110 +2335,60 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                         }
                     }
 
-                    std::string effFilterId = v.filterId;
-                    auto vfIt = voiceFilterByOutput_.find(v.id);
-                    if (vfIt != voiceFilterByOutput_.end()) {
-                        auto fIt2 = vfIt->second.find(ch);
-                        if (fIt2 != vfIt->second.end()) effFilterId = fIt2->second;
-                    }
+                        const std::string &effFilterId =
+                            (ch < kRouteCacheChannels && voiceView.filterIdByOutput[ch])
+                            ? *voiceView.filterIdByOutput[ch]
+                            : resolveOutputMappedId(filterRoute, ch, v.filterId);
                     if (!effFilterId.empty()) {
-                        auto bcit = biquads_.find(effFilterId);
-                        if (bcit != biquads_.end()) {
+                        FilterRef filterRef = resolveFilterRef(effFilterId);
+                        if (filterRef.biquad) {
                             int fsIndex = ch;
                             if (v.filterState.size() <= static_cast<size_t>(fsIndex))
                                 v.filterState.assign(channels, NativeEngine::BiquadState());
                             auto in = static_cast<float>(s);
-                            float outS = processBiquadSample(bcit->second, v.filterState[fsIndex],
+                            float outS = processBiquadSample(*filterRef.biquad,
+                                                             v.filterState[fsIndex],
                                                              in);
                             s = outS;
-                        } else {
-                            auto iit = iirs_.find(effFilterId);
-                            if (iit != iirs_.end()) {
-                                int fsIndex = ch;
-                                size_t chCount = static_cast<size_t>(channels);
-                                if (v.iirState.size() <= chCount)
-                                    v.iirState.assign(chCount, std::vector<double>());
-                                if (v.iirState.size() <= static_cast<size_t>(fsIndex))
-                                    v.iirState.assign(chCount, std::vector<double>());
-                                float outS = processIIRSample(iit->second,
-                                                              v.iirState[static_cast<size_t>(fsIndex)],
-                                                              static_cast<float>(s));
-                                s = outS;
-                            }
+                        } else if (filterRef.iir) {
+                            int fsIndex = ch;
+                            size_t chCount = static_cast<size_t>(channels);
+                            if (v.iirState.size() < chCount)
+                                v.iirState.assign(chCount, std::vector<double>());
+                            if (v.iirState.size() <= static_cast<size_t>(fsIndex))
+                                v.iirState.assign(chCount, std::vector<double>());
+                            float outS = processIIRSample(*filterRef.iir,
+                                                          v.iirState[static_cast<size_t>(fsIndex)],
+                                                          static_cast<float>(s));
+                            s = outS;
                         }
                     }
 
                     double leftGain = 1.0, rightGain = 1.0, distanceAtt = 1.0;
 
-                    std::string effPanId = v.panId;
-                    auto vpIt = voicePannerByOutput_.find(v.id);
-                    if (vpIt != voicePannerByOutput_.end()) {
-                        auto pIt2 = vpIt->second.find(ch);
-                        if (pIt2 != vpIt->second.end()) effPanId = pIt2->second;
-                    }
-                    if (!effPanId.empty()) {
-                        auto pit = panners_.find(effPanId);
-                        if (pit != panners_.end()) {
-                            NativeEngine::Panner resolvedPanner = resolvePannerForFrame(
-                                    pit->second, scheduledPannerEnvelopes, effPanId, frame);
-                            NativeEngine::Listener resolvedListener = resolveListenerForFrame(
-                                    pit->second.contextId, listener_, listeners_,
-                                    scheduledListenerEnvelopes, frame);
-                            computePannerGains(resolvedPanner, resolvedListener, false,
-                                               leftGain, rightGain, distanceAtt);
-
-                            double lowFreq = 800.0;
-                            double highFreq = 22050.0;
-                            double g = distanceAtt;
-                            if (g < 0.0) g = 0.0;
-                            if (g > 1.0) g = 1.0;
-                            double cutoff = lowFreq + (highFreq - lowFreq) * std::pow(g, 0.5);
-                            std::string pbid = pit->second.biquadId;
-                            if (!pbid.empty()) {
-                                auto cacheIt = pannerCutoffByBiquad.find(pbid);
-                                const bool shouldUpdate =
-                                        cacheIt == pannerCutoffByBiquad.end() ||
-                                        std::fabs(cacheIt->second - cutoff) >= 1.0;
-                                if (shouldUpdate) {
-                                    auto bit = biquads_.find(pbid);
-                                    if (bit != biquads_.end()) {
-                                        bit->second = computeBiquadCoeffs(
-                                                "lowpass",
-                                                cutoff,
-                                                0.707,
-                                                0.0,
-                                                streamSampleRate_ > 0 ? streamSampleRate_ : 48000);
-                                        pannerCutoffByBiquad[pbid] = cutoff;
-                                        audioThreadLog(ANDROID_LOG_INFO,
-                                                       "PANNER_CUTOFF panner=%s gain=%f cutoff=%f",
-                                                       pit->first.c_str(), g, cutoff);
-                                    }
-                                }
-                            }
-                        }
+                        const std::string &effPanId =
+                            (ch < kRouteCacheChannels && voiceView.pannerIdByOutput[ch])
+                            ? *voiceView.pannerIdByOutput[ch]
+                            : resolveOutputMappedId(pannerRoute, ch, v.panId);
+                        const NativeEngine::Panner *effPanNode =
+                            ch < kRouteCacheChannels ? voiceView.pannerNodeByOutput[ch] : nullptr;
+                    const PannerFrameData *pannerFrame = resolvePannerFrameData(effPanId,
+                                                    effPanNode,
+                                                                                frame,
+                                                                                true);
+                    if (pannerFrame && pannerFrame->hasPanner) {
+                        leftGain = pannerFrame->leftGain;
+                        rightGain = pannerFrame->rightGain;
+                        distanceAtt = pannerFrame->distanceAtt;
                     }
 
+                        const std::string &effGainId =
+                            (ch < kRouteCacheChannels && voiceView.gainIdByOutput[ch])
+                            ? *voiceView.gainIdByOutput[ch]
+                            : resolveOutputMappedId(gainRoute, ch, v.gainId);
+                    double scheduled = resolveGainValueForFrame(effGainId, v.gain, frame);
 
                     if (channels <= 1) {
-                        std::string effGainId;
-                        auto vgIt = voiceGainByOutput_.find(v.id);
-                        if (vgIt != voiceGainByOutput_.end()) {
-                            auto gIt2 = vgIt->second.find(ch);
-                            if (gIt2 != vgIt->second.end()) effGainId = gIt2->second;
-                        }
-                        if (effGainId.empty()) effGainId = v.gainId;
-
-                        double scheduled = v.gain;
-                        if (!effGainId.empty()) {
-                            auto eit = scheduledEnvelopes.find(effGainId);
-                            if (eit != scheduledEnvelopes.end())
-                                scheduled = eit->second[(size_t) frame];
-                            else {
-                                auto git = gains_.find(effGainId);
-                                if (git != gains_.end()) scheduled = git->second;
-                            }
-                        }
-
                         if (!effGainId.empty()) {
                             auto wsIt = waveShapers_.find(effGainId);
                             if (wsIt != waveShapers_.end() && !wsIt->second.curve.empty()) {
@@ -2222,39 +2403,21 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                                                                    voiceOut);
                         mixed += voiceOut;
                     } else {
-                        std::string effGainId2;
-                        auto vgIt2 = voiceGainByOutput_.find(v.id);
-                        if (vgIt2 != voiceGainByOutput_.end()) {
-                            auto gIt3 = vgIt2->second.find(ch);
-                            if (gIt3 != vgIt2->second.end()) effGainId2 = gIt3->second;
-                        }
-                        if (effGainId2.empty()) effGainId2 = v.gainId;
-
-                        double scheduled2 = v.gain;
-                        if (!effGainId2.empty()) {
-                            auto eit = scheduledEnvelopes.find(effGainId2);
-                            if (eit != scheduledEnvelopes.end())
-                                scheduled2 = eit->second[(size_t) frame];
-                            else {
-                                auto git = gains_.find(effGainId2);
-                                if (git != gains_.end()) scheduled2 = git->second;
-                            }
-                        }
-                        double g = static_cast<double>(scheduled2) * distanceAtt;
+                        double g = static_cast<double>(scheduled) * distanceAtt;
                         if (ch == 0) {
                             float voiceOut = static_cast<float>(s * g * leftGain);
-                            voiceOut = applyDynamicsCompressorForGain(effGainId2, ch, frame,
+                            voiceOut = applyDynamicsCompressorForGain(effGainId, ch, frame,
                                                                        voiceOut);
                             mixed += voiceOut;
                         } else if (ch == 1) {
                             float voiceOut = static_cast<float>(s * g * rightGain);
-                            voiceOut = applyDynamicsCompressorForGain(effGainId2, ch, frame,
+                            voiceOut = applyDynamicsCompressorForGain(effGainId, ch, frame,
                                                                        voiceOut);
                             mixed += voiceOut;
                         } else {
                             double avg = 0.5 * (leftGain + rightGain);
                             float voiceOut = static_cast<float>(s * g * avg);
-                            voiceOut = applyDynamicsCompressorForGain(effGainId2, ch, frame,
+                            voiceOut = applyDynamicsCompressorForGain(effGainId, ch, frame,
                                                                        voiceOut);
                             mixed += voiceOut;
                         }
@@ -2275,9 +2438,8 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                     const BufferData *bd_dbg = nullptr;
 
                     if (v.voiceType == Voice::BufferSource) {
-                        auto bit = localBuffers.find(v.bufferId);
-                        if (bit == localBuffers.end()) continue;
-                        const BufferData &bd = bit->second;
+                        if (!voiceBuffer) continue;
+                        const BufferData &bd = *voiceBuffer;
                         bd_dbg = &bd;
                         bufChannels = bd.channels > 0 ? bd.channels : 1;
                         if (bd.isPlanar && bd.planarFrames > 0) {
@@ -2394,42 +2556,39 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                         }
                     }
 
-                    auto resolveVoiceFilterId = [&](int outputChannelIndex) -> std::string {
-                        std::string filterId = v.filterId;
-                        auto vfItLocal = voiceFilterByOutput_.find(v.id);
-                        if (vfItLocal != voiceFilterByOutput_.end()) {
-                            auto filterIt = vfItLocal->second.find(outputChannelIndex);
-                            if (filterIt != vfItLocal->second.end()) filterId = filterIt->second;
-                        }
-                        return filterId;
-                    };
                     auto applyVoiceFilter = [&](float inputSample,
                                                 int outputChannelIndex) -> float {
-                        std::string filterId = resolveVoiceFilterId(outputChannelIndex);
+                        const std::string &filterId =
+                            (outputChannelIndex >= 0 &&
+                             outputChannelIndex < kRouteCacheChannels &&
+                             voiceView.filterIdByOutput[outputChannelIndex])
+                            ? *voiceView.filterIdByOutput[outputChannelIndex]
+                            : resolveOutputMappedId(filterRoute,
+                                        outputChannelIndex,
+                                        v.filterId);
                         if (filterId.empty()) return inputSample;
 
-                        auto bcit = biquads_.find(filterId);
-                        if (bcit != biquads_.end()) {
+                        FilterRef filterRef = resolveFilterRef(filterId);
+                        if (filterRef.biquad) {
                             int fsIndex = outputChannelIndex;
                             if (v.filterState.size() <= static_cast<size_t>(fsIndex)) {
                                 v.filterState.assign(channels, NativeEngine::BiquadState());
                             }
-                            return processBiquadSample(bcit->second,
+                            return processBiquadSample(*filterRef.biquad,
                                                        v.filterState[static_cast<size_t>(fsIndex)],
                                                        inputSample);
                         }
 
-                        auto iit = iirs_.find(filterId);
-                        if (iit != iirs_.end()) {
+                        if (filterRef.iir) {
                             int fsIndex = outputChannelIndex;
                             auto chCount = static_cast<size_t>(channels);
-                            if (v.iirState.size() <= chCount) {
+                            if (v.iirState.size() < chCount) {
                                 v.iirState.assign(chCount, std::vector<double>());
                             }
                             if (v.iirState.size() <= static_cast<size_t>(fsIndex)) {
                                 v.iirState.assign(chCount, std::vector<double>());
                             }
-                            return processIIRSample(iit->second,
+                            return processIIRSample(*filterRef.iir,
                                                     v.iirState[static_cast<size_t>(fsIndex)],
                                                     inputSample);
                         }
@@ -2527,29 +2686,32 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                     double leftGain = 1.0, rightGain = 1.0, distanceAtt = 1.0;
                     bool steerLeftOrCenter = true;
                     bool hasResolvedPanner = false;
-                    std::string effPanId2 = v.panId;
-                    auto vpIt2 = voicePannerByOutput_.find(v.id);
-                    if (vpIt2 != voicePannerByOutput_.end()) {
-                        auto pIt3 = vpIt2->second.find(ch);
-                        if (pIt3 != vpIt2->second.end()) effPanId2 = pIt3->second;
-                    }
-                    if (!effPanId2.empty()) {
-                        auto pit = panners_.find(effPanId2);
-                        if (pit != panners_.end()) {
-                            hasResolvedPanner = true;
-                            NativeEngine::Panner resolvedPanner = resolvePannerForFrame(
-                                    pit->second, scheduledPannerEnvelopes, effPanId2, frame);
-                            hrtfModel = resolvedPanner.panningModel == NativeEngine::PANNING_HRTF;
-                            if (hrtfModel) hrtfConvolver = pit->second.hrtf;
-                            NativeEngine::Listener resolvedListener = resolveListenerForFrame(
-                                    pit->second.contextId, listener_, listeners_,
-                                    scheduledListenerEnvelopes, frame);
-                            bool useStereoPanningLaw =
-                                    stereoInput && (!hrtfModel || hrtfConvolver == nullptr);
-                            computePannerGains(resolvedPanner, resolvedListener,
-                                               useStereoPanningLaw,
-                                               leftGain, rightGain, distanceAtt,
-                                               &steerLeftOrCenter);
+                        const std::string &effPanId2 =
+                            (ch < kRouteCacheChannels && voiceView.pannerIdByOutput[ch])
+                            ? *voiceView.pannerIdByOutput[ch]
+                            : resolveOutputMappedId(pannerRoute, ch, v.panId);
+                        const NativeEngine::Panner *effPanNode2 =
+                            ch < kRouteCacheChannels ? voiceView.pannerNodeByOutput[ch] : nullptr;
+                    const PannerFrameData *pannerFrame = resolvePannerFrameData(effPanId2,
+                                                    effPanNode2,
+                                                                                frame,
+                                                                                false);
+                    if (pannerFrame && pannerFrame->hasPanner) {
+                        hasResolvedPanner = true;
+                        hrtfModel = pannerFrame->hrtfModel;
+                        hrtfConvolver = pannerFrame->hrtfConvolver;
+                        bool useStereoPanningLaw =
+                                stereoInput && (!hrtfModel || hrtfConvolver == nullptr);
+                        if (useStereoPanningLaw) {
+                            leftGain = pannerFrame->leftGainStereo;
+                            rightGain = pannerFrame->rightGainStereo;
+                            distanceAtt = pannerFrame->distanceAttStereo;
+                            steerLeftOrCenter = pannerFrame->steerLeftOrCenterStereo;
+                        } else {
+                            leftGain = pannerFrame->leftGain;
+                            rightGain = pannerFrame->rightGain;
+                            distanceAtt = pannerFrame->distanceAtt;
+                            steerLeftOrCenter = pannerFrame->steerLeftOrCenter;
                         }
                     }
 
@@ -2641,26 +2803,13 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                         }
                     }
 
-                    std::string effGainId3;
-                    auto vgIt3 = voiceGainByOutput_.find(v.id);
-                    if (vgIt3 != voiceGainByOutput_.end()) {
-                        auto gIt4 = vgIt3->second.find(ch);
-                        if (gIt4 != vgIt3->second.end()) effGainId3 = gIt4->second;
-                    }
-                    if (effGainId3.empty()) effGainId3 = v.gainId;
+                        const std::string &effGainId3 =
+                            (ch < kRouteCacheChannels && voiceView.gainIdByOutput[ch])
+                            ? *voiceView.gainIdByOutput[ch]
+                            : resolveOutputMappedId(gainRoute, ch, v.gainId);
+                    double scheduled = resolveGainValueForFrame(effGainId3, v.gain, frame);
 
                     if (channels <= 1) {
-                        double scheduled = v.gain;
-                        if (!effGainId3.empty()) {
-                            auto eit = scheduledEnvelopes.find(effGainId3);
-                            if (eit != scheduledEnvelopes.end())
-                                scheduled = eit->second[(size_t) frame];
-                            else {
-                                auto git = gains_.find(effGainId3);
-                                if (git != gains_.end()) scheduled = git->second;
-                            }
-                        }
-
                         if (!effGainId3.empty()) {
                             auto wsIt3 = waveShapers_.find(effGainId3);
                             if (wsIt3 != waveShapers_.end() && !wsIt3->second.curve.empty()) {
@@ -2675,16 +2824,6 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                                                                    voiceOut);
                         mixed += voiceOut;
                     } else {
-                        double scheduled = v.gain;
-                        if (!effGainId3.empty()) {
-                            auto eit = scheduledEnvelopes.find(effGainId3);
-                            if (eit != scheduledEnvelopes.end())
-                                scheduled = eit->second[(size_t) frame];
-                            else {
-                                auto git = gains_.find(effGainId3);
-                                if (git != gains_.end()) scheduled = git->second;
-                            }
-                        }
                         double g = static_cast<double>(scheduled) * distanceAtt;
                         if (stereoInput && !treatStereoAsMono) {
                             if (ch == 0) {
@@ -2756,22 +2895,11 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                     if (ch == channels - 1) {
                         if (v.voiceType == Voice::BufferSource) {
                             double prScale = 1.0;
-                            std::string effPRId;
-                            auto vprIt2 = voicePlaybackRateByOutput_.find(v.id);
-                            if (vprIt2 != voicePlaybackRateByOutput_.end()) {
-                                auto mapIt4 = vprIt2->second.find(0);
-                                if (mapIt4 == vprIt2->second.end()) mapIt4 = vprIt2->second.begin();
-                                if (mapIt4 != vprIt2->second.end()) effPRId = mapIt4->second;
-                            }
-                            if (effPRId.empty()) effPRId = v.playbackRateId;
-                            if (!effPRId.empty()) {
-                                auto eit = scheduledEnvelopes.find(effPRId);
-                                if (eit != scheduledEnvelopes.end())
-                                    prScale = eit->second[(size_t) frame];
-                                else {
-                                    auto git = gains_.find(effPRId);
-                                    if (git != gains_.end()) prScale = git->second;
-                                }
+                            const std::string &resolvedPRId =
+                                    playbackRatePrimaryId ? *playbackRatePrimaryId
+                                                          : v.playbackRateId;
+                            if (!resolvedPRId.empty()) {
+                                prScale = resolveGainValueForFrame(resolvedPRId, prScale, frame);
                             }
                             if (prScale < 0.0) prScale = 0.0;
                             double incr = v.increment * prScale;
@@ -2827,55 +2955,46 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
             if (ad.capacity > 0) ad.ring[(size_t) (idx % ad.capacity)] = mono;
         }
     }
+    std::vector<std::string> stoppedVoices;
+    stoppedVoices.reserve(localVoices.size());
+    for (const auto &voiceView: localVoices) {
+        const Voice &voice = *voiceView.voice;
+        if (voice.playing) continue;
 
+        if (traceEnabled) {
+            auto vg = voiceGainByOutput_.find(voice.id);
+            auto vp = voicePannerByOutput_.find(voice.id);
+            auto vf = voiceFilterByOutput_.find(voice.id);
+            size_t gainOutputs = vg != voiceGainByOutput_.end() ? vg->second.size() : 0;
+            size_t panOutputs = vp != voicePannerByOutput_.end() ? vp->second.size() : 0;
+            size_t filterOutputs = vf != voiceFilterByOutput_.end()
+                                   ? vf->second.size()
+                                   : 0;
 
-    for (const auto &lv: localVoices) {
-        auto it = audioVoices_.find(lv.id);
-        if (it == audioVoices_.end()) continue;
-        if (!lv.playing) {
-            if (traceEnabled) {
-                auto vg = voiceGainByOutput_.find(lv.id);
-                auto vp = voicePannerByOutput_.find(lv.id);
-                auto vf = voiceFilterByOutput_.find(lv.id);
-                size_t gainOutputs = vg != voiceGainByOutput_.end() ? vg->second.size() : 0;
-                size_t panOutputs = vp != voicePannerByOutput_.end() ? vp->second.size() : 0;
-                size_t filterOutputs = vf != voiceFilterByOutput_.end()
-                                       ? vf->second.size()
-                                       : 0;
-
-                if (lv.voiceType == Voice::ExternalPCM) {
-                    const unsigned long long seq =
-                            sGraphTraceSeq.fetch_add(1, std::memory_order_relaxed) + 1;
-                    logRingState(seq, "VOICE_AUTO_STOP", lv.id, lv.externalRing,
-                                 lv.bufferChannels, lv.bufferSampleRate, lv.playing);
-                    audioThreadLog(ANDROID_LOG_INFO,
-                                   "GRAPH_TRACE seq=%llu VOICE_AUTO_STOP voice=%s type=%s gainId=%s panId=%s filterId=%s gainOutputs=%zu panOutputs=%zu filterOutputs=%zu",
-                                   seq, lv.id.c_str(), voiceTypeName(lv.voiceType),
-                                   lv.gainId.c_str(), lv.panId.c_str(), lv.filterId.c_str(),
-                                   gainOutputs, panOutputs, filterOutputs);
-                } else {
-                    audioThreadLog(ANDROID_LOG_INFO,
-                                   "GRAPH_TRACE VOICE_AUTO_STOP voice=%s type=%s gainId=%s panId=%s filterId=%s gainOutputs=%zu panOutputs=%zu filterOutputs=%zu",
-                                   lv.id.c_str(), voiceTypeName(lv.voiceType),
-                                   lv.gainId.c_str(), lv.panId.c_str(), lv.filterId.c_str(),
-                                   gainOutputs, panOutputs, filterOutputs);
-                }
+            if (voice.voiceType == Voice::ExternalPCM) {
+                const unsigned long long seq =
+                        sGraphTraceSeq.fetch_add(1, std::memory_order_relaxed) + 1;
+                logRingState(seq, "VOICE_AUTO_STOP", voice.id, voice.externalRing,
+                             voice.bufferChannels, voice.bufferSampleRate, voice.playing);
+                audioThreadLog(ANDROID_LOG_INFO,
+                               "GRAPH_TRACE seq=%llu VOICE_AUTO_STOP voice=%s type=%s gainId=%s panId=%s filterId=%s gainOutputs=%zu panOutputs=%zu filterOutputs=%zu",
+                               seq, voice.id.c_str(), voiceTypeName(voice.voiceType),
+                               voice.gainId.c_str(), voice.panId.c_str(), voice.filterId.c_str(),
+                               gainOutputs, panOutputs, filterOutputs);
+            } else {
+                audioThreadLog(ANDROID_LOG_INFO,
+                               "GRAPH_TRACE VOICE_AUTO_STOP voice=%s type=%s gainId=%s panId=%s filterId=%s gainOutputs=%zu panOutputs=%zu filterOutputs=%zu",
+                               voice.id.c_str(), voiceTypeName(voice.voiceType),
+                               voice.gainId.c_str(), voice.panId.c_str(), voice.filterId.c_str(),
+                               gainOutputs, panOutputs, filterOutputs);
             }
-            audioVoices_.erase(it);
-        } else {
-            it->second.phase = lv.phase;
-            it->second.position = lv.position;
-            it->second.playing = lv.playing;
-            it->second.filterState = lv.filterState;
-            it->second.iirState = lv.iirState;
-            it->second.filterId = lv.filterId;
-            it->second.panId = lv.panId;
-            it->second.pan = lv.pan;
-            it->second.externalPrev = lv.externalPrev;
-            it->second.externalCurr = lv.externalCurr;
-            it->second.externalSubPos = lv.externalSubPos;
-            it->second.externalPrimed = lv.externalPrimed;
         }
+
+        stoppedVoices.push_back(voice.id);
+    }
+
+    for (const auto &voiceId: stoppedVoices) {
+        audioVoices_.erase(voiceId);
     }
 
     return oboe::DataCallbackResult::Continue;

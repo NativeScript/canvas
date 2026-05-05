@@ -748,6 +748,8 @@ static void NSCTapProcess(MTAudioProcessingTapRef tap, CMItemCount numberFrames,
         dispatch_source_set_timer(sched, dispatch_time(DISPATCH_TIME_NOW, 0), interval, (uint64_t)(NSEC_PER_MSEC * 5));
         __weak typeof(pnode) weakP = pnode;
         __weak typeof(self_) weakSelfTap = self_;
+        __block uint8_t *playerScratch = NULL;
+        __block uint32_t playerScratchBytes = 0;
         dispatch_source_set_event_handler(sched, ^{
           __strong typeof(weakP) strongP = weakP;
           __strong typeof(weakSelfTap) strongTap = weakSelfTap;
@@ -776,26 +778,36 @@ static void NSCTapProcess(MTAudioProcessingTapRef tap, CMItemCount numberFrames,
           }
 
           const uint32_t framesPerBuffer = 1024;
+          uint32_t scratchNeeded = framesPerBuffer * bytesPerFrameLocal;
+          if (scratchNeeded > playerScratchBytes) {
+            void *resized = realloc(playerScratch, (size_t)scratchNeeded);
+            if (!resized) return;
+            playerScratch = (uint8_t *)resized;
+            playerScratchBytes = scratchNeeded;
+          }
+
+          AVAudioFormat *pnodeFormat = nil;
+          @try {
+            pnodeFormat = [strongP outputFormatForBus:0];
+          } @catch (NSException *e) {
+            pnodeFormat = nil;
+          }
+          AVAudioFormat *useFormat = pnodeFormat ?: nodeFormat;
+          uint32_t srcChannels = channelCount;
+          uint32_t dstChannels = (uint32_t)(useFormat.channelCount);
+
           while (framesAvailable > 0) {
             uint32_t framesThis = framesAvailable >= framesPerBuffer ? framesPerBuffer : framesAvailable;
             uint32_t bytesNeeded = framesThis * bytesPerFrameLocal;
-            uint8_t *tmpBuf = (uint8_t *)malloc((size_t)bytesNeeded);
-            if (!tmpBuf) break;
-            uint32_t got = NSCRingRead(&coreLocal->ring, tmpBuf, bytesNeeded);
+            uint32_t got = NSCRingRead(&coreLocal->ring, playerScratch, bytesNeeded);
             uint32_t gotFrames = got / bytesPerFrameLocal;
-            if (gotFrames == 0) { free(tmpBuf); break; }
+            if (gotFrames == 0) { break; }
             AVAudioFrameCount fc = (AVAudioFrameCount)gotFrames;
-
-            AVAudioFormat *pnodeFormat = nil;
-            @try { pnodeFormat = [strongP outputFormatForBus:0]; } @catch (NSException *e) { pnodeFormat = nil; }
-            AVAudioFormat *useFormat = pnodeFormat ?: nodeFormat;
 
             AVAudioPCMBuffer *pcm = [[AVAudioPCMBuffer alloc] initWithPCMFormat:useFormat frameCapacity:fc];
             if (pcm) {
               pcm.frameLength = fc;
-              float *srcFloat = (float *)tmpBuf;
-              uint32_t srcChannels = channelCount;
-              uint32_t dstChannels = (uint32_t)(useFormat.channelCount);
+              float *srcFloat = (float *)playerScratch;
 
               if (dstChannels == srcChannels) {
                 for (UInt32 ch = 0; ch < dstChannels; ch++) {
@@ -827,10 +839,16 @@ static void NSCTapProcess(MTAudioProcessingTapRef tap, CMItemCount numberFrames,
 
               [strongP scheduleBuffer:pcm completionHandler:NULL];
             }
-            free(tmpBuf);
             avail = NSCRingAvailableRead(&coreLocal->ring);
             framesAvailable = avail / bytesPerFrameLocal;
             if (framesThis < framesPerBuffer) break;
+          }
+        });
+        dispatch_source_set_cancel_handler(sched, ^{
+          if (playerScratch) {
+            free(playerScratch);
+            playerScratch = NULL;
+            playerScratchBytes = 0;
           }
         });
         dispatch_resume(sched);

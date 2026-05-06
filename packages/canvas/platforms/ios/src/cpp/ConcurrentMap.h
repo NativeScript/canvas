@@ -10,18 +10,18 @@
 template<class TKey, class TValue>
 class ConcurrentMap {
 public:
-    void Insert(TKey &key, TValue value) {
+    void Insert(const TKey &key, TValue value) {
         std::unique_lock<std::shared_mutex> lock(mutex_);
         container_[key] = std::move(value);
     }
 
-    TValue Get(TKey &key) {
+    TValue Get(const TKey &key) {
         bool found;
         return Get(key, found);
     }
 
 
-    TValue Get(TKey &key, bool &found) {
+    TValue Get(const TKey &key, bool &found) {
         std::shared_lock<std::shared_mutex> lock(mutex_);
         auto it = container_.find(key);
         found = it != container_.end();
@@ -30,27 +30,39 @@ public:
     }
 
     template<class Factory>
-    TValue GetOrCreate(TKey &key, Factory factory) {
+    TValue GetOrCreate(const TKey &key, Factory factory) {
+        return GetOrCreate(key, factory, nullptr);
+    }
+
+    template<class Factory>
+    TValue GetOrCreate(const TKey &key, Factory factory, bool *created) {
         {
             std::shared_lock<std::shared_mutex> readLock(mutex_);
             auto it = container_.find(key);
-            if (it != container_.end()) return it->second;
+            if (it != container_.end()) {
+                if (created != nullptr) *created = false;
+                return it->second;
+            }
         }
 
         std::unique_lock<std::shared_mutex> writeLock(mutex_);
         auto it = container_.find(key);
-        if (it != container_.end()) return it->second;
+        if (it != container_.end()) {
+            if (created != nullptr) *created = false;
+            return it->second;
+        }
         TValue value = factory();
+        if (created != nullptr) *created = true;
         container_[key] = value;
         return value;
     }
 
-    bool ContainsKey(TKey &key) {
+    bool ContainsKey(const TKey &key) {
         std::shared_lock<std::shared_mutex> lock(mutex_);
         return container_.find(key) != container_.end();
     }
 
-    void Remove(TKey &key) {
+    void Remove(const TKey &key) {
         std::unique_lock<std::shared_mutex> lock(mutex_);
         container_.erase(key);
     }

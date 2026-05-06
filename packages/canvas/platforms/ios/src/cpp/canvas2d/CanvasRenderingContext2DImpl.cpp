@@ -21,7 +21,7 @@ namespace {
     struct CacheEntry {
         bool is_rgba;
         uint32_t packed; // R<<24 | G<<16 | B<<8 | A
-        CacheEntry(bool rgba=false, uint32_t p=0) : is_rgba(rgba), packed(p) {}
+        CacheEntry(bool rgba = false, uint32_t p = 0) : is_rgba(rgba), packed(p) {}
     };
 
     class ColorLRUCache {
@@ -38,8 +38,9 @@ namespace {
             auto it = hash_map_.find(h);
             if (it == hash_map_.end()) return false;
             auto &vec = it->second;
-            for (auto listIt : vec) {
-                if (listIt->first.size() == key.size() && std::memcmp(listIt->first.data(), key.data(), key.size()) == 0) {
+            for (auto listIt: vec) {
+                if (listIt->first.size() == key.size() &&
+                    std::memcmp(listIt->first.data(), key.data(), key.size()) == 0) {
                     items_.splice(items_.begin(), items_, listIt);
                     out = listIt->second;
                     return true;
@@ -50,12 +51,14 @@ namespace {
 
         void put_rgba(std::string_view key_sv, uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
             std::string key(key_sv);
-            uint32_t packed = ((uint32_t)r<<24) | ((uint32_t)g<<16) | ((uint32_t)b<<8) | ((uint32_t)a);
+            uint32_t packed = ((uint32_t) r << 24) | ((uint32_t) g << 16) | ((uint32_t) b << 8) |
+                              ((uint32_t) a);
             put_internal(std::move(key), CacheEntry(true, packed));
         }
 
         void put_rgba(const Key &key, uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
-            uint32_t packed = ((uint32_t)r<<24) | ((uint32_t)g<<16) | ((uint32_t)b<<8) | ((uint32_t)a);
+            uint32_t packed = ((uint32_t) r << 24) | ((uint32_t) g << 16) | ((uint32_t) b << 8) |
+                              ((uint32_t) a);
             put_internal(key, CacheEntry(true, packed));
         }
 
@@ -73,7 +76,7 @@ namespace {
             size_t h = std::hash<std::string_view>{}(key);
             auto hit = hash_map_.find(h);
             if (hit != hash_map_.end()) {
-                for (auto listIt : hit->second) {
+                for (auto listIt: hit->second) {
                     if (listIt->first == key) {
                         listIt->second = entry;
                         items_.splice(items_.begin(), items_, listIt);
@@ -84,11 +87,15 @@ namespace {
             items_.emplace_front(std::move(key), entry);
             hash_map_[h].push_back(items_.begin());
             if (items_.size() > capacity_) {
-                auto last = items_.end(); --last;
+                auto last = items_.end();
+                --last;
                 size_t hlast = std::hash<std::string_view>{}(std::string_view(last->first));
                 auto &vec = hash_map_[hlast];
                 for (auto vit = vec.begin(); vit != vec.end(); ++vit) {
-                    if (*vit == last) { vec.erase(vit); break; }
+                    if (*vit == last) {
+                        vec.erase(vit);
+                        break;
+                    }
                 }
                 if (vec.empty()) hash_map_.erase(hlast);
                 items_.pop_back();
@@ -105,7 +112,7 @@ namespace {
 
     class TextMetricsLRUCache {
     public:
-        using Key  = std::string;
+        using Key = std::string;
         using Item = std::pair<Key, TextMetricsData>;
         using List = std::list<Item>;
         using Iter = List::iterator;
@@ -116,7 +123,7 @@ namespace {
             size_t h = std::hash<std::string_view>{}(key);
             auto it = map_.find(h);
             if (it == map_.end()) return false;
-            for (auto listIt : it->second) {
+            for (auto listIt: it->second) {
                 if (listIt->first.size() == key.size() &&
                     std::memcmp(listIt->first.data(), key.data(), key.size()) == 0) {
                     items_.splice(items_.begin(), items_, listIt);
@@ -132,7 +139,7 @@ namespace {
             size_t h = std::hash<std::string_view>{}(key);
             auto hit = map_.find(h);
             if (hit != map_.end()) {
-                for (auto listIt : hit->second) {
+                for (auto listIt: hit->second) {
                     if (listIt->first == key) {
                         listIt->second = data;
                         items_.splice(items_.begin(), items_, listIt);
@@ -147,7 +154,10 @@ namespace {
                 size_t hl = std::hash<std::string_view>{}(last->first);
                 auto &vec = map_[hl];
                 for (auto vit = vec.begin(); vit != vec.end(); ++vit) {
-                    if (*vit == last) { vec.erase(vit); break; }
+                    if (*vit == last) {
+                        vec.erase(vit);
+                        break;
+                    }
                 }
                 if (vec.empty()) map_.erase(hl);
                 items_.pop_back();
@@ -156,7 +166,7 @@ namespace {
 
     private:
         size_t capacity_;
-        List   items_;
+        List items_;
         std::unordered_map<size_t, std::vector<Iter>> map_;
     };
 
@@ -164,7 +174,9 @@ namespace {
 }
 
 namespace {
-    enum class PaintTarget { Fill, Stroke };
+    enum class PaintTarget {
+        Fill, Stroke
+    };
 
     static inline int hexValChar(char c) {
         if (c >= '0' && c <= '9') return c - '0';
@@ -173,7 +185,8 @@ namespace {
         return -1;
     }
 
-    static bool parse_and_apply_color(CanvasRenderingContext2DImpl *ptr, PaintTarget target, std::string_view sv, char *cs) {
+    static bool parse_and_apply_color(CanvasRenderingContext2DImpl *ptr, PaintTarget target,
+                                      std::string_view sv, char *cs) {
         CacheEntry entry;
         if (g_color_cache.get(sv, entry)) {
             if (entry.is_rgba) {
@@ -183,9 +196,11 @@ namespace {
                 uint8_t B = (uint8_t) ((p >> 8) & 0xFF);
                 uint8_t A = (uint8_t) (p & 0xFF);
                 if (target == PaintTarget::Fill) {
-                    canvas_native_paint_style_set_fill_color_with_rgba(ptr->GetContext(), R, G, B, A);
+                    canvas_native_paint_style_set_fill_color_with_rgba(ptr->GetContext(), R, G, B,
+                                                                       A);
                 } else {
-                    canvas_native_paint_style_set_stroke_color_with_rgba(ptr->GetContext(), R, G, B, A);
+                    canvas_native_paint_style_set_stroke_color_with_rgba(ptr->GetContext(), R, G, B,
+                                                                         A);
                 }
             } else {
                 if (target == PaintTarget::Fill) {
@@ -213,9 +228,11 @@ namespace {
                     uint8_t B = (uint8_t) ((b << 4) | b);
                     uint8_t A = 255;
                     if (target == PaintTarget::Fill) {
-                        canvas_native_paint_style_set_fill_color_with_rgba(ptr->GetContext(), R, G, B, A);
+                        canvas_native_paint_style_set_fill_color_with_rgba(ptr->GetContext(), R, G,
+                                                                           B, A);
                     } else {
-                        canvas_native_paint_style_set_stroke_color_with_rgba(ptr->GetContext(), R, G, B, A);
+                        canvas_native_paint_style_set_stroke_color_with_rgba(ptr->GetContext(), R,
+                                                                             G, B, A);
                     }
                     g_color_cache.put_rgba(sv, R, G, B, A);
                     return true;
@@ -239,16 +256,19 @@ namespace {
                     A = (uint8_t) ((ah << 4) | al);
                 }
                 if (target == PaintTarget::Fill) {
-                    canvas_native_paint_style_set_fill_color_with_rgba(ptr->GetContext(), R, G, B, A);
+                    canvas_native_paint_style_set_fill_color_with_rgba(ptr->GetContext(), R, G, B,
+                                                                       A);
                 } else {
-                    canvas_native_paint_style_set_stroke_color_with_rgba(ptr->GetContext(), R, G, B, A);
+                    canvas_native_paint_style_set_stroke_color_with_rgba(ptr->GetContext(), R, G, B,
+                                                                         A);
                 }
                 g_color_cache.put_rgba(sv, R, G, B, A);
                 return true;
             }
         }
 
-        if ((p[0] == 'r' || p[0] == 'R') && (p[1] == 'g' || p[1] == 'G') && (p[2] == 'b' || p[2] == 'B')) {
+        if ((p[0] == 'r' || p[0] == 'R') && (p[1] == 'g' || p[1] == 'G') &&
+            (p[2] == 'b' || p[2] == 'B')) {
             const char *open = std::strchr(p, '(');
             const char *close = std::strrchr(p, ')');
             if (!open || !close || close <= open) return false;
@@ -259,19 +279,20 @@ namespace {
             if (endptr == cursor) return false;
             cursor = endptr;
 
-            while (*cursor && (*cursor == ',' || std::isspace((unsigned char)*cursor))) cursor++;
+            while (*cursor && (*cursor == ',' || std::isspace((unsigned char) *cursor))) cursor++;
             long gv = std::strtol(cursor, &endptr, 10);
             if (endptr == cursor) return false;
             cursor = endptr;
 
-            while (*cursor && (*cursor == ',' || std::isspace((unsigned char)*cursor))) cursor++;
+            while (*cursor && (*cursor == ',' || std::isspace((unsigned char) *cursor))) cursor++;
             long bv = std::strtol(cursor, &endptr, 10);
             if (endptr == cursor) return false;
             cursor = endptr;
 
             uint8_t A = 255;
             if ((p[3] == 'a' || p[3] == 'A')) {
-                while (*cursor && (*cursor == ',' || std::isspace((unsigned char)*cursor))) cursor++;
+                while (*cursor && (*cursor == ',' || std::isspace((unsigned char) *cursor)))
+                    cursor++;
                 if (!*cursor) return false;
                 double af = std::strtod(cursor, &endptr);
                 if (endptr == cursor) return false;
@@ -287,11 +308,31 @@ namespace {
 
             if (rv < 0 || rv > 255 || gv < 0 || gv > 255 || bv < 0 || bv > 255) return false;
             if (target == PaintTarget::Fill) {
-                canvas_native_paint_style_set_fill_color_with_rgba(ptr->GetContext(), (uint8_t) rv, (uint8_t) gv, (uint8_t) bv, A);
+                canvas_native_paint_style_set_fill_color_with_rgba(ptr->GetContext(), (uint8_t) rv,
+                                                                   (uint8_t) gv, (uint8_t) bv, A);
             } else {
-                canvas_native_paint_style_set_stroke_color_with_rgba(ptr->GetContext(), (uint8_t) rv, (uint8_t) gv, (uint8_t) bv, A);
+                canvas_native_paint_style_set_stroke_color_with_rgba(ptr->GetContext(),
+                                                                     (uint8_t) rv, (uint8_t) gv,
+                                                                     (uint8_t) bv, A);
             }
             g_color_cache.put_rgba(sv, (uint8_t) rv, (uint8_t) gv, (uint8_t) bv, A);
+            return true;
+        }
+
+
+        uint8_t nr = 0;
+        uint8_t ng = 0;
+        uint8_t nb = 0;
+        uint8_t na = 0;
+        if (canvas_native_parse_css_color_rgba(cs, &nr, &ng, &nb, &na)) {
+            if (target == PaintTarget::Fill) {
+                canvas_native_paint_style_set_fill_color_with_rgba(ptr->GetContext(), nr, ng, nb,
+                                                                   na);
+            } else {
+                canvas_native_paint_style_set_stroke_color_with_rgba(ptr->GetContext(), nr, ng, nb,
+                                                                     na);
+            }
+            g_color_cache.put_rgba(sv, nr, ng, nb, na);
             return true;
         }
 
@@ -520,7 +561,8 @@ v8::CFunction CanvasRenderingContext2DImpl::fast_reset_transform_(
 
 
 CanvasRenderingContext2DImpl::CanvasRenderingContext2DImpl(
-    CanvasRenderingContext2D *context, bool ownsContext) : context_(context), ownsContext_(ownsContext) {
+        CanvasRenderingContext2D *context, bool ownsContext) : context_(context),
+                                                               ownsContext_(ownsContext) {
 
     auto ctx_ptr = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t *>(this));
     auto raf_callback = new OnRafCallback(ctx_ptr, 0);
@@ -616,38 +658,81 @@ v8::Local<v8::FunctionTemplate> CanvasRenderingContext2DImpl::GetCtor(v8::Isolat
     tmpl->Set(ConvertToV8String(isolate, "__resize"), v8::FunctionTemplate::New(isolate, __Resize));
 
     tmpl->SetAccessor(ConvertToV8String(isolate, "continuousRenderMode"), GetContinuousRenderMode,
-                      SetContinuousRenderMode);
+                      SetContinuousRenderMode,
+                      v8::Local<v8::Value>(), v8::PROHIBITS_OVERWRITING,
+                      v8::PropertyAttribute::DontDelete);
 
-    tmpl->SetAccessor(ConvertToV8String(isolate, "filter"), GetFilter, SetFilter);
-    tmpl->SetAccessor(ConvertToV8String(isolate, "font"), GetFont, SetFont);
+    tmpl->SetAccessor(ConvertToV8String(isolate, "filter"), GetFilter, SetFilter,
+                      v8::Local<v8::Value>(), v8::PROHIBITS_OVERWRITING,
+                      v8::PropertyAttribute::DontDelete);
+    tmpl->SetAccessor(ConvertToV8String(isolate, "font"), GetFont, SetFont,
+                      v8::Local<v8::Value>(), v8::PROHIBITS_OVERWRITING,
+                      v8::PropertyAttribute::DontDelete);
     tmpl->SetAccessor(ConvertToV8String(isolate, "letterSpacing"), GetLetterSpacing,
-                      SetLetterSpacing);
-    tmpl->SetAccessor(ConvertToV8String(isolate, "wordSpacing"), GetWordSpacing, SetWordSpacing);
-
-    tmpl->SetAccessor(ConvertToV8String(isolate, "globalAlpha"), GetGlobalAlpha, SetGlobalAlpha);
+                      SetLetterSpacing,
+                      v8::Local<v8::Value>(), v8::PROHIBITS_OVERWRITING,
+                      v8::PropertyAttribute::DontDelete);
+    tmpl->SetAccessor(ConvertToV8String(isolate, "wordSpacing"), GetWordSpacing, SetWordSpacing,
+                      v8::Local<v8::Value>(), v8::PROHIBITS_OVERWRITING,
+                      v8::PropertyAttribute::DontDelete);
+    tmpl->SetAccessor(ConvertToV8String(isolate, "globalAlpha"), GetGlobalAlpha, SetGlobalAlpha,
+                      v8::Local<v8::Value>(), v8::PROHIBITS_OVERWRITING,
+                      v8::PropertyAttribute::DontDelete);
     tmpl->SetAccessor(ConvertToV8String(isolate, "imageSmoothingEnabled"), GetImageSmoothingEnabled,
-                      SetImageSmoothingEnabled);
+                      SetImageSmoothingEnabled,
+                      v8::Local<v8::Value>(), v8::PROHIBITS_OVERWRITING,
+                      v8::PropertyAttribute::DontDelete);
     tmpl->SetAccessor(ConvertToV8String(isolate, "imageSmoothingQuality"), GetImageSmoothingQuality,
-                      SetImageSmoothingQuality);
+                      SetImageSmoothingQuality,
+                      v8::Local<v8::Value>(), v8::PROHIBITS_OVERWRITING,
+                      v8::PropertyAttribute::DontDelete);
     tmpl->SetAccessor(ConvertToV8String(isolate, "lineDashOffset"), GetLineDashOffset,
-                      SetLineDashOffset);
-    tmpl->SetAccessor(ConvertToV8String(isolate, "lineJoin"), GetLineJoin, SetLineJoin);
-    tmpl->SetAccessor(ConvertToV8String(isolate, "lineCap"), GetLineCap, SetLineCap);
-    tmpl->SetAccessor(ConvertToV8String(isolate, "miterLimit"), GetMiterLimit, SetMiterLimit);
-    tmpl->SetAccessor(ConvertToV8String(isolate, "shadowColor"), GetShadowColor, SetShadowColor);
-    tmpl->SetAccessor(ConvertToV8String(isolate, "shadowBlur"), GetShadowBlur, SetShadowBlur);
+                      SetLineDashOffset,
+                      v8::Local<v8::Value>(), v8::PROHIBITS_OVERWRITING,
+                      v8::PropertyAttribute::DontDelete);
+    tmpl->SetAccessor(ConvertToV8String(isolate, "lineJoin"), GetLineJoin, SetLineJoin,
+                      v8::Local<v8::Value>(), v8::PROHIBITS_OVERWRITING,
+                      v8::PropertyAttribute::DontDelete);
+    tmpl->SetAccessor(ConvertToV8String(isolate, "lineCap"), GetLineCap, SetLineCap,
+                      v8::Local<v8::Value>(), v8::PROHIBITS_OVERWRITING,
+                      v8::PropertyAttribute::DontDelete);
+    tmpl->SetAccessor(ConvertToV8String(isolate, "miterLimit"), GetMiterLimit, SetMiterLimit,
+                      v8::Local<v8::Value>(), v8::PROHIBITS_OVERWRITING,
+                      v8::PropertyAttribute::DontDelete);
+    tmpl->SetAccessor(ConvertToV8String(isolate, "shadowColor"), GetShadowColor, SetShadowColor,
+                      v8::Local<v8::Value>(), v8::PROHIBITS_OVERWRITING,
+                      v8::PropertyAttribute::DontDelete);
+    tmpl->SetAccessor(ConvertToV8String(isolate, "shadowBlur"), GetShadowBlur, SetShadowBlur,
+                      v8::Local<v8::Value>(), v8::PROHIBITS_OVERWRITING,
+                      v8::PropertyAttribute::DontDelete);
     tmpl->SetAccessor(ConvertToV8String(isolate, "shadowOffsetX"), GetShadowOffsetX,
-                      SetShadowOffsetX);
+                      SetShadowOffsetX,
+                      v8::Local<v8::Value>(), v8::PROHIBITS_OVERWRITING,
+                      v8::PropertyAttribute::DontDelete);
     tmpl->SetAccessor(ConvertToV8String(isolate, "shadowOffsetY"), GetShadowOffsetY,
-                      SetShadowOffsetY);
-    tmpl->SetAccessor(ConvertToV8String(isolate, "textAlign"), GetTextAlign, SetTextAlign);
+                      SetShadowOffsetY,
+                      v8::Local<v8::Value>(), v8::PROHIBITS_OVERWRITING,
+                      v8::PropertyAttribute::DontDelete);
+    tmpl->SetAccessor(ConvertToV8String(isolate, "textAlign"), GetTextAlign, SetTextAlign,
+                      v8::Local<v8::Value>(), v8::PROHIBITS_OVERWRITING,
+                      v8::PropertyAttribute::DontDelete);
     tmpl->SetAccessor(ConvertToV8String(isolate, "textBaseline"), GetTextBaseline,
-                      SetTextBaseline);
+                      SetTextBaseline,
+                      v8::Local<v8::Value>(), v8::PROHIBITS_OVERWRITING,
+                      v8::PropertyAttribute::DontDelete);
     tmpl->SetAccessor(ConvertToV8String(isolate, "globalCompositeOperation"),
-                      GetGlobalCompositeOperation, SetGlobalCompositeOperation);
-    tmpl->SetAccessor(ConvertToV8String(isolate, "fillStyle"), GetFillStyle, SetFillStyle);
-    tmpl->SetAccessor(ConvertToV8String(isolate, "strokeStyle"), GetStrokeStyle, SetStrokeStyle);
-    tmpl->SetAccessor(ConvertToV8String(isolate, "lineWidth"), GetLineWidth, SetLineWidth);
+                      GetGlobalCompositeOperation, SetGlobalCompositeOperation,
+                      v8::Local<v8::Value>(), v8::PROHIBITS_OVERWRITING,
+                      v8::PropertyAttribute::DontDelete);
+    tmpl->SetAccessor(ConvertToV8String(isolate, "fillStyle"), GetFillStyle, SetFillStyle,
+                      v8::Local<v8::Value>(), v8::PROHIBITS_OVERWRITING,
+                      v8::PropertyAttribute::DontDelete);
+    tmpl->SetAccessor(ConvertToV8String(isolate, "strokeStyle"), GetStrokeStyle, SetStrokeStyle,
+                      v8::Local<v8::Value>(), v8::PROHIBITS_OVERWRITING,
+                      v8::PropertyAttribute::DontDelete);
+    tmpl->SetAccessor(ConvertToV8String(isolate, "lineWidth"), GetLineWidth, SetLineWidth,
+                      v8::Local<v8::Value>(), v8::PROHIBITS_OVERWRITING,
+                      v8::PropertyAttribute::DontDelete);
 
 
     tmpl->Set(ConvertToV8String(isolate, "addHitRegion"),
@@ -922,7 +1007,7 @@ void CanvasRenderingContext2DImpl::DrawPoints(const v8::FunctionCallbackInfo<v8:
         }
 
         canvas_native_context_draw_points(
-                ptr->GetContext(), (int32_t)pointMode,
+                ptr->GetContext(), (int32_t) pointMode,
                 store.data(), store.size());
 
 
@@ -1023,7 +1108,8 @@ void CanvasRenderingContext2DImpl::GetFont(v8::Local<v8::String> property,
     }
     auto isolate = info.GetIsolate();
     if (ptr->font_dirty_) {
-        bool accepted = canvas_native_context_set_font(ptr->GetContext(), ptr->cached_font_.c_str());
+        bool accepted = canvas_native_context_set_font(ptr->GetContext(),
+                                                       ptr->cached_font_.c_str());
         ptr->font_dirty_ = false;
         if (!accepted) {
             ptr->cached_font_.clear();
@@ -1050,14 +1136,15 @@ void CanvasRenderingContext2DImpl::SetFont(v8::Local<v8::String> property,
     auto val = ConvertFromV8String(isolate, value);
     if (val == ptr->cached_font_) return;
     if (ptr->font_dirty_) {
-        bool accepted = canvas_native_context_set_font(ptr->GetContext(), ptr->cached_font_.c_str());
+        bool accepted = canvas_native_context_set_font(ptr->GetContext(),
+                                                       ptr->cached_font_.c_str());
         ptr->font_dirty_ = false;
         if (!accepted) {
             ptr->cached_font_.clear();
         }
     }
     ptr->cached_font_ = std::move(val);
-    ptr->font_dirty_  = true;
+    ptr->font_dirty_ = true;
 }
 
 
@@ -1085,8 +1172,8 @@ void CanvasRenderingContext2DImpl::SetLetterSpacing(v8::Local<v8::String> proper
     auto isolate = info.GetIsolate();
     auto val = ConvertFromV8String(isolate, value);
     if (val == ptr->cached_letter_spacing_) return;
-    ptr->cached_letter_spacing_  = std::move(val);
-    ptr->letter_spacing_dirty_   = true;
+    ptr->cached_letter_spacing_ = std::move(val);
+    ptr->letter_spacing_dirty_ = true;
 }
 
 
@@ -1115,7 +1202,7 @@ void CanvasRenderingContext2DImpl::SetWordSpacing(v8::Local<v8::String> property
     auto val = ConvertFromV8String(isolate, value);
     if (val == ptr->cached_word_spacing_) return;
     ptr->cached_word_spacing_ = std::move(val);
-    ptr->word_spacing_dirty_  = true;
+    ptr->word_spacing_dirty_ = true;
 }
 
 
@@ -1464,7 +1551,7 @@ void CanvasRenderingContext2DImpl::GetGlobalCompositeOperation(v8::Local<v8::Str
         return;
     }
     auto operation = canvas_native_context_get_global_composition_int(ptr->GetContext());
-		info.GetReturnValue().Set(operation);
+    info.GetReturnValue().Set(operation);
 }
 
 void CanvasRenderingContext2DImpl::SetGlobalCompositeOperation(v8::Local<v8::String> property,
@@ -1475,13 +1562,13 @@ void CanvasRenderingContext2DImpl::SetGlobalCompositeOperation(v8::Local<v8::Str
         return;
     }
     auto isolate = info.GetIsolate();
-	
-	uint32_t operation = 0;
-	auto context = isolate->GetCurrentContext();
-	if (value->Uint32Value(context).To(&operation)) {
-		canvas_native_context_set_global_composition_int(ptr->GetContext(), operation);
-	}
-	
+
+    uint32_t operation = 0;
+    auto context = isolate->GetCurrentContext();
+    if (value->Uint32Value(context).To(&operation)) {
+        canvas_native_context_set_global_composition_int(ptr->GetContext(), operation);
+    }
+
 //    auto operation = ConvertFromV8String(isolate, value);
 //    canvas_native_context_set_global_composition(ptr->GetContext(), operation.c_str());
 }
@@ -1562,14 +1649,18 @@ void CanvasRenderingContext2DImpl::SetFillStyle(v8::Local<v8::String> property,
 
         int len = val->Utf8Length(isolate) + 1;
         if (g_tls_scratch.size() < (size_t) len) g_tls_scratch.resize((size_t) len);
-        val->WriteUtf8(isolate, g_tls_scratch.data(), len, nullptr, v8::String::WriteOptions::PRESERVE_ONE_BYTE_NULL);
+        val->WriteUtf8(isolate, g_tls_scratch.data(), len, nullptr,
+                       v8::String::WriteOptions::PRESERVE_ONE_BYTE_NULL);
 
         char *str = g_tls_scratch.data();
 
         char *s = str;
         while (*s && std::isspace((unsigned char) *s)) s++;
         size_t slen = std::strlen(s);
-        while (slen > 0 && std::isspace((unsigned char) s[slen - 1])) { s[slen - 1] = 0; --slen; }
+        while (slen > 0 && std::isspace((unsigned char) s[slen - 1])) {
+            s[slen - 1] = 0;
+            --slen;
+        }
 
         std::string_view sv(s, slen);
         if (parse_and_apply_color(ptr, PaintTarget::Fill, sv, s)) {
@@ -1673,14 +1764,18 @@ void CanvasRenderingContext2DImpl::SetStrokeStyle(v8::Local<v8::String> property
 
         int len = val->Utf8Length(isolate) + 1;
         if (g_tls_scratch.size() < (size_t) len) g_tls_scratch.resize((size_t) len);
-        val->WriteUtf8(isolate, g_tls_scratch.data(), len, nullptr, v8::String::WriteOptions::PRESERVE_ONE_BYTE_NULL);
+        val->WriteUtf8(isolate, g_tls_scratch.data(), len, nullptr,
+                       v8::String::WriteOptions::PRESERVE_ONE_BYTE_NULL);
 
         char *str = g_tls_scratch.data();
 
         char *s = str;
         while (*s && std::isspace((unsigned char) *s)) s++;
         size_t slen = std::strlen(s);
-        while (slen > 0 && std::isspace((unsigned char) s[slen - 1])) { s[slen - 1] = 0; --slen; }
+        while (slen > 0 && std::isspace((unsigned char) s[slen - 1])) {
+            s[slen - 1] = 0;
+            --slen;
+        }
 
         std::string_view sv(s, slen);
         if (parse_and_apply_color(ptr, PaintTarget::Stroke, sv, s)) {
@@ -2799,7 +2894,8 @@ CanvasRenderingContext2DImpl::FillText(const v8::FunctionCallbackInfo<v8::Value>
 
     auto &scratch = g_tls_scratch;
     scratch.resize(static_cast<size_t>(text_utf8_len) + 1);
-    js_str->WriteUtf8(isolate, scratch.data(), text_utf8_len, nullptr, v8::String::NO_NULL_TERMINATION);
+    js_str->WriteUtf8(isolate, scratch.data(), text_utf8_len, nullptr,
+                      v8::String::NO_NULL_TERMINATION);
     scratch[text_utf8_len] = '\0';
 
     auto x = static_cast<float>(args[1]->NumberValue(context).ToChecked());
@@ -3044,16 +3140,19 @@ CanvasRenderingContext2DImpl::MeasureText(const v8::FunctionCallbackInfo<v8::Val
 
     auto &scratch = g_tls_scratch;
     const size_t prefix_len = ptr->cached_font_.size() + 1
-                            + ptr->cached_letter_spacing_.size() + 1
-                            + ptr->cached_word_spacing_.size() + 1;
+                              + ptr->cached_letter_spacing_.size() + 1
+                              + ptr->cached_word_spacing_.size() + 1;
     scratch.resize(prefix_len + static_cast<size_t>(text_utf8_len));
     char *p = scratch.data();
     std::memcpy(p, ptr->cached_font_.data(), ptr->cached_font_.size());
-    p += ptr->cached_font_.size(); *p++ = '|';
+    p += ptr->cached_font_.size();
+    *p++ = '|';
     std::memcpy(p, ptr->cached_letter_spacing_.data(), ptr->cached_letter_spacing_.size());
-    p += ptr->cached_letter_spacing_.size(); *p++ = '|';
+    p += ptr->cached_letter_spacing_.size();
+    *p++ = '|';
     std::memcpy(p, ptr->cached_word_spacing_.data(), ptr->cached_word_spacing_.size());
-    p += ptr->cached_word_spacing_.size(); *p++ = '|';
+    p += ptr->cached_word_spacing_.size();
+    *p++ = '|';
     js_str->WriteUtf8(isolate, p, text_utf8_len, nullptr,
                       v8::String::NO_NULL_TERMINATION);
 
@@ -3069,7 +3168,8 @@ CanvasRenderingContext2DImpl::MeasureText(const v8::FunctionCallbackInfo<v8::Val
         FlushTextState(ptr);
         std::string text_str(text);
         TextMetricsData tm_data;
-        canvas_native_context_measure_text_to(ptr->GetContext(), text_str.c_str(), &tm_data.width, 12);
+        canvas_native_context_measure_text_to(ptr->GetContext(), text_str.c_str(), &tm_data.width,
+                                              12);
         g_text_metrics_cache.put(cache_key, tm_data);
         data = new TextMetricsImpl(tm_data);
     }
@@ -3080,7 +3180,7 @@ CanvasRenderingContext2DImpl::MeasureText(const v8::FunctionCallbackInfo<v8::Val
     }
 
     auto ret = ptr->tm_ctor_.Get(isolate)->InstanceTemplate()
-                   ->NewInstance(context).ToLocalChecked();
+            ->NewInstance(context).ToLocalChecked();
     ret->SetAlignedPointerInInternalField(0, data);
     data->BindFinalizer(isolate, ret);
     SetNativeType(data, NativeType::TextMetrics);
@@ -3266,9 +3366,9 @@ CanvasRenderingContext2DImpl::Restore(const v8::FunctionCallbackInfo<v8::Value> 
     ptr->cached_font_.clear();
     ptr->cached_letter_spacing_.clear();
     ptr->cached_word_spacing_.clear();
-    ptr->font_dirty_           = false;
+    ptr->font_dirty_ = false;
     ptr->letter_spacing_dirty_ = false;
-    ptr->word_spacing_dirty_   = false;
+    ptr->word_spacing_dirty_ = false;
 }
 
 void
@@ -3290,7 +3390,8 @@ CanvasRenderingContext2DImpl::Rotate(const v8::FunctionCallbackInfo<v8::Value> &
 void
 CanvasRenderingContext2DImpl::FlushTextState(CanvasRenderingContext2DImpl *ptr) {
     if (ptr->font_dirty_) {
-        bool accepted = canvas_native_context_set_font(ptr->GetContext(), ptr->cached_font_.c_str());
+        bool accepted = canvas_native_context_set_font(ptr->GetContext(),
+                                                       ptr->cached_font_.c_str());
         ptr->font_dirty_ = false;
         if (!accepted) {
             // Invalid font rejected by Rust; clear cache so the getter falls back to
@@ -3299,11 +3400,13 @@ CanvasRenderingContext2DImpl::FlushTextState(CanvasRenderingContext2DImpl *ptr) 
         }
     }
     if (ptr->letter_spacing_dirty_) {
-        canvas_native_context_set_letter_spacing(ptr->GetContext(), ptr->cached_letter_spacing_.c_str());
+        canvas_native_context_set_letter_spacing(ptr->GetContext(),
+                                                 ptr->cached_letter_spacing_.c_str());
         ptr->letter_spacing_dirty_ = false;
     }
     if (ptr->word_spacing_dirty_) {
-        canvas_native_context_set_word_spacing(ptr->GetContext(), ptr->cached_word_spacing_.c_str());
+        canvas_native_context_set_word_spacing(ptr->GetContext(),
+                                               ptr->cached_word_spacing_.c_str());
         ptr->word_spacing_dirty_ = false;
     }
 }
@@ -3480,7 +3583,8 @@ CanvasRenderingContext2DImpl::StrokeText(const v8::FunctionCallbackInfo<v8::Valu
 
         auto &scratch = g_tls_scratch;
         scratch.resize(static_cast<size_t>(text_utf8_len) + 1);
-        js_str->WriteUtf8(isolate, scratch.data(), text_utf8_len, nullptr, v8::String::NO_NULL_TERMINATION);
+        js_str->WriteUtf8(isolate, scratch.data(), text_utf8_len, nullptr,
+                          v8::String::NO_NULL_TERMINATION);
         scratch[text_utf8_len] = '\0';
 
         auto x = static_cast<float>(args[1]->NumberValue(context).ToChecked());

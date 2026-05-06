@@ -6,6 +6,12 @@
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wimplicit-retain-self"
 
+@interface NSCAudioBufferSourceNode ()
+- (nullable NSCAudioBuffer *)processBuffer:(nullable NSCAudioBuffer *)input context:(NSCAudioContext *)context;
+- (void)scheduleRetryWithContext:(NSCAudioContext *)ctx;
+- (void)registerPendingIfNeededWithContext:(NSCAudioContext *)ctx;
+@end
+
 @implementation NSCAudioBufferSourceNode {
   AVAudioPlayerNode *_player;
   NSCAudioBuffer *_buffer;
@@ -151,27 +157,12 @@
   AVAudioEngine *eng = ctx.engine;
   if (!eng)
     return NO;
-  if (!eng.isRunning)
+  if (!eng.isRunning) {
+    NSCLogError(@"NSCAudioBSN: tryStartPlayer engine NOT running – returning NO");
     return NO;
-
-  @try {
-    AVAudioTime *lrt = nil;
-    @try {
-      lrt = eng.outputNode.lastRenderTime;
-    } @catch (NSException *e) {
-      lrt = nil;
-    }
-    if (lrt) {
-      NSCLogDebug(@"NSCAudioBufferSourceNode: tryStartPlayer initial engRunning=%d "
-            @"lastRenderTime=%p sampleTime=%lld sampleRate=%f",
-            (int)eng.isRunning, lrt, (long long)lrt.sampleTime, lrt.sampleRate);
-    } else {
-      NSCLogDebug(@"NSCAudioBufferSourceNode: tryStartPlayer initial engRunning=%d "
-            @"lastRenderTime=NULL",
-            (int)eng.isRunning);
-    }
-  } @catch (NSException *e) {
   }
+
+  NSCLogError(@"NSCAudioBSN: tryStartPlayer engine running, checking connection");
 
   if (player.engine != eng) {
     @try {
@@ -194,8 +185,8 @@
       MsgSendFn fn = (MsgSendFn)objc_msgSend;
       NSArray *pts = fn(eng, ocpSel, player, (AVAudioNodeBus)0);
       isConnected = pts && pts.count > 0;
-      NSCLogDebug(@"NSCAudioBufferSourceNode: connectionPoints count=%lu",
-            (unsigned long)(pts ? pts.count : 0));
+      NSCLogError(@"NSCAudioBSN: connectionPoints count=%lu isConnected=%d",
+            (unsigned long)(pts ? pts.count : 0), (int)isConnected);
     } @catch (NSException *e) {
       isConnected = NO;
     }
@@ -209,8 +200,8 @@
     if (_lastDestination)
       targetNode = _lastDestination.avNode;
     if (!targetNode) {
-      targetNode = eng.mainMixerNode;
-      usingMainMixerFallback = YES;
+      NSCLogDebug(@"NSCAudioBufferSourceNode: deferring start until connected to a real destination");
+      return NO;
     }
     __block BOOL didImmediateConnect = NO;
     void (^immediateConnectBlock)(void) = ^{
@@ -313,13 +304,9 @@
                 safeToPlay = YES;
               } else {
                 NSCLogDebug(@"NSCAudioBufferSourceNode: poll immediate now=%p "
-                      @"playerTime=nil",
+                      @"playerTime=nil, forcing play",
                       now);
-#if TARGET_OS_SIMULATOR
-                NSCLogDebug(@"NSCAudioBufferSourceNode: simulator forcing play "
-                      @"despite nil playerTime (immediate)");
                 safeToPlay = YES;
-#endif
               }
             }
           } @catch (NSException *e) {
@@ -399,8 +386,8 @@
                         }
                       }
                     } @catch (NSException *e) {
-                    } @
-                    try {
+                    }
+                    @try {
                       AVAudioEngine *e = ctx.engine;
                       NSMutableArray *queue = [NSMutableArray
                           arrayWithObject:(AVAudioNode *)player];
@@ -532,6 +519,7 @@
                 }
               }
 #endif
+              NSCLogError(@"NSCAudioBSN: POLL-1 calling [player play]");
               [player play];
               if (_pendingStart) {
                 _pendingStart = NO;
@@ -540,6 +528,21 @@
               }
               _retryCount = 0;
             } @catch (NSException *ex) {
+              AVAudioEngine *eng2 = ctx.engine;
+              BOOL engRunning = eng2 ? eng2.isRunning : NO;
+              id attachedNodes = nil;
+              if (eng2 && [eng2 respondsToSelector:@selector(attachedNodes)]) {
+                @try {
+                  attachedNodes = [eng2 attachedNodes];
+                } @catch (NSException *e) {
+                  attachedNodes = nil;
+                }
+              }
+              NSCLogDebug(@"NSCAudioBufferSourceNode: deferred play exception: %@; "
+                    @"ctx=%p eng=%p engRunning=%d player=%p player.engine=%p "
+                    @"attachedNodesCount=%lu",
+                    ex, ctx, eng2, engRunning, player, player.engine,
+                    attachedNodes ? (unsigned long)[attachedNodes count] : 0ul);
               @try {
                 [player stop];
               } @catch (NSException *inner) {
@@ -549,7 +552,6 @@
             return;
           }
         }
-
         pollAttempts -= 1;
         if (pollAttempts > 0) {
           void (^nextPoll)(void) = weakPollBlock;
@@ -560,7 +562,6 @@
           }
           return;
         }
-
         [strongSelf scheduleRetryWithContext:ctx];
       };
       weakPollBlock = pollBlock;
@@ -638,12 +639,8 @@
                   (long long)playerTime.sampleTime, playerTime.sampleRate);
             safeToPlay = YES;
           } else {
-            NSCLogDebug(@"NSCAudioBufferSourceNode: poll now=%p playerTime=nil", now);
-#if TARGET_OS_SIMULATOR
-            NSCLogDebug(@"NSCAudioBufferSourceNode: simulator forcing play despite "
-                  @"nil playerTime");
+            NSCLogDebug(@"NSCAudioBufferSourceNode: poll now=%p playerTime=nil, forcing play", now);
             safeToPlay = YES;
-#endif
           }
         }
       } @catch (NSException *e) {
@@ -758,6 +755,7 @@
               }
             }
           }
+          NSCLogError(@"NSCAudioBSN: [player play] POLL-2 called engRunning=%d", (int)(ctx.engine.isRunning));
           [player play];
           if (_pendingStart) {
             _pendingStart = NO;
@@ -1139,6 +1137,7 @@
   _gaveUp = NO;
   AVAudioPlayerNode *player = (AVAudioPlayerNode *)self.avNode;
   AVAudioPCMBuffer *pcm = [_buffer getBuffer];
+  NSCLogError(@"NSCAudioBSN: start called buffer=%p engRunning=%d", pcm, (int)(ctx.engine.isRunning));
   if (pcm != nil) {
     __weak typeof(self) weakSelf = self;
 
@@ -1182,6 +1181,7 @@
   }
   __weak typeof(self) weakSelf = self;
 
+  NSCLogError(@"NSCAudioBSN: start engRunning=%d before tryStart", (int)(ctx.engine.isRunning));
   if (ctx.engine.isRunning) {
     if ([self tryStartPlayer:player context:ctx]) {
       return;

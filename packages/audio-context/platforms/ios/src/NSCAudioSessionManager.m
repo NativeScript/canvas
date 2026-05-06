@@ -98,23 +98,34 @@ NSString * const NSCAudioSessionManagerLatencyKey = @"latency";
     AVAudioSession *session = [AVAudioSession sharedInstance];
     __block NSError *err = nil;
 
+    AVAudioSessionCategoryOptions categoryOptions = 0;
+#ifdef AVAudioSessionCategoryOptionDefaultToSpeaker
+    categoryOptions |= AVAudioSessionCategoryOptionDefaultToSpeaker;
+#endif
+#ifdef AVAudioSessionCategoryOptionAllowBluetoothA2DP
+    categoryOptions |= AVAudioSessionCategoryOptionAllowBluetoothA2DP;
+#endif
+#ifdef AVAudioSessionCategoryOptionAllowAirPlay
+    categoryOptions |= AVAudioSessionCategoryOptionAllowAirPlay;
+#endif
+
     if (![NSThread isMainThread]) {
         dispatch_sync(dispatch_get_main_queue(), ^{
-            BOOL sessionOK = [session setCategory:AVAudioSessionCategoryPlayback error:&err];
+            BOOL sessionOK = [session setCategory:AVAudioSessionCategoryPlayback withOptions:categoryOptions error:&err];
             if (!sessionOK) {
                 NSCLogError(@"NSCAudioSessionManager: setCategory failed: %@", err);
             }
         });
         if (err) return;
     } else {
-        BOOL sessionOK = [session setCategory:AVAudioSessionCategoryPlayback error:&err];
+        BOOL sessionOK = [session setCategory:AVAudioSessionCategoryPlayback withOptions:categoryOptions error:&err];
         if (!sessionOK) {
             NSCLogError(@"NSCAudioSessionManager: setCategory failed: %@", err);
             return;
         }
     }
 
-    if (anyActive && needUpdate) {
+    if (anyActive && needUpdate && self.sessionActive) {
         NSCLogDebug(@"NSCAudioSessionManager: deferring AVAudioSession update while a context is active");
         return;
     }

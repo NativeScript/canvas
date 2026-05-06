@@ -54,6 +54,40 @@ static void NSCAudioContext_registerEngine(AVAudioEngine *engine, NSCAudioContex
 
 static NSMapTable<AVAudioEngine *, dispatch_block_t> *gScheduledResumeMap = nil;
 
+static void NSCAudioContext_prepareAudioSessionForPlayback(void) {
+    AVAudioSession *session = [AVAudioSession sharedInstance];
+    if (!session) return;
+
+    AVAudioSessionCategoryOptions options = 0;
+#ifdef AVAudioSessionCategoryOptionDefaultToSpeaker
+    options |= AVAudioSessionCategoryOptionDefaultToSpeaker;
+#endif
+#ifdef AVAudioSessionCategoryOptionAllowBluetoothA2DP
+    options |= AVAudioSessionCategoryOptionAllowBluetoothA2DP;
+#endif
+#ifdef AVAudioSessionCategoryOptionAllowAirPlay
+    options |= AVAudioSessionCategoryOptionAllowAirPlay;
+#endif
+
+    void (^configure)(void) = ^{
+        NSError *catErr = nil;
+        if (![session setCategory:AVAudioSessionCategoryPlayback withOptions:options error:&catErr]) {
+            NSCLogDebug(@"NSCAudioContext: prepare session setCategory failed: %@", catErr);
+        }
+
+        NSError *actErr = nil;
+        if (![session setActive:YES error:&actErr]) {
+            NSCLogDebug(@"NSCAudioContext: prepare session setActive failed: %@", actErr);
+        }
+    };
+
+    if ([NSThread isMainThread]) {
+        configure();
+    } else {
+        dispatch_sync(dispatch_get_main_queue(), configure);
+    }
+}
+
 void NSCAudioContext_cancelScheduledResume(AVAudioEngine *engine) {
     if (!engine) return;
     static dispatch_once_t onceToken;
@@ -496,6 +530,8 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
 - (nullable NSCAudioBuffer *)decodeAudioDataFromData:(NSData *)data {
     if (!data || data.length == 0) return nil;
 
+    @autoreleasepool {
+
 
     if (data.length > 4) {
         const uint8_t *bytes = (const uint8_t *)data.bytes;
@@ -521,42 +557,6 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
         return wrapper;
     }
 
-    NSError *playerErr = nil;
-    AVAudioPlayer *player = [[AVAudioPlayer alloc] initWithData:data error:&playerErr];
-    if (player && [player prepareToPlay]) {
-        AVAudioFormat *format = [[AVAudioFormat alloc] initWithCommonFormat:AVAudioPCMFormatFloat32
-                                                                 sampleRate:player.format.sampleRate
-                                                                   channels:player.format.channelCount
-                                                                interleaved:NO];
-        AVAudioEngine *engine = [[AVAudioEngine alloc] init];
-        AVAudioPlayerNode *playerNode = [[AVAudioPlayerNode alloc] init];
-        [engine attachNode:playerNode];
-        [engine connect:playerNode to:engine.mainMixerNode format:format];
-        NSError *engineErr = nil;
-        [engine startAndReturnError:&engineErr];
-        AVAudioPCMBuffer *pcmBuffer = nil;
-
-        AVAudioFile *tmpFile = nil;
-        NSString *tmpName = [NSTemporaryDirectory() stringByAppendingPathComponent:[NSString stringWithFormat:@"nsc_decode_%@.caf", [[NSUUID UUID] UUIDString]]];
-        BOOL ok = [data writeToFile:tmpName atomically:YES];
-        if (ok) {
-            NSURL *url = [NSURL fileURLWithPath:tmpName];
-            tmpFile = [[AVAudioFile alloc] initForReading:url error:nil];
-            if (tmpFile) {
-                AVAudioFrameCount frameCount = (AVAudioFrameCount)tmpFile.length;
-                pcmBuffer = [[AVAudioPCMBuffer alloc] initWithPCMFormat:tmpFile.processingFormat frameCapacity:frameCount];
-                NSError *readErr = nil;
-                [tmpFile readIntoBuffer:pcmBuffer error:&readErr];
-                if (!readErr) {
-                    NSCAudioBuffer *wrapper = [[NSCAudioBuffer alloc] initWithContext:self id:[[NSUUID UUID] UUIDString] buffer:pcmBuffer];
-                    @try { [[NSFileManager defaultManager] removeItemAtPath:tmpName error:NULL]; } @catch (NSException *e) {}
-                    return wrapper;
-                }
-            }
-            @try { [[NSFileManager defaultManager] removeItemAtPath:tmpName error:NULL]; } @catch (NSException *e) {}
-        }
-    }
-
     NSString *tmpName = [NSTemporaryDirectory() stringByAppendingPathComponent:[NSString stringWithFormat:@"nsc_decode_%@.tmp", [[NSUUID UUID] UUIDString]]];
     BOOL ok = [data writeToFile:tmpName atomically:YES];
     if (!ok) return nil;
@@ -564,6 +564,7 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
     NSCAudioBuffer *buf = [self _decodeAudioFileAtURL:url];
     @try { [[NSFileManager defaultManager] removeItemAtPath:tmpName error:NULL]; } @catch (NSException *e) {}
     return buf;
+    }
 }
 
 - (void)decodeAudioDataAsync:(NSString *)base64 :(void (^)(NSCAudioBuffer * _Nullable))completion {
@@ -589,10 +590,13 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
 - (void)decodeAudioDataFromDataAsync:(NSData *)data :(void (^)(NSCAudioBuffer * _Nullable))completion {
     if (!completion) return;
     __weak typeof(self) weakSelf = self;
+    NSData *retainedData = [data copy];
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        @autoreleasepool {
         __strong typeof(weakSelf) s = weakSelf;
-        NSCAudioBuffer *b = [s decodeAudioDataFromData:data];
+        NSCAudioBuffer *b = [s decodeAudioDataFromData:retainedData];
         dispatch_async(dispatch_get_main_queue(), ^{ completion(b); });
+        }
     });
 }
 
@@ -914,6 +918,7 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
     __block NSError *err = nil;
     __block BOOL ok = NO;
     @try {
+        NSCAudioContext_prepareAudioSessionForPlayback();
         if ([NSThread isMainThread]) {
             ok = [engine startAndReturnError:&err];
         } else {
@@ -956,6 +961,7 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
         __block NSError *e = nil;
         __block BOOL ok2 = NO;
         @try {
+            NSCAudioContext_prepareAudioSessionForPlayback();
             if ([NSThread isMainThread]) {
                 ok2 = [eng startAndReturnError:&e];
             } else {

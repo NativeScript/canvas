@@ -282,24 +282,6 @@ export class Canvas extends CanvasBase {
 		}
 	}
 
-	private _iosOverflowSafeArea = false;
-
-	//@ts-ignore
-	get iosOverflowSafeArea() {
-		return this._iosOverflowSafeArea;
-	}
-
-	set iosOverflowSafeArea(value: boolean) {
-		const window = UIApplication.sharedApplication.windows[0];
-		//const topPadding = window.safeAreaInsets.top;
-		const bottomPadding = window.safeAreaInsets.bottom;
-		if (bottomPadding === 0) {
-			this._iosOverflowSafeArea = false;
-		} else {
-			this._iosOverflowSafeArea = value;
-		}
-	}
-
 	static createCustomView() {
 		const canvas = new Canvas();
 		canvas._isCustom = true;

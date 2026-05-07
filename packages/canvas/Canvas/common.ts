@@ -1,4 +1,4 @@
-import { CSSType, View, Property, booleanConverter, Screen } from '@nativescript/core';
+import { CSSType, View, Property, booleanConverter, Screen, ContainerView } from '@nativescript/core';
 import type { CanvasRenderingContext } from '../common';
 import { removeItemFromArray } from './utils';
 
@@ -450,7 +450,7 @@ export function lengthToDevicePixels(value: any, parent: any, isWidth: boolean):
 }
 
 @CSSType('Canvas')
-export abstract class CanvasBase extends View implements ICanvasBase {
+export abstract class CanvasBase extends ContainerView implements ICanvasBase {
 	public static readyEvent = 'ready';
 	ignoreTouchEvents: boolean;
 	_isCustom: boolean = false;

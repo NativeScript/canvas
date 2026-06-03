@@ -122,9 +122,6 @@ v8::Local<v8::FunctionTemplate> GPUCommandEncoderImpl::GetCtor(v8::Isolate *isol
 }
 
 void GPUCommandEncoderImpl::Destroy(const v8::FunctionCallbackInfo<v8::Value> &args) {
-	// Deterministic per-frame free. A command encoder is single-use: it is
-	// finished (encoder.finish()) and the resulting buffer submitted before
-	// presentSurface(), so it is safe to drop at the frame boundary.
 	auto ptr = GetPointer(args.This());
 	if (ptr != nullptr) {
 		ptr->Release();

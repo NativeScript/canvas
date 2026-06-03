@@ -50,11 +50,7 @@ export class GPUTexture {
 	createView(desc?: GPUTextureViewDescriptor) {
 		const view = this[native_].createView(desc);
 		const ret = GPUTextureView.fromNative(view);
-		// A view of the swapchain current-texture dies at presentSurface(). Register
-		// it with the owning context so that context releases it deterministically.
-		// Views of persistent textures (render targets, depth) carry no context ref,
-		// are cached by three across frames, and must NOT be released here. See
-		// GPUCanvasContext.getCurrentTexture / presentSurface.
+		// swapchain-texture views die at present; register them with the owning context
 		const ctx = (this as any)[swapchainContext_];
 		if (ret && ctx) {
 			ctx._registerSwapchainView(ret);

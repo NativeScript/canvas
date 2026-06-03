@@ -18,11 +18,7 @@ public:
 
     const CanvasGPUTexture *GetTexture();
 
-    // Drops our Arc reference to the texture (canvas_native_webgpu_texture_release
-    // via the ArcHandle deleter). This is NOT destroy(): it does not free the GPU
-    // texture, it only releases the wrapper's handle. Used to deterministically free
-    // the per-frame swapchain GPUTexture returned by getCurrentTexture() at present,
-    // whose only other free path is the starved GC finalizer. See ReleaseHandle.
+    // drops the wrapper's Arc handle (not destroy(), which frees the GPU texture)
     void Release() { texture_.reset(); }
 
     static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
@@ -73,8 +69,7 @@ public:
 
     static void Destroy(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-    // JS-exposed as __releaseHandle: drops the wrapper's Arc handle (see Release).
-    // Distinct from destroy() so the swapchain texture's GPU memory is never freed.
+    // JS __releaseHandle: drops the wrapper's handle without destroying the texture
     static void ReleaseHandle(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void CreateView(const v8::FunctionCallbackInfo<v8::Value> &args);

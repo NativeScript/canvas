@@ -102,9 +102,6 @@ v8::Local<v8::FunctionTemplate> GPUComputePassEncoderImpl::GetCtor(v8::Isolate *
 }
 
 void GPUComputePassEncoderImpl::Destroy(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    // Deterministic per-frame free. A compute pass is ended and its parent
-    // encoder finished+submitted before presentSurface(); single-use per WebGPU
-    // semantics, so dropping it at the frame boundary is safe.
     auto ptr = GetPointer(args.This());
     if (ptr != nullptr) {
         ptr->Release();

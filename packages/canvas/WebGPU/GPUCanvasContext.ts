@@ -19,18 +19,11 @@ export class GPUCanvasContext implements CanvasRenderingContext {
 	[native_] = null;
 	[contextPtr_] = null;
 
-	// Swapchain texture views created since the last present. Each dies at the next
-	// presentSurface(); held per-context (not globally) so multiple canvases in one
-	// isolate never drain each other's in-flight views. See _registerSwapchainView.
+	// per-frame swapchain views and textures, released at the next presentSurface()
 	private _swapchainViews: GPUTextureView[] = [];
-
-	// The per-frame GPUTexture wrappers returned by getCurrentTexture(). The native
-	// surface releases its own acquire ref at present, but each JS wrapper holds its
-	// own Arc clone whose only other free path is the GC finalizer a tight loop
-	// starves. Released here at present (handle only, never a GPU destroy).
 	private _swapchainTextures: GPUTexture[] = [];
 
-	/** @internal Registered from GPUTexture.createView for swapchain-texture views. */
+	/** @internal */
 	_registerSwapchainView(view: GPUTextureView) {
 		this._swapchainViews.push(view);
 	}
@@ -194,9 +187,7 @@ export class GPUCanvasContext implements CanvasRenderingContext {
 		if (!result) {
 			console.error('GPUCanvasContext.getCurrentTexture: native texture wrapper contained no texture');
 		} else {
-			// Stamp the owning context so a view created from this texture registers
-			// for deterministic release at this context's presentSurface(), and track
-			// the texture wrapper itself for handle release at present.
+			// mark as swapchain-owned and track for release at present
 			(result as any)[swapchainContext_] = this;
 			this._swapchainTextures.push(result);
 		}
@@ -205,11 +196,7 @@ export class GPUCanvasContext implements CanvasRenderingContext {
 
 	presentSurface(_texture?: GPUTexture) {
 		this.native.presentSurface();
-		// Present is the swapchain view's point of death. Release this frame's views
-		// now instead of waiting for a GC sweep a tight render loop starves. The
-		// encoder, passes, and command buffer were already released at their own
-		// consumption points (finish/end/submit). destroy() is optional-chained so an
-		// un-rebuilt native falls back to the finalizer. See ArcHandle.h.
+		// release this frame's swapchain views and textures (their point of death)
 		const views = this._swapchainViews;
 		if (views.length > 0) {
 			this._swapchainViews = [];
@@ -221,9 +208,6 @@ export class GPUCanvasContext implements CanvasRenderingContext {
 				}
 			}
 		}
-		// Release the per-frame swapchain texture wrappers (handle only, not a GPU
-		// destroy). __releaseHandle is optional-chained so an un-rebuilt native falls
-		// back to the finalizer. See GPUTextureImpl::ReleaseHandle.
 		const texs = this._swapchainTextures;
 		if (texs.length > 0) {
 			this._swapchainTextures = [];

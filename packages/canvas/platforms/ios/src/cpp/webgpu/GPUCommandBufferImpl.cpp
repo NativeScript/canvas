@@ -65,9 +65,6 @@ v8::Local<v8::FunctionTemplate> GPUCommandBufferImpl::GetCtor(v8::Isolate *isola
 
 
 void GPUCommandBufferImpl::Destroy(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    // Deterministic dispose, called from JS at queue.submit() once the command
-    // buffer is consumed. Release() drops our Arc share via the ArcHandle; the GC
-    // finalizer that runs later is a no-op (the handle is already null).
     auto ptr = GetPointer(args.This());
     if (ptr != nullptr) {
         ptr->Release();

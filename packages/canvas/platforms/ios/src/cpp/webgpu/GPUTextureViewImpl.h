@@ -14,8 +14,7 @@ class GPUTextureViewImpl : ObjectWrapperImpl {
 public:
     explicit GPUTextureViewImpl(const CanvasGPUTextureView *view);
 
-    // Deterministic dispose, called from Destroy() at the present() boundary. The
-    // ArcHandle deleter handles the GC-finalizer case; see ArcHandle.h.
+    // deterministic dispose, called from Destroy() at present
     void Release() { view_.reset(); }
 
     const CanvasGPUTextureView *GetTextureView();

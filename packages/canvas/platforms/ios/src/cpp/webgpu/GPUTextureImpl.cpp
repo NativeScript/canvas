@@ -261,10 +261,6 @@ void GPUTextureImpl::Destroy(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
 
 void GPUTextureImpl::ReleaseHandle(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    // Drops the wrapper's Arc reference only (NOT a GPU destroy). Called from
-    // GPUCanvasContext.presentSurface() on the per-frame swapchain texture so its
-    // native handle is freed deterministically instead of waiting for the GC
-    // finalizer a tight render loop starves.
     GPUTextureImpl *ptr = GetPointer(args.This());
     if (ptr != nullptr) {
         ptr->Release();

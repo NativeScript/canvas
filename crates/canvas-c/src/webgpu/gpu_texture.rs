@@ -50,22 +50,14 @@ impl Drop for CanvasGPUTexture {
                     .has_surface_presented
                     .load(std::sync::atomic::Ordering::SeqCst);
 
-                // If the frame was acquired but never presented, return the image to
-                // the swapchain so it can be reused. We are in Drop, so we cannot
-                // propagate or fatally abort on failure; log and continue to the drop.
+                // acquired but never presented: hand the image back to the swapchain
                 if !has_surface_presented {
                     if let Err(cause) = global.surface_texture_discard(surface_id) {
-                        log::warn!(
-                            "canvas: surface_texture_discard during texture drop failed: {cause:?}"
-                        );
+                        log::warn!("surface_texture_discard failed: {cause:?}");
                     }
                 }
 
-                // Free the wgpu Texture (and its surface `clear_view`) from the hub.
-                // present()/discard() only drop the acquired-texture ref; the hub
-                // registry holds a second ref that must be dropped here. Without this
-                // the per-frame swapchain texture and its clear image view leak in
-                // wgpu-core every frame (render-proportional native-heap growth).
+                // drop the hub ref so the surface texture and its clear_view are freed
                 global.texture_drop(self.texture);
                 self.surface_id = None;
             }

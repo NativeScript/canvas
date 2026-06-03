@@ -129,10 +129,7 @@ export class GPUQueue {
 					return command[native_];
 				}),
 			);
-			// submit() consumes the command buffers (WebGPU spec: they cannot be
-			// resubmitted). Release their native handles now rather than waiting for a
-			// GC sweep a tight render loop starves. destroy() is optional-chained so an
-			// un-rebuilt native falls back to the finalizer. See ArcHandle.h.
+			// submit() consumes the command buffers; release them now instead of via GC
 			for (let i = 0; i < commands.length; i++) {
 				const command = commands[i] as any;
 				command?.[native_]?.destroy?.();

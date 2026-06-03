@@ -63,10 +63,6 @@ v8::Local<v8::FunctionTemplate> GPUTextureViewImpl::GetCtor(v8::Isolate *isolate
 
 
 void GPUTextureViewImpl::Destroy(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    // Deterministic per-frame free, driven by GPUCanvasContext.presentSurface().
-    // GPUTextureView is a transient single-frame ephemeral; the WebGPU integration
-    // (three/r3f) never keeps it across frames. Release() is idempotent so the
-    // later GC finalizer is a no-op.
     auto ptr = GetPointer(args.This());
     if (ptr != nullptr) {
         ptr->Release();

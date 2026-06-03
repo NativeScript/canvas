@@ -154,9 +154,6 @@ v8::Local<v8::FunctionTemplate> GPURenderPassEncoderImpl::GetCtor(v8::Isolate *i
 
 
 void GPURenderPassEncoderImpl::Destroy(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    // Deterministic per-frame free. A render pass is ended (pass.end()) and its
-    // parent encoder finished+submitted before presentSurface(); the pass is
-    // single-use per WebGPU semantics, so dropping it at the frame boundary is safe.
     auto ptr = GetPointer(args.This());
     if (ptr != nullptr) {
         ptr->Release();

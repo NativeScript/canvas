@@ -14,7 +14,7 @@ GPURenderPassEncoderImpl::GPURenderPassEncoderImpl(const CanvasGPURenderPassEnco
         pass) {}
 
 const CanvasGPURenderPassEncoder *GPURenderPassEncoderImpl::GetPass() {
-    return this->pass_;
+    return this->pass_.get();
 }
 
 
@@ -143,18 +143,32 @@ v8::Local<v8::FunctionTemplate> GPURenderPassEncoderImpl::GetCtor(v8::Isolate *i
             ConvertToV8String(isolate, "setViewport"),
             v8::FunctionTemplate::New(isolate, &SetViewport));
 
+    tmpl->Set(
+            ConvertToV8String(isolate, "destroy"),
+            v8::FunctionTemplate::New(isolate, &Destroy));
+
     cache->GPURenderPassEncoderTmpl =
             std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
     return ctorTmpl;
 }
 
 
+void GPURenderPassEncoderImpl::Destroy(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    // Deterministic per-frame free. A render pass is ended (pass.end()) and its
+    // parent encoder finished+submitted before presentSurface(); the pass is
+    // single-use per WebGPU semantics, so dropping it at the frame boundary is safe.
+    auto ptr = GetPointer(args.This());
+    if (ptr != nullptr) {
+        ptr->Release();
+    }
+}
+
 void
 GPURenderPassEncoderImpl::GetLabel(v8::Local<v8::Name> name,
                                    const v8::PropertyCallbackInfo<v8::Value> &info) {
     auto ptr = GetPointer(info.This());
     if (ptr != nullptr) {
-        auto label = canvas_native_webgpu_render_pass_encoder_get_label(ptr->pass_);
+        auto label = canvas_native_webgpu_render_pass_encoder_get_label(ptr->pass_.get());
         if (label == nullptr) {
             info.GetReturnValue().SetEmptyString();
             return;

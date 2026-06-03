@@ -8,16 +8,18 @@
 #include "Helpers.h"
 #include "ObjectWrapperImpl.h"
 #include "GPUUtils.h"
+#include "ArcHandle.h"
 
 class GPUCommandEncoderImpl : ObjectWrapperImpl {
 public:
     explicit GPUCommandEncoderImpl(const CanvasGPUCommandEncoder *encoder);
 
-    ~GPUCommandEncoderImpl() {
-        canvas_native_webgpu_command_encoder_release(this->encoder_);
-    }
+    // Deterministic dispose, called from Destroy() at encoder.finish(). See ArcHandle.h.
+    void Release() { encoder_.reset(); }
 
     const CanvasGPUCommandEncoder *GetEncoder();
+
+    static void Destroy(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
 
@@ -66,7 +68,7 @@ public:
     static void WriteTimestamp(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 private:
-    const CanvasGPUCommandEncoder *encoder_;
+    ArcHandle<CanvasGPUCommandEncoder, canvas_native_webgpu_command_encoder_release> encoder_;
 };
 
 

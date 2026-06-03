@@ -8,16 +8,19 @@
 #include "Common.h"
 #include "Helpers.h"
 #include "ObjectWrapperImpl.h"
+#include "ArcHandle.h"
 
 class GPUTextureViewImpl : ObjectWrapperImpl {
 public:
     explicit GPUTextureViewImpl(const CanvasGPUTextureView *view);
 
-    ~GPUTextureViewImpl() {
-        canvas_native_webgpu_texture_view_release(this->GetTextureView());
-    }
+    // Deterministic dispose, called from Destroy() at the present() boundary. The
+    // ArcHandle deleter handles the GC-finalizer case; see ArcHandle.h.
+    void Release() { view_.reset(); }
 
     const CanvasGPUTextureView *GetTextureView();
+
+    static void Destroy(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
 
@@ -41,7 +44,7 @@ public:
 
 
 private:
-    const CanvasGPUTextureView *view_;
+    ArcHandle<CanvasGPUTextureView, canvas_native_webgpu_texture_view_release> view_;
 };
 
 

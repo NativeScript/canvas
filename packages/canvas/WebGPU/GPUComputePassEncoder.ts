@@ -19,7 +19,12 @@ export class GPUComputePassEncoder {
 	}
 
 	end() {
-		this[native_].end();
+		// end() consumes the pass (WebGPU spec: it becomes invalid). Release the
+		// native handle now rather than waiting for GC. destroy() is optional-chained
+		// so an un-rebuilt native falls back to the finalizer. See ArcHandle.h.
+		const n = this[native_];
+		n?.end();
+		n?.destroy?.();
 		this[native_] = null;
 	}
 

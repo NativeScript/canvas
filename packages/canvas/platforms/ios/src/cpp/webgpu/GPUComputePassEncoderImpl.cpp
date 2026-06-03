@@ -13,7 +13,7 @@ GPUComputePassEncoderImpl::GPUComputePassEncoderImpl(const CanvasGPUComputePassE
         pass) {}
 
 const CanvasGPUComputePassEncoder *GPUComputePassEncoderImpl::GetComputePass() {
-    return this->computePass_;
+    return this->computePass_.get();
 }
 
 
@@ -90,6 +90,10 @@ v8::Local<v8::FunctionTemplate> GPUComputePassEncoderImpl::GetCtor(v8::Isolate *
             ConvertToV8String(isolate, "setPipeline"),
             v8::FunctionTemplate::New(isolate, &SetPipeline));
 
+    tmpl->Set(
+            ConvertToV8String(isolate, "destroy"),
+            v8::FunctionTemplate::New(isolate, &Destroy));
+
 
     cache->GPUComputePassEncoderTmpl =
             std::make_unique<v8::Persistent<v8::FunctionTemplate>>
@@ -97,12 +101,22 @@ v8::Local<v8::FunctionTemplate> GPUComputePassEncoderImpl::GetCtor(v8::Isolate *
     return ctorTmpl;
 }
 
+void GPUComputePassEncoderImpl::Destroy(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    // Deterministic per-frame free. A compute pass is ended and its parent
+    // encoder finished+submitted before presentSurface(); single-use per WebGPU
+    // semantics, so dropping it at the frame boundary is safe.
+    auto ptr = GetPointer(args.This());
+    if (ptr != nullptr) {
+        ptr->Release();
+    }
+}
+
 void
 GPUComputePassEncoderImpl::GetLabel(v8::Local<v8::Name> name,
                                     const v8::PropertyCallbackInfo<v8::Value> &info) {
     auto ptr = GetPointer(info.This());
     if (ptr != nullptr) {
-        auto label = canvas_native_webgpu_compute_pass_encoder_get_label(ptr->computePass_);
+        auto label = canvas_native_webgpu_compute_pass_encoder_get_label(ptr->computePass_.get());
         if (label == nullptr) {
             info.GetReturnValue().SetEmptyString();
             return;

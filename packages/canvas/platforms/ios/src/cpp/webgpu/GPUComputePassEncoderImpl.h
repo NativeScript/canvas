@@ -7,16 +7,18 @@
 
 #include "Helpers.h"
 #include "ObjectWrapperImpl.h"
+#include "ArcHandle.h"
 
 class GPUComputePassEncoderImpl : ObjectWrapperImpl {
 public:
     explicit GPUComputePassEncoderImpl(const CanvasGPUComputePassEncoder *computePass);
 
-    ~GPUComputePassEncoderImpl() {
-        canvas_native_webgpu_compute_pass_encoder_release(this->computePass_);
-    }
+    // Deterministic dispose, called from Destroy() at pass.end(). See ArcHandle.h.
+    void Release() { computePass_.reset(); }
 
     const CanvasGPUComputePassEncoder *GetComputePass();
+
+    static void Destroy(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
 
@@ -58,7 +60,7 @@ public:
 
 
 private:
-    const CanvasGPUComputePassEncoder *computePass_;
+    ArcHandle<CanvasGPUComputePassEncoder, canvas_native_webgpu_compute_pass_encoder_release> computePass_;
 };
 
 

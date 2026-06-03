@@ -1,7 +1,8 @@
 import { Helpers } from '../helpers';
-import { adapter_, contextPtr_, GPUTextureUsage, native_ } from './Constants';
+import { adapter_, contextPtr_, GPUTextureUsage, native_, swapchainContext_ } from './Constants';
 import type { GPUDevice } from './GPUDevice';
 import { GPUTexture } from './GPUTexture';
+import type { GPUTextureView } from './GPUTextureView';
 import type { GPUAdapter } from './GPUAdapter';
 import type { GPUCanvasAlphaMode, GPUCanvasPresentMode, GPUExtent3D, GPUTextureFormat } from './Types';
 import type { CanvasRenderingContext } from '../common';
@@ -17,6 +18,16 @@ export class GPUCanvasContext implements CanvasRenderingContext {
 
 	[native_] = null;
 	[contextPtr_] = null;
+
+	// Swapchain texture views created since the last present. Each dies at the next
+	// presentSurface(); held per-context (not globally) so multiple canvases in one
+	// isolate never drain each other's in-flight views. See _registerSwapchainView.
+	private _swapchainViews: GPUTextureView[] = [];
+
+	/** @internal Registered from GPUTexture.createView for swapchain-texture views. */
+	_registerSwapchainView(view: GPUTextureView) {
+		this._swapchainViews.push(view);
+	}
 
 	constructor(context: any, contextOptions: any = {}) {
 		let nativeContext = '0';
@@ -176,12 +187,32 @@ export class GPUCanvasContext implements CanvasRenderingContext {
 		const result = GPUTexture.fromNative(texture);
 		if (!result) {
 			console.error('GPUCanvasContext.getCurrentTexture: native texture wrapper contained no texture');
+		} else {
+			// Stamp the owning context so a view created from this texture registers
+			// for deterministic release at this context's presentSurface().
+			(result as any)[swapchainContext_] = this;
 		}
 		return result;
 	}
 
 	presentSurface(_texture?: GPUTexture) {
 		this.native.presentSurface();
+		// Present is the swapchain view's point of death. Release this frame's views
+		// now instead of waiting for a GC sweep a tight render loop starves. The
+		// encoder, passes, and command buffer were already released at their own
+		// consumption points (finish/end/submit). destroy() is optional-chained so an
+		// un-rebuilt native falls back to the finalizer. See ArcHandle.h.
+		const views = this._swapchainViews;
+		if (views.length > 0) {
+			this._swapchainViews = [];
+			for (let i = 0; i < views.length; i++) {
+				const view = views[i] as any;
+				view?.[native_]?.destroy?.();
+				if (view) {
+					view[native_] = null;
+				}
+			}
+		}
 	}
 
 	getCapabilities(adapter: GPUAdapter): {

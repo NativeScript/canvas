@@ -39,3 +39,8 @@ export const native_ = Symbol('[[native]]');
 export const mapState_ = Symbol('[[mapState]]');
 export const contextPtr_ = Symbol('[[contextPtr]]');
 export const adapter_ = Symbol('[[adapter]]');
+// Back-reference to the GPUCanvasContext stamped on the GPUTexture returned by
+// getCurrentTexture(). A view created from that texture registers itself with the
+// owning context so it can be released deterministically at that context's
+// presentSurface() (the swapchain view's spec-defined point of death).
+export const swapchainContext_ = Symbol('[[swapchainContext]]');

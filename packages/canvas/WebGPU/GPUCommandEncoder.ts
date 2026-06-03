@@ -190,7 +190,14 @@ export class GPUCommandEncoder {
 
 	finish(descriptor?: { label?: string }) {
 		const ret = this[native_].finish(descriptor);
-		return GPUCommandBuffer.fromNative(ret);
+		const buffer = GPUCommandBuffer.fromNative(ret);
+		// finish() consumes the encoder (WebGPU spec: it becomes invalid). Release
+		// the native handle now instead of waiting for a GC sweep a tight render
+		// loop starves. destroy() is optional-chained so an un-rebuilt native still
+		// falls back to the finalizer. See platforms/.../webgpu/ArcHandle.h.
+		this[native_]?.destroy?.();
+		this[native_] = null;
+		return buffer;
 	}
 
 	insertDebugMarker(markerLabel: string) {

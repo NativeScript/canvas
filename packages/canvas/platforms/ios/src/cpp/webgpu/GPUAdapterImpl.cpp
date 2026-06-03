@@ -8,7 +8,7 @@
 GPUAdapterImpl::GPUAdapterImpl(const CanvasGPUAdapter *adapter) : adapter_(adapter) {}
 
 const CanvasGPUAdapter *GPUAdapterImpl::GetGPUAdapter() {
-    return this->adapter_;
+    return this->adapter_.get();
 }
 
 

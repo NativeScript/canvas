@@ -7,15 +7,14 @@
 
 #include "Helpers.h"
 #include "ObjectWrapperImpl.h"
+#include "ArcHandle.h"
 
 
 class GPUBufferImpl : ObjectWrapperImpl {
 public:
     explicit GPUBufferImpl(const CanvasGPUBuffer *buffer);
 
-    ~GPUBufferImpl() {
-        canvas_native_webgpu_buffer_release(this->GetGPUBuffer());
-    }
+    ~GPUBufferImpl() = default;
 
     const CanvasGPUBuffer *GetGPUBuffer();
 
@@ -56,7 +55,7 @@ public:
 
 
 private:
-    const CanvasGPUBuffer *buffer_;
+    ArcHandle<CanvasGPUBuffer, canvas_native_webgpu_buffer_release> buffer_;
 };
 
 

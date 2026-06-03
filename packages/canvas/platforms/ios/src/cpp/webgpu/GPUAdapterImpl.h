@@ -8,6 +8,7 @@
 #include "Common.h"
 #include "Helpers.h"
 #include "ObjectWrapperImpl.h"
+#include "ArcHandle.h"
 #include "GPUSupportedLimitsImpl.h"
 #include "GPUDeviceImpl.h"
 #include "GPUAdapterInfoImpl.h"
@@ -16,9 +17,7 @@ class GPUAdapterImpl : ObjectWrapperImpl {
 public:
     explicit GPUAdapterImpl(const CanvasGPUAdapter *adapter);
 
-    ~GPUAdapterImpl() {
-        canvas_native_webgpu_adapter_release(this->GetGPUAdapter());
-    }
+    ~GPUAdapterImpl() = default;
 
     const CanvasGPUAdapter *GetGPUAdapter();
 
@@ -56,7 +55,7 @@ public:
 
 
 private:
-    const CanvasGPUAdapter *adapter_;
+    ArcHandle<CanvasGPUAdapter, canvas_native_webgpu_adapter_release> adapter_;
 };
 
 

@@ -9,7 +9,7 @@ GPUBindGroupLayoutImpl::GPUBindGroupLayoutImpl(const CanvasGPUBindGroupLayout *g
         : groupLayout_(groupLayout) {}
 
 const CanvasGPUBindGroupLayout *GPUBindGroupLayoutImpl::GetBindGroupLayout() {
-    return this->groupLayout_;
+    return this->groupLayout_.get();
 }
 
 
@@ -63,7 +63,7 @@ GPUBindGroupLayoutImpl::GetLabel(v8::Local<v8::Name> name,
                            const v8::PropertyCallbackInfo<v8::Value> &info) {
     auto ptr = GetPointer(info.This());
     if (ptr != nullptr) {
-        auto label = canvas_native_webgpu_bind_group_layout_get_label(ptr->groupLayout_);
+        auto label = canvas_native_webgpu_bind_group_layout_get_label(ptr->groupLayout_.get());
         if (label == nullptr) {
             info.GetReturnValue().SetEmptyString();
             return;

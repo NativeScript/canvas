@@ -8,14 +8,13 @@
 #include "Common.h"
 #include "Helpers.h"
 #include "ObjectWrapperImpl.h"
+#include "ArcHandle.h"
 
 class GPUDeviceImpl : ObjectWrapperImpl {
 public:
     explicit GPUDeviceImpl(const CanvasGPUDevice *device);
 
-    ~GPUDeviceImpl() {
-        canvas_native_webgpu_device_release(this->device_);
-    }
+    ~GPUDeviceImpl() = default;
 
     const CanvasGPUDevice *GetGPUDevice();
 
@@ -90,7 +89,7 @@ public:
 
 
 private:
-    const CanvasGPUDevice *device_;
+    ArcHandle<CanvasGPUDevice, canvas_native_webgpu_device_release> device_;
 };
 
 

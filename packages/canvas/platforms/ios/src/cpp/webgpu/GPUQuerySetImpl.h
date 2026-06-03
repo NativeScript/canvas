@@ -7,14 +7,13 @@
 
 #include "Helpers.h"
 #include "ObjectWrapperImpl.h"
+#include "ArcHandle.h"
 
 class GPUQuerySetImpl : ObjectWrapperImpl {
 public:
     explicit GPUQuerySetImpl(const CanvasGPUQuerySet *querySet);
 
-    ~GPUQuerySetImpl() {
-        canvas_native_webgpu_query_set_release(this->GetQuerySet());
-    }
+    ~GPUQuerySetImpl() = default;
 
     const CanvasGPUQuerySet *GetQuerySet();
 
@@ -48,7 +47,7 @@ public:
 
 
 private:
-    const CanvasGPUQuerySet *querySet_;
+    ArcHandle<CanvasGPUQuerySet, canvas_native_webgpu_query_set_release> querySet_;
 };
 
 

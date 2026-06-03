@@ -9,7 +9,7 @@ GPUSupportedLimitsImpl::GPUSupportedLimitsImpl(CanvasGPUSupportedLimits *limits)
         limits) {}
 
 CanvasGPUSupportedLimits *GPUSupportedLimitsImpl::GetLimits() {
-    return this->limits_;
+    return this->limits_.get();
 }
 
 

@@ -15,7 +15,7 @@ GPURenderBundleEncoderImpl::GPURenderBundleEncoderImpl(const CanvasGPURenderBund
         encoder) {}
 
 const CanvasGPURenderBundleEncoder *GPURenderBundleEncoderImpl::GetEncoder() {
-    return this->encoder_;
+    return this->encoder_.get();
 }
 
 
@@ -121,7 +121,7 @@ GPURenderBundleEncoderImpl::GetLabel(v8::Local<v8::Name> name,
                                      const v8::PropertyCallbackInfo<v8::Value> &info) {
     auto ptr = GetPointer(info.This());
     if (ptr != nullptr) {
-        auto label = canvas_native_webgpu_render_bundle_encoder_get_label(ptr->encoder_);
+        auto label = canvas_native_webgpu_render_bundle_encoder_get_label(ptr->encoder_.get());
         if (label == nullptr) {
             info.GetReturnValue().SetEmptyString();
             return;

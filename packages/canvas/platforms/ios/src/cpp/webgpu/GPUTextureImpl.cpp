@@ -10,7 +10,7 @@
 GPUTextureImpl::GPUTextureImpl(const CanvasGPUTexture *texture) : texture_(texture) {}
 
 const CanvasGPUTexture *GPUTextureImpl::GetTexture() {
-    return this->texture_;
+    return this->texture_.get();
 }
 
 
@@ -118,7 +118,7 @@ GPUTextureImpl::GetLabel(v8::Local<v8::Name> name,
                          const v8::PropertyCallbackInfo<v8::Value> &info) {
     auto ptr = GetPointer(info.This());
     if (ptr != nullptr) {
-        auto label = canvas_native_webgpu_texture_get_label(ptr->texture_);
+        auto label = canvas_native_webgpu_texture_get_label(ptr->texture_.get());
         if (label == nullptr) {
             info.GetReturnValue().SetEmptyString();
             return;

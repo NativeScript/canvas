@@ -8,14 +8,13 @@
 #include "Common.h"
 #include "Helpers.h"
 #include "ObjectWrapperImpl.h"
+#include "ArcHandle.h"
 
 class GPUTextureImpl : ObjectWrapperImpl {
 public:
     explicit GPUTextureImpl(const CanvasGPUTexture *texture);
 
-    ~GPUTextureImpl() {
-        canvas_native_webgpu_texture_release(this->GetTexture());
-    }
+    ~GPUTextureImpl() = default;
 
     const CanvasGPUTexture *GetTexture();
 
@@ -70,7 +69,7 @@ public:
     static void CreateView(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 private:
-    const CanvasGPUTexture *texture_;
+    ArcHandle<CanvasGPUTexture, canvas_native_webgpu_texture_release> texture_;
 };
 
 

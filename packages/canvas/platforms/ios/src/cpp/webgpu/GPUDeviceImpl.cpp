@@ -26,7 +26,7 @@
 GPUDeviceImpl::GPUDeviceImpl(const CanvasGPUDevice *device) : device_(device) {}
 
 const CanvasGPUDevice *GPUDeviceImpl::GetGPUDevice() {
-    return this->device_;
+    return this->device_.get();
 }
 
 
@@ -173,7 +173,7 @@ GPUDeviceImpl::GetLabel(v8::Local<v8::Name> name,
                         const v8::PropertyCallbackInfo<v8::Value> &info) {
     auto ptr = GetPointer(info.This());
     if (ptr != nullptr) {
-        auto label = canvas_native_webgpu_device_get_label(ptr->device_);
+        auto label = canvas_native_webgpu_device_get_label(ptr->device_.get());
         if (label == nullptr) {
             info.GetReturnValue().SetEmptyString();
             return;

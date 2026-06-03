@@ -8,7 +8,7 @@
 GPUBufferImpl::GPUBufferImpl(const CanvasGPUBuffer *buffer) : buffer_(buffer) {}
 
 const CanvasGPUBuffer *GPUBufferImpl::GetGPUBuffer() {
-    return this->buffer_;
+    return this->buffer_.get();
 }
 
 
@@ -261,7 +261,7 @@ GPUBufferImpl::GetLabel(v8::Local<v8::Name> name,
                                  const v8::PropertyCallbackInfo<v8::Value> &info) {
     auto ptr = GetPointer(info.This());
     if (ptr != nullptr) {
-        auto label = canvas_native_webgpu_buffer_get_label(ptr->buffer_);
+        auto label = canvas_native_webgpu_buffer_get_label(ptr->buffer_.get());
         if (label == nullptr) {
             info.GetReturnValue().SetEmptyString();
             return;

@@ -8,14 +8,13 @@
 #include "Common.h"
 #include "Helpers.h"
 #include "ObjectWrapperImpl.h"
+#include "ArcHandle.h"
 
 class GPUCompilationMessageImpl : ObjectWrapperImpl {
 public:
     explicit GPUCompilationMessageImpl(CanvasGPUCompilationMessage *message);
 
-    ~GPUCompilationMessageImpl() {
-        canvas_native_webgpu_compilation_message_release(this->GetMessage());
-    }
+    ~GPUCompilationMessageImpl() = default;
 
     CanvasGPUCompilationMessage *GetMessage();
 
@@ -57,7 +56,7 @@ public:
 
 
 private:
-    CanvasGPUCompilationMessage *message_;
+    MutArcHandle<CanvasGPUCompilationMessage, canvas_native_webgpu_compilation_message_release> message_;
 };
 
 

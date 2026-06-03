@@ -1495,9 +1495,19 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_present_surface(
                             if error.is_none() {
                                 global.queue_submit(data.device.queue.queue.id, &[id]).ok();
                             }
+
+                            // Release the per-present read-back command buffer. Without
+                            // this it is retained in wgpu-core every frame, the dominant
+                            // render-proportional native-heap leak. Mirrors the drop in
+                            // gpu_queue.rs::queue_submit.
+                            global.command_buffer_drop(id);
                         }
                         Err(_) => {}
                     }
+
+                    // The read-back encoder is single-use per present; drop it so it is
+                    // not retained in wgpu-core's registry across frames.
+                    global.command_encoder_drop(encoder);
                 }
             }
         };

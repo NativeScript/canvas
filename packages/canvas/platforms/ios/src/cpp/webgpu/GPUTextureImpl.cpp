@@ -57,6 +57,10 @@ v8::Local<v8::FunctionTemplate> GPUTextureImpl::GetCtor(v8::Isolate *isolate) {
             ConvertToV8String(isolate, "destroy"),
             v8::FunctionTemplate::New(isolate, &Destroy));
 
+    tmpl->Set(
+            ConvertToV8String(isolate, "__releaseHandle"),
+            v8::FunctionTemplate::New(isolate, &ReleaseHandle));
+
 
     tmpl->SetLazyDataProperty(
             ConvertToV8String(isolate, "width"),
@@ -253,6 +257,18 @@ void GPUTextureImpl::Destroy(const v8::FunctionCallbackInfo<v8::Value> &args) {
         return;
     }
     canvas_native_webgpu_texture_destroy(ptr->GetTexture());
+}
+
+
+void GPUTextureImpl::ReleaseHandle(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    // Drops the wrapper's Arc reference only (NOT a GPU destroy). Called from
+    // GPUCanvasContext.presentSurface() on the per-frame swapchain texture so its
+    // native handle is freed deterministically instead of waiting for the GC
+    // finalizer a tight render loop starves.
+    GPUTextureImpl *ptr = GetPointer(args.This());
+    if (ptr != nullptr) {
+        ptr->Release();
+    }
 }
 
 

@@ -45,28 +45,29 @@ impl Drop for CanvasGPUTexture {
         }
         match self.surface_id {
             Some(surface_id) => {
+                let global = self.instance.global();
                 let has_surface_presented = self
                     .has_surface_presented
                     .load(std::sync::atomic::Ordering::SeqCst);
 
+                // If the frame was acquired but never presented, return the image to
+                // the swapchain so it can be reused. We are in Drop, so we cannot
+                // propagate or fatally abort on failure; log and continue to the drop.
                 if !has_surface_presented {
-                    let global = self.instance.global();
-
-                    /*
-                    match global.surface_texture_discard(surface_id) {
-                        Ok(_) => {
-                            self.surface_id = None;
-                        }
-                        Err(cause) => {
-                            handle_error_fatal(
-                                global,
-                                cause,
-                                "canvas_native_webgpu_texture_release",
-                            )
-                        },
+                    if let Err(cause) = global.surface_texture_discard(surface_id) {
+                        log::warn!(
+                            "canvas: surface_texture_discard during texture drop failed: {cause:?}"
+                        );
                     }
-                    */
                 }
+
+                // Free the wgpu Texture (and its surface `clear_view`) from the hub.
+                // present()/discard() only drop the acquired-texture ref; the hub
+                // registry holds a second ref that must be dropped here. Without this
+                // the per-frame swapchain texture and its clear image view leak in
+                // wgpu-core every frame (render-proportional native-heap growth).
+                global.texture_drop(self.texture);
+                self.surface_id = None;
             }
             None => {
                 let context = self.instance.global();

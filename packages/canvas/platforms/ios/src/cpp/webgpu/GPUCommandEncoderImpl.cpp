@@ -17,7 +17,7 @@ GPUCommandEncoderImpl::GPUCommandEncoderImpl(const CanvasGPUCommandEncoder *enco
 																																																encoder) {}
 
 const CanvasGPUCommandEncoder *GPUCommandEncoderImpl::GetEncoder() {
-	return this->encoder_;
+	return this->encoder_.get();
 }
 
 void GPUCommandEncoderImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate) {
@@ -110,11 +110,22 @@ v8::Local<v8::FunctionTemplate> GPUCommandEncoderImpl::GetCtor(v8::Isolate *isol
 	tmpl->Set(
 						ConvertToV8String(isolate, "writeTimestamp"),
 						v8::FunctionTemplate::New(isolate, &WriteTimestamp));
-	
-	
+
+	tmpl->Set(
+						ConvertToV8String(isolate, "destroy"),
+						v8::FunctionTemplate::New(isolate, &Destroy));
+
+
 	cache->GPUCommandEncoderTmpl =
 	std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
 	return ctorTmpl;
+}
+
+void GPUCommandEncoderImpl::Destroy(const v8::FunctionCallbackInfo<v8::Value> &args) {
+	auto ptr = GetPointer(args.This());
+	if (ptr != nullptr) {
+		ptr->Release();
+	}
 }
 
 void
@@ -122,7 +133,7 @@ GPUCommandEncoderImpl::GetLabel(v8::Local<v8::Name> name,
 																const v8::PropertyCallbackInfo<v8::Value> &info) {
 	auto ptr = GetPointer(info.This());
 	if (ptr != nullptr) {
-		auto label = canvas_native_webgpu_command_encoder_get_label(ptr->encoder_);
+		auto label = canvas_native_webgpu_command_encoder_get_label(ptr->encoder_.get());
 		if (label == nullptr) {
 			info.GetReturnValue().SetEmptyString();
 			return;

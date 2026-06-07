@@ -10,6 +10,7 @@
 
 #include "Helpers.h"
 #include "ObjectWrapperImpl.h"
+#include "ArcHandle.h"
 #include "GPUDeviceImpl.h"
 #include "GPUTextureImpl.h"
 
@@ -51,8 +52,9 @@ public:
 	}
 	
 	~GPUCanvasContextImpl() {
+		// raf_ first (its callback can reference the context), then context_ is
+		// released by its ArcHandle member as this object is destroyed.
 		this->raf_.reset();
-		canvas_native_webgpu_context_release(this->context_);
 	}
 	
 	const CanvasGPUCanvasContext *GetContext();
@@ -102,7 +104,7 @@ public:
 	static void Flush(intptr_t context);
 	
 private:
-	const CanvasGPUCanvasContext *context_;
+	ArcHandle<CanvasGPUCanvasContext, canvas_native_webgpu_context_release> context_;
 	std::shared_ptr<RafImpl> raf_;
 	
 	bool continuousRender_ = true;

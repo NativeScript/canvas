@@ -8,14 +8,13 @@
 #include "Common.h"
 #include "Helpers.h"
 #include "ObjectWrapperImpl.h"
+#include "ArcHandle.h"
 
 class GPURenderBundleImpl : ObjectWrapperImpl {
 public:
     explicit GPURenderBundleImpl(const CanvasGPURenderBundle *bundle);
 
-    ~GPURenderBundleImpl() {
-        canvas_native_webgpu_render_bundle_release(this->bundle_);
-    }
+    ~GPURenderBundleImpl() = default;
 
     const CanvasGPURenderBundle *GetBundle();
 
@@ -41,7 +40,7 @@ public:
 
 
 private:
-    const CanvasGPURenderBundle *bundle_;
+    ArcHandle<CanvasGPURenderBundle, canvas_native_webgpu_render_bundle_release> bundle_;
 };
 
 

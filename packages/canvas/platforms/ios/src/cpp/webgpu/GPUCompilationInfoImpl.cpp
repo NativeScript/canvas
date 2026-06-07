@@ -10,7 +10,7 @@ GPUCompilationInfoImpl::GPUCompilationInfoImpl(CanvasGPUCompilationInfo *info) :
         info) {}
 
 CanvasGPUCompilationInfo *GPUCompilationInfoImpl::GetCompilationInfo() {
-    return this->info_;
+    return this->info_.get();
 }
 
 

@@ -7,14 +7,13 @@
 
 #include "Helpers.h"
 #include "ObjectWrapperImpl.h"
+#include "ArcHandle.h"
 
 class GPUSupportedLimitsImpl : public ObjectWrapperImpl {
 public:
     explicit GPUSupportedLimitsImpl(CanvasGPUSupportedLimits *limits);
 
-    ~GPUSupportedLimitsImpl() {
-        canvas_native_webgpu_limits_release(this->limits_);
-    }
+    ~GPUSupportedLimitsImpl() = default;
 
     CanvasGPUSupportedLimits *GetLimits();
 
@@ -281,7 +280,7 @@ public:
                                          const v8::PropertyCallbackInfo<void> &info);
 
 private:
-    CanvasGPUSupportedLimits *limits_;
+    MutArcHandle<CanvasGPUSupportedLimits, canvas_native_webgpu_limits_release> limits_;
 };
 
 

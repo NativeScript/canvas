@@ -8,16 +8,18 @@
 #include "Common.h"
 #include "Helpers.h"
 #include "ObjectWrapperImpl.h"
+#include "ArcHandle.h"
 
 class GPUTextureImpl : ObjectWrapperImpl {
 public:
     explicit GPUTextureImpl(const CanvasGPUTexture *texture);
 
-    ~GPUTextureImpl() {
-        canvas_native_webgpu_texture_release(this->GetTexture());
-    }
+    ~GPUTextureImpl() = default;
 
     const CanvasGPUTexture *GetTexture();
+
+    // drops the wrapper's Arc handle (not destroy(), which frees the GPU texture)
+    void Release() { texture_.reset(); }
 
     static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
 
@@ -67,10 +69,13 @@ public:
 
     static void Destroy(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    // JS __releaseHandle: drops the wrapper's handle without destroying the texture
+    static void ReleaseHandle(const v8::FunctionCallbackInfo<v8::Value> &args);
+
     static void CreateView(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 private:
-    const CanvasGPUTexture *texture_;
+    ArcHandle<CanvasGPUTexture, canvas_native_webgpu_texture_release> texture_;
 };
 
 

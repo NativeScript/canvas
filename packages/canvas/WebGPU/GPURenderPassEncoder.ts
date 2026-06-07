@@ -45,7 +45,11 @@ export class GPURenderPassEncoder {
 	}
 
 	end() {
-		this[native_].end();
+		// end() consumes the pass; release it now instead of waiting for GC
+		const n = this[native_];
+		n?.end();
+		n?.destroy?.();
+		this[native_] = null;
 	}
 
 	endOcclusionQuery() {

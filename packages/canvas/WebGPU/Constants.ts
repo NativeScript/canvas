@@ -39,3 +39,5 @@ export const native_ = Symbol('[[native]]');
 export const mapState_ = Symbol('[[mapState]]');
 export const contextPtr_ = Symbol('[[contextPtr]]');
 export const adapter_ = Symbol('[[adapter]]');
+// owning GPUCanvasContext stamped on the getCurrentTexture() texture (for release at present)
+export const swapchainContext_ = Symbol('[[swapchainContext]]');

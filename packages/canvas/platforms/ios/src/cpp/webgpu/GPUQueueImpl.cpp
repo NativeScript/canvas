@@ -17,7 +17,7 @@
 GPUQueueImpl::GPUQueueImpl(const CanvasGPUQueue *queue) : queue_(queue) {}
 
 const CanvasGPUQueue *GPUQueueImpl::GetGPUQueue() {
-    return this->queue_;
+    return this->queue_.get();
 }
 
 
@@ -94,7 +94,7 @@ GPUQueueImpl::GetLabel(v8::Local<v8::Name> name,
                        const v8::PropertyCallbackInfo<v8::Value> &info) {
     auto ptr = GetPointer(info.This());
     if (ptr != nullptr) {
-        auto label = canvas_native_webgpu_queue_get_label(ptr->queue_);
+        auto label = canvas_native_webgpu_queue_get_label(ptr->queue_.get());
         if (label == nullptr) {
             info.GetReturnValue().SetEmptyString();
             return;

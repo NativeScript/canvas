@@ -11,7 +11,7 @@ GPUComputePipelineImpl::GPUComputePipelineImpl(const CanvasGPUComputePipeline *p
         pipeline) {}
 
 const CanvasGPUComputePipeline *GPUComputePipelineImpl::GetGPUPipeline() {
-    return this->pipeline_;
+    return this->pipeline_.get();
 }
 
 
@@ -68,7 +68,7 @@ GPUComputePipelineImpl::GetLabel(v8::Local<v8::Name> name,
                                  const v8::PropertyCallbackInfo<v8::Value> &info) {
     auto ptr = GetPointer(info.This());
     if (ptr != nullptr) {
-        auto label = canvas_native_webgpu_compute_pipeline_get_label(ptr->pipeline_);
+        auto label = canvas_native_webgpu_compute_pipeline_get_label(ptr->pipeline_.get());
         if (label == nullptr) {
             info.GetReturnValue().SetEmptyString();
             return;

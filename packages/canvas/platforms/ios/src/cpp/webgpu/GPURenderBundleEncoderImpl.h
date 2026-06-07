@@ -8,15 +8,14 @@
 #include "Common.h"
 #include "Helpers.h"
 #include "ObjectWrapperImpl.h"
+#include "ArcHandle.h"
 
 class GPURenderBundleEncoderImpl : ObjectWrapperImpl {
 
 public:
     explicit GPURenderBundleEncoderImpl(const CanvasGPURenderBundleEncoder *encoder);
 
-    ~GPURenderBundleEncoderImpl() {
-        canvas_native_webgpu_render_bundle_encoder_release(this->GetEncoder());
-    }
+    ~GPURenderBundleEncoderImpl() = default;
 
     const CanvasGPURenderBundleEncoder *GetEncoder();
 
@@ -67,7 +66,7 @@ public:
 
 
 private:
-    const CanvasGPURenderBundleEncoder *encoder_;
+    ArcHandle<CanvasGPURenderBundleEncoder, canvas_native_webgpu_render_bundle_encoder_release> encoder_;
 };
 
 

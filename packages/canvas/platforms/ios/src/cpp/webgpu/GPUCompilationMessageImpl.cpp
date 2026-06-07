@@ -10,7 +10,7 @@ GPUCompilationMessageImpl::GPUCompilationMessageImpl(CanvasGPUCompilationMessage
         message) {}
 
 CanvasGPUCompilationMessage *GPUCompilationMessageImpl::GetMessage() {
-    return this->message_;
+    return this->message_.get();
 }
 
 

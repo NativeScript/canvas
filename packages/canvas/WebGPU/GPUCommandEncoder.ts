@@ -190,7 +190,11 @@ export class GPUCommandEncoder {
 
 	finish(descriptor?: { label?: string }) {
 		const ret = this[native_].finish(descriptor);
-		return GPUCommandBuffer.fromNative(ret);
+		const buffer = GPUCommandBuffer.fromNative(ret);
+		// finish() consumes the encoder; release it now instead of waiting for GC
+		this[native_]?.destroy?.();
+		this[native_] = null;
+		return buffer;
 	}
 
 	insertDebugMarker(markerLabel: string) {

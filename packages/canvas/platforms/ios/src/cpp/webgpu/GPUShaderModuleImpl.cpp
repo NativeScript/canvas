@@ -10,7 +10,7 @@ GPUShaderModuleImpl::GPUShaderModuleImpl(const CanvasGPUShaderModule *shaderModu
         shaderModule) {}
 
 const CanvasGPUShaderModule *GPUShaderModuleImpl::GetShaderModule() {
-    return this->shaderModule_;
+    return this->shaderModule_.get();
 }
 
 
@@ -67,7 +67,7 @@ GPUShaderModuleImpl::GetLabel(v8::Local<v8::Name> name,
                               const v8::PropertyCallbackInfo<v8::Value> &info) {
     auto ptr = GetPointer(info.This());
     if (ptr != nullptr) {
-        auto label = canvas_native_webgpu_shader_module_get_label(ptr->shaderModule_);
+        auto label = canvas_native_webgpu_shader_module_get_label(ptr->shaderModule_.get());
         if (label == nullptr) {
             info.GetReturnValue().SetEmptyString();
             return;

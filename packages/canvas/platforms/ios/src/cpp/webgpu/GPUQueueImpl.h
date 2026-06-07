@@ -8,15 +8,14 @@
 #include "Common.h"
 #include "Helpers.h"
 #include "ObjectWrapperImpl.h"
+#include "ArcHandle.h"
 #include "GPUUtils.h"
 
 class GPUQueueImpl : ObjectWrapperImpl {
 public:
     explicit GPUQueueImpl(const CanvasGPUQueue *queue);
 
-    ~GPUQueueImpl() {
-        canvas_native_webgpu_queue_release(this->GetGPUQueue());
-    }
+    ~GPUQueueImpl() = default;
 
     const CanvasGPUQueue *GetGPUQueue();
 
@@ -52,7 +51,7 @@ public:
 
 
 private:
-    const CanvasGPUQueue *queue_;
+    ArcHandle<CanvasGPUQueue, canvas_native_webgpu_queue_release> queue_;
 };
 
 

@@ -32,7 +32,7 @@ GPUCanvasContextImpl::GPUCanvasContextImpl(const CanvasGPUCanvasContext *context
 																																														 }
 
 const CanvasGPUCanvasContext *GPUCanvasContextImpl::GetContext() {
-	return this->context_;
+	return this->context_.get();
 }
 
 

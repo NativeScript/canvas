@@ -8,14 +8,13 @@
 #include "Common.h"
 #include "Helpers.h"
 #include "ObjectWrapperImpl.h"
+#include "ArcHandle.h"
 
 class GPUShaderModuleImpl : ObjectWrapperImpl {
 public:
     explicit GPUShaderModuleImpl(const CanvasGPUShaderModule *shaderModule);
 
-    ~GPUShaderModuleImpl() {
-        canvas_native_webgpu_shader_module_release(this->GetShaderModule());
-    }
+    ~GPUShaderModuleImpl() = default;
 
     const CanvasGPUShaderModule *GetShaderModule();
 
@@ -43,7 +42,7 @@ public:
     static void GetCompilationInfo(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 private:
-    const CanvasGPUShaderModule *shaderModule_;
+    ArcHandle<CanvasGPUShaderModule, canvas_native_webgpu_shader_module_release> shaderModule_;
 };
 
 

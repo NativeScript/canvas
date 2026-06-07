@@ -8,16 +8,18 @@
 #include "Common.h"
 #include "Helpers.h"
 #include "ObjectWrapperImpl.h"
+#include "ArcHandle.h"
 
 class GPUCommandBufferImpl : ObjectWrapperImpl {
 public:
     explicit GPUCommandBufferImpl(const CanvasGPUCommandBuffer *commandBuffer);
 
-    ~GPUCommandBufferImpl() {
-        canvas_native_webgpu_command_buffer_release(this->commandBuffer_);
-    }
+    // Deterministic dispose, called from Destroy() at queue.submit(). See ArcHandle.h.
+    void Release() { commandBuffer_.reset(); }
 
     const CanvasGPUCommandBuffer *GetGPUCommandBuffer();
+
+    static void Destroy(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
 
@@ -41,7 +43,7 @@ public:
                          const v8::PropertyCallbackInfo<v8::Value> &info);
 
 private:
-    const CanvasGPUCommandBuffer *commandBuffer_;
+    ArcHandle<CanvasGPUCommandBuffer, canvas_native_webgpu_command_buffer_release> commandBuffer_;
 };
 
 

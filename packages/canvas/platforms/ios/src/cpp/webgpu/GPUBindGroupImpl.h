@@ -8,14 +8,13 @@
 #include "Common.h"
 #include "Helpers.h"
 #include "ObjectWrapperImpl.h"
+#include "ArcHandle.h"
 
 class GPUBindGroupImpl : ObjectWrapperImpl {
 public:
     explicit GPUBindGroupImpl(const CanvasGPUBindGroup *group);
 
-    ~GPUBindGroupImpl() {
-        canvas_native_webgpu_bind_group_release(this->GetBindGroup());
-    }
+    ~GPUBindGroupImpl() = default;
 
     const CanvasGPUBindGroup *GetBindGroup();
 
@@ -41,7 +40,7 @@ public:
                          const v8::PropertyCallbackInfo<v8::Value> &info);
 
 private:
-    const CanvasGPUBindGroup *group_;
+    ArcHandle<CanvasGPUBindGroup, canvas_native_webgpu_bind_group_release> group_;
 };
 
 

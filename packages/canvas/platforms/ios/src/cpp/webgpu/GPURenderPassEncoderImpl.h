@@ -9,16 +9,18 @@
 #include "Helpers.h"
 #include "ObjectWrapperImpl.h"
 #include "GPUUtils.h"
+#include "ArcHandle.h"
 
 class GPURenderPassEncoderImpl : ObjectWrapperImpl {
 public:
     explicit GPURenderPassEncoderImpl(const CanvasGPURenderPassEncoder *pass);
 
-    ~GPURenderPassEncoderImpl() {
-        canvas_native_webgpu_render_pass_encoder_release(this->GetPass());
-    }
+    // Deterministic dispose, called from Destroy() at pass.end(). See ArcHandle.h.
+    void Release() { pass_.reset(); }
 
     const CanvasGPURenderPassEncoder *GetPass();
+
+    static void Destroy(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
 
@@ -85,7 +87,7 @@ public:
 
 
 private:
-    const CanvasGPURenderPassEncoder *pass_;
+    ArcHandle<CanvasGPURenderPassEncoder, canvas_native_webgpu_render_pass_encoder_release> pass_;
 };
 
 

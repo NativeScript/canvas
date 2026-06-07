@@ -10,7 +10,7 @@
 GPUTextureImpl::GPUTextureImpl(const CanvasGPUTexture *texture) : texture_(texture) {}
 
 const CanvasGPUTexture *GPUTextureImpl::GetTexture() {
-    return this->texture_;
+    return this->texture_.get();
 }
 
 
@@ -56,6 +56,10 @@ v8::Local<v8::FunctionTemplate> GPUTextureImpl::GetCtor(v8::Isolate *isolate) {
     tmpl->Set(
             ConvertToV8String(isolate, "destroy"),
             v8::FunctionTemplate::New(isolate, &Destroy));
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "__releaseHandle"),
+            v8::FunctionTemplate::New(isolate, &ReleaseHandle));
 
 
     tmpl->SetLazyDataProperty(
@@ -118,7 +122,7 @@ GPUTextureImpl::GetLabel(v8::Local<v8::Name> name,
                          const v8::PropertyCallbackInfo<v8::Value> &info) {
     auto ptr = GetPointer(info.This());
     if (ptr != nullptr) {
-        auto label = canvas_native_webgpu_texture_get_label(ptr->texture_);
+        auto label = canvas_native_webgpu_texture_get_label(ptr->texture_.get());
         if (label == nullptr) {
             info.GetReturnValue().SetEmptyString();
             return;
@@ -253,6 +257,14 @@ void GPUTextureImpl::Destroy(const v8::FunctionCallbackInfo<v8::Value> &args) {
         return;
     }
     canvas_native_webgpu_texture_destroy(ptr->GetTexture());
+}
+
+
+void GPUTextureImpl::ReleaseHandle(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    GPUTextureImpl *ptr = GetPointer(args.This());
+    if (ptr != nullptr) {
+        ptr->Release();
+    }
 }
 
 

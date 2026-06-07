@@ -8,14 +8,13 @@
 #include "Common.h"
 #include "Helpers.h"
 #include "ObjectWrapperImpl.h"
+#include "ArcHandle.h"
 
 class GPUSamplerImpl : ObjectWrapperImpl {
 public:
     explicit GPUSamplerImpl(const CanvasGPUSampler *sampler);
 
-    ~GPUSamplerImpl() {
-        canvas_native_webgpu_sampler_release(this->sampler_);
-    }
+    ~GPUSamplerImpl() = default;
 
     const CanvasGPUSampler *GetSampler();
 
@@ -41,7 +40,7 @@ public:
 
 
 private:
-    const CanvasGPUSampler *sampler_;
+    ArcHandle<CanvasGPUSampler, canvas_native_webgpu_sampler_release> sampler_;
 };
 
 

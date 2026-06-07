@@ -1,7 +1,8 @@
 import { Helpers } from '../helpers';
-import { adapter_, contextPtr_, GPUTextureUsage, native_ } from './Constants';
+import { adapter_, contextPtr_, GPUTextureUsage, native_, swapchainContext_ } from './Constants';
 import type { GPUDevice } from './GPUDevice';
 import { GPUTexture } from './GPUTexture';
+import type { GPUTextureView } from './GPUTextureView';
 import type { GPUAdapter } from './GPUAdapter';
 import type { GPUCanvasAlphaMode, GPUCanvasPresentMode, GPUExtent3D, GPUTextureFormat } from './Types';
 import type { CanvasRenderingContext } from '../common';
@@ -17,6 +18,15 @@ export class GPUCanvasContext implements CanvasRenderingContext {
 
 	[native_] = null;
 	[contextPtr_] = null;
+
+	// per-frame swapchain views and textures, released at the next presentSurface()
+	private _swapchainViews: GPUTextureView[] = [];
+	private _swapchainTextures: GPUTexture[] = [];
+
+	/** @internal */
+	_registerSwapchainView(view: GPUTextureView) {
+		this._swapchainViews.push(view);
+	}
 
 	constructor(context: any, contextOptions: any = {}) {
 		let nativeContext = '0';
@@ -176,12 +186,39 @@ export class GPUCanvasContext implements CanvasRenderingContext {
 		const result = GPUTexture.fromNative(texture);
 		if (!result) {
 			console.error('GPUCanvasContext.getCurrentTexture: native texture wrapper contained no texture');
+		} else {
+			// mark as swapchain-owned and track for release at present
+			(result as any)[swapchainContext_] = this;
+			this._swapchainTextures.push(result);
 		}
 		return result;
 	}
 
 	presentSurface(_texture?: GPUTexture) {
 		this.native.presentSurface();
+		// release this frame's swapchain views and textures (their point of death)
+		const views = this._swapchainViews;
+		if (views.length > 0) {
+			this._swapchainViews = [];
+			for (let i = 0; i < views.length; i++) {
+				const view = views[i] as any;
+				view?.[native_]?.destroy?.();
+				if (view) {
+					view[native_] = null;
+				}
+			}
+		}
+		const texs = this._swapchainTextures;
+		if (texs.length > 0) {
+			this._swapchainTextures = [];
+			for (let i = 0; i < texs.length; i++) {
+				const tex = texs[i] as any;
+				tex?.[native_]?.__releaseHandle?.();
+				if (tex) {
+					tex[native_] = null;
+				}
+			}
+		}
 	}
 
 	getCapabilities(adapter: GPUAdapter): {

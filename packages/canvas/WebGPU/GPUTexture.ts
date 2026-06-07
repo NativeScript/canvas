@@ -1,4 +1,4 @@
-import { native_ } from './Constants';
+import { native_, swapchainContext_ } from './Constants';
 import { GPUTextureView } from './GPUTextureView';
 import type { GPUTextureViewDescriptor } from './Interfaces';
 
@@ -49,6 +49,12 @@ export class GPUTexture {
 
 	createView(desc?: GPUTextureViewDescriptor) {
 		const view = this[native_].createView(desc);
-		return GPUTextureView.fromNative(view);
+		const ret = GPUTextureView.fromNative(view);
+		// swapchain-texture views die at present; register them with the owning context
+		const ctx = (this as any)[swapchainContext_];
+		if (ret && ctx) {
+			ctx._registerSwapchainView(ret);
+		}
+		return ret;
 	}
 }

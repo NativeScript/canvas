@@ -8,14 +8,13 @@
 #include "Common.h"
 #include "Helpers.h"
 #include "ObjectWrapperImpl.h"
+#include "ArcHandle.h"
 
 class GPUCompilationInfoImpl : ObjectWrapperImpl {
 public:
     explicit GPUCompilationInfoImpl(CanvasGPUCompilationInfo *info);
 
-    ~GPUCompilationInfoImpl() {
-        canvas_native_webgpu_compilation_info_release(this->GetCompilationInfo());
-    }
+    ~GPUCompilationInfoImpl() = default;
 
     CanvasGPUCompilationInfo* GetCompilationInfo();
 
@@ -42,7 +41,7 @@ public:
 
 
 private:
-    CanvasGPUCompilationInfo *info_;
+    MutArcHandle<CanvasGPUCompilationInfo, canvas_native_webgpu_compilation_info_release> info_;
 };
 
 

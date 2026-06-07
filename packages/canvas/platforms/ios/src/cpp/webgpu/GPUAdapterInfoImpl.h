@@ -8,14 +8,13 @@
 #include "Common.h"
 #include "Helpers.h"
 #include "ObjectWrapperImpl.h"
+#include "ArcHandle.h"
 
 class GPUAdapterInfoImpl : ObjectWrapperImpl {
 public:
     explicit GPUAdapterInfoImpl(const CanvasGPUAdapterInfo *info);
 
-    ~GPUAdapterInfoImpl() {
-        canvas_native_webgpu_adapter_info_release(this->GetInfo());
-    }
+    ~GPUAdapterInfoImpl() = default;
 
     const CanvasGPUAdapterInfo *GetInfo();
 
@@ -51,7 +50,7 @@ public:
 
 
 private:
-    const CanvasGPUAdapterInfo *info_;
+    ArcHandle<CanvasGPUAdapterInfo, canvas_native_webgpu_adapter_info_release> info_;
 };
 
 

@@ -8,7 +8,7 @@
 GPUImpl::GPUImpl(const CanvasWebGPUInstance *instance) : instance_(instance) {}
 
 const CanvasWebGPUInstance *GPUImpl::GetGPUInstance() {
-    return this->instance_;
+    return this->instance_.get();
 }
 
 void GPUImpl::Init(const v8::Local<v8::Object> &canvasModule, v8::Isolate *isolate) {

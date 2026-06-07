@@ -8,7 +8,7 @@
 GPUQuerySetImpl::GPUQuerySetImpl(const CanvasGPUQuerySet *querySet) : querySet_(querySet) {}
 
 const CanvasGPUQuerySet *GPUQuerySetImpl::GetQuerySet() {
-    return this->querySet_;
+    return this->querySet_.get();
 }
 
 
@@ -131,6 +131,6 @@ void GPUQuerySetImpl::Destroy(const v8::FunctionCallbackInfo<v8::Value> &args) {
     if (ptr == nullptr) {
         return;
     }
-    canvas_native_webgpu_query_set_destroy(ptr->querySet_);
+    canvas_native_webgpu_query_set_destroy(ptr->querySet_.get());
 
 }

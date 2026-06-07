@@ -9,17 +9,13 @@
 #include "Helpers.h"
 #include "GPUAdapterImpl.h"
 #include "ObjectWrapperImpl.h"
+#include "ArcHandle.h"
 
 class GPUImpl : ObjectWrapperImpl {
 public:
     explicit GPUImpl(const CanvasWebGPUInstance *instance);
 
-    ~GPUImpl() {
-        if (this->instance_ != nullptr) {
-            canvas_native_webgpu_instance_release(this->instance_);
-            this->instance_ = nullptr;
-        }
-    }
+    ~GPUImpl() = default;
 
     const CanvasWebGPUInstance *GetGPUInstance();
 
@@ -48,7 +44,7 @@ public:
     static void RequestAdapter(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 private:
-    const CanvasWebGPUInstance *instance_;
+    ArcHandle<CanvasWebGPUInstance, canvas_native_webgpu_instance_release> instance_;
 };
 
 

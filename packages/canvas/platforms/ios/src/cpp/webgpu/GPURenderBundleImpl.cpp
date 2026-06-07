@@ -9,7 +9,7 @@ GPURenderBundleImpl::GPURenderBundleImpl(const CanvasGPURenderBundle *bundle) : 
         bundle) {}
 
 const CanvasGPURenderBundle *GPURenderBundleImpl::GetBundle() {
-    return this->bundle_;
+    return this->bundle_.get();
 }
 
 
@@ -62,7 +62,7 @@ GPURenderBundleImpl::GetLabel(v8::Local<v8::Name> name,
                                      const v8::PropertyCallbackInfo<v8::Value> &info) {
     auto ptr = GetPointer(info.This());
     if (ptr != nullptr) {
-        auto label = canvas_native_webgpu_render_bundle_get_label(ptr->bundle_);
+        auto label = canvas_native_webgpu_render_bundle_get_label(ptr->bundle_.get());
         if (label == nullptr) {
             info.GetReturnValue().SetEmptyString();
             return;

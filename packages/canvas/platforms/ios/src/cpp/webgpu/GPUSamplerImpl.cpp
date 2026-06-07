@@ -9,7 +9,7 @@ GPUSamplerImpl::GPUSamplerImpl(const CanvasGPUSampler *sampler) : sampler_(
         sampler) {}
 
 const CanvasGPUSampler *GPUSamplerImpl::GetSampler() {
-    return this->sampler_;
+    return this->sampler_.get();
 }
 
 
@@ -63,7 +63,7 @@ GPUSamplerImpl::GetLabel(v8::Local<v8::Name> name,
                          const v8::PropertyCallbackInfo<v8::Value> &info) {
     auto ptr = GetPointer(info.This());
     if (ptr != nullptr) {
-        auto label = canvas_native_webgpu_sampler_get_label(ptr->sampler_);
+        auto label = canvas_native_webgpu_sampler_get_label(ptr->sampler_.get());
         if (label == nullptr) {
             info.GetReturnValue().SetEmptyString();
             return;

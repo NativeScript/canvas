@@ -8,7 +8,7 @@
 GPUTextureViewImpl::GPUTextureViewImpl(const CanvasGPUTextureView *view) : view_(view) {}
 
 const CanvasGPUTextureView *GPUTextureViewImpl::GetTextureView() {
-    return this->view_;
+    return this->view_.get();
 }
 
 
@@ -51,6 +51,10 @@ v8::Local<v8::FunctionTemplate> GPUTextureViewImpl::GetCtor(v8::Isolate *isolate
             GetLabel
     );
 
+    tmpl->Set(
+            ConvertToV8String(isolate, "destroy"),
+            v8::FunctionTemplate::New(isolate, &Destroy));
+
 
     cache->GPUTextureViewTmpl =
             std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
@@ -58,12 +62,19 @@ v8::Local<v8::FunctionTemplate> GPUTextureViewImpl::GetCtor(v8::Isolate *isolate
 }
 
 
+void GPUTextureViewImpl::Destroy(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto ptr = GetPointer(args.This());
+    if (ptr != nullptr) {
+        ptr->Release();
+    }
+}
+
 void
 GPUTextureViewImpl::GetLabel(v8::Local<v8::Name> name,
                              const v8::PropertyCallbackInfo<v8::Value> &info) {
     auto ptr = GetPointer(info.This());
     if (ptr != nullptr) {
-        auto label = canvas_native_webgpu_texture_view_get_label(ptr->view_);
+        auto label = canvas_native_webgpu_texture_view_get_label(ptr->view_.get());
         if (label == nullptr) {
             info.GetReturnValue().SetEmptyString();
             return;

@@ -1495,9 +1495,13 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_present_surface(
                             if error.is_none() {
                                 global.queue_submit(data.device.queue.queue.id, &[id]).ok();
                             }
+
+                            global.command_buffer_drop(id);
                         }
                         Err(_) => {}
                     }
+
+                    global.command_encoder_drop(encoder);
                 }
             }
         };

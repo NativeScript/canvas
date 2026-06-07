@@ -129,6 +129,14 @@ export class GPUQueue {
 					return command[native_];
 				}),
 			);
+			// submit() consumes the command buffers; release them now instead of via GC
+			for (let i = 0; i < commands.length; i++) {
+				const command = commands[i] as any;
+				command?.[native_]?.destroy?.();
+				if (command) {
+					command[native_] = null;
+				}
+			}
 		}
 	}
 

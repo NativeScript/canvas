@@ -8,15 +8,14 @@
 #include "Common.h"
 #include "Helpers.h"
 #include "ObjectWrapperImpl.h"
+#include "ArcHandle.h"
 
 
 class GPUPipelineLayoutImpl : ObjectWrapperImpl {
 public:
     explicit GPUPipelineLayoutImpl(const CanvasGPUPipelineLayout *pipeline);
 
-    ~GPUPipelineLayoutImpl() {
-        canvas_native_webgpu_pipeline_layout_release(this->GetPipeline());
-    }
+    ~GPUPipelineLayoutImpl() = default;
 
     const CanvasGPUPipelineLayout *GetPipeline();
 
@@ -42,7 +41,7 @@ public:
                          const v8::PropertyCallbackInfo<v8::Value> &info);
 
 private:
-    const CanvasGPUPipelineLayout *pipeline_;
+    ArcHandle<CanvasGPUPipelineLayout, canvas_native_webgpu_pipeline_layout_release> pipeline_;
 };
 
 

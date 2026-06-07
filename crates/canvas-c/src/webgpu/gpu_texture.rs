@@ -45,28 +45,21 @@ impl Drop for CanvasGPUTexture {
         }
         match self.surface_id {
             Some(surface_id) => {
+                let global = self.instance.global();
                 let has_surface_presented = self
                     .has_surface_presented
                     .load(std::sync::atomic::Ordering::SeqCst);
 
+                // acquired but never presented: hand the image back to the swapchain
                 if !has_surface_presented {
-                    let global = self.instance.global();
-
-                    /*
-                    match global.surface_texture_discard(surface_id) {
-                        Ok(_) => {
-                            self.surface_id = None;
-                        }
-                        Err(cause) => {
-                            handle_error_fatal(
-                                global,
-                                cause,
-                                "canvas_native_webgpu_texture_release",
-                            )
-                        },
+                    if let Err(cause) = global.surface_texture_discard(surface_id) {
+                        log::warn!("surface_texture_discard failed: {cause:?}");
                     }
-                    */
                 }
+
+                // drop the hub ref so the surface texture and its clear_view are freed
+                global.texture_drop(self.texture);
+                self.surface_id = None;
             }
             None => {
                 let context = self.instance.global();

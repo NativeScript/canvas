@@ -10,7 +10,7 @@ GPUCommandBufferImpl::GPUCommandBufferImpl(const CanvasGPUCommandBuffer *command
         commandBuffer) {}
 
 const CanvasGPUCommandBuffer *GPUCommandBufferImpl::GetGPUCommandBuffer() {
-    return this->commandBuffer_;
+    return this->commandBuffer_.get();
 }
 
 
@@ -53,6 +53,10 @@ v8::Local<v8::FunctionTemplate> GPUCommandBufferImpl::GetCtor(v8::Isolate *isola
             GetLabel
     );
 
+    tmpl->Set(
+            ConvertToV8String(isolate, "destroy"),
+            v8::FunctionTemplate::New(isolate, &Destroy));
+
 
     cache->GPUCommandBufferTmpl =
             std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
@@ -60,12 +64,19 @@ v8::Local<v8::FunctionTemplate> GPUCommandBufferImpl::GetCtor(v8::Isolate *isola
 }
 
 
+void GPUCommandBufferImpl::Destroy(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto ptr = GetPointer(args.This());
+    if (ptr != nullptr) {
+        ptr->Release();
+    }
+}
+
 void
 GPUCommandBufferImpl::GetLabel(v8::Local<v8::Name> name,
                                const v8::PropertyCallbackInfo<v8::Value> &info) {
     auto ptr = GetPointer(info.This());
     if (ptr != nullptr) {
-        auto label = canvas_native_webgpu_command_buffer_get_label(ptr->commandBuffer_);
+        auto label = canvas_native_webgpu_command_buffer_get_label(ptr->commandBuffer_.get());
         if (label == nullptr) {
             info.GetReturnValue().SetEmptyString();
             return;

@@ -8,14 +8,13 @@
 #include "Common.h"
 #include "Helpers.h"
 #include "ObjectWrapperImpl.h"
+#include "ArcHandle.h"
 
 class GPUBindGroupLayoutImpl : ObjectWrapperImpl {
 public:
     explicit GPUBindGroupLayoutImpl(const CanvasGPUBindGroupLayout *groupLayout);
 
-    ~GPUBindGroupLayoutImpl() {
-        canvas_native_webgpu_bind_group_layout_release(this->GetBindGroupLayout());
-    }
+    ~GPUBindGroupLayoutImpl() = default;
 
     const CanvasGPUBindGroupLayout *GetBindGroupLayout();
 
@@ -41,7 +40,7 @@ public:
                          const v8::PropertyCallbackInfo<v8::Value> &info);
 
 private:
-    const CanvasGPUBindGroupLayout *groupLayout_;
+    ArcHandle<CanvasGPUBindGroupLayout, canvas_native_webgpu_bind_group_layout_release> groupLayout_;
 };
 
 

@@ -8,7 +8,7 @@
 GPUAdapterInfoImpl::GPUAdapterInfoImpl(const CanvasGPUAdapterInfo *info) : info_(info) {}
 
 const CanvasGPUAdapterInfo *GPUAdapterInfoImpl::GetInfo() {
-    return this->info_;
+    return this->info_.get();
 }
 
 

@@ -8,14 +8,13 @@
 #include "Common.h"
 #include "Helpers.h"
 #include "ObjectWrapperImpl.h"
+#include "ArcHandle.h"
 
 class GPUComputePipelineImpl : ObjectWrapperImpl {
 public:
     explicit GPUComputePipelineImpl(const CanvasGPUComputePipeline *pipeline);
 
-    ~GPUComputePipelineImpl() {
-        canvas_native_webgpu_compute_pipeline_release(this->pipeline_);
-    }
+    ~GPUComputePipelineImpl() = default;
 
     const CanvasGPUComputePipeline *GetGPUPipeline();
 
@@ -44,7 +43,7 @@ public:
 
 
 private:
-    const CanvasGPUComputePipeline *pipeline_;
+    ArcHandle<CanvasGPUComputePipeline, canvas_native_webgpu_compute_pipeline_release> pipeline_;
 };
 
 

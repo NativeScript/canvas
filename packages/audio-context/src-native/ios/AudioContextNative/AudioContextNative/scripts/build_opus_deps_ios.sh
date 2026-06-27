@@ -19,10 +19,15 @@ JOBS=$(getconf _NPROCESSORS_ONLN 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null ||
 MIN_IOS_VERSION="${MIN_IOS_VERSION:-11.0}"
 
 # Targets: SDK ARCH HOST_TRIPLE
+MIN_XROS_VERSION="${MIN_XROS_VERSION:-1.0}"
+
+# Targets: SDK ARCH HOST_TRIPLE. visionOS is Apple-Silicon only (arm64 device + arm64 simulator).
 TARGETS=(
   "iphoneos arm64 arm-apple-darwin"
   "iphonesimulator x86_64 x86_64-apple-darwin"
   "iphonesimulator arm64 arm-apple-darwin"
+  "xros arm64 arm-apple-darwin"
+  "xrsimulator arm64 arm-apple-darwin"
 )
 
 LIBS=(libogg libvorbis libopus libopusfile)
@@ -33,14 +38,22 @@ build_for_target() {
   SYSROOT=$(xcrun --sdk "$SDK" --show-sdk-path)
   CC_TOOL=$(xcrun --sdk "$SDK" --find clang)
   export CC="$CC_TOOL -arch $ARCH"
-  # set min version flag depending on sdk
+  # set min version flag depending on sdk. visionOS has no -m*-version-min flag and no
+  # bitcode; it uses a target triple (-target <arch>-apple-xros[-simulator]).
+  BITCODE="-fembed-bitcode"
   if [ "$SDK" = "iphoneos" ]; then
     MINFLAG="-miphoneos-version-min=${MIN_IOS_VERSION}"
-  else
+  elif [ "$SDK" = "iphonesimulator" ]; then
     MINFLAG="-mios-simulator-version-min=${MIN_IOS_VERSION}"
+  elif [ "$SDK" = "xros" ]; then
+    MINFLAG="-target ${ARCH}-apple-xros${MIN_XROS_VERSION}"
+    BITCODE=""
+  elif [ "$SDK" = "xrsimulator" ]; then
+    MINFLAG="-target ${ARCH}-apple-xros${MIN_XROS_VERSION}-simulator"
+    BITCODE=""
   fi
-  export CFLAGS="-isysroot $SYSROOT -arch $ARCH $MINFLAG -fembed-bitcode"
-  export LDFLAGS="-isysroot $SYSROOT -arch $ARCH"
+  export CFLAGS="-isysroot $SYSROOT -arch $ARCH $MINFLAG $BITCODE"
+  export LDFLAGS="-isysroot $SYSROOT -arch $ARCH $MINFLAG"
   export CPPFLAGS="$CFLAGS"
 
   PREFIX="$TP_DIR/build/${SDK}-${ARCH}"

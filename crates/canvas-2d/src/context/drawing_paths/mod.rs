@@ -12,7 +12,7 @@ impl Context {
         path: Option<&mut Path>,
         fill_rule: Option<FillRule>,
     ) {
-        #[cfg(any(target_os = "macos", target_os = "ios"))]
+        #[cfg(any(target_os = "macos", target_os = "ios", target_os = "visionos"))]
         let _ = unsafe { objc2_foundation::NSAutoreleasePool::new() };
 
         #[cfg(feature = "gl")]

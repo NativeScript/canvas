@@ -3,7 +3,7 @@ export class Utils {
 	static _IS_SUPPORTED_VERSION = false;
 	static _CHECKED_FOR_SUPPORT = false;
 	public static toJSArray(array) {
-		if (__IOS__) {
+		if (__APPLE__) {
 			if (array instanceof NSArray) {
 				const jsArray = [];
 				const count = array.count;

@@ -21,7 +21,55 @@ export * from './WebGL';
 export * from './WebGL2';
 export * from './WebGPU';
 
-import { FontFace, FontFaceSet } from './Fonts';
+import { FontFace, FontFaceSet } from '@nativescript/font-manager';
+
+const url_ex = /url\(([^)]+?)\.(woff2?|ttf|otf|eot)\)/;
+declare const org, kotlin;
+if (__ANDROID__) {
+	try {
+		org.nativescript.fontmanager.FontFaceSet.getInstance().addOnLoadingDoneListener(
+			new kotlin.jvm.functions.Function1({
+				invoke(font) {
+					const path = font.getFontPath();
+					if (path) {
+						const name = font.getFontFamily();
+
+						let extension: string | undefined;
+
+						if (typeof path === 'string') {
+							const matches = path.match(url_ex) ?? [];
+							extension = matches[2];
+						}
+
+						const useAlias = extension !== 'ttf';
+						global.CanvasModule.__addFontFamily(useAlias ? name : null, [path]);
+					}
+				},
+			}),
+		);
+	} catch {}
+}
+
+if (__APPLE__) {
+	NSCFontFaceSet.instance().addOnLoadingDoneListener((font) => {
+		try {
+			const path = font.fontPath;
+			if (path) {
+				const name = font.family;
+
+				let extension: string | undefined;
+
+				if (typeof path === 'string') {
+					const matches = path.match(url_ex) ?? [];
+					extension = matches[2];
+				}
+
+				const useAlias = extension !== 'ttf';
+				global.CanvasModule.__addFontFamily(useAlias ? name : null, [path]);
+			}
+		} catch {}
+	});
+}
 
 Object.defineProperty(global, 'fonts', {
 	value: new FontFaceSet(),
@@ -155,4 +203,5 @@ export { WebGLRenderingContext } from './WebGL/WebGLRenderingContext';
 export { WebGL2RenderingContext } from './WebGL2/WebGL2RenderingContext';
 export { Canvas, createSVGMatrix } from './Canvas';
 export { TouchEvent, PointerEvent } from './Canvas/common';
-export { FontFace, FontFaceSet, importFontsFromCSS, loadFontsFromCSS } from './Fonts';
+export { FontFace, FontFaceSet, importFontsFromCSS, loadFontsFromCSS } from '@nativescript/font-manager';
+export type { stretch, stretchName, stretchPercent } from '@nativescript/font-manager';

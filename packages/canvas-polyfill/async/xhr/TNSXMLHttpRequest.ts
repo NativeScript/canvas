@@ -735,7 +735,7 @@ export class TNSXMLHttpRequest {
 					}
 
 					let size = 0;
-					if (__IOS__) {
+					if (__APPLE__) {
 						if (data instanceof NSData) {
 							size = data.length;
 						}
@@ -875,7 +875,7 @@ export class TNSXMLHttpRequest {
 						this._response = res.content;
 						this._responseText = res.responseText;
 					} else {
-						if (__IOS__) {
+						if (__APPLE__) {
 							if (res.content instanceof NSData) {
 								let code = NSUTF8StringEncoding; // long:4
 
@@ -949,7 +949,7 @@ export class TNSXMLHttpRequest {
 						}
 					}
 				} else if (this.responseType === XMLHttpRequestResponseType.arraybuffer) {
-					if (__IOS__) {
+					if (__APPLE__) {
 						this._response = interop.bufferFromData(res.content);
 					} else {
 						this._response = (ArrayBuffer as any).from(res.content);
@@ -957,7 +957,7 @@ export class TNSXMLHttpRequest {
 				} else if (this.responseType === XMLHttpRequestResponseType.blob) {
 					const header = this.getResponseHeader('Content-Type') || this.getResponseHeader('content-type');
 					const type = { type: header ?? 'application/octet-stream' };
-					if (__IOS__) {
+					if (__APPLE__) {
 						if (typeof res.content === 'string') {
 							const encoder = new TextEncoder();
 							const buffer = encoder.encode(res.content);
@@ -1356,7 +1356,7 @@ export class FileReader {
 		const handlers = this._listeners.get(eventName) || [];
 		this._listeners.set(
 			eventName,
-			handlers.filter((handler) => handler !== toDetach)
+			handlers.filter((handler) => handler !== toDetach),
 		);
 	}
 

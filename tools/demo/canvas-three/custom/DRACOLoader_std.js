@@ -34,7 +34,7 @@ function storeBuffer(key, buffer) {
 		org.nativescript.canvas.NSCCanvas.storeBuffer(key, buffer);
 	}
 
-	if (__IOS__) {
+	if (__APPLE__) {
 		NSCCanvas.store.setObjectForKey(NSData.dataWithData(buffer), key);
 	}
 }
@@ -44,7 +44,7 @@ function removeBuffer(key) {
 		org.nativescript.canvas.NSCCanvas.removeBuffer(key);
 	}
 
-	if (__IOS__) {
+	if (__APPLE__) {
 		NSCCanvas.store.removeObjectForKey(key);
 	}
 }
@@ -59,7 +59,7 @@ function getBuffer(key) {
 		return buffer;
 	}
 
-	if (__IOS__) {
+	if (__APPLE__) {
 		const buffer = NSCCanvas.store.objectForKey(key);
 
 		if (buffer) {
@@ -316,7 +316,7 @@ function DRACOWorker() {
 			org.nativescript.canvas.NSCCanvas.storeBuffer(key, buffer);
 		}
 
-		if (__IOS__) {
+		if (__APPLE__) {
 			NSCCanvas.store.setObjectForKey(NSData.dataWithData(buffer), key);
 		}
 	}
@@ -326,7 +326,7 @@ function DRACOWorker() {
 			org.nativescript.canvas.NSCCanvas.removeBuffer(key);
 		}
 
-		if (__IOS__) {
+		if (__APPLE__) {
 			NSCCanvas.store.removeObjectForKey(key);
 		}
 	}
@@ -341,7 +341,7 @@ function DRACOWorker() {
 			return buffer;
 		}
 
-		if (__IOS__) {
+		if (__APPLE__) {
 			const buffer = NSCCanvas.store.objectForKey(key);
 
 			if (buffer) {

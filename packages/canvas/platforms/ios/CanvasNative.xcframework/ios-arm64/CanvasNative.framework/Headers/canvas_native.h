@@ -806,15 +806,19 @@ typedef struct PaintStyle PaintStyle;
 
 typedef struct Path Path;
 
-#if (defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS))
+#if (defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS) || defined(TARGET_OS_VISION))
 typedef struct Raf Raf;
 #endif
 
-#if ((defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS)) && defined(TARGET_OS_ANDROID))
+#if ((defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS) || defined(TARGET_OS_VISION)) && defined(TARGET_OS_ANDROID))
 typedef struct Raf Raf;
 #endif
 
-#if ((defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS)) && defined(TARGET_OS_IOS))
+#if ((defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS) || defined(TARGET_OS_VISION)) && defined(TARGET_OS_IOS))
+typedef struct Raf Raf;
+#endif
+
+#if ((defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS) || defined(TARGET_OS_VISION)) && defined(TARGET_OS_VISION))
 typedef struct Raf Raf;
 #endif
 
@@ -2081,32 +2085,32 @@ void canvas_native_context_clear_render_func(int64_t value);
 
 void canvas_native_context_release(struct CanvasRenderingContext2D *value);
 
-#if (defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS))
+#if (defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS) || defined(TARGET_OS_VISION))
 struct Raf *canvas_native_raf_create(intptr_t callback, void (*on_frame_callback)(intptr_t callback,
                                                                                   int64_t ts));
 #endif
 
-#if (defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS))
+#if (defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS) || defined(TARGET_OS_VISION))
 void canvas_native_raf_release(struct Raf *value);
 #endif
 
-#if (defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS))
+#if (defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS) || defined(TARGET_OS_VISION))
 void canvas_native_raf_start(struct Raf *raf);
 #endif
 
-#if (defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS))
+#if (defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS) || defined(TARGET_OS_VISION))
 void canvas_native_raf_stop(struct Raf *raf);
 #endif
 
-#if (defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS))
+#if (defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS) || defined(TARGET_OS_VISION))
 bool canvas_native_raf_get_started(const struct Raf *raf);
 #endif
 
-#if (defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS))
+#if (defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS) || defined(TARGET_OS_VISION))
 void canvas_native_raf_stop_and_clear(struct Raf *raf, uint64_t timeout_ms);
 #endif
 
-#if (defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS))
+#if (defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS) || defined(TARGET_OS_VISION))
 void canvas_native_raf_clear_callback(struct Raf *raf);
 #endif
 
@@ -3260,21 +3264,21 @@ void canvas_native_webgpu_context_resize(struct CanvasGPUCanvasContext *context,
                                          uint32_t height);
 #endif
 
-#if (defined(TARGET_OS_IOS) || defined(TARGET_OS_MACOS))
+#if (defined(TARGET_OS_IOS) || defined(TARGET_OS_MACOS) || defined(TARGET_OS_VISION))
 const struct CanvasGPUCanvasContext *canvas_native_webgpu_context_create(const struct CanvasWebGPUInstance *instance,
                                                                          void *view,
                                                                          uint32_t width,
                                                                          uint32_t height);
 #endif
 
-#if defined(TARGET_OS_IOS)
+#if (defined(TARGET_OS_IOS) || defined(TARGET_OS_VISION))
 const struct CanvasGPUCanvasContext *canvas_native_webgpu_context_create_uiview(const struct CanvasWebGPUInstance *instance,
                                                                                 void *view,
                                                                                 uint32_t width,
                                                                                 uint32_t height);
 #endif
 
-#if defined(TARGET_OS_IOS)
+#if (defined(TARGET_OS_IOS) || defined(TARGET_OS_VISION))
 void canvas_native_webgpu_context_resize_uiview(const struct CanvasGPUCanvasContext *context,
                                                 void *view,
                                                 uint32_t width,
@@ -3295,7 +3299,7 @@ void canvas_native_webgpu_context_resize_nsview(const struct CanvasGPUCanvasCont
                                                 uint32_t height);
 #endif
 
-#if (defined(TARGET_OS_MACOS) || defined(TARGET_OS_IOS))
+#if (defined(TARGET_OS_MACOS) || defined(TARGET_OS_IOS) || defined(TARGET_OS_VISION))
 void canvas_native_webgpu_context_resize_layer(const struct CanvasGPUCanvasContext *context,
                                                void *layer,
                                                uint32_t width,

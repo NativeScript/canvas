@@ -6,9 +6,12 @@
 //
 
 import Foundation
+#if !os(visionOS)
 import GLKit
+#endif
 import UIKit
 
+#if !os(visionOS)
 @objcMembers
 @objc(CanvasGLKView)
 public class CanvasGLKView: GLKView, GLKViewDelegate {
@@ -76,6 +79,17 @@ extension GLKView {
         }
     }
 }
+#else
+// visionOS has no OpenGL ES. CanvasGLKView is a no-op UIView stand-in so NSCCanvas's
+// layout/lifecycle code compiles; the GL engine is never selected on visionOS.
+@objcMembers
+@objc(CanvasGLKView)
+public class CanvasGLKView: UIView {
+    var isDirty: Bool = false
+    internal(set) public weak var canvas: NSCCanvas? = nil
+    private(set) var fbo: UInt32 = 0
+}
+#endif
 
 
 internal func CPURender(_ ptr: UnsafeRawPointer?) {
@@ -120,7 +134,7 @@ public class CanvasCPUView: UIView {
     
     func deviceScale() -> Float32 {
         if (ignorePixelScaling)  {
-            return Float32(UIScreen.main.nativeScale)
+            return Float32(nscNativeScale())
         }
         return 1
     }

@@ -212,6 +212,15 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
     if (!now) return 0.0;
     return (double)now.sampleTime / now.sampleRate;
 }
+- (double)baseLatency {
+    // IOBufferDuration is the actual applied render buffer duration, matching
+    // the Web Audio API definition: frames in the ring buffer / sample rate.
+    return [AVAudioSession sharedInstance].IOBufferDuration;
+}
+- (double)outputLatency {
+    // Hardware output latency reported by the OS.
+    return [AVAudioSession sharedInstance].outputLatency;
+}
 - (AVAudioFormat *)format { return _format; }
 
 - (void)registerPendingNode:(NSCAudioBufferSourceNode *)node {

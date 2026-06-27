@@ -6,7 +6,7 @@ pub use wgt;
 #[macro_use]
 pub mod macros {
     #[macro_export]
-    #[cfg(any(target_os = "ios", target_os = "macos"))]
+    #[cfg(any(target_os = "ios", target_os = "macos", target_os = "visionos"))]
     macro_rules! gfx_select {
         ($id:expr => $p0:ident.$p1:tt.$method:ident $params:tt) => {
           gfx_select!($id => {$p0.$p1}, $method $params)

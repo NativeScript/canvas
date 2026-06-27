@@ -35,7 +35,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 			nativeContext = context.getNativeContextString();
 		}
 
-		if (__IOS__) {
+		if (__APPLE__) {
 			nativeContext = context.nativeContext.toString();
 		}
 

@@ -17,7 +17,7 @@ export class Style {
 		if (__ANDROID__) {
 			return this.nativeElement?.get?.();
 		}
-		if (__IOS__) {
+		if (__APPLE__) {
 			return this.nativeElement?.deref?.();
 		}
 		return undefined;
@@ -138,7 +138,7 @@ export class HTMLElement extends Element {
 			return androidx.core.os.ConfigurationCompat.getLocales(ctx.getResources().getConfiguration()).get(0).getLanguage();
 		}
 
-		if (__IOS__) {
+		if (__APPLE__) {
 			return NSLocale.currentLocale.languageCode;
 		}
 

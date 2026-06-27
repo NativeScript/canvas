@@ -102,6 +102,7 @@ dependencies {
 	androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'
 	//noinspection KtxExtensionAvailable
 	implementation "androidx.core:core:1.13.1"
+	implementation "org.nativescript:fontmanager:1.0.7"
 }
 
 tasks.withType(Javadoc) {

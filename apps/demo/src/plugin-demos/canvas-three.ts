@@ -8,7 +8,7 @@ export function navigatingTo(args: EventData) {
 }
 
 export function pageLoaded(args) {
-	if (__IOS__) {
+	if (__APPLE__) {
 		if (parseFloat(Device.osVersion) >= 26.0) {
 			args.object.viewController.navigationController.interactiveContentPopGestureRecognizer.enabled = false;
 		}

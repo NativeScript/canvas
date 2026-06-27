@@ -14,6 +14,7 @@
 				"assets": [
 					"packages/canvas/*.md",
 					"packages/canvas/index.d.ts",
+					"packages/canvas/nativescript.config.ts",
 					"LICENSE",
 					{
 						"glob": "**/*",

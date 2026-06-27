@@ -54,6 +54,10 @@ void NativeEngine::ensureStream() {
     if (desiredLatencyHintSec_ > 0.020) perf = oboe::PerformanceMode::PowerSaving;
     else if (desiredLatencyHintSec_ > 0.010) perf = oboe::PerformanceMode::None;
     builder.setPerformanceMode(perf);
+    // Request exclusive mode for low-latency to bypass the audio mixer
+    if (perf == oboe::PerformanceMode::LowLatency) {
+        builder.setSharingMode(oboe::SharingMode::Exclusive);
+    }
     builder.setFormat(oboe::AudioFormat::Float);
     builder.setChannelCount(2);
     if (desiredSampleRate_ > 0) {
@@ -91,21 +95,30 @@ void NativeEngine::ensureStream() {
     int32_t framesPerBurst = stream_->getFramesPerBurst();
     int32_t capacityFrames = stream_->getBufferCapacityInFrames();
     if (framesPerBurst > 0 && capacityFrames > 0) {
-        int32_t requestedFrames = std::min(capacityFrames, framesPerBurst * 4);
+        int32_t requestedFrames;
         if (desiredLatencyHintSec_ > 0.0 && streamSampleRate_ > 0) {
+            // Use hint as a TARGET: round up to the nearest burst boundary.
+            // Previously used std::max(framesPerBurst*4, hintedFrames) which treated the
+            // hint as a floor — for 'interactive' (240 frames) this always lost to 768,
+            // giving 16ms instead of ~8ms.
             int32_t hintedFrames = static_cast<int32_t>(
                     desiredLatencyHintSec_ * static_cast<double>(streamSampleRate_));
-            if (hintedFrames > 0) {
-                requestedFrames = std::min(capacityFrames,
-                                           std::max(requestedFrames, hintedFrames));
-            }
+            int32_t bursts = hintedFrames > 0
+                             ? std::max(1, (hintedFrames + framesPerBurst - 1) / framesPerBurst)
+                             : 1;
+            requestedFrames = bursts * framesPerBurst;
+        } else {
+            // No hint: 2 bursts (~8ms at 192fpb/48kHz) matches the web default
+            requestedFrames = framesPerBurst * 2;
         }
+        requestedFrames = std::min(requestedFrames, capacityFrames);
 
         auto bufferResult = stream_->setBufferSizeInFrames(requestedFrames);
         if (bufferResult) {
             __android_log_print(ANDROID_LOG_INFO, TAG,
-                                "Oboe buffer size set to %d frames (burst=%d cap=%d)",
-                                bufferResult.value(), framesPerBurst, capacityFrames);
+                                "Oboe buffer size set to %d frames (burst=%d cap=%d hint=%.3fs)",
+                                bufferResult.value(), framesPerBurst, capacityFrames,
+                                desiredLatencyHintSec_);
         } else {
             __android_log_print(ANDROID_LOG_WARN, TAG,
                                 "Oboe setBufferSizeInFrames(%d) failed: %d",

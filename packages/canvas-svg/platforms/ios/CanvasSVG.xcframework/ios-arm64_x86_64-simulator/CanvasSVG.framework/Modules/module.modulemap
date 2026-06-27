@@ -7,5 +7,4 @@ framework module CanvasSVG {
 
 module CanvasSVG.Swift {
   header "CanvasSVG-Swift.h"
-  requires objc
 }

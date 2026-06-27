@@ -27,7 +27,7 @@ class Accelerometer {
 
 	static accManager;
 	static isListeningForUpdates = false;
-	static main_queue = __IOS__ ? dispatch_get_current_queue() : null;
+	static main_queue = __APPLE__ ? dispatch_get_current_queue() : null;
 
 	static getNativeDelay(options?: AccelerometerOptions): number {
 		if (__ANDROID__) {
@@ -234,7 +234,7 @@ export class DemoSharedCanvasPhaserCe extends DemoSharedBase {
 		if (!this.useAccelerometer) {
 			return;
 		}
-		if (__IOS__) {
+		if (__APPLE__) {
 			if (!CMMotionManager.alloc().init().gyroAvailable) {
 				return;
 			}
@@ -258,7 +258,7 @@ export class DemoSharedCanvasPhaserCe extends DemoSharedBase {
 		if (!this.useAccelerometer) {
 			return;
 		}
-		if (__IOS__) {
+		if (__APPLE__) {
 			return UIDevice.currentDevice.name.toLowerCase().indexOf('simulator') !== -1;
 		}
 		if (Accelerometer.isListening) {

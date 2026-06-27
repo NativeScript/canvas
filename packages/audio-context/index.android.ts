@@ -766,6 +766,14 @@ export class AudioContext extends BaseAudioContext {
 		return this.native.getSampleRate();
 	}
 
+	get baseLatency(): number {
+		return this.native.getBaseLatency();
+	}
+
+	get outputLatency(): number {
+		return this.native.getOutputLatency();
+	}
+
 	get currentTime(): number {
 		return this.native.getCurrentTime();
 	}

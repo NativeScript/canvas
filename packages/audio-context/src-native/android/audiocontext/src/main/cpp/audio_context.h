@@ -57,6 +57,10 @@ public:
 
     int getStreamSampleRate();
 
+    int getStreamBufferSizeFrames();
+
+    int getFramesPerBurst();
+
     void setOutputDeviceId(int deviceId);
 
     int getOutputDeviceId() const { return desiredDeviceId_; }

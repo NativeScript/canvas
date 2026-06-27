@@ -9,6 +9,31 @@ import { Canvas } from '@nativescript/canvas';
 // 	const canvas = new Canvas();
 // }
 
+const font = new FontFace('Serifa-Bold', 'url(~/fonts/Serifa-Bold.otf)', {
+	weight: 'bold',
+});
+
+document.fonts.add(font);
+
+document.fonts.addEventListener('loading', (event) => {
+	console.log('loading');
+});
+document.fonts.addEventListener('loadingerror', (event) => {
+	console.log('loadingerror');
+});
+document.fonts.addEventListener('loadingdone', (event) => {
+	console.log('loadingdone', event.fontfaces);
+});
+
+document.fonts
+	.load('12px Serifa-Bold')
+	.then((fonts) => {
+		console.log(document.fonts.check('12px Serifa-Bold'));
+	})
+	.catch(() => {
+		console.log('error');
+	});
+
 /*
 
 
@@ -153,7 +178,7 @@ Application.on('launch', (args) => {
 	//require('@nativescript/canvas-polyfill');
 	if (__ANDROID__) {
 		jp.wasabeef.takt.Takt.stock(Utils.android.getApplicationContext()).seat(jp.wasabeef.takt.Seat.TOP_CENTER).color(-65536);
-	} else {
+	} else if (__IOS__) {
 		monitor = GDPerformanceMonitor.new();
 		monitor.startMonitoringWithConfiguration((label) => {
 			label.backgroundColor = UIColor.blackColor;

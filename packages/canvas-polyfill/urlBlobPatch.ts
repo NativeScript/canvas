@@ -77,7 +77,7 @@ if (typeof URL !== 'undefined') {
 		}
 	}
 
-	if (__IOS__) {
+	if (__APPLE__) {
 		if (typeof (URL as any).InternalAccessor.getPath !== 'function') {
 			const putItem = (key: string, value: string) => {
 				if (!sharedPreferences) {
@@ -189,7 +189,7 @@ if (__ANDROID__) {
 	};
 }
 
-if (__IOS__) {
+if (__APPLE__) {
 	const putItem = (key: string, value: string) => {
 		if (!sharedPreferences) {
 			sharedPreferences = NSUserDefaults.alloc().initWithSuiteName(BLOB_KEYS);

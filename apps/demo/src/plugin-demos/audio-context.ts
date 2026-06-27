@@ -16,7 +16,7 @@ export function canvasReady(args: EventData) {
 export function playSample(args: EventData) {
 	const page = (<any>args.object).page as Page;
 	const ctx = page.bindingContext as any;
-	const testPath = __IOS__ ? '~/assets/file-assets/audio/sine441stereo.mp3' : '~/assets/file-assets/audio/gs-16b-1c-44100hz.wav';
+	const testPath = __APPLE__ ? '~/assets/file-assets/audio/sine441stereo.mp3' : '~/assets/file-assets/audio/gs-16b-1c-44100hz.wav';
 	const resolvedPath = testPath.startsWith('~/') ? testPath.replace('~/', knownFolders.currentApp().path + '/') : testPath;
 	if (ctx && ctx.playUrl) {
 		const p = ctx.playUrl(resolvedPath);

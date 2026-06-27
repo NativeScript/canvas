@@ -489,6 +489,10 @@ export abstract class CanvasBase extends ContainerView implements ICanvasBase {
 		this.style.height = 'auto';
 	}
 
+	set nodeName(value: string) {
+		this._nodeName = value;
+	}
+
 	get nodeName() {
 		return this._nodeName;
 	}

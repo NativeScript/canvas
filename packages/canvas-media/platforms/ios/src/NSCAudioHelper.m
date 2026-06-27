@@ -8,6 +8,24 @@
 #endif
 #import "NSCAudioView.h"
 
+// visionOS removed the synchronous -tracksWithMediaType:. Bridge to the async loader.
+// Call sites here use already-loaded assets and are wrapped in @try/@catch; the async
+// completion is delivered on a background queue, so the semaphore wait does not deadlock.
+static NSArray<AVAssetTrack *> *NSCTracksWithMediaType(AVAsset *asset, AVMediaType mediaType) {
+#if TARGET_OS_VISION
+    __block NSArray<AVAssetTrack *> *result = nil;
+    dispatch_semaphore_t sem = dispatch_semaphore_create(0);
+    [asset loadTracksWithMediaType:mediaType completionHandler:^(NSArray<AVAssetTrack *> * _Nullable tracks, NSError * _Nullable error) {
+        result = tracks;
+        dispatch_semaphore_signal(sem);
+    }];
+    dispatch_semaphore_wait(sem, DISPATCH_TIME_FOREVER);
+    return result;
+#else
+    return [asset tracksWithMediaType:mediaType];
+#endif
+}
+
 @implementation NSCAudioHelper {
     AVPlayer *_playerInternal;
     AVPlayerItem *_currentItemInternal;
@@ -311,7 +329,7 @@
         }
 
         @try {
-            NSArray<AVAssetTrack *> *tracks = [asset tracksWithMediaType:AVMediaTypeAudio];
+            NSArray<AVAssetTrack *> *tracks = NSCTracksWithMediaType(asset, AVMediaTypeAudio);
             for (AVAssetTrack *track in tracks) {
                 CMTimeRange tr = track.timeRange;
                 CMTime td = tr.duration;
@@ -321,7 +339,7 @@
                     return YES;
                 }
             }
-            tracks = [asset tracksWithMediaType:AVMediaTypeVideo];
+            tracks = NSCTracksWithMediaType(asset, AVMediaTypeVideo);
             for (AVAssetTrack *track in tracks) {
                 CMTimeRange tr = track.timeRange;
                 CMTime td = tr.duration;
@@ -382,7 +400,7 @@
 
         double bitrate = 0.0;
         @try {
-            NSArray *tracks = [asset tracksWithMediaType:AVMediaTypeAudio];
+            NSArray *tracks = NSCTracksWithMediaType(asset, AVMediaTypeAudio);
             if (tracks.count > 0) {
                 AVAssetTrack *track = [tracks objectAtIndex:0];
                 bitrate = track.estimatedDataRate;

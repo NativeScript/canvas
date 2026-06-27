@@ -51,6 +51,12 @@ fi
 PLATFORM_NAME="${PLATFORM_NAME:-iphoneos}"
 CURRENT_ARCH="${CURRENT_ARCH}"
 
+# visionOS reports PLATFORM_NAME as "xros" (device) / "xrsimulator" (simulator).
+IS_VISIONOS=false
+if [[ "$PLATFORM_NAME" == xr* ]]; then
+  IS_VISIONOS=true
+fi
+
 if [ -z "$CURRENT_ARCH" ] || [ "$CURRENT_ARCH" == "undefined_arch" ]; then
     # Xcode 10 beta sets CURRENT_ARCH to "undefined_arch", this leads to incorrect linker arg.
     # it's better to rely on platform name as fallback because architecture differs between simulator and device
@@ -64,16 +70,25 @@ if [ -z "$CURRENT_ARCH" ] || [ "$CURRENT_ARCH" == "undefined_arch" ]; then
 fi
 
 
-if [[ $CURRENT_ARCH == x86_64 ]]; then
-  RUST_BUILD_TARGET="x86_64-apple-ios"
-fi
-
-
-if [[ $CURRENT_ARCH == arm64 ]]; then
-  if [[ $IS_SIMULATOR == false ]]; then
-    RUST_BUILD_TARGET="aarch64-apple-ios"
+if $IS_VISIONOS; then
+  # visionOS is Apple-Silicon only (arm64 device + arm64 simulator).
+  if [[ $IS_SIMULATOR == true ]] || [[ "$PLATFORM_NAME" == *"simulator"* ]]; then
+    RUST_BUILD_TARGET="aarch64-apple-visionos-sim"
   else
-    RUST_BUILD_TARGET="aarch64-apple-ios-sim"
+    RUST_BUILD_TARGET="aarch64-apple-visionos"
+  fi
+else
+  if [[ $CURRENT_ARCH == x86_64 ]]; then
+    RUST_BUILD_TARGET="x86_64-apple-ios"
+  fi
+
+
+  if [[ $CURRENT_ARCH == arm64 ]]; then
+    if [[ $IS_SIMULATOR == false ]]; then
+      RUST_BUILD_TARGET="aarch64-apple-ios"
+    else
+      RUST_BUILD_TARGET="aarch64-apple-ios-sim"
+    fi
   fi
 fi
 
@@ -91,7 +106,11 @@ if $IS_RELEASE; then
   export RUSTFLAGS="-Zlocation-detail=none -Zunstable-options -Cpanic=immediate-abort"
   cargo +nightly build -Z build-std='std,panic_abort' --manifest-path Cargo.toml --target $RUST_BUILD_TARGET $RUST_BUILD_TYPE -p canvas-ios
 
-else 
+elif $IS_VISIONOS; then
+  # visionOS is tier-3: build-std (nightly + rust-src) is required even for debug.
+  cargo +nightly build -Z build-std='std,panic_abort' --manifest-path Cargo.toml --target $RUST_BUILD_TARGET $RUST_BUILD_TYPE -p canvas-ios
+
+else
   cargo build --manifest-path Cargo.toml --target $RUST_BUILD_TARGET $RUST_BUILD_TYPE -p canvas-ios
 fi
 

@@ -113,6 +113,10 @@ declare class NSCAudioContext extends NSObject {
 
 	readonly sampleRate: number;
 
+	readonly baseLatency: number;
+
+	readonly outputLatency: number;
+
 	voiceFilterByOutput: NSMutableDictionary<NSValue, NSMutableDictionary<number, NSCAudioNode>>;
 
 	voiceGainByOutput: NSMutableDictionary<NSValue, NSMutableDictionary<number, NSCAudioNode>>;

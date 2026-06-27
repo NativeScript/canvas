@@ -42,6 +42,17 @@ wgpu-core = { workspace = true, features = ["wgsl", "metal"] }
 wgpu-hal = { workspace = true, features = ["metal"] }
 objc2-metal = { workspace = true }
 
+# visionOS: display-link 0.2 is gated to ios/macos only, so RAF uses a CADisplayLink
+# shim (see src/raf/visionos.rs) built directly on objc2-quartz-core instead.
+[target.'cfg(target_os="visionos")'.dependencies]
+wgpu-core = { workspace = true, features = ["wgsl", "metal"] }
+wgpu-hal = { workspace = true, features = ["metal"] }
+objc2 = { workspace = true, features = ["std"] }
+objc2-foundation = { workspace = true }
+objc2-metal = { workspace = true }
+objc2-quartz-core = { workspace = true, features = ["CADisplayLink", "objc2-core-foundation"] }
+objc2-core-foundation = { workspace = true }
+
 [target.'cfg(target_os="android")'.dependencies]
 ndk = { version = "0.7.0", features = ["bitmap"] }
 wgpu-core = { workspace = true, features = ["wgsl", "vulkan"] }

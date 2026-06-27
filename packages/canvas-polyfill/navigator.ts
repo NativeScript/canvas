@@ -7,7 +7,7 @@ export class Navigator {
 	appCodeName = 'Mozilla';
 	appName = 'Netscape';
 	product = 'NativeScript';
-	userAgent = `Mozilla/5.0 (${this.platform === 'Android' ? 'Linux' : this.platform}; ${this.platform} ${Device.osVersion};) (KHTML, like Gecko) ${__IOS__ ? 'Version/18.6' + Device.osVersion : ''} ${__ANDROID__ ? 'Chrome/100.3.22.0' : ''} Mobile Safari/537.36 NativeScript/` + `${global.__runtimeVersion ?? '8.0.0'}`.replaceAll('"', '');
+	userAgent = `Mozilla/5.0 (${this.platform === 'Android' ? 'Linux' : this.platform}; ${this.platform} ${Device.osVersion};) (KHTML, like Gecko) ${__APPLE__ ? 'Version/18.6' + Device.osVersion : ''} ${__ANDROID__ ? 'Chrome/100.3.22.0' : ''} Mobile Safari/537.36 NativeScript/` + `${global.__runtimeVersion ?? '8.0.0'}`.replaceAll('"', '');
 	vendor = '';
 	vendorSub = '';
 	appVersion = `5.0 (${this.platform === 'Android' ? 'Linux' : this.platform}; ${this.platform} ${Device.osVersion};) (KHTML, like Gecko) ${__APPLE__ ? 'Version/18.6' : ''} ${__ANDROID__ ? 'Chrome/100.3.22.0' : ''}  Mobile Safari/537.36 NativeScript/` + `${global.__runtimeVersion ?? '8.0.0'}`.replaceAll('"', '');
@@ -20,7 +20,7 @@ export class Navigator {
 		return gpu;
 	}
 	get platform() {
-		if (__IOS__) {
+		if (__APPLE__) {
 			if (Device.os === 'iPadOS') {
 				return 'MacIntel';
 			}

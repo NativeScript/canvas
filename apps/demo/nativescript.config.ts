@@ -10,9 +10,16 @@ export default {
 	},
 	appPath: 'src',
 	ios: {
-		discardUncaughtJsExceptions: false
+		discardUncaughtJsExceptions: false,
+		SPMPackages: [
+			{
+				name: 'CanvasNative',
+				libs: ['NativeScriptV8'],
+				path: '../../nativescript-v8',
+			},
+		],
 	},
 	cli: {
-		packageManager: 'npm'
-	}
+		packageManager: 'npm',
+	},
 } as NativeScriptConfig;

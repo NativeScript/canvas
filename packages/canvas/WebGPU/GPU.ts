@@ -16,7 +16,7 @@ export class GPU {
 	}
 
 	getPreferredCanvasFormat() {
-		if (__IOS__) {
+		if (__APPLE__) {
 			return 'bgra8unorm';
 		}
 		return 'rgba8unorm';

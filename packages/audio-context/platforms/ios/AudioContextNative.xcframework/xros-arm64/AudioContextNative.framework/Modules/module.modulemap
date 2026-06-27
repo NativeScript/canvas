@@ -1,0 +1,6 @@
+framework module AudioContextNative {
+  umbrella header "AudioContextNative.h"
+  export *
+
+  module * { export * }
+}

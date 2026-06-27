@@ -117,7 +117,7 @@ export class ImageBitmap {
 				if (__ANDROID__) {
 					realSource = source.android; // todo
 				}
-				if (__IOS__) {
+				if (__APPLE__) {
 					realSource = source.ios; // todo
 				}
 			}
@@ -187,7 +187,7 @@ export class ImageBitmap {
 					realSource = source.android; // todo
 				}
 
-				if (__IOS__) {
+				if (__APPLE__) {
 					realSource = source.ios; // todo
 				}
 			}

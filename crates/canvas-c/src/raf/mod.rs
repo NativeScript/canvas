@@ -8,3 +8,9 @@ pub use android::*;
 mod ios;
 #[cfg(target_os = "ios")]
 pub use ios::*;
+
+// visionOS has no display-link crate support; use a CADisplayLink-backed RAF instead.
+#[cfg(target_os = "visionos")]
+mod visionos;
+#[cfg(target_os = "visionos")]
+pub use visionos::*;

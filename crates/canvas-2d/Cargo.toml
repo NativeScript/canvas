@@ -26,7 +26,7 @@ raw-window-handle.workspace = true
 bitflags = "2.6.0"
 regex-lite = { workspace = true }
 
-[target.'cfg(any(target_os = "ios", target_os="macos"))'.dependencies]
+[target.'cfg(any(target_os = "ios", target_os="macos", target_os = "visionos"))'.dependencies]
 foreign-types-shared = "0.3.1"
 objc2 = {workspace = true}
 objc2-foundation = { workspace = true }

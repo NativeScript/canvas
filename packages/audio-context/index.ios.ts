@@ -1028,6 +1028,24 @@ export class AudioContext extends BaseAudioContext {
 	get sampleRate(): number {
 		return this.native.sampleRate;
 	}
+	get baseLatency(): number {
+		if (typeof this.native.baseLatency === 'number') return this.native.baseLatency;
+		try {
+			const session = AVAudioSession.sharedInstance();
+			//@ts-ignore
+			return session.IOBufferDuration ?? session.ioBufferDuration ?? 0;
+		} catch (e) {
+			return 0;
+		}
+	}
+	get outputLatency(): number {
+		if (typeof this.native.outputLatency === 'number') return this.native.outputLatency;
+		try {
+			return AVAudioSession.sharedInstance().outputLatency;
+		} catch (e) {
+			return 0;
+		}
+	}
 	get currentTime(): number {
 		return this.native.currentTime;
 	}

@@ -15,7 +15,7 @@ export class Helpers {
 			this._initialized = true;
 		}
 
-		if (__IOS__) {
+		if (__APPLE__) {
 			const cm = new CanvasModule();
 			cm.install();
 			this._initialized = true;

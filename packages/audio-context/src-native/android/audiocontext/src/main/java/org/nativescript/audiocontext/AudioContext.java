@@ -648,6 +648,34 @@ public class AudioContext {
 
 	private native int nativeGetStreamSampleRate();
 
+	private native int nativeGetStreamBufferSizeFrames();
+
+	private native int nativeGetFramesPerBurst();
+
+	public double getBaseLatency() {
+		if (!nativeAvailable) return 0.0;
+		try {
+			int bufferFrames = nativeGetStreamBufferSizeFrames();
+			int sr = nativeGetStreamSampleRate();
+			if (bufferFrames <= 0 || sr <= 0) return 0.0;
+			return (double) bufferFrames / sr;
+		} catch (Throwable t) {
+			return 0.0;
+		}
+	}
+
+	public double getOutputLatency() {
+		if (!nativeAvailable) return 0.0;
+		try {
+			int burst = nativeGetFramesPerBurst();
+			int sr = nativeGetStreamSampleRate();
+			if (burst <= 0 || sr <= 0) return 0.0;
+			return (double) burst / sr;
+		} catch (Throwable t) {
+			return 0.0;
+		}
+	}
+
 	private native long nativeGetMonotonicTimeNanos();
 
 	private native void nativeRegisterContextStart(String contextId, long startNanos);

@@ -83,7 +83,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 		//x jet game
 		//this.webgpu_backdrop(this.canvas);
-		//this.webgpu_1m_particles(this.canvas);
+		this.webgpu_1m_particles(this.canvas);
 		//this.webgpu_cube(args.object);
 		//this.webGPUGtlfLoader(this.canvas);
 		//this.webgpu_tsl_galaxy(this.canvas);
@@ -141,7 +141,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.ao(this.canvas);
 		//the_frantic_run_of_the_valorous_rabbit(this.canvas,this.canvas.parent);
 		//ghost_card(this.canvas);
-		this.webgl_orientation(this.canvas);
+		//this.webgl_orientation(this.canvas);
 	}
 
 	async webgl_orientation(canvas) {
@@ -267,7 +267,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 			//
 
-			renderer = new WebGPURenderer({ canvas: canvas as any, antialias: true });
+			renderer = new THREE.WebGLRenderer({ canvas: canvas as any, antialias: true });
 			renderer.setPixelRatio(window.devicePixelRatio);
 			renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
 			renderer.shadowMap.enabled = true;

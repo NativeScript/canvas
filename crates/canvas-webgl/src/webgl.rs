@@ -48,7 +48,7 @@ pub fn canvas_native_webgl_bind_buffer(target: u32, buffer: u32, state: &mut Web
     }
 }
 
-#[cfg(not(target_os = "ios"))]
+#[cfg(not(any(target_os = "ios", target_os = "visionos")))]
 pub fn canvas_native_webgl_bind_frame_buffer(
     target: u32,
     framebuffer: u32,
@@ -60,7 +60,7 @@ pub fn canvas_native_webgl_bind_frame_buffer(
     }
 }
 
-#[cfg(target_os = "ios")]
+#[cfg(any(target_os = "ios", target_os = "visionos"))]
 pub fn canvas_native_webgl_bind_frame_buffer(
     target: u32,
     framebuffer: u32,
@@ -1079,7 +1079,7 @@ pub fn canvas_native_webgl_get_error(state: &mut WebGLState) -> u32 {
     ret
 }
 
-#[cfg(not(any(target_os = "ios", target_os = "macos")))]
+#[cfg(not(any(target_os = "ios", target_os = "macos", target_os = "visionos")))]
 pub fn canvas_native_webgl_get_extension(
     name: &str,
     state: &mut WebGLState,
@@ -1212,7 +1212,7 @@ pub fn canvas_native_webgl_get_extension(
     extension
 }
 
-#[cfg(any(target_os = "ios", target_os = "macos"))]
+#[cfg(any(target_os = "ios", target_os = "macos", target_os = "visionos"))]
 pub fn canvas_native_webgl_get_extension(
     name: &str,
     state: &mut WebGLState,

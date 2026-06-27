@@ -32,7 +32,7 @@ export class VideoFrame extends VideoFrameBase {
 			if (!data.pixelData) return null;
 			return new VideoFrame(_INTERNAL as any, data);
 		} catch (err: any) {
-			if (__IOS__) {
+			if (__APPLE__) {
 				console.error('[VideoFrame] fromVideo:', err?.message ?? err);
 			}
 			return null;

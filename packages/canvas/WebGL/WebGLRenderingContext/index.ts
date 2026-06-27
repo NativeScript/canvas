@@ -68,7 +68,7 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 				nativeContext = context.getNativeContextString();
 			}
 
-			if (__IOS__) {
+			if (__APPLE__) {
 				nativeContext = context.nativeContext.toString();
 			}
 
@@ -843,7 +843,7 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 			} else if (__ANDROID__ && pixels instanceof android.graphics.Bitmap) {
 				(<any>org).nativescript.canvas.NSCWebGLRenderingContext.texImage2D(java.lang.Long.valueOf(this._contextPtr), target, level, internalformat, width, height, pixels, this.native.__flipY);
 				//this.native.texImage2D(target, level, internalformat, width, height, pixels);
-			} else if (__IOS__ && pixels instanceof UIImage) {
+			} else if (__APPLE__ && pixels instanceof UIImage) {
 				this.native.texImage2D(target, level, internalformat, width, height, pixels);
 			} else if (pixels instanceof ImageSource) {
 				if (__ANDROID__) {
@@ -859,7 +859,7 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 					}
 				} else if (__ANDROID__ && pixels._image instanceof android.graphics.Bitmap) {
 					(<any>org).nativescript.canvas.NSCWebGLRenderingContext.texImage2D(java.lang.Long.valueOf(this._contextPtr), target, level, internalformat, width, height, pixels._image, this.native.__flipY);
-				} else if (__IOS__ && pixels._image instanceof UIImage) {
+				} else if (__APPLE__ && pixels._image instanceof UIImage) {
 					this.native.texImage2D(target, level, internalformat, width, height, pixels._image);
 				} else if (pixels._svg) {
 					if (__ANDROID__) {
@@ -869,7 +869,7 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 						}
 					}
 
-					if (__IOS__) {
+					if (__APPLE__) {
 						const data = pixels._svg?._svg?.data;
 						const size = pixels._svg?._svg?.buf_size;
 						const dimensions = pixels._svg?._svg.data_size;
@@ -905,7 +905,7 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 			} else if (__ANDROID__ && border instanceof android.graphics.Bitmap) {
 				(<any>org).nativescript.canvas.NSCWebGLRenderingContext.texImage2D(java.lang.Long.valueOf(this._contextPtr), target, level, internalformat, width, height, border, this.native.__flipY);
 				this.native.texImage2D(target, level, internalformat, width, height, border);
-			} else if (__IOS__ && border instanceof UIImage) {
+			} else if (__APPLE__ && border instanceof UIImage) {
 				this.native.texImage2D(target, level, internalformat, width, height, border);
 			} else if (border instanceof ImageSource) {
 				if (__ANDROID__) {
@@ -921,7 +921,7 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 					}
 				} else if (__ANDROID__ && border._image instanceof android.graphics.Bitmap) {
 					(<any>org).nativescript.canvas.NSCWebGLRenderingContext.texImage2D(java.lang.Long.valueOf(this._contextPtr), target, level, internalformat, width, height, border._image, this.native.__flipY);
-				} else if (__IOS__ && border._image instanceof UIImage) {
+				} else if (__APPLE__ && border._image instanceof UIImage) {
 					this.native.texImage2D(target, level, internalformat, width, height, border._image);
 				} else if (border._svg) {
 					if (__ANDROID__) {
@@ -931,7 +931,7 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 						}
 					}
 
-					if (__IOS__) {
+					if (__APPLE__) {
 						const data = border._svg?._svg?.data;
 						const size = border._svg?._svg?.buf_size;
 						const dimensions = border._svg?._svg.data_size;
@@ -991,7 +991,7 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 				if (__ANDROID__) {
 					this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, format.android);
 				}
-				if (__IOS__) {
+				if (__APPLE__) {
 					this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, format.ios);
 				}
 			} else if (format instanceof ImageAsset) {
@@ -1005,12 +1005,12 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 					if (__ANDROID__) {
 						this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, format._imageSource.android);
 					}
-					if (__IOS__) {
+					if (__APPLE__) {
 						this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, format._imageSource.ios);
 					}
 				} else if (__ANDROID__ && format._image instanceof android.graphics.Bitmap) {
 					this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, format._image);
-				} else if (__IOS__ && format._image instanceof UIImage) {
+				} else if (__APPLE__ && format._image instanceof UIImage) {
 					this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, format._image);
 				} else if (format._asset instanceof ImageAsset) {
 					this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, format._asset.native);
@@ -1019,7 +1019,7 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 					if (__ANDROID__ && result.android) {
 						this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, result.android);
 					}
-					if (__IOS__ && result.ios) {
+					if (__APPLE__ && result.ios) {
 						this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, result.ios);
 					}
 				} else if (format._svg) {
@@ -1030,7 +1030,7 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 						}
 					}
 
-					if (__IOS__) {
+					if (__APPLE__) {
 						const data = format._svg?._svg?.data;
 						const size = format._svg?._svg?.buf_size;
 						const dimensions = format._svg?._svg.data_size;

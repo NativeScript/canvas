@@ -1,6 +1,6 @@
-#[cfg(target_os = "ios")]
+#[cfg(any(target_os = "ios", target_os = "visionos"))]
 mod ios;
-#[cfg(target_os = "ios")]
+#[cfg(any(target_os = "ios", target_os = "visionos"))]
 pub use ios::*;
 
 #[cfg(target_os = "macos")]
@@ -40,13 +40,13 @@ pub fn get_shader_info_log(shader: u32) -> String {
 }
 
 
-#[cfg(any(target_os = "macos", target_os = "ios"))]
+#[cfg(any(target_os = "macos", target_os = "ios", target_os = "visionos"))]
 pub(crate) fn get_proc_address(addr: &str) -> *const std::os::raw::c_void {
     use core_foundation::bundle::{CFBundleGetBundleWithIdentifier, CFBundleGetFunctionPointerForName};
     use core_foundation::string::CFString;
     use core_foundation::base::TCFType;
     let symbol_name = CFString::new(addr);
-    #[cfg(target_os = "ios")]
+    #[cfg(any(target_os = "ios", target_os = "visionos"))]
     let framework_name = CFString::new("com.apple.opengles");
 
     #[cfg(target_os = "macos")]

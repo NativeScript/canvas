@@ -27,7 +27,7 @@ export class Dom extends LayoutBase {
 	}
 
 	createNativeView(): Object {
-		if (__IOS__) {
+		if (__APPLE__) {
 			return UIView.new();
 		}
 
@@ -132,7 +132,7 @@ export class Dom extends LayoutBase {
 
 	_addViewToNativeVisualTree(view: ViewBase, atIndex?: number): boolean {
 		if (view === this._canvas) {
-			if (__IOS__) {
+			if (__APPLE__) {
 				this.nativeView.addSubview(this._canvas.nativeView);
 			}
 

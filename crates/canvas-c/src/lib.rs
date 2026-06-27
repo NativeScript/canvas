@@ -28,7 +28,7 @@ mod helper;
 pub use helper::*;
 mod image_asset;
 pub use image_asset::*;
-#[cfg(any(target_os = "android", target_os = "ios"))]
+#[cfg(any(target_os = "android", target_os = "ios", target_os = "visionos"))]
 mod raf;
 mod text_decoder;
 pub use text_decoder::*;
@@ -38,7 +38,7 @@ mod webgl;
 pub use webgl::*;
 pub mod impl_test;
 /* Raf */
-#[cfg(any(target_os = "android", target_os = "ios"))]
+#[cfg(any(target_os = "android", target_os = "ios", target_os = "visionos"))]
 #[derive(Clone)]
 pub struct Raf(raf::Raf);
 /* Raf */

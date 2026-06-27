@@ -5,6 +5,8 @@
 //  Created by Osei Fortune on 10/04/2021.
 //
 
+// visionOS has no OpenGL ES; this entire OpenGLES-based renderer is excluded there.
+#if !os(visionOS)
 import Foundation
 import OpenGLES
 import CoreVideo
@@ -905,3 +907,4 @@ public class NSCRender: NSObject {
 		]
 	}
 }
+#endif

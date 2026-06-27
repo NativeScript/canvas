@@ -1532,6 +1532,22 @@ Java_org_nativescript_audiocontext_AudioContext_nativeGetStreamSampleRate(JNIEnv
     return static_cast<jint>(NativeEngine::getInstance().getStreamSampleRate());
 }
 
+extern "C" JNIEXPORT jint JNICALL
+Java_org_nativescript_audiocontext_AudioContext_nativeGetStreamBufferSizeFrames(JNIEnv *env,
+                                                                                 jobject thiz) {
+    (void) env;
+    (void) thiz;
+    return static_cast<jint>(NativeEngine::getInstance().getStreamBufferSizeFrames());
+}
+
+extern "C" JNIEXPORT jint JNICALL
+Java_org_nativescript_audiocontext_AudioContext_nativeGetFramesPerBurst(JNIEnv *env,
+                                                                         jobject thiz) {
+    (void) env;
+    (void) thiz;
+    return static_cast<jint>(NativeEngine::getInstance().getFramesPerBurst());
+}
+
 extern "C" JNIEXPORT jstring JNICALL
 Java_org_nativescript_audiocontext_AudioContext_nativeCreateAnalyser(JNIEnv *env, jobject thiz,
                                                                      jint fftSize,

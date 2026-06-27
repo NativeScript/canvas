@@ -1,0 +1,26 @@
+platform :ios, '12.0'
+#pod 'CanvasNative' , '~> 1.0.0.alpha.11'
+#pod 'CanvasNative', :path => "$(SRCROOT)/../../../../../"
+#pod 'CanvasNative', :git => 'https://github.com/NativeScript/canvas.git', :tag => '1.0.0-alpha.2'
+
+# Exposes NativeScript V8 headers to module sources.
+# Path is relative to the consuming app's platforms/ios/ (where NativeScript CLI places the merged Podfile).
+# Once the canvas repo is public, swap the local path for the git reference:
+#   pod 'NativeScript', :git => 'https://github.com/NativeScript/canvas.git', :tag => 'v1.0.0'
+pod 'NativeScript', path: "../../../../"
+
+post_install do |installer|
+  installer.aggregate_targets.each do |aggregate_target|
+    aggregate_target.user_targets.each do |target|
+      target.build_configurations.each do |config|
+        config.build_settings['HEADER_SEARCH_PATHS'] ||= ['$(inherited)']
+
+        config.build_settings['HEADER_SEARCH_PATHS'] << \
+          '$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/NativeScript.framework/Headers'
+
+        config.build_settings['HEADER_SEARCH_PATHS'] << \
+          '$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/NativeScript.framework/Headers/include'
+      end
+    end
+  end
+end

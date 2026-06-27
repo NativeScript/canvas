@@ -63,6 +63,14 @@ public class AudioContextInstance {
 		return AudioContext.getInstance().getSampleRate(id);
 	}
 
+	public double getBaseLatency() {
+		return AudioContext.getInstance().getBaseLatency();
+	}
+
+	public double getOutputLatency() {
+		return AudioContext.getInstance().getOutputLatency();
+	}
+
 
 	public void renderOfflineAsync(int frames, int sampleRate, int channels, DecodeCallback cb) {
 		AudioContext.getInstance().renderOfflineForContext(id, frames, sampleRate, channels, cb);

@@ -10,6 +10,25 @@
 #endif
 #import "NSCVideoHelper+Internal.h"
 
+// visionOS removed the synchronous -tracksWithMediaType:. Bridge to the async loader.
+// Callers below have already run -loadValuesAsynchronouslyForKeys: including @"tracks",
+// so the tracks are loaded and this returns immediately. The async completion is
+// delivered on a background queue, so the semaphore wait is safe even on the main thread.
+static NSArray<AVAssetTrack *> *NSCTracksWithMediaType(AVAsset *asset, AVMediaType mediaType) {
+#if TARGET_OS_VISION
+    __block NSArray<AVAssetTrack *> *result = nil;
+    dispatch_semaphore_t sem = dispatch_semaphore_create(0);
+    [asset loadTracksWithMediaType:mediaType completionHandler:^(NSArray<AVAssetTrack *> * _Nullable tracks, NSError * _Nullable error) {
+        result = tracks;
+        dispatch_semaphore_signal(sem);
+    }];
+    dispatch_semaphore_wait(sem, DISPATCH_TIME_FOREVER);
+    return result;
+#else
+    return [asset tracksWithMediaType:mediaType];
+#endif
+}
+
 @implementation NSCVideoHelper {
     BOOL _canPlayFired;
     BOOL _canPlayThroughFired;
@@ -84,7 +103,7 @@
             __strong typeof(weakSelf) strongSelf = weakSelf;
             if (!strongSelf) return;
 
-            AVAssetTrack *videoTrack = [[strongSelf.asset tracksWithMediaType:AVMediaTypeVideo] firstObject];
+            AVAssetTrack *videoTrack = [NSCTracksWithMediaType(strongSelf.asset, AVMediaTypeVideo) firstObject];
             strongSelf->_videoSize = videoTrack ? videoTrack.naturalSize : CGSizeZero;
 
             float fps = (videoTrack && videoTrack.nominalFrameRate > 0) ? videoTrack.nominalFrameRate : 30.0f;
@@ -160,7 +179,7 @@
 
     if ([keyPath isEqualToString:@"status"]) {
         if (self.player.currentItem.status == AVPlayerItemStatusReadyToPlay) {
-            self->_videoSize = [[self.asset tracksWithMediaType:AVMediaTypeVideo] firstObject].naturalSize;
+            self->_videoSize = [NSCTracksWithMediaType(self.asset, AVMediaTypeVideo) firstObject].naturalSize;
             [self.player.currentItem addOutput:self.assetOutput];
             self.readyState = NSCPlayerReadyStateHaveCurrentData;
         }

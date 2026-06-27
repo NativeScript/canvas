@@ -317,7 +317,7 @@ impl WebGLState {
         instance
     }
 
-    #[cfg(target_os = "ios")]
+    #[cfg(any(target_os = "ios", target_os = "visionos"))]
     pub fn snapshot(&self) -> Option<Vec<u8>> {
         self.context.snapshot()
     }

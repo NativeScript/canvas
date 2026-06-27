@@ -28,14 +28,34 @@ fi
 rm -rf "$BUILD_DIR" "$DIST"
 mkdir -p "$BUILD_DIR" "$DIST"
 
-## Temporarily remove doc CSS files that Xcode may auto-include and cause duplicate resource errors.
-## Record deleted paths for restore from git after archiving.
-TMP_DELETED_LIST="$BUILD_DIR/removed_docs.txt"
-rm -f "$TMP_DELETED_LIST" || true
+## Temporarily move aside doc CSS/HTML files that Xcode may auto-include and cause
+## duplicate resource errors during the framework archive.
+## IMPORTANT: the third_party sources (libvorbis in particular) are NOT tracked in git,
+## and several of these files (e.g. libvorbis/doc/index.html) are *source* files the
+## autotools build needs. We therefore back them up to a directory OUTSIDE $WORK_ROOT
+## (so the find below can never re-match them) and restore from that backup after
+## archiving — never via `git checkout`, which silently fails for untracked files.
+DOC_BACKUP_DIR="$WORK_ROOT/../.doc_backup"
+# Self-heal: if a previous run crashed after deleting but before restoring, put the
+# backed-up docs back before we start so the deps build can find its sources.
+if [ -d "$DOC_BACKUP_DIR" ]; then
+  echo "Restoring doc files left over from a previous interrupted run..."
+  (cd "$DOC_BACKUP_DIR" && find . -type f -print0 | while IFS= read -r -d '' f; do
+    dest="$WORK_ROOT/${f#./}"
+    mkdir -p "$(dirname "$dest")"
+    cp "$f" "$dest"
+  done)
+fi
 echo "Cleaning up doc files to avoid duplicate resource conflicts..."
-# Remove documentation artifacts under any nested third_party doc locations.
+# Move documentation artifacts under any nested third_party doc locations into the backup.
 # This covers both "$WORK_ROOT/third_party" and "$WORK_ROOT/AudioContextNative/third_party" (and similar).
-find "$WORK_ROOT" -type f \( -path "*/third_party/*/doc/*" -o -path "*/third_party/*/share/doc/*" -o -path "*/third_party/doc/*" -o -path "*/third_party/share/doc/*" \) \( -name '*.css' -o -name '*.html' -o -name 'stamp-*' -o -name 'stamp_*' \) -print -exec rm -f {} \; >> "$TMP_DELETED_LIST" || true
+rm -rf "$DOC_BACKUP_DIR"
+find "$WORK_ROOT" -type f \( -path "*/third_party/*/doc/*" -o -path "*/third_party/*/share/doc/*" -o -path "*/third_party/doc/*" -o -path "*/third_party/share/doc/*" \) \( -name '*.css' -o -name '*.html' -o -name 'stamp-*' -o -name 'stamp_*' \) -print0 | while IFS= read -r -d '' f; do
+  rel="${f#$WORK_ROOT/}"
+  bak="$DOC_BACKUP_DIR/$rel"
+  mkdir -p "$(dirname "$bak")"
+  mv "$f" "$bak"
+done
 
 echo "Archiving device build..."
 xcodebuild archive \
@@ -85,10 +105,31 @@ if [ "$NEED_SIM_X86" -eq 1 ]; then
     SKIP_INSTALL=NO BUILD_LIBRARY_FOR_DISTRIBUTION=YES CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO ARCHS="x86_64"
 fi
 
+# visionOS is Apple-Silicon only — pin ARCHS=arm64 (no x86_64-apple-visionos-sim slice).
+echo "Archiving visionOS device build..."
+xcodebuild archive \
+  -project "$PROJECT" \
+  -scheme "$SCHEME" \
+  -configuration Release \
+  -destination "generic/platform=visionOS" \
+  -archivePath "$BUILD_DIR/AudioContextNative-XROS.xcarchive" \
+  ARCHS=arm64 ONLY_ACTIVE_ARCH=NO SKIP_INSTALL=NO BUILD_LIBRARY_FOR_DISTRIBUTION=YES CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
+
+echo "Archiving visionOS simulator build..."
+xcodebuild archive \
+  -project "$PROJECT" \
+  -scheme "$SCHEME" \
+  -configuration Release \
+  -destination "generic/platform=visionOS Simulator" \
+  -archivePath "$BUILD_DIR/AudioContextNative-XRSIM.xcarchive" \
+  ARCHS=arm64 ONLY_ACTIVE_ARCH=NO SKIP_INSTALL=NO BUILD_LIBRARY_FOR_DISTRIBUTION=YES CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
+
 echo "Creating XCFramework..."
 FRAME_IOS="$BUILD_DIR/AudioContextNative-iOS.xcarchive/Products/Library/Frameworks/AudioContextNative.framework"
 FRAME_SIM="$BUILD_DIR/AudioContextNative-SIM.xcarchive/Products/Library/Frameworks/AudioContextNative.framework"
 FRAME_SIM_X86="$BUILD_DIR/AudioContextNative-SIM-x86_64.xcarchive/Products/Library/Frameworks/AudioContextNative.framework"
+FRAME_XROS="$BUILD_DIR/AudioContextNative-XROS.xcarchive/Products/Library/Frameworks/AudioContextNative.framework"
+FRAME_XRSIM="$BUILD_DIR/AudioContextNative-XRSIM.xcarchive/Products/Library/Frameworks/AudioContextNative.framework"
 echo "Frameworks to combine:"
 echo "  $FRAME_IOS"
 echo "  $FRAME_SIM"
@@ -97,6 +138,9 @@ if [ "$NEED_SIM_X86" -eq 1 ]; then
   echo "  $FRAME_SIM_X86"
   frames+=("$FRAME_SIM_X86")
 fi
+echo "  $FRAME_XROS"
+echo "  $FRAME_XRSIM"
+frames+=("$FRAME_XROS" "$FRAME_XRSIM")
 for f in "${frames[@]}"; do
   if [ ! -d "$f" ]; then
     echo "ERROR: expected framework not found: $f" >&2
@@ -113,14 +157,20 @@ xcodebuild -create-xcframework "${cf_args[@]}" -output "$DIST/AudioContextNative
 
 DEST="$REPO_ROOT/packages/audio-context/platforms/ios"
 mkdir -p "$DEST"
+# Replace (don't merge into) any existing framework so stale slices can't linger.
+rm -rf "$DEST/AudioContextNative.xcframework"
 cp -R "$DIST/AudioContextNative.xcframework" "$DEST/"
 
 echo "Done. XCFramework copied to: $DEST/AudioContextNative.xcframework"
 
-# Restore any deleted tracked doc files so the repo isn't left modified.
-if git rev-parse --is-inside-work-tree >/dev/null 2>&1 && [ -f "$TMP_DELETED_LIST" ]; then
-  echo "Restoring deleted doc files from git (if tracked)..."
-  # Convert absolute paths to repo-relative paths and restore
-  sed "s#^$REPO_ROOT/##" "$TMP_DELETED_LIST" | tr '\n' ' ' | xargs -r git checkout -- || true
-  rm -f "$TMP_DELETED_LIST" || true
+# Restore the doc files we moved aside (these are untracked source files the autotools
+# build needs, so restore from our backup dir — git checkout cannot restore them).
+if [ -d "$DOC_BACKUP_DIR" ]; then
+  echo "Restoring doc files moved aside before archiving..."
+  (cd "$DOC_BACKUP_DIR" && find . -type f -print0 | while IFS= read -r -d '' f; do
+    dest="$WORK_ROOT/${f#./}"
+    mkdir -p "$(dirname "$dest")"
+    mv "$f" "$dest"
+  done)
+  rm -rf "$DOC_BACKUP_DIR"
 fi

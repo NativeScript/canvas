@@ -1,6 +1,10 @@
 platform :ios, '13.0'
 
-pod 'GDPerformanceView', :git => 'https://github.com/triniwiz/GDPerformanceView.git', :commit => 'c72cb61c719377413a656526222c2ef83ae9c073'
+
+nsc_is_visionos = "#{__dir__} #{Dir.pwd}".include?('visionos')
+unless nsc_is_visionos
+  pod 'GDPerformanceView', :git => 'https://github.com/triniwiz/GDPerformanceView.git', :commit => 'c72cb61c719377413a656526222c2ef83ae9c073'
+end
 
 
 post_install do |installer|

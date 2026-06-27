@@ -194,6 +194,12 @@ interface CanvasColor {
 }
 declare var CanvasColor: interop.StructType<CanvasColor>;
 
+declare const enum CanvasColorSpace {
+	Srgb = 0,
+
+	P3 = 1,
+}
+
 declare const enum CanvasCompareFunction {
 	Never = 1,
 
@@ -362,6 +368,12 @@ declare const enum CanvasGPUErrorType {
 	Internal = 4,
 }
 
+declare const enum CanvasGPUFeatureLevel {
+	Core = 0,
+
+	Compatibility = 1,
+}
+
 declare const enum CanvasGPUPipelineLayoutOrGPUAutoLayoutMode_Tag {
 	Layout = 0,
 
@@ -393,6 +405,7 @@ declare const enum CanvasGPUPresentMode {
 interface CanvasGPURequestAdapterOptions {
 	power_preference: CanvasGPUPowerPreference;
 	force_fallback_adapter: boolean;
+	feature_level: CanvasGPUFeatureLevel;
 }
 declare var CanvasGPURequestAdapterOptions: interop.StructType<CanvasGPURequestAdapterOptions>;
 
@@ -418,9 +431,9 @@ interface CanvasGPUSupportedLimits {
 	max_buffer_size: number;
 	max_vertex_attributes: number;
 	max_vertex_buffer_array_stride: number;
+	max_inter_stage_shader_variables: number;
 	min_uniform_buffer_offset_alignment: number;
 	min_storage_buffer_offset_alignment: number;
-	max_inter_stage_shader_components: number;
 	max_color_attachments: number;
 	max_color_attachment_bytes_per_sample: number;
 	max_compute_workgroup_storage_size: number;
@@ -429,18 +442,23 @@ interface CanvasGPUSupportedLimits {
 	max_compute_workgroup_size_y: number;
 	max_compute_workgroup_size_z: number;
 	max_compute_workgroups_per_dimension: number;
-	min_subgroup_size: number;
-	max_subgroup_size: number;
-	max_push_constant_size: number;
+	max_immediate_size: number;
 	max_non_sampler_bindings: number;
-	max_task_workgroup_total_count: number;
-	max_task_workgroups_per_dimension: number;
+	max_task_invocations_per_workgroup: number;
+	max_task_invocations_per_dimension: number;
+	max_mesh_invocations_per_workgroup: number;
+	max_mesh_invocations_per_dimension: number;
+	max_task_payload_size: number;
+	max_mesh_output_vertices: number;
+	max_mesh_output_primitives: number;
 	max_mesh_output_layers: number;
-	max_mesh_multiview_count: number;
+	max_mesh_multiview_view_count: number;
 	max_blas_primitive_count: number;
 	max_blas_geometry_count: number;
 	max_tlas_instance_count: number;
 	max_acceleration_structures_per_shader_stage: number;
+	max_multiview_view_count: number;
+	max_bind_groups_plus_vertex_buffers: number;
 }
 declare var CanvasGPUSupportedLimits: interop.StructType<CanvasGPUSupportedLimits>;
 
@@ -718,6 +736,12 @@ declare const enum CanvasOptionF32_Tag {
 }
 
 declare const enum CanvasOptionalBlendState_Tag {
+	None = 0,
+
+	Some = 1,
+}
+
+declare const enum CanvasOptionalBool_Tag {
 	None = 0,
 
 	Some = 1,
@@ -1199,7 +1223,7 @@ declare class NSCCanvas extends UIView {
 
 	context2DTest(context: number): void;
 
-	create2DContext(alpha: boolean, antialias: boolean, depth: boolean, failIfMajorPerformanceCaveat: boolean, powerPreference: number, premultipliedAlpha: boolean, preserveDrawingBuffer: boolean, stencil: boolean, desynchronized: boolean, xrCompatible: boolean, fontColor: number, willReadFrequently: boolean): number;
+	create2DContext(alpha: boolean, antialias: boolean, depth: boolean, failIfMajorPerformanceCaveat: boolean, powerPreference: number, premultipliedAlpha: boolean, preserveDrawingBuffer: boolean, stencil: boolean, desynchronized: boolean, xrCompatible: boolean, fontColor: number, willReadFrequently: boolean, colorSpace: number): number;
 
 	forceLayout(width: number, height: number): void;
 
@@ -1209,13 +1233,15 @@ declare class NSCCanvas extends UIView {
 
 	getMtlViewPtr(): interop.Pointer | interop.Reference<any>;
 
-	initContext(type: string, alpha: boolean, antialias: boolean, depth: boolean, failIfMajorPerformanceCaveat: boolean, powerPreference: number, premultipliedAlpha: boolean, preserveDrawingBuffer: boolean, stencil: boolean, desynchronized: boolean, xrCompatible: boolean, willReadFrequently: boolean): void;
+	initContext(type: string, alpha: boolean, antialias: boolean, depth: boolean, failIfMajorPerformanceCaveat: boolean, powerPreference: number, premultipliedAlpha: boolean, preserveDrawingBuffer: boolean, stencil: boolean, desynchronized: boolean, xrCompatible: boolean, willReadFrequently: boolean, colorSpace: number): void;
 
 	initWebGPUContext(instance: number): void;
 
 	render(): boolean;
 
 	setListener(listener: NSCCanvasListener): void;
+
+	setSurfaceSize(width: number, height: number): void;
 
 	snapshot(flip: boolean): UIImage;
 
@@ -1248,173 +1274,15 @@ declare class NSCCanvasRenderingContext2D extends NSCCanvasRenderingContext {
 declare class NSCCanvasUtils extends NSObject {
 	static alloc(): NSCCanvasUtils; // inherited from NSObject
 
-	static createImage(texturecache: any, buffer: any, textureAttributes: NSDictionary<any, any>, target: number, internalFormat: number, width: number, height: number, format: number, type: number, planeIndex: number): any;
-
-	static createTextureCache(): any;
-
-	static drawFrame(player: AVPlayer, output: AVPlayerItemVideoOutput, videoSize: CGSize, internalFormat: number, format: number, flipYWebGL: boolean): void;
-
 	static new(): NSCCanvasUtils; // inherited from NSObject
-
-	static setupRender(context: EAGLContext): NSCRender;
-
-	static setupRenderWithMtl(mtl: MTLDevice): NSCRender;
 
 	static writeToFileError(data: NSData, path: string): boolean;
 }
 
-declare class NSCFontDescriptors extends NSObject {
-	static alloc(): NSCFontDescriptors; // inherited from NSObject
-
-	static new(): NSCFontDescriptors; // inherited from NSObject
-
-	constructor(o: { family: string });
-
-	initWithFamily(family: string): this;
-
-	setFontStyle(value: string): void;
-
-	setFontWeight(value: string): void;
-
-	update(value: string): void;
-}
-
-declare const enum NSCFontDisplay {
-	Auto = 0,
-
-	Block = 1,
-
-	Fallback = 2,
-
-	Optional = 3,
-
-	Swap = 4,
-}
-
-declare class NSCFontFace extends NSObject {
-	static alloc(): NSCFontFace; // inherited from NSObject
-
-	static importFromRemoteWithUrlLoadCallback(url: string, load: boolean, callback: (p1: NSArray<NSCFontFace>, p2: string) => void): void;
-
-	static loadFromStyleWithStyle(style: string): NSCFontFace;
-
-	static new(): NSCFontFace; // inherited from NSObject
-
-	readonly ascentOverride: string;
-
-	readonly descentOverride: string;
-
-	display: NSCFontDisplay;
-
-	readonly family: string;
-
-	readonly font: any;
-
-	readonly fontData: NSData;
-
-	status: NSCFontFaceStatus;
-
-	style: string;
-
-	weight: NSCFontWeight;
-
-	constructor();
-
-	constructor(o: { data: string });
-
-	constructor(o: { family: string });
-
-	constructor(o: { family: string; data: NSData });
-
-	constructor(o: { family: string; source: string });
-
-	init(family: string, source: string, descriptors: NSCFontDescriptors): this;
-
-	initData(family: string, data: NSData, descriptors: NSCFontDescriptors): this;
-
-	initWithFamily(family: string): this;
-
-	initWithFamilyData(family: string, source: NSData): this;
-
-	initWithFamilySource(family: string, source: string): this;
-
-	load(callback: (p1: string) => void): void;
-
-	setFontDisplayWithValue(value: string): void;
-
-	setFontStyleWithValueAngle(value: string, angle: string): void;
-
-	setFontWeightWithValue(value: string): void;
-
-	updateDescriptorWithValue(value: string): void;
-}
-
-declare class NSCFontFaceSet extends NSObject {
-	static alloc(): NSCFontFaceSet; // inherited from NSObject
-
-	static new(): NSCFontFaceSet; // inherited from NSObject
-
-	onStatus: (p1: NSCFontFaceSetStatus) => void;
-
-	readonly size: number;
-
-	status: NSCFontFaceSetStatus;
-
-	static readonly instance: NSCFontFaceSet;
-
-	add(font: NSCFontFace): void;
-
-	array(): NSArray<any>;
-
-	check(font: string, text: string): boolean;
-
-	clear(): void;
-
-	delete(font: NSCFontFace): void;
-
-	iter(): NSEnumerator<any>;
-
-	load(font: string, text: string, callback: (p1: NSArray<NSCFontFace>, p2: string) => void): void;
-}
-
-declare const enum NSCFontFaceSetStatus {
-	Loading = 0,
-
-	Loaded = 1,
-}
-
-declare const enum NSCFontFaceStatus {
-	Unloaded = 0,
-
-	Loading = 1,
-
-	Loaded = 2,
-
-	Error = 3,
-}
-
-declare const enum NSCFontWeight {
-	Thin = 0,
-
-	ExtraLight = 1,
-
-	Light = 2,
-
-	Normal = 3,
-
-	Medium = 4,
-
-	SemiBold = 5,
-
-	Bold = 6,
-
-	ExtraBold = 7,
-
-	Black = 8,
-}
-
 declare class NSCImageAsset extends NSObject {
 	static alloc(): NSCImageAsset; // inherited from NSObject
+
+	static getImageFromPlayer(context: number, player: AVPlayer, output: AVPlayerItemVideoOutput, flipX: boolean, flipY: boolean, callback: (p1: boolean) => void): void;
 
 	static loadImageFromImage(context: number, image: UIImage, callback: (p1: boolean) => void): void;
 
@@ -1491,19 +1359,23 @@ declare class NSCMTLView extends UIView {
 declare class NSCRender extends NSObject {
 	static alloc(): NSCRender; // inherited from NSObject
 
+	static drawVideoFrame(player: AVPlayer, output: AVPlayerItemVideoOutput, videoSize: CGSize, context: number, dx: number, dy: number): boolean;
+
+	static getVideoFrameData(player: AVPlayer, output: AVPlayerItemVideoOutput, videoSize: CGSize): NSDictionary<any, any>;
+
 	static new(): NSCRender; // inherited from NSObject
 
 	constructor(o: { device: MTLDevice });
 
-	constructor(o: { glContext: EAGLContext });
-
 	drawFrame(player: AVPlayer, output: AVPlayerItemVideoOutput, videoSize: CGSize, internalFormat: number, format: number, flipYWebGL: boolean): void;
+
+	drawFrameTexImage3D(player: AVPlayer, output: AVPlayerItemVideoOutput, videoSize: CGSize, target: number, level: number, internalFormat: number, width: number, height: number, depth: number, border: number, format: number, type: number, flipYWebGL: boolean): void;
+
+	drawFrameTexSubImage3D(player: AVPlayer, output: AVPlayerItemVideoOutput, videoSize: CGSize, target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type: number, flipYWebGL: boolean): void;
 
 	drawFrameWithBufferWidthHeightInternalFormatFormatFlipYWebGL(buffer: any, width: number, height: number, internalFormat: number, format: number, flipYWebGL: boolean): void;
 
 	initWithDevice(device: MTLDevice): this;
-
-	initWithGlContext(context: EAGLContext): this;
 }
 
 declare const enum NSCSurfaceState {
@@ -1553,9 +1425,9 @@ declare class NSCWebGLRenderingContext extends NSObject {
 declare class NSSCanvasHelpers extends NSObject {
 	static alloc(): NSSCanvasHelpers; // inherited from NSObject
 
-	static create2DContext(view: NSCCanvas, width: number, height: number, alpha: boolean, density: number, fontColor: number, ppi: number, direction: number): number;
+	static create2DContext(view: NSCCanvas, width: number, height: number, alpha: boolean, density: number, fontColor: number, ppi: number, direction: number, colorSpace: number): number;
 
-	static create2DContextMetal(view: NSCCanvas, alpha: boolean, density: number, fontColor: number, ppi: number, direction: number): number;
+	static create2DContextMetal(view: NSCCanvas, alpha: boolean, density: number, fontColor: number, ppi: number, direction: number, colorSpace: number): number;
 
 	static createPattern(context: number, image: UIImage, repetition: string): number;
 
@@ -1597,6 +1469,8 @@ declare class NSSCanvasHelpers extends NSObject {
 
 	static readFile(path: string, callback: (p1: string, p2: NSData) => void): void;
 
+	static release2DContext(context: number): void;
+
 	static releaseWebGL(context: number): void;
 
 	static resize2DContext(context: number, width: number, height: number): void;
@@ -1614,6 +1488,8 @@ declare const enum PaintStyleType {
 	Gradient = 1,
 
 	Pattern = 2,
+
+	Color4f = 3,
 }
 
 declare const enum SurfaceGetCurrentTextureStatus {
@@ -1631,7 +1507,9 @@ declare const enum SurfaceGetCurrentTextureStatus {
 
 	Force32 = 2147483647,
 
-	Unknown = 6,
+	Occluded = 7,
+
+	Validation = 8,
 }
 
 declare const enum TextBaseLine {
@@ -1756,11 +1634,11 @@ declare function canvas_native_context_clip_rule(context: interop.Pointer | inte
 
 declare function canvas_native_context_close_path(context: interop.Pointer | interop.Reference<any>): void;
 
-declare function canvas_native_context_create(width: number, height: number, density: number, alpha: boolean, font_color: number, ppi: number, direction: number): interop.Pointer | interop.Reference<any>;
+declare function canvas_native_context_create(width: number, height: number, density: number, alpha: boolean, font_color: number, ppi: number, direction: number, color_space: CanvasColorSpace): interop.Pointer | interop.Reference<any>;
 
 declare function canvas_native_context_create_conic_gradient(context: interop.Pointer | interop.Reference<any>, start_angle: number, x: number, y: number): interop.Pointer | interop.Reference<any>;
 
-declare function canvas_native_context_create_gl(view: interop.Pointer | interop.Reference<any>, width: number, height: number, density: number, alpha: boolean, font_color: number, ppi: number, direction: number): interop.Pointer | interop.Reference<any>;
+declare function canvas_native_context_create_gl(view: interop.Pointer | interop.Reference<any>, width: number, height: number, density: number, alpha: boolean, font_color: number, ppi: number, direction: number, color_space: CanvasColorSpace): interop.Pointer | interop.Reference<any>;
 
 declare function canvas_native_context_create_gl_no_window(width: number, height: number, density: number, font_color: number, ppi: number, direction: number, alpha: boolean): interop.Pointer | interop.Reference<any>;
 
@@ -1920,6 +1798,8 @@ declare function canvas_native_context_line_to(context: interop.Pointer | intero
 
 declare function canvas_native_context_measure_text(context: interop.Pointer | interop.Reference<any>, text: string | interop.Pointer | interop.Reference<any>): interop.Pointer | interop.Reference<any>;
 
+declare function canvas_native_context_measure_text_to(context: interop.Pointer | interop.Reference<any>, text: string | interop.Pointer | interop.Reference<any>, out: interop.Pointer | interop.Reference<number>, len: number): void;
+
 declare function canvas_native_context_move_to(context: interop.Pointer | interop.Reference<any>, x: number, y: number): void;
 
 declare function canvas_native_context_put_image_data(context: interop.Pointer | interop.Reference<any>, image_data: interop.Pointer | interop.Reference<any>, dx: number, dy: number, dirty_x: number, dirty_y: number, dirty_width: number, dirty_height: number): void;
@@ -1952,9 +1832,11 @@ declare function canvas_native_context_scale(context: interop.Pointer | interop.
 
 declare function canvas_native_context_set_fill_style(context: interop.Pointer | interop.Reference<any>, style: interop.Pointer | interop.Reference<any>): void;
 
+declare function canvas_native_context_set_fill_style_owned(context: interop.Pointer | interop.Reference<any>, style: interop.Pointer | interop.Reference<any>): void;
+
 declare function canvas_native_context_set_filter(context: interop.Pointer | interop.Reference<any>, filter: string | interop.Pointer | interop.Reference<any>): void;
 
-declare function canvas_native_context_set_font(context: interop.Pointer | interop.Reference<any>, font: string | interop.Pointer | interop.Reference<any>): void;
+declare function canvas_native_context_set_font(context: interop.Pointer | interop.Reference<any>, font: string | interop.Pointer | interop.Reference<any>): boolean;
 
 declare function canvas_native_context_set_global_alpha(context: interop.Pointer | interop.Reference<any>, alpha: number): void;
 
@@ -1993,6 +1875,8 @@ declare function canvas_native_context_set_shadow_offset_x(context: interop.Poin
 declare function canvas_native_context_set_shadow_offset_y(context: interop.Pointer | interop.Reference<any>, y: number): void;
 
 declare function canvas_native_context_set_stroke_style(context: interop.Pointer | interop.Reference<any>, style: interop.Pointer | interop.Reference<any>): void;
+
+declare function canvas_native_context_set_stroke_style_owned(context: interop.Pointer | interop.Reference<any>, style: interop.Pointer | interop.Reference<any>): void;
 
 declare function canvas_native_context_set_text_align(context: interop.Pointer | interop.Reference<any>, alignment: string | interop.Pointer | interop.Reference<any>): void;
 
@@ -2037,6 +1921,8 @@ declare function canvas_native_font_add_family_with_bytes(alias: string | intero
 declare function canvas_native_font_clear(): void;
 
 declare function canvas_native_gradient_add_color_stop(style: interop.Pointer | interop.Reference<any>, stop: number, color: string | interop.Pointer | interop.Reference<any>): void;
+
+declare function canvas_native_gradient_add_color_stop_rgba(style: interop.Pointer | interop.Reference<any>, stop: number, r: number, g: number, b: number, a: number): void;
 
 declare function canvas_native_helper_base64_decode(data: string | interop.Pointer | interop.Reference<any>, size: number): interop.Pointer | interop.Reference<any>;
 
@@ -2138,21 +2024,39 @@ declare function canvas_native_ios_context_create_pattern_raw(context: number, w
 
 declare function canvas_native_ios_context_custom_with_buffer_flush(context: number, bytes: string | interop.Pointer | interop.Reference<any>, size: number, width: number, height: number, alpha: boolean): void;
 
+declare function canvas_native_ios_context_draw_image_dx_dy_dw_dh_with_bgra_bytes(context: number, bytes: string | interop.Pointer | interop.Reference<any>, size: number, width: number, height: number, dx: number, dy: number, d_width: number, d_height: number): boolean;
+
 declare function canvas_native_ios_context_draw_image_dx_dy_dw_dh_with_bytes(context: number, bytes: string | interop.Pointer | interop.Reference<any>, size: number, width: number, height: number, dx: number, dy: number, d_width: number, d_height: number): boolean;
+
+declare function canvas_native_ios_context_draw_image_dx_dy_dw_dh_with_gl_texture(context: number, gl_texture_id: number, gl_target: number, width: number, height: number, dx: number, dy: number, d_width: number, d_height: number): boolean;
+
+declare function canvas_native_ios_context_draw_image_dx_dy_dw_dh_with_metal_texture(context: number, mtl_texture: interop.Pointer | interop.Reference<any>, width: number, height: number, dx: number, dy: number, d_width: number, d_height: number): boolean;
+
+declare function canvas_native_ios_context_draw_image_dx_dy_with_bgra_bytes(context: number, bytes: string | interop.Pointer | interop.Reference<any>, size: number, width: number, height: number, dx: number, dy: number): boolean;
 
 declare function canvas_native_ios_context_draw_image_dx_dy_with_bytes(context: number, bytes: string | interop.Pointer | interop.Reference<any>, size: number, width: number, height: number, dx: number, dy: number): boolean;
 
+declare function canvas_native_ios_context_draw_image_dx_dy_with_gl_texture(context: number, gl_texture_id: number, gl_target: number, width: number, height: number, dx: number, dy: number): boolean;
+
+declare function canvas_native_ios_context_draw_image_dx_dy_with_metal_texture(context: number, mtl_texture: interop.Pointer | interop.Reference<any>, width: number, height: number, dx: number, dy: number): boolean;
+
+declare function canvas_native_ios_context_draw_image_with_bgra_bytes(context: number, bytes: string | interop.Pointer | interop.Reference<any>, size: number, width: number, height: number, sx: number, sy: number, s_width: number, s_height: number, dx: number, dy: number, d_width: number, d_height: number): boolean;
+
 declare function canvas_native_ios_context_draw_image_with_bytes(context: number, bytes: string | interop.Pointer | interop.Reference<any>, size: number, width: number, height: number, sx: number, sy: number, s_width: number, s_height: number, dx: number, dy: number, d_width: number, d_height: number): boolean;
 
-declare function canvas_native_ios_context_init_context_with_custom_surface(width: number, height: number, density: number, alpha: boolean, font_color: number, ppi: number, direction: number): number;
+declare function canvas_native_ios_context_draw_image_with_gl_texture(context: number, gl_texture_id: number, gl_target: number, width: number, height: number, sx: number, sy: number, s_width: number, s_height: number, dx: number, dy: number, d_width: number, d_height: number): boolean;
 
-declare function canvas_native_ios_create_2d_context(view: interop.Pointer | interop.Reference<any>, width: number, height: number, alpha: boolean, density: number, font_color: number, ppi: number, direction: number): number;
+declare function canvas_native_ios_context_draw_image_with_metal_texture(context: number, mtl_texture: interop.Pointer | interop.Reference<any>, width: number, height: number, sx: number, sy: number, s_width: number, s_height: number, dx: number, dy: number, d_width: number, d_height: number): boolean;
 
-declare function canvas_native_ios_create_2d_context_metal(view: interop.Pointer | interop.Reference<any>, alpha: boolean, density: number, samples: number, font_color: number, ppi: number, direction: number): number;
+declare function canvas_native_ios_context_init_context_with_custom_surface(width: number, height: number, density: number, alpha: boolean, font_color: number, ppi: number, direction: number, color_space: CanvasColorSpace): number;
 
-declare function canvas_native_ios_create_2d_context_metal_device_queue(view: interop.Pointer | interop.Reference<any>, device: interop.Pointer | interop.Reference<any>, queue: interop.Pointer | interop.Reference<any>, alpha: boolean, density: number, samples: number, font_color: number, ppi: number, direction: number): number;
+declare function canvas_native_ios_create_2d_context(view: interop.Pointer | interop.Reference<any>, width: number, height: number, alpha: boolean, density: number, font_color: number, ppi: number, direction: number, color_space: CanvasColorSpace): number;
 
-declare function canvas_native_ios_create_2d_context_metal_offscreen(width: number, height: number, alpha: boolean, density: number, samples: number, font_color: number, ppi: number, direction: number): number;
+declare function canvas_native_ios_create_2d_context_metal(view: interop.Pointer | interop.Reference<any>, alpha: boolean, density: number, samples: number, font_color: number, ppi: number, direction: number, color_space: CanvasColorSpace): number;
+
+declare function canvas_native_ios_create_2d_context_metal_device_queue(view: interop.Pointer | interop.Reference<any>, device: interop.Pointer | interop.Reference<any>, queue: interop.Pointer | interop.Reference<any>, alpha: boolean, density: number, samples: number, font_color: number, ppi: number, direction: number, color_space: CanvasColorSpace): number;
+
+declare function canvas_native_ios_create_2d_context_metal_offscreen(width: number, height: number, alpha: boolean, density: number, samples: number, font_color: number, ppi: number, direction: number, color_space: CanvasColorSpace): number;
 
 declare function canvas_native_ios_create_webgl_context(view: interop.Pointer | interop.Reference<any>, alpha: boolean, antialias: boolean, depth: boolean, fail_if_major_performance_caveat: boolean, power_preference: number, premultiplied_alpha: boolean, preserve_drawing_buffer: boolean, stencil: boolean, desynchronized: boolean, xr_compatible: boolean, version: number): number;
 
@@ -2167,6 +2071,8 @@ declare function canvas_native_ios_gl_make_current(context: number): void;
 declare function canvas_native_ios_image_asset_load_from_bytes(asset: number, bytes: string | interop.Pointer | interop.Reference<any>, size: number): boolean;
 
 declare function canvas_native_ios_present_drawable(context: number): void;
+
+declare function canvas_native_ios_release_2d_context(context: number): void;
 
 declare function canvas_native_ios_release_webgl(context: number): void;
 
@@ -2370,6 +2276,8 @@ declare function canvas_native_pattern_from_ptr(ptr: number): interop.Pointer | 
 
 declare function canvas_native_pattern_set_transform(pattern: interop.Pointer | interop.Reference<any>, matrix: interop.Pointer | interop.Reference<any>): void;
 
+declare function canvas_native_raf_clear_callback(raf: interop.Pointer | interop.Reference<any>): void;
+
 declare function canvas_native_raf_create(callback: number, on_frame_callback: interop.FunctionReference<(p1: number, p2: number) => void>): interop.Pointer | interop.Reference<any>;
 
 declare function canvas_native_raf_get_started(raf: interop.Pointer | interop.Reference<any>): boolean;
@@ -2379,6 +2287,8 @@ declare function canvas_native_raf_release(value: interop.Pointer | interop.Refe
 declare function canvas_native_raf_start(raf: interop.Pointer | interop.Reference<any>): void;
 
 declare function canvas_native_raf_stop(raf: interop.Pointer | interop.Reference<any>): void;
+
+declare function canvas_native_raf_stop_and_clear(raf: interop.Pointer | interop.Reference<any>, timeout_ms: number): void;
 
 declare function canvas_native_resize_ios_webgpu_uiview(context: number, view: interop.Pointer | interop.Reference<any>, width: number, height: number): void;
 
@@ -2419,6 +2329,8 @@ declare function canvas_native_text_metrics_get_actual_bounding_box_descent(metr
 declare function canvas_native_text_metrics_get_actual_bounding_box_left(metrics: interop.Pointer | interop.Reference<any>): number;
 
 declare function canvas_native_text_metrics_get_actual_bounding_box_right(metrics: interop.Pointer | interop.Reference<any>): number;
+
+declare function canvas_native_text_metrics_get_all(metrics: interop.Pointer | interop.Reference<any>, out: interop.Pointer | interop.Reference<number>, len: number): void;
 
 declare function canvas_native_text_metrics_get_alphabetic_baseline(metrics: interop.Pointer | interop.Reference<any>): number;
 
@@ -3384,7 +3296,7 @@ declare function canvas_native_webgpu_context_get_capabilities(context: interop.
 
 declare function canvas_native_webgpu_context_get_current_texture(context: interop.Pointer | interop.Reference<any>): interop.Pointer | interop.Reference<any>;
 
-declare function canvas_native_webgpu_context_has_current_texture(context: interop.Pointer | interop.Reference<any>): boolean;
+declare function canvas_native_webgpu_context_has_current_texture(context: interop.Pointer | interop.Reference<any>): interop.Pointer | interop.Reference<any>;
 
 declare function canvas_native_webgpu_context_has_surface_presented(context: interop.Pointer | interop.Reference<any>): boolean;
 

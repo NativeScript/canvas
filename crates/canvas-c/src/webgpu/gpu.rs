@@ -93,7 +93,7 @@ pub type WebGPUInstance = Arc<CanvasWebGPUInstance>;
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgpu_instance_create() -> *const CanvasWebGPUInstance {
-    #[cfg(any(target_os = "ios", target_os = "macos"))]
+    #[cfg(any(target_os = "ios", target_os = "macos", target_os = "visionos"))]
     let backends = wgt::Backends::METAL;
 
     #[cfg(target_os = "android")]
@@ -169,7 +169,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_request_adapter(
     let global = Arc::clone(instance.global());
     std::thread::spawn(move || {
         let adapter_id = {
-            #[cfg(any(target_os = "ios", target_os = "macos"))]
+            #[cfg(any(target_os = "ios", target_os = "macos", target_os = "visionos"))]
             {
                 global.request_adapter(&opts, wgt::Backends::METAL, None)
             }

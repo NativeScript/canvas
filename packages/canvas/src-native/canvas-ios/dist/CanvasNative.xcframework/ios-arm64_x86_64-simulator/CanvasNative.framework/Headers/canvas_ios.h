@@ -254,7 +254,7 @@ long long canvas_native_init_ios_webgpu_nsview(int64_t instance,
                                                uint32_t height);
 #endif
 
-#if defined(TARGET_OS_IOS)
+#if (defined(TARGET_OS_IOS) || defined(TARGET_OS_VISION))
 void canvas_native_resize_ios_webgpu_uiview(int64_t context,
                                             void *view,
                                             uint32_t width,

@@ -25,7 +25,7 @@ function getMIMEforBase64String(b64) {
 	const first = input.charAt(0);
 	const mime = b64Extensions[first];
 	// todo support webp on ios
-	if (__IOS__ && mime === 'webp') {
+	if (__APPLE__ && mime === 'webp') {
 		throw new Error('Unknown Base64 MIME type: ' + b64);
 	}
 	if (!mime) {
@@ -35,10 +35,27 @@ function getMIMEforBase64String(b64) {
 }
 
 function getUUID() {
-	if (__IOS__) {
+	if (__APPLE__) {
 		return NSUUID.UUID().UUIDString;
 	}
-	return java.util.UUID.randomUUID().toString();
+	if (__ANDROID__) {
+		return java.util.UUID.randomUUID().toString();
+	}
+
+	if (typeof crypto !== 'undefined') {
+		if (typeof crypto.randomUUID === 'function') {
+			return crypto.randomUUID();
+		}
+		if (typeof crypto.getRandomValues === 'function') {
+			//@ts-ignore
+			return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, (c) => (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16));
+		}
+	}
+
+	return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+		const r = (Math.random() * 16) | 0;
+		return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+	});
 }
 
 export class HTMLImageElement extends HTMLElement {
@@ -283,7 +300,7 @@ export class HTMLImageElement extends HTMLElement {
 				try {
 					const MIME = getMIMEforBase64String(base64result);
 					const dir = knownFolders.temp().path;
-					if (__IOS__) {
+					if (__APPLE__) {
 						NSSCanvasHelpers.handleBase64Image(MIME, dir, base64result, (error, localUri) => {
 							if (error) {
 								if ((global as any).__debug_browser_polyfill_image) {

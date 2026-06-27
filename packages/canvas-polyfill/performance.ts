@@ -25,7 +25,7 @@ if (!(global as any).performance || !(global as any).performance.now) {
 			unloadEventStart: -1,
 		},
 		now() {
-			if (__IOS__) {
+			if (__APPLE__) {
 				return performance.now();
 			}
 			return __time();

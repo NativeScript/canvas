@@ -76,7 +76,7 @@ export class EventTarget {
 			emitter = this._emitter?.get?.();
 		}
 
-		if (__IOS__) {
+		if (__APPLE__) {
 			emitter = this._emitter?.deref?.();
 		}
 		if (emitter !== null && emitter !== undefined) {
@@ -91,7 +91,7 @@ export class EventTarget {
 			emitter = this._emitter?.get?.();
 		}
 
-		if (__IOS__) {
+		if (__APPLE__) {
 			emitter = this._emitter?.deref?.();
 		}
 
@@ -107,7 +107,7 @@ export class EventTarget {
 			emitter = this._emitter?.get?.();
 		}
 
-		if (__IOS__) {
+		if (__APPLE__) {
 			emitter = this._emitter?.deref?.();
 		}
 

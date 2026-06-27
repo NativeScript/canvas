@@ -150,7 +150,13 @@ public class NSCSVG: UIView {
 	
 	func deviceScale() -> CGFloat {
 		if autoScale  {
+			#if os(visionOS)
+			// visionOS has no UIScreen; derive the scale from the active scene's trait environment.
+			let scale = UITraitCollection.current.displayScale
+			return scale > 0 ? scale : 2.0
+			#else
 			return UIScreen.main.nativeScale
+			#endif
 		}
 		return 1
 	}

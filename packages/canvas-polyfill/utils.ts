@@ -399,7 +399,7 @@ export function getPixelsPerInchForCurrentDevice() {
 			ppi = metrics.densityDpi;
 		}
 	}
-	if (__IOS__) {
+	if (__APPLE__) {
 		if (ppi === undefined) {
 			const size = new interop.Reference<number>(0);
 			sysctlbyname('hw.machine', null, size, null, 0);

@@ -10,7 +10,9 @@ import UIKit
 
 class GLUtils {
     static var device: MTLDevice?
+    #if !os(visionOS)
     static var glContext: EAGLContext?
+    #endif
     static func getBytesFromImage(pixels: UIImage) -> (UnsafeMutableRawPointer?, Int){
         var cgImage: CGImage?
    

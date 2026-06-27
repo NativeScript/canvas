@@ -35,6 +35,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, readonly) NSCAudioNode *destination;
 @property (nonatomic, readonly) double sampleRate;
 @property (nonatomic, readonly) double currentTime;
+@property (nonatomic, readonly) double baseLatency;
+@property (nonatomic, readonly) double outputLatency;
 @property (nonatomic, readonly) AVAudioFormat *format;
 
 @property (nonatomic, strong) NSMutableDictionary<NSValue *, NSMutableDictionary<NSNumber *, NSCAudioNode *> *> *voiceGainByOutput;

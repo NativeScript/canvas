@@ -7,9 +7,32 @@
 
 import Foundation
 import UIKit
+#if !os(visionOS)
 import GLKit
+#endif
 import WebKit
 import MetalKit
+
+// visionOS has no `UIScreen` (no single main screen). Views render at a 2x scale and the
+// display is wide-gamut (P3), so these helpers stand in for the `UIScreen.main` queries.
+#if os(visionOS)
+@inline(__always) func nscNativeScale() -> CGFloat {
+	// Derived from the active scene's trait environment (UIKit sets `current` during
+	// layout/draw). Falls back to 2x only if queried before a scene is available.
+	let scale = UITraitCollection.current.displayScale
+	return scale > 0 ? scale : 2.0
+}
+@inline(__always) func nscIsWideGamut() -> Bool {
+	UITraitCollection.current.displayGamut == .P3
+}
+#else
+@inline(__always) func nscNativeScale() -> CGFloat { nscNativeScale() }
+@inline(__always) func nscIsWideGamut() -> Bool {
+	if #available(iOS 11.0, *) { return UIScreen.main.traitCollection.displayGamut == .P3 }
+	return false
+}
+#endif
+
 @objcMembers
 @objc(NSCCanvas)
 public class NSCCanvas: UIView {
@@ -124,7 +147,7 @@ public class NSCCanvas: UIView {
 			if(!autoScale){
 				glkView.contentScaleFactor = 1
 			}else {
-				glkView.contentScaleFactor = UIScreen.main.nativeScale
+				glkView.contentScaleFactor = nscNativeScale()
 			}
 		}
 	}
@@ -327,7 +350,7 @@ public class NSCCanvas: UIView {
 			return
 		}
 		
-		var density = Float(UIScreen.main.nativeScale)
+		var density = Float(nscNativeScale())
 		
 		if (!autoScale) {
 			density = 1
@@ -341,10 +364,8 @@ public class NSCCanvas: UIView {
 		var isWideGamutSupported: Bool = false
 		
 		var cs = colorSpace
-		if #available(iOS 11.0, *) {
-			if (UIScreen.main.traitCollection.displayGamut == .P3) {
-				isWideGamutSupported = true
-			}
+		if nscIsWideGamut() {
+			isWideGamutSupported = true
 		}
 		
 		if(!isWideGamutSupported && cs == 1){
@@ -367,6 +388,10 @@ public class NSCCanvas: UIView {
 			engine = .CPU
 			cpuView.isHidden = false
 		}else if((is2D && NSCCanvas.forceGL) || version == 1 || version == 2){
+			// visionOS has no OpenGL ES — GL-backed 2D and WebGL are unavailable there.
+			// This branch compiles out; 2D falls through to the Metal path below, and a WebGL
+			// request leaves nativeContext == 0 (gracefully unsupported).
+			#if !os(visionOS)
 			var properties: [String: Any] = [:]
 			let useWebGL = !isCanvas
 			if(useWebGL && preserveDrawingBuffer){
@@ -426,6 +451,7 @@ public class NSCCanvas: UIView {
 			}
 			
 			glkView.isHidden = false
+			#endif
 		}else if(is2D) {
 			isOpaque = !alpha
 			mtlView.isOpaque = !alpha
@@ -493,12 +519,13 @@ public class NSCCanvas: UIView {
 		}
 		var snapshot: UIImage? = nil
 		if(engine == .GL){
+			#if !os(visionOS)
 			if(nativeContext != 0){
 				glkView.display()
 			}
-			
+
 			snapshot = glkView.snapshot
-			
+			#endif
 		}else if(engine == .GPU){
 			// todo
 			//            let drawable = mtlView.currentDrawable?.texture
@@ -514,7 +541,9 @@ public class NSCCanvas: UIView {
 	}
 	
 	
+	#if !os(visionOS)
 	var renderer: NSCRender? = nil
+	#endif
 	@discardableResult public func render() -> Bool{
 		if(engine == .GL){
 			return CanvasHelpers.flushWebGL(nativeContext)
@@ -546,7 +575,7 @@ public class NSCCanvas: UIView {
 	public var touchEventListener: ((String, UIGestureRecognizer) -> Void)?
 	
 	required init?(coder: NSCoder) {
-		let scale = UIScreen.main.nativeScale
+		let scale = nscNativeScale()
 		// passing 300 px * 150 px
 		// by default it will use dpi but we want px
 		let unscaledWidth = (300 / scale).rounded(.down)
@@ -563,7 +592,7 @@ public class NSCCanvas: UIView {
 	
 	
 	public override init(frame: CGRect) {
-		let scale = UIScreen.main.nativeScale
+		let scale = nscNativeScale()
 		// passing 300 px * 150 px
 		// by default it will use dpi but we want px
 		let unscaledWidth = (300 / scale).rounded(.down)
@@ -581,18 +610,18 @@ public class NSCCanvas: UIView {
 	
 	private func initializeView(){
 		setup()
-		if(UIScreen.instancesRespond(to: #selector(getter: UIScreen.main.nativeScale))){
-			let scale = UIScreen.main.nativeScale
-			glkView.contentScaleFactor = scale
-			mtlView.contentScaleFactor = scale
-		}
+		let scale = nscNativeScale()
+		glkView.contentScaleFactor = scale
+		mtlView.contentScaleFactor = scale
 		
 		glkView.canvas = self
 		mtlView.canvas = self
 		cpuView.canvas = self
 		handler = NSCTouchHandler(canvas: self)
 		backgroundColor = .clear
+		#if !os(visionOS)
 		glkView.enableSetNeedsDisplay = false
+		#endif
 		glkView.isHidden = true
 		mtlView.isHidden = true
 		cpuView.isHidden = true
@@ -675,14 +704,16 @@ public class NSCCanvas: UIView {
 			scaleSurface()
 			return
 		}
+		#if !os(visionOS)
 		if(engine == .GL){
 			EAGLContext.setCurrent(glkView.context)
 		}
-		
+
 		if(engine == .GL){
 			glkView.deleteDrawable()
 			glkView.bindDrawable()
 		}
+		#endif
 		if(is2D){
 			CanvasHelpers.resize2DContext(nativeContext, Float(surfaceWidth), Float(surfaceHeight))
 		}
@@ -697,7 +728,7 @@ public class NSCCanvas: UIView {
 	public func forceLayout(_ width: CGFloat, _ height: CGFloat){
 		var unscaledWidth = width.rounded(.down)
 		var unscaledHeight = height.rounded(.down)
-		let scale = UIScreen.main.nativeScale
+		let scale = nscNativeScale()
 		if(unscaledWidth.isZero || unscaledWidth.isLess(than: .zero)){
 			unscaledWidth = 1
 		}else {
@@ -765,7 +796,7 @@ public class NSCCanvas: UIView {
 			return nil
 		}
 		
-		let density = autoScale ? UIScreen.main.nativeScale : 1
+		let density = autoScale ? nscNativeScale() : 1
 		let contentWidth = CGFloat(surfaceWidth) / density
 		let contentHeight = CGFloat(surfaceHeight) / density
 		
@@ -817,7 +848,7 @@ public class NSCCanvas: UIView {
 			return
 		}
 		
-		let density = autoScale ? UIScreen.main.nativeScale : 1
+		let density = autoScale ? nscNativeScale() : 1
 		let contentWidth = CGFloat(surfaceWidth) / density
 		let contentHeight = CGFloat(surfaceHeight) / density
 		let viewSize = bounds.size

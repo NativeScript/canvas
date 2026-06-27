@@ -290,7 +290,7 @@ impl CanvasRenderingContext2D {
 }
 
 /* Raf */
-#[cfg(any(target_os = "android", target_os = "ios"))]
+#[cfg(any(target_os = "android", target_os = "ios", target_os = "visionos"))]
 #[no_mangle]
 pub extern "C" fn canvas_native_raf_create(
     callback: isize,
@@ -305,7 +305,7 @@ pub extern "C" fn canvas_native_raf_create(
     ))))))
 }
 
-#[cfg(any(target_os = "android", target_os = "ios"))]
+#[cfg(any(target_os = "android", target_os = "ios", target_os = "visionos"))]
 #[no_mangle]
 pub extern "C" fn canvas_native_raf_release(value: *mut crate::Raf) {
     if value.is_null() {
@@ -319,7 +319,7 @@ pub extern "C" fn canvas_native_raf_release(value: *mut crate::Raf) {
     }
 }
 
-#[cfg(any(target_os = "android", target_os = "ios"))]
+#[cfg(any(target_os = "android", target_os = "ios", target_os = "visionos"))]
 #[no_mangle]
 pub extern "C" fn canvas_native_raf_start(raf: *mut crate::Raf) {
     if raf.is_null() {
@@ -329,7 +329,7 @@ pub extern "C" fn canvas_native_raf_start(raf: *mut crate::Raf) {
     raf.0.start();
 }
 
-#[cfg(any(target_os = "android", target_os = "ios"))]
+#[cfg(any(target_os = "android", target_os = "ios", target_os = "visionos"))]
 #[no_mangle]
 pub extern "C" fn canvas_native_raf_stop(raf: *mut crate::Raf) {
     if raf.is_null() {
@@ -339,7 +339,7 @@ pub extern "C" fn canvas_native_raf_stop(raf: *mut crate::Raf) {
     raf.0.stop()
 }
 
-#[cfg(any(target_os = "android", target_os = "ios"))]
+#[cfg(any(target_os = "android", target_os = "ios", target_os = "visionos"))]
 #[no_mangle]
 pub extern "C" fn canvas_native_raf_get_started(raf: *const crate::Raf) -> bool {
     if raf.is_null() {
@@ -349,7 +349,7 @@ pub extern "C" fn canvas_native_raf_get_started(raf: *const crate::Raf) -> bool 
     raf.0.started()
 }
 
-#[cfg(any(target_os = "android", target_os = "ios"))]
+#[cfg(any(target_os = "android", target_os = "ios", target_os = "visionos"))]
 #[no_mangle]
 pub extern "C" fn canvas_native_raf_stop_and_clear(raf: *mut crate::Raf, timeout_ms: u64) {
     if raf.is_null() {
@@ -361,7 +361,7 @@ pub extern "C" fn canvas_native_raf_stop_and_clear(raf: *mut crate::Raf, timeout
     raf.0.clear_callback();
 }
 
-#[cfg(any(target_os = "android", target_os = "ios"))]
+#[cfg(any(target_os = "android", target_os = "ios", target_os = "visionos"))]
 #[no_mangle]
 pub extern "C" fn canvas_native_raf_clear_callback(raf: *mut crate::Raf) {
     if raf.is_null() {

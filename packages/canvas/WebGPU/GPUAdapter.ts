@@ -68,7 +68,7 @@ export class GPUAdapter {
 			}
 
 			if (!options.requiredLimits) {
-				if (__ANDROID__ || __IOS__) {
+				if (__ANDROID__ || __APPLE__) {
 					//@ts-ignore
 					const requiredLimits = new global.CanvasModule.GPUSupportedLimits();
 					const limits = this[native_].limits;

@@ -34,7 +34,7 @@ export class GPUCanvasContext implements CanvasRenderingContext {
 			nativeContext = context.getNativeContext().toString();
 		}
 
-		if (__IOS__) {
+		if (__APPLE__) {
 			nativeContext = context.nativeContext.toString();
 		}
 
@@ -70,7 +70,7 @@ export class GPUCanvasContext implements CanvasRenderingContext {
 			presentMode: 'fifo',
 			...options,
 		};
-		if (__ANDROID__ || __IOS__) {
+		if (__ANDROID__ || __APPLE__) {
 			const adapter = (options as any)?.device?.[adapter_];
 			const capabilities = this.getCapabilities(adapter);
 
@@ -82,7 +82,7 @@ export class GPUCanvasContext implements CanvasRenderingContext {
 				opts.alphaMode = capabilities.alphaModes[0];
 			} else {
 				if (!capabilities.alphaModes.includes(options.alphaMode) && (options.alphaMode === 'opaque' || options.alphaMode === 'premultiplied')) {
-					if (__IOS__ && options.alphaMode === 'premultiplied') {
+					if (__APPLE__ && options.alphaMode === 'premultiplied') {
 						let index = capabilities.alphaModes.indexOf('premultiplied');
 						if (index === -1) {
 							index = capabilities.alphaModes.indexOf('postmultiplied');
@@ -108,7 +108,7 @@ export class GPUCanvasContext implements CanvasRenderingContext {
 				console.warn(`GPUCanvasContext: configure format ${options.format} unsupported falling back to ${opts.format}`);
 			}
 
-			if (__IOS__ && !capabilities.format.includes(options.format)) {
+			if (__APPLE__ && !capabilities.format.includes(options.format)) {
 				opts.format = capabilities.format.filter((value) => {
 					return value.indexOf('srgb') === -1;
 				})[0];
@@ -136,16 +136,16 @@ export class GPUCanvasContext implements CanvasRenderingContext {
 					break;
 			}
 
-			if (__IOS__) {
+			if (__APPLE__) {
 				opts.usage = opts.usage | GPUTextureUsage.RENDER_ATTACHMENT;
 			}
 
-			if (__IOS__ && opts.usage > capabilities.usages) {
+			if (__APPLE__ && opts.usage > capabilities.usages) {
 				opts.usage = capabilities.usages;
 				console.warn(`GPUCanvasContext: configure usage unsupported falling back to ${capabilities.usages}`);
 			}
 
-			if (__IOS__) {
+			if (__APPLE__) {
 				const supported = (capabilities && (capabilities as any).usages) || 0;
 				const unsupported = opts.usage & ~supported;
 				if (unsupported !== 0) {

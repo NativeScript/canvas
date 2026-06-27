@@ -223,10 +223,10 @@ pub extern "C" fn canvas_native_webgpu_texture_get_format(
     texture: *const CanvasGPUTexture,
 ) -> CanvasGPUTextureFormat {
     if texture.is_null() {
-        #[cfg(any(target_os = "ios", target_os = "macos"))]
+        #[cfg(any(target_os = "ios", target_os = "macos", target_os = "visionos"))]
         return CanvasGPUTextureFormat::Bgra8Unorm;
 
-        #[cfg(not(any(target_os = "ios", target_os = "macos")))]
+        #[cfg(not(any(target_os = "ios", target_os = "macos", target_os = "visionos")))]
         return CanvasGPUTextureFormat::Rgba8Unorm;
     }
     let texture = unsafe { &*texture };

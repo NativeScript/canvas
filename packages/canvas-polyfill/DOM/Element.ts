@@ -336,7 +336,7 @@ export class Element extends Node {
 			return (<any>nativeElement).getBoundingClientRect();
 		}
 		if (nativeElement) {
-			if (__IOS__) {
+			if (__APPLE__) {
 				NSCanvas.getBoundingClientRect(nativeElement.nativeView, this._boundingClientRect);
 			}
 

@@ -161,7 +161,7 @@ pub extern "C" fn canvas_native_init_ios_webgpu_nsview(
     0
 }
 
-#[cfg(any(target_os = "ios"))]
+#[cfg(any(target_os = "ios", target_os = "visionos"))]
 #[no_mangle]
 pub extern "C" fn canvas_native_resize_ios_webgpu_uiview(
     context: i64,

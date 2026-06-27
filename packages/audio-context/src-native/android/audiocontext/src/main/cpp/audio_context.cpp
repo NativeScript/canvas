@@ -408,6 +408,22 @@ int NativeEngine::getStreamSampleRate() {
 #endif
 }
 
+int NativeEngine::getStreamBufferSizeFrames() {
+#ifdef HAS_OBOE
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    if (stream_) return static_cast<int>(stream_->getBufferSizeInFrames());
+#endif
+    return 0;
+}
+
+int NativeEngine::getFramesPerBurst() {
+#ifdef HAS_OBOE
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    if (stream_) return static_cast<int>(stream_->getFramesPerBurst());
+#endif
+    return 0;
+}
+
 void NativeEngine::resume() {
 #ifdef HAS_OBOE
     std::lock_guard<std::recursive_mutex> lock(mutex_);

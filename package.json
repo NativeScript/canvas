@@ -40,6 +40,7 @@
 		"@formatjs/intl-pluralrules": "~5.3.5",
 		"@nativescript/angular": "^19.0.0",
 		"@nativescript/core": "~8.9.0",
+		"@nativescript/font-manager": "^1.0.11",
 		"@nativescript/plugin-tools": "~5.5.1",
 		"@nativescript/types": "~8.9.0",
 		"@nativescript/webpack": "~5.0.24",

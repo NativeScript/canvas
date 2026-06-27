@@ -1,14 +1,13 @@
 platform :ios, '12.0'
-#pod 'CanvasNative' , '~> 1.0.0.alpha.11'
-#pod 'CanvasNative', :path => "$(SRCROOT)/../../../../../"
-#pod 'CanvasNative', :git => 'https://github.com/NativeScript/canvas.git', :tag => '1.0.0-alpha.2'
 
-#pod 'NativeScript', path: "../../node_modules/@nativescript/canvas/pods/NativeScript.podspec"
-
-
-# Exposes NativeScript v8 headers to our module sources
-pod 'NativeScript', path: "../../node_modules/@nativescript/canvas/src-native/ios/NativeScript.podspec"
-
+# The NativeScript V8 headers package is now provided via SPM (the `NativeScriptV8` product of
+# the local `nativescript-v8` Swift package) instead of a `pod 'NativeScript'`. CocoaPods is still
+# needed here only for this post_install: the canvas C++ includes <NativeScript/include/v8.h>, and
+# the V8 headers include each other by bare name (e.g. #include "v8config.h"), so the built runtime
+# framework's v8 include root must be on HEADER_SEARCH_PATHS. We append with `<<` (not via an
+# xcconfig) because the NativeScript plugin-xcconfig merge is first-key-wins and would otherwise
+# clobber (or be clobbered by) the pod-injected HEADER_SEARCH_PATHS. Without this the build fails
+# with "'v8config.h' file not found".
 post_install do |installer|
   installer.aggregate_targets.each do |aggregate_target|
     aggregate_target.user_targets.each do |target|

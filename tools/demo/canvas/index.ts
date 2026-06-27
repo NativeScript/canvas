@@ -697,7 +697,7 @@ fn main() -> @location(0) vec4f {
 	}
 
 	draw() {
-		webglPanner(this.canvas);
+		//webglPanner(this.canvas);
 		//videoFrame2DDemo(this.canvas);
 		//videoFrameWebGLDemo(this.canvas);
 		//this.remoteFont(this.canvas);
@@ -712,8 +712,8 @@ fn main() -> @location(0) vec4f {
 		// const renderBundles = require('./webgpu/renderBundles');
 		// renderBundles.run(this.canvas);
 
-		// const occlusionQuery = require('./webgpu/occlusionQuery');
-		// occlusionQuery.run(this.canvas);
+		const occlusionQuery = require('./webgpu/occlusionQuery');
+		occlusionQuery.run(this.canvas);
 
 		// const particles = require('./webgpu/particles');
 		// particles.run(this.canvas);

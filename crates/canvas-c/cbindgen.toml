@@ -21,6 +21,9 @@ mangle.remove_underscores = true
 "target_os = ios" = "TARGET_OS_IOS"
 "target_os = macos" = "TARGET_OS_MACOS"
 "target_os = android" = "TARGET_OS_ANDROID"
+# Apple's <TargetConditionals.h> defines TARGET_OS_VISION (1 on visionOS), so
+# any(ios, visionos) items get declared on both iOS and visionOS builds.
+"target_os = visionos" = "TARGET_OS_VISION"
 
 [enum]
 prefix_with_name = true

@@ -288,6 +288,8 @@ declare module org {
 				public getListenerPositionZParam(): org.nativescript.audiocontext.AudioParam;
 				public getListenerUpZParam(): org.nativescript.audiocontext.AudioParam;
 				public getSampleRate(): number;
+				public getBaseLatency(): number;
+				public getOutputLatency(): number;
 				public closeAsync(cb: org.nativescript.audiocontext.AudioContext.AsyncCallback): void;
 				public getListenerForwardZParam(): org.nativescript.audiocontext.AudioParam;
 				public renderOfflineAsync(frames: number, sampleRate: number, channels: number, cb: org.nativescript.audiocontext.DecodeCallback): void;

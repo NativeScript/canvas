@@ -1,0 +1,57 @@
+// swift-interface-format-version: 1.0
+// swift-compiler-version: Apple Swift version 6.3.1 effective-5.10 (swiftlang-6.3.1.1.2 clang-2100.0.123.102)
+// swift-module-flags: -target arm64-apple-xros1.0 -enable-objc-interop -enable-library-evolution -swift-version 5 -O -enable-experimental-feature DebugDescriptionMacro -enable-bare-slash-regex -module-name CanvasSVG
+// swift-module-flags-ignorable: -no-verify-emitted-module-interface -formal-cxx-interoperability-mode=off -interface-compiler-version 6.3.1
+@_exported import CanvasSVG
+import Foundation
+import Swift
+import UIKit
+import _Concurrency
+import _StringProcessing
+import _SwiftConcurrencyShims
+@_inheritsConvenienceInitializers @objcMembers @objc(NSCSVGData) public class NSCSVGData : ObjectiveC.NSObject {
+  @objc public var data: Foundation.NSMutableData? {
+    get
+  }
+  @objc public var width: CoreFoundation.CGFloat {
+    @objc get
+  }
+  @objc public var height: CoreFoundation.CGFloat {
+    @objc get
+  }
+  @objc public var rawData: Swift.UnsafeMutableRawPointer? {
+    @objc get
+  }
+  @objc public func getImage() -> UIKit.UIImage?
+  @objc override dynamic public init()
+  @objc deinit
+}
+@_inheritsConvenienceInitializers @_hasMissingDesignatedInitializers @objcMembers @objc(NSCSVG) @_Concurrency.MainActor @preconcurrency public class NSCSVG : UIKit.UIView {
+  @objc @_Concurrency.MainActor @preconcurrency public var sync: Swift.Bool
+  @objc @_Concurrency.MainActor @preconcurrency public var autoScale: Swift.Bool {
+    @objc get
+    @objc set
+  }
+  @objc @_Concurrency.MainActor @preconcurrency public var src: Swift.String? {
+    @objc get
+    @objc set
+  }
+  @objc @_Concurrency.MainActor @preconcurrency public var srcPath: Swift.String? {
+    @objc get
+    @objc set
+  }
+  @objc @_Concurrency.MainActor @preconcurrency public func loadData(_ data: CanvasSVG.NSCSVGData)
+  @objc @_Concurrency.MainActor @preconcurrency public func update()
+  @_Concurrency.MainActor @preconcurrency @objc override dynamic public func layoutSubviews()
+  @_Concurrency.MainActor @preconcurrency @objc override dynamic public init(frame: CoreFoundation.CGRect)
+  @_Concurrency.MainActor @preconcurrency @objc override dynamic public func draw(_ rect: CoreFoundation.CGRect)
+  @objc @_Concurrency.MainActor @preconcurrency public func toImage() -> UIKit.UIImage?
+  @objc @_Concurrency.MainActor @preconcurrency public func toData() -> Foundation.NSData?
+  @objc @_Concurrency.MainActor @preconcurrency public static func fromStringSync(_ source: Swift.String) -> CanvasSVG.NSCSVGData?
+  @objc @_Concurrency.MainActor @preconcurrency public static func fromPathSync(_ path: Swift.String) -> CanvasSVG.NSCSVGData?
+  @objc @_Concurrency.MainActor @preconcurrency public static func fromRemoteSync(_ path: Swift.String) -> CanvasSVG.NSCSVGData?
+  @objc @_Concurrency.MainActor @preconcurrency public static func fromString(_ source: Swift.String, _ callback: @escaping (CanvasSVG.NSCSVGData?) -> Swift.Void)
+  @objc @_Concurrency.MainActor @preconcurrency public static func fromPath(_ path: Swift.String, _ callback: @escaping (CanvasSVG.NSCSVGData?) -> Swift.Void)
+  @objc @_Concurrency.MainActor @preconcurrency public static func fromRemote(_ path: Swift.String, _ callback: @escaping (CanvasSVG.NSCSVGData?) -> Swift.Void)
+  @objc deinit
+}

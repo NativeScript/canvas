@@ -14,7 +14,7 @@
 		"@nativescript/canvas-polyfill": "file:../../packages/canvas-polyfill",
 		"@nativescript/canvas-svg": "file:../../packages/canvas-svg",
 		"@nativescript/canvas-three": "file:../../packages/canvas-three",
-		"@nativescript/core": "file:../../node_modules/@nativescript/core",
+		"@nativescript/core": "9.0.20",
 		"@pixi-essentials/svg": "file:../../node_modules/@pixi-essentials/svg",
 		"babylonjs": "file:../../node_modules/babylonjs",
 		"babylonjs-materials": "file:../../node_modules/babylonjs-materials",
@@ -35,6 +35,6 @@
 		"@nativescript/android": "~8.9.0",
 		"@nativescript/devtools": "~0.0.1",
 		"@nativescript/ios": "~8.9.0",
-		"@nativescript/visionos": "~8.9.0"
+		"@nativescript/visionos": "~9.0.1"
 	}
 }

@@ -6,7 +6,9 @@
 //
 
 import Foundation
+#if !os(visionOS)
 import OpenGLES
+#endif
 import CoreVideo
 import AVFoundation
 import UIKit
@@ -15,13 +17,15 @@ public class NSCCanvasUtils: NSObject {
     private static let BYTES_PER_TEXEL = 4
 
     
+	#if !os(visionOS)
 	public static func setupRender() -> NSCRender{
         return NSCRender()
     }
-	
+
 	public static func setupRender(mtl: MTLDevice) -> NSCRender{
 			return NSCRender(device: mtl)
 	}
+	#endif
     
     private static func getParent(_ path: String) -> String {
       //  let fileManager = FileManager.default

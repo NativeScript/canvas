@@ -16,7 +16,10 @@ struct RafInner {
     callback: RafCallback,
     use_deprecated: bool,
     is_prepared: bool,
-    data: Option<*mut c_void>,
+    // Incremented on every start(). Pending frame callbacks belonging to an
+    // older generation drop themselves on their next fire instead of
+    // re-posting, so a stop()/start() pair can never spawn duplicate chains.
+    generation: u64,
     thread_id: Option<std::thread::ThreadId>,
 }
 
@@ -26,57 +29,63 @@ pub struct Raf(
     Arc<parking_lot::Condvar>,
 );
 
+// Payload handed to AChoreographer_postFrameCallback. A posted frame callback
+// cannot be cancelled, so the callback itself is the SOLE owner of this
+// allocation: on each fire it either re-posts the same box for the next frame
+// or drops it. No other code path may free it — freeing it from stop() or
+// clear_callback() while a callback is still queued is a guaranteed
+// use-after-free at the next vsync.
+struct FrameChain {
+    raf: Raf,
+    generation: u64,
+}
+
 impl Raf {
     extern "C" fn callback(frame_time_nanos: c_long, data: *mut std::os::raw::c_void) {
         if data.is_null() {
             return;
         }
 
-        let data_ptr = data;
-        let raf_ptr = data as *mut Raf;
-        let raf_ref = unsafe { &*raf_ptr };
+        // Take ownership for this invocation; re-posted below if still live.
+        let chain = unsafe { Box::from_raw(data as *mut FrameChain) };
+        let raf = &chain.raf;
 
         {
-            let mut lock = raf_ref.0.lock();
-            if !lock.started {
-                let stored = lock.data.take();
-                drop(lock);
-                if let Some(p) = stored {
-                    let _ = unsafe { Box::from_raw(p as *mut Raf) };
-                }
+            let lock = raf.0.lock();
+            if !lock.started || lock.generation != chain.generation {
+                // Chain is dead (stopped, or superseded by a newer start()).
+                // Dropping `chain` releases the allocation.
                 return;
             }
-            raf_ref.1.fetch_add(1, Ordering::SeqCst);
+            raf.1.fetch_add(1, Ordering::SeqCst);
         }
 
         {
-            let lock = raf_ref.0.lock();
+            let lock = raf.0.lock();
             if let Some(callback) = lock.callback.as_ref() {
                 callback(frame_time_nanos.into());
             }
         }
 
-        raf_ref.1.fetch_sub(1, Ordering::SeqCst);
+        raf.1.fetch_sub(1, Ordering::SeqCst);
+        raf.2.notify_all();
 
-        raf_ref.2.notify_all();
+        let repost = {
+            let lock = raf.0.lock();
+            lock.started && lock.generation == chain.generation && lock.use_deprecated
+        };
 
-        unsafe {
-            let instance = AChoreographer_getInstance();
-            let mut lock = raf_ref.0.lock();
-            if lock.started {
-                if lock.use_deprecated {
-                    AChoreographer_postFrameCallback(instance, Some(Raf::callback), data_ptr);
-                } else {
-                    // post 64 variant if available
-                }
-            } else {
-                let stored = lock.data.take();
-                drop(lock);
-                if let Some(p) = stored {
-                    let _ = Box::from_raw(p as *mut Raf);
-                }
+        if repost {
+            unsafe {
+                let instance = AChoreographer_getInstance();
+                AChoreographer_postFrameCallback(
+                    instance,
+                    Some(Raf::callback),
+                    Box::into_raw(chain) as *mut c_void,
+                );
             }
         }
+        // else: `chain` drops here, ending this frame chain.
     }
 
     pub fn new(callback: RafCallback) -> Self {
@@ -86,7 +95,7 @@ impl Raf {
                 callback,
                 is_prepared: false,
                 use_deprecated: true, //*crate::API_LEVEL.get().unwrap_or(&-1) < 24,
-                data: None,
+                generation: 0,
                 thread_id: None,
             })),
             Arc::new(AtomicUsize::new(0)),
@@ -95,27 +104,42 @@ impl Raf {
     }
 
     pub fn start(&self) {
-        let mut lock = self.0.lock();
-        if !lock.is_prepared {
-            unsafe {
-                ndk::looper::ThreadLooper::prepare();
+        let generation;
+        {
+            let mut lock = self.0.lock();
+            if lock.started {
+                return;
             }
-            lock.is_prepared = true;
+            if !lock.is_prepared {
+                unsafe {
+                    ndk::looper::ThreadLooper::prepare();
+                }
+                lock.is_prepared = true;
+            }
+
+            lock.thread_id = Some(std::thread::current().id());
+            lock.generation += 1;
+            lock.started = true;
+            generation = lock.generation;
+            if !lock.use_deprecated {
+                //   #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+                //    AChoreographer_postFrameCallback64(...)
+                return;
+            }
         }
 
-        lock.thread_id = Some(std::thread::current().id());
+        let chain = Box::new(FrameChain {
+            raf: self.clone(),
+            generation,
+        });
         unsafe {
             let instance = AChoreographer_getInstance();
-            let data = Box::into_raw(Box::new(self.clone())) as *mut c_void;
-            lock.data = Some(data);
-            if lock.use_deprecated {
-                AChoreographer_postFrameCallback(instance, Some(Raf::callback), data);
-            } else {
-                //   #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
-                //    AChoreographer_postFrameCallback64(instance, Some(Raf::callback), data.cast());
-            }
+            AChoreographer_postFrameCallback(
+                instance,
+                Some(Raf::callback),
+                Box::into_raw(chain) as *mut c_void,
+            );
         }
-        lock.started = true;
     }
 
     pub fn stop(&self) {
@@ -129,8 +153,8 @@ impl Raf {
             let lock = self.0.lock();
             if let Some(tid) = lock.thread_id {
                 if tid == std::thread::current().id() {
-                    drop(lock);
-                    self.clear_callback();
+                    // Same thread as the choreographer callback: a callback
+                    // cannot be mid-flight right now, nothing to wait for.
                     return true;
                 }
             }
@@ -151,14 +175,11 @@ impl Raf {
     }
 
     pub fn clear_callback(&self) {
+        // Only detach the JS-side callback. The FrameChain allocation stays
+        // alive until the already-queued choreographer callback fires, sees
+        // started == false (or a stale generation), and drops it itself.
         let mut lock = self.0.lock();
         lock.callback = None;
-        if self.1.load(Ordering::SeqCst) == 0 {
-            if let Some(p) = lock.data.take() {
-                drop(lock);
-                let _ = unsafe { Box::from_raw(p as *mut Raf) };
-            }
-        }
     }
 
     pub fn set_callback(&self, callback: RafCallback) {

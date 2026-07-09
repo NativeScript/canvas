@@ -5,6 +5,18 @@
 # the tag, builds the JS packages, and publishes each at the version committed
 # in its package.json. No Rust/native rebuild.
 #
+# iOS SwiftPM distribution: canvas and audio-context each ship the header-only
+# NativeScriptV8 SwiftPM shim (repo-root nativescript-v8/) INSIDE the npm
+# package at platforms/ios/NativeScriptV8, referenced by their
+# nativescript.config.ts as a local `path` package. Unlike font-manager, there
+# is no GitHub-release binaryTarget to stamp: SwiftPM clones a repository's
+# entire git history just to read Package.swift, and this repo's history is
+# several GB — so ANY repositoryURL reference (source or binary target) stalls
+# first builds for 20+ minutes. The shim is tiny (V8 headers + empty stub) and
+# the heavy CanvasNative.xcframework already ships in the npm package, so
+# nothing needs a release asset. The verify step below guards that the shim
+# actually made it into the built packages.
+#
 # Authentication uses npm Trusted Publishing (OIDC) — no NPM_TOKEN required.
 # This mirrors the proven publish flow in the @nativescript/ios and
 # @nativescript/font-manager repos:
@@ -80,6 +92,33 @@ jobs:
 
       - name: Build packages
         run: npx nx run-many --target=build.all --projects="$(echo "$PACKAGES" | tr ' ' ',')"
+
+      # The iOS SwiftPM shim must ship inside the npm packages that declare a
+      # local-path SPM package in their nativescript.config.ts — if it's
+      # missing, every consumer's Xcode resolution fails (or worse, someone
+      # "fixes" it by reverting to a repositoryURL reference and reintroduces
+      # the 20+ minute full-history clone).
+      - name: Verify iOS SwiftPM shim in built packages
+        run: |
+          set -euo pipefail
+          for pkg in canvas audio-context; do
+            dir="dist/packages/$pkg/platforms/ios/NativeScriptV8"
+            for required in "$dir/Package.swift" "$dir/Headers" "$dir/Sources"; do
+              if [ ! -e "$required" ]; then
+                echo "error: $required missing — the NativeScriptV8 SPM shim was not packaged" >&2
+                exit 1
+              fi
+            done
+            if grep -q "repositoryURL" "dist/packages/$pkg/nativescript.config.ts"; then
+              echo "error: dist/packages/$pkg/nativescript.config.ts references a repositoryURL — plugin SPM packages must use a local path (full-history clone is 8+ GB)" >&2
+              exit 1
+            fi
+            echo "ok: $pkg ships the NativeScriptV8 shim with a local-path config"
+          done
+          if [ ! -d dist/packages/canvas/platforms/ios/CanvasNative.xcframework ]; then
+            echo "error: CanvasNative.xcframework missing from dist/packages/canvas" >&2
+            exit 1
+          fi
 
       # Publish each package at its committed version via OIDC. The setup-node
       # .npmrc and NODE_AUTH_TOKEN are cleared so npm performs the Trusted

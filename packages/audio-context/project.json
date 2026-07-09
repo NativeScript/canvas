@@ -20,6 +20,21 @@
 						"glob": "**/*",
 						"input": "packages/audio-context/platforms/",
 						"output": "./platforms/"
+					},
+					{
+						"glob": "Package.swift",
+						"input": "nativescript-v8/",
+						"output": "./platforms/ios/NativeScriptV8/"
+					},
+					{
+						"glob": "**/*",
+						"input": "nativescript-v8/Headers/",
+						"output": "./platforms/ios/NativeScriptV8/Headers/"
+					},
+					{
+						"glob": "**/*",
+						"input": "nativescript-v8/Sources/",
+						"output": "./platforms/ios/NativeScriptV8/Sources/"
 					}
 				],
 				"dependsOn": [

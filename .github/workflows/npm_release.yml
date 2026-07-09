@@ -109,8 +109,10 @@ jobs:
                 exit 1
               fi
             done
-            if grep -q "repositoryURL" "dist/packages/$pkg/nativescript.config.ts"; then
-              echo "error: dist/packages/$pkg/nativescript.config.ts references a repositoryURL — plugin SPM packages must use a local path (full-history clone is 8+ GB)" >&2
+            # match only a real `repositoryURL:` key — the config's comments
+            # legitimately mention the word while explaining why it's banned
+            if grep -v -E '^[[:space:]]*(//|\*)' "dist/packages/$pkg/nativescript.config.ts" | grep -q -E 'repositoryURL[[:space:]]*:'; then
+              echo "error: dist/packages/$pkg/nativescript.config.ts declares a repositoryURL — plugin SPM packages must use a local path (full-history clone is 8+ GB)" >&2
               exit 1
             fi
             echo "ok: $pkg ships the NativeScriptV8 shim with a local-path config"

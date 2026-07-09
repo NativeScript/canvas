@@ -1,0 +1,147 @@
+# Publishes the @nativescript/canvas suite to npm from an existing release tag.
+#
+# Native artifacts (Android AAR + iOS xcframework) are committed under
+# packages/canvas/platforms, so this is a publish-only workflow: it checks out
+# the tag, builds the JS packages, and publishes each at the version committed
+# in its package.json. No Rust/native rebuild.
+#
+# Authentication uses npm Trusted Publishing (OIDC) — no NPM_TOKEN required.
+# This mirrors the proven publish flow in the @nativescript/ios and
+# @nativescript/font-manager repos:
+#   * the job runs in the `npm-publish` environment, which MUST match the
+#     environment configured on the npm Trusted Publisher for EACH package
+#     (repo NativeScript/canvas + workflow npm_release.yml + env npm-publish).
+#     A Trusted Publisher must be configured on npmjs.com for every package
+#     listed in PACKAGES below, or its publish is rejected (404/ENEEDAUTH).
+#   * npm is upgraded to 11.5.1 via corepack (Trusted Publishing needs >=11.5.1;
+#     `npm i -g npm@latest` corrupts the global install and drops bundled deps
+#     like sigstore — npm/cli#9722).
+#   * the .npmrc that setup-node writes is removed and NODE_AUTH_TOKEN cleared
+#     before publish so an empty token can't shadow the OIDC exchange.
+name: npm Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release tag to publish from (e.g. 2.1.2). Must be an existing git tag. Defaults to packages/canvas/package.json version.'
+        required: false
+        type: string
+
+concurrency:
+  group: npm-release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: npm-publish # must match the npm Trusted Publisher environment
+    permissions:
+      contents: read
+      id-token: write # required for npm Trusted Publishing (OIDC) + provenance
+    env:
+      # Single source of truth for the packages to publish (space separated).
+      PACKAGES: 'audio-context canvas canvas-babylon canvas-chartjs canvas-media canvas-phaser canvas-phaser-ce canvas-pixi canvas-polyfill canvas-svg canvas-three'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve version
+        id: version
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          if [ -z "$VERSION" ]; then
+            VERSION="$(node -p "require('./packages/canvas/package.json').version")"
+          fi
+          if ! git rev-parse -q --verify "refs/tags/$VERSION^{commit}" > /dev/null; then
+            echo "error: tag $VERSION not found — create and push the release tag first" >&2
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout release tag
+        run: git checkout "refs/tags/${{ steps.version.outputs.version }}"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Update npm (required for OIDC trusted publishing)
+        run: |
+          corepack enable npm
+          corepack install -g npm@11.5.1
+          test "$(npm --version)" = "11.5.1"
+
+      # canvas commits no lockfile, so `npm install` (not `npm ci`).
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build packages
+        run: npx nx run-many --target=build.all --projects="$(echo "$PACKAGES" | tr ' ' ',')"
+
+      # Publish each package at its committed version via OIDC. The setup-node
+      # .npmrc and NODE_AUTH_TOKEN are cleared so npm performs the Trusted
+      # Publishing token exchange (per package) and generates provenance.
+      # Versions already on npm are skipped so the run is re-runnable and one
+      # unchanged package can't fail the whole release.
+      - name: Publish packages (OIDC trusted publishing)
+        env:
+          NODE_AUTH_TOKEN: ''
+        run: |
+          set -euo pipefail
+          unset NODE_AUTH_TOKEN
+          if [ -n "${NPM_CONFIG_USERCONFIG:-}" ]; then
+            rm -f "$NPM_CONFIG_USERCONFIG"
+          fi
+          published=""
+          skipped=""
+          for pkg in $PACKAGES; do
+            dir="dist/packages/$pkg"
+            if [ ! -f "$dir/package.json" ]; then
+              echo "error: $dir/package.json not found (build missing?)" >&2
+              exit 1
+            fi
+            name="$(node -p "require('./$dir/package.json').name")"
+            ver="$(node -p "require('./$dir/package.json').version")"
+            # dist-tag: prerelease label if the version has one, else latest
+            if [ "$ver" != "${ver#*-}" ]; then
+              tag="$(printf '%s' "${ver#*-}" | cut -d. -f1)"
+            else
+              tag="latest"
+            fi
+            if [ "$(npm view "$name@$ver" version 2>/dev/null || true)" = "$ver" ]; then
+              echo "==> $name@$ver already published — skipping"
+              skipped="$skipped $name@$ver"
+              continue
+            fi
+            echo "==> publishing $name@$ver (tag: $tag)"
+            ( cd "$dir" && npm publish --access public --provenance --tag "$tag" )
+            published="$published $name@$ver"
+          done
+          echo ""
+          echo "published:${published:- none}"
+          echo "skipped:${skipped:- none}"
+
+      - name: Verify npm publish
+        run: |
+          set -euo pipefail
+          for pkg in $PACKAGES; do
+            name="$(node -p "require('./dist/packages/$pkg/package.json').name")"
+            ver="$(node -p "require('./dist/packages/$pkg/package.json').version")"
+            ok=false
+            for i in $(seq 1 10); do
+              if [ "$(npm view "$name@$ver" version 2>/dev/null || true)" = "$ver" ]; then
+                echo "ok: $name@$ver is live"
+                ok=true
+                break
+              fi
+              echo "  $name@$ver not visible yet, retrying ($i/10)..."
+              sleep 15
+            done
+            if [ "$ok" != true ]; then
+              echo "error: $name@$ver not visible on the registry" >&2
+              exit 1
+            fi
+          done

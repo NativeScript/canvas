@@ -5730,4 +5730,4 @@ void canvas_native_webgl2_tex_image2d_image_data(int32_t target,
                                                  const struct ImageData *image_data,
                                                  struct WebGLState *state);
 
-#endif  /* CANVAS_C_H */
+#endif /* CANVAS_C_H */

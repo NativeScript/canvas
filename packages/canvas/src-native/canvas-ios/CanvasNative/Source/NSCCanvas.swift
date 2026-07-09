@@ -26,7 +26,7 @@ import MetalKit
 	UITraitCollection.current.displayGamut == .P3
 }
 #else
-@inline(__always) func nscNativeScale() -> CGFloat { nscNativeScale() }
+@inline(__always) func nscNativeScale() -> CGFloat { UIScreen.main.nativeScale }
 @inline(__always) func nscIsWideGamut() -> Bool {
 	if #available(iOS 11.0, *) { return UIScreen.main.traitCollection.displayGamut == .P3 }
 	return false

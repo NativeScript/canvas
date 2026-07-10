@@ -290,4 +290,4 @@ bool canvas_native_ios_context_draw_image_with_metal_texture(int64_t context,
                                                              float d_width,
                                                              float d_height);
 
-#endif /* CANVAS_IOS_H */
+#endif  /* CANVAS_IOS_H */

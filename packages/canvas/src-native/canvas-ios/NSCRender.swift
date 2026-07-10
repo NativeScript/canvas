@@ -659,7 +659,7 @@ public class NSCRender: NSObject {
 		let destWidth  = Int(width)
 		let destHeight = Int(height)
 
-		var rgbaBuf = decodeBGRAtoRGBA(baseAddress: baseAddress, pixelWidth: pixelWidth,
+		let rgbaBuf = decodeBGRAtoRGBA(baseAddress: baseAddress, pixelWidth: pixelWidth,
 		                                pixelHeight: pixelHeight, srcBytesPerRow: srcBytesPerRow)
 		defer { rgbaBuf.deallocate() }
 
@@ -704,7 +704,7 @@ public class NSCRender: NSObject {
 		let destWidth  = Int(width)
 		let destHeight = Int(height)
 
-		var rgbaBuf = decodeBGRAtoRGBA(baseAddress: baseAddress, pixelWidth: pixelWidth,
+		let rgbaBuf = decodeBGRAtoRGBA(baseAddress: baseAddress, pixelWidth: pixelWidth,
 		                                pixelHeight: pixelHeight, srcBytesPerRow: srcBytesPerRow)
 		defer { rgbaBuf.deallocate() }
 

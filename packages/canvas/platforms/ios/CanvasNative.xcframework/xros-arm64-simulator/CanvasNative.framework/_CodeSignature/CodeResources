@@ -30,11 +30,11 @@
 		</data>
 		<key>Modules/CanvasNative.swiftmodule/Project/arm64-apple-xros-simulator.swiftsourceinfo</key>
 		<data>
-		xk1lvXb/F3F/xwNEMCMLBs0o/WI=
+		vJ7tew8V6TlWsN/V2SAxcBDrV1o=
 		</data>
 		<key>Modules/CanvasNative.swiftmodule/arm64-apple-xros-simulator.abi.json</key>
 		<data>
-		Q2FeNmuhqpOuxNepCIawyy6Ji3E=
+		RLzFcOrHKSdaooV6WNcyTybiX1Q=
 		</data>
 		<key>Modules/CanvasNative.swiftmodule/arm64-apple-xros-simulator.private.swiftinterface</key>
 		<data>
@@ -50,7 +50,7 @@
 		</data>
 		<key>Modules/CanvasNative.swiftmodule/arm64-apple-xros-simulator.swiftmodule</key>
 		<data>
-		lfEEwK8Bdlt1eAN+IUvF5Dm5kqE=
+		ir38MlG405X+ZHwea2CJjVlb4QA=
 		</data>
 		<key>Modules/module.modulemap</key>
 		<data>
@@ -138,14 +138,14 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			8pk70VFJ4OhGf1PJjigPFVHEtk3bZfJvFuDrZ/MwrzA=
+			YKngU8qHA+jSEZS0dhPwJMxjy34+6KM69jHwvPq/z1s=
 			</data>
 		</dict>
 		<key>Modules/CanvasNative.swiftmodule/arm64-apple-xros-simulator.abi.json</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			XC0XlesocR+zqqtNi2Ff8qRywBVCeJlUVkDrcF536Ms=
+			hGiVwXXgTnF1vivNsBeXEUUnNixG4MvX0/8Ef5oB420=
 			</data>
 		</dict>
 		<key>Modules/CanvasNative.swiftmodule/arm64-apple-xros-simulator.private.swiftinterface</key>
@@ -173,7 +173,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			VkCd0jl+RRa3rP+6FPgSzpbrc8670vcDMSIycp6Km20=
+			mZsT/o4AQEbIYhEJ05WBAODubZGgy6f7XxE08687ELg=
 			</data>
 		</dict>
 		<key>Modules/module.modulemap</key>

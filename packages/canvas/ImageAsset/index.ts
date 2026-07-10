@@ -190,29 +190,83 @@ export class ImageAsset extends Observable {
 		});
 	}
 
-	/*
+	loadFromNativeSync(image: any): boolean {
+		try {
+			if (__ANDROID__) {
+				const asset = long(this.native.__getRef());
+				return (<any>org).nativescript.canvas.NSCImageAsset.loadImageFromBitmap(asset, image);
+			}
 
-    loadFromNative(image: any): boolean {
-        return this.native.loadImageFromImage(image);
-    }
+			if (__IOS__) {
+				const asset = NSString.stringWithString(this.native.__getRef());
+				return NSCImageAsset.loadImageFromImageSync(asset.longLongValue, image);
+			}
 
-    loadFromNative(image: any) {
-        return new Promise((resolve, reject) => {
-            this.native.loadImageFromImage(
-                image,
-                new org.nativescript.canvas.TNSImageAsset.Callback({
-                    onError(error) {
-                        reject(error);
-                    },
-                    onSuccess(success) {
-                        resolve(success);
-                    },
-                })
-            );
-        });
-    }
+			return false;
+		} catch (e) {
+			return false;
+		}
+	}
 
-    */
+	loadFromNative(image: any): Promise<boolean> {
+		return new Promise((resolve, reject) => {
+			if (__ANDROID__) {
+				const ref = new WeakRef(this);
+				const asset = long(this.native.__getRef());
+				try {
+					(<any>org).nativescript.canvas.NSCImageAsset.loadImageFromBitmapAsync(
+						asset,
+						image,
+						new (<any>org).nativescript.canvas.NSCImageAsset.Callback({
+							onComplete(success) {
+								const owner = ref.get();
+								if (!success) {
+									const error = (<any>org).nativescript.canvas.NSCImageAsset.getError(asset);
+									if (owner) {
+										owner.emitComplete(success, error);
+									}
+									reject(error);
+								} else {
+									if (owner) {
+										owner.emitComplete(success, undefined);
+									}
+									resolve(success);
+								}
+							},
+						}),
+					);
+				} catch (e) {
+					reject(e);
+				}
+				return;
+			}
+
+			if (__IOS__) {
+				this._incrementStrongRef();
+				const asset = NSString.stringWithString(this.native.__getRef());
+				try {
+					NSCImageAsset.loadImageFromImage(asset.longLongValue, image, (done) => {
+						if (!done) {
+							const error = this.error;
+							this.emitComplete(done, error);
+							this._decrementStrongRefAndRemove();
+							reject(error);
+						} else {
+							this.emitComplete(done, undefined);
+							this._decrementStrongRefAndRemove();
+							resolve(done);
+						}
+					});
+				} catch (e) {
+					this._decrementStrongRefAndRemove();
+					reject(e);
+				}
+				return;
+			}
+
+			reject(new Error('Unsupported platform'));
+		});
+	}
 
 	loadFromEncodedBytesSync(bytes: Uint8Array | Uint8ClampedArray) {
 		return this.native.fromEncodedBytesSync(bytes);

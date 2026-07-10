@@ -16,4 +16,13 @@ export default {
 			},
 		],
 	},
+	visionos: {
+		SPMPackages: [
+			{
+				name: 'CanvasNative',
+				libs: ['NativeScriptV8'],
+				path: 'node_modules/@nativescript/audio-context/platforms/ios/NativeScriptV8',
+			},
+		],
+	},
 } as NativeScriptConfig;

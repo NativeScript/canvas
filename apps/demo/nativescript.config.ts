@@ -19,6 +19,16 @@ export default {
 			},
 		],
 	},
+	visionos: {
+		discardUncaughtJsExceptions: false,
+		SPMPackages: [
+			{
+				name: 'CanvasNative',
+				libs: ['NativeScriptV8'],
+				path: '../../nativescript-v8',
+			},
+		],
+	},
 	cli: {
 		packageManager: 'npm',
 	},

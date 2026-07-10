@@ -1,13 +1,16 @@
 platform :ios, '12.0'
 
-# The NativeScript V8 headers package is now provided via SPM (the `NativeScriptV8` product of
-# the local `nativescript-v8` Swift package) instead of a `pod 'NativeScript'`. CocoaPods is still
-# needed here only for this post_install: the canvas C++ includes <NativeScript/include/v8.h>, and
-# the V8 headers include each other by bare name (e.g. #include "v8config.h"), so the built runtime
-# framework's v8 include root must be on HEADER_SEARCH_PATHS. We append with `<<` (not via an
-# xcconfig) because the NativeScript plugin-xcconfig merge is first-key-wins and would otherwise
-# clobber (or be clobbered by) the pod-injected HEADER_SEARCH_PATHS. Without this the build fails
-# with "'v8config.h' file not found".
+# The NativeScript V8 headers package is provided via SPM (the `NativeScriptV8`
+# product of the local Swift package shipped in this npm package) instead of a
+# `pod 'NativeScript'`.
+#
+# The v8 include paths the canvas C++ needs (<NativeScript/include/v8.h> plus
+# bare-name includes like "v8config.h") are delivered by build.xcconfig as
+# OTHER_CFLAGS/OTHER_CPLUSPLUSFLAGS -I flags — see the comment there. They can
+# NOT be delivered here: CocoaPods saves the user project during integration,
+# BEFORE post_install runs, so build-setting edits made below never persist to
+# disk. The hook is kept only as a best-effort for CocoaPods versions that do
+# save afterwards; do not rely on it.
 post_install do |installer|
   installer.aggregate_targets.each do |aggregate_target|
     aggregate_target.user_targets.each do |target|

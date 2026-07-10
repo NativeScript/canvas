@@ -6,3 +6,16 @@ OTHER_LDFLAGS[sdk=macosx*] = $(inherited) -framework Foundation -framework Canva
 CLANG_CXX_LANGUAGE_STANDARD = c++17
 
 GLES_SILENCE_DEPRECATION = 1
+
+// The canvas C++ sources include <NativeScript/include/v8.h> from the runtime
+// framework (built by SPM into BUILT_PRODUCTS_DIR before app sources compile),
+// and the v8 headers include each other by bare name (e.g. "v8config.h"), so
+// the framework Headers/include root must be on the compiler search path.
+// Delivered as -I compiler flags rather than HEADER_SEARCH_PATHS because the
+// NativeScript CLI pod-xcconfig merge is key-exclusive: a plugin-level
+// HEADER_SEARCH_PATHS would silently drop the CocoaPods header paths. The
+// Podfile post_install cannot do this either — CocoaPods saves the user
+// project before post_install runs, so those edits never persist.
+CANVAS_NS_V8_HEADER_FLAGS = -I"$(BUILT_PRODUCTS_DIR)/NativeScript.framework/Headers" -I"$(BUILT_PRODUCTS_DIR)/NativeScript.framework/Headers/include"
+OTHER_CFLAGS = $(inherited) $(CANVAS_NS_V8_HEADER_FLAGS)
+OTHER_CPLUSPLUSFLAGS = $(inherited) $(CANVAS_NS_V8_HEADER_FLAGS)

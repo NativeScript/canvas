@@ -2291,6 +2291,10 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
     stereoInputCache.reserve(localVoices.size());
     hrtfOutputCache.reserve(localVoices.size());
 
+    const bool collectAnalyser = analyserCount_.load(std::memory_order_acquire) > 0;
+    std::vector<float> analyserMono;
+    if (collectAnalyser) analyserMono.assign((size_t) numFrames, 0.0f);
+
     for (int frame = 0; frame < numFrames; ++frame) {
         pannerCutoffByBiquad.clear();
         pannerFrameCache.clear();
@@ -2959,13 +2963,22 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
             out[frame * channels + ch] = mixed;
         }
 
-        float mono = 0.0f;
-        for (int c = 0; c < channels; ++c) mono += out[frame * channels + c];
-        mono = mono / static_cast<float>(channels > 0 ? channels : 1);
+        if (collectAnalyser) {
+            float mono = 0.0f;
+            for (int c = 0; c < channels; ++c) mono += out[frame * channels + c];
+            analyserMono[(size_t) frame] = mono / static_cast<float>(channels > 0 ? channels : 1);
+        }
+    }
+
+    if (collectAnalyser) {
+        std::lock_guard<std::mutex> analyserLock(analyserMutex_);
         for (auto &av: analysers_) {
             AnalyserData &ad = av.second;
-            int64_t idx = ad.writeIdx.fetch_add(1, std::memory_order_relaxed);
-            if (ad.capacity > 0) ad.ring[(size_t) (idx % ad.capacity)] = mono;
+            if (ad.capacity <= 0) continue;
+            for (int frame = 0; frame < numFrames; ++frame) {
+                int64_t idx = ad.writeIdx.fetch_add(1, std::memory_order_relaxed);
+                ad.ring[(size_t) (idx % ad.capacity)] = analyserMono[(size_t) frame];
+            }
         }
     }
     std::vector<std::string> stoppedVoices;

@@ -647,7 +647,6 @@ void NativeEngine::rebuildAnalyserCaches(NativeEngine::AnalyserData &ad) {
 std::string
 NativeEngine::createAnalyser(int fftSize, double smoothingTimeConstant, double minDecibels,
                              double maxDecibels) {
-    std::lock_guard<std::recursive_mutex> lock(mutex_);
     std::string id = genId();
     AnalyserData d;
     int p = nextPowerOfTwo(fftSize > 0 ? fftSize : 2048);
@@ -660,13 +659,16 @@ NativeEngine::createAnalyser(int fftSize, double smoothingTimeConstant, double m
     d.minDecibels = minDecibels;
     d.maxDecibels = maxDecibels;
     rebuildAnalyserCaches(d);
+    std::lock_guard<std::mutex> lock(analyserMutex_);
     analysers_.emplace(id, std::move(d));
+    analyserCount_.store(analysers_.size(), std::memory_order_release);
     return id;
 }
 
 void NativeEngine::freeAnalyser(const std::string &id) {
-    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(analyserMutex_);
     analysers_.erase(id);
+    analyserCount_.store(analysers_.size(), std::memory_order_release);
 }
 
 
@@ -754,7 +756,7 @@ static void ensureDbCacheLocked(NativeEngine::AnalyserData &ad, int half) {
 std::vector<float> NativeEngine::getAnalyserTimeDomainData(const std::string &id, int count) {
     std::vector<float> out;
     if (id.empty() || count <= 0) return out;
-    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(analyserMutex_);
     auto it = analysers_.find(id);
     if (it == analysers_.end()) return out;
     AnalyserData &ad = it->second;
@@ -767,7 +769,7 @@ std::vector<float> NativeEngine::getAnalyserTimeDomainData(const std::string &id
 std::vector<float> NativeEngine::getAnalyserFrequencyData(const std::string &id) {
     std::vector<float> out;
     if (id.empty()) return out;
-    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(analyserMutex_);
     auto it = analysers_.find(id);
     if (it == analysers_.end()) return out;
     AnalyserData &ad = it->second;
@@ -780,7 +782,7 @@ std::vector<float> NativeEngine::getAnalyserFrequencyData(const std::string &id)
 
 int NativeEngine::getAnalyserTimeDomainDataInto(const std::string &id, float *dst, int dstCount) {
     if (id.empty() || !dst || dstCount <= 0) return 0;
-    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(analyserMutex_);
     auto it = analysers_.find(id);
     if (it == analysers_.end()) return 0;
     AnalyserData &ad = it->second;
@@ -791,7 +793,7 @@ int NativeEngine::getAnalyserTimeDomainDataInto(const std::string &id, float *ds
 
 int NativeEngine::getAnalyserFrequencyDataInto(const std::string &id, float *dst, int dstCount) {
     if (id.empty() || !dst || dstCount <= 0) return 0;
-    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(analyserMutex_);
     auto it = analysers_.find(id);
     if (it == analysers_.end()) return 0;
     AnalyserData &ad = it->second;
@@ -806,7 +808,7 @@ int NativeEngine::getAnalyserFrequencyDataInto(const std::string &id, float *dst
 int NativeEngine::getAnalyserByteFrequencyDataInto(const std::string &id, uint8_t *dst, int dstCount,
                                                    float minDb, float maxDb) {
     if (id.empty() || !dst || dstCount <= 0) return 0;
-    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(analyserMutex_);
     auto it = analysers_.find(id);
     if (it == analysers_.end()) return 0;
     AnalyserData &ad = it->second;
@@ -829,7 +831,7 @@ int NativeEngine::getAnalyserByteFrequencyDataInto(const std::string &id, uint8_
 
 int NativeEngine::getAnalyserByteTimeDomainDataInto(const std::string &id, uint8_t *dst, int dstCount) {
     if (id.empty() || !dst || dstCount <= 0) return 0;
-    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(analyserMutex_);
     auto it = analysers_.find(id);
     if (it == analysers_.end()) return 0;
     AnalyserData &ad = it->second;
@@ -851,7 +853,7 @@ int NativeEngine::getAnalyserByteTimeDomainDataInto(const std::string &id, uint8
 }
 
 void NativeEngine::setAnalyserDecibels(const std::string &id, double minDecibels, double maxDecibels) {
-    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(analyserMutex_);
     auto it = analysers_.find(id);
     if (it == analysers_.end()) return;
     AnalyserData &ad = it->second;
@@ -862,7 +864,7 @@ void NativeEngine::setAnalyserDecibels(const std::string &id, double minDecibels
 void NativeEngine::setAnalyserFftSize(const std::string &id, int fftSize) {
     if (id.empty()) return;
     int p = nextPowerOfTwo(fftSize > 0 ? fftSize : 2048);
-    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(analyserMutex_);
     auto it = analysers_.find(id);
     if (it == analysers_.end()) return;
     AnalyserData &ad = it->second;
@@ -877,7 +879,7 @@ void NativeEngine::setAnalyserFftSize(const std::string &id, int fftSize) {
 
 void NativeEngine::setAnalyserSmoothingTimeConstant(const std::string &id, double value) {
     if (id.empty()) return;
-    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(analyserMutex_);
     auto it = analysers_.find(id);
     if (it == analysers_.end()) return;
     AnalyserData &ad = it->second;

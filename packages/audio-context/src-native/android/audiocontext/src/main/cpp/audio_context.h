@@ -536,6 +536,8 @@ public:
     };
 
     std::unordered_map<std::string, AnalyserData> analysers_;
+    std::mutex analyserMutex_;
+    std::atomic<size_t> analyserCount_{0};
 
     static void rebuildAnalyserCaches(AnalyserData &ad);
 

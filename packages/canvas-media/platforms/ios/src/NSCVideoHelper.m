@@ -123,6 +123,15 @@ static NSArray<AVAssetTrack *> *NSCTracksWithMediaType(AVAsset *asset, AVMediaTy
                 }
             }];
 
+            if (strongSelf.currentItem) {
+                @try {
+                    [strongSelf.currentItem removeObserver:strongSelf forKeyPath:@"status"];
+                } @catch (NSException *exception) {}
+                @try {
+                    [strongSelf.currentItem removeObserver:strongSelf forKeyPath:@"loadedTimeRanges"];
+                } @catch (NSException *exception) {}
+            }
+
             AVPlayerItem *item = [AVPlayerItem playerItemWithAsset:strongSelf.asset];
 
             strongSelf->_currentItem = item;
@@ -312,6 +321,23 @@ static NSArray<AVAssetTrack *> *NSCTracksWithMediaType(AVAsset *asset, AVMediaTy
         [self.player pause];
         self.state = NSCPlayerStateStopped;
         [self.listener onStateChange:self.state];
+    }
+
+    if (self.playbackTimeObserver) {
+        [self.player removeTimeObserver:self.playbackTimeObserver];
+        self.playbackTimeObserver = nil;
+    }
+    if (self.playbackFramesObserver) {
+        [self.player removeTimeObserver:self.playbackFramesObserver];
+        self.playbackFramesObserver = nil;
+    }
+    if (_currentItem) {
+        @try {
+            [_currentItem removeObserver:self forKeyPath:@"status"];
+        } @catch (NSException *exception) {}
+        @try {
+            [_currentItem removeObserver:self forKeyPath:@"loadedTimeRanges"];
+        } @catch (NSException *exception) {}
     }
 
     if (_playEndNotificationId) {

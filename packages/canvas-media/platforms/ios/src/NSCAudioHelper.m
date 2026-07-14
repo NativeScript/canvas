@@ -146,6 +146,7 @@ static NSArray<AVAssetTrack *> *NSCTracksWithMediaType(AVAsset *asset, AVMediaTy
                 @try { [strongSelf.currentItem removeObserver:strongSelf forKeyPath:@"playbackLikelyToKeepUp"]; } @catch (NSException *e) {}
             }
             if (strongSelf->_playbackTimeObserver) {
+                @try { [strongSelf.player removeTimeObserver:strongSelf->_playbackTimeObserver]; } @catch (NSException *e) {}
                 strongSelf->_playbackTimeObserver = nil;
             }
 

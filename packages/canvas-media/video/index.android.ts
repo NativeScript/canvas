@@ -335,6 +335,13 @@ export class Video extends VideoBase {
 		super.initNativeView();
 	}
 
+	disposeNativeView() {
+		try {
+			this._instance?.release();
+		} catch (e) {}
+		super.disposeNativeView();
+	}
+
 	_addChildFromBuilder(name: string, value: any) {
 		if (value instanceof Source) {
 			this._sourceView.push(value);

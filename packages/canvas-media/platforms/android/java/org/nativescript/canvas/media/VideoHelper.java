@@ -955,6 +955,24 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 		return this._container;
 	}
 
+	public void release() {
+		try { if (_timer != null) { _timer.cancel(); _timer.purge(); _timer = null; } } catch (Throwable ignored) {}
+		try { if (_frameTimer != null) { _frameTimer.cancel(); _frameTimer.purge(); _frameTimer = null; } } catch (Throwable ignored) {}
+		try {
+			if (_player != null) {
+				_player.removeListener(this);
+				_player.setVideoSurface(null);
+				_player.release();
+			}
+		} catch (Throwable ignored) {}
+		try { if (_st != null) { _st.setOnFrameAvailableListener(null); _st.release(); _st = null; } } catch (Throwable ignored) {}
+		try { if (_surface != null) { _surface.release(); _surface = null; } } catch (Throwable ignored) {}
+		try { if (_glSt != null) { _glSt.setOnFrameAvailableListener(null); _glSt.release(); _glSt = null; } } catch (Throwable ignored) {}
+		try { if (_glSurface != null) { _glSurface.release(); _glSurface = null; } } catch (Throwable ignored) {}
+		try { if (_imageReader != null) { _imageReader.close(); _imageReader = null; } } catch (Throwable ignored) {}
+		try { if (_reusableBitmap != null) { _reusableBitmap.recycle(); _reusableBitmap = null; } } catch (Throwable ignored) {}
+	}
+
 	public void setSurface(Surface surface) {
 		this._player.setVideoSurface(surface);
 	}

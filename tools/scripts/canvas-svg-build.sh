@@ -3,8 +3,9 @@ cd ../../packages/canvas-svg/src-native/ios
 set -e
 
 
-rm -rf ../platforms/ios || true
-mkdir -p ../platforms/ios
+# Replace (don't merge into) the existing framework so stale slices can't linger.
+rm -rf ../../platforms/ios/CanvasSVG.xcframework || true
+mkdir -p ../../platforms/ios
 
 echo "Build iOS"
 ./build.sh

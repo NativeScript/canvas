@@ -1,298 +1,102 @@
+# CI for pushes and pull requests.
+#
+# All native artifacts (Android AARs + iOS/visionOS xcframeworks for canvas,
+# canvas-svg and audio-context) are built by the reusable build-native.yml
+# workflow. On pushes to master (and manual dispatch) the npm job then packages
+# everything with those freshly built artifacts and publishes a `pr`-tagged
+# prerelease of each package.
 name: Canvas Native
+
 on:
   push:
     branches:
-      - main
+      - master
   pull_request:
   workflow_dispatch:
 
-env:
-  NPM_TAG: "pr"
-  EMULATOR_NAME: "runtime-emu"
-  NDK_VERSION: r27d
-  ANDROID_API: 29
-  ANDROID_ABI: x86_64
-  NDK_ARCH: linux
-  CARGO_TERM_COLOR: always
-  NDK_HOST: linux
-  XCODE_VERSION: "^15.0"
-  NPM_PACKAGES: canvas,canvas-babylon,canvas-media,canvas-phaser,canvas-phaser-ce,canvas-pixi,canvas-polyfill,canvas-three,canvas-svg
-
 jobs:
-  android:
-    name: Android Build
-    runs-on: ubuntu-22.04
-    steps:
-    - uses: actions/checkout@v4
-    - name: Cache node modules
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.npm
-          ~/.cache
-        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/package.json') }}
-        restore-keys: |
-          ${{ runner.os }}-node-
-    - name: Cache cargo
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-cargo-
-    - name: Install Rust
-      run: |
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
-        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-    - name: Use Rust nightly
-      run: |
-        rustup default nightly
-    - name: Install Rust Component rust-src
-      run: |
-        rustup component add --toolchain nightly rust-src
-    - name: 'Install Rust target i686-linux-android'
-      shell: bash
-      run: |
-        rustup target add i686-linux-android
-    - name: 'Install Rust target x86_64-linux-android'
-      shell: bash
-      run: |
-        rustup target add x86_64-linux-android
-    - name: 'Install Rust target armv7-linux-androideabi'
-      shell: bash
-      run: |
-        rustup target add armv7-linux-androideabi
-    - name: 'Install Rust target aarch64-linux-android'
-      shell: bash
-      run: |
-        rustup target add aarch64-linux-android       
-    - uses: actions/setup-node@v4
-      with:
-          node-version: 22
-          registry-url: "https://registry.npmjs.org"
-    - uses: actions/setup-java@v4
-      with:
-          distribution: "temurin"
-          java-version: "17"
-          cache: gradle
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
-    - name: Setup NDK
-      run: |
-          echo "y" | sdkmanager "cmake;3.6.4111459"
-          wget https://dl.google.com/android/repository/android-ndk-$NDK_VERSION-$NDK_ARCH.zip
-          chmod +x android-ndk-$NDK_VERSION-$NDK_ARCH.zip
-          unzip -q android-ndk-$NDK_VERSION-$NDK_ARCH.zip
-          rm -rf android-ndk-$NDK_VERSION-$NDK_ARCH.zip
-          export ANDROID_NDK_HOME=`pwd`/android-ndk-$NDK_VERSION
-          export ANDROID_NDK_ROOT=$ANDROID_NDK_HOME
-          export ANDROID_NDK=$ANDROID_NDK_HOME
-          export NDK_PATH=$ANDROID_NDK
-          export CC_armv7_linux_androideabi=armv7a-linux-androideabi21-clang
-          export CXX_armv7_linux_androideabi=armv7a-linux-androideabi21-clang++
-          export AR_armv7_linux_androideabi=llvm-ar
-          export CARGO_TARGET_ARMV7_LINUX_ANDROIDEABI_LINKER=armv7a-linux-androideabi21-clang
-          export CC_aarch64_linux_android=aarch64-linux-android21-clang
-          export CXX_aarch64_linux_android=aarch64-linux-android21-clang++
-          export AR_aarch64_linux_android=llvm-ar
-          export CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=aarch64-linux-android21-clang
-          export CC_i686_linux_android=i686-linux-android21-clang
-          export CXX_i686_linux_android=i686-linux-android21-clang++
-          export AR_i686_linux_android=llvm-ar
-          export CARGO_TARGET_I686_LINUX_ANDROID_LINKER=i686-linux-android21-clang
-          export CC_x86_64_linux_android=x86_64-linux-android21-clang
-          export CXX_x86_64_linux_android=x86_64-linux-android21-clang++
-          export AR_x86_64_linux_android=llvm-ar
-          export CARGO_TARGET_X86_64_LINUX_ANDROID_LINKER=x86_64-linux-android21-clang
-          echo ANDROID_NDK_HOME=${ANDROID_NDK_HOME} >> $GITHUB_ENV
-          echo ANDROID_NDK_ROOT=${ANDROID_NDK_ROOT} >> $GITHUB_ENV
-          echo ANDROID_NDK=${ANDROID_NDK} >> $GITHUB_ENV
-          echo NDK_PATH=${NDK_PATH} >> $GITHUB_ENV
-          echo CC_armv7_linux_androideabi=${CC_armv7_linux_androideabi} >> $GITHUB_ENV
-          echo CXX_armv7_linux_androideabi=${CXX_armv7_linux_androideabi} >> $GITHUB_ENV
-          echo AR_armv7_linux_androideabi=${AR_armv7_linux_androideabi} >> $GITHUB_ENV
-          echo CARGO_TARGET_ARMV7_LINUX_ANDROIDEABI_LINKER=${CARGO_TARGET_ARMV7_LINUX_ANDROIDEABI_LINKER} >> $GITHUB_ENV
-          echo CC_aarch64_linux_android=${CC_aarch64_linux_android} >> $GITHUB_ENV
-          echo CXX_aarch64_linux_android=${CXX_aarch64_linux_android} >> $GITHUB_ENV
-          echo AR_aarch64_linux_android=${AR_aarch64_linux_android} >> $GITHUB_ENV
-          echo CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=${CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER} >> $GITHUB_ENV
-          echo CC_i686_linux_android=${CC_i686_linux_android} >> $GITHUB_ENV
-          echo CXX_i686_linux_android=${CXX_i686_linux_android} >> $GITHUB_ENV
-          echo AR_i686_linux_android=${AR_i686_linux_android} >> $GITHUB_ENV
-          echo CARGO_TARGET_I686_LINUX_ANDROID_LINKER=${CARGO_TARGET_I686_LINUX_ANDROID_LINKER} >> $GITHUB_ENV
-          echo CC_x86_64_linux_android=${CC_x86_64_linux_android} >> $GITHUB_ENV
-          echo CXX_x86_64_linux_android=${CXX_x86_64_linux_android} >> $GITHUB_ENV
-          echo AR_x86_64_linux_android=${AR_x86_64_linux_android} >> $GITHUB_ENV
-          echo CARGO_TARGET_X86_64_LINUX_ANDROID_LINKER=${CARGO_TARGET_X86_64_LINUX_ANDROID_LINKER} >> $GITHUB_ENV
-          echo ${ANDROID_NDK_HOME} >> $GITHUB_PATH
-          echo ${ANDROID_NDK}/toolchains/llvm/prebuilt/${NDK_ARCH}-x86_64/bin >> $GITHUB_PATH
-          echo ${CC_armv7_linux_androideabi} >> $GITHUB_PATH
-          echo ${CXX_armv7_linux_androideabi} >> $GITHUB_PATH
-          echo ${AR_armv7_linux_androideabi} >> $GITHUB_PATH
-          echo ${CARGO_TARGET_ARMV7_LINUX_ANDROIDEABI_LINKER} >> $GITHUB_PATH
-          echo ${CC_aarch64_linux_android} >> $GITHUB_PATH
-          echo ${CXX_aarch64_linux_android} >> $GITHUB_PATH
-          echo ${AR_aarch64_linux_android} >> $GITHUB_PATH
-          echo ${CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER} >> $GITHUB_PATH
-          echo ${CC_i686_linux_android} >> $GITHUB_PATH
-          echo ${CXX_i686_linux_android} >> $GITHUB_PATH
-          echo ${AR_i686_linux_android} >> $GITHUB_PATH
-          echo ${CARGO_TARGET_I686_LINUX_ANDROID_LINKER} >> $GITHUB_PATH
-          echo ${CC_x86_64_linux_android} >> $GITHUB_PATH
-          echo ${CXX_x86_64_linux_android} >> $GITHUB_PATH
-          echo ${AR_x86_64_linux_android} >> $GITHUB_PATH
-          echo ${CARGO_TARGET_X86_64_LINUX_ANDROID_LINKER} >> $GITHUB_PATH
-    - name: Install Build Tools
-      run: | 
-        sudo apt-get install pkg-config libssl-dev -y
-    - name: Build Canvas Native
-      run: |
-          make android
-  ios:
-    name: iOS Build
-    runs-on: macos-14
-    steps:
-    - uses: actions/checkout@v4
-    - name: Cache node modules
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.npm
-          ~/.cache
-        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/package.json') }}
-        restore-keys: |
-          ${{ runner.os }}-node-
-    - name: Cache cargo
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-cargo-
-    - name: Install Rust
-      run: |
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
-        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-    - name: Use Rust nightly
-      run: |
-        rustup default nightly
-    - name: Install Rust Component rust-src
-      run: |
-        rustup component add --toolchain nightly rust-src
-    - name: 'Install Rust target x86_64-apple-ios'
-      shell: bash
-      run: |
-        rustup target add x86_64-apple-ios
-    - name: 'Install Rust target aarch64-apple-ios'
-      shell: bash
-      run: |
-        rustup target add aarch64-apple-ios
-    - name: 'Install Rust target aarch64-apple-ios-sim'
-      shell: bash
-      run: |
-        rustup target add aarch64-apple-ios-sim
-    - name: Install cbindgen
-      run: |
-        cargo install --force cbindgen
-    - name: Install Python
-      uses: actions/setup-python@v4
-      with:
-          python-version: "3"    
-               
-    - uses: actions/setup-node@v4
-      with:
-          node-version: 22
-          registry-url: "https://registry.npmjs.org"
-    - uses: maxim-lobanov/setup-xcode@v1
-      with:
-          xcode-version: ${{env.XCODE_VERSION}}
-    - name: Install Python
-      uses: actions/setup-python@v4
-      with:
-          python-version: "3"
-    - name: Install Dependencies
-      run: |
-          npm install
-          python3 -m pip install --upgrade pip six
-          brew install cmake
-          [ ! -f /usr/local/bin/cmake ] && ln -s /usr/local/bin/cmake $(which cmake) || true
-    - name: Build
-      run: | 
-        make ios
-        npm run build.canvas.ios.framework.release 
+  build-native:
+    name: Build Native
+    uses: ./.github/workflows/build-native.yml
+
   npm:
     name: Npm Build
     if: ${{ github.event_name != 'pull_request' }}
     runs-on: ubuntu-22.04
-    needs: [android, ios]
-    outputs:
-      npm_version: ${{ steps.npm_version_output.outputs.NPM_VERSION }}
-      npm_tag: ${{ steps.npm_version_output.outputs.NPM_TAG }}
+    needs: [build-native]
+    env:
+      NPM_TAG: pr
+      # Space separated; must match the packages/<name> directories.
+      NPM_PACKAGES: audio-context canvas canvas-babylon canvas-chartjs canvas-media canvas-phaser canvas-phaser-ce canvas-pixi canvas-polyfill canvas-svg canvas-three
     steps:
-    - uses: actions/setup-node@v4
-      with:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
           node-version: 22
-          registry-url: "https://registry.npmjs.org"
+          registry-url: 'https://registry.npmjs.org'
 
-    - name: Generate Version
-      run: |
-          echo NPM_VERSION=$(node -e "console.log(require('./packages/canvas/package.json').version);")-$NPM_TAG-$(date +"%m-%d-%Y")-$GITHUB_RUN_ID >> $GITHUB_ENV
+      - name: Download native artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: native-artifacts
 
-    - name: Bump canvas
-      working-directory: packages/canvas
-      run: npm version $NPM_VERSION
+      - name: Place native artifacts
+        run: |
+          set -e
+          cp native-artifacts/canvas-android/canvas-release.aar packages/canvas/platforms/android/
+          cp native-artifacts/canvas-svg-android/canvassvg-release.aar packages/canvas-svg/platforms/android/
+          cp native-artifacts/audio-context-android/audiocontext-release.aar packages/audio-context/platforms/android/
+          # xcframeworks are tarred to preserve file permissions; replace the
+          # committed ones so stale slices can't linger
+          rm -rf packages/canvas/platforms/ios/CanvasNative.xcframework
+          tar -xzf native-artifacts/canvas-ios/canvas-ios.tar.gz -C packages/canvas/platforms/ios
+          rm -rf packages/canvas-svg/platforms/ios/CanvasSVG.xcframework
+          tar -xzf native-artifacts/canvas-svg-ios/canvas-svg-ios.tar.gz -C packages/canvas-svg/platforms/ios
+          rm -rf packages/audio-context/platforms/ios/AudioContextNative.xcframework
+          tar -xzf native-artifacts/audio-context-ios/audio-context-ios.tar.gz -C packages/audio-context/platforms/ios
 
-    - name: Bump canvas-babylon
-      working-directory: packages/canvas-babylon
-      run: npm version $NPM_VERSION
+      - name: Install dependencies
+        run: npm install
 
-    - name: Bump canvas-media
-      working-directory: packages/canvas-media
-      run: npm version $NPM_VERSION
+      - name: Generate version
+        run: |
+          echo NPM_VERSION=$(node -p "require('./packages/canvas/package.json').version")-$NPM_TAG-$(date +"%m-%d-%Y")-$GITHUB_RUN_ID >> $GITHUB_ENV
 
-    - name: Bump canvas-phaser
-      working-directory: packages/canvas-phaser
-      run: npm version $NPM_VERSION
+      - name: Bump versions
+        run: |
+          set -e
+          for pkg in $NPM_PACKAGES; do
+            (cd "packages/$pkg" && npm version "$NPM_VERSION" --no-git-tag-version --allow-same-version)
+          done
 
-    - name: Bump canvas-phaser-ce
-      working-directory: packages/canvas-phaser-ce
-      run: npm version $NPM_VERSION
+      - name: Build all packages
+        run: npx nx run-many --target=build.all --projects="$(echo "$NPM_PACKAGES" | tr ' ' ',')"
 
-    - name: Bump canvas-pixi
-      working-directory: packages/canvas-pixi
-      run: npm version $NPM_VERSION
+      - name: 'Publish packages (tag: pr)'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
+        run: |
+          set -euo pipefail
+          for pkg in $NPM_PACKAGES; do
+            dir="dist/packages/$pkg"
+            if [ ! -f "$dir/package.json" ]; then
+              echo "error: $dir/package.json not found (build missing?)" >&2
+              exit 1
+            fi
+            name="$(node -p "require('./$dir/package.json').name")"
+            ver="$(node -p "require('./$dir/package.json').version")"
+            echo "==> publishing $name@$ver (tag: $NPM_TAG)"
+            (cd "$dir" && npm publish --access public --tag "$NPM_TAG")
+          done
 
-    - name: Bump canvas-polyfill
-      working-directory: packages/canvas-polyfill
-      run: npm version $NPM_VERSION
-
-    - name: Bump canvas-three
-      working-directory: packages/canvas-three
-      run: npm version $NPM_VERSION
-
-    - name: Bump canvas-svg
-      working-directory: packages/canvas-svg
-      run: npm version $NPM_VERSION
-
-    - name: Build all packages
-      run: npx nx run canvas:build.all
-
-    - name: Publish @nativescript/core
-      env:
-          NPM_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
-      run: |
-          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ../../.npmrc
-          echo "Publishing @nativescript/canvas@$NPM_VERSION to NPM with tag $NPM_TAG..."
-          npm run publish-packages --name $NPM_PACKAGES --verify true --version $NPM_VERSION
   pr-notice:
     name: PR Publish Notice
     if: ${{ github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
-    needs: [ android, ios ]
+    needs: [build-native]
+    permissions:
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
       - name: Post PR comment about publishing
@@ -302,6 +106,5 @@ jobs:
           issue-number: ${{ github.event.pull_request.number }}
           body: |
             :information_source: Note: npm publishing is disabled for pull requests.
-            Publishing is performed only from tag pushes via the `Publish Packages` workflow.
-            If you need a test publish, create a tag `v0.0.0-rc.test` and push it to trigger a release run.
-    
+            Publishing is performed only from tag pushes via the `npm Release` workflow.
+            If you need a test publish, merge to master — pushes publish `pr`-tagged prereleases.

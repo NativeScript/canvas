@@ -1,0 +1,52 @@
+name: Setup Apple native build environment
+description: >
+  Selects Xcode, installs the visionOS platform (SDK + simulator runtime, not
+  preinstalled on GitHub macOS runners), and optionally installs the Rust
+  nightly toolchain (with rust-src for -Z build-std) plus a cargo cache.
+
+inputs:
+  xcode-version:
+    description: Xcode version spec passed to setup-xcode
+    required: false
+    default: '^16.0'
+  install-rust:
+    description: Install Rust nightly + cargo cache (set 'false' for xcodebuild-only projects)
+    required: false
+    default: 'true'
+
+runs:
+  using: composite
+  steps:
+    - uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: ${{ inputs.xcode-version }}
+
+    - name: Install visionOS platform
+      shell: bash
+      run: |
+        if ! xcodebuild -showsdks 2>/dev/null | grep -q xros; then
+          sudo xcodebuild -runFirstLaunch
+          sudo xcodebuild -downloadPlatform visionOS
+        fi
+        xcodebuild -showsdks
+
+    - name: Install Rust nightly
+      if: ${{ inputs.install-rust == 'true' }}
+      shell: bash
+      # rust-src is required: iOS and visionOS release builds go through
+      # `cargo +nightly build -Z build-std` (see Makefile).
+      run: |
+        rustup toolchain install nightly --profile minimal --component rust-src
+        rustup default nightly
+        rustc --version
+
+    - name: Cache cargo
+      if: ${{ inputs.install-rust == 'true' }}
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-

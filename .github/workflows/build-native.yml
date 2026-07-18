@@ -1,0 +1,221 @@
+# Reusable workflow that builds every native artifact the npm packages ship:
+#
+#   artifact name          contents                              destination in the repo
+#   ---------------------  ------------------------------------  ---------------------------------------------
+#   canvas-android         canvas-release.aar                    packages/canvas/platforms/android/
+#   canvas-ios             CanvasNative.xcframework (tar.gz)     packages/canvas/platforms/ios/
+#   canvas-svg-android     canvassvg-release.aar                 packages/canvas-svg/platforms/android/
+#   canvas-svg-ios         CanvasSVG.xcframework (tar.gz)        packages/canvas-svg/platforms/ios/
+#   audio-context-android  audiocontext-release.aar              packages/audio-context/platforms/android/
+#   audio-context-ios      AudioContextNative.xcframework        packages/audio-context/platforms/ios/
+#                          (tar.gz)
+#
+# xcframeworks are tarred before upload because upload-artifact does not
+# preserve file permissions.
+#
+# The canvas build mirrors the local flow:
+#   iOS:     make ios && make visionos, then tools/scripts/canvas-build.sh
+#            (what `npm run build.canvas.ios.framework.release` runs, minus nx)
+#   Android: make android, then gradle :canvas:assembleRelease and copy the aar
+#
+# canvas-svg and audio-context change rarely, so their jobs cache the final
+# artifact keyed on a hash of their sources and skip the whole build on a hit.
+name: Build Native
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: Git ref to build. Empty means the ref that triggered the caller.
+        required: false
+        type: string
+        default: ''
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Git ref to build
+        required: false
+        type: string
+        default: ''
+
+env:
+  # bump to invalidate the canvas-svg / audio-context artifact caches
+  NATIVE_CACHE_VERSION: v1
+
+jobs:
+  canvas-android:
+    name: Canvas Android
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: ./.github/actions/setup-android-native
+      - name: Build Rust libraries
+        run: make android
+      - name: Build canvas AAR
+        working-directory: packages/canvas/src-native/canvas-android
+        run: ./gradlew :canvas:assembleRelease
+      - name: Copy AAR into platforms/android
+        run: cp packages/canvas/src-native/canvas-android/canvas/build/outputs/aar/canvas-release.aar packages/canvas/platforms/android/canvas-release.aar
+      - uses: actions/upload-artifact@v4
+        with:
+          name: canvas-android
+          path: packages/canvas/platforms/android/canvas-release.aar
+          if-no-files-found: error
+
+  canvas-ios:
+    name: Canvas iOS + visionOS
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: ./.github/actions/setup-apple-native
+      - name: Build Rust libraries (iOS)
+        run: make ios
+      - name: Build Rust libraries (visionOS)
+        run: make visionos
+      # same as `npm run build.canvas.ios.framework.release`, without needing node_modules
+      - name: Build CanvasNative.xcframework
+        working-directory: tools/scripts
+        run: sh canvas-build.sh
+      - name: Pack xcframework
+        run: tar -czf canvas-ios.tar.gz -C packages/canvas/platforms/ios CanvasNative.xcframework
+      - uses: actions/upload-artifact@v4
+        with:
+          name: canvas-ios
+          path: canvas-ios.tar.gz
+          if-no-files-found: error
+
+  canvas-svg-android:
+    name: Canvas SVG Android
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - name: Restore cached AAR
+        id: svg-aar
+        uses: actions/cache@v4
+        with:
+          path: packages/canvas-svg/platforms/android/canvassvg-release.aar
+          key: ${{ env.NATIVE_CACHE_VERSION }}-canvas-svg-android-${{ hashFiles('crates/canvas-svg/**', 'crates/canvas-svg-android/**', 'packages/canvas-svg/src-native/android/**', '!packages/canvas-svg/src-native/android/**/build/**', '!packages/canvas-svg/src-native/android/**/jniLibs/**', 'Cargo.lock', 'tools/scripts/build-svg-android.sh', 'tools/scripts/copy-svg-android.sh', 'Makefile') }}
+      - uses: ./.github/actions/setup-android-native
+        if: steps.svg-aar.outputs.cache-hit != 'true'
+      - name: Build Rust libraries
+        if: steps.svg-aar.outputs.cache-hit != 'true'
+        run: make android-svg
+      - name: Copy .so files into jniLibs
+        if: steps.svg-aar.outputs.cache-hit != 'true'
+        run: sh tools/scripts/copy-svg-android.sh
+      - name: Build canvassvg AAR
+        if: steps.svg-aar.outputs.cache-hit != 'true'
+        working-directory: packages/canvas-svg/src-native/android
+        run: ./gradlew :canvassvg:assembleRelease
+      - name: Copy AAR into platforms/android
+        if: steps.svg-aar.outputs.cache-hit != 'true'
+        run: cp packages/canvas-svg/src-native/android/canvassvg/build/outputs/aar/canvassvg-release.aar packages/canvas-svg/platforms/android/canvassvg-release.aar
+      - uses: actions/upload-artifact@v4
+        with:
+          name: canvas-svg-android
+          path: packages/canvas-svg/platforms/android/canvassvg-release.aar
+          if-no-files-found: error
+
+  canvas-svg-ios:
+    name: Canvas SVG iOS + visionOS
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - name: Restore cached xcframework
+        id: svg-xcframework
+        uses: actions/cache@v4
+        with:
+          path: canvas-svg-ios.tar.gz
+          key: ${{ env.NATIVE_CACHE_VERSION }}-canvas-svg-ios-${{ hashFiles('crates/canvas-svg/**', 'crates/canvas-svg-ios/**', 'packages/canvas-svg/src-native/ios/**', '!packages/canvas-svg/src-native/ios/dist/**', 'Cargo.lock', 'tools/scripts/canvas-svg-build.sh', 'Makefile') }}
+      - uses: ./.github/actions/setup-apple-native
+        if: steps.svg-xcframework.outputs.cache-hit != 'true'
+      - name: Build Rust libraries (iOS + visionOS)
+        if: steps.svg-xcframework.outputs.cache-hit != 'true'
+        run: make svg
+      # same as `npm run build.canvas.svg.ios.framework.release`
+      - name: Build CanvasSVG.xcframework
+        if: steps.svg-xcframework.outputs.cache-hit != 'true'
+        working-directory: tools/scripts
+        run: sh canvas-svg-build.sh
+      - name: Pack xcframework
+        if: steps.svg-xcframework.outputs.cache-hit != 'true'
+        run: tar -czf canvas-svg-ios.tar.gz -C packages/canvas-svg/platforms/ios CanvasSVG.xcframework
+      - uses: actions/upload-artifact@v4
+        with:
+          name: canvas-svg-ios
+          path: canvas-svg-ios.tar.gz
+          if-no-files-found: error
+
+  audio-context-android:
+    name: AudioContext Android
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - name: Restore cached AAR
+        id: audio-aar
+        uses: actions/cache@v4
+        with:
+          path: packages/audio-context/platforms/android/audiocontext-release.aar
+          key: ${{ env.NATIVE_CACHE_VERSION }}-audio-context-android-${{ hashFiles('packages/audio-context/src-native/android/**', '!packages/audio-context/src-native/android/**/build/**') }}
+      - uses: actions/setup-java@v4
+        if: steps.audio-aar.outputs.cache-hit != 'true'
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+      - name: Setup Android SDK
+        if: steps.audio-aar.outputs.cache-hit != 'true'
+        uses: android-actions/setup-android@v3
+      - name: Build audiocontext AAR
+        if: steps.audio-aar.outputs.cache-hit != 'true'
+        working-directory: packages/audio-context/src-native/android
+        run: ./gradlew :audiocontext:assembleRelease
+      - name: Copy AAR into platforms/android
+        if: steps.audio-aar.outputs.cache-hit != 'true'
+        run: cp packages/audio-context/src-native/android/audiocontext/build/outputs/aar/audiocontext-release.aar packages/audio-context/platforms/android/audiocontext-release.aar
+      - uses: actions/upload-artifact@v4
+        with:
+          name: audio-context-android
+          path: packages/audio-context/platforms/android/audiocontext-release.aar
+          if-no-files-found: error
+
+  audio-context-ios:
+    name: AudioContext iOS + visionOS
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - name: Restore cached xcframework
+        id: audio-xcframework
+        uses: actions/cache@v4
+        with:
+          path: audio-context-ios.tar.gz
+          key: ${{ env.NATIVE_CACHE_VERSION }}-audio-context-ios-${{ hashFiles('packages/audio-context/src-native/ios/**', 'tools/scripts/audio-context-build.sh') }}
+      - uses: ./.github/actions/setup-apple-native
+        if: steps.audio-xcframework.outputs.cache-hit != 'true'
+        with:
+          install-rust: 'false'
+      # same as `npm run build.audiocontext.ios.framework.release`
+      - name: Build AudioContextNative.xcframework
+        if: steps.audio-xcframework.outputs.cache-hit != 'true'
+        working-directory: tools/scripts
+        run: sh audio-context-build.sh
+      - name: Pack xcframework
+        if: steps.audio-xcframework.outputs.cache-hit != 'true'
+        run: tar -czf audio-context-ios.tar.gz -C packages/audio-context/platforms/ios AudioContextNative.xcframework
+      - uses: actions/upload-artifact@v4
+        with:
+          name: audio-context-ios
+          path: audio-context-ios.tar.gz
+          if-no-files-found: error

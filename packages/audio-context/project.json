@@ -63,6 +63,15 @@
 				}
 			]
 		},
+		"build.native.ios.framework.release": {
+			"outputs": ["{workspaceRoot}/dist/packages"],
+			"options": {
+				"commands": ["sh audio-context-build.sh"],
+				"cwd": "tools/scripts",
+				"parallel": false
+			},
+			"executor": "nx:run-commands"
+		},
 		"focus": {
 			"executor": "nx:run-commands",
 			"options": {

@@ -20,7 +20,8 @@ export class ImageAsset extends Observable {
 		this._native = native || new global.CanvasModule.ImageAsset();
 		if (__ANDROID__) {
 			const ref = long(this.native.__getRef());
-			this._android = new (<any>org).nativescript.canvas.NSCImageAsset(ref);
+			// Kotlin must not release it when finalized.
+			this._android = new (<any>org).nativescript.canvas.NSCImageAsset(ref, false);
 		}
 	}
 
@@ -221,7 +222,7 @@ export class ImageAsset extends Observable {
 							onComplete(success) {
 								const owner = ref.get();
 								if (!success) {
-									const error = (<any>org).nativescript.canvas.NSCImageAsset.getError(asset);
+									const error = (<any>org).nativescript.canvas.NSCImageAsset.getError(asset) || 'Failed to load image from native source';
 									if (owner) {
 										owner.emitComplete(success, error);
 									}
@@ -247,7 +248,7 @@ export class ImageAsset extends Observable {
 				try {
 					NSCImageAsset.loadImageFromImage(asset.longLongValue, image, (done) => {
 						if (!done) {
-							const error = this.error;
+							const error = this.error || 'Failed to load image from native source';
 							this.emitComplete(done, error);
 							this._decrementStrongRefAndRemove();
 							reject(error);

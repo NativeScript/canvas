@@ -59,6 +59,17 @@ void canvas_native_ios_gl_make_current(int64_t context);
 
 bool canvas_native_ios_image_asset_load_from_bytes(int64_t asset, uint8_t *bytes, uintptr_t size);
 
+/**
+ * Loads raw (already decoded) premultiplied RGBA pixels, e.g. extracted from a
+ * UIImage via CGBitmapContext. `canvas_native_ios_image_asset_load_from_bytes`
+ * expects *encoded* (PNG/JPEG/…) data and fails on raw pixels.
+ */
+bool canvas_native_ios_image_asset_load_from_raw_bytes(int64_t asset,
+                                                       uint32_t width,
+                                                       uint32_t height,
+                                                       uint8_t *bytes,
+                                                       uintptr_t size);
+
 int64_t canvas_native_ios_context_create_pattern_raw(int64_t context,
                                                      int32_t width,
                                                      int32_t height,

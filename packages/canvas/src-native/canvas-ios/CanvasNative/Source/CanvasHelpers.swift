@@ -13,45 +13,70 @@ import Photos
 @objcMembers
 public class CanvasHelpers: NSObject {
     
-    public static func getBytesFromUIImage(_ image: UIImage) -> NSMutableData {
-        var cgImage = image.cgImage
-        
-        if(cgImage == nil && image.ciImage != nil){
+    // Raw premultiplied RGBA pixels + the pixel (not point) dimensions of a UIImage.
+    static func getRawPixelsFromUIImage(_ image: UIImage) -> (data: NSMutableData, width: Int, height: Int)? {
+        var source = image
+        // Bake the orientation in (camera photos etc.) so the pixel rows match what UIKit displays.
+        if image.imageOrientation != .up && image.size.width > 0 && image.size.height > 0 {
+            UIGraphicsBeginImageContextWithOptions(image.size, false, image.scale)
+            image.draw(in: CGRect(origin: .zero, size: image.size))
+            source = UIGraphicsGetImageFromCurrentImageContext() ?? image
+            UIGraphicsEndImageContext()
+        }
+
+        var cgImage = source.cgImage
+
+        if(cgImage == nil && source.ciImage != nil){
             let context = CIContext()
-            cgImage = context.createCGImage(image.ciImage!, from: image.ciImage!.extent)
+            cgImage = context.createCGImage(source.ciImage!, from: source.ciImage!.extent)
         }
-        
+
         guard let cgImage = cgImage else {
-            return NSMutableData(length: 0)!
+            return nil
         }
-       
+
         let width = cgImage.width
         let height = cgImage.height
-        let bytesPerRow = width * 4
-        let size = width * height * 4
-        let buffer = NSMutableData(length: size)
-        let colorSpace = CGColorSpaceCreateDeviceRGB()
-        let ctx = CGContext(data: buffer?.mutableBytes, width: width, height: height, bitsPerComponent: 8, bytesPerRow: bytesPerRow, space: colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue)
-        
-        ctx?.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
 
-        return buffer!
+        if(width <= 0 || height <= 0){
+            return nil
+        }
+
+        let bytesPerRow = width * 4
+        guard let buffer = NSMutableData(length: bytesPerRow * height) else {
+            return nil
+        }
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        // CGBitmapContext only supports premultiplied alpha for RGBA8888.
+        guard let ctx = CGContext(data: buffer.mutableBytes, width: width, height: height, bitsPerComponent: 8, bytesPerRow: bytesPerRow, space: colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue) else {
+            return nil
+        }
+
+        ctx.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
+
+        return (buffer, width, height)
     }
-    
+
+    public static func getBytesFromUIImage(_ image: UIImage) -> NSMutableData {
+        return getRawPixelsFromUIImage(image)?.data ?? NSMutableData(length: 0)!
+    }
+
 
     public static func createPattern(_ context: Int64, _ image: UIImage, _ repetition: String) -> Int64 {
-        let bytes = getBytesFromUIImage(image)
-        let width = Int32(image.size.width)
-        let height = Int32(image.size.height)
+        guard let (bytes, width, height) = getRawPixelsFromUIImage(image) else {
+            return 0
+        }
         let repetition = (repetition as NSString).utf8String
-        return canvas_native_ios_context_create_pattern_raw(context, width, height, bytes.mutableBytes, UInt(bytes.count), repetition)
+        return canvas_native_ios_context_create_pattern_raw(context, Int32(width), Int32(height), bytes.mutableBytes, UInt(bytes.count), repetition)
     }
 
     public static func loadImageAssetWithContext(_ asset: Int64, _ image: UIImage) -> Bool {
-        let bytes = getBytesFromUIImage(image)
-        return canvas_native_ios_image_asset_load_from_bytes(asset, bytes.mutableBytes, UInt(bytes.count))
+        guard let (bytes, width, height) = getRawPixelsFromUIImage(image) else {
+            return false
+        }
+        return canvas_native_ios_image_asset_load_from_raw_bytes(asset, UInt32(width), UInt32(height), bytes.mutableBytes, UInt(bytes.count))
     }
-    
+
     
     public static func loadImageAssetWithPath(_ asset: Int64, _ path: String) -> Bool {
         let ptr =  OpaquePointer.init(bitPattern: UInt(asset))
@@ -60,24 +85,24 @@ public class CanvasHelpers: NSObject {
     
     
     public static func drawImage(context: Int64, image: UIImage, dx: Float, dy: Float) -> Bool {
-        let bytes = getBytesFromUIImage(image)
-        let width = Float(image.size.width)
-        let height = Float(image.size.height)
-        return canvas_native_ios_context_draw_image_dx_dy_with_bytes(context, bytes.mutableBytes, UInt(bytes.count),width, height,dx, dy)
+        guard let (bytes, width, height) = getRawPixelsFromUIImage(image) else {
+            return false
+        }
+        return canvas_native_ios_context_draw_image_dx_dy_with_bytes(context, bytes.mutableBytes, UInt(bytes.count),Float(width), Float(height),dx, dy)
     }
-    
+
     public static func drawImage(context: Int64, image: UIImage, dx: Float, dy: Float, dw: Float, dh: Float) -> Bool {
-        let bytes = getBytesFromUIImage(image)
-        let width = Float(image.size.width)
-        let height = Float(image.size.height)
-        return canvas_native_ios_context_draw_image_dx_dy_dw_dh_with_bytes(context, bytes.mutableBytes, UInt(bytes.count),width, height,dx, dy, dw, dh)
+        guard let (bytes, width, height) = getRawPixelsFromUIImage(image) else {
+            return false
+        }
+        return canvas_native_ios_context_draw_image_dx_dy_dw_dh_with_bytes(context, bytes.mutableBytes, UInt(bytes.count),Float(width), Float(height),dx, dy, dw, dh)
     }
-    
+
     public static func drawImage(context: Int64, image: UIImage, sx: Float, sy: Float, sw: Float, sh: Float ,dx: Float, dy: Float, dw: Float, dh: Float)  -> Bool {
-        let bytes = getBytesFromUIImage(image)
-        let width = Float(image.size.width)
-        let height = Float(image.size.height)
-        return canvas_native_ios_context_draw_image_with_bytes(context, bytes.mutableBytes, UInt(bytes.count),width, height, sx,  sy, sw, sh ,dx, dy, dw, dh)
+        guard let (bytes, width, height) = getRawPixelsFromUIImage(image) else {
+            return false
+        }
+        return canvas_native_ios_context_draw_image_with_bytes(context, bytes.mutableBytes, UInt(bytes.count),Float(width), Float(height), sx,  sy, sw, sh ,dx, dy, dw, dh)
     }
     
     

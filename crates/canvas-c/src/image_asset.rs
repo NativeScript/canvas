@@ -80,6 +80,31 @@ impl ImageAsset {
             .load_from_raw_bytes(width as usize, height as usize, depth as usize, data)
     }
 
+    #[cfg(feature = "2d")]
+    pub fn load_from_raw_bytes_premultiplied(
+        &self,
+        width: u32,
+        height: u32,
+        _depth: u32,
+        data: Vec<u8>,
+    ) -> bool {
+        self.0
+            .load_from_raw_bytes_rgba_premultiplied(width, height, data)
+    }
+
+    #[cfg(not(feature = "2d"))]
+    pub fn load_from_raw_bytes_premultiplied(
+        &self,
+        width: u32,
+        height: u32,
+        depth: u32,
+        data: Vec<u8>,
+    ) -> bool {
+        // stb-backed assets carry no alpha-type tag; store the bytes as-is.
+        self.0
+            .load_from_raw_bytes(width as usize, height as usize, depth as usize, data)
+    }
+
 
     pub fn load_from_reader<R>(&self, reader: &mut R) -> bool
     where
@@ -230,6 +255,22 @@ pub extern "C" fn canvas_native_image_asset_load_from_raw(
     let array = unsafe { std::slice::from_raw_parts(array, size) };
     let asset = unsafe { &*asset };
     asset.load_from_raw_bytes(width, height, 4, array.to_vec())
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_image_asset_load_from_raw_premultiplied(
+    asset: *const ImageAsset,
+    width: u32,
+    height: u32,
+    array: *const u8,
+    size: usize,
+) -> bool {
+    if asset.is_null() || array.is_null() {
+        return false;
+    }
+    let array = unsafe { std::slice::from_raw_parts(array, size) };
+    let asset = unsafe { &*asset };
+    asset.load_from_raw_bytes_premultiplied(width, height, 4, array.to_vec())
 }
 
 #[no_mangle]

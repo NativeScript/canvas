@@ -464,7 +464,7 @@ impl ImageAsset {
             None,
         );
 
-        let has_alpha = info.is_opaque();
+        let has_alpha = !info.is_opaque();
         let inner = ImageAssetInner {
             image: Some(CanvasImage::new(&info, data)),
             #[cfg(feature = "2d")]
@@ -759,13 +759,36 @@ impl ImageAsset {
         self.load_from_raw_bytes(&info, data)
     }
 
+    /// For pixel sources that hand out premultiplied RGBA (Android `Bitmap`,
+    /// CGBitmapContext) — tagging them `Unpremul` would premultiply twice.
+    #[cfg(feature = "2d")]
+    pub fn load_from_raw_bytes_rgba_premultiplied(
+        &self,
+        width: u32,
+        height: u32,
+        data: Vec<u8>,
+    ) -> bool {
+        let info = skia_safe::ImageInfo::new(
+            (width as i32, height as i32),
+            skia_safe::ColorType::RGBA8888,
+            skia_safe::AlphaType::Premul,
+            None,
+        );
+        self.load_from_raw_bytes(&info, data)
+    }
+
     #[cfg(feature = "2d")]
     pub fn load_from_raw_bytes(&self, info: &skia_safe::ImageInfo, data: Vec<u8>) -> bool {
-        let has_alpha = !info.is_opaque();
         let mut lock = self.0.lock();
+        lock.raster_image_cache = None;
+        if info.width() <= 0 || info.height() <= 0 || data.len() < info.compute_min_byte_size() {
+            lock.image = None;
+            lock.error = Cow::Borrowed("Invalid image data size");
+            return false;
+        }
+        let has_alpha = !info.is_opaque();
         lock.error = Cow::default();
         lock.image = Some(CanvasImage::new(info, data));
-        lock.raster_image_cache = None;
         lock.has_alpha = has_alpha;
         true
     }

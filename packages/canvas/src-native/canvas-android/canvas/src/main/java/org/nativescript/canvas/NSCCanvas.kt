@@ -133,6 +133,12 @@ class NSCCanvas : FrameLayout {
 	lateinit var surfaceView: GLViewSV
 	lateinit var cpuView: CPUView
 
+	var surfaceZOrderOnTop: Boolean = false
+		set(value) {
+			field = value
+			surfaceView.setZOrderOnTop(value)
+		}
+
 	private var isAlpha = false
 
 	constructor(context: Context) : super(context, null) {
@@ -481,11 +487,6 @@ class NSCCanvas : FrameLayout {
 		}
 
 		val surface = if (surfaceType == SurfaceType.Surface) {
-			if (alpha) {
-				surfaceView.setZOrderOnTop(true)
-			} else {
-				surfaceView.setZOrderOnTop(false)
-			}
 			if (!surfaceView.isCreated) {
 				null
 			} else {
@@ -832,11 +833,7 @@ class NSCCanvas : FrameLayout {
 	internal fun resize() {
 		scaleSurface()
 		if (nativeContext != 0L) {
-			// Re-bind EGL context if surface was previously destroyed (e.g. SurfaceView on resume)
-			if (isSurfaceDestroyed && engine == Engine.GL) {
-				makeContextCurrent()
-				isSurfaceDestroyed = false
-			}
+			isSurfaceDestroyed = false
 			when (engine) {
 				Engine.GL -> {
 					surface?.let {

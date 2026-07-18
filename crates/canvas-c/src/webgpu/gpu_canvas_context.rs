@@ -64,8 +64,30 @@ impl Drop for CanvasGPUCanvasContext {
         if !std::thread::panicking() {
             let global = self.instance.global();
             let surface = self.surface.lock();
+            discard_current_texture(self, *surface, "CanvasGPUCanvasContext::drop");
             global.surface_drop(*surface);
         }
+    }
+}
+
+fn discard_current_texture(
+    context: &CanvasGPUCanvasContext,
+    surface_id: wgpu_core::id::SurfaceId,
+    operation: &'static str,
+) {
+    let had_current = context.current_texture.lock().take().is_some();
+    if had_current
+        && !context
+            .has_surface_presented
+            .load(std::sync::atomic::Ordering::SeqCst)
+    {
+        let global = context.instance.global();
+        if let Err(cause) = global.surface_texture_discard(surface_id) {
+            log::warn!("{operation}: surface_texture_discard failed: {cause:?}");
+        }
+        context
+            .has_surface_presented
+            .store(true, std::sync::atomic::Ordering::SeqCst);
     }
 }
 
@@ -476,8 +498,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize(
 
     let context = &*context;
 
-    let mut surface_data_lock = context.data.lock();
-
     let global = context.instance.global();
 
     let display_handle = RawDisplayHandle::Android(raw_window_handle::AndroidDisplayHandle::new());
@@ -490,6 +510,10 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize(
     let window_handle = RawWindowHandle::AndroidNdk(handle);
 
     let mut surface = context.surface.lock();
+
+    discard_current_texture(context, *surface, "canvas_native_webgpu_context_resize");
+
+    let mut surface_data_lock = context.data.lock();
 
     global.surface_drop(*surface);
 
@@ -677,6 +701,12 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize_uiview(
 
     let global = context.instance.global();
 
+    discard_current_texture(
+        context,
+        *surface,
+        "canvas_native_webgpu_context_resize_uiview",
+    );
+
     global.surface_drop(*surface);
 
     let mut surface_data_lock = context.data.lock();
@@ -833,8 +863,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize_nsview(
     }
     let context = &*context;
 
-    let mut surface_data_lock = context.data.lock();
-
     let global = context.instance.global();
 
     let display_handle = RawDisplayHandle::AppKit(AppKitDisplayHandle::new());
@@ -843,6 +871,14 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize_nsview(
     let window_handle = RawWindowHandle::AppKit(handle);
 
     let mut surface = context.surface.lock();
+
+    discard_current_texture(
+        context,
+        *surface,
+        "canvas_native_webgpu_context_resize_nsview",
+    );
+
+    let mut surface_data_lock = context.data.lock();
 
     global.surface_drop(*surface);
 
@@ -950,11 +986,17 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize_layer(
     }
     let context = &*context;
 
-    let mut surface_data_lock = context.data.lock();
-
     let global = context.instance.global();
 
     let mut surface = context.surface.lock();
+
+    discard_current_texture(
+        context,
+        *surface,
+        "canvas_native_webgpu_context_resize_layer",
+    );
+
+    let mut surface_data_lock = context.data.lock();
 
     global.surface_drop(*surface);
 

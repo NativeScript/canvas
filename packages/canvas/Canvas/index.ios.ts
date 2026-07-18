@@ -54,6 +54,7 @@ export class Canvas extends CanvasBase {
 	_didLayout = false;
 
 	static useSurface = false;
+	surfaceOnTop = false;
 	_renderer;
 
 	constructor(nativeInstance?) {

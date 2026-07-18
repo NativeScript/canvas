@@ -18,11 +18,11 @@
 		</data>
 		<key>Headers/canvas_ios.h</key>
 		<data>
-		D90A5d7/C9+c+8lBqPPydDNnhwg=
+		uZPa47NtAbPvcJH3E82VYMpmEt4=
 		</data>
 		<key>Headers/canvas_native.h</key>
 		<data>
-		MzU0N+ID79evqz8wRW/Wzc/4Hds=
+		TK8Gj9uaX2GTidH121FBcEshtBw=
 		</data>
 		<key>Info.plist</key>
 		<data>
@@ -30,7 +30,7 @@
 		</data>
 		<key>Modules/CanvasNative.swiftmodule/Project/arm64-apple-xros-simulator.swiftsourceinfo</key>
 		<data>
-		vJ7tew8V6TlWsN/V2SAxcBDrV1o=
+		KANCX0Lw8Lj8A+FKLkgQJNQWsSs=
 		</data>
 		<key>Modules/CanvasNative.swiftmodule/arm64-apple-xros-simulator.abi.json</key>
 		<data>
@@ -50,7 +50,7 @@
 		</data>
 		<key>Modules/CanvasNative.swiftmodule/arm64-apple-xros-simulator.swiftmodule</key>
 		<data>
-		ir38MlG405X+ZHwea2CJjVlb4QA=
+		FHea5uYBuqNQy2daBu6ZVCVlJGg=
 		</data>
 		<key>Modules/module.modulemap</key>
 		<data>
@@ -124,21 +124,21 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			P6uaSXvvXwJ0QdRYaLFypab9AkISeX99nfIFxJ7A0pc=
+			shY+cv27jzx85/9YP2sIDFvL7NsmUpFsq6u2xtsefpE=
 			</data>
 		</dict>
 		<key>Headers/canvas_native.h</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			b4HeiTD1j5+wSznLx8t09+TKupQscbobPLujk2GfOuI=
+			/NeidkxYkBW3K8RNB7d2KpM2dhIKg87yQa2okHLt9G0=
 			</data>
 		</dict>
 		<key>Modules/CanvasNative.swiftmodule/Project/arm64-apple-xros-simulator.swiftsourceinfo</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			YKngU8qHA+jSEZS0dhPwJMxjy34+6KM69jHwvPq/z1s=
+			K/gClSjo3jE9EoIdidlkyfj1m0UjKMqx/0ZRSofqWcA=
 			</data>
 		</dict>
 		<key>Modules/CanvasNative.swiftmodule/arm64-apple-xros-simulator.abi.json</key>
@@ -173,7 +173,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			mZsT/o4AQEbIYhEJ05WBAODubZGgy6f7XxE08687ELg=
+			jromtlqNFLkB+mv09UOAsnBJ3PNL85SMbZGmWToiCcA=
 			</data>
 		</dict>
 		<key>Modules/module.modulemap</key>

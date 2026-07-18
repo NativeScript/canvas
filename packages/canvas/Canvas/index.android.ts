@@ -124,6 +124,14 @@ export class Canvas extends CanvasBase {
 		}
 	}
 
+	get surfaceOnTop(): boolean {
+		return this._canvas?.getSurfaceZOrderOnTop() ?? false;
+	}
+
+	set surfaceOnTop(value: boolean) {
+		this._canvas?.setSurfaceZOrderOnTop(value);
+	}
+
 	static get forceGL() {
 		return org.nativescript.canvas.NSCCanvas.getForceGL();
 	}

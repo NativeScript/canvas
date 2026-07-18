@@ -236,6 +236,33 @@ pub extern "C" fn canvas_native_ios_image_asset_load_from_bytes(
     asset.load_from_bytes(bytes)
 }
 
+/// Loads raw (already decoded) premultiplied RGBA pixels, e.g. extracted from a
+/// UIImage via CGBitmapContext. `canvas_native_ios_image_asset_load_from_bytes`
+/// expects *encoded* (PNG/JPEG/…) data and fails on raw pixels.
+#[no_mangle]
+pub extern "C" fn canvas_native_ios_image_asset_load_from_raw_bytes(
+    asset: i64,
+    width: u32,
+    height: u32,
+    bytes: *mut u8,
+    size: usize,
+) -> bool {
+    if asset == 0 {
+        return false;
+    }
+
+    let asset = asset as *const ImageAsset;
+    let asset = unsafe { &*asset };
+
+    if bytes.is_null() || size == 0 {
+        asset.set_error("Invalid image data size");
+        return false;
+    }
+
+    let bytes = unsafe { std::slice::from_raw_parts(bytes as _, size) };
+    asset.load_from_raw_bytes_premultiplied(width, height, 4, bytes.to_vec())
+}
+
 #[no_mangle]
 pub extern "C" fn canvas_native_ios_context_create_pattern_raw(
     context: i64,

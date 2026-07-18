@@ -14,7 +14,7 @@ import java.util.concurrent.Executors
 /**
  * Created by triniwiz on 5/4/20
  */
-class NSCImageAsset(asset: Long) {
+class NSCImageAsset @JvmOverloads constructor(asset: Long, private val owned: Boolean = true) {
 	var asset: Long = asset
 		private set
 
@@ -25,7 +25,11 @@ class NSCImageAsset(asset: Long) {
 	@Synchronized
 	@Throws(Throwable::class)
 	protected fun finalize() {
-		destroyImageAsset(asset)
+		// Only release assets created via createImageAsset(); wrappers around a
+		// borrowed ref (e.g. from the JS ImageAsset) don't own a strong count.
+		if (owned) {
+			destroyImageAsset(asset)
+		}
 		asset = 0
 	}
 
@@ -45,17 +49,48 @@ class NSCImageAsset(asset: Long) {
 			return nativeDestroyImageAsset(asset)
 		}
 
+		/**
+		 * Returns a bitmap whose pixels can be locked natively (software ARGB_8888).
+		 * Converts HARDWARE/F16/565/etc. configs; returns null if conversion fails.
+		 */
+		@JvmStatic
+		fun toSoftwareBitmap(bitmap: Bitmap?): Bitmap? {
+			if (bitmap == null) {
+				return null
+			}
+			if (bitmap.config == Bitmap.Config.ARGB_8888) {
+				return bitmap
+			}
+			val copy = try {
+				bitmap.copy(Bitmap.Config.ARGB_8888, false)
+			} catch (_: Throwable) {
+				null
+			}
+			if (copy != null) {
+				return copy
+			}
+			return try {
+				val bm = Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)
+				Canvas(bm).drawBitmap(bitmap, 0F, 0F, null)
+				bm
+			} catch (_: Throwable) {
+				null
+			}
+		}
+
+		private fun loadBitmap(asset: Long, bitmap: Bitmap?): Boolean {
+			if (bitmap == null) {
+				return false
+			}
+			// If conversion fails, let the native side try (and set a descriptive error).
+			val bm = toSoftwareBitmap(bitmap) ?: bitmap
+			return nativeLoadFromBitmap(asset, bm)
+		}
+
 		@JvmStatic
 		fun loadImageFromResource(resources: Resources, asset: Long, image: Int): Boolean {
 			val bitmap = BitmapFactory.decodeResource(resources, image) ?: return false
-			if (bitmap.config != Bitmap.Config.ARGB_8888) {
-				val bm = Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)
-
-				val canvas = Canvas(bm)
-				canvas.drawBitmap(bitmap, 0F, 0F, null)
-				return nativeLoadFromBitmap(asset, bitmap)
-			}
-			return nativeLoadFromBitmap(asset, bitmap)
+			return loadBitmap(asset, bitmap)
 		}
 
 
@@ -88,14 +123,7 @@ class NSCImageAsset(asset: Long) {
 
 		@JvmStatic
 		fun loadImageFromBitmap(asset: Long, bitmap: Bitmap): Boolean {
-			if (bitmap.config != Bitmap.Config.ARGB_8888) {
-				val bm = Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)
-
-				val canvas = Canvas(bm)
-				canvas.drawBitmap(bitmap, 0F, 0F, null)
-				return nativeLoadFromBitmap(asset, bitmap)
-			}
-			return nativeLoadFromBitmap(asset, bitmap)
+			return loadBitmap(asset, bitmap)
 		}
 
 		@JvmStatic
@@ -111,7 +139,7 @@ class NSCImageAsset(asset: Long) {
 		@JvmStatic
 		fun loadWebP(asset: Long, path: String): Boolean {
 			val bm = BitmapFactory.decodeFile(path)
-			return nativeLoadFromBitmap(asset, bm)
+			return loadBitmap(asset, bm)
 		}
 
 		@JvmStatic
@@ -119,7 +147,7 @@ class NSCImageAsset(asset: Long) {
 			val looper = Looper.myLooper()
 			executorService.execute {
 				val bm = BitmapFactory.decodeFile(path)
-				val done = nativeLoadFromBitmap(asset, bm)
+				val done = loadBitmap(asset, bm)
 
 				if (looper != null) {
 					val handle = Handler(looper)
@@ -136,7 +164,7 @@ class NSCImageAsset(asset: Long) {
 		fun loadImageFromBitmapAsync(asset: Long, bitmap: Bitmap, callback: Callback) {
 			val looper = Looper.myLooper()
 			executorService.execute {
-				val done = nativeLoadFromBitmap(asset, bitmap)
+				val done = loadBitmap(asset, bitmap)
 				if (looper != null) {
 					val handle = Handler(looper)
 					handle.post {
@@ -220,7 +248,7 @@ class NSCImageAsset(asset: Long) {
 		fun loadImageFromEncodedBytesAsync(asset: Long, bitmap: Bitmap, callback: Callback) {
 			val looper = Looper.myLooper()
 			executorService.execute {
-				val done = nativeLoadFromBitmap(asset, bitmap)
+				val done = loadBitmap(asset, bitmap)
 				if (looper != null) {
 					val handle = Handler(looper)
 					handle.post {
@@ -279,7 +307,7 @@ class NSCImageAsset(asset: Long) {
 		fun loadImageFromBytesAsync(asset: Long, bitmap: Bitmap, callback: Callback) {
 			val looper = Looper.myLooper()
 			executorService.execute {
-				val done = nativeLoadFromBitmap(asset, bitmap)
+				val done = loadBitmap(asset, bitmap)
 				if (looper != null) {
 					val handle = Handler(looper)
 					handle.post {

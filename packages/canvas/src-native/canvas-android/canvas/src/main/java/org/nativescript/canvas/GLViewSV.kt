@@ -32,7 +32,6 @@ class GLViewSV : SurfaceView, SurfaceHolder.Callback {
 
 	fun init() {
 		holder.setFormat(PixelFormat.RGBA_8888)
-		setZOrderOnTop(true)
 		holder.addCallback(this)
 
 	}
@@ -45,13 +44,6 @@ class GLViewSV : SurfaceView, SurfaceHolder.Callback {
 		isCreated = true
 		if (wasDestroyed) {
 			wasDestroyed = false
-			// Surface was recreated after being destroyed (e.g. app resume)
-			// Re-connect the new surface to the native context
-			canvas?.let {
-				if (it.nativeContext != 0L) {
-					it.resize()
-				}
-			}
 		} else if (!isReady) {
 			isCreatedWithZeroSized = true
 		}

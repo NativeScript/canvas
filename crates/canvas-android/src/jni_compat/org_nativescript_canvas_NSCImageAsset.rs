@@ -21,6 +21,21 @@ pub extern "system" fn nativeDestroyImageAsset(_env: JNIEnv, _: JClass, asset: j
     canvas_native_image_asset_release(asset);
 }
 
+/// Drops per-row padding: Android bitmaps may have `stride > width * bpp`
+/// (e.g. reused/inBitmap allocations), while the asset expects tightly packed rows.
+fn repack_rows(data: Vec<u8>, width: usize, height: usize, bpp: usize, stride: usize) -> Vec<u8> {
+    let row_bytes = width * bpp;
+    if stride == row_bytes {
+        return data;
+    }
+    let mut packed = Vec::with_capacity(row_bytes * height);
+    for row in 0..height {
+        let start = row * stride;
+        packed.extend_from_slice(&data[start..start + row_bytes]);
+    }
+    packed
+}
+
 #[no_mangle]
 pub extern "system" fn nativeLoadFromBitmap(
     env: JNIEnv,
@@ -37,27 +52,58 @@ pub extern "system" fn nativeLoadFromBitmap(
 
     let bytes = crate::utils::image::get_bytes_from_bitmap(&env, bitmap);
 
-    if let Some((image_data, info)) = bytes {
-        if match info.format() {
-            BitmapFormat::NONE => false,
-            BitmapFormat::RGBA_8888 => {
-                asset.load_from_raw_bytes(info.width(), info.height(), 4, image_data)
+    match bytes {
+        Some((image_data, info)) => {
+            let (width, height) = (info.width() as usize, info.height() as usize);
+            let stride = info.stride() as usize;
+            if match info.format() {
+                BitmapFormat::NONE => {
+                    asset.set_error("Unsupported bitmap configuration: NONE");
+                    false
+                }
+                BitmapFormat::RGBA_8888 => {
+                    let image_data = repack_rows(image_data, width, height, 4, stride);
+                    // Android ARGB_8888 pixels are premultiplied by default.
+                    asset.load_from_raw_bytes_premultiplied(
+                        info.width(),
+                        info.height(),
+                        4,
+                        image_data,
+                    )
+                }
+                BitmapFormat::RGB_565 => {
+                    let image_data = repack_rows(image_data, width, height, 2, stride);
+                    let image = canvas_core::image_asset::ImageAsset::rgb565_to_rgba8888(
+                        image_data.as_slice(),
+                    );
+                    asset.load_from_raw_bytes(info.width(), info.height(), 4, image)
+                }
+                #[allow(deprecated)]
+                BitmapFormat::RGBA_4444 => {
+                    asset.set_error("Unsupported bitmap configuration: RGBA_4444");
+                    false
+                }
+                BitmapFormat::A_8 => {
+                    asset.set_error("Unsupported bitmap configuration: ALPHA_8");
+                    false
+                }
+                BitmapFormat::RGBA_F16 => {
+                    asset.set_error("Unsupported bitmap configuration: RGBA_F16");
+                    false
+                }
+            } {
+                return JNI_TRUE;
             }
-            BitmapFormat::RGB_565 => {
-                let image =
-                    canvas_core::image_asset::ImageAsset::rgb565_to_rgba8888(image_data.as_slice());
-                asset.load_from_raw_bytes(info.width(), info.height(), 4, image)
-            }
-            #[allow(deprecated)]
-            BitmapFormat::RGBA_4444 => false,
-            BitmapFormat::A_8 => false,
-            BitmapFormat::RGBA_F16 => false,
-        } {
-            return JNI_TRUE;
+            JNI_FALSE
+        }
+        None => {
+            // Typically a Bitmap.Config.HARDWARE bitmap — its pixels can't be locked.
+            asset.set_error(
+                "Failed to read bitmap pixels (hardware bitmaps are not supported; convert with bitmap.copy(Bitmap.Config.ARGB_8888, false))",
+            );
+            JNI_FALSE
         }
     }
-
-    JNI_FALSE
 }
 
 #[no_mangle]

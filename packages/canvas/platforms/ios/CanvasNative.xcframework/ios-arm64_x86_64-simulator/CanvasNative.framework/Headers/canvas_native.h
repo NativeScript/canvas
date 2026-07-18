@@ -3988,6 +3988,12 @@ bool canvas_native_image_asset_load_from_raw(const struct ImageAsset *asset,
                                              const uint8_t *array,
                                              uintptr_t size);
 
+bool canvas_native_image_asset_load_from_raw_premultiplied(const struct ImageAsset *asset,
+                                                           uint32_t width,
+                                                           uint32_t height,
+                                                           const uint8_t *array,
+                                                           uintptr_t size);
+
 bool canvas_native_image_asset_load_from_raw_encoded(const struct ImageAsset *asset,
                                                      const uint8_t *array,
                                                      uintptr_t size);

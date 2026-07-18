@@ -3298,7 +3298,6 @@ void GPUDeviceImpl::CreateRenderPipelineAsync(const v8::FunctionCallbackInfo<v8:
     }
 
     if (stencil != nullptr) {
-        delete descriptor.depth_stencil;
         data->depth_stencil = stencil;
     }
 

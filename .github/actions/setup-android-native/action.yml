@@ -34,7 +34,7 @@ runs:
       shell: bash
       run: |
         set -e
-        yes | sdkmanager "ndk;${{ inputs.ndk-version }}" > /dev/null
+        (yes || true) | sdkmanager "ndk;${{ inputs.ndk-version }}" > /dev/null
         NDK="$ANDROID_HOME/ndk/${{ inputs.ndk-version }}"
         TOOLCHAIN="$NDK/toolchains/llvm/prebuilt/linux-x86_64"
         API=${{ inputs.api-level }}

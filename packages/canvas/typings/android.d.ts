@@ -308,6 +308,8 @@ declare module org {
 				public initWebGPUContext(it: number): void;
 				public static nativeCreate2DContext(param0: number, param1: number, param2: globalAndroid.view.Surface, param3: boolean, param4: number, param5: number, param6: number, param7: number): number;
 				public setFit(value: org.nativescript.canvas.CanvasFit): void;
+				public getSurfaceZOrderOnTop(): boolean;
+				public setSurfaceZOrderOnTop(value: boolean): void;
 				public getDrawingBufferHeight(): number;
 				public static nativeResizeWebGPU(param0: number, param1: globalAndroid.view.Surface, param2: number, param3: number): void;
 			}

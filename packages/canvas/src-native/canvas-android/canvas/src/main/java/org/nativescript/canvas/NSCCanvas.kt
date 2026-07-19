@@ -6,6 +6,8 @@ import android.graphics.Color
 import android.graphics.Matrix
 import android.opengl.EGL14
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.Surface
@@ -205,34 +207,47 @@ class NSCCanvas : FrameLayout {
 	@Synchronized
 	@Throws(Throwable::class)
 	protected fun finalize() {
-		when (engine) {
-			Engine.None -> {}
-			Engine.CPU -> {
-				if (nativeContext != 0L) {
-					nativeContext2DClearRenderFunc(nativeContext)
-					nativeRelease2DContext(nativeContext)
-					nativeContext = 0
-				}
-			}
-			Engine.GL -> {
-				if (nativeContext != 0L) {
-					if (is2D) {
-						nativeRelease2DContext(nativeContext)
-					} else {
-						nativeReleaseWebGL(nativeContext)
-					}
-					nativeContext = 0
-				}
-			}
-
-			Engine.GPU -> {
-				if (is2D && nativeContext != 0L) {
-					nativeRelease2DContext(nativeContext)
-					nativeContext = 0
-				}
-			}
+		// GL/EGL and Skia-GPU teardown is thread-affine: the native context is
+		// created and rendered on the thread that owns it (the main/UI thread that
+		// drives WebGL/canvas). This finalize() runs on the ART FinalizerDaemon
+		// thread, so releasing the context here tears down EGL/GL and non-Send (Rc)
+		// state OFF that thread — which double-frees shared handles and SIGSEGVs
+		// inside libcanvasnative (drop glue deref'ing an already-freed inner ptr).
+		// Hand the release back to the owning (main) thread instead. Capture the
+		// handle + mode into locals and zero the field now so a re-run can't
+		// double-post; the posted release frees the native memory on the right
+		// thread (a leak if the looper never drains is preferable to a crash).
+		val ctx = nativeContext
+		val texture = textureView.surfaceTexture
+		if (ctx == 0L) {
+			texture?.release()
+			return
 		}
-		textureView.surfaceTexture?.release()
+		nativeContext = 0
+		val engine = this.engine
+		val is2D = this.is2D
+		mainHandler.post {
+			when (engine) {
+				Engine.None -> {}
+				Engine.CPU -> {
+					nativeContext2DClearRenderFunc(ctx)
+					nativeRelease2DContext(ctx)
+				}
+				Engine.GL -> {
+					if (is2D) {
+						nativeRelease2DContext(ctx)
+					} else {
+						nativeReleaseWebGL(ctx)
+					}
+				}
+				Engine.GPU -> {
+					if (is2D) {
+						nativeRelease2DContext(ctx)
+					}
+				}
+			}
+			texture?.release()
+		}
 	}
 
 	fun initWebGPUContext(instance: Long) {
@@ -981,6 +996,11 @@ class NSCCanvas : FrameLayout {
 	}
 
 	companion object {
+		// Posts finalizer-driven native teardown back onto the GL-owning (main)
+		// thread — see finalize(). Never touch GL/EGL on the FinalizerDaemon thread.
+		@JvmStatic
+		val mainHandler = Handler(Looper.getMainLooper())
+
 		@JvmStatic
 		var forceGL = false
 

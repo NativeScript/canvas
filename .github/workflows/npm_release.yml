@@ -1,13 +1,10 @@
 # Publishes the @nativescript/canvas suite to npm from an existing release tag.
 #
 # Native artifacts (Android AARs + iOS/visionOS xcframeworks for canvas,
-# canvas-svg and audio-context) are rebuilt from the release tag by the
-# reusable build-native.yml workflow, then laid over the committed copies in
-# packages/*/platforms before the JS packages are built. This guarantees what
-# ships on npm matches the tagged sources (the committed artifacts remain the
-# fallback for anyone consuming the repo directly). canvas-svg and
-# audio-context artifacts are cached by source hash, so unchanged ones don't
-# rebuild.
+# canvas-svg and audio-context) are NOT rebuilt here — the release publishes the
+# native artifacts committed to packages/*/platforms as-is. Rebuild them ahead of
+# tagging (e.g. via the build-native.yml workflow or `make`) and commit the
+# result so the tag already carries the artifacts that will ship.
 #
 # iOS SwiftPM distribution: canvas and audio-context each ship the header-only
 # NativeScriptV8 SwiftPM shim (repo-root nativescript-v8/) INSIDE the npm
@@ -71,18 +68,9 @@ jobs:
           fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-  build-native:
-    name: Build Native
-    needs: [version]
-    permissions:
-      contents: read
-    uses: ./.github/workflows/build-native.yml
-    with:
-      ref: refs/tags/${{ needs.version.outputs.version }}
-
   publish:
     runs-on: ubuntu-latest
-    needs: [version, build-native]
+    needs: [version]
     environment: npm-publish # must match the npm Trusted Publisher environment
     permissions:
       contents: read
@@ -97,26 +85,6 @@ jobs:
 
       - name: Checkout release tag
         run: git checkout "refs/tags/${{ needs.version.outputs.version }}"
-
-      - name: Download native artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: native-artifacts
-
-      - name: Place native artifacts
-        run: |
-          set -e
-          cp native-artifacts/canvas-android/canvas-release.aar packages/canvas/platforms/android/
-          cp native-artifacts/canvas-svg-android/canvassvg-release.aar packages/canvas-svg/platforms/android/
-          cp native-artifacts/audio-context-android/audiocontext-release.aar packages/audio-context/platforms/android/
-          # xcframeworks are tarred to preserve file permissions; replace the
-          # committed ones so stale slices can't linger
-          rm -rf packages/canvas/platforms/ios/CanvasNative.xcframework
-          tar -xzf native-artifacts/canvas-ios/canvas-ios.tar.gz -C packages/canvas/platforms/ios
-          rm -rf packages/canvas-svg/platforms/ios/CanvasSVG.xcframework
-          tar -xzf native-artifacts/canvas-svg-ios/canvas-svg-ios.tar.gz -C packages/canvas-svg/platforms/ios
-          rm -rf packages/audio-context/platforms/ios/AudioContextNative.xcframework
-          tar -xzf native-artifacts/audio-context-ios/audio-context-ios.tar.gz -C packages/audio-context/platforms/ios
 
       - uses: actions/setup-node@v4
         with:

@@ -374,9 +374,18 @@ export class Canvas extends CanvasBase {
 						owner._readyEvent();
 					}
 				},
-				surfaceResize(width, height) {},
-				surfaceDestroyed() {},
-				surfaceCreated() {},
+				surfaceResize(width: number, height: number) {
+					const owner = ref.get();
+					owner?.notify?.({ eventName: 'surfaceResize', object: owner, width, height });
+				},
+				surfaceDestroyed() {
+					const owner = ref.get();
+					owner?.notify?.({ eventName: 'surfaceDestroyed', object: owner });
+				},
+				surfaceCreated() {
+					const owner = ref.get();
+					owner?.notify?.({ eventName: 'surfaceCreated', object: owner });
+				},
 			}),
 		);
 	}

@@ -115,7 +115,7 @@ if (!global.Storage) {
 	(<any>global).Storage = Storage;
 }
 
-if (!global.localStorage || (<any>module).hot) {
+if (!global.localStorage || (typeof module !== 'undefined' && (<any>module)?.hot)) {
 	const path = knownFolders.documents().path + '/localStorage.db';
 	file = File.fromPath(path);
 	localStorageTimeout = null;
@@ -148,7 +148,7 @@ if (!global.sessionStorage) {
 
 export default global.localStorage;
 
-if ((<any>module).hot) {
+if (typeof module !== 'undefined' && (<any>module)?.hot) {
 	(<any>module).hot.accept();
 	(<any>module).hot.dispose(() => {
 		// Flush any pending writes before dispose

@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 #![allow(non_snake_case)]
 #![allow(non_camel_case_types)]
+#![allow(clippy::too_many_arguments)]
 
 use std::cell::{Ref, RefCell, RefMut};
 use std::collections::HashMap;
@@ -9,8 +10,8 @@ use std::os::raw::c_void;
 use std::ptr::NonNull;
 use std::rc::Rc;
 
-use canvas_core::context_attributes::{ColorSpace, ContextAttributes};
 use canvas_core::context_attributes::PowerPreference;
+use canvas_core::context_attributes::{ColorSpace, ContextAttributes};
 
 pub fn get_sdk_version() -> i32 {
     18
@@ -143,19 +144,19 @@ impl WebGLState {
         //state.gl_context = GLContext::get_current();
     }
 
-    fn get_state(&self) -> Ref<WebGLStateInner> {
+    fn get_state(&'_ self) -> Ref<'_, WebGLStateInner> {
         Ref::map(self.state.borrow(), |v| v)
     }
 
-    fn get_state_mut(&self) -> RefMut<WebGLStateInner> {
+    fn get_state_mut(&'_ self) -> RefMut<'_, WebGLStateInner> {
         RefMut::map(self.state.borrow_mut(), |v| v)
     }
 
-    fn get_attributes(&self) -> Ref<ContextAttributes> {
+    fn get_attributes(&'_ self) -> Ref<'_, ContextAttributes> {
         Ref::map(self.attributes.borrow(), |v| v)
     }
 
-    fn get_attributes_mut(&self) -> RefMut<ContextAttributes> {
+    fn get_attributes_mut(&'_ self) -> RefMut<'_, ContextAttributes> {
         RefMut::map(self.attributes.borrow_mut(), |v| v)
     }
 
@@ -220,7 +221,7 @@ impl WebGLState {
                 false,
                 false,
                 version == WebGLVersion::V1,
-                ColorSpace::Srgb
+                ColorSpace::Srgb,
             ))),
             state: Rc::new(RefCell::new(WebGLStateInner {
                 version,
@@ -285,7 +286,7 @@ impl WebGLState {
                 xr_compatible,
                 is_canvas,
                 gl_legacy,
-                ColorSpace::Srgb
+                ColorSpace::Srgb,
             ))),
             state: Rc::new(RefCell::new(WebGLStateInner {
                 version,
@@ -509,20 +510,31 @@ impl WebGLState {
 
         // MAX_COMBINED_TEXTURE_IMAGE_UNITS is available in GLES2 and GLES3
         let mut max_units: i32 = 0;
-        unsafe { gl_bindings::GetIntegerv(gl_bindings::MAX_COMBINED_TEXTURE_IMAGE_UNITS, &mut max_units) }
+        unsafe {
+            gl_bindings::GetIntegerv(
+                gl_bindings::MAX_COMBINED_TEXTURE_IMAGE_UNITS,
+                &mut max_units,
+            )
+        }
         self.state.borrow_mut().max_combined_texture_image_units = max_units;
 
         if self.get_version() == WebGLVersion::V2 {
             let mut max_ub: i32 = 0;
-            unsafe { gl_bindings::GetIntegerv(gl_bindings::MAX_UNIFORM_BUFFER_BINDINGS, &mut max_ub) }
+            unsafe {
+                gl_bindings::GetIntegerv(gl_bindings::MAX_UNIFORM_BUFFER_BINDINGS, &mut max_ub)
+            }
             self.state.borrow_mut().max_uniform_buffer_bindings = max_ub;
 
             let mut max_vub: i32 = 0;
-            unsafe { gl_bindings::GetIntegerv(gl_bindings::MAX_VERTEX_UNIFORM_BLOCKS, &mut max_vub) }
+            unsafe {
+                gl_bindings::GetIntegerv(gl_bindings::MAX_VERTEX_UNIFORM_BLOCKS, &mut max_vub)
+            }
             self.state.borrow_mut().max_vertex_uniform_blocks = max_vub;
 
             let mut max_fub: i32 = 0;
-            unsafe { gl_bindings::GetIntegerv(gl_bindings::MAX_FRAGMENT_UNIFORM_BLOCKS, &mut max_fub) }
+            unsafe {
+                gl_bindings::GetIntegerv(gl_bindings::MAX_FRAGMENT_UNIFORM_BLOCKS, &mut max_fub)
+            }
             self.state.borrow_mut().max_fragment_uniform_blocks = max_fub;
 
             // Quick runtime UBO smoke-test: create a small UBO, bind base, check for GL errors
@@ -530,7 +542,12 @@ impl WebGLState {
             unsafe {
                 gl_bindings::GenBuffers(1, &mut buf);
                 gl_bindings::BindBuffer(gl_bindings::UNIFORM_BUFFER, buf);
-                gl_bindings::BufferData(gl_bindings::UNIFORM_BUFFER, 16, std::ptr::null(), gl_bindings::DYNAMIC_DRAW);
+                gl_bindings::BufferData(
+                    gl_bindings::UNIFORM_BUFFER,
+                    16,
+                    std::ptr::null(),
+                    gl_bindings::DYNAMIC_DRAW,
+                );
                 gl_bindings::BindBufferBase(gl_bindings::UNIFORM_BUFFER, 0, buf);
             }
             let err = unsafe { gl_bindings::GetError() };
@@ -542,7 +559,10 @@ impl WebGLState {
             }
             self.state.borrow_mut().gpu_safe = err == gl_bindings::NO_ERROR;
             if !self.state.borrow().gpu_safe {
-                log::warn!("GPU safety probe failed (GetError = {}). Disabling GPU-only paths.", err);
+                log::warn!(
+                    "GPU safety probe failed (GetError = {}). Disabling GPU-only paths.",
+                    err
+                );
             }
         }
     }
@@ -565,7 +585,12 @@ impl WebGLState {
     /// Get cached active uniform-block count for a program. If not cached and
     /// the context is WebGL2, the value is queried from GL and cached.
     pub fn get_program_active_uniform_blocks(&self, program: u32) -> Option<i32> {
-        if let Some(v) = self.state.borrow().program_active_uniform_blocks.get(&program) {
+        if let Some(v) = self
+            .state
+            .borrow()
+            .program_active_uniform_blocks
+            .get(&program)
+        {
             return Some(*v);
         }
         if self.get_version() != WebGLVersion::V2 {
@@ -573,14 +598,26 @@ impl WebGLState {
         }
         self.context.make_current();
         let mut active_blocks: i32 = 0;
-        unsafe { gl_bindings::GetProgramiv(program, gl_bindings::ACTIVE_UNIFORM_BLOCKS, &mut active_blocks) }
-        self.state.borrow_mut().program_active_uniform_blocks.insert(program, active_blocks);
+        unsafe {
+            gl_bindings::GetProgramiv(
+                program,
+                gl_bindings::ACTIVE_UNIFORM_BLOCKS,
+                &mut active_blocks,
+            )
+        }
+        self.state
+            .borrow_mut()
+            .program_active_uniform_blocks
+            .insert(program, active_blocks);
         Some(active_blocks)
     }
 
     /// Set the cached active uniform-block count for a program (used after linking)
     pub fn set_program_active_uniform_blocks(&mut self, program: u32, count: i32) {
-        self.state.borrow_mut().program_active_uniform_blocks.insert(program, count);
+        self.state
+            .borrow_mut()
+            .program_active_uniform_blocks
+            .insert(program, count);
     }
 
     /// Remove the current context if it's the stored context. Returns true if it was removed.
@@ -588,7 +625,6 @@ impl WebGLState {
         // Delegate to the GLContext's portable helper which returns a bool consistently
         self.context.remove_if_current()
     }
-
 }
 
 #[derive(Clone)]

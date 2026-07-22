@@ -196,8 +196,7 @@ pub extern "C" fn canvas_native_ios_release_webgl(context: i64) {
     if context == 0 {
         return;
     }
-    let context = context as *mut WebGLState;
-    let _ = unsafe { Box::from_raw(context) };
+    canvas_c::canvas_native_webgl_state_destroy(context as *mut WebGLState);
 }
 
 #[no_mangle]

@@ -10,9 +10,11 @@ use canvas_2d::utils::image::from_image_slice;
 use canvas_core::context_attributes::{ColorSpace, PowerPreference};
 use canvas_core::gpu::gl::GLContext;
 use canvas_webgl::prelude::WebGLVersion;
+use std::collections::HashSet;
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_void};
 use std::ptr::NonNull;
+use std::sync::{Mutex, OnceLock};
 
 /* GL */
 
@@ -275,12 +277,41 @@ impl WebGLState {
     }
 }
 
-#[no_mangle]
-pub extern "C" fn canvas_native_webgl_state_destroy(state: *mut WebGLState) {
-    if state.is_null() {
+// keeps track of all live WebGLState handles so we can avoid double-freeing them
+// todo : this is a bit of a hack, but it works for now. We should probably use a more robust solution in the future.
+fn webgl_state_live() -> &'static Mutex<HashSet<usize>> {
+    static LIVE: OnceLock<Mutex<HashSet<usize>>> = OnceLock::new();
+    LIVE.get_or_init(|| Mutex::new(HashSet::new()))
+}
+
+#[inline]
+fn webgl_state_register(ptr: *mut WebGLState) -> *mut WebGLState {
+    if !ptr.is_null() {
+        webgl_state_live()
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .insert(ptr as usize);
+    }
+    ptr
+}
+
+
+fn webgl_state_free(ptr: *mut WebGLState) {
+    if ptr.is_null() {
         return;
     }
-    let _ = unsafe { Box::from_raw(state) };
+    let present = webgl_state_live()
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .remove(&(ptr as usize));
+    if present {
+        let _ = unsafe { Box::from_raw(ptr) };
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_state_destroy(state: *mut WebGLState) {
+    webgl_state_free(state);
 }
 
 impl WebGLState {
@@ -1671,7 +1702,7 @@ pub extern "C" fn canvas_native_webgl_create(
                 false,
             ) {
                 None => std::ptr::null_mut(),
-                Some(state) => Box::into_raw(Box::new(state)),
+                Some(state) => webgl_state_register(Box::into_raw(Box::new(state))),
             }
         }
         _ => std::ptr::null_mut(),
@@ -1715,7 +1746,7 @@ pub extern "C" fn canvas_native_webgl_create(
                 false,
             ) {
                 None => std::ptr::null_mut(),
-                Some(state) => Box::into_raw(Box::new(state)),
+                Some(state) => webgl_state_register(Box::into_raw(Box::new(state))),
             }
         }
         _ => std::ptr::null_mut(),
@@ -1761,7 +1792,7 @@ pub extern "C" fn canvas_native_webgl_create_no_window(
                 is_canvas,
             ) {
                 None => std::ptr::null_mut(),
-                Some(state) => Box::into_raw(Box::new(state)),
+                Some(state) => webgl_state_register(Box::into_raw(Box::new(state))),
             }
         }
         _ => std::ptr::null_mut(),

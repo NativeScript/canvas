@@ -75,6 +75,20 @@ android {
 		}
 	}
 
+	// src/main/jniLibs/<abi>/libNativeScript.so exists ONLY so CMake can link
+	// this module's native against the NativeScript runtime's symbols at build
+	// time. It must NEVER be packaged into the AAR: the consuming NS app ships
+	// its own current libNativeScript.so, and this bundled copy is stale (built
+	// against a dynamic STL). If it gets packaged, pickFirst may choose it over
+	// the app's runtime lib → UnsatisfiedLinkError (libc++_shared not found) at
+	// boot. Excluding it from packaging leaves the on-disk file untouched, so
+	// CMake linking still works.
+	packagingOptions {
+		jniLibs {
+			excludes += '**/libNativeScript.so'
+		}
+	}
+
 	compileOptions {
 		sourceCompatibility JavaVersion.VERSION_17
 		targetCompatibility JavaVersion.VERSION_17

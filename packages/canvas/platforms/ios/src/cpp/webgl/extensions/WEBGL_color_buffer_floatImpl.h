@@ -48,13 +48,13 @@ public:
         auto object = WEBGL_color_buffer_floatImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType( buffer, NativeType::WEBGL_color_buffer_float);
-        object->SetAlignedPointerInInternalField(0, buffer);
+        object->SetAlignedPointerInInternalField(0, buffer, ObjectWrapperImpl::kInternalFieldTag);
         buffer->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 
     static WEBGL_color_buffer_floatImpl *GetPointer(const v8::Local<v8::Object> &object) {
-        auto ptr = object->GetAlignedPointerFromInternalField(0);
+        auto ptr = object->GetAlignedPointerFromInternalField(0, ObjectWrapperImpl::kInternalFieldTag);
         if (ptr == nullptr) {
             return nullptr;
         }

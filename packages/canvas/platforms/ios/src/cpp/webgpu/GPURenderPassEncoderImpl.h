@@ -35,7 +35,7 @@ public:
         auto object = GPURenderPassEncoderImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType(encoder, NativeType::GPURenderPassEncoder);
-        object->SetAlignedPointerInInternalField(0, encoder);
+        object->SetAlignedPointerInInternalField(0, encoder, ObjectWrapperImpl::kInternalFieldTag);
         encoder->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }

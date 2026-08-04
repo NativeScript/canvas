@@ -51,6 +51,10 @@ jobs:
         with:
           ref: ${{ inputs.ref }}
       - uses: ./.github/actions/setup-android-native
+      - name: Fetch V8 + NativeScript runtime headers
+        run: ./tools/scripts/download-v8.sh
+      - name: Build libNativeScript.so stub for linking
+        run: ./tools/scripts/build-android-v8-stub.sh
       - name: Build Rust libraries
         run: make android
       - name: Build canvas AAR
@@ -72,6 +76,8 @@ jobs:
         with:
           ref: ${{ inputs.ref }}
       - uses: ./.github/actions/setup-apple-native
+      - name: Fetch V8 + NativeScript runtime headers
+        run: ./tools/scripts/download-v8.sh
       - name: Build Rust libraries (iOS)
         run: make ios
       - name: Build Rust libraries (visionOS)

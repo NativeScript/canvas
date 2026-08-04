@@ -33,7 +33,7 @@ public:
         auto object = GPUCommandEncoderImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType(encoder, NativeType::GPUCommandEncoder);
-        object->SetAlignedPointerInInternalField(0, encoder);
+        object->SetAlignedPointerInInternalField(0, encoder, ObjectWrapperImpl::kInternalFieldTag);
         encoder->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }

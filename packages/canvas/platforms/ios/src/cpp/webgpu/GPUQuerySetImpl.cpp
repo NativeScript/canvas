@@ -25,7 +25,7 @@ void GPUQuerySetImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isol
 }
 
 GPUQuerySetImpl *GPUQuerySetImpl::GetPointer(const v8::Local<v8::Object> &object) {
-    auto ptr = object->GetAlignedPointerFromInternalField(0);
+    auto ptr = object->GetAlignedPointerFromInternalField(0, ObjectWrapperImpl::kInternalFieldTag);
     if (ptr == nullptr) {
         return nullptr;
     }
@@ -77,7 +77,7 @@ v8::Local<v8::FunctionTemplate> GPUQuerySetImpl::GetCtor(v8::Isolate *isolate) {
 void
 GPUQuerySetImpl::GetCount(v8::Local<v8::Name> name,
                           const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(info.Holder());
     if (ptr != nullptr) {
         info.GetReturnValue().Set(canvas_native_webgpu_query_set_get_count(ptr->GetQuerySet()));
         return;
@@ -90,7 +90,7 @@ GPUQuerySetImpl::GetCount(v8::Local<v8::Name> name,
 void
 GPUQuerySetImpl::GetType(v8::Local<v8::Name> name,
                          const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(info.Holder());
     auto isolate = info.GetIsolate();
     if (ptr != nullptr) {
         auto type = canvas_native_webgpu_query_set_get_type(ptr->GetQuerySet());
@@ -111,7 +111,7 @@ GPUQuerySetImpl::GetType(v8::Local<v8::Name> name,
 void
 GPUQuerySetImpl::GetLabel(v8::Local<v8::Name> name,
                           const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(info.Holder());
     auto isolate = info.GetIsolate();
     if (ptr != nullptr) {
         auto label = canvas_native_webgpu_query_set_get_label(ptr->GetQuerySet());

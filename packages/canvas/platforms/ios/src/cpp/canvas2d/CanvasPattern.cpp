@@ -24,7 +24,7 @@ v8::CFunction CanvasPattern::fast_set_transform_(
         v8::CFunction::Make(CanvasPattern::FastSetTransform));
 
 CanvasPattern *CanvasPattern::GetPointer(const v8::Local<v8::Object> &object) {
-    auto ptr = object->GetAlignedPointerFromInternalField(0);
+    auto ptr = object->GetAlignedPointerFromInternalField(0, ObjectWrapperImpl::kInternalFieldTag);
     if (ptr == nullptr) {
         return nullptr;
     }

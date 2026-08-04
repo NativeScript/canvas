@@ -31,7 +31,7 @@ public:
         auto object = GPUQueueImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType(queue, NativeType::GPUQueue);
-        object->SetAlignedPointerInInternalField(0, queue);
+        object->SetAlignedPointerInInternalField(0, queue, ObjectWrapperImpl::kInternalFieldTag);
         queue->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }

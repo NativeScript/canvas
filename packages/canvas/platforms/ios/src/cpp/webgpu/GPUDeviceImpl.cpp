@@ -43,7 +43,7 @@ void GPUDeviceImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolat
 }
 
 GPUDeviceImpl *GPUDeviceImpl::GetPointer(const v8::Local<v8::Object> &object) {
-    auto ptr = object->GetAlignedPointerFromInternalField(0);
+    auto ptr = object->GetAlignedPointerFromInternalField(0, ObjectWrapperImpl::kInternalFieldTag);
     if (ptr == nullptr) {
         return nullptr;
     }
@@ -171,7 +171,7 @@ v8::Local<v8::FunctionTemplate> GPUDeviceImpl::GetCtor(v8::Isolate *isolate) {
 void
 GPUDeviceImpl::GetLabel(v8::Local<v8::Name> name,
                         const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(info.Holder());
     if (ptr != nullptr) {
         auto label = canvas_native_webgpu_device_get_label(ptr->device_.get());
         if (label == nullptr) {
@@ -269,7 +269,7 @@ GPUDeviceImpl::SetUncapturedError(const v8::FunctionCallbackInfo<v8::Value> &arg
 void
 GPUDeviceImpl::GetFeatures(v8::Local<v8::Name> name,
                            const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(info.Holder());
     auto isolate = info.GetIsolate();
     if (ptr != nullptr) {
         auto context = isolate->GetCurrentContext();
@@ -302,7 +302,7 @@ GPUDeviceImpl::GetFeatures(v8::Local<v8::Name> name,
 void
 GPUDeviceImpl::GetLimits(v8::Local<v8::Name> name,
                          const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(info.Holder());
     if (ptr != nullptr) {
         auto limits = canvas_native_webgpu_device_get_limits(ptr->GetGPUDevice());
 
@@ -318,7 +318,7 @@ GPUDeviceImpl::GetLimits(v8::Local<v8::Name> name,
 void
 GPUDeviceImpl::GetQueue(v8::Local<v8::Name> name,
                         const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(info.Holder());
     if (ptr != nullptr) {
         auto queue = canvas_native_webgpu_device_get_queue(ptr->GetGPUDevice());
         auto ret = GPUQueueImpl::NewInstance(info.GetIsolate(),
@@ -338,7 +338,7 @@ struct LostData {
 void
 GPUDeviceImpl::GetLost(v8::Local<v8::Name> name,
                        const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(info.Holder());
     auto isolate = info.GetIsolate();
     auto resolver = v8::Promise::Resolver::New(isolate->GetCurrentContext()).ToLocalChecked();
     info.GetReturnValue().Set(resolver->GetPromise());

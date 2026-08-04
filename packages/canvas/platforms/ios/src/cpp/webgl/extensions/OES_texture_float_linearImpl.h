@@ -36,13 +36,13 @@ public:
         auto object = OES_texture_float_linearImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType( texture, NativeType::OES_texture_float_linear);
-        object->SetAlignedPointerInInternalField(0, texture);
+        object->SetAlignedPointerInInternalField(0, texture, ObjectWrapperImpl::kInternalFieldTag);
         texture->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 
     static OES_texture_float_linearImpl *GetPointer(const v8::Local<v8::Object> &object) {
-        auto ptr = object->GetAlignedPointerFromInternalField(0);
+        auto ptr = object->GetAlignedPointerFromInternalField(0, ObjectWrapperImpl::kInternalFieldTag);
         if (ptr == nullptr) {
             return nullptr;
         }

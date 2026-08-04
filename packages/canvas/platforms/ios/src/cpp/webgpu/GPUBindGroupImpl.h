@@ -31,7 +31,7 @@ public:
         auto object = GPUBindGroupImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType(groupLayout, NativeType::GPUBindGroup);
-        object->SetAlignedPointerInInternalField(0, groupLayout);
+        object->SetAlignedPointerInInternalField(0, groupLayout, ObjectWrapperImpl::kInternalFieldTag);
         groupLayout->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }

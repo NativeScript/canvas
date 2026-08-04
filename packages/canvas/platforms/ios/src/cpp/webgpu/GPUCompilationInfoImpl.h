@@ -31,7 +31,7 @@ public:
         auto object = GPUCompilationInfoImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType(info, NativeType::GPUCompilationInfo);
-        object->SetAlignedPointerInInternalField(0, info);
+        object->SetAlignedPointerInInternalField(0, info, ObjectWrapperImpl::kInternalFieldTag);
         info->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }

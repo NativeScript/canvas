@@ -37,13 +37,13 @@ public:
         auto object = WebGLSampler::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType( sampler, NativeType::WebGLSampler);
-        object->SetAlignedPointerInInternalField(0, sampler);
+        object->SetAlignedPointerInInternalField(0, sampler, ObjectWrapperImpl::kInternalFieldTag);
         sampler->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 
     static WebGLSampler *GetPointer(const v8::Local<v8::Object> &object) {
-        auto ptr = object->GetAlignedPointerFromInternalField(0);
+        auto ptr = object->GetAlignedPointerFromInternalField(0, ObjectWrapperImpl::kInternalFieldTag);
         if (ptr == nullptr) {
             return nullptr;
         }

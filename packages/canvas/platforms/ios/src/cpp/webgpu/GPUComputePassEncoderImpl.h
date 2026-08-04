@@ -33,7 +33,7 @@ public:
         auto object = GPUComputePassEncoderImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType(pass, NativeType::GPUComputePass);
-        object->SetAlignedPointerInInternalField(0, pass);
+        object->SetAlignedPointerInInternalField(0, pass, ObjectWrapperImpl::kInternalFieldTag);
         pass->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }

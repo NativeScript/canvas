@@ -33,7 +33,7 @@ void GPUCommandEncoderImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate
 }
 
 GPUCommandEncoderImpl *GPUCommandEncoderImpl::GetPointer(const v8::Local<v8::Object> &object) {
-	auto ptr = object->GetAlignedPointerFromInternalField(0);
+	auto ptr = object->GetAlignedPointerFromInternalField(0, ObjectWrapperImpl::kInternalFieldTag);
 	if (ptr == nullptr) {
 		return nullptr;
 	}
@@ -131,7 +131,7 @@ void GPUCommandEncoderImpl::Destroy(const v8::FunctionCallbackInfo<v8::Value> &a
 void
 GPUCommandEncoderImpl::GetLabel(v8::Local<v8::Name> name,
 																const v8::PropertyCallbackInfo<v8::Value> &info) {
-	auto ptr = GetPointer(info.This());
+	auto ptr = GetPointer(info.Holder());
 	if (ptr != nullptr) {
 		auto label = canvas_native_webgpu_command_encoder_get_label(ptr->encoder_.get());
 		if (label == nullptr) {

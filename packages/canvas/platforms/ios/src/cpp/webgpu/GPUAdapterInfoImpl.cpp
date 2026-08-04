@@ -25,7 +25,7 @@ void GPUAdapterInfoImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *i
 }
 
 GPUAdapterInfoImpl *GPUAdapterInfoImpl::GetPointer(const v8::Local<v8::Object> &object) {
-    auto ptr = object->GetAlignedPointerFromInternalField(0);
+    auto ptr = object->GetAlignedPointerFromInternalField(0, ObjectWrapperImpl::kInternalFieldTag);
     if (ptr == nullptr) {
         return nullptr;
     }
@@ -76,7 +76,7 @@ v8::Local<v8::FunctionTemplate> GPUAdapterInfoImpl::GetCtor(v8::Isolate *isolate
 void
 GPUAdapterInfoImpl::GetArchitecture(v8::Local<v8::Name> name,
                                     const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(info.Holder());
 
     if (ptr == nullptr) {
         info.GetReturnValue().SetEmptyString();
@@ -101,7 +101,7 @@ GPUAdapterInfoImpl::GetArchitecture(v8::Local<v8::Name> name,
 void
 GPUAdapterInfoImpl::GetDescription(v8::Local<v8::Name> name,
                                    const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(info.Holder());
 
     if (ptr == nullptr) {
         info.GetReturnValue().SetEmptyString();
@@ -126,7 +126,7 @@ GPUAdapterInfoImpl::GetDescription(v8::Local<v8::Name> name,
 void
 GPUAdapterInfoImpl::GetDevice(v8::Local<v8::Name> name,
                               const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(info.Holder());
 
     if (ptr == nullptr) {
         info.GetReturnValue().SetEmptyString();
@@ -151,7 +151,7 @@ GPUAdapterInfoImpl::GetDevice(v8::Local<v8::Name> name,
 void
 GPUAdapterInfoImpl::GetVendor(v8::Local<v8::Name> name,
                               const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(info.Holder());
 
     if (ptr == nullptr) {
         info.GetReturnValue().SetEmptyString();

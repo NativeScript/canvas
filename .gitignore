@@ -54,3 +54,25 @@ rust-skia
 .build
 .nx/cache
 .nx/workspace-data
+
+# V8 + NativeScript runtime headers - fetched by tools/scripts/download-v8.sh
+# (pinned by /V8_RELEASE and /NATIVESCRIPT_IOS_RUNTIME_REF), not committed.
+# Non-V8 sibling files that live alongside them are kept tracked via the
+# negations below.
+/.v8-prebuilt/
+/nativescript-v8/Headers/include/*
+!/nativescript-v8/Headers/include/libffi.h
+!/nativescript-v8/Headers/include/libffi/
+/nativescript-v8/Headers/runtime/*
+/packages/canvas/src-native/canvas-android/canvas/src/main/cpp/include/*
+!/packages/canvas/src-native/canvas-android/canvas/src/main/cpp/include/canvas_native.h
+!/packages/canvas/src-native/canvas-android/canvas/src/main/cpp/include/canvas_android.h
+!/packages/canvas/src-native/canvas-android/canvas/src/main/cpp/include/command_log.txt
+!/packages/canvas/src-native/canvas-android/canvas/src/main/cpp/include/robin_hood.h
+!/packages/canvas/src-native/canvas-android/canvas/src/main/cpp/include/zip.h
+!/packages/canvas/src-native/canvas-android/canvas/src/main/cpp/include/zipconf.h
+
+# Build-time-only libNativeScript.so stub, built from the pinned V8 release by
+# tools/scripts/build-android-v8-stub.sh (see /V8_RELEASE) -- not committed,
+# regenerated on demand. Real apps supply their own copy at runtime.
+/packages/canvas/src-native/canvas-android/canvas/src/main/jniLibs/*/libNativeScript.so

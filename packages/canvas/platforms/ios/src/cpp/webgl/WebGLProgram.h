@@ -40,13 +40,13 @@ public:
         auto object = WebGLProgram::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType( program, NativeType::WebGLProgram);
-        object->SetAlignedPointerInInternalField(0, program);
+        object->SetAlignedPointerInInternalField(0, program, ObjectWrapperImpl::kInternalFieldTag);
         program->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 
     static WebGLProgram *GetPointer(const v8::Local<v8::Object> &object) {
-        auto ptr = object->GetAlignedPointerFromInternalField(0);
+        auto ptr = object->GetAlignedPointerFromInternalField(0, ObjectWrapperImpl::kInternalFieldTag);
         if (ptr == nullptr) {
             return nullptr;
         }

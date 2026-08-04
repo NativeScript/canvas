@@ -44,13 +44,13 @@ public:
         auto object = WEBGL_compressed_texture_etc1Impl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType( compressedTextureEtc1, NativeType::WEBGL_compressed_texture_etc1);
-        object->SetAlignedPointerInInternalField(0, compressedTextureEtc1);
+        object->SetAlignedPointerInInternalField(0, compressedTextureEtc1, ObjectWrapperImpl::kInternalFieldTag);
         compressedTextureEtc1->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 
     static WEBGL_compressed_texture_etc1Impl *GetPointer(const v8::Local<v8::Object> &object) {
-        auto ptr = object->GetAlignedPointerFromInternalField(0);
+        auto ptr = object->GetAlignedPointerFromInternalField(0, ObjectWrapperImpl::kInternalFieldTag);
         if (ptr == nullptr) {
             return nullptr;
         }

@@ -31,13 +31,13 @@ public:
         auto object = ImageBitmapImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
 
-        auto ptr = asset->Value();
+        auto ptr = asset->Value(v8::kExternalPointerTypeTagDefault);
         auto impl = static_cast<ObjectWrapperImpl *>(ptr);
 
         SetNativeType(impl, NativeType::ImageBitmap);
 
 
-        object->SetAlignedPointerInInternalField(0, ptr);
+        object->SetAlignedPointerInInternalField(0, ptr, ObjectWrapperImpl::kInternalFieldTag);
 
         impl->BindFinalizer(isolate, object);
 
@@ -54,15 +54,15 @@ public:
 
     static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);
 
-    static void GetWidth(v8::Local<v8::String> name,
+    static void GetWidth(v8::Local<v8::Name> name,
                          const v8::PropertyCallbackInfo<v8::Value> &info);
 
-    static void GetHeight(v8::Local<v8::String> name,
+    static void GetHeight(v8::Local<v8::Name> name,
                           const v8::PropertyCallbackInfo<v8::Value> &info);
 
     static void GetReference(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-    static void GetAddr(v8::Local<v8::String> name,
+    static void GetAddr(v8::Local<v8::Name> name,
                         const v8::PropertyCallbackInfo<v8::Value> &info);
 
     static void Close(const v8::FunctionCallbackInfo<v8::Value> &args);

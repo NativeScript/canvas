@@ -44,13 +44,13 @@ public:
         auto object = WEBGL_depth_textureImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType( depthTexture, NativeType::WEBGL_depth_texture);
-        object->SetAlignedPointerInInternalField(0, depthTexture);
+        object->SetAlignedPointerInInternalField(0, depthTexture, ObjectWrapperImpl::kInternalFieldTag);
         depthTexture->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 
     static WEBGL_depth_textureImpl *GetPointer(const v8::Local<v8::Object> &object) {
-        auto ptr = object->GetAlignedPointerFromInternalField(0);
+        auto ptr = object->GetAlignedPointerFromInternalField(0, ObjectWrapperImpl::kInternalFieldTag);
         if (ptr == nullptr) {
             return nullptr;
         }

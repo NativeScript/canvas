@@ -36,13 +36,13 @@ public:
         auto object = WebGLQuery::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType( query, NativeType::WebGLQuery);
-        object->SetAlignedPointerInInternalField(0, query);
+        object->SetAlignedPointerInInternalField(0, query, ObjectWrapperImpl::kInternalFieldTag);
         query->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 
     static WebGLQuery *GetPointer(const v8::Local<v8::Object> &object) {
-        auto ptr = object->GetAlignedPointerFromInternalField(0);
+        auto ptr = object->GetAlignedPointerFromInternalField(0, ObjectWrapperImpl::kInternalFieldTag);
         if (ptr == nullptr) {
             return nullptr;
         }

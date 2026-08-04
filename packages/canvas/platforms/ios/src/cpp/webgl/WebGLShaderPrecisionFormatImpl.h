@@ -52,13 +52,13 @@ public:
         auto object = WebGLShaderPrecisionFormatImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType(shaderPrecisionFormat, NativeType::WebGLShaderPrecisionFormat);
-        object->SetAlignedPointerInInternalField(0, shaderPrecisionFormat);
+        object->SetAlignedPointerInInternalField(0, shaderPrecisionFormat, ObjectWrapperImpl::kInternalFieldTag);
         shaderPrecisionFormat->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 
     static WebGLShaderPrecisionFormatImpl *GetPointer(const v8::Local<v8::Object> &object) {
-        auto ptr = object->GetAlignedPointerFromInternalField(0);
+        auto ptr = object->GetAlignedPointerFromInternalField(0, ObjectWrapperImpl::kInternalFieldTag);
         if (ptr == nullptr) {
             return nullptr;
         }

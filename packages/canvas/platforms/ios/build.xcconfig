@@ -3,19 +3,30 @@ OTHER_LDFLAGS[sdk=xros*] = $(inherited) -framework Foundation -framework CanvasN
 OTHER_LDFLAGS[sdk=xrsimulator*] = $(inherited) -framework Foundation -framework CanvasNative -framework Metal
 OTHER_LDFLAGS[sdk=macosx*] = $(inherited) -framework Foundation -framework CanvasNative -framework Metal
 
-CLANG_CXX_LANGUAGE_STANDARD = c++17
+// V8 14.9's headers use C++20 concepts/requires-clauses (e.g. v8-internal.h),
+// so this can no longer be c++17.
+CLANG_CXX_LANGUAGE_STANDARD = c++20
 
 GLES_SILENCE_DEPRECATION = 1
 
-// The canvas C++ sources include <NativeScript/include/v8.h> from the runtime
-// framework (built by SPM into BUILT_PRODUCTS_DIR before app sources compile),
-// and the v8 headers include each other by bare name (e.g. "v8config.h"), so
-// the framework Headers/include root must be on the compiler search path.
+// The canvas C++ sources include "include/v8.h", which the NativeScriptV8 SPM
+// product (nativescript-v8/Package.swift, publicHeadersPath:"Headers") makes
+// reachable by exposing nativescript-v8/Headers itself as a search root. But
+// the vendored V8 headers reference each other by bare name from within that
+// tree (e.g. v8.h -> cppgc/common.h -> "v8config.h", Chromium-style, expecting
+// the include/ dir itself on the search path) -- SPM only exposes the Headers
+// parent, not the nested include/ dir, so those bare includes fall through to
+// whatever OTHER "-I .../include"-shaped path happens to be on the compiler's
+// search list. That used to be the NativeScript runtime framework's own
+// (still V8 10.3) Headers/include, which "won" the include-guard race against
+// the real nativescript-v8/Headers/include/v8config.h and silently fed stale
+// V8 10.3 macros into freshly-vendored V8 14.9 headers -- so pointing this at
+// the vendored tree instead is required, not optional.
 // Delivered as -I compiler flags rather than HEADER_SEARCH_PATHS because the
 // NativeScript CLI pod-xcconfig merge is key-exclusive: a plugin-level
 // HEADER_SEARCH_PATHS would silently drop the CocoaPods header paths. The
 // Podfile post_install cannot do this either — CocoaPods saves the user
 // project before post_install runs, so those edits never persist.
-CANVAS_NS_V8_HEADER_FLAGS = -I"$(BUILT_PRODUCTS_DIR)/NativeScript.framework/Headers" -I"$(BUILT_PRODUCTS_DIR)/NativeScript.framework/Headers/include"
+CANVAS_NS_V8_HEADER_FLAGS = -I"$(SRCROOT)/../../../../nativescript-v8/Headers/include"
 OTHER_CFLAGS = $(inherited) $(CANVAS_NS_V8_HEADER_FLAGS)
 OTHER_CPLUSPLUSFLAGS = $(inherited) $(CANVAS_NS_V8_HEADER_FLAGS)

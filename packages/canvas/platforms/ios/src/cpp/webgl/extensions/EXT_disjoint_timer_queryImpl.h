@@ -29,7 +29,7 @@ public:
         auto object = EXT_disjoint_timer_queryImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType( query, NativeType::EXT_disjoint_timer_query);
-        object->SetAlignedPointerInInternalField(0, query);
+        object->SetAlignedPointerInInternalField(0, query, ObjectWrapperImpl::kInternalFieldTag);
         object->Set(context, ConvertToV8String(isolate, "ext_name"),
                     ConvertToV8String(isolate, "EXT_disjoint_timer_query"));
         query->BindFinalizer(isolate, object);

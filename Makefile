@@ -5,7 +5,7 @@ ARCHS_ANDROID = i686-linux-android x86_64-linux-android aarch64-linux-android ar
 XCFRAMEWORK = CanvasNative.xcframework
 RUST_LIB = canvasnative
 
-all: GENERATE_HEADERS ios android
+all: GENERATE_HEADERS GENERATE_V8_HEADERS ios android
 
 ios: $(XCFRAMEWORK)
 
@@ -24,6 +24,14 @@ android-svg: GENERATE_ANDROID_SVG
 .PHONY: GENERATE_HEADERS
 GENERATE_HEADERS:
 	./tools/scripts/build-headers.sh
+
+.PHONY: GENERATE_V8_HEADERS
+GENERATE_V8_HEADERS:
+	./tools/scripts/download-v8.sh
+
+.PHONY: GENERATE_ANDROID_V8_STUB
+GENERATE_ANDROID_V8_STUB:
+	./tools/scripts/build-android-v8-stub.sh
 
 .PHONY: $(ARCHS_IOS)
 $(ARCHS_IOS): %:

@@ -27,7 +27,7 @@ void GPUCompilationInfoImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolat
 }
 
 GPUCompilationInfoImpl *GPUCompilationInfoImpl::GetPointer(const v8::Local<v8::Object> &object) {
-    auto ptr = object->GetAlignedPointerFromInternalField(0);
+    auto ptr = object->GetAlignedPointerFromInternalField(0, ObjectWrapperImpl::kInternalFieldTag);
     if (ptr == nullptr) {
         return nullptr;
     }
@@ -65,7 +65,7 @@ GPUCompilationInfoImpl::GetMessages(v8::Local<v8::Name> name,
                                     const v8::PropertyCallbackInfo<v8::Value> &info) {
     auto isolate = info.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(info.Holder());
     if (ptr != nullptr) {
         auto count = canvas_native_webgpu_compilation_info_get_messages_count(
                 ptr->GetCompilationInfo());

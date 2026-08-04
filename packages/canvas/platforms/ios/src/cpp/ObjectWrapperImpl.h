@@ -15,6 +15,12 @@ class ObjectWrapperImpl {
 public:
     NativeType type_ = NativeType::None;
 
+    // V8 14+ requires an explicit EmbedderDataTypeTag on internal-field pointer
+    // accessors. Canvas already discriminates wrapper types itself via `type_`
+    // above, so every wrapper class shares this one tag rather than needing a
+    // distinct V8-level tag per class.
+    static constexpr v8::EmbedderDataTypeTag kInternalFieldTag = v8::kEmbedderDataTypeTagDefault;
+
     virtual ~ObjectWrapperImpl() = default;
 
     static void Finalizer(const v8::WeakCallbackInfo<ObjectWrapperImpl> &data) {
@@ -34,7 +40,7 @@ public:
     static void SetNativeType(const v8::Local<v8::Object> &obj, NativeType type) {
         if (!obj.IsEmpty() && !obj->IsNullOrUndefined() && obj->IsObject() &&
             obj.As<v8::Object>()->InternalFieldCount() > 1) {
-            auto wrapper = obj.As<v8::Object>()->GetAlignedPointerFromInternalField(0);
+            auto wrapper = obj.As<v8::Object>()->GetAlignedPointerFromInternalField(0, ObjectWrapperImpl::kInternalFieldTag);
             if (wrapper != nullptr) {
                 ((ObjectWrapperImpl *) wrapper)->type_ = type;
             }
@@ -45,7 +51,7 @@ public:
     inline static NativeType GetNativeType(const v8::Local<v8::Value> &obj) {
         if (!obj.IsEmpty() && !obj->IsNullOrUndefined() && obj->IsObject() &&
             obj.As<v8::Object>()->InternalFieldCount() > 1) {
-            auto info = obj.As<v8::Object>()->GetAlignedPointerFromInternalField(0);
+            auto info = obj.As<v8::Object>()->GetAlignedPointerFromInternalField(0, kInternalFieldTag);
 
             if (info != nullptr) {
                 auto value = static_cast<ObjectWrapperImpl *>(info);

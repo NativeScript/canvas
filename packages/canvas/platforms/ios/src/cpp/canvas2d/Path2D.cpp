@@ -24,7 +24,7 @@ void Path2D::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate) {
 }
 
 Path2D *Path2D::GetPointer(const v8::Local<v8::Object> &object) {
-    auto ptr = object->GetAlignedPointerFromInternalField(0);
+    auto ptr = object->GetAlignedPointerFromInternalField(0, ObjectWrapperImpl::kInternalFieldTag);
     if (ptr == nullptr) {
         return nullptr;
     }
@@ -81,7 +81,7 @@ void Path2D::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
             auto path = canvas_native_path_create_with_string(d.c_str());
             auto object = new Path2D(path);
 
-            ret->SetAlignedPointerInInternalField(0, object);
+            ret->SetAlignedPointerInInternalField(0, object, ObjectWrapperImpl::kInternalFieldTag);
 
             object->BindFinalizer(isolate, ret);
 
@@ -98,7 +98,7 @@ void Path2D::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
                         path_to_copy->GetPath());
                 auto object = new Path2D(path);
 
-                ret->SetAlignedPointerInInternalField(0, object);
+                ret->SetAlignedPointerInInternalField(0, object, ObjectWrapperImpl::kInternalFieldTag);
 
                 object->BindFinalizer(isolate, ret);
 
@@ -111,7 +111,7 @@ void Path2D::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
     } else {
         auto path = new Path2D(canvas_native_path_create());
 
-        ret->SetAlignedPointerInInternalField(0, path);
+        ret->SetAlignedPointerInInternalField(0, path, ObjectWrapperImpl::kInternalFieldTag);
 
         path->BindFinalizer(isolate, ret);
 

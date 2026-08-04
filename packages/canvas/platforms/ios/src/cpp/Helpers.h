@@ -5,6 +5,7 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 #include "Common.h"
 #include "OneByteStringResource.h"
 #include "v8-fast-api-calls.h"
@@ -112,6 +113,22 @@ ConvertFromV8String(v8::Isolate *isolate, const v8::Local<v8::Value> &value) {
     return {*result};
 }
 
+// Copies a V8 fast-API one-byte string into a NUL-terminated scratch buffer.
+// `v8::FastOneByteString` (v8-fast-api-calls.h) is only ever handed to a fast
+// method when the JS argument is actually stored one-byte/Latin1-internally
+// (V8's optimizing compiler checks this before calling in); anything else
+// (two-byte strings, non-strings) falls back to the registered slow
+// v8::FunctionCallback automatically, so callers don't need to re-validate
+// the type here. `str.data` is not itself NUL-terminated, and downstream FFI
+// calls generally expect a C string, hence the copy.
+inline static const char *
+CopyFastOneByteStringToScratch(const v8::FastOneByteString &str, std::vector<char> &scratch) {
+    scratch.resize(static_cast<size_t>(str.length) + 1);
+    std::memcpy(scratch.data(), str.data, str.length);
+    scratch[str.length] = '\0';
+    return scratch.data();
+}
+
 inline static std::string_view
 ConvertFromV8StringView(v8::Isolate *isolate, const v8::Local<v8::Value> &value) {
     if (value.IsEmpty()) {
@@ -213,7 +230,7 @@ static void SetFastMethod(v8::Local<v8::Context> context,
                           v8::FunctionCallback slow_callback,
                           const v8::CFunction *c_function,
                           v8::Local<v8::Value> data = v8::Local<v8::Value>()) {
-    v8::Isolate *isolate = context->GetIsolate();
+    v8::Isolate *isolate = v8::Isolate::GetCurrent();
     v8::Local<v8::Function> function =
             v8::FunctionTemplate::New(isolate,
                                       slow_callback,
@@ -237,7 +254,7 @@ static void SetFastMethodNoSideEffect(v8::Local<v8::Context> context,
                                       v8::FunctionCallback slow_callback,
                                       const v8::CFunction *c_function,
                                       v8::Local<v8::Value> data) {
-    v8::Isolate *isolate = context->GetIsolate();
+    v8::Isolate *isolate = v8::Isolate::GetCurrent();
     v8::Local<v8::Function> function =
             v8::FunctionTemplate::New(isolate,
                                       slow_callback,

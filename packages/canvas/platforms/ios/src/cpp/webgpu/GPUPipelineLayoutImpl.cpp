@@ -26,7 +26,7 @@ void GPUPipelineLayoutImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate
 }
 
 GPUPipelineLayoutImpl *GPUPipelineLayoutImpl::GetPointer(const v8::Local<v8::Object> &object) {
-    auto ptr = object->GetAlignedPointerFromInternalField(0);
+    auto ptr = object->GetAlignedPointerFromInternalField(0, ObjectWrapperImpl::kInternalFieldTag);
     if (ptr == nullptr) {
         return nullptr;
     }
@@ -61,7 +61,7 @@ v8::Local<v8::FunctionTemplate> GPUPipelineLayoutImpl::GetCtor(v8::Isolate *isol
 void
 GPUPipelineLayoutImpl::GetLabel(v8::Local<v8::Name> name,
                                 const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(info.Holder());
     if (ptr != nullptr) {
         auto label = canvas_native_webgpu_pipeline_layout_get_label(ptr->pipeline_.get());
         if (label == nullptr) {

@@ -24,7 +24,7 @@ void TextMetricsImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isol
 }
 
 TextMetricsImpl *TextMetricsImpl::GetPointer(v8::Local<v8::Object> object) {
-    auto ptr = object->GetAlignedPointerFromInternalField(0);
+    auto ptr = object->GetAlignedPointerFromInternalField(0, ObjectWrapperImpl::kInternalFieldTag);
     if (ptr == nullptr) {
         return nullptr;
     }
@@ -66,7 +66,7 @@ v8::Local<v8::FunctionTemplate> TextMetricsImpl::GetCtor(v8::Isolate *isolate) {
 #define TM_GETTER(FnName, field)                                                        \
 void TextMetricsImpl::FnName(v8::Local<v8::Name> property,                             \
                              const v8::PropertyCallbackInfo<v8::Value> &info) {         \
-    TextMetricsImpl *ptr = GetPointer(info.This());                                     \
+    TextMetricsImpl *ptr = GetPointer(info.Holder());                                     \
     if (ptr == nullptr) { info.GetReturnValue().Set(0); return; }                       \
     info.GetReturnValue().Set((double) ptr->data_.field);                               \
 }

@@ -33,18 +33,18 @@ public:
 
     static void Ctor(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-    static void GetWidth(v8::Local<v8::String> name,
+    static void GetWidth(v8::Local<v8::Name> name,
                          const v8::PropertyCallbackInfo<v8::Value> &info);
 
-    static void GetHeight(v8::Local<v8::String> name,
+    static void GetHeight(v8::Local<v8::Name> name,
                           const v8::PropertyCallbackInfo<v8::Value> &info);
 
-    static void GetAddr(v8::Local<v8::String> name,
+    static void GetAddr(v8::Local<v8::Name> name,
                         const v8::PropertyCallbackInfo<v8::Value> &info);
 
     static void GetReference(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-    static void GetError(v8::Local<v8::String> name,
+    static void GetError(v8::Local<v8::Name> name,
                          const v8::PropertyCallbackInfo<v8::Value> &info);
 
 //    static void Scale(const v8::FunctionCallbackInfo<v8::Value> &args);

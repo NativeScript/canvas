@@ -35,36 +35,12 @@ v8::CFunction WebGL2RenderingContext::fast_clear_buffer_fi_(
 v8::CFunction WebGL2RenderingContext::fast_clear_buffer_fv_(
                                                             v8::CFunction::Make(WebGL2RenderingContext::FastClearBufferfv));
 
-v8::CFunction WebGL2RenderingContext::fast_clear_buffer_fv_array_(
-                                                                  v8::CFunction::Make(WebGL2RenderingContext::FastClearBufferfvArray));
-
-const v8::CFunction fast_clear_buffer_fv_overloads_[] = {
-    WebGL2RenderingContext::fast_clear_buffer_fv_,
-    WebGL2RenderingContext::fast_clear_buffer_fv_array_
-};
-
 v8::CFunction WebGL2RenderingContext::fast_clear_buffer_iv_(
                                                             v8::CFunction::Make(WebGL2RenderingContext::FastClearBufferiv));
-
-v8::CFunction WebGL2RenderingContext::fast_clear_buffer_iv_array_(
-                                                                  v8::CFunction::Make(WebGL2RenderingContext::FastClearBufferivArray));
-
-const v8::CFunction fast_clear_buffer_iv_overloads_[] = {
-    WebGL2RenderingContext::fast_clear_buffer_iv_,
-    WebGL2RenderingContext::fast_clear_buffer_iv_array_
-};
 
 
 v8::CFunction WebGL2RenderingContext::fast_clear_buffer_uiv_(
                                                              v8::CFunction::Make(WebGL2RenderingContext::FastClearBufferuiv));
-
-v8::CFunction WebGL2RenderingContext::fast_clear_buffer_uiv_array_(
-                                                                   v8::CFunction::Make(WebGL2RenderingContext::FastClearBufferuivArray));
-
-const v8::CFunction fast_clear_buffer_uiv_overloads_[] = {
-    WebGL2RenderingContext::fast_clear_buffer_uiv_,
-    WebGL2RenderingContext::fast_clear_buffer_uiv_array_
-};
 
 v8::CFunction WebGL2RenderingContext::fast_draw_arrays_instanced_(
                                                                   v8::CFunction::Make(WebGL2RenderingContext::FastDrawArraysInstanced));
@@ -117,72 +93,24 @@ v8::CFunction WebGL2RenderingContext::fast_uniform_4uiv_(
 v8::CFunction WebGL2RenderingContext::fast_uniform_matrix_2x3fv_(
                                                                  v8::CFunction::Make(WebGL2RenderingContext::FastUniformMatrix2x3fv));
 
-v8::CFunction WebGL2RenderingContext::fast_uniform_matrix_2x3fv_array_(
-                                                                       v8::CFunction::Make(WebGL2RenderingContext::FastUniformMatrix2x3fvArray));
-
-const v8::CFunction fast_uniform_matrix_2x3fv_overloads_[] = {
-    WebGL2RenderingContext::fast_uniform_matrix_2x3fv_,
-    WebGL2RenderingContext::fast_uniform_matrix_2x3fv_array_
-};
-
 
 v8::CFunction WebGL2RenderingContext::fast_uniform_matrix_2x4fv_(
                                                                  v8::CFunction::Make(WebGL2RenderingContext::FastUniformMatrix2x4fv));
-
-v8::CFunction WebGL2RenderingContext::fast_uniform_matrix_2x4fv_array_(
-                                                                       v8::CFunction::Make(WebGL2RenderingContext::FastUniformMatrix2x4fvArray));
-
-const v8::CFunction fast_uniform_matrix_2x4fv_overloads_[] = {
-    WebGL2RenderingContext::fast_uniform_matrix_2x4fv_,
-    WebGL2RenderingContext::fast_uniform_matrix_2x4fv_array_
-};
 
 
 v8::CFunction WebGL2RenderingContext::fast_uniform_matrix_3x2fv_(
                                                                  v8::CFunction::Make(WebGL2RenderingContext::FastUniformMatrix3x2fv));
 
-v8::CFunction WebGL2RenderingContext::fast_uniform_matrix_3x2fv_array_(
-                                                                       v8::CFunction::Make(WebGL2RenderingContext::FastUniformMatrix3x2fvArray));
-
-const v8::CFunction fast_uniform_matrix_3x2fv_overloads_[] = {
-    WebGL2RenderingContext::fast_uniform_matrix_3x2fv_,
-    WebGL2RenderingContext::fast_uniform_matrix_3x2fv_array_
-};
-
 v8::CFunction WebGL2RenderingContext::fast_uniform_matrix_3x4fv_(
                                                                  v8::CFunction::Make(WebGL2RenderingContext::FastUniformMatrix3x4fv));
-
-v8::CFunction WebGL2RenderingContext::fast_uniform_matrix_3x4fv_array_(
-                                                                       v8::CFunction::Make(WebGL2RenderingContext::FastUniformMatrix3x4fvArray));
-
-const v8::CFunction fast_uniform_matrix_3x4fv_overloads_[] = {
-    WebGL2RenderingContext::fast_uniform_matrix_3x4fv_,
-    WebGL2RenderingContext::fast_uniform_matrix_3x4fv_array_
-};
 
 
 v8::CFunction WebGL2RenderingContext::fast_uniform_matrix_4x2fv_(
                                                                  v8::CFunction::Make(WebGL2RenderingContext::FastUniformMatrix4x2fv));
 
-v8::CFunction WebGL2RenderingContext::fast_uniform_matrix_4x2fv_array_(
-                                                                       v8::CFunction::Make(WebGL2RenderingContext::FastUniformMatrix4x2fvArray));
-
-const v8::CFunction fast_uniform_matrix_4x2fv_overloads_[] = {
-    WebGL2RenderingContext::fast_uniform_matrix_4x2fv_,
-    WebGL2RenderingContext::fast_uniform_matrix_4x2fv_array_
-};
-
 
 v8::CFunction WebGL2RenderingContext::fast_uniform_matrix_4x3fv_(
                                                                  v8::CFunction::Make(WebGL2RenderingContext::FastUniformMatrix4x3fv));
-
-v8::CFunction WebGL2RenderingContext::fast_uniform_matrix_4x3fv_array_(
-                                                                       v8::CFunction::Make(WebGL2RenderingContext::FastUniformMatrix4x3fvArray));
-
-const v8::CFunction fast_uniform_matrix_4x3fv_overloads_[] = {
-    WebGL2RenderingContext::fast_uniform_matrix_4x3fv_,
-    WebGL2RenderingContext::fast_uniform_matrix_4x3fv_array_
-};
 
 v8::CFunction WebGL2RenderingContext::fast_vertex_attrib_divisor_(
                                                                   v8::CFunction::Make(WebGL2RenderingContext::FastVertexAttribDivisor));
@@ -195,14 +123,6 @@ v8::CFunction WebGL2RenderingContext::fast_vertex_attrib_i_4i_(
 v8::CFunction WebGL2RenderingContext::fast_vertex_attrib_i_4iv_(
                                                                 v8::CFunction::Make(WebGL2RenderingContext::FastVertexAttribI4iv));
 
-v8::CFunction WebGL2RenderingContext::fast_vertex_attrib_i_4iv_array_(
-                                                                      v8::CFunction::Make(WebGL2RenderingContext::FastVertexAttribI4ivArray));
-
-const v8::CFunction fast_vertex_attrib_i_4iv_overloads_[] = {
-    WebGL2RenderingContext::fast_vertex_attrib_i_4iv_,
-    WebGL2RenderingContext::fast_vertex_attrib_i_4iv_array_
-};
-
 
 v8::CFunction WebGL2RenderingContext::fast_vertex_attrib_i_4ui_(
                                                                 v8::CFunction::Make(WebGL2RenderingContext::FastVertexAttribI4ui));
@@ -210,14 +130,6 @@ v8::CFunction WebGL2RenderingContext::fast_vertex_attrib_i_4ui_(
 
 v8::CFunction WebGL2RenderingContext::fast_vertex_attrib_i_4uiv_(
                                                                  v8::CFunction::Make(WebGL2RenderingContext::FastVertexAttribI4uiv));
-
-v8::CFunction WebGL2RenderingContext::fast_vertex_attrib_i_4uiv_array_(
-                                                                       v8::CFunction::Make(WebGL2RenderingContext::FastVertexAttribI4uivArray));
-
-const v8::CFunction fast_vertex_attrib_i_4uiv_overloads_[] = {
-    WebGL2RenderingContext::fast_vertex_attrib_i_4uiv_,
-    WebGL2RenderingContext::fast_vertex_attrib_i_4uiv_array_
-};
 
 v8::CFunction WebGL2RenderingContext::fast_uniform_block_binding_(
                                                                   v8::CFunction::Make(WebGL2RenderingContext::FastUniformBlockBinding));
@@ -327,7 +239,7 @@ v8::Local<v8::FunctionTemplate> WebGL2RenderingContext::GetCtor(v8::Isolate *iso
 }
 
 WebGL2RenderingContext *WebGL2RenderingContext::GetPointer(const v8::Local<v8::Object> &object) {
-    auto ptr = object->GetAlignedPointerFromInternalField(0);
+    auto ptr = object->GetAlignedPointerFromInternalField(0, ObjectWrapperImpl::kInternalFieldTag);
     if (ptr == nullptr) {
         return nullptr;
     }
@@ -4361,15 +4273,15 @@ void WebGL2RenderingContext::SetMethods(v8::Isolate *isolate,
     SetFastMethod(isolate, tmpl, "clearBufferfi", ClearBufferfi, &fast_clear_buffer_fi_,
                   v8::Local<v8::Value>());
 
-    SetFastMethodWithOverLoads(isolate, tmpl, "clearBufferfv", ClearBufferfv,
-                               fast_clear_buffer_fv_overloads_, v8::Local<v8::Value>());
+    SetFastMethod(isolate, tmpl, "clearBufferfv", ClearBufferfv,
+                  &fast_clear_buffer_fv_, v8::Local<v8::Value>());
 
 
-    SetFastMethodWithOverLoads(isolate, tmpl, "clearBufferiv", ClearBufferiv,
-                               fast_clear_buffer_iv_overloads_, v8::Local<v8::Value>());
+    SetFastMethod(isolate, tmpl, "clearBufferiv", ClearBufferiv,
+                  &fast_clear_buffer_iv_, v8::Local<v8::Value>());
 
-    SetFastMethodWithOverLoads(isolate, tmpl, "clearBufferuiv", ClearBufferuiv,
-                               fast_clear_buffer_uiv_overloads_, v8::Local<v8::Value>());
+    SetFastMethod(isolate, tmpl, "clearBufferuiv", ClearBufferuiv,
+                  &fast_clear_buffer_uiv_, v8::Local<v8::Value>());
 
 
     tmpl->Set(
@@ -4484,27 +4396,27 @@ void WebGL2RenderingContext::SetMethods(v8::Isolate *isolate,
                   &fast_uniform_block_binding_, v8::Local<v8::Value>());
 
 
-    SetFastMethodWithOverLoads(isolate, tmpl, "uniformMatrix2x3fv", UniformMatrix2x3fv,
-                               fast_uniform_matrix_2x3fv_overloads_, v8::Local<v8::Value>());
+    SetFastMethod(isolate, tmpl, "uniformMatrix2x3fv", UniformMatrix2x3fv,
+                  &fast_uniform_matrix_2x3fv_, v8::Local<v8::Value>());
 
 
-    SetFastMethodWithOverLoads(isolate, tmpl, "uniformMatrix2x4fv", UniformMatrix2x4fv,
-                               fast_uniform_matrix_2x4fv_overloads_, v8::Local<v8::Value>());
+    SetFastMethod(isolate, tmpl, "uniformMatrix2x4fv", UniformMatrix2x4fv,
+                  &fast_uniform_matrix_2x4fv_, v8::Local<v8::Value>());
 
 
-    SetFastMethodWithOverLoads(isolate, tmpl, "uniformMatrix3x2fv", UniformMatrix3x2fv,
-                               fast_uniform_matrix_3x2fv_overloads_, v8::Local<v8::Value>());
+    SetFastMethod(isolate, tmpl, "uniformMatrix3x2fv", UniformMatrix3x2fv,
+                  &fast_uniform_matrix_3x2fv_, v8::Local<v8::Value>());
 
-    SetFastMethodWithOverLoads(isolate, tmpl, "uniformMatrix3x4fv", UniformMatrix3x4fv,
-                               fast_uniform_matrix_3x4fv_overloads_, v8::Local<v8::Value>());
-
-
-    SetFastMethodWithOverLoads(isolate, tmpl, "uniformMatrix4x2fv", UniformMatrix4x2fv,
-                               fast_uniform_matrix_4x2fv_overloads_, v8::Local<v8::Value>());
+    SetFastMethod(isolate, tmpl, "uniformMatrix3x4fv", UniformMatrix3x4fv,
+                  &fast_uniform_matrix_3x4fv_, v8::Local<v8::Value>());
 
 
-    SetFastMethodWithOverLoads(isolate, tmpl, "uniformMatrix4x3fv", UniformMatrix4x3fv,
-                               fast_uniform_matrix_4x3fv_overloads_, v8::Local<v8::Value>());
+    SetFastMethod(isolate, tmpl, "uniformMatrix4x2fv", UniformMatrix4x2fv,
+                  &fast_uniform_matrix_4x2fv_, v8::Local<v8::Value>());
+
+
+    SetFastMethod(isolate, tmpl, "uniformMatrix4x3fv", UniformMatrix4x3fv,
+                  &fast_uniform_matrix_4x3fv_, v8::Local<v8::Value>());
 
 
     SetFastMethod(isolate, tmpl, "vertexAttribDivisor", VertexAttribDivisor,
@@ -4514,16 +4426,16 @@ void WebGL2RenderingContext::SetMethods(v8::Isolate *isolate,
     SetFastMethod(isolate, tmpl, "vertexAttribI4i", VertexAttribI4i, &fast_vertex_attrib_i_4i_,
                   v8::Local<v8::Value>());
 
-    SetFastMethodWithOverLoads(isolate, tmpl, "vertexAttribI4iv", VertexAttribI4iv,
-                               fast_vertex_attrib_i_4iv_overloads_, v8::Local<v8::Value>());
+    SetFastMethod(isolate, tmpl, "vertexAttribI4iv", VertexAttribI4iv,
+                  &fast_vertex_attrib_i_4iv_, v8::Local<v8::Value>());
 
 
     SetFastMethod(isolate, tmpl, "vertexAttribI4ui", VertexAttribI4ui, &fast_vertex_attrib_i_4ui_,
                   v8::Local<v8::Value>());
 
 
-    SetFastMethodWithOverLoads(isolate, tmpl, "vertexAttribI4uiv", VertexAttribI4uiv,
-                               fast_vertex_attrib_i_4uiv_overloads_, v8::Local<v8::Value>());
+    SetFastMethod(isolate, tmpl, "vertexAttribI4uiv", VertexAttribI4uiv,
+                  &fast_vertex_attrib_i_4uiv_, v8::Local<v8::Value>());
 
 
     tmpl->Set(

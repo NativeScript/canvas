@@ -33,7 +33,7 @@ public:
         auto object = GPUTextureViewImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType(view, NativeType::GPUTextureView);
-        object->SetAlignedPointerInInternalField(0, view);
+        object->SetAlignedPointerInInternalField(0, view, ObjectWrapperImpl::kInternalFieldTag);
         view->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }

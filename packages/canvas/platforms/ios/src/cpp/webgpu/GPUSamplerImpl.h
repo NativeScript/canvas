@@ -30,7 +30,7 @@ public:
         auto object = GPUSamplerImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType(sampler, NativeType::GPUSampler);
-        object->SetAlignedPointerInInternalField(0, sampler);
+        object->SetAlignedPointerInInternalField(0, sampler, ObjectWrapperImpl::kInternalFieldTag);
         sampler->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }

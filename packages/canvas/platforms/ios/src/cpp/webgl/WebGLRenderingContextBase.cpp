@@ -29,9 +29,9 @@ WebGLRenderingContextBase::WebGLRenderingContextBase(WebGLState* state,
 }
 
 
-void WebGLRenderingContextBase::GetContinuousRenderMode(v8::Local<v8::String> property,
+void WebGLRenderingContextBase::GetContinuousRenderMode(v8::Local<v8::Name> property,
                                                            const v8::PropertyCallbackInfo<v8::Value> &info) {
-    WebGLRenderingContextBase *ptr = GetPointer(info.This());
+    WebGLRenderingContextBase *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         info.GetReturnValue().Set(false);
         return;
@@ -39,10 +39,10 @@ void WebGLRenderingContextBase::GetContinuousRenderMode(v8::Local<v8::String> pr
     info.GetReturnValue().Set(ptr->continuousRender_);
 }
 
-void WebGLRenderingContextBase::SetContinuousRenderMode(v8::Local<v8::String> property,
+void WebGLRenderingContextBase::SetContinuousRenderMode(v8::Local<v8::Name> property,
                                                            v8::Local<v8::Value> value,
                                                            const v8::PropertyCallbackInfo<void> &info) {
-    WebGLRenderingContextBase *ptr = GetPointer(info.This());
+    WebGLRenderingContextBase *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }

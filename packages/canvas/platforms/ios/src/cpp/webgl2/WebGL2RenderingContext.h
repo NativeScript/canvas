@@ -38,11 +38,8 @@ public:
     static v8::CFunction fast_blit_framebuffer_;
     static v8::CFunction fast_clear_buffer_fi_;
     static v8::CFunction fast_clear_buffer_fv_;
-    static v8::CFunction fast_clear_buffer_fv_array_;
     static v8::CFunction fast_clear_buffer_iv_;
-    static v8::CFunction fast_clear_buffer_iv_array_;
     static v8::CFunction fast_clear_buffer_uiv_;
-    static v8::CFunction fast_clear_buffer_uiv_array_;
     static v8::CFunction fast_draw_arrays_instanced_;
     static v8::CFunction fast_draw_buffers_;
     static v8::CFunction fast_draw_elements_instanced_;
@@ -59,24 +56,16 @@ public:
     static v8::CFunction fast_uniform_4ui_;
     static v8::CFunction fast_uniform_4uiv_;
     static v8::CFunction fast_uniform_matrix_2x3fv_;
-    static v8::CFunction fast_uniform_matrix_2x3fv_array_;
     static v8::CFunction fast_uniform_matrix_2x4fv_;
-    static v8::CFunction fast_uniform_matrix_2x4fv_array_;
     static v8::CFunction fast_uniform_matrix_3x2fv_;
-    static v8::CFunction fast_uniform_matrix_3x2fv_array_;
     static v8::CFunction fast_uniform_matrix_3x4fv_;
-    static v8::CFunction fast_uniform_matrix_3x4fv_array_;
     static v8::CFunction fast_uniform_matrix_4x2fv_;
-    static v8::CFunction fast_uniform_matrix_4x2fv_array_;
     static v8::CFunction fast_uniform_matrix_4x3fv_;
-    static v8::CFunction fast_uniform_matrix_4x3fv_array_;
     static v8::CFunction fast_vertex_attrib_divisor_;
     static v8::CFunction fast_vertex_attrib_i_4i_;
     static v8::CFunction fast_vertex_attrib_i_4iv_;
-    static v8::CFunction fast_vertex_attrib_i_4iv_array_;
     static v8::CFunction fast_vertex_attrib_i_4ui_;
     static v8::CFunction fast_vertex_attrib_i_4uiv_;
-    static v8::CFunction fast_vertex_attrib_i_4uiv_array_;
     static v8::CFunction fast_uniform_block_binding_;
 
     static v8::CFunction fast_invalidate_framebuffer_;
@@ -116,7 +105,7 @@ public:
         auto object = WebGL2RenderingContext::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType(renderingContext, NativeType::WebGLRenderingContextBase);
-        object->SetAlignedPointerInInternalField(0, renderingContext);
+        object->SetAlignedPointerInInternalField(0, renderingContext, ObjectWrapperImpl::kInternalFieldTag);
         renderingContext->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
@@ -335,103 +324,95 @@ public:
 
     static void
     FastClearBufferfv(v8::Local<v8::Object> receiver_obj, uint32_t buffer, int32_t drawbuffer,
-                      const v8::FastApiTypedArray<float> &values) {
+                      v8::Local<v8::Value> values) {
         WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
             return;
         }
 
-        auto size = values.length();
-        float *data;
-        values.getStorageIfAligned(&data);
+        if (values->IsFloat32Array()) {
+            auto buf = values.As<v8::Float32Array>();
+            auto array = buf->Buffer();
+            auto offset = buf->ByteOffset();
+            auto size = buf->Length();
+            auto data_ptr = static_cast<uint8_t *>(array->GetBackingStore()->Data()) + offset;
+            auto data = static_cast<float *>((void *) data_ptr);
 
-
-        canvas_native_webgl2_clear_bufferfv(
-                buffer,
-                drawbuffer,
-                data,
-                size,
-                ptr->GetState()
-        );
-    }
-
-    static void
-    FastClearBufferfvArray(v8::Local<v8::Object> receiver_obj, uint32_t buffer, int32_t drawbuffer,
-                           v8::Local<v8::Array> values) {
-        WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
-        if (ptr == nullptr) {
-            return;
-        }
-
-        auto len = values->Length();
-        std::vector<float> buf;
-        buf.reserve(len);
-
-        auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<float>::Build().GetId(), float>(
-                values, buf.data(), len);
-
-
-        if (copied) {
             canvas_native_webgl2_clear_bufferfv(
                     buffer,
                     drawbuffer,
-                    buf.data(),
-                    buf.size(),
+                    data,
+                    size,
                     ptr->GetState()
             );
+        } else if (values->IsArray()) {
+            auto array = values.As<v8::Array>();
+            auto len = array->Length();
+            std::vector<float> buf;
+            buf.resize(len);
+
+            auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<float>::Build().GetId(), float>(
+                    array, buf.data(), len);
+
+            if (copied) {
+                canvas_native_webgl2_clear_bufferfv(
+                        buffer,
+                        drawbuffer,
+                        buf.data(),
+                        buf.size(),
+                        ptr->GetState()
+                );
+            }
         }
     }
+
 
     static void ClearBufferiv(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void
     FastClearBufferiv(v8::Local<v8::Object> receiver_obj, uint32_t buffer, int32_t drawbuffer,
-                      const v8::FastApiTypedArray<int32_t> &values) {
+                      v8::Local<v8::Value> values) {
         WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
             return;
         }
 
-        auto size = values.length();
-        int32_t *data;
-        values.getStorageIfAligned(&data);
+        if (values->IsInt32Array()) {
+            auto buf = values.As<v8::Int32Array>();
+            auto array = buf->Buffer();
+            auto offset = buf->ByteOffset();
+            auto size = buf->Length();
+            auto data_ptr = static_cast<uint8_t *>(array->GetBackingStore()->Data()) + offset;
+            auto data = static_cast<int32_t *>((void *) data_ptr);
 
-
-        canvas_native_webgl2_clear_bufferiv(
-                buffer,
-                drawbuffer,
-                data,
-                size,
-                ptr->GetState()
-        );
-    }
-
-    static void
-    FastClearBufferivArray(v8::Local<v8::Object> receiver_obj, uint32_t buffer, int32_t drawbuffer,
-                           v8::Local<v8::Array> values) {
-        WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
-        if (ptr == nullptr) {
-            return;
-        }
-
-        auto len = values->Length();
-        std::vector<int32_t> buf;
-        buf.reserve(len);
-
-        auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<int32_t>::Build().GetId(), int32_t>(
-                values, buf.data(), len);
-
-
-        if (copied) {
             canvas_native_webgl2_clear_bufferiv(
                     buffer,
                     drawbuffer,
-                    buf.data(),
-                    buf.size(),
+                    data,
+                    size,
                     ptr->GetState()
             );
+        } else if (values->IsArray()) {
+            auto array = values.As<v8::Array>();
+            auto len = array->Length();
+            std::vector<int32_t> buf;
+            buf.resize(len);
+
+            auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<int32_t>::Build().GetId(), int32_t>(
+                    array, buf.data(), len);
+
+            if (copied) {
+                canvas_native_webgl2_clear_bufferiv(
+                        buffer,
+                        drawbuffer,
+                        buf.data(),
+                        buf.size(),
+                        ptr->GetState()
+                );
+            }
         }
     }
+
 
 
     static void ClearBufferuiv(const v8::FunctionCallbackInfo<v8::Value> &args);
@@ -439,52 +420,48 @@ public:
 
     static void
     FastClearBufferuiv(v8::Local<v8::Object> receiver_obj, uint32_t buffer, int32_t drawbuffer,
-                       const v8::FastApiTypedArray<uint32_t> &values) {
+                       v8::Local<v8::Value> values) {
         WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
             return;
         }
 
-        auto size = values.length();
-        uint32_t *data;
-        values.getStorageIfAligned(&data);
+        if (values->IsUint32Array()) {
+            auto buf = values.As<v8::Uint32Array>();
+            auto array = buf->Buffer();
+            auto offset = buf->ByteOffset();
+            auto size = buf->Length();
+            auto data_ptr = static_cast<uint8_t *>(array->GetBackingStore()->Data()) + offset;
+            auto data = static_cast<uint32_t *>((void *) data_ptr);
 
-
-        canvas_native_webgl2_clear_bufferuiv(
-                buffer,
-                drawbuffer,
-                data,
-                size,
-                ptr->GetState()
-        );
-    }
-
-    static void
-    FastClearBufferuivArray(v8::Local<v8::Object> receiver_obj, uint32_t buffer, int32_t drawbuffer,
-                            v8::Local<v8::Array> values) {
-        WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
-        if (ptr == nullptr) {
-            return;
-        }
-
-        auto len = values->Length();
-        std::vector<uint32_t> buf;
-        buf.reserve(len);
-
-        auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<uint32_t>::Build().GetId(), uint32_t>(
-                values, buf.data(), len);
-
-
-        if (copied) {
             canvas_native_webgl2_clear_bufferuiv(
                     buffer,
                     drawbuffer,
-                    buf.data(),
-                    buf.size(),
+                    data,
+                    size,
                     ptr->GetState()
             );
+        } else if (values->IsArray()) {
+            auto array = values.As<v8::Array>();
+            auto len = array->Length();
+            std::vector<uint32_t> buf;
+            buf.resize(len);
+
+            auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<uint32_t>::Build().GetId(), uint32_t>(
+                    array, buf.data(), len);
+
+            if (copied) {
+                canvas_native_webgl2_clear_bufferuiv(
+                        buffer,
+                        drawbuffer,
+                        buf.data(),
+                        buf.size(),
+                        ptr->GetState()
+                );
+            }
         }
     }
+
 
     static void ClientWaitSync(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -1156,7 +1133,7 @@ public:
 
     static void
     FastUniform1uiv(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
-                    const v8::FastApiTypedArray<uint32_t> &value) {
+                    v8::Local<v8::Value> value) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
             return;
@@ -1165,9 +1142,16 @@ public:
         auto location = WebGLUniformLocation::GetPointer(location_obj);
 
         if (location != nullptr) {
-            auto size = value.length();
-            uint32_t *data;
-            value.getStorageIfAligned(&data);
+            if (!value->IsUint32Array()) {
+                return;
+            }
+
+            auto buf = value.As<v8::Uint32Array>();
+            auto array = buf->Buffer();
+            auto offset = buf->ByteOffset();
+            auto size = buf->Length();
+            auto data_ptr = static_cast<uint8_t *>(array->GetBackingStore()->Data()) + offset;
+            auto data = static_cast<uint32_t *>((void *) data_ptr);
 
             canvas_native_webgl2_uniform1uiv(
                     location->GetUniformLocation(),
@@ -1208,7 +1192,7 @@ public:
 
     static void
     FastUniform2uiv(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
-                    const v8::FastApiTypedArray<uint32_t> &value) {
+                    v8::Local<v8::Value> value) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
             return;
@@ -1217,9 +1201,16 @@ public:
         auto location = WebGLUniformLocation::GetPointer(location_obj);
 
         if (location != nullptr) {
-            auto size = value.length();
-            uint32_t *data;
-            value.getStorageIfAligned(&data);
+            if (!value->IsUint32Array()) {
+                return;
+            }
+
+            auto buf = value.As<v8::Uint32Array>();
+            auto array = buf->Buffer();
+            auto offset = buf->ByteOffset();
+            auto size = buf->Length();
+            auto data_ptr = static_cast<uint8_t *>(array->GetBackingStore()->Data()) + offset;
+            auto data = static_cast<uint32_t *>((void *) data_ptr);
 
             canvas_native_webgl2_uniform2uiv(
                     location->GetUniformLocation(),
@@ -1260,7 +1251,7 @@ public:
 
     static void
     FastUniform3uiv(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
-                    const v8::FastApiTypedArray<uint32_t> &value) {
+                    v8::Local<v8::Value> value) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
             return;
@@ -1269,9 +1260,16 @@ public:
         auto location = WebGLUniformLocation::GetPointer(location_obj);
 
         if (location != nullptr) {
-            auto size = value.length();
-            uint32_t *data;
-            value.getStorageIfAligned(&data);
+            if (!value->IsUint32Array()) {
+                return;
+            }
+
+            auto buf = value.As<v8::Uint32Array>();
+            auto array = buf->Buffer();
+            auto offset = buf->ByteOffset();
+            auto size = buf->Length();
+            auto data_ptr = static_cast<uint8_t *>(array->GetBackingStore()->Data()) + offset;
+            auto data = static_cast<uint32_t *>((void *) data_ptr);
 
             canvas_native_webgl2_uniform3uiv(
                     location->GetUniformLocation(),
@@ -1313,7 +1311,7 @@ public:
 
     static void
     FastUniform4uiv(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
-                    const v8::FastApiTypedArray<uint32_t> &value) {
+                    v8::Local<v8::Value> value) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
             return;
@@ -1322,9 +1320,16 @@ public:
         auto location = WebGLUniformLocation::GetPointer(location_obj);
 
         if (location != nullptr) {
-            auto size = value.length();
-            uint32_t *data;
-            value.getStorageIfAligned(&data);
+            if (!value->IsUint32Array()) {
+                return;
+            }
+
+            auto buf = value.As<v8::Uint32Array>();
+            auto array = buf->Buffer();
+            auto offset = buf->ByteOffset();
+            auto size = buf->Length();
+            auto data_ptr = static_cast<uint8_t *>(array->GetBackingStore()->Data()) + offset;
+            auto data = static_cast<uint32_t *>((void *) data_ptr);
 
             canvas_native_webgl2_uniform4uiv(
                     location->GetUniformLocation(),
@@ -1366,33 +1371,7 @@ public:
 
     static void
     FastUniformMatrix2x3fv(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
-                           bool transpose, const v8::FastApiTypedArray<float> &data_value) {
-        WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
-        if (ptr == nullptr) {
-            return;
-        }
-
-        auto type = GetNativeType(location_obj);
-        if (type == NativeType::WebGLUniformLocation) {
-            auto location = WebGLUniformLocation::GetPointer(location_obj);
-            auto size = data_value.length();
-            float *data;
-            data_value.getStorageIfAligned(&data);
-
-            canvas_native_webgl2_uniform_matrix2x3fv(
-                    location->GetUniformLocation(),
-                    transpose,
-                    data, size,
-                    ptr->GetState()
-            );
-        }
-
-    }
-
-    static void
-    FastUniformMatrix2x3fvArray(v8::Local<v8::Object> receiver_obj,
-                                v8::Local<v8::Object> location_obj,
-                                bool transpose, v8::Local<v8::Array> data_value) {
+                           bool transpose, v8::Local<v8::Value> data_value) {
         WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
             return;
@@ -1402,57 +1381,49 @@ public:
         if (type == NativeType::WebGLUniformLocation) {
             auto location = WebGLUniformLocation::GetPointer(location_obj);
 
-            auto len = data_value->Length();
-            std::vector<float> buf;
-            buf.reserve(len);
+            if (data_value->IsFloat32Array()) {
+                auto buf = data_value.As<v8::Float32Array>();
+                auto array = buf->Buffer();
+                auto offset = buf->ByteOffset();
+                auto size = buf->Length();
+                auto data_ptr = static_cast<uint8_t *>(array->GetBackingStore()->Data()) + offset;
+                auto data = static_cast<float *>((void *) data_ptr);
 
-            auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<float>::Build().GetId(), float>(
-                    data_value, buf.data(), len);
-
-            if (copied) {
                 canvas_native_webgl2_uniform_matrix2x3fv(
                         location->GetUniformLocation(),
                         transpose,
-                        buf.data(), buf.size(),
+                        data, size,
                         ptr->GetState()
                 );
+            } else if (data_value->IsArray()) {
+                auto array = data_value.As<v8::Array>();
+                auto len = array->Length();
+                std::vector<float> buf;
+                buf.resize(len);
+
+                auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<float>::Build().GetId(), float>(
+                        array, buf.data(), len);
+
+                if (copied) {
+                    canvas_native_webgl2_uniform_matrix2x3fv(
+                            location->GetUniformLocation(),
+                            transpose,
+                            buf.data(), buf.size(),
+                            ptr->GetState()
+                    );
+                }
             }
         }
 
     }
+
 
     static void UniformMatrix2x4fv(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 
     static void
     FastUniformMatrix2x4fv(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
-                           bool transpose, const v8::FastApiTypedArray<float> &data_value) {
-        WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
-        if (ptr == nullptr) {
-            return;
-        }
-
-        auto type = GetNativeType(location_obj);
-        if (type == NativeType::WebGLUniformLocation) {
-            auto location = WebGLUniformLocation::GetPointer(location_obj);
-            auto size = data_value.length();
-            float *data;
-            data_value.getStorageIfAligned(&data);
-
-            canvas_native_webgl2_uniform_matrix2x4fv(
-                    location->GetUniformLocation(),
-                    transpose,
-                    data, size,
-                    ptr->GetState()
-            );
-        }
-
-    }
-
-    static void
-    FastUniformMatrix2x4fvArray(v8::Local<v8::Object> receiver_obj,
-                                v8::Local<v8::Object> location_obj,
-                                bool transpose, v8::Local<v8::Array> data_value) {
+                           bool transpose, v8::Local<v8::Value> data_value) {
         WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
             return;
@@ -1462,57 +1433,49 @@ public:
         if (type == NativeType::WebGLUniformLocation) {
             auto location = WebGLUniformLocation::GetPointer(location_obj);
 
-            auto len = data_value->Length();
-            std::vector<float> buf;
-            buf.reserve(len);
+            if (data_value->IsFloat32Array()) {
+                auto buf = data_value.As<v8::Float32Array>();
+                auto array = buf->Buffer();
+                auto offset = buf->ByteOffset();
+                auto size = buf->Length();
+                auto data_ptr = static_cast<uint8_t *>(array->GetBackingStore()->Data()) + offset;
+                auto data = static_cast<float *>((void *) data_ptr);
 
-            auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<float>::Build().GetId(), float>(
-                    data_value, buf.data(), len);
-
-            if (copied) {
                 canvas_native_webgl2_uniform_matrix2x4fv(
                         location->GetUniformLocation(),
                         transpose,
-                        buf.data(), buf.size(),
+                        data, size,
                         ptr->GetState()
                 );
+            } else if (data_value->IsArray()) {
+                auto array = data_value.As<v8::Array>();
+                auto len = array->Length();
+                std::vector<float> buf;
+                buf.resize(len);
+
+                auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<float>::Build().GetId(), float>(
+                        array, buf.data(), len);
+
+                if (copied) {
+                    canvas_native_webgl2_uniform_matrix2x4fv(
+                            location->GetUniformLocation(),
+                            transpose,
+                            buf.data(), buf.size(),
+                            ptr->GetState()
+                    );
+                }
             }
         }
 
     }
+
 
     static void UniformMatrix3x2fv(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 
     static void
     FastUniformMatrix3x2fv(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
-                           bool transpose, const v8::FastApiTypedArray<float> &data_value) {
-        WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
-        if (ptr == nullptr) {
-            return;
-        }
-
-        auto type = GetNativeType(location_obj);
-        if (type == NativeType::WebGLUniformLocation) {
-            auto location = WebGLUniformLocation::GetPointer(location_obj);
-            auto size = data_value.length();
-            float *data;
-            data_value.getStorageIfAligned(&data);
-
-            canvas_native_webgl2_uniform_matrix3x2fv(
-                    location->GetUniformLocation(),
-                    transpose,
-                    data, size,
-                    ptr->GetState()
-            );
-        }
-
-    }
-
-    static void
-    FastUniformMatrix3x2fvArray(v8::Local<v8::Object> receiver_obj,
-                                v8::Local<v8::Object> location_obj,
-                                bool transpose, v8::Local<v8::Array> data_value) {
+                           bool transpose, v8::Local<v8::Value> data_value) {
         WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
             return;
@@ -1522,57 +1485,49 @@ public:
         if (type == NativeType::WebGLUniformLocation) {
             auto location = WebGLUniformLocation::GetPointer(location_obj);
 
-            auto len = data_value->Length();
-            std::vector<float> buf;
-            buf.reserve(len);
+            if (data_value->IsFloat32Array()) {
+                auto buf = data_value.As<v8::Float32Array>();
+                auto array = buf->Buffer();
+                auto offset = buf->ByteOffset();
+                auto size = buf->Length();
+                auto data_ptr = static_cast<uint8_t *>(array->GetBackingStore()->Data()) + offset;
+                auto data = static_cast<float *>((void *) data_ptr);
 
-            auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<float>::Build().GetId(), float>(
-                    data_value, buf.data(), len);
-
-            if (copied) {
                 canvas_native_webgl2_uniform_matrix3x2fv(
                         location->GetUniformLocation(),
                         transpose,
-                        buf.data(), buf.size(),
+                        data, size,
                         ptr->GetState()
                 );
+            } else if (data_value->IsArray()) {
+                auto array = data_value.As<v8::Array>();
+                auto len = array->Length();
+                std::vector<float> buf;
+                buf.resize(len);
+
+                auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<float>::Build().GetId(), float>(
+                        array, buf.data(), len);
+
+                if (copied) {
+                    canvas_native_webgl2_uniform_matrix3x2fv(
+                            location->GetUniformLocation(),
+                            transpose,
+                            buf.data(), buf.size(),
+                            ptr->GetState()
+                    );
+                }
             }
         }
 
     }
+
 
     static void UniformMatrix3x4fv(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 
     static void
     FastUniformMatrix3x4fv(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
-                           bool transpose, const v8::FastApiTypedArray<float> &data_value) {
-        WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
-        if (ptr == nullptr) {
-            return;
-        }
-
-        auto type = GetNativeType(location_obj);
-        if (type == NativeType::WebGLUniformLocation) {
-            auto location = WebGLUniformLocation::GetPointer(location_obj);
-            auto size = data_value.length();
-            float *data;
-            data_value.getStorageIfAligned(&data);
-
-            canvas_native_webgl2_uniform_matrix3x4fv(
-                    location->GetUniformLocation(),
-                    transpose,
-                    data, size,
-                    ptr->GetState()
-            );
-        }
-
-    }
-
-    static void
-    FastUniformMatrix3x4fvArray(v8::Local<v8::Object> receiver_obj,
-                                v8::Local<v8::Object> location_obj,
-                                bool transpose, v8::Local<v8::Array> data_value) {
+                           bool transpose, v8::Local<v8::Value> data_value) {
         WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
             return;
@@ -1582,57 +1537,49 @@ public:
         if (type == NativeType::WebGLUniformLocation) {
             auto location = WebGLUniformLocation::GetPointer(location_obj);
 
-            auto len = data_value->Length();
-            std::vector<float> buf;
-            buf.reserve(len);
+            if (data_value->IsFloat32Array()) {
+                auto buf = data_value.As<v8::Float32Array>();
+                auto array = buf->Buffer();
+                auto offset = buf->ByteOffset();
+                auto size = buf->Length();
+                auto data_ptr = static_cast<uint8_t *>(array->GetBackingStore()->Data()) + offset;
+                auto data = static_cast<float *>((void *) data_ptr);
 
-            auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<float>::Build().GetId(), float>(
-                    data_value, buf.data(), len);
-
-            if (copied) {
                 canvas_native_webgl2_uniform_matrix3x4fv(
                         location->GetUniformLocation(),
                         transpose,
-                        buf.data(), buf.size(),
+                        data, size,
                         ptr->GetState()
                 );
+            } else if (data_value->IsArray()) {
+                auto array = data_value.As<v8::Array>();
+                auto len = array->Length();
+                std::vector<float> buf;
+                buf.resize(len);
+
+                auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<float>::Build().GetId(), float>(
+                        array, buf.data(), len);
+
+                if (copied) {
+                    canvas_native_webgl2_uniform_matrix3x4fv(
+                            location->GetUniformLocation(),
+                            transpose,
+                            buf.data(), buf.size(),
+                            ptr->GetState()
+                    );
+                }
             }
         }
 
     }
+
 
 
     static void UniformMatrix4x2fv(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void
     FastUniformMatrix4x2fv(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
-                           bool transpose, const v8::FastApiTypedArray<float> &data_value) {
-        WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
-        if (ptr == nullptr) {
-            return;
-        }
-
-        auto type = GetNativeType(location_obj);
-        if (type == NativeType::WebGLUniformLocation) {
-            auto location = WebGLUniformLocation::GetPointer(location_obj);
-            auto size = data_value.length();
-            float *data;
-            data_value.getStorageIfAligned(&data);
-
-            canvas_native_webgl2_uniform_matrix4x2fv(
-                    location->GetUniformLocation(),
-                    transpose,
-                    data, size,
-                    ptr->GetState()
-            );
-        }
-
-    }
-
-    static void
-    FastUniformMatrix4x2fvArray(v8::Local<v8::Object> receiver_obj,
-                                v8::Local<v8::Object> location_obj,
-                                bool transpose, v8::Local<v8::Array> data_value) {
+                           bool transpose, v8::Local<v8::Value> data_value) {
         WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
             return;
@@ -1642,57 +1589,49 @@ public:
         if (type == NativeType::WebGLUniformLocation) {
             auto location = WebGLUniformLocation::GetPointer(location_obj);
 
-            auto len = data_value->Length();
-            std::vector<float> buf;
-            buf.reserve(len);
+            if (data_value->IsFloat32Array()) {
+                auto buf = data_value.As<v8::Float32Array>();
+                auto array = buf->Buffer();
+                auto offset = buf->ByteOffset();
+                auto size = buf->Length();
+                auto data_ptr = static_cast<uint8_t *>(array->GetBackingStore()->Data()) + offset;
+                auto data = static_cast<float *>((void *) data_ptr);
 
-            auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<float>::Build().GetId(), float>(
-                    data_value, buf.data(), len);
-
-            if (copied) {
                 canvas_native_webgl2_uniform_matrix4x2fv(
                         location->GetUniformLocation(),
                         transpose,
-                        buf.data(), buf.size(),
+                        data, size,
                         ptr->GetState()
                 );
+            } else if (data_value->IsArray()) {
+                auto array = data_value.As<v8::Array>();
+                auto len = array->Length();
+                std::vector<float> buf;
+                buf.resize(len);
+
+                auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<float>::Build().GetId(), float>(
+                        array, buf.data(), len);
+
+                if (copied) {
+                    canvas_native_webgl2_uniform_matrix4x2fv(
+                            location->GetUniformLocation(),
+                            transpose,
+                            buf.data(), buf.size(),
+                            ptr->GetState()
+                    );
+                }
             }
         }
 
     }
+
 
     static void UniformMatrix4x3fv(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 
     static void
     FastUniformMatrix4x3fv(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
-                           bool transpose, const v8::FastApiTypedArray<float> &data_value) {
-        WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
-        if (ptr == nullptr) {
-            return;
-        }
-
-        auto type = GetNativeType(location_obj);
-        if (type == NativeType::WebGLUniformLocation) {
-            auto location = WebGLUniformLocation::GetPointer(location_obj);
-            auto size = data_value.length();
-            float *data;
-            data_value.getStorageIfAligned(&data);
-
-            canvas_native_webgl2_uniform_matrix4x3fv(
-                    location->GetUniformLocation(),
-                    transpose,
-                    data, size,
-                    ptr->GetState()
-            );
-        }
-
-    }
-
-    static void
-    FastUniformMatrix4x3fvArray(v8::Local<v8::Object> receiver_obj,
-                                v8::Local<v8::Object> location_obj,
-                                bool transpose, v8::Local<v8::Array> data_value) {
+                           bool transpose, v8::Local<v8::Value> data_value) {
         WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
             return;
@@ -1702,24 +1641,42 @@ public:
         if (type == NativeType::WebGLUniformLocation) {
             auto location = WebGLUniformLocation::GetPointer(location_obj);
 
-            auto len = data_value->Length();
-            std::vector<float> buf;
-            buf.reserve(len);
+            if (data_value->IsFloat32Array()) {
+                auto buf = data_value.As<v8::Float32Array>();
+                auto array = buf->Buffer();
+                auto offset = buf->ByteOffset();
+                auto size = buf->Length();
+                auto data_ptr = static_cast<uint8_t *>(array->GetBackingStore()->Data()) + offset;
+                auto data = static_cast<float *>((void *) data_ptr);
 
-            auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<float>::Build().GetId(), float>(
-                    data_value, buf.data(), len);
-
-            if (copied) {
                 canvas_native_webgl2_uniform_matrix4x3fv(
                         location->GetUniformLocation(),
                         transpose,
-                        buf.data(), buf.size(),
+                        data, size,
                         ptr->GetState()
                 );
+            } else if (data_value->IsArray()) {
+                auto array = data_value.As<v8::Array>();
+                auto len = array->Length();
+                std::vector<float> buf;
+                buf.resize(len);
+
+                auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<float>::Build().GetId(), float>(
+                        array, buf.data(), len);
+
+                if (copied) {
+                    canvas_native_webgl2_uniform_matrix4x3fv(
+                            location->GetUniformLocation(),
+                            transpose,
+                            buf.data(), buf.size(),
+                            ptr->GetState()
+                    );
+                }
             }
         }
 
     }
+
 
     static void VertexAttribDivisor(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -1762,49 +1719,47 @@ public:
 
     static void VertexAttribI4iv(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-    static void FastVertexAttribI4iv(v8::Local<v8::Object> receiver_obj, uint32_t index,
-                                     const v8::FastApiTypedArray<int32_t> &data_value) {
+    static void
+    FastVertexAttribI4iv(v8::Local<v8::Object> receiver_obj, uint32_t index,
+                         v8::Local<v8::Value> data_value) {
         WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
             return;
         }
 
-        auto size = data_value.length();
-        int32_t *data;
-        data_value.getStorageIfAligned(&data);
+        if (data_value->IsInt32Array()) {
+            auto buf = data_value.As<v8::Int32Array>();
+            auto array = buf->Buffer();
+            auto offset = buf->ByteOffset();
+            auto size = buf->Length();
+            auto data_ptr = static_cast<uint8_t *>(array->GetBackingStore()->Data()) + offset;
+            auto data = static_cast<int32_t *>((void *) data_ptr);
 
-        canvas_native_webgl2_vertex_attrib_i4iv(
-                index,
-                data, size,
-                ptr->GetState()
-        );
-
-    }
-
-    static void FastVertexAttribI4ivArray(v8::Local<v8::Object> receiver_obj, uint32_t index,
-                                          v8::Local<v8::Array> data_value) {
-        WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
-        if (ptr == nullptr) {
-            return;
-        }
-
-        auto len = data_value->Length();
-        std::vector<int32_t> buf;
-        buf.reserve(len);
-
-        auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<int32_t>::Build().GetId(), int32_t>(
-                data_value, buf.data(), len);
-
-
-        if (copied) {
             canvas_native_webgl2_vertex_attrib_i4iv(
                     index,
-                    buf.data(), buf.size(),
+                    data, size,
                     ptr->GetState()
             );
+        } else if (data_value->IsArray()) {
+            auto array = data_value.As<v8::Array>();
+            auto len = array->Length();
+            std::vector<int32_t> buf;
+            buf.resize(len);
+
+            auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<int32_t>::Build().GetId(), int32_t>(
+                    array, buf.data(), len);
+
+            if (copied) {
+                canvas_native_webgl2_vertex_attrib_i4iv(
+                        index,
+                        buf.data(), buf.size(),
+                        ptr->GetState()
+                );
+            }
         }
 
     }
+
 
     static void VertexAttribI4ui(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -1832,48 +1787,46 @@ public:
     static void VertexAttribI4uiv(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 
-    static void FastVertexAttribI4uiv(v8::Local<v8::Object> receiver_obj, uint32_t index,
-                                      const v8::FastApiTypedArray<uint32_t> &data_value) {
+    static void
+    FastVertexAttribI4uiv(v8::Local<v8::Object> receiver_obj, uint32_t index,
+                          v8::Local<v8::Value> data_value) {
         WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
             return;
         }
 
-        auto size = data_value.length();
-        uint32_t *data;
-        data_value.getStorageIfAligned(&data);
+        if (data_value->IsUint32Array()) {
+            auto buf = data_value.As<v8::Uint32Array>();
+            auto array = buf->Buffer();
+            auto offset = buf->ByteOffset();
+            auto size = buf->Length();
+            auto data_ptr = static_cast<uint8_t *>(array->GetBackingStore()->Data()) + offset;
+            auto data = static_cast<uint32_t *>((void *) data_ptr);
 
-        canvas_native_webgl2_vertex_attrib_i4uiv(
-                index,
-                data, size,
-                ptr->GetState()
-        );
-
-    }
-
-    static void FastVertexAttribI4uivArray(v8::Local<v8::Object> receiver_obj, uint32_t index,
-                                           v8::Local<v8::Array> data_value) {
-        WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
-        if (ptr == nullptr) {
-            return;
-        }
-
-        auto len = data_value->Length();
-        std::vector<uint32_t> buf;
-        buf.reserve(len);
-
-        auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<uint32_t>::Build().GetId(), uint32_t>(
-                data_value, buf.data(), len);
-
-
-        if (copied) {
             canvas_native_webgl2_vertex_attrib_i4uiv(
                     index,
-                    buf.data(), buf.size(),
+                    data, size,
                     ptr->GetState()
             );
+        } else if (data_value->IsArray()) {
+            auto array = data_value.As<v8::Array>();
+            auto len = array->Length();
+            std::vector<uint32_t> buf;
+            buf.resize(len);
+
+            auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<uint32_t>::Build().GetId(), uint32_t>(
+                    array, buf.data(), len);
+
+            if (copied) {
+                canvas_native_webgl2_vertex_attrib_i4uiv(
+                        index,
+                        buf.data(), buf.size(),
+                        ptr->GetState()
+                );
+            }
         }
 
     }
+
 
 };

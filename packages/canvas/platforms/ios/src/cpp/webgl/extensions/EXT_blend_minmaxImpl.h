@@ -19,7 +19,7 @@ public:
         auto object = EXT_blend_minmaxImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType( minmax, NativeType::EXT_blend_minmax);
-        object->SetAlignedPointerInInternalField(0, minmax);
+        object->SetAlignedPointerInInternalField(0, minmax, ObjectWrapperImpl::kInternalFieldTag);
         object->Set(context, ConvertToV8String(isolate, "ext_name"),
                     ConvertToV8String(isolate, "EXT_blend_minmax"));
         minmax->BindFinalizer(isolate, object);
@@ -27,7 +27,7 @@ public:
     }
 
     static EXT_blend_minmaxImpl *GetPointer(const v8::Local<v8::Object> &object) {
-        auto ptr = object->GetAlignedPointerFromInternalField(0);
+        auto ptr = object->GetAlignedPointerFromInternalField(0, ObjectWrapperImpl::kInternalFieldTag);
         if (ptr == nullptr) {
             return nullptr;
         }

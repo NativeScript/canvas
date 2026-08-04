@@ -4,13 +4,20 @@ platform :ios, '12.0'
 # product of the local Swift package shipped in this npm package) instead of a
 # `pod 'NativeScript'`.
 #
-# The v8 include paths the canvas C++ needs (<NativeScript/include/v8.h> plus
-# bare-name includes like "v8config.h") are delivered by build.xcconfig as
-# OTHER_CFLAGS/OTHER_CPLUSPLUSFLAGS -I flags — see the comment there. They can
-# NOT be delivered here: CocoaPods saves the user project during integration,
-# BEFORE post_install runs, so build-setting edits made below never persist to
-# disk. The hook is kept only as a best-effort for CocoaPods versions that do
-# save afterwards; do not rely on it.
+# Canvas's C++ includes "include/v8.h" (see Common.h), which the NativeScriptV8
+# SPM product makes reachable by exposing nativescript-v8/Headers itself as a
+# search root. But the vendored V8 14.9 headers reference each other by bare
+# name from within that tree (e.g. v8.h -> cppgc/common.h -> "v8config.h"),
+# which needs the include/ dir itself on the search path — SPM only exposes
+# the Headers parent. HEADER_SEARCH_PATHS entries here win over any
+# OTHER_CFLAGS/OTHER_CPLUSPLUSFLAGS-delivered -I (see build.xcconfig) because
+# Xcode emits HEADER_SEARCH_PATHS-derived -I flags earlier in the compiler
+# invocation, so this is the mechanism that actually needs to carry it.
+# IMPORTANT: do NOT point this at the NativeScript runtime framework's own
+# Headers/include (the historical entry here) -- that framework still ships
+# an older V8, and its v8config.h shares the same include guard as the vendored
+# one, so whichever wins the search-path race silently makes the *other*
+# tree's headers a no-op for the rest of the compile.
 post_install do |installer|
   installer.aggregate_targets.each do |aggregate_target|
     aggregate_target.user_targets.each do |target|
@@ -18,10 +25,7 @@ post_install do |installer|
         config.build_settings['HEADER_SEARCH_PATHS'] ||= ['$(inherited)']
 
         config.build_settings['HEADER_SEARCH_PATHS'] << \
-          '$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/NativeScript.framework/Headers'
-
-        config.build_settings['HEADER_SEARCH_PATHS'] << \
-          '$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/NativeScript.framework/Headers/include'
+          '$(SRCROOT)/../../../../nativescript-v8/Headers/include'
       end
     end
   end

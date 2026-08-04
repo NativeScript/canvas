@@ -25,7 +25,7 @@ void GPUAdapterImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isola
 }
 
 GPUAdapterImpl *GPUAdapterImpl::GetPointer(const v8::Local<v8::Object> &object) {
-    auto ptr = object->GetAlignedPointerFromInternalField(0);
+    auto ptr = object->GetAlignedPointerFromInternalField(0, ObjectWrapperImpl::kInternalFieldTag);
     if (ptr == nullptr) {
         return nullptr;
     }
@@ -80,7 +80,7 @@ v8::Local<v8::FunctionTemplate> GPUAdapterImpl::GetCtor(v8::Isolate *isolate) {
 void
 GPUAdapterImpl::GetFeatures(v8::Local<v8::Name> name,
                             const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(info.Holder());
     auto isolate = info.GetIsolate();
     if (ptr != nullptr) {
         auto context = isolate->GetCurrentContext();
@@ -112,7 +112,7 @@ GPUAdapterImpl::GetFeatures(v8::Local<v8::Name> name,
 void
 GPUAdapterImpl::GetIsFallbackAdapter(v8::Local<v8::Name> name,
                                      const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(info.Holder());
     if (ptr != nullptr) {
         info.GetReturnValue().Set(
                 canvas_native_webgpu_adapter_is_fallback_adapter(ptr->GetGPUAdapter())
@@ -125,7 +125,7 @@ GPUAdapterImpl::GetIsFallbackAdapter(v8::Local<v8::Name> name,
 void
 GPUAdapterImpl::GetLimits(v8::Local<v8::Name> name,
                           const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(info.Holder());
     if (ptr != nullptr) {
         auto limits = canvas_native_webgpu_adapter_get_limits(ptr->GetGPUAdapter());
         auto ret = GPUSupportedLimitsImpl::NewInstance(info.GetIsolate(),

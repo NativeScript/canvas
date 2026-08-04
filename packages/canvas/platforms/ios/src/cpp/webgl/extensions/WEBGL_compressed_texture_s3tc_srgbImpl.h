@@ -54,7 +54,7 @@ public:
         auto object = WEBGL_compressed_texture_s3tc_srgbImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType( compressedTextureS3TcSrgb, NativeType::WEBGL_compressed_texture_s3tc_srgb);
-        object->SetAlignedPointerInInternalField(0, compressedTextureS3TcSrgb);
+        object->SetAlignedPointerInInternalField(0, compressedTextureS3TcSrgb, ObjectWrapperImpl::kInternalFieldTag);
         object->Set(context, ConvertToV8String(isolate, "ext_name"),
                     ConvertToV8String(isolate, "WEBGL_compressed_texture_s3tc_srgb"));
         compressedTextureS3TcSrgb->BindFinalizer(isolate, object);
@@ -62,7 +62,7 @@ public:
     }
 
     static WEBGL_compressed_texture_s3tc_srgbImpl *GetPointer(const v8::Local<v8::Object> &object) {
-        auto ptr = object->GetAlignedPointerFromInternalField(0);
+        auto ptr = object->GetAlignedPointerFromInternalField(0, ObjectWrapperImpl::kInternalFieldTag);
         if (ptr == nullptr) {
             return nullptr;
         }

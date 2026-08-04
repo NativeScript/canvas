@@ -39,13 +39,13 @@ public:
         auto object = WebGLVertexArrayObject::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType(vertexArrayObject, NativeType::WebGLVertexArrayObject);
-        object->SetAlignedPointerInInternalField(0, vertexArrayObject);
+        object->SetAlignedPointerInInternalField(0, vertexArrayObject, ObjectWrapperImpl::kInternalFieldTag);
         vertexArrayObject->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 
     static WebGLVertexArrayObject *GetPointer(const v8::Local<v8::Object> &object) {
-        auto ptr = object->GetAlignedPointerFromInternalField(0);
+        auto ptr = object->GetAlignedPointerFromInternalField(0, ObjectWrapperImpl::kInternalFieldTag);
         if (ptr == nullptr) {
             return nullptr;
         }

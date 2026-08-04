@@ -27,7 +27,7 @@ void GPUTextureImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isola
 }
 
 GPUTextureImpl *GPUTextureImpl::GetPointer(const v8::Local<v8::Object> &object) {
-    auto ptr = object->GetAlignedPointerFromInternalField(0);
+    auto ptr = object->GetAlignedPointerFromInternalField(0, ObjectWrapperImpl::kInternalFieldTag);
     if (ptr == nullptr) {
         return nullptr;
     }
@@ -120,7 +120,7 @@ v8::Local<v8::FunctionTemplate> GPUTextureImpl::GetCtor(v8::Isolate *isolate) {
 void
 GPUTextureImpl::GetLabel(v8::Local<v8::Name> name,
                          const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(info.Holder());
     if (ptr != nullptr) {
         auto label = canvas_native_webgpu_texture_get_label(ptr->texture_.get());
         if (label == nullptr) {
@@ -140,7 +140,7 @@ GPUTextureImpl::GetLabel(v8::Local<v8::Name> name,
 void
 GPUTextureImpl::GetDimension(v8::Local<v8::Name> name,
                              const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(info.Holder());
     if (ptr != nullptr) {
         auto width = canvas_native_webgpu_texture_get_dimension(ptr->GetTexture());
         auto isolate = info.GetIsolate();
@@ -164,7 +164,7 @@ GPUTextureImpl::GetDimension(v8::Local<v8::Name> name,
 void
 GPUTextureImpl::GetWidth(v8::Local<v8::Name> name,
                          const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(info.Holder());
     if (ptr != nullptr) {
         auto width = canvas_native_webgpu_texture_get_width(ptr->GetTexture());
         info.GetReturnValue().Set(width);
@@ -177,7 +177,7 @@ GPUTextureImpl::GetWidth(v8::Local<v8::Name> name,
 void
 GPUTextureImpl::GetHeight(v8::Local<v8::Name> name,
                           const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(info.Holder());
     if (ptr != nullptr) {
         auto value = canvas_native_webgpu_texture_get_height(ptr->GetTexture());
         info.GetReturnValue().Set(value);
@@ -189,7 +189,7 @@ GPUTextureImpl::GetHeight(v8::Local<v8::Name> name,
 void
 GPUTextureImpl::GetDepthOrArrayLayers(v8::Local<v8::Name> name,
                                       const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(info.Holder());
     if (ptr != nullptr) {
         auto value = canvas_native_webgpu_texture_get_depth_or_array_layers(ptr->GetTexture());
         info.GetReturnValue().Set(value);
@@ -202,7 +202,7 @@ GPUTextureImpl::GetDepthOrArrayLayers(v8::Local<v8::Name> name,
 void
 GPUTextureImpl::GetUsage(v8::Local<v8::Name> name,
                          const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(info.Holder());
     if (ptr != nullptr) {
         auto value = canvas_native_webgpu_texture_get_usage(ptr->GetTexture());
         info.GetReturnValue().Set(value);
@@ -215,7 +215,7 @@ GPUTextureImpl::GetUsage(v8::Local<v8::Name> name,
 void
 GPUTextureImpl::GetFormat(v8::Local<v8::Name> name,
                           const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(info.Holder());
     if (ptr != nullptr) {
         auto isolate = info.GetIsolate();
         auto value = canvas_native_webgpu_texture_get_format(ptr->GetTexture());
@@ -229,7 +229,7 @@ GPUTextureImpl::GetFormat(v8::Local<v8::Name> name,
 void
 GPUTextureImpl::GetSampleCount(v8::Local<v8::Name> name,
                                const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(info.Holder());
     if (ptr != nullptr) {
         auto value = canvas_native_webgpu_texture_get_sample_count(ptr->GetTexture());
         info.GetReturnValue().Set(value);
@@ -241,7 +241,7 @@ GPUTextureImpl::GetSampleCount(v8::Local<v8::Name> name,
 void
 GPUTextureImpl::GetMipLevelCount(v8::Local<v8::Name> name,
                                  const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(info.Holder());
     if (ptr != nullptr) {
         auto value = canvas_native_webgpu_texture_get_mip_level_count(ptr->GetTexture());
         info.GetReturnValue().Set(value);

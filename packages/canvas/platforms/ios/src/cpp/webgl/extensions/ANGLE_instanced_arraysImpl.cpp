@@ -22,7 +22,7 @@ v8::CFunction ANGLE_instanced_arraysImpl::fast_vertex_attrib_divisor_angle_(
 
 ANGLE_instanced_arraysImpl *
 ANGLE_instanced_arraysImpl::GetPointer(const v8::Local<v8::Object> &object) {
-    auto ptr = object->GetAlignedPointerFromInternalField(0);
+    auto ptr = object->GetAlignedPointerFromInternalField(0, ObjectWrapperImpl::kInternalFieldTag);
     if (ptr == nullptr) {
         return nullptr;
     }

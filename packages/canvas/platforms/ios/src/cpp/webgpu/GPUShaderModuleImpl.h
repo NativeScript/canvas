@@ -31,7 +31,7 @@ public:
         auto object = GPUShaderModuleImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType(shaderModule, NativeType::GPUShaderModule);
-        object->SetAlignedPointerInInternalField(0, shaderModule);
+        object->SetAlignedPointerInInternalField(0, shaderModule, ObjectWrapperImpl::kInternalFieldTag);
         shaderModule->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }

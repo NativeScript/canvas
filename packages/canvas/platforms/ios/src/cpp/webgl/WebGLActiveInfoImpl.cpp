@@ -9,7 +9,7 @@
 WebGLActiveInfoImpl::WebGLActiveInfoImpl(WebGLActiveInfo* info) : info_(info) {}
 
 WebGLActiveInfoImpl *WebGLActiveInfoImpl::GetPointer(const v8::Local<v8::Object> &object) {
-    auto ptr = object->GetAlignedPointerFromInternalField(0);
+    auto ptr = object->GetAlignedPointerFromInternalField(0, ObjectWrapperImpl::kInternalFieldTag);
     if (ptr == nullptr) {
         return nullptr;
     }
@@ -47,7 +47,7 @@ v8::Local<v8::FunctionTemplate> WebGLActiveInfoImpl::GetCtor(v8::Isolate *isolat
 void
 WebGLActiveInfoImpl::GetName(v8::Local<v8::Name> name,
                              const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(info.Holder());
     auto isolate = info.GetIsolate();
     if (ptr != nullptr) {
         auto info_name = canvas_native_webgl_active_info_get_name(ptr->GetWebGLActiveInfo());
@@ -62,7 +62,7 @@ WebGLActiveInfoImpl::GetName(v8::Local<v8::Name> name,
 void
 WebGLActiveInfoImpl::GetSize(v8::Local<v8::Name> name,
                              const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(info.Holder());
     if (ptr != nullptr) {
         auto size = canvas_native_webgl_active_info_get_size(ptr->GetWebGLActiveInfo());
         info.GetReturnValue().Set(size);
@@ -75,7 +75,7 @@ WebGLActiveInfoImpl::GetSize(v8::Local<v8::Name> name,
 void
 WebGLActiveInfoImpl::GetType(v8::Local<v8::Name> name,
                              const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(info.Holder());
     if (ptr != nullptr) {
         auto type = canvas_native_webgl_active_info_get_type(ptr->GetWebGLActiveInfo());
         info.GetReturnValue().Set(type);

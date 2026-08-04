@@ -25,7 +25,7 @@ void GPUImpl::Init(const v8::Local<v8::Object> &canvasModule, v8::Isolate *isola
 
 
 GPUImpl *GPUImpl::GetPointer(const v8::Local<v8::Object> &object) {
-    auto ptr = object->GetAlignedPointerFromInternalField(0);
+    auto ptr = object->GetAlignedPointerFromInternalField(0, ObjectWrapperImpl::kInternalFieldTag);
     if (ptr == nullptr) {
         return nullptr;
     }
@@ -67,7 +67,7 @@ void GPUImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
     auto object = new GPUImpl(instance);
 
-    ret->SetAlignedPointerInInternalField(0, object);
+    ret->SetAlignedPointerInInternalField(0, object, ObjectWrapperImpl::kInternalFieldTag);
 
     SetNativeType(object, NativeType::GPUInstance);
 

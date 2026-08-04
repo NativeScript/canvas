@@ -127,13 +127,13 @@ public:
         auto object = WEBGL_draw_buffersImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType(buffers, NativeType::WEBGL_draw_buffers);
-        object->SetAlignedPointerInInternalField(0, buffers);
+        object->SetAlignedPointerInInternalField(0, buffers, ObjectWrapperImpl::kInternalFieldTag);
         buffers->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 
     static WEBGL_draw_buffersImpl *GetPointer(const v8::Local<v8::Object> &object) {
-        auto ptr = object->GetAlignedPointerFromInternalField(0);
+        auto ptr = object->GetAlignedPointerFromInternalField(0, ObjectWrapperImpl::kInternalFieldTag);
         if (ptr == nullptr) {
             return nullptr;
         }

@@ -32,7 +32,7 @@ public:
         auto object = GPUPipelineLayoutImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType(pipeline, NativeType::GPUPipelineLayout);
-        object->SetAlignedPointerInInternalField(0, pipeline);
+        object->SetAlignedPointerInInternalField(0, pipeline, ObjectWrapperImpl::kInternalFieldTag);
         pipeline->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }

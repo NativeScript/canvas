@@ -33,7 +33,7 @@ void ImageAssetImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isola
 }
 
 ImageAssetImpl *ImageAssetImpl::GetPointer(const v8::Local<v8::Object> &object) {
-    auto ptr = object->GetAlignedPointerFromInternalField(0);
+    auto ptr = object->GetAlignedPointerFromInternalField(0, ObjectWrapperImpl::kInternalFieldTag);
     if (ptr == nullptr) {
         return nullptr;
     }
@@ -53,17 +53,17 @@ v8::Local<v8::FunctionTemplate> ImageAssetImpl::GetCtor(v8::Isolate *isolate) {
     
     auto tmpl = ctorTmpl->InstanceTemplate();
     tmpl->SetInternalFieldCount(2);
-    tmpl->SetAccessor(
+    tmpl->SetNativeDataProperty(
                       ConvertToV8String(isolate, "width"),
                       GetWidth);
-    tmpl->SetAccessor(
+    tmpl->SetNativeDataProperty(
                       ConvertToV8String(isolate, "height"),
                       GetHeight);
-    tmpl->SetAccessor(
+    tmpl->SetNativeDataProperty(
                       ConvertToV8String(isolate, "error"),
                       GetError);
     
-    tmpl->SetAccessor(
+    tmpl->SetNativeDataProperty(
                       ConvertToV8String(isolate, "__addr"),
                       GetAddr);
     
@@ -138,7 +138,7 @@ void ImageAssetImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
     
     SetNativeType(object, NativeType::ImageAsset);
     
-    ret->SetAlignedPointerInInternalField(0, object);
+    ret->SetAlignedPointerInInternalField(0, object, ObjectWrapperImpl::kInternalFieldTag);
     
     object->BindFinalizer(isolate, ret);
     
@@ -146,9 +146,9 @@ void ImageAssetImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
 }
 
 void
-ImageAssetImpl::GetWidth(v8::Local<v8::String> name,
+ImageAssetImpl::GetWidth(v8::Local<v8::Name> name,
                          const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(info.Holder());
     if (ptr != nullptr) {
         auto ret = canvas_native_image_asset_width(ptr->GetImageAsset());
         info.GetReturnValue().Set(ret);
@@ -158,9 +158,9 @@ ImageAssetImpl::GetWidth(v8::Local<v8::String> name,
 }
 
 void
-ImageAssetImpl::GetHeight(v8::Local<v8::String> name,
+ImageAssetImpl::GetHeight(v8::Local<v8::Name> name,
                           const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(info.Holder());
     if (ptr != nullptr) {
         auto ret = canvas_native_image_asset_height(ptr->GetImageAsset());
         info.GetReturnValue().Set(ret);
@@ -171,9 +171,9 @@ ImageAssetImpl::GetHeight(v8::Local<v8::String> name,
 
 
 void
-ImageAssetImpl::GetAddr(v8::Local<v8::String> name,
+ImageAssetImpl::GetAddr(v8::Local<v8::Name> name,
                         const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(info.Holder());
     if (ptr != nullptr) {
         auto isolate = info.GetIsolate();
         auto ret = std::to_string(canvas_native_image_asset_get_addr(ptr->GetImageAsset()));
@@ -200,9 +200,9 @@ ImageAssetImpl::GetReference(const v8::FunctionCallbackInfo<v8::Value> &args) {
 }
 
 void
-ImageAssetImpl::GetError(v8::Local<v8::String> name,
+ImageAssetImpl::GetError(v8::Local<v8::Name> name,
                          const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(info.Holder());
     if (ptr != nullptr) {
         auto ret = canvas_native_image_asset_get_error(ptr->GetImageAsset());
         auto isolate = info.GetIsolate();

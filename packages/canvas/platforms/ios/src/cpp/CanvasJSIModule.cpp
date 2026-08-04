@@ -554,7 +554,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
 							auto asset_data = static_cast<ImageBitmapData *>(func->data);
 							
 							auto bitmap = new ImageBitmapImpl(asset_data->asset_);
-							auto external = v8::External::New(isolate, bitmap);
+							auto external = v8::External::New(isolate, bitmap, v8::kExternalPointerTypeTagDefault);
 							
 							auto ret = ImageBitmapImpl::NewInstance(isolate, external);
 							
@@ -657,7 +657,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
 				
 				
 				auto bitmap = new ImageBitmapImpl(ret);
-				auto data = v8::External::New(isolate, bitmap);
+				auto data = v8::External::New(isolate, bitmap, v8::kExternalPointerTypeTagDefault);
 				
 				auto object = ImageBitmapImpl::NewInstance(isolate, data);
 				
@@ -677,7 +677,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
 				
 				
 				auto bitmap = new ImageBitmapImpl(ret);
-				auto data = v8::External::New(isolate, bitmap);
+				auto data = v8::External::New(isolate, bitmap, v8::kExternalPointerTypeTagDefault);
 				auto object = ImageBitmapImpl::NewInstance(isolate, data);
 				
 				retArgs[1] = object;
@@ -719,7 +719,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
 				
 				
 				auto bitmap = new ImageBitmapImpl(ret);
-				auto data = v8::External::New(isolate, bitmap);
+				auto data = v8::External::New(isolate, bitmap, v8::kExternalPointerTypeTagDefault);
 				auto object = ImageBitmapImpl::NewInstance(isolate, data);
 				
 				retArgs[1] = object;
@@ -742,7 +742,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
 				
 				
 				auto bitmap = new ImageBitmapImpl(ret);
-				auto data = v8::External::New(isolate, bitmap);
+				auto data = v8::External::New(isolate, bitmap, v8::kExternalPointerTypeTagDefault);
 				auto object = ImageBitmapImpl::NewInstance(isolate, data);
 				
 				retArgs[1] = object;

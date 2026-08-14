@@ -7,6 +7,7 @@
 
 #include <vector>
 #include "Common.h"
+#include "V8FastApiCalls.h"
 
 #include "WebGLRenderingContextBase.h"
 
@@ -2191,7 +2192,7 @@ public:
                 std::vector<int32_t> buf;
                 buf.resize(len);
 
-                auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<int32_t>::Build().GetId(), int32_t>(
+                auto copied = v8_helpers::TryToCopyAndConvertArrayToCppBufferInt32(
                         array, buf.data(), len);
 
                 if (copied) {
@@ -2239,7 +2240,7 @@ public:
                 std::vector<float> buf;
                 buf.resize(len);
 
-                auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<float>::Build().GetId(), float>(
+                auto copied = v8_helpers::TryToCopyAndConvertArrayToCppBufferFloat(
                         array, buf.data(), len);
 
                 if (copied) {
@@ -2340,7 +2341,7 @@ public:
                 std::vector<int32_t> buf;
                 buf.resize(len);
 
-                auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<int32_t>::Build().GetId(), int32_t>(
+                auto copied = v8_helpers::TryToCopyAndConvertArrayToCppBufferInt32(
                         array, buf.data(), len);
 
                 if (copied) {
@@ -2387,7 +2388,7 @@ public:
                 std::vector<float> buf;
                 buf.resize(len);
 
-                auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<float>::Build().GetId(), float>(
+                auto copied = v8_helpers::TryToCopyAndConvertArrayToCppBufferFloat(
                         array, buf.data(), len);
 
                 if (copied) {
@@ -2482,7 +2483,7 @@ public:
                 std::vector<float> buf;
                 buf.resize(len);
 
-                auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<float>::Build().GetId(), float>(
+                auto copied = v8_helpers::TryToCopyAndConvertArrayToCppBufferFloat(
                         array, buf.data(), len);
 
                 if (copied) {
@@ -2530,7 +2531,7 @@ public:
                 std::vector<int32_t> buf;
                 buf.resize(len);
 
-                auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<int32_t>::Build().GetId(), int32_t>(
+                auto copied = v8_helpers::TryToCopyAndConvertArrayToCppBufferInt32(
                         array, buf.data(), len);
 
                 if (copied) {
@@ -2627,7 +2628,7 @@ public:
                 std::vector<int32_t> buf;
                 buf.resize(len);
 
-                auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<int32_t>::Build().GetId(), int32_t>(
+                auto copied = v8_helpers::TryToCopyAndConvertArrayToCppBufferInt32(
                         array, buf.data(), len);
 
                 if (copied) {
@@ -2674,7 +2675,7 @@ public:
                 std::vector<float> buf;
                 buf.resize(len);
 
-                auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<float>::Build().GetId(), float>(
+                auto copied = v8_helpers::TryToCopyAndConvertArrayToCppBufferFloat(
                         array, buf.data(), len);
 
                 if (copied) {
@@ -2747,7 +2748,7 @@ public:
                 std::vector<float> buf;
                 buf.resize(len);
 
-                auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<float>::Build().GetId(), float>(
+                auto copied = v8_helpers::TryToCopyAndConvertArrayToCppBufferFloat(
                         array, buf.data(), len);
 
                 if (copied) {
@@ -2795,7 +2796,7 @@ public:
                 std::vector<float> buf;
                 buf.resize(len);
 
-                auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<float>::Build().GetId(), float>(
+                auto copied = v8_helpers::TryToCopyAndConvertArrayToCppBufferFloat(
                         array, buf.data(), len);
 
                 if (copied) {
@@ -2842,7 +2843,7 @@ public:
                 std::vector<float> buf;
                 buf.resize(len);
 
-                auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<float>::Build().GetId(), float>(
+                auto copied = v8_helpers::TryToCopyAndConvertArrayToCppBufferFloat(
                         array, buf.data(), len);
 
                 if (copied) {

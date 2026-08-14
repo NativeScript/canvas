@@ -6,6 +6,7 @@
 
 #include "Common.h"
 #include "Helpers.h"
+#include "V8FastApiCalls.h"
 #include <vector>
 #include "ObjectWrapperImpl.h"
 
@@ -354,7 +355,7 @@ public:
         std::vector<float> buf;
         buf.reserve(len);
 
-        auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<float>::Build().GetId(), float>(
+        auto copied = v8_helpers::TryToCopyAndConvertArrayToCppBufferFloat(
                 value, nullptr, len);
 
         if (copied) {

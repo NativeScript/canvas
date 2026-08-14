@@ -14,6 +14,7 @@
 #include "OnRafCallback.h"
 
 #include "Helpers.h"
+#include "V8FastApiCalls.h"
 
 #include "CanvasGradient.h"
 #include "CanvasPattern.h"
@@ -606,7 +607,7 @@ public:
         std::vector<float> buf;
         buf.reserve(len);
 
-        auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<float>::Build().GetId(), float>(
+        auto copied = v8_helpers::TryToCopyAndConvertArrayToCppBufferFloat(
                 array, buf.data(), len);
 
         if (copied) {
@@ -1247,7 +1248,7 @@ public:
         std::vector<float> buf;
         buf.reserve(len);
 
-        auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<float>::Build().GetId(), float>(
+        auto copied = v8_helpers::TryToCopyAndConvertArrayToCppBufferFloat(
                 array, buf.data(), len);
 
         if (copied) {
@@ -1375,7 +1376,7 @@ public:
         std::vector<float> buf;
         buf.reserve(len);
 
-        auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<float>::Build().GetId(), float>(
+        auto copied = v8_helpers::TryToCopyAndConvertArrayToCppBufferFloat(
                 array, buf.data(), len);
 
         if (copied) {

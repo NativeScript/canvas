@@ -7,6 +7,7 @@
 #include "gl.h"
 #include <vector>
 #include "Common.h"
+#include "V8FastApiCalls.h"
 #include "Caches.h"
 #include "Helpers.h"
 #include "ObjectWrapperImpl.h"
@@ -155,7 +156,7 @@ public:
         std::vector<uint32_t> buf;
         buf.reserve(len);
 
-        auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<uint32_t>::Build().GetId(), uint32_t>(
+        auto copied = v8_helpers::TryToCopyAndConvertArrayToCppBufferUint32(
                 value, buf.data(), len);
 
         if (copied) {

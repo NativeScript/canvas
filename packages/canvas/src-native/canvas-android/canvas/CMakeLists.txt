@@ -133,6 +133,7 @@ add_library(
         ${CPP_DIR}/TextEncoderImpl.cpp
         ${CPP_DIR}/WorkerPool.cpp
         ${CPP_DIR}/V8BufferHelper.cpp
+        ${CPP_DIR}/V8FastApiCalls.cpp
 
 
         ${CPP_DIR}/webgl/WebGLActiveInfoImpl.cpp

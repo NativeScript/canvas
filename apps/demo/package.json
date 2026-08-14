@@ -4,6 +4,7 @@
 	"license": "SEE LICENSE IN <your-license-filename>",
 	"repository": "<fill-your-repository-here>",
 	"dependencies": {
+		"@nativescript/audio-context": "file:../../packages/audio-context",
 		"@nativescript/canvas": "file:../../packages/canvas",
 		"@nativescript/canvas-babylon": "file:../../packages/canvas-babylon",
 		"@nativescript/canvas-chartjs": "file:../../packages/canvas-chartjs",
@@ -28,13 +29,12 @@
 		"three": "file:../../node_modules/three",
 		"three-stdlib": "file:../../node_modules/three-stdlib",
 		"vexflow": "file:../../node_modules/vexflow",
-		"zen-3d": "file:../../node_modules/zen-3d",
-		"@nativescript/audio-context": "file:../../packages/audio-context"
+		"zen-3d": "file:../../node_modules/zen-3d"
 	},
 	"devDependencies": {
-		"@nativescript/android": "~8.9.0",
+		"@nativescript/android": "^9.0.6-next.2026-08-13-31716987422",
 		"@nativescript/devtools": "~0.0.1",
-		"@nativescript/ios": "9.1.0-alpha.18",
+		"@nativescript/ios": "9.0.4-next.2026-08-13-31742124335",
 		"@nativescript/visionos": "~9.0.1"
 	}
 }

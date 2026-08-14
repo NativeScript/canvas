@@ -1,6 +1,6 @@
 {
 	"name": "@nativescript/canvas-three",
-	"version": "2.1.17",
+	"version": "3.0.0-alpha.0",
 	"description": "Utilities for using THREE.js on NativeScript",
 	"main": "index",
 	"typings": "index.d.ts",

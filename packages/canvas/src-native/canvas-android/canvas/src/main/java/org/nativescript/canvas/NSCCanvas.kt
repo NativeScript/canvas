@@ -219,19 +219,26 @@ class NSCCanvas : FrameLayout {
 		isSurfaceDestroyed = true
 	}
 
+	// GL/EGL and Skia-GPU teardown is thread-affine: the native context is
+	// created and rendered on the thread that owns it (the main/UI thread that
+	// drives WebGL/canvas). Whatever thread calls this, hand the release back to
+	// the owning (main) thread — releasing off-thread tears down EGL/GL and
+	// non-Send (Rc) state on the wrong thread, which double-frees shared handles
+	// and SIGSEGVs inside libcanvasnative (drop glue deref'ing an already-freed
+	// inner ptr). Capture the handle + mode into locals and zero the field now
+	// so a concurrent/duplicate call can't double-post; the posted release frees
+	// the native memory on the right thread (a leak if the looper never drains
+	// is preferable to a crash).
+	//
+	// Exposed so JS can call this deterministically from disposeNativeView()
+	// instead of relying solely on finalize(), which only runs whenever ART's
+	// GC gets around to it — an arbitrary, batched, unpredictable time that can
+	// be many create/destroy cycles later. Until then the view's nativeContext
+	// handle stays non-zero (initContext()/getContext() see it as already
+	// initialized and no-op), so a canvas whose view was torn down keeps
+	// holding onto live EGL/GL state it no longer needs.
 	@Synchronized
-	@Throws(Throwable::class)
-	protected fun finalize() {
-		// GL/EGL and Skia-GPU teardown is thread-affine: the native context is
-		// created and rendered on the thread that owns it (the main/UI thread that
-		// drives WebGL/canvas). This finalize() runs on the ART FinalizerDaemon
-		// thread, so releasing the context here tears down EGL/GL and non-Send (Rc)
-		// state OFF that thread — which double-frees shared handles and SIGSEGVs
-		// inside libcanvasnative (drop glue deref'ing an already-freed inner ptr).
-		// Hand the release back to the owning (main) thread instead. Capture the
-		// handle + mode into locals and zero the field now so a re-run can't
-		// double-post; the posted release frees the native memory on the right
-		// thread (a leak if the looper never drains is preferable to a crash).
+	fun releaseNativeContext() {
 		val ctx = nativeContext
 		val texture = textureView.surfaceTexture
 		if (ctx == 0L) {
@@ -258,11 +265,18 @@ class NSCCanvas : FrameLayout {
 				Engine.GPU -> {
 					if (is2D) {
 						nativeRelease2DContext(ctx)
+					} else {
+						nativeReleaseWebGPU(ctx)
 					}
 				}
 			}
 			texture?.release()
 		}
+	}
+
+	@Throws(Throwable::class)
+	protected fun finalize() {
+		releaseNativeContext()
 	}
 
 	fun initWebGPUContext(instance: Long) {
@@ -1201,6 +1215,10 @@ class NSCCanvas : FrameLayout {
 		external fun nativeResizeWebGPU(
 			context: Long, surface: Surface, width: Int, height: Int
 		)
+
+		@JvmStatic
+		@FastNative
+		external fun nativeReleaseWebGPU(context: Long)
 
 		@JvmStatic
 		@FastNative

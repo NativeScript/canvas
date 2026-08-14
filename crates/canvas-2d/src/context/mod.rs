@@ -198,8 +198,20 @@ impl SurfaceData {
 
 pub struct Context {
     pub(crate) surface_data: SurfaceData,
+    // `surface` (its internal Skia GPU device holds its own strong ref on
+    // `direct_context`'s underlying GrDirectContext) and `direct_context`
+    // itself must both be declared — and therefore dropped, since Rust drops
+    // struct fields in declaration order — before the native
+    // vulkan_context/gl_context/metal_context fields below. Those own the
+    // real VkDevice/EGLContext/MTLDevice; GrDirectContext's destructor needs
+    // that native context to still be alive to release its own GPU-side
+    // resource cache (pipelines, allocations, command buffers). Dropping the
+    // native context first leaves GrDirectContext tearing itself down against
+    // an already-destroyed device.
     pub(crate) surface: Surface,
     pub(crate) surface_state: SurfaceState,
+    #[cfg(any(feature = "gl", feature = "vulkan", feature = "metal"))]
+    pub(crate) direct_context: Option<skia_safe::gpu::DirectContext>,
     #[cfg(feature = "vulkan")]
     pub vulkan_context: Option<canvas_core::gpu::vulkan::VulkanContext>,
     #[cfg(feature = "vulkan")]
@@ -211,8 +223,6 @@ pub struct Context {
     #[cfg(feature = "gl")]
     pub gl_context: Option<canvas_core::gpu::gl::GLContext>,
     pub cpu_context: Option<canvas_core::cpu::CPUContext>,
-    #[cfg(any(feature = "gl", feature = "vulkan", feature = "metal"))]
-    pub(crate) direct_context: Option<skia_safe::gpu::DirectContext>,
     pub(crate) path: Path,
     pub(crate) state: State,
     pub(crate) state_stack: Vec<State>,

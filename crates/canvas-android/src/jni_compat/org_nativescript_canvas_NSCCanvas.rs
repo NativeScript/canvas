@@ -120,6 +120,19 @@ pub extern "system" fn nativeResizeWebGPU(
     }
 }
 
+#[no_mangle]
+pub extern "system" fn nativeReleaseWebGPU(_: JNIEnv, _: JClass, context: jlong) {
+    if context == 0 {
+        return;
+    }
+
+    unsafe {
+        let context: *const canvas_c::webgpu::gpu_canvas_context::CanvasGPUCanvasContext =
+            context as _;
+        canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_context_release(context);
+    }
+}
+
 // #[cfg(feature = "vulkan")]
 #[no_mangle]
 pub extern "system" fn nativeCreate2dContextVulkan(

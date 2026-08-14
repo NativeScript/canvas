@@ -28,6 +28,28 @@ use raw_window_handle::{AndroidDisplayHandle, RawDisplayHandle, RawWindowHandle}
 
 pub static IS_GL_SYMBOLS_LOADED: OnceLock<bool> = OnceLock::new();
 
+// `Display::new` always resolves to the same process-wide native `EGLDisplay`
+// (see eglGetPlatformDisplay docs: repeated calls with the same native display
+// id return the same handle). glutin's `Display` wrapper doesn't know that,
+// though: each wrapper independently owns a slice of that singleton's
+// lifetime, and on some drivers (those exposing EGL_KHR_display_reference)
+// dropping ANY of them calls the real eglTerminate. With one `Display` per
+// canvas, tearing down one canvas (e.g. on GC-driven `finalize()`) can
+// terminate the shared display out from under every other still-alive canvas,
+// which then silently fails to render (EGL_BAD_DISPLAY) without crashing.
+// Caching a single `Display` here and cloning it out (Display is Arc-backed)
+// means there is only ever one owner, so its lifetime no longer depends on
+// any individual canvas's teardown timing.
+static ANDROID_DISPLAY: OnceLock<Option<Display>> = OnceLock::new();
+
+fn shared_display() -> Option<Display> {
+    ANDROID_DISPLAY
+        .get_or_init(|| unsafe {
+            Display::new(RawDisplayHandle::Android(AndroidDisplayHandle::new())).ok()
+        })
+        .clone()
+}
+
 
 thread_local! {
     static CURRENT_EGL_CONTEXT: Cell<usize> = const { Cell::new(0) };
@@ -430,8 +452,8 @@ impl GLContext {
         window: RawWindowHandle,
         shared_context: Option<&GLContext>,
     ) -> Option<GLContext> {
-        match unsafe { Display::new(RawDisplayHandle::Android(AndroidDisplayHandle::new())) } {
-            Ok(display) => unsafe {
+        match shared_display() {
+            Some(display) => unsafe {
                 let dsply = display.clone();
                 IS_GL_SYMBOLS_LOADED.get_or_init(move || {
                     gl_bindings::load_with(|symbol| {
@@ -596,7 +618,7 @@ impl GLContext {
                     None => None,
                 }
             },
-            Err(_) => None,
+            None => None,
         }
     }
 
@@ -859,8 +881,8 @@ impl GLContext {
         width: i32,
         height: i32,
     ) -> Option<GLContext> {
-        match unsafe { Display::new(RawDisplayHandle::Android(AndroidDisplayHandle::new())) } {
-            Ok(display) => unsafe {
+        match shared_display() {
+            Some(display) => unsafe {
                 let dsply = display.clone();
                 IS_GL_SYMBOLS_LOADED.get_or_init(move || {
                     gl_bindings::load_with(|symbol| {
@@ -1028,7 +1050,7 @@ impl GLContext {
                     None => None,
                 }
             },
-            Err(_) => None,
+            None => None,
         }
     }
 
@@ -1037,8 +1059,8 @@ impl GLContext {
     }
 
     pub fn has_gl2support() -> bool {
-        match unsafe { Display::new(RawDisplayHandle::Android(AndroidDisplayHandle::new())) } {
-            Ok(display) => unsafe {
+        match shared_display() {
+            Some(display) => unsafe {
                 display
                     .find_configs(
                         ConfigTemplateBuilder::default()
@@ -1047,7 +1069,7 @@ impl GLContext {
                     )
                     .is_ok()
             },
-            Err(_) => false,
+            None => false,
         }
     }
 

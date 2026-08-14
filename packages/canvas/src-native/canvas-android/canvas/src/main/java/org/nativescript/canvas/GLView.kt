@@ -89,8 +89,17 @@ class GLView : TextureView, SurfaceTextureListener {
 
 
 	override fun onSurfaceTextureDestroyed(surface: SurfaceTexture): Boolean {
-		this.surface?.release()
 		isCreated = false
+		// Mirror GLViewSV.surfaceDestroyed(): let the canvas rebind its EGL
+		// context to an offscreen surface before the window surface actually
+		// goes away, so a render loop that's still firing (Choreographer/
+		// requestAnimationFrame) doesn't run against a torn-down surface.
+		// Previously this only released the local Surface wrapper, leaving the
+		// native context bound to a dead surface until finalize() eventually
+		// ran — the TextureView path never got the offscreen-rebind protection
+		// the SurfaceView path already has.
+		canvas?.surfaceDestroyed()
+		this.surface?.release()
 		return false
 	}
 

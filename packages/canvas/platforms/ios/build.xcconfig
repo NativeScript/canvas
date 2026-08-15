@@ -24,9 +24,27 @@ GLES_SILENCE_DEPRECATION = 1
 // the vendored tree instead is required, not optional.
 // Delivered as -I compiler flags rather than HEADER_SEARCH_PATHS because the
 // NativeScript CLI pod-xcconfig merge is key-exclusive: a plugin-level
-// HEADER_SEARCH_PATHS would silently drop the CocoaPods header paths. The
-// Podfile post_install cannot do this either — CocoaPods saves the user
-// project before post_install runs, so those edits never persist.
-CANVAS_NS_V8_HEADER_FLAGS = -I"$(SRCROOT)/../../../../nativescript-v8/Headers/include"
+// HEADER_SEARCH_PATHS would silently drop the CocoaPods header paths. A
+// Podfile post_install can't carry it either — CocoaPods saves the user
+// project before post_install runs, so those edits never persist — which is
+// why this package ships no Podfile at all: everything native arrives via the
+// NativeScriptV8 SwiftPM package in nativescript.config.ts plus the vendored
+// CanvasNative.xcframework.
+// Two roots because the shim lives in a different place depending on who is
+// building. $(SRCROOT) is always <app>/platforms/<platform>:
+//   * installed plugin  -> <app>/node_modules/@nativescript/canvas/platforms/ios/
+//                          NativeScriptV8/Headers/include (packaged by
+//                          project.json, referenced by nativescript.config.ts)
+//   * this monorepo     -> <repo>/nativescript-v8/Headers/include (the demo's
+//                          own nativescript.config.ts points SwiftPM there, and
+//                          the shim dir is only materialised into dist/)
+// clang silently ignores a -I that doesn't exist, so shipping both is safe and
+// exactly one resolves in any given build. NOTE: the npm path assumes canvas
+// resolves to <app>/node_modules — the same assumption the SPM `path:` in
+// nativescript.config.ts already makes, so a hoisted install breaks both
+// together, not just this.
+CANVAS_NS_V8_HEADERS_NPM = $(SRCROOT)/../../node_modules/@nativescript/canvas/platforms/ios/NativeScriptV8/Headers/include
+CANVAS_NS_V8_HEADERS_MONOREPO = $(SRCROOT)/../../../../nativescript-v8/Headers/include
+CANVAS_NS_V8_HEADER_FLAGS = -I"$(CANVAS_NS_V8_HEADERS_NPM)" -I"$(CANVAS_NS_V8_HEADERS_MONOREPO)"
 OTHER_CFLAGS = $(inherited) $(CANVAS_NS_V8_HEADER_FLAGS)
 OTHER_CPLUSPLUSFLAGS = $(inherited) $(CANVAS_NS_V8_HEADER_FLAGS)

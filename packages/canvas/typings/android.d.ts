@@ -262,6 +262,7 @@ declare module org {
 				public static nativeContext2DPathTest(param0: number): void;
 				public static nativeResizeCustomSurface(param0: number, param1: number, param2: number, param3: number, param4: boolean, param5: number): void;
 				public static getBuffer(key: number): java.nio.ByteBuffer;
+				public releaseNativeContext(): void;
 				public getNativeContext(): number;
 				public getNativeContextString(): string;
 				public getIgnoreTouchEvents(): boolean;

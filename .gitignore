@@ -57,13 +57,18 @@ rust-skia
 
 # V8 + NativeScript runtime headers - fetched by tools/scripts/download-v8.sh
 # (pinned by /V8_RELEASE and /NATIVESCRIPT_IOS_RUNTIME_REF), not committed.
-# Non-V8 sibling files that live alongside them are kept tracked via the
-# negations below.
+# The ignore rules for nativescript-v8/Headers live in a NESTED .gitignore
+# (nativescript-v8/Headers/.gitignore) instead of here: Nx's asset-copy
+# handler (@nx/js CopyAssetsHandler, used by packages/canvas and
+# packages/audio-context's build target to ship these headers into
+# dist/.../NativeScriptV8/Headers) reads and applies the ROOT .gitignore to
+# filter which asset-glob matches get copied, but does not read nested
+# .gitignore files. Root-level ignore rules here silently dropped the fetched
+# v8.h/v8config.h/runtime/*.h from the built npm packages even though
+# download-v8.sh had vendored them - see the fix for that incident. A nested
+# .gitignore keeps git ignoring them for commits while staying invisible to
+# the asset copier.
 /.v8-prebuilt/
-/nativescript-v8/Headers/include/*
-!/nativescript-v8/Headers/include/libffi.h
-!/nativescript-v8/Headers/include/libffi/
-/nativescript-v8/Headers/runtime/*
 /packages/canvas/src-native/canvas-android/canvas/src/main/cpp/include/*
 !/packages/canvas/src-native/canvas-android/canvas/src/main/cpp/include/canvas_native.h
 !/packages/canvas/src-native/canvas-android/canvas/src/main/cpp/include/canvas_android.h

@@ -1,0 +1,14 @@
+# Fetched by tools/scripts/download-v8.sh (pinned by /V8_RELEASE and
+# /NATIVESCRIPT_IOS_RUNTIME_REF), not committed. Kept as a NESTED .gitignore
+# rather than in the repo-root .gitignore: Nx's CopyAssetsHandler (used by
+# packages/canvas and packages/audio-context to ship these headers into
+# dist/.../NativeScriptV8/Headers) reads and honors the root .gitignore when
+# filtering asset-glob matches, but does not read nested .gitignore files -
+# see the note in the root .gitignore for the incident this fixed.
+#
+# Non-V8 sibling files that live alongside them are kept tracked via the
+# negations below.
+include/*
+!include/libffi.h
+!include/libffi/
+runtime/*

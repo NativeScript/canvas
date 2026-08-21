@@ -1,6 +1,6 @@
 {
 	"name": "@nativescript/canvas-svg",
-	"version": "3.0.0-alpha.3",
+	"version": "3.0.0-alpha.4",
 	"description": "Add a plugin description",
 	"main": "index",
 	"typings": "index.d.ts",

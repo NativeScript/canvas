@@ -1,6 +1,6 @@
 {
 	"name": "@nativescript/audio-context",
-	"version": "2.0.0-alpha.0",
+	"version": "2.0.0-alpha.1",
 	"description": "Web Audio API for NativeScript",
 	"main": "index",
 	"types": "index.d.ts",

@@ -42,13 +42,13 @@ public:
         auto object = WebGLUniformLocation::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType(uniformLocation, NativeType::WebGLUniformLocation);
-        object->SetAlignedPointerInInternalField(0, uniformLocation);
+        canvas::SetAlignedPointer(object, 0, uniformLocation);
         uniformLocation->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 
     static WebGLUniformLocation *GetPointer(const v8::Local<v8::Object> &object) {
-        auto ptr = object->GetAlignedPointerFromInternalField(0);
+        auto ptr = canvas::GetAlignedPointer(object, 0);
         if (ptr == nullptr) {
             return nullptr;
         }

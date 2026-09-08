@@ -3,7 +3,7 @@ OTHER_LDFLAGS[sdk=xros*] = $(inherited) -framework Foundation -framework CanvasN
 OTHER_LDFLAGS[sdk=xrsimulator*] = $(inherited) -framework Foundation -framework CanvasNative -framework Metal
 OTHER_LDFLAGS[sdk=macosx*] = $(inherited) -framework Foundation -framework CanvasNative -framework Metal
 
-CLANG_CXX_LANGUAGE_STANDARD = c++17
+CLANG_CXX_LANGUAGE_STANDARD = c++20
 
 GLES_SILENCE_DEPRECATION = 1
 

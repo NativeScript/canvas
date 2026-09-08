@@ -35,13 +35,13 @@ public:
         auto object = WebGLShader::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType( shader, NativeType::WebGLShader);
-        object->SetAlignedPointerInInternalField(0, shader);
+        canvas::SetAlignedPointer(object, 0, shader);
         shader->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 
     static WebGLShader *GetPointer(const v8::Local<v8::Object> &object) {
-        auto ptr = object->GetAlignedPointerFromInternalField(0);
+        auto ptr = canvas::GetAlignedPointer(object, 0);
         if (ptr == nullptr) {
             return nullptr;
         }

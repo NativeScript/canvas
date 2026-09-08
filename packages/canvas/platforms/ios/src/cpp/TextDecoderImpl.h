@@ -33,7 +33,7 @@ public:
     static void DecodeAsync(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void
-    Encoding(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &info);
+    Encoding(v8::Local<v8::Name> name, const v8::PropertyCallbackInfo<v8::Value> &info);
 
 private:
     TextDecoder *decoder_;

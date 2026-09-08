@@ -36,13 +36,13 @@ public:
         auto object = WebGLSyncImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType( sync, NativeType::WebGLSync);
-        object->SetAlignedPointerInInternalField(0, sync);
+        canvas::SetAlignedPointer(object, 0, sync);
         sync->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 
     static WebGLSyncImpl *GetPointer(const v8::Local<v8::Object> &object) {
-        auto ptr = object->GetAlignedPointerFromInternalField(0);
+        auto ptr = canvas::GetAlignedPointer(object, 0);
         if (ptr == nullptr) {
             return nullptr;
         }

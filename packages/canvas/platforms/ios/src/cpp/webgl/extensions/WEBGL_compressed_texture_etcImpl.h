@@ -71,7 +71,7 @@ public:
         auto object = WEBGL_compressed_texture_etcImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType( compressedTextureEtc, NativeType::WEBGL_compressed_texture_etc);
-        object->SetAlignedPointerInInternalField(0, compressedTextureEtc);
+        canvas::SetAlignedPointer(object, 0, compressedTextureEtc);
         object->Set(context, ConvertToV8String(isolate, "ext_name"),
                     ConvertToV8String(isolate, "WEBGL_compressed_texture_etc")).FromJust();
         compressedTextureEtc->BindFinalizer(isolate, object);
@@ -79,7 +79,7 @@ public:
     }
 
     static WEBGL_compressed_texture_etcImpl *GetPointer(const v8::Local<v8::Object> &object) {
-        auto ptr = object->GetAlignedPointerFromInternalField(0);
+        auto ptr = canvas::GetAlignedPointer(object, 0);
         if (ptr == nullptr) {
             return nullptr;
         }

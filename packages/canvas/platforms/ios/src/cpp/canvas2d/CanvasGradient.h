@@ -32,7 +32,7 @@ public:
         auto object = CanvasGradient::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType(gradient, NativeType::CanvasGradient);
-        object->SetAlignedPointerInInternalField(0, gradient);
+        canvas::SetAlignedPointer(object, 0, gradient);
         gradient->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }

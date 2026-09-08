@@ -33,7 +33,7 @@ public:
         auto object = GPUTextureImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType(texture, NativeType::GPUTexture);
-        object->SetAlignedPointerInInternalField(0, texture);
+        canvas::SetAlignedPointer(object, 0, texture);
         texture->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }

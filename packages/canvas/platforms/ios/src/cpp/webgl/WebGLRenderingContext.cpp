@@ -6,30 +6,30 @@
 #include "OneByteStringResource.h"
 
 v8::CFunction WebGLRenderingContext::fast_disable_(
-        v8::CFunction::Make(WebGLRenderingContext::FastDisable));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastDisable));
 
 v8::CFunction WebGLRenderingContext::fast_resized_(
-        v8::CFunction::Make(WebGLRenderingContext::__FastResized));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::__FastResized));
 
 v8::CFunction WebGLRenderingContext::fast_start_raf_(
-        v8::CFunction::Make(WebGLRenderingContext::__FastStartRaf));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::__FastStartRaf));
 
 v8::CFunction WebGLRenderingContext::fast_stop_raf_(
-        v8::CFunction::Make(WebGLRenderingContext::__FastStopRaf));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::__FastStopRaf));
 
 v8::CFunction WebGLRenderingContext::fast_active_texture_(
-        v8::CFunction::Make(WebGLRenderingContext::FastActiveTexture));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastActiveTexture));
 
 
 v8::CFunction WebGLRenderingContext::fast_attach_shader_(
-        v8::CFunction::Make(WebGLRenderingContext::FastAttachShader));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastAttachShader));
 
 
 v8::CFunction WebGLRenderingContext::fast_bind_buffer_(
-        v8::CFunction::Make(WebGLRenderingContext::FastBindBuffer));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastBindBuffer));
 
 v8::CFunction WebGLRenderingContext::fast_bind_buffer_null_(
-        v8::CFunction::Make(WebGLRenderingContext::FastBindBufferNull));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastBindBufferNull));
 
 const v8::CFunction bind_buffer_overloads_[] = {
         WebGLRenderingContext::fast_bind_buffer_,
@@ -38,60 +38,60 @@ const v8::CFunction bind_buffer_overloads_[] = {
 
 
 v8::CFunction WebGLRenderingContext::fast_uniform1f_(
-        v8::CFunction::Make(WebGLRenderingContext::FastUniform1f));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastUniform1f));
 
 v8::CFunction WebGLRenderingContext::fast_uniform1i_(
-        v8::CFunction::Make(WebGLRenderingContext::FastUniform1i));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastUniform1i));
 
 
 v8::CFunction WebGLRenderingContext::fast_uniform2f_(
-        v8::CFunction::Make(WebGLRenderingContext::FastUniform2f));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastUniform2f));
 
 v8::CFunction WebGLRenderingContext::fast_uniform2i_(
-        v8::CFunction::Make(WebGLRenderingContext::FastUniform2i));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastUniform2i));
 
 
 v8::CFunction WebGLRenderingContext::fast_uniform3f_(
-        v8::CFunction::Make(WebGLRenderingContext::FastUniform3f));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastUniform3f));
 
 v8::CFunction WebGLRenderingContext::fast_uniform3i_(
-        v8::CFunction::Make(WebGLRenderingContext::FastUniform3i));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastUniform3i));
 
 
 v8::CFunction WebGLRenderingContext::fast_uniform4f_(
-        v8::CFunction::Make(WebGLRenderingContext::FastUniform4f));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastUniform4f));
 
 v8::CFunction WebGLRenderingContext::fast_uniform4i_(
-        v8::CFunction::Make(WebGLRenderingContext::FastUniform4i));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastUniform4i));
 
 
 v8::CFunction WebGLRenderingContext::fast_draw_arrays_(
-        v8::CFunction::Make(WebGLRenderingContext::FastDrawArrays));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastDrawArrays));
 
 v8::CFunction WebGLRenderingContext::fast_clear_depth_(
-        v8::CFunction::Make(WebGLRenderingContext::FastClearDepth));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastClearDepth));
 
 v8::CFunction WebGLRenderingContext::fast_clear_stencil_(
-        v8::CFunction::Make(WebGLRenderingContext::FastClearStencil));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastClearStencil));
 
 v8::CFunction WebGLRenderingContext::fast_clear_(
-        v8::CFunction::Make(WebGLRenderingContext::FastClear));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastClear));
 
 v8::CFunction WebGLRenderingContext::fast_clear_color_(
-        v8::CFunction::Make(WebGLRenderingContext::FastClearColor));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastClearColor));
 
 v8::CFunction WebGLRenderingContext::fast_enable_(
-        v8::CFunction::Make(WebGLRenderingContext::FastEnable));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastEnable));
 
 v8::CFunction WebGLRenderingContext::fast_enable_vertex_attrib_array_(
-        v8::CFunction::Make(WebGLRenderingContext::FastEnableVertexAttribArray));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastEnableVertexAttribArray));
 
 
 v8::CFunction WebGLRenderingContext::fast_use_program_(
-        v8::CFunction::Make(WebGLRenderingContext::FastUseProgram));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastUseProgram));
 
 v8::CFunction WebGLRenderingContext::fast_use_program_null_(
-        v8::CFunction::Make(WebGLRenderingContext::FastUseProgramNull));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastUseProgramNull));
 
 
 const v8::CFunction fast_use_overloads_[] = {
@@ -101,14 +101,14 @@ const v8::CFunction fast_use_overloads_[] = {
 
 
 v8::CFunction WebGLRenderingContext::fast_viewport_(
-        v8::CFunction::Make(WebGLRenderingContext::FastViewport));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastViewport));
 
 
 v8::CFunction WebGLRenderingContext::fast_uniform_matrix2fv_(
-        v8::CFunction::Make(WebGLRenderingContext::FastUniformMatrix2fv));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastUniformMatrix2fv));
 
 v8::CFunction WebGLRenderingContext::fast_uniform_matrix2fv_array_(
-        v8::CFunction::Make(WebGLRenderingContext::FastUniformMatrix2fvArray));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastUniformMatrix2fvArray));
 
 const v8::CFunction uniform_matrix2fv_overloads_[] = {
         WebGLRenderingContext::fast_uniform_matrix2fv_,
@@ -116,10 +116,10 @@ const v8::CFunction uniform_matrix2fv_overloads_[] = {
 };
 
 v8::CFunction WebGLRenderingContext::fast_uniform_matrix3fv_(
-        v8::CFunction::Make(WebGLRenderingContext::FastUniformMatrix3fv));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastUniformMatrix3fv));
 
 v8::CFunction WebGLRenderingContext::fast_uniform_matrix3fv_array_(
-        v8::CFunction::Make(WebGLRenderingContext::FastUniformMatrix3fvArray));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastUniformMatrix3fvArray));
 
 const v8::CFunction uniform_matrix3fv_overloads_[] = {
         WebGLRenderingContext::fast_uniform_matrix3fv_,
@@ -127,10 +127,10 @@ const v8::CFunction uniform_matrix3fv_overloads_[] = {
 };
 
 v8::CFunction WebGLRenderingContext::fast_uniform_matrix4fv_(
-        v8::CFunction::Make(WebGLRenderingContext::FastUniformMatrix4fv));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastUniformMatrix4fv));
 
 v8::CFunction WebGLRenderingContext::fast_uniform_matrix4fv_array_(
-        v8::CFunction::Make(WebGLRenderingContext::FastUniformMatrix4fvArray));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastUniformMatrix4fvArray));
 
 const v8::CFunction uniform_matrix4fv_overloads_[] = {
         WebGLRenderingContext::fast_uniform_matrix4fv_,
@@ -138,10 +138,10 @@ const v8::CFunction uniform_matrix4fv_overloads_[] = {
 };
 
 v8::CFunction WebGLRenderingContext::fast_uniform_1iv_(
-        v8::CFunction::Make(WebGLRenderingContext::FastUniform1iv));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastUniform1iv));
 
 v8::CFunction WebGLRenderingContext::fast_uniform_1iv_array_(
-        v8::CFunction::Make(WebGLRenderingContext::FastUniform1ivArray));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastUniform1ivArray));
 
 
 const v8::CFunction uniform_1iv_overloads_[] = {
@@ -150,10 +150,10 @@ const v8::CFunction uniform_1iv_overloads_[] = {
 };
 
 v8::CFunction WebGLRenderingContext::fast_uniform_2iv_(
-        v8::CFunction::Make(WebGLRenderingContext::FastUniform2iv));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastUniform2iv));
 
 v8::CFunction WebGLRenderingContext::fast_uniform_2iv_array_(
-        v8::CFunction::Make(WebGLRenderingContext::FastUniform2ivArray));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastUniform2ivArray));
 
 const v8::CFunction uniform_2iv_overloads_[] = {
         WebGLRenderingContext::fast_uniform_2iv_,
@@ -161,10 +161,10 @@ const v8::CFunction uniform_2iv_overloads_[] = {
 };
 
 v8::CFunction WebGLRenderingContext::fast_uniform_3iv_(
-        v8::CFunction::Make(WebGLRenderingContext::FastUniform3iv));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastUniform3iv));
 
 v8::CFunction WebGLRenderingContext::fast_uniform_3iv_array_(
-        v8::CFunction::Make(WebGLRenderingContext::FastUniform3ivArray));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastUniform3ivArray));
 
 const v8::CFunction uniform_3iv_overloads_[] = {
         WebGLRenderingContext::fast_uniform_3iv_,
@@ -172,10 +172,10 @@ const v8::CFunction uniform_3iv_overloads_[] = {
 };
 
 v8::CFunction WebGLRenderingContext::fast_uniform_4iv_(
-        v8::CFunction::Make(WebGLRenderingContext::FastUniform4iv));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastUniform4iv));
 
 v8::CFunction WebGLRenderingContext::fast_uniform_4iv_array_(
-        v8::CFunction::Make(WebGLRenderingContext::FastUniform4ivArray));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastUniform4ivArray));
 
 const v8::CFunction uniform_4iv_overloads_[] = {
         WebGLRenderingContext::fast_uniform_4iv_,
@@ -184,10 +184,10 @@ const v8::CFunction uniform_4iv_overloads_[] = {
 
 
 v8::CFunction WebGLRenderingContext::fast_uniform_1fv_(
-        v8::CFunction::Make(WebGLRenderingContext::FastUniform1fv));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastUniform1fv));
 
 v8::CFunction WebGLRenderingContext::fast_uniform_1fv_array_(
-        v8::CFunction::Make(WebGLRenderingContext::FastUniform1fvArray));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastUniform1fvArray));
 
 const v8::CFunction uniform_1fv_overloads_[] = {
         WebGLRenderingContext::fast_uniform_1fv_,
@@ -195,10 +195,10 @@ const v8::CFunction uniform_1fv_overloads_[] = {
 };
 
 v8::CFunction WebGLRenderingContext::fast_uniform_2fv_(
-        v8::CFunction::Make(WebGLRenderingContext::FastUniform2fv));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastUniform2fv));
 
 v8::CFunction WebGLRenderingContext::fast_uniform_2fv_array_(
-        v8::CFunction::Make(WebGLRenderingContext::FastUniform2fvArray));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastUniform2fvArray));
 
 const v8::CFunction uniform_2fv_overloads_[] = {
         WebGLRenderingContext::fast_uniform_2fv_,
@@ -206,10 +206,10 @@ const v8::CFunction uniform_2fv_overloads_[] = {
 };
 
 v8::CFunction WebGLRenderingContext::fast_uniform_3fv_(
-        v8::CFunction::Make(WebGLRenderingContext::FastUniform3fv));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastUniform3fv));
 
 v8::CFunction WebGLRenderingContext::fast_uniform_3fv_array_(
-        v8::CFunction::Make(WebGLRenderingContext::FastUniform3fvArray));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastUniform3fvArray));
 
 const v8::CFunction uniform_3fv_overloads_[] = {
         WebGLRenderingContext::fast_uniform_3fv_,
@@ -217,10 +217,10 @@ const v8::CFunction uniform_3fv_overloads_[] = {
 };
 
 v8::CFunction WebGLRenderingContext::fast_uniform_4fv_(
-        v8::CFunction::Make(WebGLRenderingContext::FastUniform4fv));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastUniform4fv));
 
 v8::CFunction WebGLRenderingContext::fast_uniform_4fv_array_(
-        v8::CFunction::Make(WebGLRenderingContext::FastUniform4fvArray));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastUniform4fvArray));
 
 const v8::CFunction uniform_4fv_overloads_[] = {
         WebGLRenderingContext::fast_uniform_4fv_,
@@ -228,14 +228,14 @@ const v8::CFunction uniform_4fv_overloads_[] = {
 };
 
 v8::CFunction WebGLRenderingContext::fast_vertex_attrib_pointer_(
-        v8::CFunction::Make(WebGLRenderingContext::FastVertexAttribPointer));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastVertexAttribPointer));
 
 
 v8::CFunction WebGLRenderingContext::fast_bind_frame_buffer_(
-        v8::CFunction::Make(WebGLRenderingContext::FastBindFramebuffer));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastBindFramebuffer));
 
 v8::CFunction WebGLRenderingContext::fast_bind_frame_buffer_null_(
-        v8::CFunction::Make(WebGLRenderingContext::FastBindFramebufferNull));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastBindFramebufferNull));
 
 const v8::CFunction fast_bind_frame_buffer_overloads_[] = {
         WebGLRenderingContext::fast_bind_frame_buffer_null_,
@@ -244,10 +244,10 @@ const v8::CFunction fast_bind_frame_buffer_overloads_[] = {
 
 
 v8::CFunction WebGLRenderingContext::fast_bind_render_buffer_(
-        v8::CFunction::Make(WebGLRenderingContext::FastBindRenderbuffer));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastBindRenderbuffer));
 
 v8::CFunction WebGLRenderingContext::fast_bind_render_buffer_null_(
-        v8::CFunction::Make(WebGLRenderingContext::FastBindRenderbufferNull));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastBindRenderbufferNull));
 
 const v8::CFunction fast_bind_render_buffer_overloads_[] = {
         WebGLRenderingContext::fast_bind_render_buffer_null_,
@@ -256,10 +256,10 @@ const v8::CFunction fast_bind_render_buffer_overloads_[] = {
 
 
 v8::CFunction WebGLRenderingContext::fast_bind_texture_(
-        v8::CFunction::Make(WebGLRenderingContext::FastBindTexture));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastBindTexture));
 
 v8::CFunction WebGLRenderingContext::fast_bind_texture_null_(
-        v8::CFunction::Make(WebGLRenderingContext::FastBindTextureNull));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastBindTextureNull));
 
 const v8::CFunction fast_bind_texture_overloads_[] = {
         WebGLRenderingContext::fast_bind_texture_null_,
@@ -267,88 +267,88 @@ const v8::CFunction fast_bind_texture_overloads_[] = {
 };
 
 v8::CFunction WebGLRenderingContext::fast_draw_elements_(
-        v8::CFunction::Make(WebGLRenderingContext::FastDrawElements));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastDrawElements));
 
 
 v8::CFunction WebGLRenderingContext::fast_vertex_attrib_1f_(
-        v8::CFunction::Make(WebGLRenderingContext::FastVertexAttrib1f));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastVertexAttrib1f));
 
 v8::CFunction WebGLRenderingContext::fast_vertex_attrib_1fv_(
-        v8::CFunction::Make(WebGLRenderingContext::FastVertexAttrib1fv));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastVertexAttrib1fv));
 
 v8::CFunction WebGLRenderingContext::fast_vertex_attrib_2f_(
-        v8::CFunction::Make(WebGLRenderingContext::FastVertexAttrib2f));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastVertexAttrib2f));
 
 v8::CFunction WebGLRenderingContext::fast_vertex_attrib_2fv_(
-        v8::CFunction::Make(WebGLRenderingContext::FastVertexAttrib2fv));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastVertexAttrib2fv));
 
 v8::CFunction WebGLRenderingContext::fast_vertex_attrib_3f_(
-        v8::CFunction::Make(WebGLRenderingContext::FastVertexAttrib3f));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastVertexAttrib3f));
 
 v8::CFunction WebGLRenderingContext::fast_vertex_attrib_3fv_(
-        v8::CFunction::Make(WebGLRenderingContext::FastVertexAttrib3fv));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastVertexAttrib3fv));
 
 v8::CFunction WebGLRenderingContext::fast_vertex_attrib_4f_(
-        v8::CFunction::Make(WebGLRenderingContext::FastVertexAttrib4f));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastVertexAttrib4f));
 
 v8::CFunction WebGLRenderingContext::fast_vertex_attrib_4fv_(
-        v8::CFunction::Make(WebGLRenderingContext::FastVertexAttrib4fv));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastVertexAttrib4fv));
 
 
 v8::CFunction WebGLRenderingContext::fast_blend_color_(
-        v8::CFunction::Make(WebGLRenderingContext::FastBlendColor));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastBlendColor));
 
 v8::CFunction WebGLRenderingContext::fast_blend_equation_separate_(
-        v8::CFunction::Make(WebGLRenderingContext::FastBlendEquationSeparate));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastBlendEquationSeparate));
 
 v8::CFunction WebGLRenderingContext::fast_blend_equation_(
-        v8::CFunction::Make(WebGLRenderingContext::FastBlendEquation));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastBlendEquation));
 
 v8::CFunction WebGLRenderingContext::fast_blend_func_separate_(
-        v8::CFunction::Make(WebGLRenderingContext::FastBlendFuncSeparate));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastBlendFuncSeparate));
 
 v8::CFunction WebGLRenderingContext::fast_blend_func_(
-        v8::CFunction::Make(WebGLRenderingContext::FastBlendFunc));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastBlendFunc));
 
 
 v8::CFunction WebGLRenderingContext::fast_buffer_data_os_(
-        v8::CFunction::Make(WebGLRenderingContext::FastBufferDataOS));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastBufferDataOS));
 
 v8::CFunction WebGLRenderingContext::fast_buffer_data_target_usage_(
-        v8::CFunction::Make(WebGLRenderingContext::FastBufferDataTargetUsage));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastBufferDataTargetUsage));
 
 
 /*
  v8::CFunction WebGLRenderingContext::fast_buffer_data_u8_(
-        v8::CFunction::Make(WebGLRenderingContext::FastBufferDataU8));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastBufferDataU8));
 
 v8::CFunction WebGLRenderingContext::fast_buffer_data_i8_(
-        v8::CFunction::Make(WebGLRenderingContext::FastBufferDataI8));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastBufferDataI8));
 
 
 v8::CFunction WebGLRenderingContext::fast_buffer_data_u16_(
-        v8::CFunction::Make(WebGLRenderingContext::FastBufferDataU16));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastBufferDataU16));
 
 v8::CFunction WebGLRenderingContext::fast_buffer_data_i16_(
-        v8::CFunction::Make(WebGLRenderingContext::FastBufferDataI16));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastBufferDataI16));
 */
 
 
 v8::CFunction WebGLRenderingContext::fast_buffer_data_u32_(
-        v8::CFunction::Make(WebGLRenderingContext::FastBufferDataU32));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastBufferDataU32));
 
 v8::CFunction WebGLRenderingContext::fast_buffer_data_i32_(
-        v8::CFunction::Make(WebGLRenderingContext::FastBufferDataI32));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastBufferDataI32));
 
 
 v8::CFunction WebGLRenderingContext::fast_buffer_data_f32_(
-        v8::CFunction::Make(WebGLRenderingContext::FastBufferDataF32));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastBufferDataF32));
 
 v8::CFunction WebGLRenderingContext::fast_buffer_data_f64_(
-        v8::CFunction::Make(WebGLRenderingContext::FastBufferDataF64));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastBufferDataF64));
 //
 //v8::CFunction WebGLRenderingContext::fast_buffer_data_array_buffer_(
-//        v8::CFunction::Make(WebGLRenderingContext::FastBufferDataArrayBuffer));
+//        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastBufferDataArrayBuffer));
 
 
 const v8::CFunction fast_buffer_data_overloads_[] = {
@@ -367,41 +367,41 @@ const v8::CFunction fast_buffer_data_overloads_[] = {
 
 
 v8::CFunction WebGLRenderingContext::fast_buffer_sub_data_target_offset_(
-        v8::CFunction::Make(WebGLRenderingContext::FastBufferSubDataTargetOffset));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastBufferSubDataTargetOffset));
 
 //v8::CFunction WebGLRenderingContext::fast_buffer_sub_data_u8_(
-//        v8::CFunction::Make(WebGLRenderingContext::FastBufferSubDataU8));
+//        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastBufferSubDataU8));
 
 
 //v8::CFunction WebGLRenderingContext::fast_buffer_sub_data_i8_(
-//        v8::CFunction::Make(WebGLRenderingContext::FastBufferSubDataI8));
+//        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastBufferSubDataI8));
 //
 //v8::CFunction WebGLRenderingContext::fast_buffer_sub_data_u16_(
-//        v8::CFunction::Make(WebGLRenderingContext::FastBufferSubDataU16));
+//        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastBufferSubDataU16));
 //
 //
 //v8::CFunction WebGLRenderingContext::fast_buffer_sub_data_i16_(
-//        v8::CFunction::Make(WebGLRenderingContext::FastBufferSubDataI16));
+//        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastBufferSubDataI16));
 
 
 v8::CFunction WebGLRenderingContext::fast_buffer_sub_data_u32_(
-        v8::CFunction::Make(WebGLRenderingContext::FastBufferSubDataU32));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastBufferSubDataU32));
 
 
 v8::CFunction WebGLRenderingContext::fast_buffer_sub_data_i32_(
-        v8::CFunction::Make(WebGLRenderingContext::FastBufferSubDataI32));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastBufferSubDataI32));
 
 
 v8::CFunction WebGLRenderingContext::fast_buffer_sub_data_f32_(
-        v8::CFunction::Make(WebGLRenderingContext::FastBufferSubDataF32));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastBufferSubDataF32));
 
 
 v8::CFunction WebGLRenderingContext::fast_buffer_sub_data_f64_(
-        v8::CFunction::Make(WebGLRenderingContext::FastBufferSubDataF64));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastBufferSubDataF64));
 
 
 //v8::CFunction WebGLRenderingContext::fast_buffer_sub_data_array_buffer_(
-//        v8::CFunction::Make(WebGLRenderingContext::FastBufferSubDataArrayBuffer));
+//        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastBufferSubDataArrayBuffer));
 
 
 
@@ -417,125 +417,125 @@ const v8::CFunction fast_buffer_sub_data_overloads_[] = {
 
 
 v8::CFunction WebGLRenderingContext::fast_check_framebuffer_status_(
-        v8::CFunction::Make(WebGLRenderingContext::FastCheckFramebufferStatus));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastCheckFramebufferStatus));
 
 v8::CFunction WebGLRenderingContext::fast_validate_program_(
-        v8::CFunction::Make(WebGLRenderingContext::FastValidateProgram));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastValidateProgram));
 
 
 v8::CFunction WebGLRenderingContext::fast_delete_buffer_(
-        v8::CFunction::Make(WebGLRenderingContext::FastDeleteBuffer));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastDeleteBuffer));
 
 
 v8::CFunction WebGLRenderingContext::fast_delete_buffer_framebuffer_(
-        v8::CFunction::Make(WebGLRenderingContext::FastDeleteFramebuffer));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastDeleteFramebuffer));
 
 v8::CFunction WebGLRenderingContext::fast_delete_program_(
-        v8::CFunction::Make(WebGLRenderingContext::FastDeleteProgram));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastDeleteProgram));
 
 
 v8::CFunction WebGLRenderingContext::fast_delete_renderbuffer_(
-        v8::CFunction::Make(WebGLRenderingContext::FastDeleteRenderbuffer));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastDeleteRenderbuffer));
 
 v8::CFunction WebGLRenderingContext::fast_delete_shader_(
-        v8::CFunction::Make(WebGLRenderingContext::FastDeleteShader));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastDeleteShader));
 
 v8::CFunction WebGLRenderingContext::fast_delete_texture_(
-        v8::CFunction::Make(WebGLRenderingContext::FastDeleteTexture));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastDeleteTexture));
 
 
 v8::CFunction WebGLRenderingContext::fast_compile_shader_(
-        v8::CFunction::Make(WebGLRenderingContext::FastCompileShader));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastCompileShader));
 
 v8::CFunction WebGLRenderingContext::fast_framebuffer_texture_2d_(
-        v8::CFunction::Make(WebGLRenderingContext::FastFramebufferTexture2D));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastFramebufferTexture2D));
 
 v8::CFunction WebGLRenderingContext::fast_color_mask_(
-        v8::CFunction::Make(WebGLRenderingContext::FastColorMask));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastColorMask));
 
 v8::CFunction WebGLRenderingContext::fast_copy_tex_image_2d_(
-        v8::CFunction::Make(WebGLRenderingContext::FastCopyTexImage2D));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastCopyTexImage2D));
 
 v8::CFunction WebGLRenderingContext::fast_copy_tex_sub_image_2d_(
-        v8::CFunction::Make(WebGLRenderingContext::FastCopyTexSubImage2D));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastCopyTexSubImage2D));
 
 v8::CFunction WebGLRenderingContext::fast_cull_face_(
-        v8::CFunction::Make(WebGLRenderingContext::FastCullFace));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastCullFace));
 
 v8::CFunction WebGLRenderingContext::fast_depth_func_(
-        v8::CFunction::Make(WebGLRenderingContext::FastDepthFunc));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastDepthFunc));
 
 v8::CFunction WebGLRenderingContext::fast_depth_mask_(
-        v8::CFunction::Make(WebGLRenderingContext::FastDepthMask));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastDepthMask));
 
 v8::CFunction WebGLRenderingContext::fast_depth_range_(
-        v8::CFunction::Make(WebGLRenderingContext::FastDepthRange));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastDepthRange));
 
 v8::CFunction WebGLRenderingContext::fast_detach_shader_(
-        v8::CFunction::Make(WebGLRenderingContext::FastDetachShader));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastDetachShader));
 
 v8::CFunction WebGLRenderingContext::fast_disable_vertex_attrib_array_(
-        v8::CFunction::Make(WebGLRenderingContext::FastDisableVertexAttribArray));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastDisableVertexAttribArray));
 
 v8::CFunction WebGLRenderingContext::fast_finish_(
-        v8::CFunction::Make(WebGLRenderingContext::FastFinish));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastFinish));
 
 v8::CFunction WebGLRenderingContext::fast_flush_(
-        v8::CFunction::Make(WebGLRenderingContext::FastFlush));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastFlush));
 
 v8::CFunction WebGLRenderingContext::fast_framebuffer_renderbuffer_(
-        v8::CFunction::Make(WebGLRenderingContext::FastFramebufferRenderbuffer));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastFramebufferRenderbuffer));
 
 
 v8::CFunction WebGLRenderingContext::fast_front_face_(
-        v8::CFunction::Make(WebGLRenderingContext::FastFrontFace));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastFrontFace));
 
 v8::CFunction WebGLRenderingContext::fast_generate_mipmap_(
-        v8::CFunction::Make(WebGLRenderingContext::FastGenerateMipmap));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastGenerateMipmap));
 
 
 v8::CFunction WebGLRenderingContext::fast_get_vertex_attrib_offset_(
-        v8::CFunction::Make(WebGLRenderingContext::FastGetVertexAttribOffset));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastGetVertexAttribOffset));
 
 v8::CFunction WebGLRenderingContext::fast_hint_(
-        v8::CFunction::Make(WebGLRenderingContext::FastHint));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastHint));
 
 v8::CFunction WebGLRenderingContext::fast_is_buffer_(
-        v8::CFunction::Make(WebGLRenderingContext::FastIsBuffer));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastIsBuffer));
 
 v8::CFunction WebGLRenderingContext::fast_is_context_lost_(
-        v8::CFunction::Make(WebGLRenderingContext::FastIsContextLost));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastIsContextLost));
 
 v8::CFunction WebGLRenderingContext::fast_is_enabled_(
-        v8::CFunction::Make(WebGLRenderingContext::FastIsEnabled));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastIsEnabled));
 
 v8::CFunction WebGLRenderingContext::fast_is_framebuffer_(
-        v8::CFunction::Make(WebGLRenderingContext::FastIsFramebuffer));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastIsFramebuffer));
 
 v8::CFunction WebGLRenderingContext::fast_is_program_(
-        v8::CFunction::Make(WebGLRenderingContext::FastIsProgram));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastIsProgram));
 
 v8::CFunction WebGLRenderingContext::fast_is_renderbuffer_(
-        v8::CFunction::Make(WebGLRenderingContext::FastIsRenderbuffer));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastIsRenderbuffer));
 
 v8::CFunction WebGLRenderingContext::fast_is_shader_(
-        v8::CFunction::Make(WebGLRenderingContext::FastIsShader));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastIsShader));
 
 v8::CFunction WebGLRenderingContext::fast_is_texture_(
-        v8::CFunction::Make(WebGLRenderingContext::FastIsTexture));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastIsTexture));
 
 v8::CFunction WebGLRenderingContext::fast_line_width_(
-        v8::CFunction::Make(WebGLRenderingContext::FastLineWidth));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastLineWidth));
 
 v8::CFunction WebGLRenderingContext::fast_link_program_(
-        v8::CFunction::Make(WebGLRenderingContext::FastLinkProgram));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastLinkProgram));
 
 v8::CFunction WebGLRenderingContext::fast_pixel_storei_bool_(
-        v8::CFunction::Make(WebGLRenderingContext::FastPixelStoreiBool));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastPixelStoreiBool));
 
 
 v8::CFunction WebGLRenderingContext::fast_pixel_storei_(
-        v8::CFunction::Make(WebGLRenderingContext::FastPixelStorei));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastPixelStorei));
 
 
 const v8::CFunction fast_pixel_storei_overloads_[] = {
@@ -544,41 +544,41 @@ const v8::CFunction fast_pixel_storei_overloads_[] = {
 };
 
 v8::CFunction WebGLRenderingContext::fast_polygon_offset_(
-        v8::CFunction::Make(WebGLRenderingContext::FastPolygonOffset));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastPolygonOffset));
 
 v8::CFunction WebGLRenderingContext::fast_renderbuffer_storage_(
-        v8::CFunction::Make(WebGLRenderingContext::FastRenderbufferStorage));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastRenderbufferStorage));
 
 v8::CFunction WebGLRenderingContext::fast_sample_coverage_(
-        v8::CFunction::Make(WebGLRenderingContext::FastSampleCoverage));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastSampleCoverage));
 
 v8::CFunction WebGLRenderingContext::fast_scissor_(
-        v8::CFunction::Make(WebGLRenderingContext::FastScissor));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastScissor));
 
 
 v8::CFunction WebGLRenderingContext::fast_stencil_func_separate_(
-        v8::CFunction::Make(WebGLRenderingContext::FastStencilFuncSeparate));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastStencilFuncSeparate));
 
 v8::CFunction WebGLRenderingContext::fast_stencil_func_(
-        v8::CFunction::Make(WebGLRenderingContext::FastStencilFunc));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastStencilFunc));
 
 v8::CFunction WebGLRenderingContext::fast_stencil_mask_separate_(
-        v8::CFunction::Make(WebGLRenderingContext::FastStencilMaskSeparate));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastStencilMaskSeparate));
 
 v8::CFunction WebGLRenderingContext::fast_stencil_mask_(
-        v8::CFunction::Make(WebGLRenderingContext::FastStencilMask));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastStencilMask));
 
 v8::CFunction WebGLRenderingContext::fast_stencil_op_separate_(
-        v8::CFunction::Make(WebGLRenderingContext::FastStencilOpSeparate));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastStencilOpSeparate));
 
 v8::CFunction WebGLRenderingContext::fast_stencil_op_(
-        v8::CFunction::Make(WebGLRenderingContext::FastStencilOp));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastStencilOp));
 
 v8::CFunction WebGLRenderingContext::fast_tex_parameterf_(
-        v8::CFunction::Make(WebGLRenderingContext::FastTexParameterf));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastTexParameterf));
 
 v8::CFunction WebGLRenderingContext::fast_tex_parameteri_(
-        v8::CFunction::Make(WebGLRenderingContext::FastTexParameteri));
+        CANVAS_FAST_FUNCTION(WebGLRenderingContext::FastTexParameteri));
 
 
 WebGLRenderingContext::WebGLRenderingContext(WebGLState *state)
@@ -617,7 +617,7 @@ v8::Local<v8::FunctionTemplate> WebGLRenderingContext::GetCtor(v8::Isolate *isol
 }
 
 WebGLRenderingContext *WebGLRenderingContext::GetPointer(const v8::Local<v8::Object> &object) {
-    auto ptr = object->GetAlignedPointerFromInternalField(0);
+    auto ptr = canvas::GetAlignedPointer(object, 0);
     if (ptr == nullptr) {
         return nullptr;
     }
@@ -808,9 +808,9 @@ v8::Local<v8::Value> WebGLRenderingContext::GetParameterInternal(v8::Isolate *is
 
 
 void
-WebGLRenderingContext::GetDrawingBufferWidth(v8::Local<v8::String> name,
+WebGLRenderingContext::GetDrawingBufferWidth(v8::Local<v8::Name> name,
                                              const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(canvas::Receiver(info));
     if (ptr != nullptr) {
         auto ret = canvas_native_webgl_state_get_drawing_buffer_width(ptr->GetState());
         info.GetReturnValue().Set(ret);
@@ -820,10 +820,10 @@ WebGLRenderingContext::GetDrawingBufferWidth(v8::Local<v8::String> name,
 }
 
 
-void WebGLRenderingContext::GetDrawingBufferHeight(v8::Local<v8::String> name,
+void WebGLRenderingContext::GetDrawingBufferHeight(v8::Local<v8::Name> name,
                                                    const v8::PropertyCallbackInfo<v8::Value> &info
 ) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(canvas::Receiver(info));
     if (ptr != nullptr) {
         auto ret = canvas_native_webgl_state_get_drawing_buffer_height(ptr->GetState());
         info.GetReturnValue().Set(ret);
@@ -833,9 +833,9 @@ void WebGLRenderingContext::GetDrawingBufferHeight(v8::Local<v8::String> name,
 }
 
 void
-WebGLRenderingContext::GetFlipY(v8::Local<v8::String> name,
+WebGLRenderingContext::GetFlipY(v8::Local<v8::Name> name,
                                 const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(canvas::Receiver(info));
     if (ptr != nullptr) {
         auto ret = canvas_native_webgl_state_get_flip_y(ptr->GetState());
         info.GetReturnValue().Set(ret);
@@ -6370,9 +6370,9 @@ void WebGLRenderingContext::SetConstants(v8::Isolate *isolate,
 void WebGLRenderingContext::SetProps(v8::Isolate *isolate,
                                      const v8::Local<v8::ObjectTemplate> &tmpl) {
 
-    tmpl->SetAccessor(ConvertToV8String(isolate, "drawingBufferWidth"), &GetDrawingBufferWidth);
-    tmpl->SetAccessor(ConvertToV8String(isolate, "drawingBufferHeight"), &GetDrawingBufferHeight);
-    tmpl->SetAccessor(ConvertToV8String(isolate, "__flipY"), &GetFlipY);
+    canvas::SetAccessor(tmpl, ConvertToV8String(isolate, "drawingBufferWidth"), &GetDrawingBufferWidth);
+    canvas::SetAccessor(tmpl, ConvertToV8String(isolate, "drawingBufferHeight"), &GetDrawingBufferHeight);
+    canvas::SetAccessor(tmpl, ConvertToV8String(isolate, "__flipY"), &GetFlipY);
 }
 
 
@@ -6390,7 +6390,7 @@ WebGLRenderingContext::SetMethods(v8::Isolate *isolate, const v8::Local<v8::Obje
                   v8::Local<v8::Value>());
 
 
-    tmpl->SetAccessor(ConvertToV8String(isolate, "continuousRenderMode"), GetContinuousRenderMode,
+    canvas::SetAccessor(tmpl, ConvertToV8String(isolate, "continuousRenderMode"), GetContinuousRenderMode,
                       SetContinuousRenderMode);
 
 

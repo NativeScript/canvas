@@ -12,15 +12,15 @@ OES_vertex_array_objectImpl::OES_vertex_array_objectImpl(OES_vertex_array_object
 
 
 v8::CFunction OES_vertex_array_objectImpl::fast_delete_vertex_array_oes_(
-        v8::CFunction::Make(OES_vertex_array_objectImpl::FastDeleteVertexArrayOES));
+        CANVAS_FAST_FUNCTION(OES_vertex_array_objectImpl::FastDeleteVertexArrayOES));
 
 
 v8::CFunction OES_vertex_array_objectImpl::fast_is_vertex_array_oes_(
-        v8::CFunction::Make(OES_vertex_array_objectImpl::FastIsVertexArrayOES));
+        CANVAS_FAST_FUNCTION(OES_vertex_array_objectImpl::FastIsVertexArrayOES));
 
 
 v8::CFunction OES_vertex_array_objectImpl::fast_bind_vertex_array_oes_(
-        v8::CFunction::Make(OES_vertex_array_objectImpl::FastBindVertexArrayOES));
+        CANVAS_FAST_FUNCTION(OES_vertex_array_objectImpl::FastBindVertexArrayOES));
 
 void OES_vertex_array_objectImpl::CreateVertexArrayOES(
         const v8::FunctionCallbackInfo<v8::Value> &args) {

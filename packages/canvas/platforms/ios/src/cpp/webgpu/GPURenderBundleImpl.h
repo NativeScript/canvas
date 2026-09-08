@@ -30,7 +30,7 @@ public:
         auto object = GPURenderBundleImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType(bundle, NativeType::GPURenderBundle);
-        object->SetAlignedPointerInInternalField(0, bundle);
+        canvas::SetAlignedPointer(object, 0, bundle);
         bundle->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }

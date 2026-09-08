@@ -52,13 +52,13 @@ public:
         auto object = WEBGL_lose_contextImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType( element, NativeType::WEBGL_lose_context);
-        object->SetAlignedPointerInInternalField(0, element);
+        canvas::SetAlignedPointer(object, 0, element);
         element->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 
     static WEBGL_lose_contextImpl *GetPointer(const v8::Local<v8::Object> &object) {
-        auto ptr = object->GetAlignedPointerFromInternalField(0);
+        auto ptr = canvas::GetAlignedPointer(object, 0);
         if (ptr == nullptr) {
             return nullptr;
         }

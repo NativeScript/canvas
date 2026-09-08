@@ -35,7 +35,7 @@ void ImageBitmapImpl::FromAsset(const v8::FunctionCallbackInfo<v8::Value> &args)
         auto ptr = ImageAssetImpl::GetPointer(asset.As<v8::Object>());
         auto ret = canvas_native_image_asset_reference(ptr->GetImageAsset());
         auto bitmap = new ImageBitmapImpl(ret);
-        auto data = v8::External::New(isolate, bitmap);
+        auto data = canvas::NewExternal(isolate, bitmap);
         auto object = ImageBitmapImpl::NewInstance(isolate, data);
         args.GetReturnValue().Set(object);
         return;
@@ -44,7 +44,7 @@ void ImageBitmapImpl::FromAsset(const v8::FunctionCallbackInfo<v8::Value> &args)
 }
 
 ImageBitmapImpl *ImageBitmapImpl::GetPointer(v8::Local<v8::Object> object) {
-    auto ptr = object->GetAlignedPointerFromInternalField(0);
+    auto ptr = canvas::GetAlignedPointer(object, 0);
     if (ptr == nullptr) {
         return nullptr;
     }
@@ -67,16 +67,16 @@ v8::Local<v8::FunctionTemplate> ImageBitmapImpl::GetCtor(v8::Isolate *isolate) {
     auto tmpl = ctorTmpl->InstanceTemplate();
 
     tmpl->SetInternalFieldCount(2);
-    tmpl->SetAccessor(
+    canvas::SetAccessor(tmpl,
             ConvertToV8String(isolate, "width"), GetWidth);
 
-    tmpl->SetAccessor(
+    canvas::SetAccessor(tmpl,
             ConvertToV8String(isolate, "height"), GetHeight);
 
     tmpl->Set(
             ConvertToV8String(isolate, "close"), v8::FunctionTemplate::New(isolate, Close));
 
-    tmpl->SetAccessor(
+    canvas::SetAccessor(tmpl,
             ConvertToV8String(isolate, "__addr"),
             GetAddr);
 
@@ -90,9 +90,9 @@ v8::Local<v8::FunctionTemplate> ImageBitmapImpl::GetCtor(v8::Isolate *isolate) {
 }
 
 void
-ImageBitmapImpl::GetWidth(v8::Local<v8::String> name,
+ImageBitmapImpl::GetWidth(v8::Local<v8::Name> name,
                           const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(canvas::Receiver(info));
     if (ptr != nullptr && !ptr->closed_) {
         auto ret = canvas_native_image_asset_width(ptr->GetImageAsset());
         info.GetReturnValue().Set(ret);
@@ -102,9 +102,9 @@ ImageBitmapImpl::GetWidth(v8::Local<v8::String> name,
 }
 
 void
-ImageBitmapImpl::GetHeight(v8::Local<v8::String> name,
+ImageBitmapImpl::GetHeight(v8::Local<v8::Name> name,
                            const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(canvas::Receiver(info));
     if (ptr != nullptr && !ptr->closed_) {
         auto ret = canvas_native_image_asset_height(ptr->GetImageAsset());
         info.GetReturnValue().Set(ret);
@@ -215,9 +215,9 @@ ImageBitmapImpl::HandleOptions(v8::Isolate *isolate, const v8::Local<v8::Value> 
 
 
 void
-ImageBitmapImpl::GetAddr(v8::Local<v8::String> name,
+ImageBitmapImpl::GetAddr(v8::Local<v8::Name> name,
                         const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(canvas::Receiver(info));
     if (ptr != nullptr) {
         auto isolate = info.GetIsolate();
         auto ret = std::to_string(canvas_native_image_asset_get_addr(ptr->GetImageAsset()));

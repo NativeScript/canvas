@@ -29,7 +29,7 @@ public:
         auto object = GPUQuerySetImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType(querySet, NativeType::GPUQuerySet);
-        object->SetAlignedPointerInInternalField(0, querySet);
+        canvas::SetAlignedPointer(object, 0, querySet);
         querySet->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }

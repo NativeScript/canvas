@@ -21,10 +21,10 @@ void CanvasPattern::Init(const v8::Local<v8::Object> &canvasModule, v8::Isolate 
 }
 
 v8::CFunction CanvasPattern::fast_set_transform_(
-        v8::CFunction::Make(CanvasPattern::FastSetTransform));
+        CANVAS_FAST_FUNCTION(CanvasPattern::FastSetTransform));
 
 CanvasPattern *CanvasPattern::GetPointer(const v8::Local<v8::Object> &object) {
-    auto ptr = object->GetAlignedPointerFromInternalField(0);
+    auto ptr = canvas::GetAlignedPointer(object, 0);
     if (ptr == nullptr) {
         return nullptr;
     }

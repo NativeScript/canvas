@@ -44,13 +44,13 @@ public:
         auto object = EXT_texture_filter_anisotropicImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType( filterAnisotropic, NativeType::EXT_texture_filter_anisotropic);
-        object->SetAlignedPointerInInternalField(0, filterAnisotropic);
+        canvas::SetAlignedPointer(object, 0, filterAnisotropic);
         filterAnisotropic->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 
     static EXT_texture_filter_anisotropicImpl *GetPointer(const v8::Local<v8::Object> &object) {
-        auto ptr = object->GetAlignedPointerFromInternalField(0);
+        auto ptr = canvas::GetAlignedPointer(object, 0);
         if (ptr == nullptr) {
             return nullptr;
         }

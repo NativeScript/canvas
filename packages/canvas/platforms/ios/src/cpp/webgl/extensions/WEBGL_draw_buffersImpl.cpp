@@ -9,7 +9,7 @@ WEBGL_draw_buffersImpl::WEBGL_draw_buffersImpl(WEBGL_draw_buffers *buffers) : bu
 }
 
 v8::CFunction WEBGL_draw_buffersImpl::fast_draw_buffers_webgl(
-        v8::CFunction::Make(WEBGL_draw_buffersImpl::FastDrawBuffersWEBGL));
+        CANVAS_FAST_FUNCTION(WEBGL_draw_buffersImpl::FastDrawBuffersWEBGL));
 
 void WEBGL_draw_buffersImpl::DrawBuffersWEBGL(
         const v8::FunctionCallbackInfo<v8::Value> &args) {

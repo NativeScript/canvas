@@ -67,6 +67,38 @@ xcodebuild \
     SKIP_INSTALL=NO \
     BUILD_LIBRARY_FOR_DISTRIBUTION=YES
 
+echo "Build for appletvsimulator (tvOS Simulator)"
+xcodebuild \
+    -project CanvasNative.xcodeproj \
+    -scheme CanvasNative \
+    -sdk appletvsimulator \
+    -destination "generic/platform=tvOS Simulator" \
+    -configuration Release \
+    -quiet \
+    clean build \
+    BUILD_DIR=$(PWD)/dist \
+    ARCHS=arm64 \
+    ONLY_ACTIVE_ARCH=NO \
+    SKIP_INSTALL=NO \
+    BUILD_LIBRARY_FOR_DISTRIBUTION=YES
+
+echo "Build for appletvos (tvOS)"
+xcodebuild \
+    -project CanvasNative.xcodeproj \
+    -scheme CanvasNative \
+    -sdk appletvos \
+    -destination "generic/platform=tvOS" \
+    -configuration Release \
+    -quiet \
+    clean build \
+    BUILD_DIR=$(PWD)/dist \
+    ARCHS=arm64 \
+    ONLY_ACTIVE_ARCH=NO \
+    CODE_SIGN_IDENTITY="" \
+    CODE_SIGNING_REQUIRED=NO \
+    SKIP_INSTALL=NO \
+    BUILD_LIBRARY_FOR_DISTRIBUTION=YES
+
 echo "Creating XCFramework"
 xcodebuild \
     -create-xcframework \
@@ -78,4 +110,8 @@ xcodebuild \
     -debug-symbols $(PWD)/dist/Release-xros/CanvasNative.framework.dSYM \
     -framework $(PWD)/dist/Release-xrsimulator/CanvasNative.framework \
     -debug-symbols $(PWD)/dist/Release-xrsimulator/CanvasNative.framework.dSYM \
+    -framework $(PWD)/dist/Release-appletvos/CanvasNative.framework \
+    -debug-symbols $(PWD)/dist/Release-appletvos/CanvasNative.framework.dSYM \
+    -framework $(PWD)/dist/Release-appletvsimulator/CanvasNative.framework \
+    -debug-symbols $(PWD)/dist/Release-appletvsimulator/CanvasNative.framework.dSYM \
     -output $(PWD)/dist/CanvasNative.xcframework

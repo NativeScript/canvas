@@ -62,6 +62,38 @@ xcodebuild \
     SKIP_INSTALL=NO \
     BUILD_LIBRARY_FOR_DISTRIBUTION=YES
 
+echo "Build for appletvsimulator (tvOS Simulator)"
+xcodebuild \
+    -project CanvasSVG.xcodeproj \
+    -scheme CanvasSVG \
+    -sdk appletvsimulator \
+    -destination "generic/platform=tvOS Simulator" \
+    -configuration Release \
+    -quiet \
+    clean build \
+    BUILD_DIR=$(PWD)/dist \
+    ARCHS=arm64 \
+    ONLY_ACTIVE_ARCH=NO \
+    SKIP_INSTALL=NO \
+    BUILD_LIBRARY_FOR_DISTRIBUTION=YES
+
+echo "Build for appletvos (tvOS)"
+xcodebuild \
+    -project CanvasSVG.xcodeproj \
+    -scheme CanvasSVG \
+    -sdk appletvos \
+    -destination "generic/platform=tvOS" \
+    -configuration Release \
+    -quiet \
+    clean build \
+    BUILD_DIR=$(PWD)/dist \
+    ARCHS=arm64 \
+    ONLY_ACTIVE_ARCH=NO \
+    CODE_SIGN_IDENTITY="" \
+    CODE_SIGNING_REQUIRED=NO \
+    SKIP_INSTALL=NO \
+    BUILD_LIBRARY_FOR_DISTRIBUTION=YES
+
 echo "Creating XCFramework"
 xcodebuild \
     -create-xcframework \
@@ -73,6 +105,10 @@ xcodebuild \
     -debug-symbols $(PWD)/dist/Release-xros/CanvasSVG.framework.dSYM \
     -framework $(PWD)/dist/Release-xrsimulator/CanvasSVG.framework \
     -debug-symbols $(PWD)/dist/Release-xrsimulator/CanvasSVG.framework.dSYM \
+    -framework $(PWD)/dist/Release-appletvos/CanvasSVG.framework \
+    -debug-symbols $(PWD)/dist/Release-appletvos/CanvasSVG.framework.dSYM \
+    -framework $(PWD)/dist/Release-appletvsimulator/CanvasSVG.framework \
+    -debug-symbols $(PWD)/dist/Release-appletvsimulator/CanvasSVG.framework.dSYM \
     -output $(PWD)/dist/CanvasSVG.xcframework
 
 echo "Publishing XCFramework to packages/canvas-svg/platforms/ios"

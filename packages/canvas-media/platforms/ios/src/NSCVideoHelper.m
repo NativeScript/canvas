@@ -280,11 +280,18 @@ static NSArray<AVAssetTrack *> *NSCTracksWithMediaType(AVAsset *asset, AVMediaTy
 }
 
 - (BOOL)playsinline {
+#if TARGET_OS_TV
+    // tvOS AVPlayerViewController is always full screen; there is no inline mode to toggle.
+    return NO;
+#else
     return !self.controller.entersFullScreenWhenPlaybackBegins;
+#endif
 }
 
 - (void)setPlaysinline:(BOOL)playsinline {
+#if !TARGET_OS_TV
     self.controller.entersFullScreenWhenPlaybackBegins = !playsinline;
+#endif
 }
 
 - (void)play {

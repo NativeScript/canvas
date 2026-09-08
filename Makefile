@@ -1,5 +1,6 @@
 ARCHS_IOS = x86_64-apple-ios aarch64-apple-ios aarch64-apple-ios-sim
 ARCHS_VISIONOS = aarch64-apple-visionos aarch64-apple-visionos-sim
+ARCHS_TVOS = aarch64-apple-tvos aarch64-apple-tvos-sim
 ARCHS_ANDROID = i686-linux-android x86_64-linux-android aarch64-linux-android armv7-linux-androideabi
 
 XCFRAMEWORK = CanvasNative.xcframework
@@ -10,6 +11,8 @@ all: GENERATE_HEADERS ios android
 ios: $(XCFRAMEWORK)
 
 visionos: $(ARCHS_VISIONOS)
+
+tvos: $(ARCHS_TVOS)
 
 android: GENERATE_ANDROID
 
@@ -35,6 +38,12 @@ $(XCFRAMEWORK): $(ARCHS_IOS)
 
 .PHONY: $(ARCHS_VISIONOS)
 $(ARCHS_VISIONOS): %:
+	RUSTFLAGS="-Zlocation-detail=none -Zunstable-options -Cpanic=immediate-abort" \
+	cargo +nightly build -Z build-std='std,panic_abort' \
+	    --target $@ --release -p canvas-ios
+
+.PHONY: $(ARCHS_TVOS)
+$(ARCHS_TVOS): %:
 	RUSTFLAGS="-Zlocation-detail=none -Zunstable-options -Cpanic=immediate-abort" \
 	cargo +nightly build -Z build-std='std,panic_abort' \
 	    --target $@ --release -p canvas-ios

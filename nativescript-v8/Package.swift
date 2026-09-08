@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "CanvasNative",
-    platforms: [.iOS(.v12), .visionOS(.v1)],
+    platforms: [.iOS(.v12), .visionOS(.v1), .tvOS(.v13)],
     products: [
         .library(name: "NativeScriptV8", targets: ["NativeScriptV8"]),
     ],

@@ -276,6 +276,8 @@ impl MetalContext {
         }
     }
 
+    pub fn has_current_drawable(&self) -> bool { self.current_drawable.is_some() }
+
     pub fn current_drawable(&mut self) -> Option<&Retained<ProtocolObject<dyn CAMetalDrawable>>> {
         if self.current_drawable.is_none() {
             self.current_drawable = unsafe {

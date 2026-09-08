@@ -341,11 +341,23 @@ impl Context {
         self.surface_data.scale
     }
 
+    // Acquiring the next drawable during presentation can block the display-link
+    // callback on tvOS. Keep the previous surface until the next operation needs
+    // to draw, then retain its contents when swapping the backing texture.
+    #[inline]
+    fn ensure_metal_drawable(&mut self) {
+        #[cfg(all(feature = "metal", target_os = "tvos"))]
+        if self.metal_context.as_ref().is_some_and(|c| !c.has_current_drawable()) {
+            Self::acquire_drawable(self);
+        }
+    }
+
     #[inline]
     pub fn with_canvas<F>(&mut self, f: F)
     where
         F: FnOnce(&skia_safe::Canvas),
     {
+        self.ensure_metal_drawable();
         f(self.surface.canvas());
     }
 
@@ -354,6 +366,7 @@ impl Context {
     where
         F: FnOnce(&skia_safe::Canvas, &mut Path),
     {
+        self.ensure_metal_drawable();
         f(self.surface.canvas(), &mut self.path);
         self.surface_state = self.surface_state | SurfaceState::Pending;
     }
@@ -363,6 +376,7 @@ impl Context {
     where
         F: FnOnce(&skia_safe::Canvas),
     {
+        self.ensure_metal_drawable();
         f(self.surface.canvas());
         self.surface_state = self.surface_state | SurfaceState::Pending;
     }
@@ -372,6 +386,7 @@ impl Context {
     where
         F: FnOnce(&skia_safe::Canvas, &Paint),
     {
+        self.ensure_metal_drawable();
         f(self.surface.canvas(), &self.state.paint);
         self.surface_state = self.surface_state | SurfaceState::Pending;
     }
@@ -388,6 +403,7 @@ impl Context {
     where
         F: FnOnce(&skia_safe::Canvas),
     {
+        self.ensure_metal_drawable();
         f(self.surface.canvas());
         self.surface_state = self.surface_state | SurfaceState::Pending;
     }
@@ -545,6 +561,7 @@ impl Context {
     where
         F: Fn(&skia_safe::Canvas, &skia_safe::Paint, &mut Path),
     {
+        self.ensure_metal_drawable();
         let blend = self.state.global_composite_operation.get_blend_mode();
         // Fast path: most draw calls use SrcOver (the default)
         if !matches!(
@@ -606,6 +623,7 @@ impl Context {
     where
         F: Fn(&skia_safe::Canvas, &skia_safe::Paint),
     {
+        self.ensure_metal_drawable();
         let blend = self.state.global_composite_operation.get_blend_mode();
         // Fast path: most draw calls use SrcOver (the default)
         if !matches!(
@@ -663,6 +681,7 @@ impl Context {
     where
         F: Fn(&skia_safe::Canvas, &skia_safe::Paint, &Font),
     {
+        self.ensure_metal_drawable();
         let blend = self.state.global_composite_operation.get_blend_mode();
         if !matches!(
             blend,

@@ -349,13 +349,21 @@ impl Context {
 
     pub fn present(context: &mut Context) {
         let _ = MetalContext::new_release_pool();
-        let mut info: Option<TextureInfo> = None;
-        let mut width = 0;
-        let mut height = 0;
+
         if let Some(context) = context.metal_context.as_mut() {
             context.present_drawable();
         }
 
+        #[cfg(not(target_os = "tvos"))]
+        Self::acquire_drawable(context);
+    }
+
+    pub(crate) fn acquire_drawable(context: &mut Context) {
+        #[cfg(target_os = "tvos")]
+        let _pool = MetalContext::new_release_pool();
+        let mut info: Option<TextureInfo> = None;
+        let mut width = 0;
+        let mut height = 0;
         if let Some(context) = context.metal_context.as_mut() {
             if let Some(drawable) = context.next_drawable() {
                 let texture = drawable.texture();

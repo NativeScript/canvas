@@ -1856,7 +1856,7 @@ void CanvasRenderingContext2DImpl::SetLineDash(v8::Local<v8::Name> property,
             auto lineDash = lineDashObject.As<v8::Array>();
             auto size = lineDash->Length();
             std::vector<float> dash;
-            dash.reserve(size);
+            dash.resize(size);
             for (int i = 0; i < size; ++i) {
                 auto val = lineDash->Get(context, i).ToLocalChecked();
                 dash[i] = (float) val->NumberValue(context).ToChecked();
@@ -3283,7 +3283,7 @@ CanvasRenderingContext2DImpl::RoundRect(const v8::FunctionCallbackInfo<v8::Value
                 auto size = array->Length();
                 if (size > 1) {
                     std::vector<float> store;
-                    store.reserve(size);
+                    store.resize(size);
                     for (int i = 0;
                          i < size; i++) {
                         store[i] = (float) array->Get(

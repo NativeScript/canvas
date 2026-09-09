@@ -666,7 +666,7 @@ public:
 
         auto len = buffers->Length();
         std::vector<uint32_t> buf;
-        buf.reserve(len);
+        buf.resize(len);
 
         auto copied = v8_helpers::TryToCopyAndConvertArrayToCppBufferUint32(
                 buffers, buf.data(), len);
@@ -823,7 +823,7 @@ public:
 
         auto len = attachments->Length();
         std::vector<uint32_t> buf;
-        buf.reserve(len);
+        buf.resize(len);
 
         auto copied = v8_helpers::TryToCopyAndConvertArrayToCppBufferUint32(
                 attachments, buf.data(), len);
@@ -847,7 +847,7 @@ public:
 
         auto len = attachments->Length();
         std::vector<uint32_t> buf;
-        buf.reserve(len);
+        buf.resize(len);
 
         auto copied = v8_helpers::TryToCopyAndConvertArrayToCppBufferUint32(
                 attachments, buf.data(), len);

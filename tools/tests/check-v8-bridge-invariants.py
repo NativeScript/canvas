@@ -120,6 +120,31 @@ for path, text in sources():
         fail(f'overload set registered but not declared as an array in this file: {name}',
              [(rel, 0, name)])
 
+# 7. `reserve(n)` only sets capacity, so a buffer filled through `data()` (or
+#    indexed with operator[]) still reports `size() == 0`. Passing that as a
+#    length silently sends an empty array to the FFI -- how setLineDash,
+#    roundRect, drawBuffers and invalidateFramebuffer were all no-ops. Flag a
+#    reserve whose buffer is later handed over as `data(), size()` without
+#    anything having actually grown it.
+GROWS = r'\.(push_back|emplace_back|resize|insert|assign)\b'
+for path, text in sources():
+    lines = strip_comments(text).splitlines()
+    for index, line in enumerate(lines):
+        match = re.search(r'\b(\w+)\.reserve\s*\(', line)
+        if not match:
+            continue
+        name = re.escape(match.group(1))
+        window = lines[index + 1:index + 25]
+        use = next((offset for offset, following in enumerate(window)
+                    if re.search(rf'\b{name}\.data\s*\(\)', following)
+                    and any(re.search(rf'\b{name}\.size\s*\(\)', nearby)
+                            for nearby in window[offset:offset + 3])), None)
+        if use is None:
+            continue
+        if not re.search(rf'\b{name}{GROWS}', '\n'.join(window[:use + 1])):
+            fail(f'{match.group(1)}.reserve() leaves size() at 0 but size() is passed as a length',
+                 [(path.relative_to(ROOT), index + 1, line.strip())])
+
 if failures:
     for message, hits in failures:
         print(f'FAIL: {message}', file=sys.stderr)

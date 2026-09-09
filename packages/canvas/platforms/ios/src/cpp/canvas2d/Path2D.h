@@ -353,10 +353,10 @@ public:
 
         auto len = value->Length();
         std::vector<float> buf;
-        buf.reserve(len);
+        buf.resize(len);
 
         auto copied = v8_helpers::TryToCopyAndConvertArrayToCppBufferFloat(
-                value, nullptr, len);
+                value, buf.data(), len);
 
         if (copied) {
             if (len > 1) {

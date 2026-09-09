@@ -357,7 +357,7 @@ void Path2D::RoundRect(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
                 if (size >= 1) {
                     std::vector<float> store;
-                    store.reserve(size);
+                    store.resize(size);
                     for (int i = 0;
                          i < size; i++) {
                         store[i] = (float) array->Get(context, i).ToLocalChecked()->NumberValue(

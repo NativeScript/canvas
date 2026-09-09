@@ -1246,7 +1246,7 @@ public:
 
         auto len = array->Length();
         std::vector<float> buf;
-        buf.reserve(len);
+        buf.resize(len);
 
         auto copied = v8_helpers::TryToCopyAndConvertArrayToCppBufferFloat(
                 array, buf.data(), len);
@@ -1374,7 +1374,7 @@ public:
 
         auto len = array->Length();
         std::vector<float> buf;
-        buf.reserve(len);
+        buf.resize(len);
 
         auto copied = v8_helpers::TryToCopyAndConvertArrayToCppBufferFloat(
                 array, buf.data(), len);

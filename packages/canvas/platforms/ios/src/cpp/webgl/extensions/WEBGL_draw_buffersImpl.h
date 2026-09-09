@@ -154,7 +154,7 @@ public:
 
         auto len = value->Length();
         std::vector<uint32_t> buf;
-        buf.reserve(len);
+        buf.resize(len);
 
         auto copied = v8_helpers::TryToCopyAndConvertArrayToCppBufferUint32(
                 value, buf.data(), len);

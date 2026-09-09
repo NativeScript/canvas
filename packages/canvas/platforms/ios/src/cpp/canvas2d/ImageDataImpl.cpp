@@ -8,8 +8,9 @@
 
 struct ImageDataBuffer {
 public:
-    explicit ImageDataBuffer(ImageData *imageData) : imageData_(imageData) {
-        this->slice_ = canvas_native_image_data_get_data(imageData_);
+    explicit ImageDataBuffer(ImageData *imageData) {
+        // The buffer owns a clone of the pixel storage; ImageDataImpl owns imageData.
+        this->slice_ = canvas_native_image_data_get_data(imageData);
         this->buf_ = canvas_native_u8_buffer_get_bytes_mut(slice_);
         this->size_ = canvas_native_u8_buffer_get_length(slice_);
     }
@@ -25,14 +26,11 @@ public:
     ~ImageDataBuffer() {
         canvas_native_u8_buffer_release(slice_);
         slice_ = nullptr;
-        canvas_native_image_data_release(imageData_);
-        imageData_ = nullptr;
     }
 
 private:
     uint8_t *buf_;
     size_t size_;
-    ImageData *imageData_;
     U8Buffer *slice_;
 };
 

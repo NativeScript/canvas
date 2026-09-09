@@ -74,7 +74,7 @@ canvas-webgl = { path = "./crates/canvas-webgl" }
 canvas-svg = { path = "./crates/canvas-svg" }
 gl-bindings = { path = "./crates/gl-bindings" }
 canvas-c = { path = "./crates/canvas-c" }
-skia-safe = { git = "https://github.com/triniwiz/rust-skia", rev = "91bf15b", features = ["textlayout"] }
+skia-safe = { git = "https://github.com/triniwiz/rust-skia", rev = "1eafe30", features = ["textlayout"] }
 itertools = "0.14.0"
 ustr = "1.1.0"
 wgpu-core = { git = "https://github.com/triniwiz/wgpu", rev = "8bf3e5f", features = ["wgsl"] }

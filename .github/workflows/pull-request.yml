@@ -15,6 +15,41 @@ on:
   workflow_dispatch:
 
 jobs:
+  # Fast, dependency-free guards. These run first because they catch the class
+  # of regression that merges introduce silently -- see
+  # tools/tests/check-v8-bridge-invariants.py.
+  static-checks:
+    name: Static Checks
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: V8 bridge invariants
+        run: python3 tools/tests/check-v8-bridge-invariants.py
+
+  unit-tests:
+    name: Unit Tests
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-test-${{ hashFiles('Cargo.toml', 'crates/*/Cargo.toml') }}
+          restore-keys: ${{ runner.os }}-cargo-test-
+      # canvas-c needs 2d (skia) and webgl to compile; gl pulls the WebGL utils
+      # the 2d and webgpu paths import.
+      #
+      # .cargo/config.toml adds `-C panic=abort` on the Apple host targets for
+      # the macOS dylib build, and libtest cannot link against that, so the
+      # rustflags are overridden for this run only.
+      - name: Rust unit tests
+        env:
+          RUSTFLAGS: '-C link-arg=-undefined -C link-arg=dynamic_lookup'
+        run: cargo test -p canvas-c --features 2d,webgl,gl
+
   build-native:
     name: Build Native
     uses: ./.github/workflows/build-native.yml

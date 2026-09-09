@@ -24,6 +24,15 @@ svg: GENERATE_IOS_SVG GENERATE_VISIONOS_SVG
 
 android-svg: GENERATE_ANDROID_SVG
 
+# Host-side tests. The workspace pins `-C panic=abort` for the Apple host
+# targets in .cargo/config.toml (needed by the macOS dylib build) and libtest
+# cannot link against that, so the rustflags are replaced for this run.
+.PHONY: test
+test:
+	python3 ./tools/tests/check-v8-bridge-invariants.py
+	RUSTFLAGS="-C link-arg=-undefined -C link-arg=dynamic_lookup" \
+	    cargo test -p canvas-c --features 2d,webgl,gl
+
 .PHONY: GENERATE_HEADERS
 GENERATE_HEADERS:
 	./tools/scripts/build-headers.sh

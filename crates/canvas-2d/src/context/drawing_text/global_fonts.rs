@@ -5,7 +5,7 @@ use skia_safe::font_arguments::variation_position::Coordinate;
 use skia_safe::font_arguments::VariationPosition;
 use skia_safe::font_style::Slant;
 use skia_safe::textlayout::{FontCollection, TextStyle, TypefaceFontProvider};
-use skia_safe::{FontArguments, FontMgr, Typeface};
+use skia_safe::{Data, FontArguments, FontMgr, Typeface};
 use std::sync::LazyLock;
 use ustr::Ustr;
 
@@ -200,7 +200,7 @@ impl FontLibrary {
                 Err(why) => return Err(format!("{}: \"{}\"", why, path.display())),
                 Ok(b) => b,
             };
-            match decode_mgr.new_from_data(bytes.as_slice(), None) {
+            match decode_mgr.new_from_data(Data::new_copy(bytes.as_slice()), None) {
                 Some(font) => typefaces.push(font),
                 None => return Err(format!("Could not decode font data in {}", path.display())),
             }
@@ -219,7 +219,7 @@ impl FontLibrary {
         let decode_mgr = FontMgr::new();
         let mut typefaces = Vec::with_capacity(data.len());
         for bytes in data.iter() {
-            match decode_mgr.new_from_data(bytes, None) {
+            match decode_mgr.new_from_data(Data::new_copy(bytes), None) {
                 Some(font) => typefaces.push(font),
                 None => return Err("Could not decode font data".to_string()),
             }

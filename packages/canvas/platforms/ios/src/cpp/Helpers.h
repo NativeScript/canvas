@@ -197,16 +197,20 @@ static void SetFastMethod(v8::Isolate *isolate,
 }
 
 
-#define NUM(a) (sizeof(a) / sizeof(*a))
-
+// Takes the overload set by reference so its extent is deduced. The previous
+// signature took `const v8::CFunction *`, and NUM(&method_overloads) measured
+// a pointer-to-pointer rather than the array -- it evaluated to 1 for every
+// call site, so only the first overload of each set was ever registered with
+// V8. That silently dropped 23 of the 41 declared overloads; for bindTexture,
+// bindFramebuffer and bindRenderbuffer the surviving entry is the *null*
+// variant, leaving the common non-null bind with no fast path at all.
+template <size_t N>
 static void SetFastMethodWithOverLoads(v8::Isolate *isolate,
                                        v8::Local<v8::Template> that,
                                        const char *name,
                                        v8::FunctionCallback slow_callback,
-                                       const v8::CFunction *method_overloads,
+                                       const v8::CFunction (&method_overloads)[N],
                                        v8::Local<v8::Value> data) {
-
-    auto len = NUM(&method_overloads);
     v8::Local<v8::FunctionTemplate> t =
             v8::FunctionTemplate::NewWithCFunctionOverloads(isolate,
                                                             slow_callback,
@@ -215,7 +219,7 @@ static void SetFastMethodWithOverLoads(v8::Isolate *isolate,
                                                             0,
                                                             v8::ConstructorBehavior::kThrow,
                                                             v8::SideEffectType::kHasSideEffect,
-                                                            {method_overloads, len});
+                                                            {method_overloads, N});
     // kInternalized strings are created in the old space.
     const v8::NewStringType type = v8::NewStringType::kInternalized;
     v8::Local<v8::String> name_string =

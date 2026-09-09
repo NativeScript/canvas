@@ -31,7 +31,7 @@ public:
         auto object = GPURenderPipelineImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType(pipeline, NativeType::GPURenderPipeline);
-        object->SetAlignedPointerInInternalField(0, pipeline);
+        canvas::SetAlignedPointer(object, 0, pipeline);
         pipeline->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }

@@ -171,7 +171,11 @@ static void SetFastMethod(v8::Isolate *isolate,
                                       0,
                                       v8::ConstructorBehavior::kThrow,
                                       v8::SideEffectType::kHasSideEffect,
+#if V8_MAJOR_VERSION >= 14
+                                      nullptr);
+#else
                                       c_function);
+#endif
     // kInternalized strings are created in the old space.
     const v8::NewStringType type = v8::NewStringType::kInternalized;
     v8::Local<v8::String> name_string =
@@ -189,6 +193,10 @@ static void SetFastMethodWithOverLoads(v8::Isolate *isolate,
                                        const v8::CFunction *method_overloads,
                                        v8::Local<v8::Value> data) {
 
+#if V8_MAJOR_VERSION >= 14
+    auto t = v8::FunctionTemplate::New(isolate, slow_callback, data,
+        v8::Local<v8::Signature>(), 0, v8::ConstructorBehavior::kThrow);
+#else
     auto len = NUM(&method_overloads);
     v8::Local<v8::FunctionTemplate> t =
             v8::FunctionTemplate::NewWithCFunctionOverloads(isolate,
@@ -199,6 +207,7 @@ static void SetFastMethodWithOverLoads(v8::Isolate *isolate,
                                                             v8::ConstructorBehavior::kThrow,
                                                             v8::SideEffectType::kHasSideEffect,
                                                             {method_overloads, len});
+#endif
     // kInternalized strings are created in the old space.
     const v8::NewStringType type = v8::NewStringType::kInternalized;
     v8::Local<v8::String> name_string =
@@ -213,7 +222,7 @@ static void SetFastMethod(v8::Local<v8::Context> context,
                           v8::FunctionCallback slow_callback,
                           const v8::CFunction *c_function,
                           v8::Local<v8::Value> data = v8::Local<v8::Value>()) {
-    v8::Isolate *isolate = context->GetIsolate();
+    v8::Isolate *isolate = v8::Isolate::GetCurrent();
     v8::Local<v8::Function> function =
             v8::FunctionTemplate::New(isolate,
                                       slow_callback,
@@ -237,7 +246,7 @@ static void SetFastMethodNoSideEffect(v8::Local<v8::Context> context,
                                       v8::FunctionCallback slow_callback,
                                       const v8::CFunction *c_function,
                                       v8::Local<v8::Value> data) {
-    v8::Isolate *isolate = context->GetIsolate();
+    v8::Isolate *isolate = v8::Isolate::GetCurrent();
     v8::Local<v8::Function> function =
             v8::FunctionTemplate::New(isolate,
                                       slow_callback,
@@ -269,7 +278,11 @@ static void SetFastMethodNoSideEffect(v8::Isolate *isolate,
                                       0,
                                       v8::ConstructorBehavior::kThrow,
                                       v8::SideEffectType::kHasNoSideEffect,
+#if V8_MAJOR_VERSION >= 14
+                                      nullptr);
+#else
                                       c_function);
+#endif
     // kInternalized strings are created in the old space.
     const v8::NewStringType type = v8::NewStringType::kInternalized;
     v8::Local<v8::String> name_string =

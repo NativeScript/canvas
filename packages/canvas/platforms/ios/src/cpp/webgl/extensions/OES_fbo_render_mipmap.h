@@ -38,7 +38,7 @@ public:
         auto object = OES_fbo_render_mipmapImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType( mipmap, NativeType::OES_fbo_render_mipmap);
-        object->SetAlignedPointerInInternalField(0, mipmap);
+        canvas::SetAlignedPointer(object, 0, mipmap);
         object->Set(context, ConvertToV8String(isolate, "ext_name"),
                     ConvertToV8String(isolate, "OES_fbo_render_mipmap")).FromJust();
         mipmap->BindFinalizer(isolate, object);
@@ -46,7 +46,7 @@ public:
     }
 
     static OES_fbo_render_mipmapImpl *GetPointer(const v8::Local<v8::Object> &object) {
-        auto ptr = object->GetAlignedPointerFromInternalField(0);
+        auto ptr = canvas::GetAlignedPointer(object, 0);
         if (ptr == nullptr) {
             return nullptr;
         }

@@ -72,13 +72,13 @@ public:
         auto object = OES_vertex_array_objectImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType(vertexArrayObject, NativeType::OES_vertex_array_object);
-        object->SetAlignedPointerInInternalField(0, vertexArrayObject);
+        canvas::SetAlignedPointer(object, 0, vertexArrayObject);
         vertexArrayObject->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 
     static OES_vertex_array_objectImpl *GetPointer(const v8::Local<v8::Object> &object) {
-        auto ptr = object->GetAlignedPointerFromInternalField(0);
+        auto ptr = canvas::GetAlignedPointer(object, 0);
         if (ptr == nullptr) {
             return nullptr;
         }

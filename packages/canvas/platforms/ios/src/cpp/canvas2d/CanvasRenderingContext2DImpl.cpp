@@ -341,33 +341,33 @@ namespace {
 }
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_start_raf_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::__FastStartRaf));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::__FastStartRaf));
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_stop_raf_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::__FastStopRaf));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::__FastStopRaf));
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_draw_point_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastDrawPoint));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastDrawPoint));
 
 //v8::CFunction CanvasRenderingContext2DImpl::fast_draw_atlas_(
-//        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastDrawAtlas));
+//        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastDrawAtlas));
 
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_ellipse_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastEllipse));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastEllipse));
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_bezier_curve_to_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastBezierCurveTo));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastBezierCurveTo));
 
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_clip_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastClip));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastClip));
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_clip_rule_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastClipRule));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastClipRule));
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_clip_path_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastClipPath));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastClipPath));
 
 
 const v8::CFunction fast_clip_overloads_[] = {
@@ -378,27 +378,27 @@ const v8::CFunction fast_clip_overloads_[] = {
 
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_close_path_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastClosePath));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastClosePath));
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_begin_path_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastBeginPath));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastBeginPath));
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_arc_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastArc));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastArc));
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_arc_to_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastArcTo));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastArcTo));
 
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_draw_image_dx_dy_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastDrawImageDxDy));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastDrawImageDxDy));
 
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_draw_image_dx_dy_dw_dh_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastDrawImageDxDyDwDh));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastDrawImageDxDyDwDh));
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_draw_image_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastDrawImage));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastDrawImage));
 
 
 const v8::CFunction fast_draw_overloads_[] = {
@@ -409,45 +409,45 @@ const v8::CFunction fast_draw_overloads_[] = {
 
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_save_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastSave));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastSave));
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_restore_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastRestore));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastRestore));
 
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_translate_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastTranslate));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastTranslate));
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_clear_rect_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastClearRect));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastClearRect));
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_fill_rect_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastFillRect));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastFillRect));
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_fill_oval_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastFillOval));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastFillOval));
 
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_stroke_rect_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastStrokeRect));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastStrokeRect));
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_stroke_oval_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastStrokeOval));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastStrokeOval));
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_rotate_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastRotate));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastRotate));
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_fill_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastFill));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastFill));
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_fill_path_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastFillPath));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastFillPath));
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_fill_rule_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastFillRule));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastFillRule));
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_fill_path_rule_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastFillPathRule));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastFillPathRule));
 
 const v8::CFunction fast_fill_overloads_[] = {
         CanvasRenderingContext2DImpl::fast_fill_path_rule_,
@@ -459,10 +459,10 @@ const v8::CFunction fast_fill_overloads_[] = {
 
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_put_image_data_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastPutImageData));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastPutImageData));
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_put_image_data_dx_dy_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastPutImageDataDxDy));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastPutImageDataDxDy));
 
 const v8::CFunction fast_put_image_data_overloads_[] = {
         CanvasRenderingContext2DImpl::fast_put_image_data_,
@@ -471,10 +471,10 @@ const v8::CFunction fast_put_image_data_overloads_[] = {
 };
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_stroke_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastStroke));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastStroke));
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_stroke_path_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastStrokePath));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastStrokePath));
 
 const v8::CFunction fast_stroke_overloads_[] = {
         CanvasRenderingContext2DImpl::fast_stroke_,
@@ -482,13 +482,13 @@ const v8::CFunction fast_stroke_overloads_[] = {
 };
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_is_point_in_path_xy_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastIsPointInPathXY));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastIsPointInPathXY));
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_is_point_in_path_xy_rule_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastIsPointInPathXYRule));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastIsPointInPathXYRule));
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_is_point_in_path_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastIsPointInPath));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastIsPointInPath));
 
 const v8::CFunction fast_is_point_in_path_overloads_[] = {
         CanvasRenderingContext2DImpl::fast_is_point_in_path_,
@@ -498,10 +498,10 @@ const v8::CFunction fast_is_point_in_path_overloads_[] = {
 
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_is_point_in_stroke_xy_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastIsPointInStrokeXY));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastIsPointInStrokeXY));
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_is_point_in_stroke_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastIsPointInStroke));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastIsPointInStroke));
 
 const v8::CFunction fast_is_point_in_stroke_overloads_[] = {
         CanvasRenderingContext2DImpl::fast_is_point_in_stroke_,
@@ -509,21 +509,21 @@ const v8::CFunction fast_is_point_in_stroke_overloads_[] = {
 };
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_line_to_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastLineTo));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastLineTo));
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_move_to_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastMoveTo));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastMoveTo));
 
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_quadratic_curve_to_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastQuadraticCurveTo));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastQuadraticCurveTo));
 
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_round_rect_array_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastRoundRectArray));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastRoundRectArray));
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_round_rect_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastRoundRect));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastRoundRect));
 
 const v8::CFunction fast_round_rect_overloads_[] = {
         CanvasRenderingContext2DImpl::fast_round_rect_array_,
@@ -532,20 +532,20 @@ const v8::CFunction fast_round_rect_overloads_[] = {
 
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_rect_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastRect));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastRect));
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_scale_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastRect));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastRect));
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_set_line_dash_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastSetLineDash));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastSetLineDash));
 
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_set_transform_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastSetTransform));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastSetTransform));
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_set_transform_abcdef_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastSetTransformABCDEF));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastSetTransformABCDEF));
 
 const v8::CFunction fast_set_transform_overloads_[] = {
         CanvasRenderingContext2DImpl::fast_set_transform_abcdef_,
@@ -553,11 +553,11 @@ const v8::CFunction fast_set_transform_overloads_[] = {
 };
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_transform_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastTransform));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastTransform));
 
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_reset_transform_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastResetTransform));
+        CANVAS_FAST_FUNCTION(CanvasRenderingContext2DImpl::FastResetTransform));
 
 
 CanvasRenderingContext2DImpl::CanvasRenderingContext2DImpl(
@@ -595,7 +595,7 @@ void CanvasRenderingContext2DImpl::Init(v8::Local<v8::Object> canvasModule, v8::
 
 CanvasRenderingContext2DImpl *
 CanvasRenderingContext2DImpl::GetPointer(const v8::Local<v8::Object> &object) {
-    auto ptr = object->GetAlignedPointerFromInternalField(0);
+    auto ptr = canvas::GetAlignedPointer(object, 0);
     if (ptr == nullptr) {
         return nullptr;
     }
@@ -657,81 +657,81 @@ v8::Local<v8::FunctionTemplate> CanvasRenderingContext2DImpl::GetCtor(v8::Isolat
               v8::FunctionTemplate::New(isolate, __GetPointer));
     tmpl->Set(ConvertToV8String(isolate, "__resize"), v8::FunctionTemplate::New(isolate, __Resize));
 
-    tmpl->SetAccessor(ConvertToV8String(isolate, "continuousRenderMode"), GetContinuousRenderMode,
+    canvas::SetAccessor(tmpl, ConvertToV8String(isolate, "continuousRenderMode"), GetContinuousRenderMode,
                       SetContinuousRenderMode,
-                      v8::Local<v8::Value>(), v8::PROHIBITS_OVERWRITING,
+                      v8::Local<v8::Value>(),
                       v8::PropertyAttribute::DontDelete);
 
-    tmpl->SetAccessor(ConvertToV8String(isolate, "filter"), GetFilter, SetFilter,
-                      v8::Local<v8::Value>(), v8::PROHIBITS_OVERWRITING,
+    canvas::SetAccessor(tmpl, ConvertToV8String(isolate, "filter"), GetFilter, SetFilter,
+                      v8::Local<v8::Value>(),
                       v8::PropertyAttribute::DontDelete);
-    tmpl->SetAccessor(ConvertToV8String(isolate, "font"), GetFont, SetFont,
-                      v8::Local<v8::Value>(), v8::PROHIBITS_OVERWRITING,
+    canvas::SetAccessor(tmpl, ConvertToV8String(isolate, "font"), GetFont, SetFont,
+                      v8::Local<v8::Value>(),
                       v8::PropertyAttribute::DontDelete);
-    tmpl->SetAccessor(ConvertToV8String(isolate, "letterSpacing"), GetLetterSpacing,
+    canvas::SetAccessor(tmpl, ConvertToV8String(isolate, "letterSpacing"), GetLetterSpacing,
                       SetLetterSpacing,
-                      v8::Local<v8::Value>(), v8::PROHIBITS_OVERWRITING,
+                      v8::Local<v8::Value>(),
                       v8::PropertyAttribute::DontDelete);
-    tmpl->SetAccessor(ConvertToV8String(isolate, "wordSpacing"), GetWordSpacing, SetWordSpacing,
-                      v8::Local<v8::Value>(), v8::PROHIBITS_OVERWRITING,
+    canvas::SetAccessor(tmpl, ConvertToV8String(isolate, "wordSpacing"), GetWordSpacing, SetWordSpacing,
+                      v8::Local<v8::Value>(),
                       v8::PropertyAttribute::DontDelete);
-    tmpl->SetAccessor(ConvertToV8String(isolate, "globalAlpha"), GetGlobalAlpha, SetGlobalAlpha,
-                      v8::Local<v8::Value>(), v8::PROHIBITS_OVERWRITING,
+    canvas::SetAccessor(tmpl, ConvertToV8String(isolate, "globalAlpha"), GetGlobalAlpha, SetGlobalAlpha,
+                      v8::Local<v8::Value>(),
                       v8::PropertyAttribute::DontDelete);
-    tmpl->SetAccessor(ConvertToV8String(isolate, "imageSmoothingEnabled"), GetImageSmoothingEnabled,
+    canvas::SetAccessor(tmpl, ConvertToV8String(isolate, "imageSmoothingEnabled"), GetImageSmoothingEnabled,
                       SetImageSmoothingEnabled,
-                      v8::Local<v8::Value>(), v8::PROHIBITS_OVERWRITING,
+                      v8::Local<v8::Value>(),
                       v8::PropertyAttribute::DontDelete);
-    tmpl->SetAccessor(ConvertToV8String(isolate, "imageSmoothingQuality"), GetImageSmoothingQuality,
+    canvas::SetAccessor(tmpl, ConvertToV8String(isolate, "imageSmoothingQuality"), GetImageSmoothingQuality,
                       SetImageSmoothingQuality,
-                      v8::Local<v8::Value>(), v8::PROHIBITS_OVERWRITING,
+                      v8::Local<v8::Value>(),
                       v8::PropertyAttribute::DontDelete);
-    tmpl->SetAccessor(ConvertToV8String(isolate, "lineDashOffset"), GetLineDashOffset,
+    canvas::SetAccessor(tmpl, ConvertToV8String(isolate, "lineDashOffset"), GetLineDashOffset,
                       SetLineDashOffset,
-                      v8::Local<v8::Value>(), v8::PROHIBITS_OVERWRITING,
+                      v8::Local<v8::Value>(),
                       v8::PropertyAttribute::DontDelete);
-    tmpl->SetAccessor(ConvertToV8String(isolate, "lineJoin"), GetLineJoin, SetLineJoin,
-                      v8::Local<v8::Value>(), v8::PROHIBITS_OVERWRITING,
+    canvas::SetAccessor(tmpl, ConvertToV8String(isolate, "lineJoin"), GetLineJoin, SetLineJoin,
+                      v8::Local<v8::Value>(),
                       v8::PropertyAttribute::DontDelete);
-    tmpl->SetAccessor(ConvertToV8String(isolate, "lineCap"), GetLineCap, SetLineCap,
-                      v8::Local<v8::Value>(), v8::PROHIBITS_OVERWRITING,
+    canvas::SetAccessor(tmpl, ConvertToV8String(isolate, "lineCap"), GetLineCap, SetLineCap,
+                      v8::Local<v8::Value>(),
                       v8::PropertyAttribute::DontDelete);
-    tmpl->SetAccessor(ConvertToV8String(isolate, "miterLimit"), GetMiterLimit, SetMiterLimit,
-                      v8::Local<v8::Value>(), v8::PROHIBITS_OVERWRITING,
+    canvas::SetAccessor(tmpl, ConvertToV8String(isolate, "miterLimit"), GetMiterLimit, SetMiterLimit,
+                      v8::Local<v8::Value>(),
                       v8::PropertyAttribute::DontDelete);
-    tmpl->SetAccessor(ConvertToV8String(isolate, "shadowColor"), GetShadowColor, SetShadowColor,
-                      v8::Local<v8::Value>(), v8::PROHIBITS_OVERWRITING,
+    canvas::SetAccessor(tmpl, ConvertToV8String(isolate, "shadowColor"), GetShadowColor, SetShadowColor,
+                      v8::Local<v8::Value>(),
                       v8::PropertyAttribute::DontDelete);
-    tmpl->SetAccessor(ConvertToV8String(isolate, "shadowBlur"), GetShadowBlur, SetShadowBlur,
-                      v8::Local<v8::Value>(), v8::PROHIBITS_OVERWRITING,
+    canvas::SetAccessor(tmpl, ConvertToV8String(isolate, "shadowBlur"), GetShadowBlur, SetShadowBlur,
+                      v8::Local<v8::Value>(),
                       v8::PropertyAttribute::DontDelete);
-    tmpl->SetAccessor(ConvertToV8String(isolate, "shadowOffsetX"), GetShadowOffsetX,
+    canvas::SetAccessor(tmpl, ConvertToV8String(isolate, "shadowOffsetX"), GetShadowOffsetX,
                       SetShadowOffsetX,
-                      v8::Local<v8::Value>(), v8::PROHIBITS_OVERWRITING,
+                      v8::Local<v8::Value>(),
                       v8::PropertyAttribute::DontDelete);
-    tmpl->SetAccessor(ConvertToV8String(isolate, "shadowOffsetY"), GetShadowOffsetY,
+    canvas::SetAccessor(tmpl, ConvertToV8String(isolate, "shadowOffsetY"), GetShadowOffsetY,
                       SetShadowOffsetY,
-                      v8::Local<v8::Value>(), v8::PROHIBITS_OVERWRITING,
+                      v8::Local<v8::Value>(),
                       v8::PropertyAttribute::DontDelete);
-    tmpl->SetAccessor(ConvertToV8String(isolate, "textAlign"), GetTextAlign, SetTextAlign,
-                      v8::Local<v8::Value>(), v8::PROHIBITS_OVERWRITING,
+    canvas::SetAccessor(tmpl, ConvertToV8String(isolate, "textAlign"), GetTextAlign, SetTextAlign,
+                      v8::Local<v8::Value>(),
                       v8::PropertyAttribute::DontDelete);
-    tmpl->SetAccessor(ConvertToV8String(isolate, "textBaseline"), GetTextBaseline,
+    canvas::SetAccessor(tmpl, ConvertToV8String(isolate, "textBaseline"), GetTextBaseline,
                       SetTextBaseline,
-                      v8::Local<v8::Value>(), v8::PROHIBITS_OVERWRITING,
+                      v8::Local<v8::Value>(),
                       v8::PropertyAttribute::DontDelete);
-    tmpl->SetAccessor(ConvertToV8String(isolate, "globalCompositeOperation"),
+    canvas::SetAccessor(tmpl, ConvertToV8String(isolate, "globalCompositeOperation"),
                       GetGlobalCompositeOperation, SetGlobalCompositeOperation,
-                      v8::Local<v8::Value>(), v8::PROHIBITS_OVERWRITING,
+                      v8::Local<v8::Value>(),
                       v8::PropertyAttribute::DontDelete);
-    tmpl->SetAccessor(ConvertToV8String(isolate, "fillStyle"), GetFillStyle, SetFillStyle,
-                      v8::Local<v8::Value>(), v8::PROHIBITS_OVERWRITING,
+    canvas::SetAccessor(tmpl, ConvertToV8String(isolate, "fillStyle"), GetFillStyle, SetFillStyle,
+                      v8::Local<v8::Value>(),
                       v8::PropertyAttribute::DontDelete);
-    tmpl->SetAccessor(ConvertToV8String(isolate, "strokeStyle"), GetStrokeStyle, SetStrokeStyle,
-                      v8::Local<v8::Value>(), v8::PROHIBITS_OVERWRITING,
+    canvas::SetAccessor(tmpl, ConvertToV8String(isolate, "strokeStyle"), GetStrokeStyle, SetStrokeStyle,
+                      v8::Local<v8::Value>(),
                       v8::PropertyAttribute::DontDelete);
-    tmpl->SetAccessor(ConvertToV8String(isolate, "lineWidth"), GetLineWidth, SetLineWidth,
-                      v8::Local<v8::Value>(), v8::PROHIBITS_OVERWRITING,
+    canvas::SetAccessor(tmpl, ConvertToV8String(isolate, "lineWidth"), GetLineWidth, SetLineWidth,
+                      v8::Local<v8::Value>(),
                       v8::PropertyAttribute::DontDelete);
 
 
@@ -921,9 +921,9 @@ void CanvasRenderingContext2DImpl::__StopRaf(const v8::FunctionCallbackInfo<v8::
 }
 
 
-void CanvasRenderingContext2DImpl::GetContinuousRenderMode(v8::Local<v8::String> property,
+void CanvasRenderingContext2DImpl::GetContinuousRenderMode(v8::Local<v8::Name> property,
                                                            const v8::PropertyCallbackInfo<v8::Value> &info) {
-    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    CanvasRenderingContext2DImpl *ptr = GetPointer(canvas::Receiver(info));
     if (ptr == nullptr) {
         info.GetReturnValue().Set(false);
         return;
@@ -931,10 +931,10 @@ void CanvasRenderingContext2DImpl::GetContinuousRenderMode(v8::Local<v8::String>
     info.GetReturnValue().Set(ptr->continuousRender_);
 }
 
-void CanvasRenderingContext2DImpl::SetContinuousRenderMode(v8::Local<v8::String> property,
+void CanvasRenderingContext2DImpl::SetContinuousRenderMode(v8::Local<v8::Name> property,
                                                            v8::Local<v8::Value> value,
                                                            const v8::PropertyCallbackInfo<void> &info) {
-    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    CanvasRenderingContext2DImpl *ptr = GetPointer(canvas::Receiver(info));
     if (ptr == nullptr) {
         return;
     }
@@ -1074,9 +1074,9 @@ void CanvasRenderingContext2DImpl::__Resize(const v8::FunctionCallbackInfo<v8::V
 }
 
 
-void CanvasRenderingContext2DImpl::GetFilter(v8::Local<v8::String> property,
+void CanvasRenderingContext2DImpl::GetFilter(v8::Local<v8::Name> property,
                                              const v8::PropertyCallbackInfo<v8::Value> &info) {
-    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    CanvasRenderingContext2DImpl *ptr = GetPointer(canvas::Receiver(info));
     if (ptr == nullptr) {
         info.GetReturnValue().SetEmptyString();
         return;
@@ -1087,10 +1087,10 @@ void CanvasRenderingContext2DImpl::GetFilter(v8::Local<v8::String> property,
     canvas_native_string_destroy((char *) filter);
 }
 
-void CanvasRenderingContext2DImpl::SetFilter(v8::Local<v8::String> property,
+void CanvasRenderingContext2DImpl::SetFilter(v8::Local<v8::Name> property,
                                              v8::Local<v8::Value> value,
                                              const v8::PropertyCallbackInfo<void> &info) {
-    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    CanvasRenderingContext2DImpl *ptr = GetPointer(canvas::Receiver(info));
     if (ptr == nullptr) {
         return;
     }
@@ -1099,9 +1099,9 @@ void CanvasRenderingContext2DImpl::SetFilter(v8::Local<v8::String> property,
     canvas_native_context_set_filter(ptr->GetContext(), val.c_str());
 }
 
-void CanvasRenderingContext2DImpl::GetFont(v8::Local<v8::String> property,
+void CanvasRenderingContext2DImpl::GetFont(v8::Local<v8::Name> property,
                                            const v8::PropertyCallbackInfo<v8::Value> &info) {
-    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    CanvasRenderingContext2DImpl *ptr = GetPointer(canvas::Receiver(info));
     if (ptr == nullptr) {
         info.GetReturnValue().SetEmptyString();
         return;
@@ -1125,10 +1125,10 @@ void CanvasRenderingContext2DImpl::GetFont(v8::Local<v8::String> property,
     canvas_native_string_destroy((char *) font);
 }
 
-void CanvasRenderingContext2DImpl::SetFont(v8::Local<v8::String> property,
+void CanvasRenderingContext2DImpl::SetFont(v8::Local<v8::Name> property,
                                            v8::Local<v8::Value> value,
                                            const v8::PropertyCallbackInfo<void> &info) {
-    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    CanvasRenderingContext2DImpl *ptr = GetPointer(canvas::Receiver(info));
     if (ptr == nullptr) {
         return;
     }
@@ -1148,9 +1148,9 @@ void CanvasRenderingContext2DImpl::SetFont(v8::Local<v8::String> property,
 }
 
 
-void CanvasRenderingContext2DImpl::GetLetterSpacing(v8::Local<v8::String> property,
+void CanvasRenderingContext2DImpl::GetLetterSpacing(v8::Local<v8::Name> property,
                                                     const v8::PropertyCallbackInfo<v8::Value> &info) {
-    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    CanvasRenderingContext2DImpl *ptr = GetPointer(canvas::Receiver(info));
     if (ptr == nullptr) {
         info.GetReturnValue().SetEmptyString();
         return;
@@ -1162,10 +1162,10 @@ void CanvasRenderingContext2DImpl::GetLetterSpacing(v8::Local<v8::String> proper
     canvas_native_string_destroy((char *) font);
 }
 
-void CanvasRenderingContext2DImpl::SetLetterSpacing(v8::Local<v8::String> property,
+void CanvasRenderingContext2DImpl::SetLetterSpacing(v8::Local<v8::Name> property,
                                                     v8::Local<v8::Value> value,
                                                     const v8::PropertyCallbackInfo<void> &info) {
-    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    CanvasRenderingContext2DImpl *ptr = GetPointer(canvas::Receiver(info));
     if (ptr == nullptr) {
         return;
     }
@@ -1177,9 +1177,9 @@ void CanvasRenderingContext2DImpl::SetLetterSpacing(v8::Local<v8::String> proper
 }
 
 
-void CanvasRenderingContext2DImpl::GetWordSpacing(v8::Local<v8::String> property,
+void CanvasRenderingContext2DImpl::GetWordSpacing(v8::Local<v8::Name> property,
                                                   const v8::PropertyCallbackInfo<v8::Value> &info) {
-    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    CanvasRenderingContext2DImpl *ptr = GetPointer(canvas::Receiver(info));
     if (ptr == nullptr) {
         info.GetReturnValue().SetEmptyString();
         return;
@@ -1191,10 +1191,10 @@ void CanvasRenderingContext2DImpl::GetWordSpacing(v8::Local<v8::String> property
     canvas_native_string_destroy((char *) font);
 }
 
-void CanvasRenderingContext2DImpl::SetWordSpacing(v8::Local<v8::String> property,
+void CanvasRenderingContext2DImpl::SetWordSpacing(v8::Local<v8::Name> property,
                                                   v8::Local<v8::Value> value,
                                                   const v8::PropertyCallbackInfo<void> &info) {
-    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    CanvasRenderingContext2DImpl *ptr = GetPointer(canvas::Receiver(info));
     if (ptr == nullptr) {
         return;
     }
@@ -1206,9 +1206,9 @@ void CanvasRenderingContext2DImpl::SetWordSpacing(v8::Local<v8::String> property
 }
 
 
-void CanvasRenderingContext2DImpl::GetGlobalAlpha(v8::Local<v8::String> property,
+void CanvasRenderingContext2DImpl::GetGlobalAlpha(v8::Local<v8::Name> property,
                                                   const v8::PropertyCallbackInfo<v8::Value> &info) {
-    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    CanvasRenderingContext2DImpl *ptr = GetPointer(canvas::Receiver(info));
     if (ptr == nullptr) {
         info.GetReturnValue().Set(1);
         return;
@@ -1217,10 +1217,10 @@ void CanvasRenderingContext2DImpl::GetGlobalAlpha(v8::Local<v8::String> property
     info.GetReturnValue().Set((double) alpha);
 }
 
-void CanvasRenderingContext2DImpl::SetGlobalAlpha(v8::Local<v8::String> property,
+void CanvasRenderingContext2DImpl::SetGlobalAlpha(v8::Local<v8::Name> property,
                                                   v8::Local<v8::Value> value,
                                                   const v8::PropertyCallbackInfo<void> &info) {
-    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    CanvasRenderingContext2DImpl *ptr = GetPointer(canvas::Receiver(info));
     if (ptr == nullptr) {
         return;
     }
@@ -1230,9 +1230,9 @@ void CanvasRenderingContext2DImpl::SetGlobalAlpha(v8::Local<v8::String> property
                                            (float) value->NumberValue(context).ToChecked());
 }
 
-void CanvasRenderingContext2DImpl::GetImageSmoothingEnabled(v8::Local<v8::String> property,
+void CanvasRenderingContext2DImpl::GetImageSmoothingEnabled(v8::Local<v8::Name> property,
                                                             const v8::PropertyCallbackInfo<v8::Value> &info) {
-    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    CanvasRenderingContext2DImpl *ptr = GetPointer(canvas::Receiver(info));
     if (ptr == nullptr) {
         info.GetReturnValue().Set(false);
         return;
@@ -1241,10 +1241,10 @@ void CanvasRenderingContext2DImpl::GetImageSmoothingEnabled(v8::Local<v8::String
     info.GetReturnValue().Set(enabled);
 }
 
-void CanvasRenderingContext2DImpl::SetImageSmoothingEnabled(v8::Local<v8::String> property,
+void CanvasRenderingContext2DImpl::SetImageSmoothingEnabled(v8::Local<v8::Name> property,
                                                             v8::Local<v8::Value> value,
                                                             const v8::PropertyCallbackInfo<void> &info) {
-    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    CanvasRenderingContext2DImpl *ptr = GetPointer(canvas::Receiver(info));
     if (ptr == nullptr) {
         return;
     }
@@ -1253,9 +1253,9 @@ void CanvasRenderingContext2DImpl::SetImageSmoothingEnabled(v8::Local<v8::String
                                                       value->BooleanValue(isolate));
 }
 
-void CanvasRenderingContext2DImpl::GetImageSmoothingQuality(v8::Local<v8::String> property,
+void CanvasRenderingContext2DImpl::GetImageSmoothingQuality(v8::Local<v8::Name> property,
                                                             const v8::PropertyCallbackInfo<v8::Value> &info) {
-    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    CanvasRenderingContext2DImpl *ptr = GetPointer(canvas::Receiver(info));
     if (ptr == nullptr) {
         info.GetReturnValue().SetEmptyString();
         return;
@@ -1269,10 +1269,10 @@ void CanvasRenderingContext2DImpl::GetImageSmoothingQuality(v8::Local<v8::String
 
 }
 
-void CanvasRenderingContext2DImpl::SetImageSmoothingQuality(v8::Local<v8::String> property,
+void CanvasRenderingContext2DImpl::SetImageSmoothingQuality(v8::Local<v8::Name> property,
                                                             v8::Local<v8::Value> value,
                                                             const v8::PropertyCallbackInfo<void> &info) {
-    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    CanvasRenderingContext2DImpl *ptr = GetPointer(canvas::Receiver(info));
     if (ptr == nullptr) {
         return;
     }
@@ -1281,9 +1281,9 @@ void CanvasRenderingContext2DImpl::SetImageSmoothingQuality(v8::Local<v8::String
     canvas_native_context_set_image_smoothing_quality(ptr->GetContext(), quality.c_str());
 }
 
-void CanvasRenderingContext2DImpl::GetLineDashOffset(v8::Local<v8::String> property,
+void CanvasRenderingContext2DImpl::GetLineDashOffset(v8::Local<v8::Name> property,
                                                      const v8::PropertyCallbackInfo<v8::Value> &info) {
-    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    CanvasRenderingContext2DImpl *ptr = GetPointer(canvas::Receiver(info));
     if (ptr == nullptr) {
         info.GetReturnValue().Set(0);
         return;
@@ -1292,10 +1292,10 @@ void CanvasRenderingContext2DImpl::GetLineDashOffset(v8::Local<v8::String> prope
     info.GetReturnValue().Set((double) offset);
 }
 
-void CanvasRenderingContext2DImpl::SetLineDashOffset(v8::Local<v8::String> property,
+void CanvasRenderingContext2DImpl::SetLineDashOffset(v8::Local<v8::Name> property,
                                                      v8::Local<v8::Value> value,
                                                      const v8::PropertyCallbackInfo<void> &info) {
-    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    CanvasRenderingContext2DImpl *ptr = GetPointer(canvas::Receiver(info));
     if (ptr == nullptr) {
         return;
     }
@@ -1306,9 +1306,9 @@ void CanvasRenderingContext2DImpl::SetLineDashOffset(v8::Local<v8::String> prope
 }
 
 
-void CanvasRenderingContext2DImpl::GetLineJoin(v8::Local<v8::String> property,
+void CanvasRenderingContext2DImpl::GetLineJoin(v8::Local<v8::Name> property,
                                                const v8::PropertyCallbackInfo<v8::Value> &info) {
-    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    CanvasRenderingContext2DImpl *ptr = GetPointer(canvas::Receiver(info));
     if (ptr == nullptr) {
         info.GetReturnValue().Set(0);
         return;
@@ -1320,10 +1320,10 @@ void CanvasRenderingContext2DImpl::GetLineJoin(v8::Local<v8::String> property,
     canvas_native_string_destroy((char *) join);
 }
 
-void CanvasRenderingContext2DImpl::SetLineJoin(v8::Local<v8::String> property,
+void CanvasRenderingContext2DImpl::SetLineJoin(v8::Local<v8::Name> property,
                                                v8::Local<v8::Value> value,
                                                const v8::PropertyCallbackInfo<void> &info) {
-    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    CanvasRenderingContext2DImpl *ptr = GetPointer(canvas::Receiver(info));
     if (ptr == nullptr) {
         return;
     }
@@ -1332,9 +1332,9 @@ void CanvasRenderingContext2DImpl::SetLineJoin(v8::Local<v8::String> property,
     canvas_native_context_set_line_join(ptr->GetContext(), join.c_str());
 }
 
-void CanvasRenderingContext2DImpl::GetLineCap(v8::Local<v8::String> property,
+void CanvasRenderingContext2DImpl::GetLineCap(v8::Local<v8::Name> property,
                                               const v8::PropertyCallbackInfo<v8::Value> &info) {
-    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    CanvasRenderingContext2DImpl *ptr = GetPointer(canvas::Receiver(info));
     if (ptr == nullptr) {
         info.GetReturnValue().Set(0);
         return;
@@ -1346,10 +1346,10 @@ void CanvasRenderingContext2DImpl::GetLineCap(v8::Local<v8::String> property,
     canvas_native_string_destroy((char *) cap);
 }
 
-void CanvasRenderingContext2DImpl::SetLineCap(v8::Local<v8::String> property,
+void CanvasRenderingContext2DImpl::SetLineCap(v8::Local<v8::Name> property,
                                               v8::Local<v8::Value> value,
                                               const v8::PropertyCallbackInfo<void> &info) {
-    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    CanvasRenderingContext2DImpl *ptr = GetPointer(canvas::Receiver(info));
     if (ptr == nullptr) {
         return;
     }
@@ -1359,9 +1359,9 @@ void CanvasRenderingContext2DImpl::SetLineCap(v8::Local<v8::String> property,
 }
 
 
-void CanvasRenderingContext2DImpl::GetMiterLimit(v8::Local<v8::String> property,
+void CanvasRenderingContext2DImpl::GetMiterLimit(v8::Local<v8::Name> property,
                                                  const v8::PropertyCallbackInfo<v8::Value> &info) {
-    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    CanvasRenderingContext2DImpl *ptr = GetPointer(canvas::Receiver(info));
     if (ptr == nullptr) {
         info.GetReturnValue().Set(0);
         return;
@@ -1370,10 +1370,10 @@ void CanvasRenderingContext2DImpl::GetMiterLimit(v8::Local<v8::String> property,
     info.GetReturnValue().Set((double) limit);
 }
 
-void CanvasRenderingContext2DImpl::SetMiterLimit(v8::Local<v8::String> property,
+void CanvasRenderingContext2DImpl::SetMiterLimit(v8::Local<v8::Name> property,
                                                  v8::Local<v8::Value> value,
                                                  const v8::PropertyCallbackInfo<void> &info) {
-    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    CanvasRenderingContext2DImpl *ptr = GetPointer(canvas::Receiver(info));
     if (ptr == nullptr) {
         return;
     }
@@ -1384,9 +1384,9 @@ void CanvasRenderingContext2DImpl::SetMiterLimit(v8::Local<v8::String> property,
 }
 
 
-void CanvasRenderingContext2DImpl::GetShadowColor(v8::Local<v8::String> property,
+void CanvasRenderingContext2DImpl::GetShadowColor(v8::Local<v8::Name> property,
                                                   const v8::PropertyCallbackInfo<v8::Value> &info) {
-    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    CanvasRenderingContext2DImpl *ptr = GetPointer(canvas::Receiver(info));
     if (ptr == nullptr) {
         info.GetReturnValue().Set(0);
         return;
@@ -1397,10 +1397,10 @@ void CanvasRenderingContext2DImpl::GetShadowColor(v8::Local<v8::String> property
     canvas_native_string_destroy((char *) color);
 }
 
-void CanvasRenderingContext2DImpl::SetShadowColor(v8::Local<v8::String> property,
+void CanvasRenderingContext2DImpl::SetShadowColor(v8::Local<v8::Name> property,
                                                   v8::Local<v8::Value> value,
                                                   const v8::PropertyCallbackInfo<void> &info) {
-    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    CanvasRenderingContext2DImpl *ptr = GetPointer(canvas::Receiver(info));
     if (ptr == nullptr) {
         return;
     }
@@ -1410,9 +1410,9 @@ void CanvasRenderingContext2DImpl::SetShadowColor(v8::Local<v8::String> property
 }
 
 
-void CanvasRenderingContext2DImpl::GetShadowBlur(v8::Local<v8::String> property,
+void CanvasRenderingContext2DImpl::GetShadowBlur(v8::Local<v8::Name> property,
                                                  const v8::PropertyCallbackInfo<v8::Value> &info) {
-    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    CanvasRenderingContext2DImpl *ptr = GetPointer(canvas::Receiver(info));
     if (ptr == nullptr) {
         info.GetReturnValue().Set(0);
         return;
@@ -1421,10 +1421,10 @@ void CanvasRenderingContext2DImpl::GetShadowBlur(v8::Local<v8::String> property,
     info.GetReturnValue().Set((double) blur);
 }
 
-void CanvasRenderingContext2DImpl::SetShadowBlur(v8::Local<v8::String> property,
+void CanvasRenderingContext2DImpl::SetShadowBlur(v8::Local<v8::Name> property,
                                                  v8::Local<v8::Value> value,
                                                  const v8::PropertyCallbackInfo<void> &info) {
-    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    CanvasRenderingContext2DImpl *ptr = GetPointer(canvas::Receiver(info));
     if (ptr == nullptr) {
         return;
     }
@@ -1434,9 +1434,9 @@ void CanvasRenderingContext2DImpl::SetShadowBlur(v8::Local<v8::String> property,
                                           (float) value->NumberValue(context).ToChecked());
 }
 
-void CanvasRenderingContext2DImpl::GetShadowOffsetX(v8::Local<v8::String> property,
+void CanvasRenderingContext2DImpl::GetShadowOffsetX(v8::Local<v8::Name> property,
                                                     const v8::PropertyCallbackInfo<v8::Value> &info) {
-    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    CanvasRenderingContext2DImpl *ptr = GetPointer(canvas::Receiver(info));
     if (ptr == nullptr) {
         info.GetReturnValue().Set(0);
         return;
@@ -1445,10 +1445,10 @@ void CanvasRenderingContext2DImpl::GetShadowOffsetX(v8::Local<v8::String> proper
     info.GetReturnValue().Set((double) x);
 }
 
-void CanvasRenderingContext2DImpl::SetShadowOffsetX(v8::Local<v8::String> property,
+void CanvasRenderingContext2DImpl::SetShadowOffsetX(v8::Local<v8::Name> property,
                                                     v8::Local<v8::Value> value,
                                                     const v8::PropertyCallbackInfo<void> &info) {
-    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    CanvasRenderingContext2DImpl *ptr = GetPointer(canvas::Receiver(info));
     if (ptr == nullptr) {
         return;
     }
@@ -1459,9 +1459,9 @@ void CanvasRenderingContext2DImpl::SetShadowOffsetX(v8::Local<v8::String> proper
 }
 
 
-void CanvasRenderingContext2DImpl::GetShadowOffsetY(v8::Local<v8::String> property,
+void CanvasRenderingContext2DImpl::GetShadowOffsetY(v8::Local<v8::Name> property,
                                                     const v8::PropertyCallbackInfo<v8::Value> &info) {
-    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    CanvasRenderingContext2DImpl *ptr = GetPointer(canvas::Receiver(info));
     if (ptr == nullptr) {
         info.GetReturnValue().Set(0);
         return;
@@ -1470,10 +1470,10 @@ void CanvasRenderingContext2DImpl::GetShadowOffsetY(v8::Local<v8::String> proper
     info.GetReturnValue().Set((double) y);
 }
 
-void CanvasRenderingContext2DImpl::SetShadowOffsetY(v8::Local<v8::String> property,
+void CanvasRenderingContext2DImpl::SetShadowOffsetY(v8::Local<v8::Name> property,
                                                     v8::Local<v8::Value> value,
                                                     const v8::PropertyCallbackInfo<void> &info) {
-    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    CanvasRenderingContext2DImpl *ptr = GetPointer(canvas::Receiver(info));
     if (ptr == nullptr) {
         return;
     }
@@ -1484,9 +1484,9 @@ void CanvasRenderingContext2DImpl::SetShadowOffsetY(v8::Local<v8::String> proper
 }
 
 
-void CanvasRenderingContext2DImpl::GetTextAlign(v8::Local<v8::String> property,
+void CanvasRenderingContext2DImpl::GetTextAlign(v8::Local<v8::Name> property,
                                                 const v8::PropertyCallbackInfo<v8::Value> &info) {
-    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    CanvasRenderingContext2DImpl *ptr = GetPointer(canvas::Receiver(info));
     if (ptr == nullptr) {
         info.GetReturnValue().Set(0);
         return;
@@ -1498,10 +1498,10 @@ void CanvasRenderingContext2DImpl::GetTextAlign(v8::Local<v8::String> property,
     canvas_native_string_destroy((char *) alignment);
 }
 
-void CanvasRenderingContext2DImpl::SetTextAlign(v8::Local<v8::String> property,
+void CanvasRenderingContext2DImpl::SetTextAlign(v8::Local<v8::Name> property,
                                                 v8::Local<v8::Value> value,
                                                 const v8::PropertyCallbackInfo<void> &info) {
-    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    CanvasRenderingContext2DImpl *ptr = GetPointer(canvas::Receiver(info));
     if (ptr == nullptr) {
         return;
     }
@@ -1510,9 +1510,9 @@ void CanvasRenderingContext2DImpl::SetTextAlign(v8::Local<v8::String> property,
     canvas_native_context_set_text_align(ptr->GetContext(), alignment.c_str());
 }
 
-void CanvasRenderingContext2DImpl::GetTextBaseline(v8::Local<v8::String> property,
+void CanvasRenderingContext2DImpl::GetTextBaseline(v8::Local<v8::Name> property,
                                                    const v8::PropertyCallbackInfo<v8::Value> &info) {
-    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    CanvasRenderingContext2DImpl *ptr = GetPointer(canvas::Receiver(info));
     if (ptr == nullptr) {
         info.GetReturnValue().Set(0);
         return;
@@ -1524,10 +1524,10 @@ void CanvasRenderingContext2DImpl::GetTextBaseline(v8::Local<v8::String> propert
 //    canvas_native_string_destroy((char *) baseline);
 }
 
-void CanvasRenderingContext2DImpl::SetTextBaseline(v8::Local<v8::String> property,
+void CanvasRenderingContext2DImpl::SetTextBaseline(v8::Local<v8::Name> property,
                                                    v8::Local<v8::Value> value,
                                                    const v8::PropertyCallbackInfo<void> &info) {
-    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    CanvasRenderingContext2DImpl *ptr = GetPointer(canvas::Receiver(info));
     if (ptr == nullptr) {
 
         return;
@@ -1543,9 +1543,9 @@ void CanvasRenderingContext2DImpl::SetTextBaseline(v8::Local<v8::String> propert
 }
 
 
-void CanvasRenderingContext2DImpl::GetGlobalCompositeOperation(v8::Local<v8::String> property,
+void CanvasRenderingContext2DImpl::GetGlobalCompositeOperation(v8::Local<v8::Name> property,
                                                                const v8::PropertyCallbackInfo<v8::Value> &info) {
-    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    CanvasRenderingContext2DImpl *ptr = GetPointer(canvas::Receiver(info));
     if (ptr == nullptr) {
         info.GetReturnValue().Set(0);
         return;
@@ -1554,10 +1554,10 @@ void CanvasRenderingContext2DImpl::GetGlobalCompositeOperation(v8::Local<v8::Str
     info.GetReturnValue().Set(operation);
 }
 
-void CanvasRenderingContext2DImpl::SetGlobalCompositeOperation(v8::Local<v8::String> property,
+void CanvasRenderingContext2DImpl::SetGlobalCompositeOperation(v8::Local<v8::Name> property,
                                                                v8::Local<v8::Value> value,
                                                                const v8::PropertyCallbackInfo<void> &info) {
-    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    CanvasRenderingContext2DImpl *ptr = GetPointer(canvas::Receiver(info));
     if (ptr == nullptr) {
         return;
     }
@@ -1574,9 +1574,9 @@ void CanvasRenderingContext2DImpl::SetGlobalCompositeOperation(v8::Local<v8::Str
 }
 
 
-void CanvasRenderingContext2DImpl::GetFillStyle(v8::Local<v8::String> property,
+void CanvasRenderingContext2DImpl::GetFillStyle(v8::Local<v8::Name> property,
                                                 const v8::PropertyCallbackInfo<v8::Value> &info) {
-    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    CanvasRenderingContext2DImpl *ptr = GetPointer(canvas::Receiver(info));
     if (ptr == nullptr) {
         info.GetReturnValue().Set(0);
         return;
@@ -1626,10 +1626,10 @@ void CanvasRenderingContext2DImpl::GetFillStyle(v8::Local<v8::String> property,
 
 }
 
-void CanvasRenderingContext2DImpl::SetFillStyle(v8::Local<v8::String> property,
+void CanvasRenderingContext2DImpl::SetFillStyle(v8::Local<v8::Name> property,
                                                 v8::Local<v8::Value> value,
                                                 const v8::PropertyCallbackInfo<void> &info) {
-    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    CanvasRenderingContext2DImpl *ptr = GetPointer(canvas::Receiver(info));
     if (ptr == nullptr) {
         return;
     }
@@ -1647,10 +1647,9 @@ void CanvasRenderingContext2DImpl::SetFillStyle(v8::Local<v8::String> property,
             val = value.As<v8::StringObject>()->ValueOf();
         }
 
-        int len = val->Utf8Length(isolate) + 1;
+        int len = canvas::Utf8Length(val, isolate) + 1;
         if (g_tls_scratch.size() < (size_t) len) g_tls_scratch.resize((size_t) len);
-        val->WriteUtf8(isolate, g_tls_scratch.data(), len, nullptr,
-                       v8::String::WriteOptions::PRESERVE_ONE_BYTE_NULL);
+        canvas::WriteUtf8(val, isolate, g_tls_scratch.data(), len, true);
 
         char *str = g_tls_scratch.data();
 
@@ -1693,9 +1692,9 @@ void CanvasRenderingContext2DImpl::SetFillStyle(v8::Local<v8::String> property,
     }
 }
 
-void CanvasRenderingContext2DImpl::GetStrokeStyle(v8::Local<v8::String> property,
+void CanvasRenderingContext2DImpl::GetStrokeStyle(v8::Local<v8::Name> property,
                                                   const v8::PropertyCallbackInfo<v8::Value> &info) {
-    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    CanvasRenderingContext2DImpl *ptr = GetPointer(canvas::Receiver(info));
     if (ptr == nullptr) {
         info.GetReturnValue().SetUndefined();
         return;
@@ -1745,10 +1744,10 @@ void CanvasRenderingContext2DImpl::GetStrokeStyle(v8::Local<v8::String> property
 }
 
 
-void CanvasRenderingContext2DImpl::SetStrokeStyle(v8::Local<v8::String> property,
+void CanvasRenderingContext2DImpl::SetStrokeStyle(v8::Local<v8::Name> property,
                                                   v8::Local<v8::Value> value,
                                                   const v8::PropertyCallbackInfo<void> &info) {
-    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    CanvasRenderingContext2DImpl *ptr = GetPointer(canvas::Receiver(info));
     if (ptr == nullptr) {
         return;
     }
@@ -1762,10 +1761,9 @@ void CanvasRenderingContext2DImpl::SetStrokeStyle(v8::Local<v8::String> property
             val = value.As<v8::StringObject>()->ValueOf();
         }
 
-        int len = val->Utf8Length(isolate) + 1;
+        int len = canvas::Utf8Length(val, isolate) + 1;
         if (g_tls_scratch.size() < (size_t) len) g_tls_scratch.resize((size_t) len);
-        val->WriteUtf8(isolate, g_tls_scratch.data(), len, nullptr,
-                       v8::String::WriteOptions::PRESERVE_ONE_BYTE_NULL);
+        canvas::WriteUtf8(val, isolate, g_tls_scratch.data(), len, true);
 
         char *str = g_tls_scratch.data();
 
@@ -1808,9 +1806,9 @@ void CanvasRenderingContext2DImpl::SetStrokeStyle(v8::Local<v8::String> property
 }
 
 
-void CanvasRenderingContext2DImpl::GetLineWidth(v8::Local<v8::String> property,
+void CanvasRenderingContext2DImpl::GetLineWidth(v8::Local<v8::Name> property,
                                                 const v8::PropertyCallbackInfo<v8::Value> &info) {
-    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    CanvasRenderingContext2DImpl *ptr = GetPointer(canvas::Receiver(info));
     if (ptr == nullptr) {
         info.GetReturnValue().Set(0);
         return;
@@ -1823,10 +1821,10 @@ void CanvasRenderingContext2DImpl::GetLineWidth(v8::Local<v8::String> property,
 }
 
 
-void CanvasRenderingContext2DImpl::SetLineWidth(v8::Local<v8::String> property,
+void CanvasRenderingContext2DImpl::SetLineWidth(v8::Local<v8::Name> property,
                                                 v8::Local<v8::Value> value,
                                                 const v8::PropertyCallbackInfo<void> &info) {
-    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    CanvasRenderingContext2DImpl *ptr = GetPointer(canvas::Receiver(info));
     if (ptr == nullptr) {
         return;
     }
@@ -1837,9 +1835,9 @@ void CanvasRenderingContext2DImpl::SetLineWidth(v8::Local<v8::String> property,
     canvas_native_context_set_line_width(ptr->GetContext(), lineWidth);
 }
 
-void CanvasRenderingContext2DImpl::GetLineDash(v8::Local<v8::String> property,
+void CanvasRenderingContext2DImpl::GetLineDash(v8::Local<v8::Name> property,
                                                const v8::PropertyCallbackInfo<v8::Value> &info) {
-    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    CanvasRenderingContext2DImpl *ptr = GetPointer(canvas::Receiver(info));
     if (ptr == nullptr) {
         info.GetReturnValue().Set(0);
         return;
@@ -1860,10 +1858,10 @@ void CanvasRenderingContext2DImpl::GetLineDash(v8::Local<v8::String> property,
 }
 
 
-void CanvasRenderingContext2DImpl::SetLineDash(v8::Local<v8::String> property,
+void CanvasRenderingContext2DImpl::SetLineDash(v8::Local<v8::Name> property,
                                                v8::Local<v8::Value> value,
                                                const v8::PropertyCallbackInfo<void> &info) {
-    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    CanvasRenderingContext2DImpl *ptr = GetPointer(canvas::Receiver(info));
     if (ptr == nullptr) {
         return;
     }
@@ -2087,7 +2085,7 @@ CanvasRenderingContext2DImpl::CreateImageData(const v8::FunctionCallbackInfo<v8:
                     context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
 
 
-            ret->SetAlignedPointerInInternalField(0, data);
+            canvas::SetAlignedPointer(ret, 0, data);
 
             SetNativeType(data, NativeType::ImageData);
 
@@ -2107,7 +2105,7 @@ CanvasRenderingContext2DImpl::CreateImageData(const v8::FunctionCallbackInfo<v8:
         auto ret = ImageDataImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
 
-        ret->SetAlignedPointerInInternalField(0, data);
+        canvas::SetAlignedPointer(ret, 0, data);
 
         SetNativeType(data, NativeType::ImageData);
 
@@ -2890,12 +2888,11 @@ CanvasRenderingContext2DImpl::FillText(const v8::FunctionCallbackInfo<v8::Value>
 
     if (!args[0]->IsString()) return;
     auto js_str = args[0].As<v8::String>();
-    const int text_utf8_len = js_str->Utf8Length(isolate);
+    const int text_utf8_len = canvas::Utf8Length(js_str, isolate);
 
     auto &scratch = g_tls_scratch;
     scratch.resize(static_cast<size_t>(text_utf8_len) + 1);
-    js_str->WriteUtf8(isolate, scratch.data(), text_utf8_len, nullptr,
-                      v8::String::NO_NULL_TERMINATION);
+    canvas::WriteUtf8(js_str, isolate, scratch.data(), text_utf8_len, false);
     scratch[text_utf8_len] = '\0';
 
     auto x = static_cast<float>(args[1]->NumberValue(context).ToChecked());
@@ -2961,7 +2958,7 @@ CanvasRenderingContext2DImpl::GetImageData(const v8::FunctionCallbackInfo<v8::Va
         auto ret = ImageDataImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
 
-        ret->SetAlignedPointerInInternalField(0, data);
+        canvas::SetAlignedPointer(ret, 0, data);
 
         SetNativeType(data, NativeType::ImageData);
 
@@ -3135,7 +3132,7 @@ CanvasRenderingContext2DImpl::MeasureText(const v8::FunctionCallbackInfo<v8::Val
         }
     }
 
-    const int text_utf8_len = js_str->Utf8Length(isolate);
+    const int text_utf8_len = canvas::Utf8Length(js_str, isolate);
     if (text_utf8_len == 0) return;
 
     auto &scratch = g_tls_scratch;
@@ -3153,8 +3150,7 @@ CanvasRenderingContext2DImpl::MeasureText(const v8::FunctionCallbackInfo<v8::Val
     std::memcpy(p, ptr->cached_word_spacing_.data(), ptr->cached_word_spacing_.size());
     p += ptr->cached_word_spacing_.size();
     *p++ = '|';
-    js_str->WriteUtf8(isolate, p, text_utf8_len, nullptr,
-                      v8::String::NO_NULL_TERMINATION);
+    canvas::WriteUtf8(js_str, isolate, p, text_utf8_len, false);
 
     std::string_view text(p, static_cast<size_t>(text_utf8_len));
     std::string_view cache_key(scratch.data(), prefix_len + static_cast<size_t>(text_utf8_len));
@@ -3181,7 +3177,7 @@ CanvasRenderingContext2DImpl::MeasureText(const v8::FunctionCallbackInfo<v8::Val
 
     auto ret = ptr->tm_ctor_.Get(isolate)->InstanceTemplate()
             ->NewInstance(context).ToLocalChecked();
-    ret->SetAlignedPointerInInternalField(0, data);
+    canvas::SetAlignedPointer(ret, 0, data);
     data->BindFinalizer(isolate, ret);
     SetNativeType(data, NativeType::TextMetrics);
 
@@ -3516,7 +3512,7 @@ CanvasRenderingContext2DImpl::GetTransform(const v8::FunctionCallbackInfo<v8::Va
             context).ToLocalChecked();
     auto object = new MatrixImpl(matrix);
 
-    ret->SetAlignedPointerInInternalField(0, object);
+    canvas::SetAlignedPointer(ret, 0, object);
 
     SetNativeType(object, NativeType::Matrix);
 
@@ -3579,12 +3575,11 @@ CanvasRenderingContext2DImpl::StrokeText(const v8::FunctionCallbackInfo<v8::Valu
     auto count = args.Length();
     if (count >= 3 && args[0]->IsString()) {
         auto js_str = args[0].As<v8::String>();
-        const int text_utf8_len = js_str->Utf8Length(isolate);
+        const int text_utf8_len = canvas::Utf8Length(js_str, isolate);
 
         auto &scratch = g_tls_scratch;
         scratch.resize(static_cast<size_t>(text_utf8_len) + 1);
-        js_str->WriteUtf8(isolate, scratch.data(), text_utf8_len, nullptr,
-                          v8::String::NO_NULL_TERMINATION);
+        canvas::WriteUtf8(js_str, isolate, scratch.data(), text_utf8_len, false);
         scratch[text_utf8_len] = '\0';
 
         auto x = static_cast<float>(args[1]->NumberValue(context).ToChecked());

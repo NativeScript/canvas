@@ -36,13 +36,13 @@ public:
         auto object = WebGLFramebuffer::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType( buffer, NativeType::WebGLFramebuffer);
-        object->SetAlignedPointerInInternalField(0, buffer);
+        canvas::SetAlignedPointer(object, 0, buffer);
         buffer->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 
     static WebGLFramebuffer *GetPointer(const v8::Local<v8::Object> &object) {
-        auto ptr = object->GetAlignedPointerFromInternalField(0);
+        auto ptr = canvas::GetAlignedPointer(object, 0);
         if (ptr == nullptr) {
             return nullptr;
         }

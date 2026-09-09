@@ -173,7 +173,7 @@ public:
         auto object = CanvasRenderingContext2DImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType(renderingContext, NativeType::CanvasRenderingContext2D);
-        object->SetAlignedPointerInInternalField(0, renderingContext);
+        canvas::SetAlignedPointer(object, 0, renderingContext);
         renderingContext->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
@@ -203,167 +203,167 @@ public:
     static void __Resize(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 
-    static void SetContinuousRenderMode(v8::Local<v8::String> property,
+    static void SetContinuousRenderMode(v8::Local<v8::Name> property,
                                         v8::Local<v8::Value> value,
                                         const v8::PropertyCallbackInfo<void> &info);
 
-    static void GetContinuousRenderMode(v8::Local<v8::String> property,
+    static void GetContinuousRenderMode(v8::Local<v8::Name> property,
                                         const v8::PropertyCallbackInfo<v8::Value> &info);
 
 
-    static void GetFilter(v8::Local<v8::String> property,
+    static void GetFilter(v8::Local<v8::Name> property,
                           const v8::PropertyCallbackInfo<v8::Value> &info);
 
-    static void SetFilter(v8::Local<v8::String> property,
+    static void SetFilter(v8::Local<v8::Name> property,
                           v8::Local<v8::Value> value,
                           const v8::PropertyCallbackInfo<void> &info);
 
-    static void GetFont(v8::Local<v8::String> property,
+    static void GetFont(v8::Local<v8::Name> property,
                         const v8::PropertyCallbackInfo<v8::Value> &info);
 
-    static void SetFont(v8::Local<v8::String> property,
+    static void SetFont(v8::Local<v8::Name> property,
                         v8::Local<v8::Value> value,
                         const v8::PropertyCallbackInfo<void> &info);
 
 
-    static void GetLetterSpacing(v8::Local<v8::String> property,
+    static void GetLetterSpacing(v8::Local<v8::Name> property,
                                  const v8::PropertyCallbackInfo<v8::Value> &info);
 
-    static void SetLetterSpacing(v8::Local<v8::String> property,
+    static void SetLetterSpacing(v8::Local<v8::Name> property,
                                  v8::Local<v8::Value> value,
                                  const v8::PropertyCallbackInfo<void> &info);
 
-    static void GetWordSpacing(v8::Local<v8::String> property,
+    static void GetWordSpacing(v8::Local<v8::Name> property,
                                const v8::PropertyCallbackInfo<v8::Value> &info);
 
-    static void SetWordSpacing(v8::Local<v8::String> property,
+    static void SetWordSpacing(v8::Local<v8::Name> property,
                                v8::Local<v8::Value> value,
                                const v8::PropertyCallbackInfo<void> &info);
 
-    static void SetGlobalAlpha(v8::Local<v8::String> property,
+    static void SetGlobalAlpha(v8::Local<v8::Name> property,
                                v8::Local<v8::Value> value,
                                const v8::PropertyCallbackInfo<void> &info);
 
-    static void GetGlobalAlpha(v8::Local<v8::String> property,
+    static void GetGlobalAlpha(v8::Local<v8::Name> property,
                                const v8::PropertyCallbackInfo<v8::Value> &info);
 
 
-    static void SetImageSmoothingEnabled(v8::Local<v8::String> property,
+    static void SetImageSmoothingEnabled(v8::Local<v8::Name> property,
                                          v8::Local<v8::Value> value,
                                          const v8::PropertyCallbackInfo<void> &info);
 
-    static void GetImageSmoothingEnabled(v8::Local<v8::String> property,
+    static void GetImageSmoothingEnabled(v8::Local<v8::Name> property,
                                          const v8::PropertyCallbackInfo<v8::Value> &info);
 
-    static void SetImageSmoothingQuality(v8::Local<v8::String> property,
+    static void SetImageSmoothingQuality(v8::Local<v8::Name> property,
                                          v8::Local<v8::Value> value,
                                          const v8::PropertyCallbackInfo<void> &info);
 
-    static void GetImageSmoothingQuality(v8::Local<v8::String> property,
+    static void GetImageSmoothingQuality(v8::Local<v8::Name> property,
                                          const v8::PropertyCallbackInfo<v8::Value> &info);
 
-    static void SetLineDashOffset(v8::Local<v8::String> property,
+    static void SetLineDashOffset(v8::Local<v8::Name> property,
                                   v8::Local<v8::Value> value,
                                   const v8::PropertyCallbackInfo<void> &info);
 
-    static void GetLineDashOffset(v8::Local<v8::String> property,
+    static void GetLineDashOffset(v8::Local<v8::Name> property,
                                   const v8::PropertyCallbackInfo<v8::Value> &info);
 
-    static void GetLineJoin(v8::Local<v8::String> property,
+    static void GetLineJoin(v8::Local<v8::Name> property,
                             const v8::PropertyCallbackInfo<v8::Value> &info);
 
-    static void SetLineJoin(v8::Local<v8::String> property,
+    static void SetLineJoin(v8::Local<v8::Name> property,
                             v8::Local<v8::Value> value,
                             const v8::PropertyCallbackInfo<void> &info);
 
-    static void GetLineCap(v8::Local<v8::String> property,
+    static void GetLineCap(v8::Local<v8::Name> property,
                            const v8::PropertyCallbackInfo<v8::Value> &info);
 
-    static void SetLineCap(v8::Local<v8::String> property,
+    static void SetLineCap(v8::Local<v8::Name> property,
                            v8::Local<v8::Value> value,
                            const v8::PropertyCallbackInfo<void> &info);
 
-    static void GetMiterLimit(v8::Local<v8::String> property,
+    static void GetMiterLimit(v8::Local<v8::Name> property,
                               const v8::PropertyCallbackInfo<v8::Value> &info);
 
-    static void SetMiterLimit(v8::Local<v8::String> property,
+    static void SetMiterLimit(v8::Local<v8::Name> property,
                               v8::Local<v8::Value> value,
                               const v8::PropertyCallbackInfo<void> &info);
 
-    static void GetShadowColor(v8::Local<v8::String> property,
+    static void GetShadowColor(v8::Local<v8::Name> property,
                                const v8::PropertyCallbackInfo<v8::Value> &info);
 
-    static void SetShadowColor(v8::Local<v8::String> property,
+    static void SetShadowColor(v8::Local<v8::Name> property,
                                v8::Local<v8::Value> value,
                                const v8::PropertyCallbackInfo<void> &info);
 
-    static void GetShadowBlur(v8::Local<v8::String> property,
+    static void GetShadowBlur(v8::Local<v8::Name> property,
                               const v8::PropertyCallbackInfo<v8::Value> &info);
 
-    static void SetShadowBlur(v8::Local<v8::String> property,
+    static void SetShadowBlur(v8::Local<v8::Name> property,
                               v8::Local<v8::Value> value,
                               const v8::PropertyCallbackInfo<void> &info);
 
-    static void GetShadowOffsetX(v8::Local<v8::String> property,
+    static void GetShadowOffsetX(v8::Local<v8::Name> property,
                                  const v8::PropertyCallbackInfo<v8::Value> &info);
 
-    static void SetShadowOffsetX(v8::Local<v8::String> property,
+    static void SetShadowOffsetX(v8::Local<v8::Name> property,
                                  v8::Local<v8::Value> value,
                                  const v8::PropertyCallbackInfo<void> &info);
 
-    static void GetShadowOffsetY(v8::Local<v8::String> property,
+    static void GetShadowOffsetY(v8::Local<v8::Name> property,
                                  const v8::PropertyCallbackInfo<v8::Value> &info);
 
-    static void SetShadowOffsetY(v8::Local<v8::String> property,
+    static void SetShadowOffsetY(v8::Local<v8::Name> property,
                                  v8::Local<v8::Value> value,
                                  const v8::PropertyCallbackInfo<void> &info);
 
-    static void GetTextAlign(v8::Local<v8::String> property,
+    static void GetTextAlign(v8::Local<v8::Name> property,
                              const v8::PropertyCallbackInfo<v8::Value> &info);
 
-    static void SetTextAlign(v8::Local<v8::String> property,
+    static void SetTextAlign(v8::Local<v8::Name> property,
                              v8::Local<v8::Value> value,
                              const v8::PropertyCallbackInfo<void> &info);
 
-    static void GetTextBaseline(v8::Local<v8::String> property,
+    static void GetTextBaseline(v8::Local<v8::Name> property,
                                 const v8::PropertyCallbackInfo<v8::Value> &info);
 
-    static void SetTextBaseline(v8::Local<v8::String> property,
+    static void SetTextBaseline(v8::Local<v8::Name> property,
                                 v8::Local<v8::Value> value,
                                 const v8::PropertyCallbackInfo<void> &info);
 
-    static void GetGlobalCompositeOperation(v8::Local<v8::String> property,
+    static void GetGlobalCompositeOperation(v8::Local<v8::Name> property,
                                             const v8::PropertyCallbackInfo<v8::Value> &info);
 
-    static void SetGlobalCompositeOperation(v8::Local<v8::String> property,
+    static void SetGlobalCompositeOperation(v8::Local<v8::Name> property,
                                             v8::Local<v8::Value> value,
                                             const v8::PropertyCallbackInfo<void> &info);
 
-    static void GetFillStyle(v8::Local<v8::String> property,
+    static void GetFillStyle(v8::Local<v8::Name> property,
                              const v8::PropertyCallbackInfo<v8::Value> &info);
 
-    static void SetFillStyle(v8::Local<v8::String> property,
+    static void SetFillStyle(v8::Local<v8::Name> property,
                              v8::Local<v8::Value> value,
                              const v8::PropertyCallbackInfo<void> &info);
 
-    static void GetStrokeStyle(v8::Local<v8::String> property,
+    static void GetStrokeStyle(v8::Local<v8::Name> property,
                                const v8::PropertyCallbackInfo<v8::Value> &info);
 
-    static void SetStrokeStyle(v8::Local<v8::String> property,
+    static void SetStrokeStyle(v8::Local<v8::Name> property,
                                v8::Local<v8::Value> value,
                                const v8::PropertyCallbackInfo<void> &info);
 
-    static void GetLineWidth(v8::Local<v8::String> property,
+    static void GetLineWidth(v8::Local<v8::Name> property,
                              const v8::PropertyCallbackInfo<v8::Value> &info);
 
-    static void SetLineWidth(v8::Local<v8::String> property,
+    static void SetLineWidth(v8::Local<v8::Name> property,
                              v8::Local<v8::Value> value,
                              const v8::PropertyCallbackInfo<void> &info);
 
-    static void GetLineDash(v8::Local<v8::String> property,
+    static void GetLineDash(v8::Local<v8::Name> property,
                             const v8::PropertyCallbackInfo<v8::Value> &info);
 
-    static void SetLineDash(v8::Local<v8::String> property,
+    static void SetLineDash(v8::Local<v8::Name> property,
                             v8::Local<v8::Value> value,
                             const v8::PropertyCallbackInfo<void> &info);
 

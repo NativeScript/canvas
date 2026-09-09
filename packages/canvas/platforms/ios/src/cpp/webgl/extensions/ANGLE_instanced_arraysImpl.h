@@ -31,7 +31,7 @@ public:
         auto object = ANGLE_instanced_arraysImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType(arrays, NativeType::ANGLE_instanced_arrays);
-        object->SetAlignedPointerInInternalField(0, arrays);
+        canvas::SetAlignedPointer(object, 0, arrays);
         arrays->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }

@@ -5,7 +5,7 @@ OTHER_LDFLAGS[sdk=appletvos*] = $(inherited) -framework Foundation -framework Ca
 OTHER_LDFLAGS[sdk=appletvsimulator*] = $(inherited) -framework Foundation -framework CanvasNative -framework OpenGLES -framework GLKit -framework Metal
 OTHER_LDFLAGS[sdk=macosx*] = $(inherited) -framework Foundation -framework CanvasNative -framework Metal
 
-CLANG_CXX_LANGUAGE_STANDARD = c++17
+CLANG_CXX_LANGUAGE_STANDARD = c++20
 
 GLES_SILENCE_DEPRECATION = 1
 

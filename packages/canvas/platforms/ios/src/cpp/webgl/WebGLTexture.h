@@ -36,13 +36,13 @@ public:
         auto object = WebGLTexture::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType(texture, NativeType::WebGLTexture);
-        object->SetAlignedPointerInInternalField(0, texture);
+        canvas::SetAlignedPointer(object, 0, texture);
         texture->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 
     static WebGLTexture *GetPointer(const v8::Local<v8::Object> &object) {
-        auto ptr = object->GetAlignedPointerFromInternalField(0);
+        auto ptr = canvas::GetAlignedPointer(object, 0);
         if (ptr == nullptr) {
             return nullptr;
         }

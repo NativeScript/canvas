@@ -24,49 +24,49 @@ void Path2D::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate) {
 }
 
 Path2D *Path2D::GetPointer(const v8::Local<v8::Object> &object) {
-    auto ptr = object->GetAlignedPointerFromInternalField(0);
+    auto ptr = canvas::GetAlignedPointer(object, 0);
     if (ptr == nullptr) {
         return nullptr;
     }
     return static_cast<Path2D *>(ptr);
 }
 
-v8::CFunction Path2D::fast_arc_(v8::CFunction::Make(Path2D::FastArc));
+v8::CFunction Path2D::fast_arc_(CANVAS_FAST_FUNCTION(Path2D::FastArc));
 
-v8::CFunction Path2D::fast_add_path_(v8::CFunction::Make(Path2D::FastAddPath));
+v8::CFunction Path2D::fast_add_path_(CANVAS_FAST_FUNCTION(Path2D::FastAddPath));
 
-v8::CFunction Path2D::fast_arc_to_(v8::CFunction::Make(Path2D::FastArcTo));
+v8::CFunction Path2D::fast_arc_to_(CANVAS_FAST_FUNCTION(Path2D::FastArcTo));
 
-v8::CFunction Path2D::fast_bezier_curve_to_(v8::CFunction::Make(Path2D::FastBezierCurveTo));
+v8::CFunction Path2D::fast_bezier_curve_to_(CANVAS_FAST_FUNCTION(Path2D::FastBezierCurveTo));
 
-v8::CFunction Path2D::fast_close_path_(v8::CFunction::Make(Path2D::FastClosePath));
+v8::CFunction Path2D::fast_close_path_(CANVAS_FAST_FUNCTION(Path2D::FastClosePath));
 
-v8::CFunction Path2D::fast_ellipse_(v8::CFunction::Make(Path2D::FastEllipse));
+v8::CFunction Path2D::fast_ellipse_(CANVAS_FAST_FUNCTION(Path2D::FastEllipse));
 
-v8::CFunction Path2D::fast_line_to_(v8::CFunction::Make(Path2D::FastLineTo));
+v8::CFunction Path2D::fast_line_to_(CANVAS_FAST_FUNCTION(Path2D::FastLineTo));
 
-v8::CFunction Path2D::fast_move_to_(v8::CFunction::Make(Path2D::FastMoveTo));
+v8::CFunction Path2D::fast_move_to_(CANVAS_FAST_FUNCTION(Path2D::FastMoveTo));
 
-v8::CFunction Path2D::fast_quadratic_curve_to_(v8::CFunction::Make(Path2D::FastQuadraticCurveTo));
+v8::CFunction Path2D::fast_quadratic_curve_to_(CANVAS_FAST_FUNCTION(Path2D::FastQuadraticCurveTo));
 
-v8::CFunction Path2D::fast_rect_(v8::CFunction::Make(Path2D::FastRect));
+v8::CFunction Path2D::fast_rect_(CANVAS_FAST_FUNCTION(Path2D::FastRect));
 
 v8::CFunction Path2D::fast_round_rect_(
-        v8::CFunction::Make(Path2D::FastRoundRect));
+        CANVAS_FAST_FUNCTION(Path2D::FastRoundRect));
 
 v8::CFunction Path2D::fast_round_rect_array_(
-        v8::CFunction::Make(Path2D::FastRoundRectArray));
+        CANVAS_FAST_FUNCTION(Path2D::FastRoundRectArray));
 
 const v8::CFunction fast_round_rect_overloads_[] = {
         Path2D::fast_round_rect_,
         Path2D::fast_round_rect_array_
 };
 
-v8::CFunction Path2D::fast_trim_(v8::CFunction::Make(Path2D::FastTrim));
+v8::CFunction Path2D::fast_trim_(CANVAS_FAST_FUNCTION(Path2D::FastTrim));
 
 
 
-//v8::CFunction Path2D::fast_to_svg_(v8::CFunction::Make(Path2D::FastToSVG));
+//v8::CFunction Path2D::fast_to_svg_(CANVAS_FAST_FUNCTION(Path2D::FastToSVG));
 
 void Path2D::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto count = args.Length();
@@ -81,7 +81,7 @@ void Path2D::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
             auto path = canvas_native_path_create_with_string(d.c_str());
             auto object = new Path2D(path);
 
-            ret->SetAlignedPointerInInternalField(0, object);
+            canvas::SetAlignedPointer(ret, 0, object);
 
             object->BindFinalizer(isolate, ret);
 
@@ -98,7 +98,7 @@ void Path2D::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
                         path_to_copy->GetPath());
                 auto object = new Path2D(path);
 
-                ret->SetAlignedPointerInInternalField(0, object);
+                canvas::SetAlignedPointer(ret, 0, object);
 
                 object->BindFinalizer(isolate, ret);
 
@@ -111,7 +111,7 @@ void Path2D::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
     } else {
         auto path = new Path2D(canvas_native_path_create());
 
-        ret->SetAlignedPointerInInternalField(0, path);
+        canvas::SetAlignedPointer(ret, 0, path);
 
         path->BindFinalizer(isolate, ret);
 

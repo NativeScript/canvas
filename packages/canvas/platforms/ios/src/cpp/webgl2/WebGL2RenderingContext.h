@@ -116,7 +116,7 @@ public:
         auto object = WebGL2RenderingContext::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType(renderingContext, NativeType::WebGLRenderingContextBase);
-        object->SetAlignedPointerInInternalField(0, renderingContext);
+        canvas::SetAlignedPointer(object, 0, renderingContext);
         renderingContext->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
@@ -133,6 +133,7 @@ public:
 
     static void BeginQuery(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static void FastBeginQuery(v8::Local<v8::Object> receiver_obj, uint32_t target,
                                v8::Local<v8::Object> query_obj) {
         WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
@@ -153,9 +154,11 @@ public:
             }
         }
     }
+#endif
 
     static void BeginTransformFeedback(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static void FastBeginTransformFeedback(v8::Local<v8::Object> receiver_obj, uint32_t value) {
         WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -167,9 +170,11 @@ public:
                 ptr->GetState()
         );
     }
+#endif
 
     static void BindBufferBase(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static void
     FastBindBufferBase(v8::Local<v8::Object> receiver_obj, uint32_t target, uint32_t index,
                        v8::Local<v8::Object> buffer_obj) {
@@ -191,9 +196,11 @@ public:
             );
         }
     }
+#endif
 
     static void BindBufferRange(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static void
     FastBindBufferRange(v8::Local<v8::Object> receiver_obj, uint32_t target, uint32_t index,
                         v8::Local<v8::Object> buffer_obj, int32_t offset, int32_t size) {
@@ -216,9 +223,11 @@ public:
             );
         }
     }
+#endif
 
     static void BindSampler(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static void FastBindSampler(v8::Local<v8::Object> receiver_obj, uint32_t unit,
                                 v8::Local<v8::Object> sampler_obj) {
         WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
@@ -237,9 +246,11 @@ public:
             );
         }
     }
+#endif
 
     static void BindTransformFeedback(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static void FastBindTransformFeedback(v8::Local<v8::Object> receiver_obj, uint32_t target,
                                           v8::Local<v8::Object> transformer_obj) {
         WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
@@ -260,6 +271,7 @@ public:
             );
         }
     }
+#endif
 
     static void BindVertexArray(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -272,6 +284,7 @@ public:
 
     }
 
+#if V8_MAJOR_VERSION < 14
     static void FastBindVertexArray(v8::Local<v8::Object> receiver_obj, uint32_t vertex_array) {
         WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -283,9 +296,11 @@ public:
                 vertex_array
         );
     }
+#endif
 
     static void BlitFramebuffer(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static void
     FastBlitFramebuffer(v8::Local<v8::Object> receiver_obj, int32_t srcX0, int32_t srcY0,
                         int32_t srcX1, int32_t srcY1, int32_t dstX0, int32_t dstY0, int32_t dstX1,
@@ -310,9 +325,11 @@ public:
                 ptr->GetState()
         );
     }
+#endif
 
     static void ClearBufferfi(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static void
     FastClearBufferfi(v8::Local<v8::Object> receiver_obj, uint32_t buffer, int32_t drawbuffer,
                       double depth, int32_t stencil) {
@@ -330,9 +347,11 @@ public:
                 ptr->GetState()
         );
     }
+#endif
 
     static void ClearBufferfv(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static void
     FastClearBufferfv(v8::Local<v8::Object> receiver_obj, uint32_t buffer, int32_t drawbuffer,
                       const v8::FastApiTypedArray<float> &values) {
@@ -354,7 +373,9 @@ public:
                 ptr->GetState()
         );
     }
+#endif
 
+#if V8_MAJOR_VERSION < 14
     static void
     FastClearBufferfvArray(v8::Local<v8::Object> receiver_obj, uint32_t buffer, int32_t drawbuffer,
                            v8::Local<v8::Array> values) {
@@ -381,9 +402,11 @@ public:
             );
         }
     }
+#endif
 
     static void ClearBufferiv(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static void
     FastClearBufferiv(v8::Local<v8::Object> receiver_obj, uint32_t buffer, int32_t drawbuffer,
                       const v8::FastApiTypedArray<int32_t> &values) {
@@ -405,7 +428,9 @@ public:
                 ptr->GetState()
         );
     }
+#endif
 
+#if V8_MAJOR_VERSION < 14
     static void
     FastClearBufferivArray(v8::Local<v8::Object> receiver_obj, uint32_t buffer, int32_t drawbuffer,
                            v8::Local<v8::Array> values) {
@@ -432,11 +457,13 @@ public:
             );
         }
     }
+#endif
 
 
     static void ClearBufferuiv(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 
+#if V8_MAJOR_VERSION < 14
     static void
     FastClearBufferuiv(v8::Local<v8::Object> receiver_obj, uint32_t buffer, int32_t drawbuffer,
                        const v8::FastApiTypedArray<uint32_t> &values) {
@@ -458,7 +485,9 @@ public:
                 ptr->GetState()
         );
     }
+#endif
 
+#if V8_MAJOR_VERSION < 14
     static void
     FastClearBufferuivArray(v8::Local<v8::Object> receiver_obj, uint32_t buffer, int32_t drawbuffer,
                             v8::Local<v8::Array> values) {
@@ -485,6 +514,7 @@ public:
             );
         }
     }
+#endif
 
     static void ClientWaitSync(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -492,6 +522,7 @@ public:
 
     static void CopyBufferSubData(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static void FastCopyBufferSubData(v8::Local<v8::Object> receiver_obj, uint32_t readTarget,
                                       uint32_t writeTarget, int32_t readOffset, int32_t writeOffset,
                                       uint32_t size) {
@@ -509,9 +540,11 @@ public:
                 ptr->GetState()
         );
     }
+#endif
 
     static void CopyTexSubImage3D(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static void
     FastCopyTexSubImage3D(v8::Local<v8::Object> receiver_obj, uint32_t target, int32_t level,
                           int32_t xoffset, int32_t yoffset, int32_t zoffset, int32_t x, int32_t y,
@@ -535,6 +568,7 @@ public:
                 ptr->GetState()
         );
     }
+#endif
 
     static void CreateQuery(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -546,6 +580,7 @@ public:
 
     static void DeleteQuery(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static void
     FastDeleteQuery(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> query_obj) {
         WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
@@ -565,9 +600,11 @@ public:
             }
         }
     }
+#endif
 
     static void DeleteSampler(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static void
     FastDeleteSampler(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> sampler_obj) {
         WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
@@ -588,9 +625,11 @@ public:
             }
         }
     }
+#endif
 
     static void DeleteSync(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static void FastDeleteSync(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> sync_obj) {
         WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -609,9 +648,11 @@ public:
             }
         }
     }
+#endif
 
     static void DeleteTransformFeedback(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static void FastDeleteTransformFeedback(v8::Local<v8::Object> receiver_obj,
                                             v8::Local<v8::Object> transform_feedback_obj) {
         WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
@@ -633,9 +674,11 @@ public:
             }
         }
     }
+#endif
 
     static void DeleteVertexArray(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static void FastDeleteVertexArray(v8::Local<v8::Object> receiver_obj,
                                       v8::Local<v8::Object> vertex_array_obj) {
         WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
@@ -655,9 +698,11 @@ public:
             }
         }
     }
+#endif
 
     static void DrawArraysInstanced(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static void
     FastDrawArraysInstanced(v8::Local<v8::Object> receiver_obj, uint32_t mode, int32_t first,
                             int32_t count, int32_t instanceCount) {
@@ -677,9 +722,11 @@ public:
 
         ptr->UpdateInvalidateState();
     }
+#endif
 
     static void DrawBuffers(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static void FastDrawBuffers(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Array> buffers) {
         WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -701,9 +748,11 @@ public:
         }
 
     }
+#endif
 
     static void DrawElementsInstanced(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static void
     FastDrawElementsInstanced(v8::Local<v8::Object> receiver_obj, uint32_t mode, int32_t count,
                               uint32_t type, int32_t offset, int32_t instanceCount) {
@@ -724,9 +773,11 @@ public:
 
         ptr->UpdateInvalidateState();
     }
+#endif
 
     static void DrawRangeElements(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static void
     FastDrawRangeElements(v8::Local<v8::Object> receiver_obj, uint32_t mode, uint32_t start,
                           uint32_t end, int32_t count, uint32_t type, int32_t offset) {
@@ -748,9 +799,11 @@ public:
 
         ptr->UpdateInvalidateState();
     }
+#endif
 
     static void EndQuery(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static void FastEndQuery(v8::Local<v8::Object> receiver_obj, uint32_t target) {
         WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -760,9 +813,11 @@ public:
         canvas_native_webgl2_end_query(target,
                                        ptr->GetState());
     }
+#endif
 
     static void EndTransformFeedback(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static void FastEndTransformFeedback(v8::Local<v8::Object> receiver_obj) {
         WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -772,11 +827,13 @@ public:
         canvas_native_webgl2_end_transform_feedback(
                 ptr->GetState());
     }
+#endif
 
     static void FenceSync(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void FramebufferTextureLayer(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static void FastFramebufferTextureLayer(v8::Local<v8::Object> receiver_obj,
                                             v8::Local<v8::Object> texture_obj, uint32_t target,
                                             uint32_t attachment, int32_t level, int32_t layer) {
@@ -802,6 +859,7 @@ public:
 
         }
     }
+#endif
 
     static void GetActiveUniformBlockName(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -835,6 +893,7 @@ public:
 
     static void InvalidateFramebuffer(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static void
     FastInvalidateFramebuffer(v8::Local<v8::Object> receiver_obj, uint32_t target,
                               v8::Local<v8::Array> attachments) {
@@ -856,9 +915,11 @@ public:
                     ptr->GetState());
         }
     }
+#endif
 
     static void InvalidateSubFramebuffer(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static void FastInvalidateSubFramebuffer(v8::Local<v8::Object> receiver_obj, uint32_t target,
                                              v8::Local<v8::Array> attachments, int32_t x, int32_t y,
                                              int32_t width, int32_t height) {
@@ -886,9 +947,11 @@ public:
                     ptr->GetState());
         }
     }
+#endif
 
     static void IsQuery(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static bool FastIsQuery(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> query_obj) {
         WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -909,9 +972,11 @@ public:
         // todo check return
         return false;
     }
+#endif
 
     static void IsSampler(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static bool
     FastIsSampler(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> sample_obj) {
         WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
@@ -933,9 +998,11 @@ public:
         // todo check return
         return false;
     }
+#endif
 
     static void IsSync(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static bool FastIsSync(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> sync_obj) {
         WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -957,9 +1024,11 @@ public:
         // todo check return
         return false;
     }
+#endif
 
     static void IsTransformFeedback(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static bool FastIsTransformFeedback(v8::Local<v8::Object> receiver_obj,
                                         v8::Local<v8::Object> feedback_obj) {
         WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
@@ -981,9 +1050,11 @@ public:
         // todo check return
         return false;
     }
+#endif
 
     static void IsVertexArray(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static bool
     FastIsVertexArray(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> vertex_obj) {
         WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
@@ -1005,9 +1076,11 @@ public:
         // todo check return
         return false;
     }
+#endif
 
     static void PauseTransformFeedback(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static void FastPauseTransformFeedback(v8::Local<v8::Object> receiver_obj) {
         WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -1016,9 +1089,11 @@ public:
         canvas_native_webgl2_pause_transform_feedback(
                 ptr->GetState());
     }
+#endif
 
     static void ReadBuffer(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static void FastReadBuffer(v8::Local<v8::Object> receiver_obj, uint32_t src) {
         WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -1030,9 +1105,11 @@ public:
                 ptr->GetState()
         );
     }
+#endif
 
     static void RenderbufferStorageMultisample(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static void
     FastRenderbufferStorageMultisample(v8::Local<v8::Object> receiver_obj, uint32_t target,
                                        int32_t samples, uint32_t internalFormat, int32_t width,
@@ -1051,9 +1128,11 @@ public:
                 ptr->GetState()
         );
     }
+#endif
 
     static void ResumeTransformFeedback(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static void FastResumeTransformFeedback(v8::Local<v8::Object> receiver_obj) {
         WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -1063,9 +1142,11 @@ public:
         canvas_native_webgl2_resume_transform_feedback(
                 ptr->GetState());
     }
+#endif
 
     static void SamplerParameterf(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static void
     FastSamplerParameterf(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> sampler_obj,
                           uint32_t pname, double param) {
@@ -1087,10 +1168,12 @@ public:
         }
 
     }
+#endif
 
     static void SamplerParameteri(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 
+#if V8_MAJOR_VERSION < 14
     static void
     FastSamplerParameteri(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> sampler_obj,
                           uint32_t pname, int32_t param) {
@@ -1112,6 +1195,7 @@ public:
         }
 
     }
+#endif
 
     static void TexImage3D(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -1126,6 +1210,7 @@ public:
     static void Uniform1ui(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 
+#if V8_MAJOR_VERSION < 14
     static void
     FastUniform1ui(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
                    uint32_t v0) {
@@ -1151,9 +1236,11 @@ public:
         }
 
     }
+#endif
 
     static void Uniform1uiv(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static void
     FastUniform1uiv(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
                     const v8::FastApiTypedArray<uint32_t> &value) {
@@ -1175,9 +1262,11 @@ public:
                     ptr->GetState());
         }
     }
+#endif
 
     static void Uniform2ui(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static void
     FastUniform2ui(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
                    uint32_t v0, uint32_t v1) {
@@ -1203,9 +1292,11 @@ public:
         }
 
     }
+#endif
 
     static void Uniform2uiv(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static void
     FastUniform2uiv(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
                     const v8::FastApiTypedArray<uint32_t> &value) {
@@ -1227,9 +1318,11 @@ public:
                     ptr->GetState());
         }
     }
+#endif
 
     static void Uniform3ui(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static void
     FastUniform3ui(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
                    uint32_t v0, uint32_t v1, uint32_t v2) {
@@ -1255,9 +1348,11 @@ public:
         }
 
     }
+#endif
 
     static void Uniform3uiv(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static void
     FastUniform3uiv(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
                     const v8::FastApiTypedArray<uint32_t> &value) {
@@ -1279,9 +1374,11 @@ public:
                     ptr->GetState());
         }
     }
+#endif
 
     static void Uniform4ui(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static void
     FastUniform4ui(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
                    uint32_t v0, uint32_t v1, uint32_t v2, uint32_t v3) {
@@ -1307,10 +1404,12 @@ public:
         }
 
     }
+#endif
 
     static void Uniform4uiv(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 
+#if V8_MAJOR_VERSION < 14
     static void
     FastUniform4uiv(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
                     const v8::FastApiTypedArray<uint32_t> &value) {
@@ -1332,9 +1431,11 @@ public:
                     ptr->GetState());
         }
     }
+#endif
 
     static void UniformBlockBinding(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static void
     FastUniformBlockBinding(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> program_obj,
                             uint32_t uniformBlockIndex, uint32_t uniformBlockBinding) {
@@ -1361,9 +1462,11 @@ public:
         }
 
     }
+#endif
 
     static void UniformMatrix2x3fv(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static void
     FastUniformMatrix2x3fv(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
                            bool transpose, const v8::FastApiTypedArray<float> &data_value) {
@@ -1388,7 +1491,9 @@ public:
         }
 
     }
+#endif
 
+#if V8_MAJOR_VERSION < 14
     static void
     FastUniformMatrix2x3fvArray(v8::Local<v8::Object> receiver_obj,
                                 v8::Local<v8::Object> location_obj,
@@ -1420,10 +1525,12 @@ public:
         }
 
     }
+#endif
 
     static void UniformMatrix2x4fv(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 
+#if V8_MAJOR_VERSION < 14
     static void
     FastUniformMatrix2x4fv(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
                            bool transpose, const v8::FastApiTypedArray<float> &data_value) {
@@ -1448,7 +1555,9 @@ public:
         }
 
     }
+#endif
 
+#if V8_MAJOR_VERSION < 14
     static void
     FastUniformMatrix2x4fvArray(v8::Local<v8::Object> receiver_obj,
                                 v8::Local<v8::Object> location_obj,
@@ -1480,10 +1589,12 @@ public:
         }
 
     }
+#endif
 
     static void UniformMatrix3x2fv(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 
+#if V8_MAJOR_VERSION < 14
     static void
     FastUniformMatrix3x2fv(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
                            bool transpose, const v8::FastApiTypedArray<float> &data_value) {
@@ -1508,7 +1619,9 @@ public:
         }
 
     }
+#endif
 
+#if V8_MAJOR_VERSION < 14
     static void
     FastUniformMatrix3x2fvArray(v8::Local<v8::Object> receiver_obj,
                                 v8::Local<v8::Object> location_obj,
@@ -1540,10 +1653,12 @@ public:
         }
 
     }
+#endif
 
     static void UniformMatrix3x4fv(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 
+#if V8_MAJOR_VERSION < 14
     static void
     FastUniformMatrix3x4fv(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
                            bool transpose, const v8::FastApiTypedArray<float> &data_value) {
@@ -1568,7 +1683,9 @@ public:
         }
 
     }
+#endif
 
+#if V8_MAJOR_VERSION < 14
     static void
     FastUniformMatrix3x4fvArray(v8::Local<v8::Object> receiver_obj,
                                 v8::Local<v8::Object> location_obj,
@@ -1600,10 +1717,12 @@ public:
         }
 
     }
+#endif
 
 
     static void UniformMatrix4x2fv(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static void
     FastUniformMatrix4x2fv(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
                            bool transpose, const v8::FastApiTypedArray<float> &data_value) {
@@ -1628,7 +1747,9 @@ public:
         }
 
     }
+#endif
 
+#if V8_MAJOR_VERSION < 14
     static void
     FastUniformMatrix4x2fvArray(v8::Local<v8::Object> receiver_obj,
                                 v8::Local<v8::Object> location_obj,
@@ -1660,10 +1781,12 @@ public:
         }
 
     }
+#endif
 
     static void UniformMatrix4x3fv(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 
+#if V8_MAJOR_VERSION < 14
     static void
     FastUniformMatrix4x3fv(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
                            bool transpose, const v8::FastApiTypedArray<float> &data_value) {
@@ -1688,7 +1811,9 @@ public:
         }
 
     }
+#endif
 
+#if V8_MAJOR_VERSION < 14
     static void
     FastUniformMatrix4x3fvArray(v8::Local<v8::Object> receiver_obj,
                                 v8::Local<v8::Object> location_obj,
@@ -1720,9 +1845,11 @@ public:
         }
 
     }
+#endif
 
     static void VertexAttribDivisor(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static void
     FastVertexAttribDivisor(v8::Local<v8::Object> receiver_obj, uint32_t index, uint32_t divisor) {
         WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
@@ -1737,9 +1864,11 @@ public:
         );
 
     }
+#endif
 
     static void VertexAttribI4i(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static void
     FastVertexAttribI4i(v8::Local<v8::Object> receiver_obj, int32_t index, int32_t v0, int32_t v1,
                         int32_t v2, int32_t v3) {
@@ -1759,9 +1888,11 @@ public:
         );
 
     }
+#endif
 
     static void VertexAttribI4iv(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static void FastVertexAttribI4iv(v8::Local<v8::Object> receiver_obj, uint32_t index,
                                      const v8::FastApiTypedArray<int32_t> &data_value) {
         WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
@@ -1780,7 +1911,9 @@ public:
         );
 
     }
+#endif
 
+#if V8_MAJOR_VERSION < 14
     static void FastVertexAttribI4ivArray(v8::Local<v8::Object> receiver_obj, uint32_t index,
                                           v8::Local<v8::Array> data_value) {
         WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
@@ -1805,9 +1938,11 @@ public:
         }
 
     }
+#endif
 
     static void VertexAttribI4ui(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+#if V8_MAJOR_VERSION < 14
     static void
     FastVertexAttribI4ui(v8::Local<v8::Object> receiver_obj, uint32_t index, uint32_t v0,
                          uint32_t v1,
@@ -1828,10 +1963,12 @@ public:
         );
 
     }
+#endif
 
     static void VertexAttribI4uiv(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 
+#if V8_MAJOR_VERSION < 14
     static void FastVertexAttribI4uiv(v8::Local<v8::Object> receiver_obj, uint32_t index,
                                       const v8::FastApiTypedArray<uint32_t> &data_value) {
         WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
@@ -1850,7 +1987,9 @@ public:
         );
 
     }
+#endif
 
+#if V8_MAJOR_VERSION < 14
     static void FastVertexAttribI4uivArray(v8::Local<v8::Object> receiver_obj, uint32_t index,
                                            v8::Local<v8::Array> data_value) {
         WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
@@ -1875,5 +2014,6 @@ public:
         }
 
     }
+#endif
 
 };

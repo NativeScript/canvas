@@ -9,10 +9,10 @@
 #include "GPUQueueImpl.h"
 
 v8::CFunction GPUCanvasContextImpl::fast_start_raf_(
-																										v8::CFunction::Make(GPUCanvasContextImpl::__FastStartRaf));
+																										CANVAS_FAST_FUNCTION(GPUCanvasContextImpl::__FastStartRaf));
 
 v8::CFunction GPUCanvasContextImpl::fast_stop_raf_(
-																									 v8::CFunction::Make(GPUCanvasContextImpl::__FastStopRaf));
+																									 CANVAS_FAST_FUNCTION(GPUCanvasContextImpl::__FastStopRaf));
 
 
 GPUCanvasContextImpl::GPUCanvasContextImpl(const CanvasGPUCanvasContext *context) : context_(
@@ -49,7 +49,7 @@ void GPUCanvasContextImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate 
 }
 
 GPUCanvasContextImpl *GPUCanvasContextImpl::GetPointer(const v8::Local<v8::Object> &object) {
-	auto ptr = object->GetAlignedPointerFromInternalField(0);
+	auto ptr = canvas::GetAlignedPointer(object, 0);
 	if (ptr == nullptr) {
 		return nullptr;
 	}
@@ -105,9 +105,9 @@ void GPUCanvasContextImpl::__StopRaf(const v8::FunctionCallbackInfo<v8::Value> &
 }
 
 
-void GPUCanvasContextImpl::GetContinuousRenderMode(v8::Local<v8::String> property,
+void GPUCanvasContextImpl::GetContinuousRenderMode(v8::Local<v8::Name> property,
 																									 const v8::PropertyCallbackInfo<v8::Value> &info) {
-	GPUCanvasContextImpl *ptr = GetPointer(info.This());
+	GPUCanvasContextImpl *ptr = GetPointer(canvas::Receiver(info));
 	if (ptr == nullptr) {
 		info.GetReturnValue().Set(false);
 		return;
@@ -115,10 +115,10 @@ void GPUCanvasContextImpl::GetContinuousRenderMode(v8::Local<v8::String> propert
 	info.GetReturnValue().Set(ptr->continuousRender_);
 }
 
-void GPUCanvasContextImpl::SetContinuousRenderMode(v8::Local<v8::String> property,
+void GPUCanvasContextImpl::SetContinuousRenderMode(v8::Local<v8::Name> property,
 																									 v8::Local<v8::Value> value,
 																									 const v8::PropertyCallbackInfo<void> &info) {
-	GPUCanvasContextImpl *ptr = GetPointer(info.This());
+	GPUCanvasContextImpl *ptr = GetPointer(canvas::Receiver(info));
 	if (ptr == nullptr) {
 		return;
 	}
@@ -182,7 +182,7 @@ v8::Local<v8::FunctionTemplate> GPUCanvasContextImpl::GetCtor(v8::Isolate *isola
 						ConvertToV8String(isolate, "__toDataURL"),
 						v8::FunctionTemplate::New(isolate, &__ToDataURL));
 	
-	tmpl->SetAccessor(ConvertToV8String(isolate, "continuousRenderMode"), GetContinuousRenderMode,
+	canvas::SetAccessor(tmpl, ConvertToV8String(isolate, "continuousRenderMode"), GetContinuousRenderMode,
 										SetContinuousRenderMode);
 	
 	cache->GPUCanvasContextTmpl =

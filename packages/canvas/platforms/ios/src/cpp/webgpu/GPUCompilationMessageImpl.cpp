@@ -29,7 +29,7 @@ void GPUCompilationMessageImpl::Init(v8::Local<v8::Object> canvasModule, v8::Iso
 
 GPUCompilationMessageImpl *
 GPUCompilationMessageImpl::GetPointer(const v8::Local<v8::Object> &object) {
-    auto ptr = object->GetAlignedPointerFromInternalField(0);
+    auto ptr = canvas::GetAlignedPointer(object, 0);
     if (ptr == nullptr) {
         return nullptr;
     }
@@ -88,7 +88,7 @@ v8::Local<v8::FunctionTemplate> GPUCompilationMessageImpl::GetCtor(v8::Isolate *
 void
 GPUCompilationMessageImpl::GetLength(v8::Local<v8::Name> name,
                                      const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(canvas::Receiver(info));
     if (ptr != nullptr) {
         auto len = canvas_native_webgpu_compilation_message_get_length(ptr->GetMessage());
 
@@ -104,7 +104,7 @@ GPUCompilationMessageImpl::GetLength(v8::Local<v8::Name> name,
 void
 GPUCompilationMessageImpl::GetLineNum(v8::Local<v8::Name> name,
                                       const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(canvas::Receiver(info));
     if (ptr != nullptr) {
         auto num = canvas_native_webgpu_compilation_message_get_line_num(ptr->GetMessage());
 
@@ -120,7 +120,7 @@ GPUCompilationMessageImpl::GetLineNum(v8::Local<v8::Name> name,
 void
 GPUCompilationMessageImpl::GetLinePos(v8::Local<v8::Name> name,
                                       const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(canvas::Receiver(info));
     if (ptr != nullptr) {
         auto pos = canvas_native_webgpu_compilation_message_get_line_pos(ptr->GetMessage());
 
@@ -135,7 +135,7 @@ GPUCompilationMessageImpl::GetLinePos(v8::Local<v8::Name> name,
 void
 GPUCompilationMessageImpl::GetMessage(v8::Local<v8::Name> name,
                                       const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(canvas::Receiver(info));
     if (ptr != nullptr) {
         auto isolate = info.GetIsolate();
         auto len = canvas_native_webgpu_compilation_message_get_message(ptr->GetMessage());
@@ -152,7 +152,7 @@ GPUCompilationMessageImpl::GetMessage(v8::Local<v8::Name> name,
 void
 GPUCompilationMessageImpl::GetOffset(v8::Local<v8::Name> name,
                                      const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(canvas::Receiver(info));
     if (ptr != nullptr) {
         auto offset = canvas_native_webgpu_compilation_message_get_offset(ptr->GetMessage());
 
@@ -168,7 +168,7 @@ GPUCompilationMessageImpl::GetOffset(v8::Local<v8::Name> name,
 void
 GPUCompilationMessageImpl::GetType(v8::Local<v8::Name> name,
                                    const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(canvas::Receiver(info));
     auto isolate = info.GetIsolate();
     if (ptr != nullptr) {
         auto message_type = canvas_native_webgpu_compilation_message_get_type(ptr->GetMessage());

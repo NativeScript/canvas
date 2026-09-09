@@ -73,7 +73,7 @@ public:
 		auto object = GPUCanvasContextImpl::GetCtor(isolate)->GetFunction(
 																																			context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
 		SetNativeType(ctx, NativeType::GPUCanvasContext);
-		object->SetAlignedPointerInInternalField(0, ctx);
+		canvas::SetAlignedPointer(object, 0, ctx);
 		ctx->BindFinalizer(isolate, object);
 		return scope.Escape(object);
 	}
@@ -88,11 +88,11 @@ public:
 	
 	static void GetCapabilities(const v8::FunctionCallbackInfo<v8::Value> &args);
 	
-	static void SetContinuousRenderMode(v8::Local<v8::String> property,
+	static void SetContinuousRenderMode(v8::Local<v8::Name> property,
 																			v8::Local<v8::Value> value,
 																			const v8::PropertyCallbackInfo<void> &info);
 
-	static void GetContinuousRenderMode(v8::Local<v8::String> property,
+	static void GetContinuousRenderMode(v8::Local<v8::Name> property,
 																			const v8::PropertyCallbackInfo<v8::Value> &info);
 	
 	void SetRaf(std::shared_ptr<RafImpl> raf);

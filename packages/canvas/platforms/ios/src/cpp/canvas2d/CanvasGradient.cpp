@@ -21,7 +21,7 @@ void CanvasGradient::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isola
 }
 
 CanvasGradient *CanvasGradient::GetPointer(const v8::Local<v8::Object> &object) {
-    auto ptr = object->GetAlignedPointerFromInternalField(0);
+    auto ptr = canvas::GetAlignedPointer(object, 0);
     if (ptr == nullptr) {
         return nullptr;
     }

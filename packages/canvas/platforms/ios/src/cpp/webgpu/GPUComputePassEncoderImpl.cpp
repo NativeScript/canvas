@@ -32,7 +32,7 @@ void GPUComputePassEncoderImpl::Init(v8::Local<v8::Object> canvasModule, v8::Iso
 
 GPUComputePassEncoderImpl *
 GPUComputePassEncoderImpl::GetPointer(const v8::Local<v8::Object> &object) {
-    auto ptr = object->GetAlignedPointerFromInternalField(0);
+    auto ptr = canvas::GetAlignedPointer(object, 0);
     if (ptr == nullptr) {
         return nullptr;
     }
@@ -111,7 +111,7 @@ void GPUComputePassEncoderImpl::Destroy(const v8::FunctionCallbackInfo<v8::Value
 void
 GPUComputePassEncoderImpl::GetLabel(v8::Local<v8::Name> name,
                                     const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(canvas::Receiver(info));
     if (ptr != nullptr) {
         auto label = canvas_native_webgpu_compute_pass_encoder_get_label(ptr->computePass_.get());
         if (label == nullptr) {

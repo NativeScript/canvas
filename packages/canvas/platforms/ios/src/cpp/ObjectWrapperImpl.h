@@ -34,7 +34,7 @@ public:
     static void SetNativeType(const v8::Local<v8::Object> &obj, NativeType type) {
         if (!obj.IsEmpty() && !obj->IsNullOrUndefined() && obj->IsObject() &&
             obj.As<v8::Object>()->InternalFieldCount() > 1) {
-            auto wrapper = obj.As<v8::Object>()->GetAlignedPointerFromInternalField(0);
+            auto wrapper = canvas::GetAlignedPointer(obj.As<v8::Object>(), 0);
             if (wrapper != nullptr) {
                 ((ObjectWrapperImpl *) wrapper)->type_ = type;
             }
@@ -45,7 +45,7 @@ public:
     inline static NativeType GetNativeType(const v8::Local<v8::Value> &obj) {
         if (!obj.IsEmpty() && !obj->IsNullOrUndefined() && obj->IsObject() &&
             obj.As<v8::Object>()->InternalFieldCount() > 1) {
-            auto info = obj.As<v8::Object>()->GetAlignedPointerFromInternalField(0);
+            auto info = canvas::GetAlignedPointer(obj.As<v8::Object>(), 0);
 
             if (info != nullptr) {
                 auto value = static_cast<ObjectWrapperImpl *>(info);

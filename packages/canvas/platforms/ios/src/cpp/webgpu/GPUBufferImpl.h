@@ -30,7 +30,7 @@ public:
         auto object = GPUBufferImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType(buffer, NativeType::GPUBuffer);
-        object->SetAlignedPointerInInternalField(0, buffer);
+        canvas::SetAlignedPointer(object, 0, buffer);
         buffer->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }

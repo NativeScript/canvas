@@ -41,13 +41,13 @@ public:
         auto object = OES_standard_derivativesImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType( derivatives, NativeType::OES_standard_derivatives);
-        object->SetAlignedPointerInInternalField(0, derivatives);
+        canvas::SetAlignedPointer(object, 0, derivatives);
         derivatives->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 
     static OES_standard_derivativesImpl *GetPointer(const v8::Local<v8::Object> &object) {
-        auto ptr = object->GetAlignedPointerFromInternalField(0);
+        auto ptr = canvas::GetAlignedPointer(object, 0);
         if (ptr == nullptr) {
             return nullptr;
         }

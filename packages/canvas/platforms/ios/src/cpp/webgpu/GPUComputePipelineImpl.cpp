@@ -28,7 +28,7 @@ void GPUComputePipelineImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolat
 }
 
 GPUComputePipelineImpl *GPUComputePipelineImpl::GetPointer(const v8::Local<v8::Object> &object) {
-    auto ptr = object->GetAlignedPointerFromInternalField(0);
+    auto ptr = canvas::GetAlignedPointer(object, 0);
     if (ptr == nullptr) {
         return nullptr;
     }
@@ -66,7 +66,7 @@ v8::Local<v8::FunctionTemplate> GPUComputePipelineImpl::GetCtor(v8::Isolate *iso
 void
 GPUComputePipelineImpl::GetLabel(v8::Local<v8::Name> name,
                                  const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(canvas::Receiver(info));
     if (ptr != nullptr) {
         auto label = canvas_native_webgpu_compute_pipeline_get_label(ptr->pipeline_.get());
         if (label == nullptr) {

@@ -25,7 +25,7 @@ void GPUBufferImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolat
 }
 
 GPUBufferImpl *GPUBufferImpl::GetPointer(const v8::Local<v8::Object> &object) {
-    auto ptr = object->GetAlignedPointerFromInternalField(0);
+    auto ptr = canvas::GetAlignedPointer(object, 0);
     if (ptr == nullptr) {
         return nullptr;
     }
@@ -90,7 +90,7 @@ v8::Local<v8::FunctionTemplate> GPUBufferImpl::GetCtor(v8::Isolate *isolate) {
 void
 GPUBufferImpl::GetUsage(v8::Local<v8::Name> name,
                         const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(canvas::Receiver(info));
     if (ptr != nullptr) {
         auto usage = canvas_native_webgpu_buffer_usage(ptr->GetGPUBuffer());
         info.GetReturnValue().Set(
@@ -105,7 +105,7 @@ GPUBufferImpl::GetUsage(v8::Local<v8::Name> name,
 void
 GPUBufferImpl::GetSize(v8::Local<v8::Name> name,
                        const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(canvas::Receiver(info));
     if (ptr != nullptr) {
         auto size = canvas_native_webgpu_buffer_size(ptr->GetGPUBuffer());
         info.GetReturnValue().Set((double) size);
@@ -259,7 +259,7 @@ void GPUBufferImpl::GetMappedRange(const v8::FunctionCallbackInfo<v8::Value> &ar
 void
 GPUBufferImpl::GetLabel(v8::Local<v8::Name> name,
                                  const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
+    auto ptr = GetPointer(canvas::Receiver(info));
     if (ptr != nullptr) {
         auto label = canvas_native_webgpu_buffer_get_label(ptr->buffer_.get());
         if (label == nullptr) {

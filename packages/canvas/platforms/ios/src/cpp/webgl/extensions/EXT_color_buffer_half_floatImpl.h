@@ -19,7 +19,7 @@ public:
         auto object = EXT_color_buffer_half_floatImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType( buffer, NativeType::EXT_color_buffer_half_float);
-        object->SetAlignedPointerInInternalField(0, buffer);
+        canvas::SetAlignedPointer(object, 0, buffer);
         object->Set(context, ConvertToV8String(isolate, "ext_name"),
                     ConvertToV8String(isolate, "EXT_color_buffer_half_float"));
         buffer->BindFinalizer(isolate, object);
@@ -27,7 +27,7 @@ public:
     }
 
     static EXT_color_buffer_half_floatImpl *GetPointer(const v8::Local<v8::Object> &object) {
-        auto ptr = object->GetAlignedPointerFromInternalField(0);
+        auto ptr = canvas::GetAlignedPointer(object, 0);
         if (ptr == nullptr) {
             return nullptr;
         }

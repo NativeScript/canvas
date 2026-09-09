@@ -25,7 +25,7 @@ public:
     WebGLRenderingContextBase(WebGLState* state, WebGLRenderingVersion version);
 
     static WebGLRenderingContextBase *GetPointer(const v8::Local<v8::Object> &object) {
-        auto ptr = object->GetAlignedPointerFromInternalField(0);
+        auto ptr = canvas::GetAlignedPointer(object, 0);
         if (ptr == nullptr) {
             return nullptr;
         }
@@ -33,10 +33,10 @@ public:
     }
 
 
-    static void GetContinuousRenderMode(v8::Local<v8::String> property,
+    static void GetContinuousRenderMode(v8::Local<v8::Name> property,
                                                             const v8::PropertyCallbackInfo<v8::Value> &info);
 
-    static void SetContinuousRenderMode(v8::Local<v8::String> property,
+    static void SetContinuousRenderMode(v8::Local<v8::Name> property,
                                                             v8::Local<v8::Value> value,
                                                             const v8::PropertyCallbackInfo<void> &info);
 

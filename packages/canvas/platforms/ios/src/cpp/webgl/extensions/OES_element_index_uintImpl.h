@@ -44,7 +44,7 @@ public:
         auto object = OES_element_index_uintImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType( element, NativeType::OES_element_index_uint);
-        object->SetAlignedPointerInInternalField(0, element);
+        canvas::SetAlignedPointer(object, 0, element);
         object->Set(context, ConvertToV8String(isolate, "ext_name"),
                     ConvertToV8String(isolate, "OES_element_index_uint")).FromJust();
         element->BindFinalizer(isolate, object);
@@ -52,7 +52,7 @@ public:
     }
 
     static OES_element_index_uintImpl *GetPointer(const v8::Local<v8::Object> &object) {
-        auto ptr = object->GetAlignedPointerFromInternalField(0);
+        auto ptr = canvas::GetAlignedPointer(object, 0);
         if (ptr == nullptr) {
             return nullptr;
         }

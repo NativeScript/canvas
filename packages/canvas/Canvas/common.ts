@@ -323,6 +323,29 @@ export class WheelEvent extends UIEvent {
 	}
 }
 
+interface KeyboardEventOptions extends UIEventOptions {
+	key?: string;
+	code?: string;
+	repeat?: boolean;
+}
+
+/**
+ * Minimal DOM KeyboardEvent. Fed by physical/remote keys on platforms that have them
+ * (tvOS: Siri Remote select/menu/play-pause and the directional presses map to DOM key names).
+ */
+export class KeyboardEvent extends UIEvent {
+	readonly key: string;
+	readonly code: string;
+	readonly repeat: boolean;
+
+	constructor(type: 'keydown' | 'keyup', options?: KeyboardEventOptions) {
+		super(type as any, options);
+		this.key = options?.key ?? '';
+		this.code = options?.code ?? '';
+		this.repeat = options?.repeat ?? false;
+	}
+}
+
 class Rectangle {
 	top: number;
 	left: number;
@@ -469,6 +492,8 @@ export abstract class CanvasBase extends ContainerView implements ICanvasBase {
 	_mouseDownCallbacks = [];
 	_mouseCancelCallbacks = [];
 	_mouseWheelCallbacks = [];
+	_keyDownCallbacks = [];
+	_keyUpCallbacks = [];
 
 	_touchStartCallbacks = new Array<(arg0: TouchEvent) => void>();
 	_touchEndCallbacks = new Array<(arg0: TouchEvent) => void>();
@@ -600,6 +625,12 @@ export abstract class CanvasBase extends ContainerView implements ICanvasBase {
 			case 'dommousescroll':
 				this._mouseWheelCallbacks.push(callback);
 				break;
+			case 'keydown':
+				this._keyDownCallbacks.push(callback);
+				break;
+			case 'keyup':
+				this._keyUpCallbacks.push(callback);
+				break;
 		}
 	}
 
@@ -669,6 +700,12 @@ export abstract class CanvasBase extends ContainerView implements ICanvasBase {
 			case 'mousewheel':
 			case 'dommousescroll':
 				removeItemFromArray(this._mouseWheelCallbacks, callback);
+				break;
+			case 'keydown':
+				removeItemFromArray(this._keyDownCallbacks, callback);
+				break;
+			case 'keyup':
+				removeItemFromArray(this._keyUpCallbacks, callback);
 				break;
 		}
 	}
@@ -1071,6 +1108,23 @@ export abstract class CanvasBase extends ContainerView implements ICanvasBase {
 		}
 	}
 
+	private _keyCallback(data: { phase: string; key: string; code: string; repeat?: boolean }) {
+		const callbacks = data.phase === 'up' ? this._keyUpCallbacks : this._keyDownCallbacks;
+		if (callbacks.length === 0) {
+			return;
+		}
+		const event = new KeyboardEvent(data.phase === 'up' ? 'keyup' : 'keydown', {
+			key: data.key,
+			code: data.code,
+			repeat: !!data.repeat,
+			target: this.__target ?? this,
+			cancelable: true,
+		} as any);
+		for (const callback of callbacks.slice()) {
+			callback(event);
+		}
+	}
+
 	private _pinchCallback(data: { event: string; deltaX: number; deltaY: number; deltaMode: number; pointers: { ptrId: number; x: number; y: number }[]; isInProgress: boolean }) {
 		// move callback
 
@@ -1208,6 +1262,9 @@ export abstract class CanvasBase extends ContainerView implements ICanvasBase {
 					break;
 				case 'scale':
 					this._pinchCallback(data);
+					break;
+				case 'key':
+					this._keyCallback(data);
 					break;
 				case 'cancel':
 					this._cancelCallback(data.ptrId, data.x, data.y, data.isPrimary);

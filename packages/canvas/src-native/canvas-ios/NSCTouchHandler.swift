@@ -12,7 +12,9 @@ class NSCTouchHandler: NSObject {
     private let view: NSCCanvas
     var gestureRecognizer: TouchGestureRecognizer?
     var panRecognizer: UIPanGestureRecognizer?
+    #if !os(tvOS)
     var pinchRecognizer: UIPinchGestureRecognizer?
+    #endif
     
     
     var pointers: [Pointer] = []
@@ -40,7 +42,10 @@ class NSCTouchHandler: NSObject {
         self.gestureRecognizer = TouchGestureRecognizer(target: self, action: nil)
         self.gestureRecognizer?.handler = self
         self.panRecognizer = UIPanGestureRecognizer(target: self, action: #selector(handle))
+        #if !os(tvOS)
+        // tvOS has no UIPinchGestureRecognizer (Siri Remote touch surface is single-touch).
         self.pinchRecognizer = UIPinchGestureRecognizer(target: self, action: #selector(handle))
+        #endif
         self.pointers.reserveCapacity(10)
     }
     

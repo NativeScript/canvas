@@ -1,4 +1,5 @@
-import { File, knownFolders } from '@nativescript/core';
+import { File } from '@nativescript/core';
+import { storageFolderPath } from './storage-folder';
 
 let file: File;
 let localStorageTimeout = null;
@@ -116,7 +117,7 @@ if (!global.Storage) {
 }
 
 if (!global.localStorage || (typeof module !== 'undefined' && (<any>module)?.hot)) {
-	const path = knownFolders.documents().path + '/localStorage.db';
+	const path = storageFolderPath() + '/localStorage.db';
 	file = File.fromPath(path);
 	localStorageTimeout = null;
 

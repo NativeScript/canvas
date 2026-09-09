@@ -8,7 +8,9 @@
 @implementation NSCAudioView {
     __weak NSCAudioHelper *_helper;
     UIButton *_playButton;
-    UISlider *_slider;
+#if !TARGET_OS_TV
+    UISlider *_slider; // tvOS has no UISlider; seeking is done with the remote instead.
+#endif
     UILabel *_timeLabel;
     BOOL _isSeeking;
     UIImage *_customPlayImage;
@@ -40,6 +42,7 @@
         [_playButton addTarget:self action:@selector(playTapped:) forControlEvents:UIControlEventTouchUpInside];
         [self addSubview:_playButton];
 
+#if !TARGET_OS_TV
         _slider = [[UISlider alloc] initWithFrame:CGRectZero];
         _slider.translatesAutoresizingMaskIntoConstraints = YES;
         _slider.enabled = NO;
@@ -47,13 +50,16 @@
         [_slider addTarget:self action:@selector(sliderTouchDown:) forControlEvents:UIControlEventTouchDown];
         [_slider addTarget:self action:@selector(sliderTouchUp:) forControlEvents:UIControlEventTouchUpInside | UIControlEventTouchUpOutside];
         [self addSubview:_slider];
+#endif
 
         _timeLabel = [[UILabel alloc] initWithFrame:CGRectZero];
         _timeLabel.translatesAutoresizingMaskIntoConstraints = YES;
         _durationSeconds = 0.0;
         _timeLabel.text = @"0:00 / 0:00";
+#if !TARGET_OS_TV
         _slider.minimumValue = 0;
         _slider.maximumValue = 1.0f;
+#endif
         [self addSubview:_timeLabel];
     }
     return self;
@@ -79,12 +85,14 @@
     CGFloat labelY = floor((h - labelH) / 2.0);
     _timeLabel.frame = CGRectMake(labelX, labelY, labelW, labelH);
 
+#if !TARGET_OS_TV
     CGFloat sliderX = CGRectGetMaxX(_playButton.frame) + pad;
     CGFloat sliderW = labelX - pad - sliderX;
     if (sliderW < 40.0) sliderW = 40.0;
     CGFloat sliderH = 30.0;
     CGFloat sliderY = floor((h - sliderH) / 2.0);
     _slider.frame = CGRectMake(sliderX, sliderY, sliderW, sliderH);
+#endif
 }
 
 - (void)playTapped:(id)sender {
@@ -96,6 +104,7 @@
     }
 }
 
+#if !TARGET_OS_TV
 - (void)sliderChanged:(UISlider *)s {
     if (!_isSeeking) return;
     double seconds = s.value;
@@ -117,11 +126,14 @@
     double seconds = s.value;
     [_helper setCurrentTime:seconds];
 }
+#endif
 
 - (void)updateCurrentTime:(double)seconds {
     if (_isSeeking) return;
     dispatch_async(dispatch_get_main_queue(), ^{
+#if !TARGET_OS_TV
 			self->_slider.value = seconds;
+#endif
 			[self updateTimeLabelWithCurrent:seconds duration:self->_durationSeconds];
     });
 }
@@ -259,16 +271,20 @@
     dispatch_async(dispatch_get_main_queue(), ^{
         __strong typeof(weakSelf) strongSelf = weakSelf;
         if (!strongSelf) return;
+        strongSelf->_durationSeconds = seconds;
+#if !TARGET_OS_TV
         strongSelf->_slider.minimumValue = 0;
         if (seconds > 0) {
             strongSelf->_slider.maximumValue = (float)seconds;
         } else {
             strongSelf->_slider.maximumValue = 1.0f;
         }
-        strongSelf->_durationSeconds = seconds;
         strongSelf->_slider.enabled = (!isnan(seconds) && seconds > 0);
         if (strongSelf->_slider.value > strongSelf->_slider.maximumValue) strongSelf->_slider.value = strongSelf->_slider.maximumValue;
         [strongSelf updateTimeLabelWithCurrent:strongSelf->_slider.value duration:strongSelf->_durationSeconds];
+#else
+        [strongSelf updateTimeLabelWithCurrent:0 duration:strongSelf->_durationSeconds];
+#endif
     });
 }
 

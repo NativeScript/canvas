@@ -7,6 +7,10 @@ export class GPUQuerySet {
 		return this[native_]?.label ?? '';
 	}
 
+	destroy() {
+		this[native_]?.destroy?.();
+	}
+
 	static fromNative(query) {
 		if (query) {
 			const ret = new GPUQuerySet();

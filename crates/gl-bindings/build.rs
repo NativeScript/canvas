@@ -11,7 +11,7 @@ fn main() {
         android: { target_os = "android" },
         wasm: { target_arch = "wasm32" },
         macos: { target_os = "macos" },
-        ios: { target_os = "ios" },
+        ios: { any(target_os = "ios", target_os = "tvos") },
         // apple: { any(target_os = "ios", target_os = "macos") },
         free_unix: { all(unix, not(apple), not(android)) },
 

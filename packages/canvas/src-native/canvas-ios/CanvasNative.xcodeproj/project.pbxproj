@@ -613,6 +613,30 @@
 					"-framework",
 					Metal,
 				);
+				"OTHER_LDFLAGS[sdk=appletvos*][arch=arm64]" = (
+					"$(inherited)",
+					"-L\"$(SRCROOT)/../../../../target/aarch64-apple-tvos/debug\"",
+					"-Wl,-no_compact_unwind",
+					"-lcanvasnative",
+					"-lc++",
+					"-ObjC",
+					"-framework",
+					OpenGLES,
+					"-framework",
+					Metal,
+				);
+				"OTHER_LDFLAGS[sdk=appletvsimulator*][arch=arm64]" = (
+					"$(inherited)",
+					"-L\"$(SRCROOT)/../../../../target/aarch64-apple-tvos-sim/debug\"",
+					"-Wl,-no_compact_unwind",
+					"-lcanvasnative",
+					"-lc++",
+					"-ObjC",
+					"-framework",
+					OpenGLES,
+					"-framework",
+					Metal,
+				);
 				OTHER_SWIFT_FLAGS = "-Xcc -Wno-error=non-modular-include-in-framework-module";
 				PRODUCT_BUNDLE_IDENTIFIER = com.github.triniwiz.CanvasNative;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
@@ -621,15 +645,18 @@
 				SKIP_INSTALL = YES;
 				STRIP_INSTALLED_PRODUCT = YES;
 				STRIP_SWIFT_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator xros xrsimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator xros xrsimulator appletvos appletvsimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TARGETED_DEVICE_FAMILY = "1,2,3,7";
 				USE_HEADERMAP = NO;
 				XROS_DEPLOYMENT_TARGET = 1.0;
+				TVOS_DEPLOYMENT_TARGET = 12.0;
+				"EXCLUDED_SOURCE_FILE_NAMES[sdk=appletvos*]" = "NSCCanvas.xib";
+				"EXCLUDED_SOURCE_FILE_NAMES[sdk=appletvsimulator*]" = "NSCCanvas.xib";
 			};
 			name = Debug;
 		};
@@ -717,6 +744,30 @@
 					"-framework",
 					Metal,
 				);
+				"OTHER_LDFLAGS[sdk=appletvos*][arch=arm64]" = (
+					"$(inherited)",
+					"-L\"$(SRCROOT)/../../../../target/aarch64-apple-tvos/release\"",
+					"-Wl,-no_compact_unwind",
+					"-lcanvasnative",
+					"-lc++",
+					"-ObjC",
+					"-framework",
+					OpenGLES,
+					"-framework",
+					Metal,
+				);
+				"OTHER_LDFLAGS[sdk=appletvsimulator*][arch=arm64]" = (
+					"$(inherited)",
+					"-L\"$(SRCROOT)/../../../../target/aarch64-apple-tvos-sim/release\"",
+					"-Wl,-no_compact_unwind",
+					"-lcanvasnative",
+					"-lc++",
+					"-ObjC",
+					"-framework",
+					OpenGLES,
+					"-framework",
+					Metal,
+				);
 				OTHER_SWIFT_FLAGS = "-Xcc -Wno-error=non-modular-include-in-framework-module";
 				PRODUCT_BUNDLE_IDENTIFIER = com.github.triniwiz.CanvasNative;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
@@ -725,14 +776,17 @@
 				SKIP_INSTALL = YES;
 				STRIP_INSTALLED_PRODUCT = YES;
 				STRIP_SWIFT_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator xros xrsimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator xros xrsimulator appletvos appletvsimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TARGETED_DEVICE_FAMILY = "1,2,3,7";
 				USE_HEADERMAP = NO;
 				XROS_DEPLOYMENT_TARGET = 1.0;
+				TVOS_DEPLOYMENT_TARGET = 12.0;
+				"EXCLUDED_SOURCE_FILE_NAMES[sdk=appletvos*]" = "NSCCanvas.xib";
+				"EXCLUDED_SOURCE_FILE_NAMES[sdk=appletvsimulator*]" = "NSCCanvas.xib";
 			};
 			name = Release;
 		};
@@ -750,7 +804,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.github.triniwiz.CanvasNativeTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TARGETED_DEVICE_FAMILY = "1,2,3,7";
 			};
 			name = Debug;
 		};
@@ -768,7 +822,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.github.triniwiz.CanvasNativeTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TARGETED_DEVICE_FAMILY = "1,2,3,7";
 			};
 			name = Release;
 		};

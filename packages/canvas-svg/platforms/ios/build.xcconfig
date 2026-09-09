@@ -1,4 +1,6 @@
 OTHER_LDFLAGS[sdk=iphone*] = $(inherited) -framework Foundation -framework CanvasSVG -framework OpenGLES -framework GLKit
 OTHER_LDFLAGS[sdk=xros*] = $(inherited) -framework Foundation -framework CanvasSVG
 OTHER_LDFLAGS[sdk=xrsimulator*] = $(inherited) -framework Foundation -framework CanvasSVG
+OTHER_LDFLAGS[sdk=appletvos*] = $(inherited) -framework Foundation -framework CanvasSVG
+OTHER_LDFLAGS[sdk=appletvsimulator*] = $(inherited) -framework Foundation -framework CanvasSVG
 OTHER_LDFLAGS[sdk=macosx*] = $(inherited) -framework Foundation -framework CanvasSVG

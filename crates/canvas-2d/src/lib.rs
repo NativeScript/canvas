@@ -101,7 +101,7 @@ pub fn bytes_to_data_n32_url(
     encoded_prefix.push_str(format);
     encoded_prefix.push_str(";base64,");
 
-    #[cfg(any(target_os = "ios", target_os = "macos", target_os = "visionos"))]
+    #[cfg(any(target_os = "ios", target_os = "macos", target_os = "visionos", target_os = "tvos"))]
     let fmt = ColorType::BGRA8888;
 
     #[cfg(any(target_os = "android"))]

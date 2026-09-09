@@ -1,5 +1,6 @@
-import { File, knownFolders, path, ApplicationSettings, Utils } from '@nativescript/core';
+import { File, path, ApplicationSettings, Utils } from '@nativescript/core';
 import { FileManager } from '../file/file';
+import { storageFolderPath } from '../../storage-folder';
 import { fileNameFromPath, Headers, HttpDownloadRequestOptions, HttpError, HttpRequestOptions, isImageUrl, SaveImageStorageKey, TNSHttpSettings } from './http-request-common';
 
 export type CancellablePromise = Promise<any> & { cancel: () => void };
@@ -723,7 +724,7 @@ export class Http {
 							// strip any params if were any
 							filename = filename.split('?')[0];
 						}
-						localPath = path.join(knownFolders.documents().path, filename);
+						localPath = path.join(storageFolderPath(), filename);
 						makeRemoteRequest();
 					}
 

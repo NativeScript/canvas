@@ -1,4 +1,5 @@
-import { Folder, knownFolders, path, Utils, File as NSFile } from '@nativescript/core';
+import { Folder, path, Utils, File as NSFile } from '@nativescript/core';
+import { storageFolderPath } from './storage-folder';
 
 const BLOB_PATH = 'blob:nativescript/';
 const BLOB_DIR = 'ns_blobs';
@@ -90,9 +91,9 @@ if (typeof URL !== 'undefined') {
 			const createObjectURLLegacyWithId = (id: string, object: any, options = null) => {
 				const buf = (Blob as any).InternalAccessor.getBuffer(object);
 				if (buf || object instanceof Blob || object instanceof File) {
-					const exists = Folder.exists(path.join(knownFolders.documents().path, BLOB_DIR));
+					const exists = Folder.exists(path.join(storageFolderPath(), BLOB_DIR));
 					if (!exists) {
-						Folder.fromPath(path.join(knownFolders.documents().path, BLOB_DIR));
+						Folder.fromPath(path.join(storageFolderPath(), BLOB_DIR));
 					}
 					let fileName = id;
 					// todo get type from magic bytes
@@ -100,7 +101,7 @@ if (typeof URL !== 'undefined') {
 						fileName = `${fileName}.${options.ext}`;
 					}
 
-					const filePath = path.join(knownFolders.documents().path, BLOB_DIR, fileName);
+					const filePath = path.join(storageFolderPath(), BLOB_DIR, fileName);
 
 					NSFile.fromPath(filePath).writeSync(NSData.dataWithData(buf));
 
@@ -111,7 +112,7 @@ if (typeof URL !== 'undefined') {
 			};
 
 			const getItem = (key: string) => {
-				const fileDir = Folder.fromPath(path.join(knownFolders.documents().path, BLOB_DIR));
+				const fileDir = Folder.fromPath(path.join(storageFolderPath(), BLOB_DIR));
 				let fileName = null;
 
 				if (!sharedPreferences) {
@@ -161,7 +162,7 @@ if (typeof URL !== 'undefined') {
 					fileName = `${fileName}.${blob?.ext}`;
 				}
 
-				const filePath = path.join(knownFolders.documents().path, BLOB_DIR, fileName);
+				const filePath = path.join(storageFolderPath(), BLOB_DIR, fileName);
 
 				blob.path = filePath;
 
@@ -201,9 +202,9 @@ if (__APPLE__) {
 	const createObjectURLLegacyWithId = (id: string, object: any, options = null) => {
 		const buf = (Blob as any).InternalAccessor.getBuffer(object);
 		if (buf || object instanceof Blob || object instanceof File) {
-			const exists = Folder.exists(path.join(knownFolders.documents().path, BLOB_DIR));
+			const exists = Folder.exists(path.join(storageFolderPath(), BLOB_DIR));
 			if (!exists) {
-				Folder.fromPath(path.join(knownFolders.documents().path, BLOB_DIR));
+				Folder.fromPath(path.join(storageFolderPath(), BLOB_DIR));
 			}
 			let fileName = id;
 			// todo get type from magic bytes
@@ -211,7 +212,7 @@ if (__APPLE__) {
 				fileName = `${fileName}.${options.ext}`;
 			}
 
-			const filePath = path.join(knownFolders.documents().path, BLOB_DIR, fileName);
+			const filePath = path.join(storageFolderPath(), BLOB_DIR, fileName);
 
 			NSFile.fromPath(filePath).writeSync(NSData.dataWithData(buf));
 
@@ -222,7 +223,7 @@ if (__APPLE__) {
 	};
 
 	const getItem = (key: string) => {
-		const fileDir = Folder.fromPath(path.join(knownFolders.documents().path, BLOB_DIR));
+		const fileDir = Folder.fromPath(path.join(storageFolderPath(), BLOB_DIR));
 		let fileName = null;
 
 		if (!sharedPreferences) {
@@ -272,7 +273,7 @@ if (__APPLE__) {
 			fileName = `${fileName}.${blob?.ext}`;
 		}
 
-		const filePath = path.join(knownFolders.documents().path, BLOB_DIR, fileName);
+		const filePath = path.join(storageFolderPath(), BLOB_DIR, fileName);
 
 		blob.path = filePath;
 

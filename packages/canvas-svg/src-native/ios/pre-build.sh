@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -e
 
-source $HOME/.cargo/env
-source $HOME/.profile
+[ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env"
+[ -f "$HOME/.profile" ] && source "$HOME/.profile"
 
 whereis cc
 
@@ -57,6 +57,12 @@ if [[ "$PLATFORM_NAME" == xr* ]]; then
   IS_VISIONOS=true
 fi
 
+# tvOS reports PLATFORM_NAME as "appletvos" (device) / "appletvsimulator" (simulator).
+IS_TVOS=false
+if [[ "$PLATFORM_NAME" == appletv* ]]; then
+  IS_TVOS=true
+fi
+
 if [ -z "$CURRENT_ARCH" ] || [ "$CURRENT_ARCH" == "undefined_arch" ]; then
     # Xcode 10 beta sets CURRENT_ARCH to "undefined_arch", this leads to incorrect linker arg.
     # it's better to rely on platform name as fallback because architecture differs between simulator and device
@@ -76,6 +82,12 @@ if $IS_VISIONOS; then
     RUST_BUILD_TARGET="aarch64-apple-visionos-sim"
   else
     RUST_BUILD_TARGET="aarch64-apple-visionos"
+  fi
+elif $IS_TVOS; then
+  if [[ $IS_SIMULATOR == true ]] || [[ "$PLATFORM_NAME" == *"simulator"* ]]; then
+    RUST_BUILD_TARGET="aarch64-apple-tvos-sim"
+  else
+    RUST_BUILD_TARGET="aarch64-apple-tvos"
   fi
 else
   if [[ $CURRENT_ARCH == x86_64 ]]; then

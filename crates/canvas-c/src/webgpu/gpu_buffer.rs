@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{mpsc, Arc, OnceLock};
 use std::{
     borrow::Cow,
     ffi::CString,
@@ -9,6 +9,25 @@ use crate::webgpu::error::{handle_error_fatal, CanvasGPUError, CanvasGPUErrorTyp
 use crate::webgpu::prelude::label_to_ptr;
 
 use super::gpu::CanvasWebGPUInstance;
+
+// wgpu requires polling to dispatch completed mappings, including compute-only
+// workloads with no canvas/frame loop. One worker services requests off the UI
+// thread and retains each instance until its pending callbacks have run.
+fn poll_mappings(instance: Arc<CanvasWebGPUInstance>) {
+    static POLLER: OnceLock<mpsc::Sender<Arc<CanvasWebGPUInstance>>> = OnceLock::new();
+    let sender = POLLER.get_or_init(|| {
+        let (sender, receiver) = mpsc::channel::<Arc<CanvasWebGPUInstance>>();
+        std::thread::spawn(move || {
+            for instance in receiver {
+                if let Err(error) = instance.global().poll_all_devices(true) {
+                    log::error!("WebGPU mapping poll failed: {error}");
+                }
+            }
+        });
+        sender
+    });
+    let _ = sender.send(instance);
+}
 
 #[repr(C)]
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -259,5 +278,7 @@ pub extern "C" fn canvas_native_webgpu_buffer_map_async(
     let global = buffer.instance.global();
     let buffer_id = buffer.buffer;
 
-    let _ = global.buffer_map_async(buffer_id, offset, size, op);
+    if global.buffer_map_async(buffer_id, offset, size, op).is_ok() {
+        poll_mappings(Arc::clone(&buffer.instance));
+    }
 }

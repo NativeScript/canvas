@@ -264,6 +264,7 @@ declare module org {
 				public static getBuffer(key: number): java.nio.ByteBuffer;
 				public releaseNativeContext(): void;
 				public getNativeContext(): number;
+				public releaseNativeContext(): void;
 				public getNativeContextString(): string;
 				public getIgnoreTouchEvents(): boolean;
 				public static context2DRender(context: number): void;

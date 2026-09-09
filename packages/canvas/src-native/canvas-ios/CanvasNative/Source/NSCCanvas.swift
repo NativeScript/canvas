@@ -10,7 +10,9 @@ import UIKit
 #if !os(visionOS)
 import GLKit
 #endif
+#if canImport(WebKit)
 import WebKit
+#endif
 import MetalKit
 
 // visionOS has no `UIScreen` (no single main screen). Views render at a 2x scale and the
@@ -28,7 +30,7 @@ import MetalKit
 #else
 @inline(__always) func nscNativeScale() -> CGFloat { UIScreen.main.nativeScale }
 @inline(__always) func nscIsWideGamut() -> Bool {
-	if #available(iOS 11.0, *) { return UIScreen.main.traitCollection.displayGamut == .P3 }
+	if #available(iOS 11.0, tvOS 11.0, *) { return UIScreen.main.traitCollection.displayGamut == .P3 }
 	return false
 }
 #endif
@@ -249,7 +251,7 @@ public class NSCCanvas: UIView {
 					return "data:,"
 				}
 			case "image/heic", "image/heic-sequence":
-				if #available(iOS 17.0, *), let data = image.heicData() {
+				if #available(iOS 17.0, tvOS 17.0, *), let data = image.heicData() {
 					base64ImageString = data.base64EncodedString()
 				} else {
 					return "data:,"
@@ -457,7 +459,7 @@ public class NSCCanvas: UIView {
 			mtlView.isOpaque = !alpha
 			
 			if(cs == 1){
-				if #available(iOS 13.0, *) {
+				if #available(iOS 13.0, tvOS 13.0, *) {
 					(mtlView.layer as! CAMetalLayer).colorspace = CGColorSpace(name: CGColorSpace.displayP3)
 				}
 			}
@@ -573,6 +575,71 @@ public class NSCCanvas: UIView {
 	private var handler: NSCTouchHandler?
 	
 	public var touchEventListener: ((String, UIGestureRecognizer) -> Void)?
+
+	// MARK: - Remote / keyboard presses
+	//
+	// On tvOS the Siri Remote and game controllers deliver UIPress events instead of touches.
+	// They are forwarded through the same listener as touch events, as a `key` event carrying DOM
+	// key names (ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Enter, Escape, MediaPlayPause) so the JS
+	// side can dispatch KeyboardEvents. tvOS only: on iOS the canvas keeps its default responder
+	// behaviour and does not intercept UIPress events.
+	#if os(tvOS)
+	public override var canBecomeFirstResponder: Bool { true }
+
+	// tvOS routes remote presses through the focus engine: the canvas must be focusable to receive
+	// them when it is the only content on screen.
+	public override var canBecomeFocused: Bool { true }
+
+	public override func didMoveToWindow() {
+		super.didMoveToWindow()
+		if window != nil {
+			becomeFirstResponder()
+			setNeedsFocusUpdate()
+		}
+	}
+
+	private static func domKey(for type: UIPress.PressType) -> (key: String, code: String)? {
+		switch type {
+		case .upArrow: return ("ArrowUp", "ArrowUp")
+		case .downArrow: return ("ArrowDown", "ArrowDown")
+		case .leftArrow: return ("ArrowLeft", "ArrowLeft")
+		case .rightArrow: return ("ArrowRight", "ArrowRight")
+		case .select: return ("Enter", "Enter")
+		case .menu: return ("Escape", "Escape")
+		case .playPause: return ("MediaPlayPause", "MediaPlayPause")
+		@unknown default: return nil
+		}
+	}
+
+	private func forwardPresses(_ presses: Set<UIPress>, phase: String) -> Bool {
+		guard let listener = touchEventListener else { return false }
+		var handled = false
+		for press in presses {
+			guard let mapped = NSCCanvas.domKey(for: press.type) else { continue }
+			let json = "{\"event\":\"key\",\"phase\":\"\(phase)\",\"key\":\"\(mapped.key)\",\"code\":\"\(mapped.code)\"}"
+			listener(json, handler?.gestureRecognizer ?? UIGestureRecognizer())
+			handled = true
+		}
+		return handled
+	}
+
+	// The presses are forwarded and then passed up the responder chain, so system behaviour
+	// (Menu returning to the home screen, focus navigation) is preserved.
+	public override func pressesBegan(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
+		_ = forwardPresses(presses, phase: "down")
+		super.pressesBegan(presses, with: event)
+	}
+
+	public override func pressesEnded(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
+		_ = forwardPresses(presses, phase: "up")
+		super.pressesEnded(presses, with: event)
+	}
+
+	public override func pressesCancelled(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
+		_ = forwardPresses(presses, phase: "up")
+		super.pressesCancelled(presses, with: event)
+	}
+	#endif
 	
 	required init?(coder: NSCoder) {
 		let scale = nscNativeScale()

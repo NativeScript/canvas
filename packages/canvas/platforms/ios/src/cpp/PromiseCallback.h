@@ -36,7 +36,7 @@ struct PromiseCallback {
         CompleteCallback completeCallback_;
         CompleteCallback completeCallbackWrapper_;
         bool isPrepared_ = false;
-        void* data;
+        void* data = nullptr;
         mutable std::mutex mtx;
 
         Inner(v8::Isolate *isolate, v8::Local<v8::Promise::Resolver> callback,

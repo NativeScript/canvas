@@ -1235,6 +1235,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_configure(
         height,
         present_mode: config.presentMode.into(),
         alpha_mode: config.alphaMode.into(),
+        // Auto is wgpu 30's default and reproduces the pre-30 behaviour: sRGB,
+        // or extended-sRGB-linear for fp16 surfaces that support it.
+        color_space: wgt::SurfaceColorSpace::Auto,
         view_formats,
     };
 

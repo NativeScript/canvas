@@ -113,6 +113,17 @@ impl Into<wgt::Limits> for CanvasGPUSupportedLimits {
             max_tlas_instance_count: self.max_tlas_instance_count,
             max_acceleration_structures_per_shader_stage: self.max_acceleration_structures_per_shader_stage,
             max_multiview_view_count: self.max_multiview_view_count,
+            // wgpu 30 additions. Canvas exposes no ray tracing -- the
+            // acceleration-structure limits above are already pinned to 0 --
+            // so the two ray limits stay 0. The combined limit is documented as
+            // the sum of the storage, uniform and vertex buffer limits, so
+            // derive it rather than repeating wgpu's default.
+            max_buffers_and_acceleration_structures_per_shader_stage: self
+                .max_storage_buffers_per_shader_stage
+                .saturating_add(self.max_uniform_buffers_per_shader_stage)
+                .saturating_add(self.max_vertex_buffers),
+            max_ray_dispatch_count: 0,
+            max_ray_recursion_depth: 0,
         }
     }
 }

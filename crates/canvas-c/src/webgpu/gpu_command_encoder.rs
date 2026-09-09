@@ -272,8 +272,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_begin_render_pass(
     let desc = wgpu_core::command::RenderPassDescriptor {
         label: label.clone(),
         color_attachments: Cow::Owned(color_attachments),
-        depth_stencil_attachment: depth_stencil_attachment.as_ref(),
-        timestamp_writes: timestamp_writes.as_ref(),
+        depth_stencil_attachment,
+        timestamp_writes,
         occlusion_query_set,
         multiview_mask: None,
     };

@@ -500,7 +500,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_bundle_encoder_finish(
 
     let encoder = encoder.unwrap();
 
-    let encoder = Box::from_raw(encoder);
+    // wgpu 30 takes the encoder by &mut rather than consuming the Box, so the
+    // Box still owns it here and drops at the end of this function as before.
+    let mut encoder = Box::from_raw(encoder);
 
     let desc = if label.is_null() {
         wgt::RenderBundleDescriptor::default()
@@ -510,7 +512,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_bundle_encoder_finish(
         }
     };
 
-    let (render_bundle_id, error) = global.render_bundle_encoder_finish(encoder, &desc, None);
+    let (render_bundle_id, error) =
+        global.render_bundle_encoder_finish(&mut encoder, &desc, None);
 
     if let Some(cause) = error {
         handle_error_fatal(

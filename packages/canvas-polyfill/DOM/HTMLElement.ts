@@ -96,10 +96,26 @@ export class Style {
 			}
 		}
 	}
+
+	setProperty(property: string, value: string): void {
+		this._values.set(property, value);
+	}
+
+	getPropertyValue(property: string): string {
+		const value = this._values.get(property);
+		return value == null ? '' : String(value);
+	}
+
+	removeProperty(property: string): string {
+		const value = this._values.get(property);
+		this._values.delete(property);
+		return value == null ? '' : String(value);
+	}
 }
 
 export class HTMLElement extends Element {
 	private _style: Style;
+	private _dataset: Record<string, string> = {};
 
 	constructor(tagName: string = '') {
 		super(tagName ?? '');
@@ -111,6 +127,10 @@ export class HTMLElement extends Element {
 			return this._nativeElement.style;
 		}
 		return this._style;
+	}
+
+	get dataset(): Record<string, string> {
+		return this._dataset;
 	}
 
 	set nativeElement(value) {

@@ -3129,7 +3129,8 @@ CanvasRenderingContext2DImpl::MeasureText(const v8::FunctionCallbackInfo<v8::Val
     }
 
     const int text_utf8_len = static_cast<int>(js_str->Utf8LengthV2(isolate));
-    if (text_utf8_len == 0) return;
+    // Empty strings still return a TextMetrics instance, as required by Canvas 2D.
+    // Pixi 8 CanvasTextSystem reads .width on empty remainder strings.
 
     auto &scratch = g_tls_scratch;
     const size_t prefix_len = ptr->cached_font_.size() + 1

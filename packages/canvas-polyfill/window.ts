@@ -6,7 +6,7 @@ import { HTMLVideoElement } from './DOM/HTMLVideoElement';
 import { HTMLAudioElement } from './DOM/HTMLAudioElement';
 import { XMLDocument } from './DOM/XMLDocument';
 import { DOMPointReadOnly, DOMPoint } from './DOM/DOMPointReadOnly';
-import { Device, fromObject, View } from '@nativescript/core';
+import { Device, fromObject, Screen, View } from '@nativescript/core';
 import { AbortController, AbortSignal } from '@nativescript/core/abortcontroller';
 import { CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext, ImageData, ImageBitmap } from '@nativescript/canvas';
 import { HTMLCollection } from './DOM/HTMLCollection';
@@ -112,7 +112,7 @@ function _emitOff(eventName: string, listener: Function) {
 
 (global as any).window.scrollTo = (global as any).scrollTo = (global as any).scrollTo || (() => ({}));
 
-if (typeof (global as any).addEventListener === 'undefined' && typeof (global as any).window?.addEventListener === 'undefined') {
+if (typeof (global as any).addEventListener !== 'function' && typeof (global as any).window?.addEventListener !== 'function') {
 	(global as any).window.addEventListener = (global as any).addEventListener = (eventName: string, listener) => {
 		if (typeof listener !== 'function') {
 			return;
@@ -131,10 +131,18 @@ if (typeof (global as any).addEventListener === 'undefined' && typeof (global as
 	};
 }
 
-if (typeof (global as any).removeEventListener === 'undefined' && typeof (global as any).window?.removeEventListener === 'undefined') {
+if (typeof (global as any).removeEventListener !== 'function' && typeof (global as any).window?.removeEventListener !== 'function') {
 	(global as any).window.removeEventListener = (global as any).removeEventListener = (eventName: string, listener) => {
 		_emitOff(eventName, listener);
 	};
+}
+
+// NativeScript can install global listeners before a separate window exists.
+// Fill each missing alias independently; preserve existing implementations.
+for (const method of ['addEventListener', 'removeEventListener']) {
+	const host = global as any;
+	if (typeof host.window[method] !== 'function') host.window[method] = host[method].bind(host);
+	if (typeof host[method] !== 'function') host[method] = host.window[method].bind(host.window);
 }
 
 import { DOMParser as Parser } from '@xmldom/xmldom';
@@ -173,8 +181,16 @@ export class DOMParser {
 	hostname: '', // window.location.hostname returns the domain name of the web host
 	pathname: '', // window.location.pathname returns the path and filename of the current page
 	protocol: 'https', // window.location.protocol returns the web protocol used (http: or https:)
+	search: '',
 	assign: null, // window.location.assign loads a new document
 };
+if (typeof (global as any).window.location.search !== 'string') {
+	try {
+		(global as any).window.location.search = '';
+	} catch {
+		/* native location may be sealed */
+	}
+}
 
 if ((global as any).document) {
 	(global as any).document.readyState = 'complete';
@@ -184,9 +200,43 @@ if ((global as any).document) {
 (global as any).window.onpointerdown = global.onpointerdown = () => {};
 
 (global as any).window.setTimeout = setTimeout;
+(global as any).window.clearTimeout = clearTimeout;
 (global as any).window.setInterval = setInterval;
+(global as any).window.clearInterval = clearInterval;
 (global as any).window.requestAnimationFrame = requestAnimationFrame;
 (global as any).window.cancelAnimationFrame = cancelAnimationFrame;
+const matchMediaStub = (query?: string) => ({
+	matches: false,
+	media: query ?? '',
+	onchange: null,
+	addListener() {},
+	removeListener() {},
+	addEventListener() {},
+	removeEventListener() {},
+	dispatchEvent() {
+		return false;
+	},
+});
+if (typeof (global as any).window.matchMedia !== 'function') (global as any).window.matchMedia = matchMediaStub;
+if (typeof (global as any).matchMedia !== 'function') (global as any).matchMedia = matchMediaStub;
+try {
+	const dpr = Screen.mainScreen.scale || 1;
+	(global as any).window.devicePixelRatio = dpr;
+	if (typeof (global as any).devicePixelRatio === 'undefined') (global as any).devicePixelRatio = dpr;
+} catch {
+	(global as any).window.devicePixelRatio = (global as any).window.devicePixelRatio || 1;
+}
+if ((global as any).window.parent == null) (global as any).window.parent = (global as any).window;
+if ((global as any).document) {
+	const docEl = (global as any).document.documentElement;
+	if (docEl && !docEl.dataset) docEl.dataset = {};
+	if (typeof (global as any).document.hidden === 'undefined') {
+		Object.defineProperty((global as any).document, 'hidden', { get: () => false, configurable: true });
+	}
+	if (typeof (global as any).document.visibilityState === 'undefined') {
+		Object.defineProperty((global as any).document, 'visibilityState', { get: () => 'visible', configurable: true });
+	}
+}
 (global as any).window.getComputedStyle = function (element, pseudoEltOptional) {
 	const obj: any = {};
 	obj.getPropertyValue = function (prop) {

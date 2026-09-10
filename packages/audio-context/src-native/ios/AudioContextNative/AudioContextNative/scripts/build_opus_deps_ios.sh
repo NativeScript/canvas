@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Cross-compile libogg, libopus and libopusfile for iOS (device + simulator)
+# Cross-compile libogg, libopus and libopusfile for iOS, visionOS and tvOS
+# (device + simulator)
 # Produces universal static libraries under third_party/build/universal/lib
 # and headers under third_party/build/universal/include
 
@@ -20,14 +21,20 @@ MIN_IOS_VERSION="${MIN_IOS_VERSION:-11.0}"
 
 # Targets: SDK ARCH HOST_TRIPLE
 MIN_XROS_VERSION="${MIN_XROS_VERSION:-1.0}"
+MIN_TVOS_VERSION="${MIN_TVOS_VERSION:-12.0}"
 
-# Targets: SDK ARCH HOST_TRIPLE. visionOS is Apple-Silicon only (arm64 device + arm64 simulator).
+# Targets: SDK ARCH HOST_TRIPLE. visionOS is Apple-Silicon only (arm64 device +
+# arm64 simulator). tvOS is built arm64-only to match the scope canvas uses in
+# canvas-ios/pre-build.sh -- an x86_64 tvOS simulator slice would also need an
+# x86_64 build of every dep here.
 TARGETS=(
   "iphoneos arm64 arm-apple-darwin"
   "iphonesimulator x86_64 x86_64-apple-darwin"
   "iphonesimulator arm64 arm-apple-darwin"
   "xros arm64 arm-apple-darwin"
   "xrsimulator arm64 arm-apple-darwin"
+  "appletvos arm64 arm-apple-darwin"
+  "appletvsimulator arm64 arm-apple-darwin"
 )
 
 LIBS=(libogg libvorbis libopus libopusfile)
@@ -39,7 +46,9 @@ build_for_target() {
   CC_TOOL=$(xcrun --sdk "$SDK" --find clang)
   export CC="$CC_TOOL -arch $ARCH"
   # set min version flag depending on sdk. visionOS has no -m*-version-min flag and no
-  # bitcode; it uses a target triple (-target <arch>-apple-xros[-simulator]).
+  # bitcode; it uses a target triple (-target <arch>-apple-xros[-simulator]). tvOS is
+  # given the same treatment: the triple spells device vs simulator unambiguously, and
+  # bitcode is gone from current Xcode.
   BITCODE="-fembed-bitcode"
   if [ "$SDK" = "iphoneos" ]; then
     MINFLAG="-miphoneos-version-min=${MIN_IOS_VERSION}"
@@ -50,6 +59,12 @@ build_for_target() {
     BITCODE=""
   elif [ "$SDK" = "xrsimulator" ]; then
     MINFLAG="-target ${ARCH}-apple-xros${MIN_XROS_VERSION}-simulator"
+    BITCODE=""
+  elif [ "$SDK" = "appletvos" ]; then
+    MINFLAG="-target ${ARCH}-apple-tvos${MIN_TVOS_VERSION}"
+    BITCODE=""
+  elif [ "$SDK" = "appletvsimulator" ]; then
+    MINFLAG="-target ${ARCH}-apple-tvos${MIN_TVOS_VERSION}-simulator"
     BITCODE=""
   fi
   export CFLAGS="-isysroot $SYSROOT -arch $ARCH $MINFLAG $BITCODE"
@@ -137,6 +152,30 @@ for t in "${TARGETS[@]}"; do
   build_for_target "$SDK" "$ARCH" "$HOST"
 done
 
+# Every configure/make above is `|| true`, so a dep that fails to build leaves a
+# prefix that looks fine until the framework fails to link -- or, worse, links
+# against a stale archive from an earlier run. Check that each target produced
+# the archives AudioContextNative actually links (see OTHER_LDFLAGS in
+# AudioContextNative.xcodeproj) and say which one is missing.
+REQUIRED_LIBS=(libogg.a libvorbis.a libvorbisfile.a libopus.a libopusfile.a)
+missing_any=0
+for t in "${TARGETS[@]}"; do
+  read -r SDK ARCH HOST <<< "$t"
+  PREFIX="$TP_DIR/build/${SDK}-${ARCH}"
+  for lib in "${REQUIRED_LIBS[@]}"; do
+    if [ ! -f "$PREFIX/lib/$lib" ]; then
+      echo "ERROR: ${SDK}-${ARCH} is missing $lib (see $TP_DIR/build/logs/${SDK}-${ARCH})" >&2
+      missing_any=1
+    fi
+  done
+done
+if [ "$missing_any" -ne 0 ]; then
+  echo "ERROR: third-party build incomplete; not packaging XCFrameworks." >&2
+  echo "Hint: a source tree left over from an earlier run can break its own build" >&2
+  echo "      (libogg's doc/ is one); re-extracting via scripts/fetch_opus_deps.sh clears it." >&2
+  exit 1
+fi
+
 # Create XCFrameworks (preferred) from per-arch libraries. This avoids
 # lipo conflicts when device and simulator slices share the same arch.
 UNIVERSAL_LIB_DIR="$TP_DIR/build/universal"
@@ -188,6 +227,6 @@ else
   echo "Warning: no include dir found to copy to universal include"
 fi
 
-echo "\n=== iOS cross-build complete ==="
+echo "\n=== Apple cross-build complete (iOS, visionOS, tvOS) ==="
 echo "XCFrameworks: $UNIVERSAL_LIB_DIR"
 echo "Universal includes: $UNIVERSAL_INCLUDE_DIR"

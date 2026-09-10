@@ -196,7 +196,7 @@ jobs:
           if-no-files-found: error
 
   audio-context-ios:
-    name: AudioContext iOS + visionOS
+    name: AudioContext iOS + visionOS + tvOS
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4

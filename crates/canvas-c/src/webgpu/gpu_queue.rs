@@ -16,21 +16,11 @@ use canvas_webgl::utils::gl::bytes_per_pixel;
 use std::borrow::Cow;
 use std::os::raw::{c_char, c_void};
 use std::sync::{Arc, Mutex, OnceLock};
-use wgpu_core::id::DeviceId;
 
 #[derive(Debug)]
 pub struct QueueId {
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
-    pub(crate) id: wgpu_core::id::QueueId,
-}
-
-impl Drop for QueueId {
-    fn drop(&mut self) {
-        if !std::thread::panicking() {
-            let global = self.instance.global();
-            global.queue_drop(self.id);
-        }
-    }
+    pub(crate) id: Arc<wgpu_core::device::queue::Queue>,
 }
 
 #[derive(Clone, Debug)]
@@ -450,8 +440,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_context_to_texture(
 
     if let Err(cause) = ret {
         handle_error(
-            global,
-            queue.error_sink.as_ref(),
+queue.error_sink.as_ref(),
             cause,
             "",
             None,
@@ -584,8 +573,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_external_image_to_textu
         let ret = global.queue_write_texture(queue_id, &destination, data, &data_layout, &size);
         if let Err(cause) = ret {
             handle_error(
-                global,
-                queue.error_sink.as_ref(),
+queue.error_sink.as_ref(),
                 cause,
                 "",
                 None,
@@ -634,8 +622,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_external_image_to_textu
 
     if let Err(cause) = ret {
         handle_error(
-            global,
-            queue.error_sink.as_ref(),
+queue.error_sink.as_ref(),
             cause,
             "",
             None,
@@ -716,8 +703,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_gpu_context_to_texture(
                 global.command_encoder_copy_texture_to_texture(encoder, &source, &dest, &size)
             {
                 handle_error(
-                    global,
-                    queue.error_sink.as_ref(),
+queue.error_sink.as_ref(),
                     cause,
                     "",
                     None,
@@ -782,7 +768,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_submit(
         .collect::<Vec<_>>();
 
     if let Err((_, cause)) = global.queue_submit(queue_id, &command_buffer_ids) {
-        handle_error_fatal(global, cause, "canvas_native_webgpu_queue_submit");
+        handle_error_fatal(cause, "canvas_native_webgpu_queue_submit");
     }
 
     for id in command_buffer_ids.into_iter() {
@@ -830,8 +816,7 @@ unsafe fn write_buffer_size(
 
     if let Err(cause) = result {
         handle_error(
-            global,
-            queue.error_sink.as_ref(),
+queue.error_sink.as_ref(),
             cause,
             "",
             None,
@@ -925,8 +910,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_write_texture(
         global.queue_write_texture(queue_id, &destination, data, &data_layout, &size)
     {
         handle_error(
-            global,
-            queue.error_sink.as_ref(),
+queue.error_sink.as_ref(),
             cause,
             "",
             None,

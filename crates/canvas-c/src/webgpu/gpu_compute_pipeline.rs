@@ -11,17 +11,8 @@ use crate::webgpu::prelude::label_to_ptr;
 pub struct CanvasGPUComputePipeline {
     pub(crate) label: Option<Cow<'static, str>>,
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
-    pub(crate) pipeline: wgpu_core::id::ComputePipelineId,
+    pub(crate) pipeline: Arc<wgpu_core::pipeline::ComputePipeline>,
     pub(crate) error_sink: super::gpu_device::ErrorSink,
-}
-
-impl Drop for CanvasGPUComputePipeline {
-    fn drop(&mut self) {
-        if !std::thread::panicking() {
-            let global = self.instance.global();
-            global.compute_pipeline_drop(self.pipeline);
-        }
-    }
 }
 
 #[no_mangle]
@@ -74,20 +65,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pipeline_get_bind_group_la
     let error_sink = pipeline.error_sink.as_ref();
     let (group_layout, error) =  global.compute_pipeline_get_bind_group_layout(pipeline_id, index, None);
 
-
-    if let Some(cause) = error {
-        handle_error(
-            global,
-            error_sink,
-            cause,
-            "",
-            None,
-            "canvas_native_webgpu_compute_pipeline_get_bind_group_layout",
-        );
-    }
-
-
-    Arc::into_raw(Arc::new(CanvasGPUBindGroupLayout {
+Arc::into_raw(Arc::new(CanvasGPUBindGroupLayout {
         label: None,
         instance: pipeline.instance.clone(),
         group_layout,

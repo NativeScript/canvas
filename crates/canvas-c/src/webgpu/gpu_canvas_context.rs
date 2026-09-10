@@ -45,7 +45,7 @@ pub struct ViewData {
 
 #[derive(Copy, Clone, Debug)]
 pub struct ReadBackTexture {
-    pub(crate) texture: wgpu_core::id::TextureId,
+    pub(crate) texture: Arc<wgpu_core::resource::Texture>,
     pub(crate) data: TextureData,
 }
 
@@ -478,7 +478,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create(
             Arc::into_raw(Arc::new(ctx))
         }
         Err(cause) => {
-            handle_error_fatal(global, cause, "canvas_native_webgpu_context_create");
+            handle_error_fatal(cause, "canvas_native_webgpu_context_create");
             std::ptr::null_mut()
         }
     }
@@ -580,9 +580,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize(
                 };
 
                 if let Some(cause) = error {
-                    handle_error_fatal(
-                        global,
-                        cause,
+                    handle_error_fatal(cause,
                         "canvas_native_webgpu_context_resize: create readback texture",
                     );
                 } else {
@@ -595,14 +593,14 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize(
                 if let Some(cause) =
                     global.surface_configure(surface_id, surface_data.device.device, &new_config)
                 {
-                    handle_error_fatal(global, cause, "canvas_native_webgpu_context_resize");
+                    handle_error_fatal(cause, "canvas_native_webgpu_context_resize");
                 } else {
                     surface_data.previous_configuration = new_config;
                 }
             }
         }
         Err(cause) => {
-            handle_error_fatal(global, cause, "canvas_native_webgpu_context_resize");
+            handle_error_fatal(cause, "canvas_native_webgpu_context_resize");
         }
     }
 }
@@ -636,7 +634,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create(
             Arc::into_raw(Arc::new(ctx))
         }
         Err(cause) => {
-            handle_error_fatal(global, cause, "canvas_native_webgpu_context_create");
+            handle_error_fatal(cause, "canvas_native_webgpu_context_create");
             std::ptr::null()
         }
     }
@@ -678,7 +676,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create_uiview(
             Arc::into_raw(Arc::new(ctx))
         }
         Err(cause) => {
-            handle_error_fatal(global, cause, "canvas_native_webgpu_context_create_uiview");
+            handle_error_fatal(cause, "canvas_native_webgpu_context_create_uiview");
             std::ptr::null()
         }
     }
@@ -781,9 +779,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize_uiview(
                 };
 
                 if let Some(cause) = error {
-                    handle_error_fatal(
-                        global,
-                        cause,
+                    handle_error_fatal(cause,
                         "canvas_native_webgpu_context_resize_uiview: create readback texture",
                     );
                 } else {
@@ -796,14 +792,14 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize_uiview(
                 if let Some(cause) =
                     global.surface_configure(surface_id, surface_data.device.device, &new_config)
                 {
-                    handle_error_fatal(global, cause, "canvas_native_webgpu_context_resize_uiview");
+                    handle_error_fatal(cause, "canvas_native_webgpu_context_resize_uiview");
                 } else {
                     surface_data.previous_configuration = new_config;
                 }
             }
         }
         Err(cause) => {
-            handle_error_fatal(global, cause, "canvas_native_webgpu_context_resize_uiview");
+            handle_error_fatal(cause, "canvas_native_webgpu_context_resize_uiview");
         }
     }
 }
@@ -844,7 +840,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create_nsview(
             Arc::into_raw(Arc::new(ctx))
         }
         Err(cause) => {
-            handle_error_fatal(global, cause, "canvas_native_webgpu_context_create");
+            handle_error_fatal(cause, "canvas_native_webgpu_context_create");
             std::ptr::null()
         }
     }
@@ -946,9 +942,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize_nsview(
                 };
 
                 if let Some(cause) = error {
-                    handle_error_fatal(
-                        global,
-                        cause,
+                    handle_error_fatal(cause,
                         "canvas_native_webgpu_context_resize_nsview: create readback texture",
                     );
                 } else {
@@ -961,14 +955,14 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize_nsview(
                 if let Some(cause) =
                     global.surface_configure(surface_id, surface_data.device.device, &new_config)
                 {
-                    handle_error_fatal(global, cause, "canvas_native_webgpu_context_resize_nsview");
+                    handle_error_fatal(cause, "canvas_native_webgpu_context_resize_nsview");
                 } else {
                     surface_data.previous_configuration = new_config;
                 }
             }
         }
         Err(cause) => {
-            handle_error_fatal(global, cause, "canvas_native_webgpu_context_resize_nsview");
+            handle_error_fatal(cause, "canvas_native_webgpu_context_resize_nsview");
         }
     }
 }
@@ -1064,9 +1058,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize_layer(
                 };
 
                 if let Some(cause) = error {
-                    handle_error_fatal(
-                        global,
-                        cause,
+                    handle_error_fatal(cause,
                         "canvas_native_webgpu_context_resize_nsview: create readback texture",
                     );
                 } else {
@@ -1079,14 +1071,14 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize_layer(
                 if let Some(cause) =
                     global.surface_configure(surface_id, surface_data.device.device, &new_config)
                 {
-                    handle_error_fatal(global, cause, "canvas_native_webgpu_context_resize_nsview");
+                    handle_error_fatal(cause, "canvas_native_webgpu_context_resize_nsview");
                 } else {
                     surface_data.previous_configuration = new_config;
                 }
             }
         }
         Err(cause) => {
-            handle_error_fatal(global, cause, "canvas_native_webgpu_context_resize_nsview");
+            handle_error_fatal(cause, "canvas_native_webgpu_context_resize_nsview");
         }
     }
 }
@@ -1286,9 +1278,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_configure(
     };
 
     if let Some(cause) = error {
-        handle_error_fatal(
-            global,
-            cause,
+        handle_error_fatal(cause,
             "canvas_native_webgpu_context_resize: create readback texture",
         );
     } else {
@@ -1299,7 +1289,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_configure(
     }
 
     if let Some(cause) = global.surface_configure(*surface_id, device_id, &config) {
-        handle_error_fatal(global, cause, "canvas_native_webgpu_context_configure");
+        handle_error_fatal(cause, "canvas_native_webgpu_context_configure");
         let mut lock = context.data.lock();
         *lock = None;
     } else {
@@ -1463,9 +1453,7 @@ pub extern "C" fn canvas_native_webgpu_context_get_current_texture(
             ret
         }
         Err(cause) => {
-            handle_error_fatal(
-                global,
-                cause,
+            handle_error_fatal(cause,
                 "canvas_native_webgpu_context_get_current_texture",
             );
             std::ptr::null_mut()
@@ -1570,9 +1558,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_present_surface(
                 log::warn!("present_surface: no acquired texture in wgpu (cache was stale), skipping");
             }
             _ => {
-                handle_error_fatal(
-                    global,
-                    cause,
+                handle_error_fatal(cause,
                     "canvas_native_webgpu_context_present_surface",
                 );
             }
@@ -1617,9 +1603,7 @@ pub extern "C" fn canvas_native_webgpu_context_get_capabilities(
             Box::into_raw(Box::new(cap))
         }
         Err(cause) => {
-            handle_error_fatal(
-                global,
-                cause,
+            handle_error_fatal(cause,
                 "canvas_native_webgpu_context_get_capabilities",
             );
             std::ptr::null_mut()
@@ -1641,9 +1625,7 @@ pub fn canvas_native_webgpu_context_get_capabilities_rust(
     match global.surface_get_capabilities(*surface_id, adapter_id) {
         Ok(capabilities) => Some(capabilities),
         Err(cause) => {
-            handle_error_fatal(
-                global,
-                cause,
+            handle_error_fatal(cause,
                 "canvas_native_webgpu_context_get_capabilities",
             );
             None

@@ -11,18 +11,8 @@ use super::gpu::CanvasWebGPUInstance;
 pub struct CanvasGPUShaderModule {
     pub(crate) label: Option<Cow<'static, str>>,
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
-    pub(crate) module: wgpu_core::id::ShaderModuleId,
+    pub(crate) module: Arc<wgpu_core::pipeline::ShaderModule>,
     pub(crate) compilation_info: CanvasGPUCompilationInfo,
-}
-
-impl Drop for CanvasGPUShaderModule {
-    fn drop(&mut self) {
-        if !std::thread::panicking() {
-            let global = self.instance.global();
-            //todo
-            //  global.shader_module_drop(self.module);
-        }
-    }
 }
 
 #[no_mangle]

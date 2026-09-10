@@ -6,7 +6,6 @@ use std::{
     os::raw::{c_char, c_void},
 };
 use wgpu_core::binding_model::BufferBinding;
-use wgpu_core::id::PipelineLayoutId;
 use wgpu_core::pipeline::{CreateRenderPipelineError, RenderPipelineDescriptor};
 use wgpu_core::resource::CreateBufferError;
 use wgt::{Features, PrimitiveTopology};
@@ -55,6 +54,16 @@ pub enum CanvasGPUErrorFilter {
     Validation,
     /// Catch only internal errors.
     Internal,
+}
+
+impl From<CanvasGPUErrorFilter> for wgt::error::ErrorFilter {
+    fn from(value: CanvasGPUErrorFilter) -> Self {
+        match value {
+            CanvasGPUErrorFilter::OutOfMemory => wgt::error::ErrorFilter::OutOfMemory,
+            CanvasGPUErrorFilter::Validation => wgt::error::ErrorFilter::Validation,
+            CanvasGPUErrorFilter::Internal => wgt::error::ErrorFilter::Internal,
+        }
+    }
 }
 
 pub(crate) type ErrorSink = Arc<parking_lot::Mutex<ErrorSinkRaw>>;
@@ -231,7 +240,7 @@ impl ErrorSinkRaw {
 pub struct CanvasGPUDevice {
     pub(crate) label: Option<Cow<'static, str>>,
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
-    pub(crate) device: wgpu_core::id::DeviceId,
+    pub(crate) device: Arc<wgpu_core::device::Device>,
     pub(crate) queue: Arc<CanvasGPUQueue>,
     pub(crate) user_data: *mut c_void,
     pub(crate) error_sink: ErrorSink,
@@ -244,14 +253,11 @@ unsafe impl Send for CanvasGPUDevice {}
 impl Drop for CanvasGPUDevice {
     fn drop(&mut self) {
         if !std::thread::panicking() {
-            let context = self.instance.global();
-
-            match context.device_poll(self.device, wgt::PollType::wait_indefinitely()) {
-                Ok(_) => (),
-                Err(err) => handle_error_fatal(context, err, "CanvasGPUDevice::drop"),
+            // Still drain the device before releasing it; the release itself is
+            // now the Arc going out of scope with this struct.
+            if let Err(err) = self.device.poll(wgt::PollType::wait_indefinitely()) {
+                log::error!("CanvasGPUDevice::drop: {err:?}");
             }
-
-            context.device_drop(self.device);
         }
     }
 }
@@ -261,15 +267,11 @@ impl CanvasGPUDevice {
         self.label.clone()
     }
     pub fn features(&self) -> Features {
-        let device_id = self.device;
-        let global = self.instance.global();
-        global.device_features(device_id)
+        self.device.features()
     }
 
     pub fn destroy(&self) {
-        let device_id = self.device;
-        let global = self.instance.global();
-        global.device_destroy(device_id);
+        self.device.destroy();
     }
 
     pub fn create_bind_group(
@@ -278,7 +280,6 @@ impl CanvasGPUDevice {
         layout: &CanvasGPUBindGroupLayout,
         entries: &[CanvasBindGroupEntry],
     ) -> *const CanvasGPUBindGroup {
-        let global = self.instance.global();
         let layout_id = layout.group_layout;
         let entries = entries
             .iter()
@@ -313,20 +314,8 @@ impl CanvasGPUDevice {
             layout: layout_id,
             entries: Cow::from(entries),
         };
-        let device_id = self.device;
-        let (group, error) = global.device_create_bind_group(device_id, &desc, None);
+        let group = self.device.create_bind_group(&desc);
 
-        let error_sink = self.error_sink.as_ref();
-        if let Some(cause) = error {
-            handle_error(
-                global,
-                error_sink,
-                cause,
-                "label",
-                desc.label,
-                "canvas_native_webgpu_device_create_bind_group",
-            );
-        };
 
         Arc::into_raw(Arc::new(CanvasGPUBindGroup {
             label,
@@ -340,7 +329,6 @@ impl CanvasGPUDevice {
         label: Option<Cow<'static, str>>,
         entries: &[CanvasBindGroupLayoutEntry],
     ) -> *const CanvasGPUBindGroupLayout {
-        let global = self.instance.global();
         let wgpu_entries = entries
             .iter()
             .map(|entry| (*entry).into())
@@ -350,24 +338,8 @@ impl CanvasGPUDevice {
             label: label.clone(),
             entries: Cow::from(wgpu_entries),
         };
-
-        let device_id = self.device;
-        let (group_layout_id, error) =
-            global.device_create_bind_group_layout(device_id, &desc, None);
-
-        let error_sink = self.error_sink.as_ref();
-        if let Some(cause) = error {
-            handle_error(
-                global,
-                error_sink,
-                cause,
-                "label",
-                desc.label,
-                "canvas_native_webgpu_device_create_bind_group_layout",
-            );
-        }
-
-        Arc::into_raw(Arc::new(CanvasGPUBindGroupLayout {
+        let group_layout_id = self.device.create_bind_group_layout(&desc);
+Arc::into_raw(Arc::new(CanvasGPUBindGroupLayout {
             label,
             instance: self.instance.clone(),
             group_layout: group_layout_id,
@@ -382,7 +354,6 @@ impl CanvasGPUDevice {
         mapped_at_creation: bool,
     ) -> *const CanvasGPUBuffer {
         let label = ptr_into_label(label);
-        let global = self.instance.global();
 
         match wgt::BufferUsages::from_bits(usage) {
             Some(usage) => {
@@ -393,23 +364,8 @@ impl CanvasGPUDevice {
                     mapped_at_creation,
                 };
 
-                let device_id = self.device;
-
-                let (buffer, err) = global.device_create_buffer(device_id, &desc, None);
-
-                let error_sink = self.error_sink.as_ref();
-                if let Some(cause) = err {
-                    handle_error(
-                        global,
-                        error_sink,
-                        cause,
-                        "label",
-                        desc.label,
-                        "canvas_native_webgpu_device_create_buffer",
-                    );
-                }
-
-                Arc::into_raw(Arc::new(CanvasGPUBuffer {
+                let buffer = self.device.create_buffer(&desc);
+Arc::into_raw(Arc::new(CanvasGPUBuffer {
                     instance: self.instance.clone(),
                     label,
                     buffer,
@@ -423,8 +379,7 @@ impl CanvasGPUDevice {
                     CreateBufferError::InvalidUsage(wgt::BufferUsages::from_bits_truncate(usage));
 
                 handle_error(
-                    global,
-                    self.error_sink.as_ref(),
+self.error_sink.as_ref(),
                     err,
                     "label",
                     label,
@@ -473,9 +428,7 @@ pub extern "C" fn canvas_native_webgpu_device_get_limits(
         return Box::into_raw(Box::new(wgt::Limits::default().into()));
     }
     let device = unsafe { &*device };
-    let device_id = device.device;
-    let global = device.instance.global();
-    let limits = global.device_limits(device_id);
+    let limits = device.device.limits();
 
     let limits: CanvasGPUSupportedLimits = limits.into();
     Box::into_raw(Box::new(limits))
@@ -538,43 +491,33 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_pop_error_scope(
     userdata: *mut ::std::os::raw::c_void,
 ) {
     let device = &*device;
-    let callback = callback;
-    let mut error_sink = device.error_sink.lock();
-    let scope = match error_sink.scopes.pop() {
-        Some(s) => s,
-        None => {
-            if let Some(cb) = callback {
-                cb(CanvasGPUErrorType::None, std::ptr::null_mut(), userdata);
-            }
-            return;
+
+    let report = |typ: CanvasGPUErrorType, msg: *mut c_char| {
+        if let Some(callback) = callback {
+            callback(typ, msg, userdata);
         }
     };
 
-    match scope.error {
+    // An empty stack is a JS-visible OperationError; wgpu signals it as Err.
+    let popped = match device.device.pop_error_scope() {
+        Ok(scope) => scope,
+        Err(_) => return report(CanvasGPUErrorType::None, std::ptr::null_mut()),
+    };
+
+    match popped {
         Some(error) => {
             let typ = match error {
-                CanvasGPUError::OutOfMemory { .. } => CanvasGPUErrorType::OutOfMemory,
-                CanvasGPUError::Validation { .. } => CanvasGPUErrorType::Validation,
-                CanvasGPUError::Lost { .. } => unreachable!(),
-                CanvasGPUError::None => CanvasGPUErrorType::None,
-                CanvasGPUError::Internal => CanvasGPUErrorType::Internal,
+                wgt::error::Error::OutOfMemory { .. } => CanvasGPUErrorType::OutOfMemory,
+                wgt::error::Error::Validation { .. } => CanvasGPUErrorType::Validation,
+                _ => CanvasGPUErrorType::Internal,
             };
-
-            let msg = CString::new(error.to_string()).unwrap();
-            unsafe {
-                if let Some(callback) = callback {
-                    callback(typ, msg.into_raw(), userdata);
-                }
-            };
+            let msg = error.to_string().replace('\0', "<NUL>");
+            let msg = CString::new(msg)
+                .unwrap_or_else(|_| CString::new("webgpu error").unwrap());
+            report(typ, msg.into_raw());
         }
-        None => {
-            unsafe {
-                if let Some(callback) = callback {
-                    callback(CanvasGPUErrorType::None, std::ptr::null_mut(), userdata);
-                }
-            };
-        }
-    };
+        None => report(CanvasGPUErrorType::None, std::ptr::null_mut()),
+    }
 }
 
 #[no_mangle]
@@ -583,11 +526,10 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_push_error_scope(
     filter: CanvasGPUErrorFilter,
 ) {
     let device = &*device;
-    let mut error_sink = device.error_sink.lock();
-    error_sink.scopes.push(ErrorScope {
-        error: None,
-        filter,
-    });
+    // wgpu-core owns the WebGPU error-scope stack now, and every infallible
+    // create_* reports into it, so this delegates rather than keeping a second
+    // stack that those calls would never reach.
+    device.device.push_error_scope(filter.into());
 }
 
 #[no_mangle]
@@ -597,8 +539,26 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_set_uncaptured_error_callba
     userdata: *mut std::os::raw::c_void,
 ) {
     let device = &*device;
-    let mut error_sink = device.error_sink.lock();
-    error_sink.uncaptured_handler = UncapturedErrorCallback { callback, userdata };
+
+    // Keep our copy so the C API still reports what is registered, but the
+    // handler wgpu actually calls is the one installed below.
+    {
+        let mut error_sink = device.error_sink.lock();
+        error_sink.uncaptured_handler = UncapturedErrorCallback { callback, userdata };
+    }
+
+    let userdata = userdata as usize;
+    device.device.on_uncaptured_error(Arc::new(move |error: wgt::error::Error| {
+        let Some(callback) = callback else { return };
+        let typ = match error {
+            wgt::error::Error::OutOfMemory { .. } => CanvasGPUErrorType::OutOfMemory,
+            wgt::error::Error::Validation { .. } => CanvasGPUErrorType::Validation,
+            _ => CanvasGPUErrorType::Internal,
+        };
+        let msg = error.to_string().replace('\0', "<NUL>");
+        let msg = CString::new(msg).unwrap_or_else(|_| CString::new("webgpu error").unwrap());
+        unsafe { callback(typ, msg.into_raw(), userdata as *mut c_void) };
+    }));
 }
 
 #[no_mangle]
@@ -685,24 +645,9 @@ pub extern "C" fn canvas_native_webgpu_device_create_command_encoder(
     let desc = wgt::CommandEncoderDescriptor {
         label: label.clone(),
     };
-
-    let device_id = device.device;
     let global = &device.instance.global();
 
-    let (encoder, error) = global.device_create_command_encoder(device_id, &desc, None);
-    let error_sink = device.error_sink.as_ref();
-    if let Some(cause) = error {
-        handle_error(
-            global,
-            error_sink,
-            cause,
-            "label",
-            desc.label,
-            "canvas_native_webgpu_device_create_command_encoder",
-        );
-    }
-
-    let encoder = CanvasGPUCommandEncoder {
+    let encoder = device.device.create_command_encoder(&desc);let encoder = CanvasGPUCommandEncoder {
         label,
         instance: device.instance.clone(),
         encoder,
@@ -777,11 +722,8 @@ unsafe fn create_compute_pipeline(
     assert!(!device.is_null());
 
     let device = &*device;
-    let device_id = device.device;
 
-    let global = device.instance.global();
-
-    let (pipeline, error) = global.device_create_compute_pipeline(device_id, &descriptor, None);
+    let pipeline = device.device.create_compute_pipeline(&descriptor);
 
     let pipeline = CanvasGPUComputePipeline {
         label: descriptor.label.map(|label| Cow::Owned(label.into_owned())),
@@ -842,8 +784,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_compute_pipeline(
         }
 
         handle_error(
-            global,
-            error_sink,
+error_sink,
             cause,
             "label",
             label,
@@ -962,10 +903,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_pipeline_layout(
 
     let device = &*device;
 
-    let global = device.instance.global();
-
-    let device_id = device.device;
-
     let group_layouts = std::slice::from_raw_parts(group_layouts, size);
 
     let group_layouts = group_layouts
@@ -986,21 +923,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_pipeline_layout(
         immediate_size: Default::default(),
     };
 
-    let (pipeline_layout, error) = global.device_create_pipeline_layout(device_id, &desc, None);
-
-    let error_sink = device.error_sink.as_ref();
-    if let Some(cause) = error {
-        handle_error(
-            global,
-            error_sink,
-            cause,
-            "label",
-            desc.label.clone(),
-            "canvas_native_webgpu_device_create_pipeline_layout",
-        );
-    }
-
-    Arc::into_raw(Arc::new(CanvasGPUPipelineLayout {
+    let pipeline_layout = device.device.create_pipeline_layout(&desc);
+Arc::into_raw(Arc::new(CanvasGPUPipelineLayout {
         label: desc.label,
         instance: device.instance.clone(),
         layout: pipeline_layout,
@@ -1021,31 +945,14 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_query_set(
 
     let device = &*device;
 
-    let global = device.instance.global();
-
-    let device_id = device.device;
-
     let desc = wgt::QuerySetDescriptor {
         label: label.clone(),
         ty: type_.into(),
         count,
     };
 
-    let (query, error) = global.device_create_query_set(device_id, &desc, None);
-
-    let error_sink = device.error_sink.as_ref();
-    if let Some(cause) = error {
-        handle_error(
-            global,
-            error_sink,
-            cause,
-            "label",
-            desc.label,
-            "canvas_native_webgpu_device_create_query_set",
-        );
-    }
-
-    Arc::into_raw(Arc::new(CanvasGPUQuerySet {
+    let query = device.device.create_query_set(&desc);
+Arc::into_raw(Arc::new(CanvasGPUQuerySet {
         instance: device.instance.clone(),
         query,
         count,
@@ -1080,10 +987,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_bundle_encode
 
     let device = &*device;
 
-    let global = device.instance.global();
-
-    let device_id = device.device;
-
     let depth_stencil = match descriptor.depth_stencil_format {
         CanvasOptionalGPUTextureFormat::None => None,
         CanvasOptionalGPUTextureFormat::Some(format) => Some(wgt::RenderBundleDepthStencil {
@@ -1114,7 +1017,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_bundle_encode
         multiview: None,
     };
 
-    let (bundle, error) = global.device_create_render_bundle_encoder(device_id, &desc);
+    let bundle = device.device.create_render_bundle_encoder(&desc);
 
     let encoder = Box::into_raw(Box::new(Some(Box::into_raw(bundle))));
 
@@ -1125,9 +1028,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_bundle_encode
             encoder,
         })),
         Some(cause) => {
-            handle_error_fatal(
-                global,
-                cause,
+            handle_error_fatal(cause,
                 "canvas_native_webgpu_device_create_render_bundle_encoder",
             );
             Arc::into_raw(Arc::new(CanvasGPURenderBundleEncoder {
@@ -1159,11 +1060,9 @@ pub extern "C" fn canvas_native_webgpu_device_create_shader_module(
         label,
         runtime_checks: Default::default(),
     };
-
-    let device_id = device.device;
     let global = &device.instance.global();
 
-    let (module, error) = global.device_create_shader_module(device_id, &desc, source, None);
+    let module = device.device.create_shader_module(&desc, source);
 
     let messages = error.iter();
     let mut msgs: Vec<crate::webgpu::gpu_shader_module::CanvasGPUCompilationMessage> =
@@ -1171,19 +1070,7 @@ pub extern "C" fn canvas_native_webgpu_device_create_shader_module(
     for (_, message) in messages.enumerate() {
         let info = crate::webgpu::gpu_shader_module::CanvasGPUCompilationMessage::new(message, src);
         msgs.push(info);
-    }
-    if let Some(cause) = error {
-        handle_error(
-            global,
-            device.error_sink.as_ref(),
-            cause,
-            "label",
-            desc.label.clone(),
-            "canvas_native_webgpu_device_create_shader_module",
-        );
-    }
-
-    let shader = CanvasGPUShaderModule {
+    }let shader = CanvasGPUShaderModule {
         label: desc.label,
         module,
         instance: device.instance.clone(),
@@ -1399,7 +1286,7 @@ unsafe fn parse_render_pipeline_descriptor<'a>(
                 None
             } else {
                 let value = &*value;
-                Some(value.layout)
+                Some(Arc::clone(&value.layout))
             }
         }
         CanvasGPUPipelineLayoutOrGPUAutoLayoutMode::Auto(CanvasGPUAutoLayoutMode::Auto) => None,
@@ -1409,12 +1296,12 @@ unsafe fn parse_render_pipeline_descriptor<'a>(
 
     let vertex_shader_module = &*vertex.module;
 
-    let vertex_shader_module_id = vertex_shader_module.module;
+    let vertex_shader_module_id = Arc::clone(&vertex_shader_module.module);
 
     let fragment = if !descriptor.fragment.is_null() {
         let frag = &*descriptor.fragment;
         let module = &*frag.module;
-        let module_id = module.module;
+        let module_id = Arc::clone(&module.module);
 
         let entry_point = if frag.entry_point.is_null() {
             None
@@ -1542,8 +1429,7 @@ unsafe fn create_render_pipeline(
     wgpu_core::id::RenderPipelineId,
     Option<CreateRenderPipelineError>,
 ) {
-    let global = global.global();
-    global.device_create_render_pipeline(device_id, &descriptor, None)
+    device.device.create_render_pipeline(&descriptor, None)
 }
 
 #[no_mangle]
@@ -1562,7 +1448,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_pipeline(
         create_render_pipeline(device.instance.clone(), device.device, descriptor);
 
     let error_sink = device.error_sink.as_ref();
-    let global = device.instance.global();
 
     if let Some(cause) = error {
         // println!("Can not create render pipeline: {:?}\n", cause);
@@ -1591,8 +1476,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_pipeline(
             println!("Please report it to https://github.com/gfx-rs/wgpu");
         }
         handle_error(
-            global,
-            error_sink,
+error_sink,
             cause,
             "label",
             label.clone(),
@@ -1635,7 +1519,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_pipeline_asyn
     let callback_data = callback_data as i64;
     let descriptor = parse_render_pipeline_descriptor(descriptor);
     let device = &*device;
-    let device_id = device.device;
     let instance = Arc::clone(&device.instance);
     let error_sink = Arc::clone(&device.error_sink);
     let label = descriptor
@@ -1722,9 +1605,6 @@ pub extern "C" fn canvas_native_webgpu_device_create_texture(
 
     let device = unsafe { &*device };
     let descriptor = unsafe { &*descriptor };
-    let device_id = device.device;
-
-    let global = device.instance.global();
 
     let label = ptr_into_label(descriptor.label);
 
@@ -1755,20 +1635,8 @@ pub extern "C" fn canvas_native_webgpu_device_create_texture(
         view_formats,
     };
 
-    let (texture_id, err) = global.device_create_texture(device_id, &desc, None);
-
-    if let Some(cause) = err {
-        handle_error(
-            global,
-            device.error_sink.as_ref(),
-            cause,
-            "",
-            desc.label.clone(),
-            "canvas_native_webgpu_device_create_texture",
-        );
-    }
-
-    Arc::into_raw(Arc::new(CanvasGPUTexture {
+    let texture_id = device.device.create_texture(&desc);
+Arc::into_raw(Arc::new(CanvasGPUTexture {
         label: desc.label,
         instance: device.instance.clone(),
         texture: texture_id,
@@ -1814,9 +1682,6 @@ pub extern "C" fn canvas_native_webgpu_device_create_sampler(
     }
 
     let device = unsafe { &*device };
-    let device_id = device.device;
-
-    let global = device.instance.global();
 
     let mut label: wgpu_core::Label = None;
 
@@ -1863,21 +1728,8 @@ pub extern "C" fn canvas_native_webgpu_device_create_sampler(
         }
     };
 
-    let (sampler_id, error) = global.device_create_sampler(device_id, &desc, None);
-
-    let error_sink = device.error_sink.as_ref();
-    if let Some(cause) = error {
-        handle_error(
-            global,
-            error_sink,
-            cause,
-            "label",
-            desc.label,
-            "canvas_native_webgpu_device_create_sampler",
-        );
-    }
-
-    Arc::into_raw(Arc::new(CanvasGPUSampler {
+    let sampler_id = device.device.create_sampler(&desc);
+Arc::into_raw(Arc::new(CanvasGPUSampler {
         instance: device.instance.clone(),
         sampler: sampler_id,
         label,

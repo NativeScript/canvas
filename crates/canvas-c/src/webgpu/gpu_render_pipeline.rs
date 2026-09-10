@@ -11,17 +11,8 @@ use super::{gpu::CanvasWebGPUInstance, gpu_bind_group_layout::CanvasGPUBindGroup
 pub struct CanvasGPURenderPipeline {
     pub(crate) label: Option<Cow<'static, str>>,
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
-    pub(crate) pipeline: wgpu_core::id::RenderPipelineId,
+    pub(crate) pipeline: Arc<wgpu_core::pipeline::RenderPipeline>,
     pub(crate) error_sink: super::gpu_device::ErrorSink,
-}
-
-impl Drop for CanvasGPURenderPipeline {
-    fn drop(&mut self) {
-        if !std::thread::panicking() {
-            let global = self.instance.global();
-            global.render_pipeline_drop(self.pipeline);
-        }
-    }
 }
 
 #[no_mangle]
@@ -71,19 +62,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pipeline_get_bind_group_lay
     let global = pipeline.instance.global();
 
     let (group_layout, error) = global.render_pipeline_get_bind_group_layout(pipeline_id, index, None);
-
-    if let Some(cause) = error {
-        handle_error(
-            global,
-            pipeline.error_sink.as_ref(),
-            cause,
-            "",
-            None,
-            "canvas_native_webgpu_render_pipeline_get_bind_group_layout",
-        );
-    }
-
-    Arc::into_raw(Arc::new(CanvasGPUBindGroupLayout {
+Arc::into_raw(Arc::new(CanvasGPUBindGroupLayout {
         label: None,
         instance: pipeline.instance.clone(),
         group_layout,

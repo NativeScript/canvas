@@ -19,7 +19,7 @@ fn poll_mappings(instance: Arc<CanvasWebGPUInstance>) {
         let (sender, receiver) = mpsc::channel::<Arc<CanvasWebGPUInstance>>();
         std::thread::spawn(move || {
             for instance in receiver {
-                if let Err(error) = instance.global().poll_all_devices(true) {
+                if let Err(error) = instance.instance().poll_all_devices(true) {
                     log::error!("WebGPU mapping poll failed: {error}");
                 }
             }
@@ -58,19 +58,10 @@ impl From<wgpu_core::device::HostMap> for GPUMapMode {
 pub struct CanvasGPUBuffer {
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
     pub(crate) label: Option<Cow<'static, str>>,
-    pub(crate) buffer: wgpu_core::id::BufferId,
+    pub(crate) buffer: Arc<wgpu_core::resource::Buffer>,
     pub(crate) size: u64,
     pub(crate) usage: u32,
     pub(crate) error_sink: super::gpu_device::ErrorSink,
-}
-
-impl Drop for CanvasGPUBuffer {
-    fn drop(&mut self) {
-        if !std::thread::panicking() {
-            let global = self.instance.global();
-            global.buffer_drop(self.buffer);
-        }
-    }
 }
 
 impl CanvasGPUBuffer {
@@ -86,15 +77,11 @@ impl CanvasGPUBuffer {
     }
 
     pub fn destroy(&self) {
-        let buffer_id = self.buffer;
-        let global = self.instance.global();
-        let _ = global.buffer_destroy(buffer_id);
+        self.buffer.destroy();
     }
 
     pub fn unmap(&self) {
-        let buffer_id = self.buffer;
-        let global = self.instance.global();
-        let _ = global.buffer_unmap(buffer_id);
+        self.buffer.unmap();
     }
 }
 
@@ -158,15 +145,12 @@ pub unsafe extern "C" fn canvas_native_webgpu_buffer_get_mapped_range(
     let offset: u64 = offset.try_into().ok().unwrap_or_default();
     let size: Option<u64> = size.try_into().ok();
 
-    let buffer_id = buffer.buffer;
-    let global = buffer.instance.global();
-
-    let range = global.buffer_get_mapped_range(buffer_id, offset, size);
+    let range = buffer.buffer.get_mapped_range(offset, size);
 
     match range {
         Ok((buf, _)) => buf.as_ptr() as *mut c_void,
         Err(err) => {
-            handle_error_fatal(global, err, "canvas_native_webgpu_buffer_get_mapped_range");
+            handle_error_fatal(err, "canvas_native_webgpu_buffer_get_mapped_range");
             std::ptr::null_mut()
         }
     }
@@ -184,15 +168,12 @@ pub unsafe fn canvas_native_webgpu_buffer_get_mapped_range_size(
     let offset: u64 = offset.try_into().ok().unwrap_or_default();
     let size: Option<u64> = size.try_into().ok();
 
-    let buffer_id = buffer.buffer;
-    let global = buffer.instance.global();
-
-    let range = global.buffer_get_mapped_range(buffer_id, offset, size);
+    let range = buffer.buffer.get_mapped_range(offset, size);
 
     match range {
         Ok((buf, size)) => (buf.as_ptr() as *mut c_void, size),
         Err(err) => {
-            handle_error_fatal(global, err, "canvas_native_webgpu_buffer_get_mapped_range");
+            handle_error_fatal(err, "canvas_native_webgpu_buffer_get_mapped_range");
             (std::ptr::null_mut(), 0)
         }
     }
@@ -275,10 +256,7 @@ pub extern "C" fn canvas_native_webgpu_buffer_map_async(
         ),
     };
 
-    let global = buffer.instance.global();
-    let buffer_id = buffer.buffer;
-
-    if global.buffer_map_async(buffer_id, offset, size, op).is_ok() {
+    if buffer.buffer.map_async(offset, size, op).is_some() {
         poll_mappings(Arc::clone(&buffer.instance));
     }
 }

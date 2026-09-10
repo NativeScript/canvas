@@ -14,20 +14,11 @@ use super::{
 
 pub struct CanvasGPUAdapter {
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
-    pub(crate) adapter: wgpu_core::id::AdapterId,
+    pub(crate) adapter: Arc<wgpu_core::instance::Adapter>,
     pub(crate) is_fallback_adapter: bool,
     pub(crate) feature_level: wgt::FeatureLevel,
     pub(crate) features: Vec<&'static str>,
     pub(crate) limits: wgt::Limits,
-}
-
-impl Drop for CanvasGPUAdapter {
-    fn drop(&mut self) {
-        if !std::thread::panicking() {
-            let global = self.instance.global();
-            global.adapter_drop(self.adapter);
-        }
-    }
 }
 
 #[no_mangle]
@@ -91,10 +82,7 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_adapter_info(
     }
     let adapter = unsafe { &*adapter };
 
-    let adapter_id = adapter.adapter;
-    let global = adapter.instance.global();
-
-    let info = global.adapter_get_info(adapter_id);
+    let info = adapter.adapter.get_info();
 
     Arc::into_raw(Arc::new(CanvasGPUAdapterInfo::new(info)))
 }
@@ -126,8 +114,7 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
     let label = ptr_into_label(label);
 
     {
-        let global = adapter.instance.global();
-        let adapter_features = global.adapter_features(adapter.adapter);
+        let adapter_features = adapter.adapter.features();
         if !adapter_features.contains(features) {
             let missing = features.difference(adapter_features);
             let err = format!("Adapter does not support required features: {missing:?}");
@@ -142,7 +129,7 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
 
     let callback = callback as i64;
     let callback_data = callback_data as i64;
-    let adapter_id = adapter.adapter;
+    let adapter_inner = Arc::clone(&adapter.adapter);
     let feature_level = adapter.feature_level;
     let instance = Arc::clone(&adapter.instance);
     std::thread::spawn(move || {
@@ -155,9 +142,6 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
             experimental_features: Default::default(),
         };
 
-
-        let global = instance.global();
-
         let callback = unsafe {
             std::mem::transmute::<*const i64, fn(*mut c_char, *const CanvasGPUDevice, *mut c_void)>(
                 callback as _,
@@ -165,12 +149,7 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
         };
         let callback_data = callback_data as *mut c_void;
 
-        match global.adapter_request_device(
-            adapter_id,
-            &descriptor,
-            None,
-            None,
-        ) {
+        match adapter_inner.request_device(&descriptor) {
             Ok((device, queue)) => {
                 let error_sink = Arc::new(parking_lot::Mutex::new(ErrorSinkRaw::new(
                     DEFAULT_DEVICE_LOST_HANDLER,
@@ -178,7 +157,7 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
 
                 let queue = Arc::new(CanvasGPUQueue {
                     label: descriptor.label,
-                    device_id: device,
+                    device_id: Arc::clone(&device),
                     queue: Arc::new(QueueId {
                         id: queue,
                         instance: Arc::clone(&instance),

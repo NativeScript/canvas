@@ -21,8 +21,8 @@ use super::{
 pub struct CanvasGPUTexture {
     pub(crate) label: Option<Cow<'static, str>>,
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
-    pub(crate) texture: wgpu_core::id::TextureId,
-    pub(crate) surface_id: Option<wgpu_core::id::SurfaceId>,
+    pub(crate) texture: Arc<wgpu_core::resource::Texture>,
+    pub(crate) surface_id: Option<Arc<wgpu_core::instance::Surface>>,
     pub(crate) owned: bool,
     pub(crate) depth_or_array_layers: u32,
     pub(crate) dimension: CanvasTextureDimension,
@@ -43,28 +43,18 @@ impl Drop for CanvasGPUTexture {
         if std::thread::panicking() {
             return;
         }
-        match self.surface_id {
-            Some(surface_id) => {
-                let global = self.instance.global();
-                let has_surface_presented = self
-                    .has_surface_presented
-                    .load(std::sync::atomic::Ordering::SeqCst);
+        // Releasing the texture itself is the Arc going out of scope with this
+        // struct. What still has to happen by hand is handing an acquired but
+        // never presented swapchain image back to the surface.
+        if let Some(surface) = self.surface_id.take() {
+            let has_surface_presented = self
+                .has_surface_presented
+                .load(std::sync::atomic::Ordering::SeqCst);
 
-                // acquired but never presented: hand the image back to the swapchain
-                if !has_surface_presented {
-                    if let Err(cause) = global.surface_texture_discard(surface_id) {
-                        log::warn!("surface_texture_discard failed: {cause:?}");
-                    }
+            if !has_surface_presented {
+                if let Err(cause) = surface.discard() {
+                    log::warn!("surface discard failed: {cause:?}");
                 }
-
-                // drop the hub ref so the surface texture and its clear_view are freed
-                global.texture_drop(self.texture);
-                self.surface_id = None;
-            }
-            None => {
-                let context = self.instance.global();
-                context.texture_drop(self.texture);
-                self.surface_id = None;
             }
         }
     }
@@ -159,19 +149,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_texture_create_texture_view(
     let (texture_view, error) = global.texture_create_view(texture_id, &desc, None);
 
     let error_sink = texture.error_sink.as_ref();
-
-    if let Some(cause) = error {
-        handle_error(
-            global,
-            error_sink,
-            cause,
-            "",
-            None,
-            "canvas_native_webgpu_texture_create_texture_view",
-        );
-    }
-
-    Arc::into_raw(Arc::new(CanvasGPUTextureView {
+Arc::into_raw(Arc::new(CanvasGPUTextureView {
         label: desc.label,
         instance: texture.instance.clone(),
         texture_view,

@@ -176,7 +176,7 @@ pub unsafe fn render_webgpu_three_cube(data: *mut Data, window: AppKitWindowHand
     }
 
     let config = CanvasGPUSurfaceConfiguration {
-        alphaMode: CanvasGPUSurfaceAlphaMode::PostMultiplied,
+        alphaMode: CanvasGPUSurfaceAlphaMode::PreMultiplied,
         usage: CanvasGPUTextureUsageRenderAttachment | CanvasGPUTextureUsageCopySrc | CanvasGPUTextureUsageCopyDst,
         presentMode: CanvasGPUPresentMode::Fifo,
         view_formats: ptr::null(),

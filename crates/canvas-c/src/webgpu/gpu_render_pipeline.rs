@@ -59,8 +59,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pipeline_get_bind_group_lay
     let pipeline = &*pipeline;
     let pipeline_id = pipeline.pipeline;
 
-    let global = pipeline.instance.global();
-
     let (group_layout, error) = global.render_pipeline_get_bind_group_layout(pipeline_id, index, None);
 Arc::into_raw(Arc::new(CanvasGPUBindGroupLayout {
         label: None,

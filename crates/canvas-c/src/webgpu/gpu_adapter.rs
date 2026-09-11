@@ -138,6 +138,7 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
             required_features: features,
             required_limits: limits,
             memory_hints: Default::default(),
+            default_queue: wgt::QueueDescriptor { label: None },
             trace: Default::default(),
             experimental_features: Default::default(),
         };

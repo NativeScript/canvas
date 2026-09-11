@@ -130,6 +130,53 @@ impl CanvasGPUCompilationMessage {
         self.length
     }
 
+    /// wgpu-core now attaches compilation messages to the module itself
+    /// (`ShaderModule::compilation_info`) rather than handing back an error, so
+    /// this builds our message from one of those. `SourceLocation` counts UTF-8
+    /// bytes; GPUCompilationMessage is specified in UTF-16 code units, so the
+    /// offsets are converted here exactly as the error-based path did.
+    pub fn from_compilation_message(
+        message: &wgt::CompilationMessage,
+        source: &str,
+    ) -> Self {
+        let text = message.message.replace('\0', "<NUL>");
+        let text = Arc::new(
+            CString::new(text).unwrap_or_else(|_| CString::new("shader compilation message").unwrap()),
+        );
+
+        let r#type = match message.message_type {
+            wgt::CompilationMessageType::Error => CanvasGPUCompilationMessageType::Error,
+            wgt::CompilationMessageType::Warning => CanvasGPUCompilationMessageType::Warning,
+            wgt::CompilationMessageType::Info => CanvasGPUCompilationMessageType::Info,
+        };
+
+        match message.location {
+            Some(loc) => {
+                let len_utf16 = |s: &str| s.chars().map(|c| c.len_utf16() as u64).sum();
+                let start = (loc.offset as usize).min(source.len());
+                let end = (start + loc.length as usize).min(source.len());
+                let line_start = source[0..start].rfind('\n').map(|pos| pos + 1).unwrap_or(0);
+
+                Self {
+                    message: text,
+                    r#type,
+                    line_num: loc.line_number.into(),
+                    line_pos: len_utf16(&source[line_start..start]) + 1,
+                    offset: len_utf16(&source[0..start]),
+                    length: len_utf16(&source[start..end]),
+                }
+            }
+            None => Self {
+                message: text,
+                r#type,
+                line_num: 0,
+                line_pos: 0,
+                offset: 0,
+                length: 0,
+            },
+        }
+    }
+
     pub fn new(error: &wgpu_core::pipeline::CreateShaderModuleError, source: &str) -> Self {
         let message = Arc::new(CString::new(error.to_string()).unwrap());
 

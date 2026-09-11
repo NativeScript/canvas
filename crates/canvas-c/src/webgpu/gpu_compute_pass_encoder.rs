@@ -205,7 +205,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_set_bind_grou
             None
         }else {
             let bind_group = &*bind_group;
-            let bind_group_id = bind_group.group;
+            let bind_group_id = Arc::clone(&bind_group.group);
             Some(bind_group_id)
         };
 
@@ -222,18 +222,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_set_bind_grou
 
             let dynamic_offsets: &[u32] = &dynamic_offsets[start..start + len];
 
-            if let Err(cause) =
-                compute_pass.set_bind_group(index, bind_group_id, dynamic_offsets)
-            {
-                handle_error(
-error_sink,
-                    cause,
-                    "encoder",
-                    None,
-                    "canvas_native_webgpu_compute_pass_encoder_set_bind_group",
-                );
-            }
-        } else {
+            compute_pass.set_bind_group(index, bind_group_id, dynamic_offsets);} else {
             compute_pass.set_bind_group(index, bind_group_id, &[]);}
     }
 }

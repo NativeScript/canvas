@@ -135,23 +135,12 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_draw_indexed_i
 
     let indirect_buffer = &*indirect_buffer;
 
-    let buffer_id = indirect_buffer.buffer;
+    let buffer_id = Arc::clone(&indirect_buffer.buffer);
 
     let mut pass = render_pass.pass.lock();
 
     if let Some(pass) = pass.as_mut() {
-        if let Err(cause) =
-            pass.draw_indexed_indirect(buffer_id, indirect_offset)
-        {
-            handle_error(
-error_sink,
-                cause,
-                "encoder",
-                label,
-                "canvas_native_webgpu_render_pass_encoder_draw_indexed_indirect",
-            );
-        }
-    }
+        pass.draw_indexed_indirect(buffer_id, indirect_offset);}
 }
 
 #[no_mangle]
@@ -171,23 +160,12 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_multi_draw_ind
 
     let indirect_buffer = &*indirect_buffer;
 
-    let buffer_id = indirect_buffer.buffer;
+    let buffer_id = Arc::clone(&indirect_buffer.buffer);
 
     let mut pass = render_pass.pass.lock();
 
     if let Some(pass) = pass.as_mut() {
-        if let Err(cause) =
-            pass.multi_draw_indexed_indirect(buffer_id, indirect_offset, count)
-        {
-            handle_error(
-error_sink,
-                cause,
-                "encoder",
-                label,
-                "canvas_native_webgpu_render_pass_encoder_draw_indexed_indirect",
-            );
-        }
-    }
+        pass.multi_draw_indexed_indirect(buffer_id, indirect_offset, count);}
 }
 
 #[no_mangle]
@@ -230,22 +208,11 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_multi_draw_ind
 
     let indirect_buffer = &*indirect_buffer;
 
-    let buffer_id = indirect_buffer.buffer;
+    let buffer_id = Arc::clone(&indirect_buffer.buffer);
     let mut pass = render_pass.pass.lock();
 
     if let Some(pass) = pass.as_mut() {
-        if let Err(cause) =
-            pass.multi_draw_indirect(buffer_id, indirect_offset, count)
-        {
-            handle_error(
-error_sink,
-                cause,
-                "encoder",
-                label,
-                "canvas_native_webgpu_render_pass_encoder_draw_indirect",
-            );
-        }
-    }
+        pass.multi_draw_indirect(buffer_id, indirect_offset, count);}
 }
 
 #[no_mangle]
@@ -263,16 +230,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_end(
     let mut lock = render_pass.pass.lock();
 
     if let Some(pass) = lock.as_mut() {
-        pass.end() {
-            println!("canvas_native_webgpu_render_pass_encoder_end: {:?}", cause);
-            handle_error(
-error_sink,
-                cause,
-                "encoder",
-                label,
-                "canvas_native_webgpu_render_pass_encoder_end",
-            );
-        }
+        pass.end();
 
         if let Some(pass) = lock.take() {
             drop(pass);
@@ -294,7 +252,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_end_occlusion_
     let mut pass = render_pass.pass.lock();
 
     if let Some(pass) = pass.as_mut() {
-        if let Err(cause) = pass.end_occlusion_query();}
+        pass.end_occlusion_query();
+    }
 }
 
 #[no_mangle]
@@ -315,7 +274,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_execute_bundle
     if let Some(pass) = pass.as_mut() {
         let bundles = std::slice::from_raw_parts(bundles, bundles_size)
             .iter()
-            .map(|value| (&**value).bundle)
+            .map(|value| Arc::clone(&(&**value).bundle))
             .collect::<Vec<_>>();
 
         pass.execute_bundles(bundles.as_slice());}
@@ -404,7 +363,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_set_bind_group
             None
         } else {
             let bind_group = &*bind_group;
-            let bind_group_id = bind_group.group;
+            let bind_group_id = Arc::clone(&bind_group.group);
             Some(bind_group_id)
         };
 
@@ -420,18 +379,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_set_bind_group
 
             let dynamic_offsets: &[u32] = &dynamic_offsets[start..start + len];
 
-            if let Err(cause) =
-                pass.set_bind_group(index, bind_group_id, dynamic_offsets)
-            {
-                handle_error(
-error_sink,
-                    cause,
-                    "encoder",
-                    label,
-                    "canvas_native_webgpu_render_pass_encoder_set_bind_group",
-                );
-            }
-        } else {
+            pass.set_bind_group(index, bind_group_id, dynamic_offsets);} else {
             pass.set_bind_group(index, bind_group_id, &[]);}
     }
 }
@@ -481,25 +429,16 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_set_index_buff
 
         let size: Option<u64> = size.try_into().ok();
 
-        let mut sizeValue: Option<std::num::NonZero<u64>> = None;
+        // wgpu takes Option<BufferAddress> now; zero means "no explicit size",
+        // which is what NonZero used to encode.
+        let sizeValue = size.filter(|value| *value > 0);
 
-        if let Some(value) = size {
-            sizeValue = std::num::NonZero::new(value);
-        }
-
-        if size.is_some() {
-            if let Some(size) = sizeValue {
-                pass.set_index_buffer(buffer_id,
-                    index_format.into(),
-                    offset,
-                    Some(size));} else {
-                // todo error ??
-            }
-        } else {
-            pass.set_index_buffer(buffer_id,
-                index_format.into(),
-                offset,
-                None);}
+        pass.set_index_buffer(
+            Arc::clone(&buffer_id),
+            index_format.into(),
+            offset,
+            sizeValue,
+        );
     }
 }
 
@@ -586,17 +525,17 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_set_vertex_buf
                 None
             } else {
                 let buffer = &*buffer;
-                Some(buffer.buffer)
+                Some(Arc::clone(&buffer.buffer))
             }
         };
 
         let size: Option<u64> = size.try_into().ok();
 
         let sizeValue = if let Some(value) = size {
-            std::num::NonZero::new(value)
+            Some(value).filter(|v| *v > 0)
         } else if !buffer.is_null() {
             let buffer = &*buffer;
-            std::num::NonZero::new(buffer.size)
+            Some(buffer.size).filter(|v| *v > 0)
         } else {
             None
         };
@@ -627,18 +566,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_set_viewport(
     let mut pass = render_pass.pass.lock();
 
     if let Some(pass) = pass.as_mut() {
-        if let Err(cause) =
-            pass.set_viewport(x, y, width, height, depth_min, depth_max)
-        {
-            handle_error(
-error_sink,
-                cause,
-                "encoder",
-                label,
-                "canvas_native_webgpu_render_pass_encoder_set_viewport",
-            );
-        }
-    }
+        pass.set_viewport(x, y, width, height, depth_min, depth_max);}
 }
 
 #[no_mangle]

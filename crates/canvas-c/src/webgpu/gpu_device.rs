@@ -267,7 +267,7 @@ impl CanvasGPUDevice {
         self.label.clone()
     }
     pub fn features(&self) -> Features {
-        self.device.features()
+        *self.device.features()
     }
 
     pub fn destroy(&self) {
@@ -280,7 +280,7 @@ impl CanvasGPUDevice {
         layout: &CanvasGPUBindGroupLayout,
         entries: &[CanvasBindGroupEntry],
     ) -> *const CanvasGPUBindGroup {
-        let layout_id = layout.group_layout;
+        let layout_id = Arc::clone(&layout.group_layout);
         let entries = entries
             .iter()
             .map(|entry| wgpu_core::binding_model::BindGroupEntry {
@@ -289,7 +289,7 @@ impl CanvasGPUDevice {
                     CanvasBindGroupEntryResource::Buffer(buffer) => {
                         let buf = unsafe { &*buffer.buffer };
                         wgpu_core::binding_model::BindingResource::Buffer(BufferBinding {
-                            buffer: buf.buffer,
+                            buffer: Arc::clone(&buf.buffer),
                             offset: buffer.offset.try_into().ok().unwrap_or_default(),
                             size: if buffer.size > 0 {
                                 Some(buffer.size as u64)
@@ -300,11 +300,11 @@ impl CanvasGPUDevice {
                     }
                     CanvasBindGroupEntryResource::Sampler(sampler) => {
                         let sampler = unsafe { &**sampler };
-                        wgpu_core::binding_model::BindingResource::Sampler(sampler.sampler)
+                        wgpu_core::binding_model::BindingResource::Sampler(Arc::clone(&sampler.sampler))
                     }
                     CanvasBindGroupEntryResource::TextureView(view) => {
                         let view = unsafe { &**view };
-                        wgpu_core::binding_model::BindingResource::TextureView(view.texture_view)
+                        wgpu_core::binding_model::BindingResource::TextureView(Arc::clone(&view.texture_view))
                     }
                 },
             })
@@ -430,7 +430,7 @@ pub extern "C" fn canvas_native_webgpu_device_get_limits(
     let device = unsafe { &*device };
     let limits = device.device.limits();
 
-    let limits: CanvasGPUSupportedLimits = limits.into();
+    let limits: CanvasGPUSupportedLimits = limits.clone().into();
     Box::into_raw(Box::new(limits))
 }
 
@@ -645,9 +645,9 @@ pub extern "C" fn canvas_native_webgpu_device_create_command_encoder(
     let desc = wgt::CommandEncoderDescriptor {
         label: label.clone(),
     };
-    let global = &device.instance.global();
+    let encoder = device.device.create_command_encoder(&desc);
 
-    let encoder = device.device.create_command_encoder(&desc);let encoder = CanvasGPUCommandEncoder {
+    let encoder = CanvasGPUCommandEncoder {
         label,
         instance: device.instance.clone(),
         encoder,
@@ -677,7 +677,7 @@ unsafe fn parse_compute_pipeline_descriptor(
     compute: *const CanvasProgrammableStage,
 ) -> (
     Option<Cow<'static, str>>,
-    Option<PipelineLayoutId>,
+    Option<Arc<wgpu_core::binding_model::PipelineLayout>>,
     ProgrammableStage,
 ) {
     let label = ptr_into_string(label);
@@ -715,15 +715,12 @@ unsafe fn parse_compute_pipeline_descriptor(
 unsafe fn create_compute_pipeline(
     device: *const CanvasGPUDevice,
     descriptor: wgpu_core::pipeline::ComputePipelineDescriptor,
-) -> (
-    CanvasGPUComputePipeline,
-    Option<wgpu_core::pipeline::CreateComputePipelineError>,
-) {
+) -> CanvasGPUComputePipeline {
     assert!(!device.is_null());
 
     let device = &*device;
 
-    let pipeline = device.device.create_compute_pipeline(&descriptor);
+    let pipeline = device.device.create_compute_pipeline(descriptor);
 
     let pipeline = CanvasGPUComputePipeline {
         label: descriptor.label.map(|label| Cow::Owned(label.into_owned())),
@@ -732,7 +729,7 @@ unsafe fn create_compute_pipeline(
         error_sink: device.error_sink.clone(),
     };
 
-    (pipeline, error)
+    pipeline
 }
 
 #[no_mangle]
@@ -757,40 +754,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_compute_pipeline(
         cache: None,
     };
 
-    let (pipeline, error) = create_compute_pipeline(device, descriptor);
-
-    let global = pipeline.instance.global();
-    let error_sink = pipeline.error_sink.as_ref();
-
-    if let Some(cause) = error {
-        if let wgpu_core::pipeline::CreateComputePipelineError::Internal(ref error) = cause {
-            #[cfg(target_os = "android")]
-            log::warn!(
-                "Shader translation error for stage {:?}: {}",
-                wgt::ShaderStages::COMPUTE,
-                error
-            );
-            #[cfg(target_os = "android")]
-            log::warn!("Please report it to https://github.com/gfx-rs/wgpu");
-
-            #[cfg(not(target_os = "android"))]
-            println!(
-                "Shader translation error for stage {:?}: {}",
-                wgt::ShaderStages::COMPUTE,
-                error
-            );
-            #[cfg(not(target_os = "android"))]
-            println!("Please report it to https://github.com/gfx-rs/wgpu");
-        }
-
-        handle_error(
-error_sink,
-            cause,
-            "label",
-            label,
-            "canvas_native_webgpu_device_create_compute_pipeline",
-        );
-    }
+    let pipeline = create_compute_pipeline(device, descriptor);
 
     Arc::into_raw(Arc::new(pipeline))
 }
@@ -841,7 +805,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_compute_pipeline_asy
                 cache: None,
             };
 
-            let (pipeline, error) = create_compute_pipeline(device, descriptor);
+            let pipeline = create_compute_pipeline(device, descriptor);
 
             let callback = unsafe {
                 std::mem::transmute::<
@@ -912,7 +876,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_pipeline_layout(
                 None
             } else {
                 let group = &**group;
-                Some(group.group_layout)
+                Some(Arc::clone(&group.group_layout))
             }
         })
         .collect::<Vec<_>>();
@@ -1060,17 +1024,21 @@ pub extern "C" fn canvas_native_webgpu_device_create_shader_module(
         label,
         runtime_checks: Default::default(),
     };
-    let global = &device.instance.global();
-
     let module = device.device.create_shader_module(&desc, source);
 
-    let messages = error.iter();
-    let mut msgs: Vec<crate::webgpu::gpu_shader_module::CanvasGPUCompilationMessage> =
-        Vec::with_capacity(messages.len());
-    for (_, message) in messages.enumerate() {
-        let info = crate::webgpu::gpu_shader_module::CanvasGPUCompilationMessage::new(message, src);
-        msgs.push(info);
-    }let shader = CanvasGPUShaderModule {
+    // Messages hang off the module now instead of arriving with an error.
+    let msgs: Vec<crate::webgpu::gpu_shader_module::CanvasGPUCompilationMessage> = module
+        .compilation_info()
+        .messages
+        .iter()
+        .map(|message| {
+            crate::webgpu::gpu_shader_module::CanvasGPUCompilationMessage::from_compilation_message(
+                message, src,
+            )
+        })
+        .collect();
+
+    let shader = CanvasGPUShaderModule {
         label: desc.label,
         module,
         instance: device.instance.clone(),
@@ -1422,14 +1390,10 @@ unsafe fn parse_render_pipeline_descriptor<'a>(
 }
 
 unsafe fn create_render_pipeline(
-    global: Arc<CanvasWebGPUInstance>,
-    device_id: wgpu_core::id::DeviceId,
+    device: &CanvasGPUDevice,
     descriptor: RenderPipelineDescriptor,
-) -> (
-    wgpu_core::id::RenderPipelineId,
-    Option<CreateRenderPipelineError>,
-) {
-    device.device.create_render_pipeline(&descriptor, None)
+) -> Arc<wgpu_core::pipeline::RenderPipeline> {
+    device.device.create_render_pipeline(&descriptor)
 }
 
 #[no_mangle]

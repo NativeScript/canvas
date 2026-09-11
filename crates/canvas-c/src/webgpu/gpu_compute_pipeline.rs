@@ -60,8 +60,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pipeline_get_bind_group_la
 
     let pipeline = &*pipeline;
     let pipeline_id = pipeline.pipeline;
-
-    let global = pipeline.instance.global();
     let error_sink = pipeline.error_sink.as_ref();
     let (group_layout, error) =  global.compute_pipeline_get_bind_group_layout(pipeline_id, index, None);
 

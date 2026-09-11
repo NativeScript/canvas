@@ -126,7 +126,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_texture_create_texture_view(
     }
     let texture = unsafe { &*texture };
     let texture_id = texture.texture;
-    let global = texture.instance.global();
 
     let desc = if descriptor.is_null() {
         wgpu_core::resource::TextureViewDescriptor::default()
@@ -138,6 +137,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_texture_create_texture_view(
         let range = *descriptor.range;
 
         wgpu_core::resource::TextureViewDescriptor {
+            swizzle: Default::default(),
             label,
             format: descriptor.format.into(),
             dimension: descriptor.dimension.into(),
@@ -249,7 +249,6 @@ pub extern "C" fn canvas_native_webgpu_texture_destroy(texture: *const CanvasGPU
     }
     let texture = unsafe { &*texture };
     let texture_id = texture.texture;
-    let global = texture.instance.global();
 
     let _ = global.texture_destroy(texture_id);
 }

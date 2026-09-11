@@ -1093,6 +1093,50 @@ pub struct CanvasGPUSurfaceConfiguration {
     pub format: CanvasOptionalGPUTextureFormat,
 }
 
+
+/// Pick an alpha mode the surface will actually accept.
+///
+/// Backends do not agree on how they name premultiplied compositing, and the
+/// name can change between wgpu releases for the same physical behaviour --
+/// Metal reported `PostMultiplied` up to wgpu v30.0.0 and reports
+/// `PreMultiplied` after it. A caller that hardcodes either one is then one
+/// wgpu bump away from a surface that fails validation and never presents, so
+/// the requested mode is matched against the surface's real capabilities here
+/// rather than passed straight through.
+///
+/// `Auto` is left alone: it is wgpu's own "you choose" value and is always
+/// accepted.
+fn negotiate_alpha_mode(
+    requested: wgt::CompositeAlphaMode,
+    supported: &[wgt::CompositeAlphaMode],
+) -> wgt::CompositeAlphaMode {
+    use wgt::CompositeAlphaMode as Mode;
+
+    if requested == Mode::Auto || supported.is_empty() || supported.contains(&requested) {
+        return requested;
+    }
+
+    // Pre/PostMultiplied are the same intent under two names, so accept the
+    // other spelling before falling back to something visibly different.
+    let alias = match requested {
+        Mode::PreMultiplied => Some(Mode::PostMultiplied),
+        Mode::PostMultiplied => Some(Mode::PreMultiplied),
+        _ => None,
+    };
+
+    let chosen = alias
+        .filter(|mode| supported.contains(mode))
+        .or_else(|| supported.contains(&Mode::Opaque).then_some(Mode::Opaque))
+        .unwrap_or(supported[0]);
+
+    log::warn!(
+        "webgpu: alpha mode {requested:?} is not supported by this surface \
+         (supported: {supported:?}); using {chosen:?}"
+    );
+
+    chosen
+}
+
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_context_configure(
     context: *const CanvasGPUCanvasContext,
@@ -1152,7 +1196,11 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_configure(
         width,
         height,
         present_mode: config.presentMode.into(),
-        alpha_mode: config.alphaMode.into(),
+        alpha_mode: match surface_id.get_capabilities(&device_ref.adapter) {
+            Ok(caps) => negotiate_alpha_mode(config.alphaMode.into(), &caps.alpha_modes),
+            // No capabilities to check against: let configure validate it.
+            Err(_) => config.alphaMode.into(),
+        },
         // Auto is wgpu 30's default and reproduces the pre-30 behaviour: sRGB,
         // or extended-sRGB-linear for fp16 surfaces that support it.
         color_space: wgt::SurfaceColorSpace::Auto,

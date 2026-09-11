@@ -169,6 +169,7 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
                 let ret = Arc::into_raw(Arc::new(CanvasGPUDevice {
                     label,
                     device,
+                    adapter: Arc::clone(&adapter_inner),
                     queue,
                     user_data: std::ptr::null_mut(),
                     instance,

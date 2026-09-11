@@ -240,6 +240,10 @@ pub struct CanvasGPUDevice {
     pub(crate) label: Option<Cow<'static, str>>,
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
     pub(crate) device: Arc<wgpu_core::device::Device>,
+    /// Kept so the surface can be negotiated against real capabilities at
+    /// configure time. wgpu-core's Device::adapter is pub(crate), so this is
+    /// the only way back to the adapter from a device we already own.
+    pub(crate) adapter: Arc<wgpu_core::instance::Adapter>,
     pub(crate) queue: Arc<CanvasGPUQueue>,
     pub(crate) user_data: *mut c_void,
     pub(crate) error_sink: ErrorSink,

@@ -236,7 +236,6 @@ impl ErrorSinkRaw {
     }
 }
 
-#[derive(Debug)]
 pub struct CanvasGPUDevice {
     pub(crate) label: Option<Cow<'static, str>>,
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
@@ -685,7 +684,7 @@ unsafe fn parse_compute_pipeline_descriptor(
     let pipeline_layout = match layout {
         CanvasGPUPipelineLayoutOrGPUAutoLayoutMode::Layout(layout) => {
             let layout = &*layout;
-            Some(layout.layout)
+            Some(Arc::clone(&layout.layout))
         }
         CanvasGPUPipelineLayoutOrGPUAutoLayoutMode::Auto(CanvasGPUAutoLayoutMode::Auto) => None,
     };
@@ -697,7 +696,7 @@ unsafe fn parse_compute_pipeline_descriptor(
         module: CanvasGPUShaderModule {
             label: label.clone(),
             instance: Arc::clone(&module.instance),
-            module: module.module,
+            module: Arc::clone(&module.module),
             compilation_info: module.compilation_info.clone(),
         },
         entry_point: ptr_into_string(compute.entry_point),
@@ -720,10 +719,15 @@ unsafe fn create_compute_pipeline(
 
     let device = &*device;
 
+    let label = descriptor
+        .label
+        .as_ref()
+        .map(|label| Cow::Owned(label.to_string()));
+
     let pipeline = device.device.create_compute_pipeline(descriptor);
 
     let pipeline = CanvasGPUComputePipeline {
-        label: descriptor.label.map(|label| Cow::Owned(label.into_owned())),
+        label,
         instance: device.instance.clone(),
         pipeline,
         error_sink: device.error_sink.clone(),
@@ -821,34 +825,20 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_compute_pipeline_asy
 
             let callback_data = callback_data as *mut c_void;
 
-            if let Some(error) = error {
-                let error: CanvasGPUError = error.into();
-                let error_type = match &error {
-                    CanvasGPUError::Lost => super::error::CanvasGPUErrorType::Lost,
-                    CanvasGPUError::OutOfMemory => super::error::CanvasGPUErrorType::OutOfMemory,
-                    CanvasGPUError::Validation(_) => super::error::CanvasGPUErrorType::Validation,
-                    CanvasGPUError::Internal => super::error::CanvasGPUErrorType::Internal,
-                    CanvasGPUError::None => CanvasGPUErrorType::None,
-                };
+            let ret = Arc::into_raw(Arc::new(pipeline));
 
-                let error_value = match error {
-                    CanvasGPUError::Lost => std::ptr::null_mut(),
-                    CanvasGPUError::OutOfMemory => std::ptr::null_mut(),
-                    CanvasGPUError::Validation(value) => CString::new(value).unwrap().into_raw(),
-                    CanvasGPUError::Internal => std::ptr::null_mut(),
-                    CanvasGPUError::None => std::ptr::null_mut(),
-                };
-                callback(std::ptr::null(), error_type, error_value, callback_data);
-            } else {
-                let ret = Arc::into_raw(Arc::new(pipeline));
 
-                callback(
-                    ret,
-                    CanvasGPUErrorType::None,
-                    std::ptr::null_mut(),
-                    callback_data,
-                );
-            }
+            callback(
+
+            ret,
+
+            CanvasGPUErrorType::None,
+
+            std::ptr::null_mut(),
+
+            callback_data,
+
+            );
         });
     });
 }
@@ -985,23 +975,11 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_bundle_encode
 
     let encoder = Box::into_raw(Box::new(Some(Box::into_raw(bundle))));
 
-    match error {
-        None => Arc::into_raw(Arc::new(CanvasGPURenderBundleEncoder {
-            label: desc.label,
-            instance: device.instance.clone(),
-            encoder,
-        })),
-        Some(cause) => {
-            handle_error_fatal(cause,
-                "canvas_native_webgpu_device_create_render_bundle_encoder",
-            );
-            Arc::into_raw(Arc::new(CanvasGPURenderBundleEncoder {
-                label: desc.label,
-                instance: device.instance.clone(),
-                encoder,
-            }))
-        }
-    }
+    Arc::into_raw(Arc::new(CanvasGPURenderBundleEncoder {
+        label: desc.label,
+        instance: device.instance.clone(),
+        encoder,
+    }))
 }
 
 #[no_mangle]
@@ -1393,7 +1371,9 @@ unsafe fn create_render_pipeline(
     device: &CanvasGPUDevice,
     descriptor: RenderPipelineDescriptor,
 ) -> Arc<wgpu_core::pipeline::RenderPipeline> {
-    device.device.create_render_pipeline(&descriptor)
+    // wgpu takes the general (mesh-or-vertex) form now; RenderPipelineDescriptor
+    // converts into it.
+    device.device.create_render_pipeline(descriptor.into())
 }
 
 #[no_mangle]
@@ -1408,45 +1388,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_pipeline(
 
     let device = &*device;
 
-    let (pipeline, error) =
-        create_render_pipeline(device.instance.clone(), device.device, descriptor);
+    let pipeline = create_render_pipeline(device, descriptor);
 
-    let error_sink = device.error_sink.as_ref();
-
-    if let Some(cause) = error {
-        // println!("Can not create render pipeline: {:?}\n", cause);
-        //
-        // println!("Can not create render pipeline: {:?}\n", cause.to_string());
-        //
-        // println!("Can not create render pipeline: {:?}\n", cause.source());
-        //
-        // todo improve error
-        // if let CreateRenderPipelineError::PipelineConstants {stage,  ref error} = cause {
-        //     println!("CreateRenderPipelineError::PipelineConstants {:?} {}", stage, error);
-        // }
-        //
-        // if let CreateRenderPipelineError::Stage {stage,  ref error} = cause {
-        //     println!("CreateRenderPipelineError::Stage {:?} {}", stage, error);
-        // }
-        if let CreateRenderPipelineError::Internal { stage, ref error } = cause {
-            #[cfg(target_os = "android")]
-            log::error!("Shader translation error for stage {:?}: {}", stage, error);
-            #[cfg(target_os = "android")]
-            log::error!("Please report it to https://github.com/gfx-rs/wgpu");
-
-            #[cfg(not(target_os = "android"))]
-            println!("Shader translation error for stage {:?}: {}", stage, error);
-            #[cfg(not(target_os = "android"))]
-            println!("Please report it to https://github.com/gfx-rs/wgpu");
-        }
-        handle_error(
-error_sink,
-            cause,
-            "label",
-            label.clone(),
-            "canvas_native_webgpu_device_create_render_pipeline",
-        );
-    }
 
     Arc::into_raw(Arc::new(CanvasGPURenderPipeline {
         label,
@@ -1490,7 +1433,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_pipeline_asyn
         .as_ref()
         .map(|value| Cow::Owned(value.to_string()));
     std::thread::spawn(move || {
-        let (pipeline, error) = create_render_pipeline(instance.clone(), device_id, descriptor);
+        let pipeline = create_render_pipeline(&*device, descriptor);
 
         let callback = unsafe {
             std::mem::transmute::<
@@ -1506,39 +1449,31 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_pipeline_asyn
 
         let callback_data = callback_data as *mut c_void;
 
-        if let Some(error) = error {
-            let error: CanvasGPUError = error.into();
-            let error_type = match &error {
-                CanvasGPUError::Lost => super::error::CanvasGPUErrorType::Lost,
-                CanvasGPUError::OutOfMemory => super::error::CanvasGPUErrorType::OutOfMemory,
-                CanvasGPUError::Validation(_) => super::error::CanvasGPUErrorType::Validation,
-                CanvasGPUError::Internal => super::error::CanvasGPUErrorType::Internal,
-                CanvasGPUError::None => CanvasGPUErrorType::None,
-            };
+        let pipeline = CanvasGPURenderPipeline {
 
-            let error_value = match error {
-                CanvasGPUError::Lost => std::ptr::null_mut(),
-                CanvasGPUError::OutOfMemory => std::ptr::null_mut(),
-                CanvasGPUError::Validation(value) => CString::new(value).unwrap().into_raw(),
-                CanvasGPUError::Internal => std::ptr::null_mut(),
-                CanvasGPUError::None => std::ptr::null_mut(),
-            };
-            callback(std::ptr::null(), error_type, error_value, callback_data);
-        } else {
-            let pipeline = CanvasGPURenderPipeline {
-                label,
-                instance,
-                pipeline,
-                error_sink,
-            };
-            let ret = Arc::into_raw(Arc::new(pipeline));
-            callback(
-                ret,
-                CanvasGPUErrorType::None,
-                std::ptr::null_mut(),
-                callback_data,
-            );
-        }
+        label,
+
+        instance,
+
+        pipeline,
+
+        error_sink,
+
+        };
+
+        let ret = Arc::into_raw(Arc::new(pipeline));
+
+        callback(
+
+        ret,
+
+        CanvasGPUErrorType::None,
+
+        std::ptr::null_mut(),
+
+        callback_data,
+
+        );
     });
 }
 

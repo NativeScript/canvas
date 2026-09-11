@@ -125,7 +125,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_texture_create_texture_view(
         return std::ptr::null_mut();
     }
     let texture = unsafe { &*texture };
-    let texture_id = texture.texture;
 
     let desc = if descriptor.is_null() {
         wgpu_core::resource::TextureViewDescriptor::default()
@@ -146,9 +145,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_texture_create_texture_view(
         }
     };
 
-    let (texture_view, error) = global.texture_create_view(texture_id, &desc, None);
-
-    let error_sink = texture.error_sink.as_ref();
+    let texture_view = texture.texture.create_view(&desc);
 Arc::into_raw(Arc::new(CanvasGPUTextureView {
         label: desc.label,
         instance: texture.instance.clone(),
@@ -248,7 +245,6 @@ pub extern "C" fn canvas_native_webgpu_texture_destroy(texture: *const CanvasGPU
         return;
     }
     let texture = unsafe { &*texture };
-    let texture_id = texture.texture;
 
-    let _ = global.texture_destroy(texture_id);
+    texture.texture.destroy();
 }

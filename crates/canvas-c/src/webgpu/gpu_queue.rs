@@ -355,7 +355,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_context_to_texture(
 
     let size: wgt::Extent3d = size.into();
 
-    let destination_texture_id = destination_texture.texture;
+    let destination_texture_id = Arc::clone(&destination_texture.texture);
 
     let source_width = width as u32;
 
@@ -517,7 +517,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_external_image_to_textu
 
     let destination_texture = &*destination.texture;
 
-    let destination_texture_id = destination_texture.texture;
+    let destination_texture_id = Arc::clone(&destination_texture.texture);
 
     let size = *size;
 
@@ -617,9 +617,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_gpu_context_to_texture(
 
     let mut texture = None;
     if let Some(current_texture) = context.current_texture.lock().as_ref() {
-        texture = Some(current_texture.texture);
+        texture = Some(Arc::clone(&current_texture.texture));
     } else if let Some(read_back_texture) = context.read_back_texture.lock().as_ref() {
-        texture = Some(read_back_texture.texture);
+        texture = Some(Arc::clone(&read_back_texture.texture));
     }
 
     if let Some(texture) = texture {
@@ -655,7 +655,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_gpu_context_to_texture(
 
             let size: wgt::Extent3d = size.into();
 
-            encoder.copy_texture_to_texture(source, dest, &size);}
+            encoder.copy_texture_to_texture(&source, &dest, &size);
+        }
     }
 }
 
@@ -703,17 +704,13 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_submit(
                 .store(false, std::sync::atomic::Ordering::SeqCst);
             // let mut id = buffer.command_buffer.lock();
             // id.take()
-            buffer.command_buffer
+            Arc::clone(&buffer.command_buffer)
         })
         .collect::<Vec<_>>();
 
-    if let Err((_, cause)) = queue.queue.id.submit(&command_buffer_ids) {
-        handle_error_fatal(cause, "canvas_native_webgpu_queue_submit");
-    }
+    queue.queue.id.submit(&command_buffer_ids);
 
-    for id in command_buffer_ids.into_iter() {
-        global.command_buffer_drop(id);
-    }
+    // command buffers are released by dropping the Vec
 }
 
 unsafe fn write_buffer_size(
@@ -732,7 +729,7 @@ unsafe fn write_buffer_size(
     let queue = &*queue;
 
     let buffer = &*buffer;
-    let buffer_id = buffer.buffer;
+    let buffer_id = Arc::clone(&buffer.buffer);
 
     let data = std::slice::from_raw_parts(data, data_size);
 
@@ -743,22 +740,12 @@ unsafe fn write_buffer_size(
 
     const ALIGNMENT: usize = wgt::COPY_BUFFER_ALIGNMENT as usize;
     let aligned_len = (data.len() + ALIGNMENT - 1) & !(ALIGNMENT - 1);
-    let result = if aligned_len != data.len() {
+    if aligned_len != data.len() {
         let mut buf = vec![0u8; aligned_len];
         buf[..data.len()].copy_from_slice(data);
-        queue.queue.id.write_buffer(buffer_id, buffer_offset, &buf)
+        queue.queue.id.write_buffer(buffer_id, buffer_offset, &buf);
     } else {
-        queue.queue.id.write_buffer(buffer_id, buffer_offset, data)
-    };
-
-    if let Err(cause) = result {
-        handle_error(
-queue.error_sink.as_ref(),
-            cause,
-            "",
-            None,
-            "canvas_native_webgpu_queue_write_buffer",
-        );
+        queue.queue.id.write_buffer(buffer_id, buffer_offset, data);
     }
 }
 
@@ -821,7 +808,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_write_texture(
     let destination = &*destination;
 
     let destination_texture = &*destination.texture;
-    let destination_texture_id = destination_texture.texture;
+    let destination_texture_id = Arc::clone(&destination_texture.texture);
 
     let destination = wgt::TexelCopyTextureInfo {
         texture: destination_texture_id,
@@ -840,18 +827,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_write_texture(
 
     let size: wgt::Extent3d = size.into();
 
-    if let Err(cause) =
-        queue.queue.id.write_texture(destination, data, &data_layout, &size)
-    {
-        handle_error(
-queue.error_sink.as_ref(),
-            cause,
-            "",
-            None,
-            "canvas_native_webgpu_queue_write_texture",
-        );
-    }
-}
+    queue.queue.id.write_texture(destination, data, &data_layout, &size);}
 
 #[cfg(test)]
 mod tests {

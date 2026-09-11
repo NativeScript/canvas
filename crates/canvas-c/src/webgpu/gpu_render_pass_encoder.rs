@@ -423,7 +423,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_set_index_buff
 
     if let Some(pass) = pass.as_mut() {
         let buffer = &*buffer;
-        let buffer_id = buffer.buffer;
+        let buffer_id = Arc::clone(&buffer.buffer);
 
         let offset: u64 = offset.try_into().unwrap_or_default();
 

@@ -124,6 +124,13 @@ impl Into<wgt::Limits> for CanvasGPUSupportedLimits {
                 .saturating_add(self.max_vertex_buffers),
             max_ray_dispatch_count: 0,
             max_ray_recursion_depth: 0,
+            // wgpu 30-trunk splits the per-shader-stage storage limits out by
+            // stage; canvas only tracks the combined figure, so both stages
+            // report it.
+            max_storage_buffers_in_vertex_stage: self.max_storage_buffers_per_shader_stage,
+            max_storage_buffers_in_fragment_stage: self.max_storage_buffers_per_shader_stage,
+            max_storage_textures_in_vertex_stage: self.max_storage_textures_per_shader_stage,
+            max_storage_textures_in_fragment_stage: self.max_storage_textures_per_shader_stage,
         }
     }
 }

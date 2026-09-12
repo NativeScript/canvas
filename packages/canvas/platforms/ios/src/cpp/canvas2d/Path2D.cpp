@@ -57,10 +57,6 @@ v8::CFunction Path2D::fast_round_rect_(
 v8::CFunction Path2D::fast_round_rect_array_(
         v8::CFunction::Make(Path2D::FastRoundRectArray));
 
-const v8::CFunction fast_round_rect_overloads_[] = {
-        Path2D::fast_round_rect_,
-        Path2D::fast_round_rect_array_
-};
 
 v8::CFunction Path2D::fast_trim_(v8::CFunction::Make(Path2D::FastTrim));
 
@@ -457,8 +453,9 @@ v8::Local<v8::FunctionTemplate> Path2D::GetCtor(v8::Isolate *isolate) {
     SetFastMethod(isolate, tmpl, "quadraticCurveTo", QuadraticCurveTo, &fast_quadratic_curve_to_,
                   v8::Local<v8::Value>());
     SetFastMethod(isolate, tmpl, "rect", Rect, &fast_rect_, v8::Local<v8::Value>());
-    SetFastMethodWithOverLoads(isolate, tmpl, "roundRect", RoundRect,
-                               fast_round_rect_overloads_, v8::Local<v8::Value>());
+    // No fast path: these overloads differ only by argument type, which V8 cannot
+    // resolve. RoundRect dispatches on the argument type itself.
+    SetFastMethod(isolate, tmpl, "roundRect", RoundRect, nullptr, v8::Local<v8::Value>());
 
     SetFastMethod(isolate, tmpl, "trim", Trim, &fast_trim_, v8::Local<v8::Value>());
 

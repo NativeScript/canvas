@@ -31,10 +31,6 @@ v8::CFunction WebGLRenderingContext::fast_bind_buffer_(
 v8::CFunction WebGLRenderingContext::fast_bind_buffer_null_(
         v8::CFunction::Make(WebGLRenderingContext::FastBindBufferNull));
 
-const v8::CFunction bind_buffer_overloads_[] = {
-        WebGLRenderingContext::fast_bind_buffer_,
-        WebGLRenderingContext::fast_bind_buffer_null_
-};
 
 
 v8::CFunction WebGLRenderingContext::fast_uniform1f_(
@@ -94,10 +90,6 @@ v8::CFunction WebGLRenderingContext::fast_use_program_null_(
         v8::CFunction::Make(WebGLRenderingContext::FastUseProgramNull));
 
 
-const v8::CFunction fast_use_overloads_[] = {
-        WebGLRenderingContext::fast_use_program_,
-        WebGLRenderingContext::fast_use_program_null_
-};
 
 
 v8::CFunction WebGLRenderingContext::fast_viewport_(
@@ -149,10 +141,6 @@ v8::CFunction WebGLRenderingContext::fast_bind_frame_buffer_(
 v8::CFunction WebGLRenderingContext::fast_bind_frame_buffer_null_(
         v8::CFunction::Make(WebGLRenderingContext::FastBindFramebufferNull));
 
-const v8::CFunction fast_bind_frame_buffer_overloads_[] = {
-        WebGLRenderingContext::fast_bind_frame_buffer_null_,
-        WebGLRenderingContext::fast_bind_frame_buffer_
-};
 
 
 v8::CFunction WebGLRenderingContext::fast_bind_render_buffer_(
@@ -161,10 +149,6 @@ v8::CFunction WebGLRenderingContext::fast_bind_render_buffer_(
 v8::CFunction WebGLRenderingContext::fast_bind_render_buffer_null_(
         v8::CFunction::Make(WebGLRenderingContext::FastBindRenderbufferNull));
 
-const v8::CFunction fast_bind_render_buffer_overloads_[] = {
-        WebGLRenderingContext::fast_bind_render_buffer_null_,
-        WebGLRenderingContext::fast_bind_render_buffer_
-};
 
 
 v8::CFunction WebGLRenderingContext::fast_bind_texture_(
@@ -173,10 +157,6 @@ v8::CFunction WebGLRenderingContext::fast_bind_texture_(
 v8::CFunction WebGLRenderingContext::fast_bind_texture_null_(
         v8::CFunction::Make(WebGLRenderingContext::FastBindTextureNull));
 
-const v8::CFunction fast_bind_texture_overloads_[] = {
-        WebGLRenderingContext::fast_bind_texture_null_,
-        WebGLRenderingContext::fast_bind_texture_,
-};
 
 v8::CFunction WebGLRenderingContext::fast_draw_elements_(
         v8::CFunction::Make(WebGLRenderingContext::FastDrawElements));
@@ -238,10 +218,15 @@ v8::CFunction WebGLRenderingContext::fast_buffer_data_(
         v8::CFunction::Make(WebGLRenderingContext::FastBufferData));
 
 
+// V8 resolves fast-API overloads by argument count alone (see the overload
+// section of v8-fast-api-calls.h), and primitive parameters are *coerced* per
+// WebIDL rather than type-checked -- so two overloads of the same arity are
+// both unresolvable and unsafe. V8 traps on the duplicate inside
+// NewWithCFunctionOverloads. Type-based overloads therefore stay off the fast
+// path entirely; the slow callback already dispatches them on argument type.
+// bufferData(target, srcData, usage) and bufferData(target, size, usage) are both arity 4.
 const v8::CFunction fast_buffer_data_overloads_[] = {
-        WebGLRenderingContext::fast_buffer_data_os_,
-        WebGLRenderingContext::fast_buffer_data_,
-        WebGLRenderingContext::fast_buffer_data_target_usage_,
+        WebGLRenderingContext::fast_buffer_data_target_usage_
 };
 
 
@@ -381,10 +366,6 @@ v8::CFunction WebGLRenderingContext::fast_pixel_storei_(
         v8::CFunction::Make(WebGLRenderingContext::FastPixelStorei));
 
 
-const v8::CFunction fast_pixel_storei_overloads_[] = {
-        WebGLRenderingContext::fast_pixel_storei_,
-        WebGLRenderingContext::fast_pixel_storei_bool_
-};
 
 v8::CFunction WebGLRenderingContext::fast_polygon_offset_(
         v8::CFunction::Make(WebGLRenderingContext::FastPolygonOffset));
@@ -6259,18 +6240,22 @@ WebGLRenderingContext::SetMethods(v8::Isolate *isolate, const v8::Local<v8::Obje
             v8::FunctionTemplate::New(isolate, &BindAttribLocation)
     );
 
-    SetFastMethodWithOverLoads(isolate, tmpl, "bindBuffer", BindBuffer,
-                               bind_buffer_overloads_, v8::Local<v8::Value>());
+    // No fast path: these overloads differ only by argument type, which V8 cannot
+    // resolve. BindBuffer dispatches on the argument type itself.
+    SetFastMethod(isolate, tmpl, "bindBuffer", BindBuffer, nullptr, v8::Local<v8::Value>());
 
-    SetFastMethodWithOverLoads(isolate, tmpl, "bindFramebuffer", BindFramebuffer,
-                               fast_bind_frame_buffer_overloads_, v8::Local<v8::Value>());
+    // No fast path: these overloads differ only by argument type, which V8 cannot
+    // resolve. BindFramebuffer dispatches on the argument type itself.
+    SetFastMethod(isolate, tmpl, "bindFramebuffer", BindFramebuffer, nullptr, v8::Local<v8::Value>());
 
-    SetFastMethodWithOverLoads(isolate, tmpl, "bindRenderbuffer", BindRenderbuffer,
-                               fast_bind_render_buffer_overloads_, v8::Local<v8::Value>());
+    // No fast path: these overloads differ only by argument type, which V8 cannot
+    // resolve. BindRenderbuffer dispatches on the argument type itself.
+    SetFastMethod(isolate, tmpl, "bindRenderbuffer", BindRenderbuffer, nullptr, v8::Local<v8::Value>());
 
 
-    SetFastMethodWithOverLoads(isolate, tmpl, "bindTexture", BindTexture,
-                               fast_bind_texture_overloads_, v8::Local<v8::Value>());
+    // No fast path: these overloads differ only by argument type, which V8 cannot
+    // resolve. BindTexture dispatches on the argument type itself.
+    SetFastMethod(isolate, tmpl, "bindTexture", BindTexture, nullptr, v8::Local<v8::Value>());
 
     SetFastMethod(isolate, tmpl, "blendColor", BlendColor, &fast_blend_color_,
                   v8::Local<v8::Value>());
@@ -6604,8 +6589,9 @@ WebGLRenderingContext::SetMethods(v8::Isolate *isolate, const v8::Local<v8::Obje
     SetFastMethod(isolate, tmpl, "linkProgram", LinkProgram,
                   &fast_link_program_, v8::Local<v8::Value>());
 
-    SetFastMethodWithOverLoads(isolate, tmpl, "pixelStorei", PixelStorei,
-                               fast_pixel_storei_overloads_, v8::Local<v8::Value>());
+    // No fast path: these overloads differ only by argument type, which V8 cannot
+    // resolve. PixelStorei dispatches on the argument type itself.
+    SetFastMethod(isolate, tmpl, "pixelStorei", PixelStorei, nullptr, v8::Local<v8::Value>());
 
     SetFastMethod(isolate, tmpl, "polygonOffset", PolygonOffset,
                   &fast_polygon_offset_, v8::Local<v8::Value>());
@@ -6767,8 +6753,9 @@ WebGLRenderingContext::SetMethods(v8::Isolate *isolate, const v8::Local<v8::Obje
     SetFastMethod(isolate, tmpl, "uniformMatrix4fv", UniformMatrix4fv,
                   &fast_uniform_matrix4fv_, v8::Local<v8::Value>());
 
-    SetFastMethodWithOverLoads(isolate, tmpl, "useProgram", UseProgram,
-                               fast_use_overloads_, v8::Local<v8::Value>());
+    // No fast path: these overloads differ only by argument type, which V8 cannot
+    // resolve. UseProgram dispatches on the argument type itself.
+    SetFastMethod(isolate, tmpl, "useProgram", UseProgram, nullptr, v8::Local<v8::Value>());
 
 
     SetFastMethod(isolate, tmpl, "validateProgram", ValidateProgram, &fast_validate_program_,

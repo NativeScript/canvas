@@ -201,9 +201,13 @@ static void SetFastMethod(v8::Isolate *isolate,
 // signature took `const v8::CFunction *`, and NUM(&method_overloads) measured
 // a pointer-to-pointer rather than the array -- it evaluated to 1 for every
 // call site, so only the first overload of each set was ever registered with
-// V8. That silently dropped 23 of the 41 declared overloads; for bindTexture,
-// bindFramebuffer and bindRenderbuffer the surviving entry is the *null*
-// variant, leaving the common non-null bind with no fast path at all.
+// V8. That silently dropped 23 of the 41 declared overloads.
+//
+// Registering the full sets then exposed a second bug the first one had been
+// masking: many sets held two overloads of the same arity (bindTexture(target,
+// tex) vs bindTexture(target, null), fill(path) vs fill(rule), ...). V8 has no
+// way to choose between those, so those sets are now slow-callback only and
+// the loop below flags any that come back.
 template <size_t N>
 static void SetFastMethodWithOverLoads(v8::Isolate *isolate,
                                        v8::Local<v8::Template> that,
@@ -211,6 +215,23 @@ static void SetFastMethodWithOverLoads(v8::Isolate *isolate,
                                        v8::FunctionCallback slow_callback,
                                        const v8::CFunction (&method_overloads)[N],
                                        v8::Local<v8::Value> data) {
+    // V8 dispatches an overload set on argument count alone, so two entries of
+    // the same arity are unresolvable -- it traps inside
+    // NewWithCFunctionOverloads with no unwindable stack, which makes the
+    // offender very hard to find. Name it first. (Type-based overloads belong
+    // on the slow callback, which can inspect the argument.)
+    for (size_t i = 0; i < N; i++) {
+        for (size_t j = i + 1; j < N; j++) {
+            if (method_overloads[i].ArgumentCount() ==
+                method_overloads[j].ArgumentCount()) {
+                LogToConsole(std::string("fast-API overload set for '") + name +
+                             "' has two entries of arity " +
+                             std::to_string(method_overloads[i].ArgumentCount()) +
+                             "; V8 resolves overloads by arity alone");
+            }
+        }
+    }
+
     v8::Local<v8::FunctionTemplate> t =
             v8::FunctionTemplate::NewWithCFunctionOverloads(isolate,
                                                             slow_callback,

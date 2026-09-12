@@ -370,10 +370,15 @@ v8::CFunction CanvasRenderingContext2DImpl::fast_clip_path_(
         v8::CFunction::Make(CanvasRenderingContext2DImpl::FastClipPath));
 
 
+// V8 resolves fast-API overloads by argument count alone (see the overload
+// section of v8-fast-api-calls.h), and primitive parameters are *coerced* per
+// WebIDL rather than type-checked -- so two overloads of the same arity are
+// both unresolvable and unsafe. V8 traps on the duplicate inside
+// NewWithCFunctionOverloads. Type-based overloads therefore stay off the fast
+// path entirely; the slow callback already dispatches them on argument type.
+// clip(path) and clip(rule) are both arity 2.
 const v8::CFunction fast_clip_overloads_[] = {
-        CanvasRenderingContext2DImpl::fast_clip_,
-        CanvasRenderingContext2DImpl::fast_clip_path_,
-        CanvasRenderingContext2DImpl::fast_clip_rule_
+        CanvasRenderingContext2DImpl::fast_clip_
 };
 
 
@@ -452,12 +457,16 @@ v8::CFunction CanvasRenderingContext2DImpl::fast_fill_rule_(
 v8::CFunction CanvasRenderingContext2DImpl::fast_fill_path_rule_(
         v8::CFunction::Make(CanvasRenderingContext2DImpl::FastFillPathRule));
 
+// V8 resolves fast-API overloads by argument count alone (see the overload
+// section of v8-fast-api-calls.h), and primitive parameters are *coerced* per
+// WebIDL rather than type-checked -- so two overloads of the same arity are
+// both unresolvable and unsafe. V8 traps on the duplicate inside
+// NewWithCFunctionOverloads. Type-based overloads therefore stay off the fast
+// path entirely; the slow callback already dispatches them on argument type.
+// fill(path) and fill(rule) are both arity 2.
 const v8::CFunction fast_fill_overloads_[] = {
         CanvasRenderingContext2DImpl::fast_fill_path_rule_,
-        CanvasRenderingContext2DImpl::fast_fill_path_,
-        CanvasRenderingContext2DImpl::fast_fill_rule_,
-        CanvasRenderingContext2DImpl::fast_fill_,
-
+        CanvasRenderingContext2DImpl::fast_fill_
 };
 
 
@@ -528,10 +537,6 @@ v8::CFunction CanvasRenderingContext2DImpl::fast_round_rect_array_(
 v8::CFunction CanvasRenderingContext2DImpl::fast_round_rect_(
         v8::CFunction::Make(CanvasRenderingContext2DImpl::FastRoundRect));
 
-const v8::CFunction fast_round_rect_overloads_[] = {
-        CanvasRenderingContext2DImpl::fast_round_rect_array_,
-        CanvasRenderingContext2DImpl::fast_round_rect_
-};
 
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_rect_(
@@ -806,8 +811,9 @@ v8::Local<v8::FunctionTemplate> CanvasRenderingContext2DImpl::GetCtor(v8::Isolat
     SetFastMethod(isolate, tmpl, "quadraticCurveTo", QuadraticCurveTo, &fast_quadratic_curve_to_,
                   v8::Local<v8::Value>());
 
-    SetFastMethodWithOverLoads(isolate, tmpl, "roundRect", RoundRect, fast_round_rect_overloads_,
-                               v8::Local<v8::Value>());
+    // No fast path: these overloads differ only by argument type, which V8 cannot
+    // resolve. RoundRect dispatches on the argument type itself.
+    SetFastMethod(isolate, tmpl, "roundRect", RoundRect, nullptr, v8::Local<v8::Value>());
 
     SetFastMethod(isolate, tmpl, "rect", Rect, &fast_rect_, v8::Local<v8::Value>());
 

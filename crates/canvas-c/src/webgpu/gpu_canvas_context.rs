@@ -479,7 +479,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize(
     match context.instance.instance().create_surface(Some(display_handle), window_handle) {
         Ok(surface_id) => {
             *surface = surface_id;
-            drop(surface);
+            // Guard stays held -- `surface.configure(..)` below still needs it.
             context
                 .has_surface_presented
                 .store(false, std::sync::atomic::Ordering::SeqCst);
@@ -724,11 +724,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize_uiview(
                     )
                 };
 
-                if let Some(cause) = error {
-                    handle_error_fatal(cause,
-                        "canvas_native_webgpu_context_resize_uiview: create readback texture",
-                    );
-                } else {
+                {
                     *read_back_texture_lock = Some(ReadBackTexture {
                         texture: read_back,
                         data: texture_data,

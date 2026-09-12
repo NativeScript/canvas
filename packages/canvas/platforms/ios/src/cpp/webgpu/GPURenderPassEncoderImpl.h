@@ -13,6 +13,38 @@
 
 class GPURenderPassEncoderImpl : ObjectWrapperImpl {
 public:
+    // Fast-API entry points for the per-draw-call methods. The TS wrapper
+    // normalises optional arguments, so each arrives at a fixed arity;
+    // setBindGroup takes 5 args or 2, distinct arities that resolve cleanly.
+    // Defined in the .cpp, which has the GPUBufferImpl/Pipeline/BindGroup
+    // includes this header lacks.
+    static v8::CFunction fast_draw_;
+    static v8::CFunction fast_draw_indexed_;
+    static v8::CFunction fast_set_pipeline_;
+    static v8::CFunction fast_set_vertex_buffer_;
+    static v8::CFunction fast_set_bind_group_[2];
+
+    static void FastDraw(v8::Local<v8::Object> receiver_obj, uint32_t vertexCount,
+                         uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance);
+
+    static void FastDrawIndexed(v8::Local<v8::Object> receiver_obj, uint32_t indexCount,
+                                uint32_t instanceCount, uint32_t firstIndex, int32_t baseVertex,
+                                uint32_t firstInstance);
+
+    static void FastSetPipeline(v8::Local<v8::Object> receiver_obj,
+                                v8::Local<v8::Object> pipeline_obj);
+
+    static void FastSetVertexBuffer(v8::Local<v8::Object> receiver_obj, uint32_t slot,
+                                    v8::Local<v8::Object> buffer_obj, double offset, double size);
+
+    static void FastSetBindGroupNoOffsets(v8::Local<v8::Object> receiver_obj, uint32_t index,
+                                          v8::Local<v8::Object> bind_group_obj);
+
+    static void FastSetBindGroup(v8::Local<v8::Object> receiver_obj, uint32_t index,
+                                 v8::Local<v8::Object> bind_group_obj,
+                                 v8::Local<v8::Value> dynamic_offsets, double start,
+                                 double length);
+
     explicit GPURenderPassEncoderImpl(const CanvasGPURenderPassEncoder *pass);
 
     // Deterministic dispose, called from Destroy() at pass.end(). See ArcHandle.h.

@@ -80,6 +80,8 @@ public:
 
     static void Destroy(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void GetMetalDevicePointer(const v8::FunctionCallbackInfo<v8::Value> &args);
+
     static void PopErrorScope(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void PushErrorScope(const v8::FunctionCallbackInfo<v8::Value> &args);

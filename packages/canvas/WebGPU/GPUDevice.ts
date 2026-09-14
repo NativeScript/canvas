@@ -403,7 +403,26 @@ export class GPUDevice extends EventTarget {
 	get queue() {
 		if (!this._queue) {
 			this._queue = GPUQueue.fromNative(this[native_].queue);
+			// The queue needs to reach back here for the zero-copy video upload path,
+			// which has to build its texture cache on this device specifically.
+			(this._queue as any)._device = this;
 		}
 		return this._queue;
+	}
+
+	private _metalDevice: number | undefined;
+	/**
+	 * The `MTLDevice` wgpu renders with, as a number, or 0 where there is none (non-Apple
+	 * platforms, or an older native build without the binding).
+	 */
+	get __metalDevice(): number {
+		if (this._metalDevice === undefined) {
+			try {
+				this._metalDevice = this[native_].__getMetalDevicePointer?.() ?? 0;
+			} catch (e) {
+				this._metalDevice = 0;
+			}
+		}
+		return this._metalDevice;
 	}
 }

@@ -28,6 +28,9 @@ pub struct CanvasGPUQueue {
     pub(crate) device_id: Arc<wgpu_core::device::Device>,
     pub(crate) queue: Arc<QueueId>,
     pub(crate) error_sink: super::gpu_device::ErrorSink,
+    /// Lazily built pipelines for the video blit, shared across clones of this handle.
+    pub(crate) blit:
+        Arc<parking_lot::Mutex<Option<crate::webgpu::gpu_native_texture::BlitCache>>>,
 }
 
 unsafe impl Send for CanvasGPUQueue {}
@@ -282,7 +285,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_webgl_to_texture(
     let width = webgl.0.get_drawing_buffer_width();
     let height = webgl.0.get_drawing_buffer_height();
 
-    let row_size = bytes_per_pixel(gl_bindings::RGBA as u32, gl_bindings::RGBA as u32) as i32;
+    // glReadPixels wants a component *type* here; GL_RGBA fails with GL_INVALID_ENUM.
+    let row_size =
+        bytes_per_pixel(gl_bindings::UNSIGNED_BYTE as u32, gl_bindings::RGBA as u32) as i32;
 
     let mut bytes = vec![0u8; (width * height * row_size) as usize];
     unsafe {
@@ -293,7 +298,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_webgl_to_texture(
             width,
             height,
             gl_bindings::RGBA as u32,
-            gl_bindings::RGBA as u32,
+            gl_bindings::UNSIGNED_BYTE as u32,
             bytes.as_mut_ptr() as *mut c_void,
         );
     }
@@ -656,6 +661,13 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_gpu_context_to_texture(
             let size: wgt::Extent3d = size.into();
 
             encoder.copy_texture_to_texture(&source, &dest, &size);
+
+            // Submit, or the copy is recorded and dropped.
+            let command_buffer = encoder.finish(&wgt::CommandBufferDescriptor {
+                label: Some(Cow::Borrowed("copyGPUContextToTexture:CommandBuffer")),
+            });
+
+            queue.queue.id.submit(&[command_buffer]);
         }
     }
 }

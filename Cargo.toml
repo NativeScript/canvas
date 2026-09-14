@@ -58,7 +58,7 @@ opt-level = "z"
 [workspace.dependencies.wgt]
 package = "wgpu-types"
 git = "https://github.com/triniwiz/wgpu"
-rev = "b421632"
+rev = "e5c0aa02"
 
 
 
@@ -77,8 +77,8 @@ canvas-c = { path = "./crates/canvas-c" }
 skia-safe = { git = "https://github.com/triniwiz/rust-skia", rev = "1eafe30", features = ["textlayout"] }
 itertools = "0.14.0"
 ustr = "1.1.0"
-wgpu-core = { git = "https://github.com/triniwiz/wgpu", rev = "b421632", features = ["wgsl"] }
-wgpu-hal = { git = "https://github.com/triniwiz/wgpu", rev = "b421632" }
+wgpu-core = { git = "https://github.com/triniwiz/wgpu", rev = "e5c0aa02", features = ["wgsl"] }
+wgpu-hal = { git = "https://github.com/triniwiz/wgpu", rev = "e5c0aa02" }
 ureq = "2.10.1"
 jni = "0.21.1"
 regex-lite = "0.1.9"

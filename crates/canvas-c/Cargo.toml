@@ -31,6 +31,7 @@ infer = "0.16.0"
 image = { version = "0.25.5", optional = true }
 
 [target.'cfg(target_os="ios")'.dependencies]
+objc2 = { workspace = true, features = ["std"] }
 display-link = { version = "0.2.0" }
 wgpu-core = { workspace = true, features = ["wgsl", "metal"] }
 wgpu-hal = { workspace = true, features = ["metal"] }
@@ -38,6 +39,7 @@ objc2-foundation = { workspace = true }
 objc2-metal = { workspace = true }
 
 [target.'cfg(target_os="macos")'.dependencies]
+objc2 = { workspace = true, features = ["std"] }
 wgpu-core = { workspace = true, features = ["wgsl", "metal"] }
 wgpu-hal = { workspace = true, features = ["metal"] }
 objc2-metal = { workspace = true }

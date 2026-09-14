@@ -1,6 +1,6 @@
 import { Canvas } from '../Canvas';
 import { ImageAsset } from '../ImageAsset';
-import { native_ } from './Constants';
+import { GPUTextureUsage, native_ } from './Constants';
 import { GPUBuffer } from './GPUBuffer';
 import { GPUCommandBuffer } from './GPUCommandBuffer';
 import { GPUImageCopyExternalImage, GPUImageCopyTexture, GPUImageCopyTextureTagged, GPUImageDataLayout } from './Interfaces';
@@ -21,6 +21,42 @@ export class GPUQueue {
 		return null;
 	}
 
+	/** Set by GPUDevice when it hands out the queue. */
+	private _device: any;
+
+	/**
+	 * Point `into` at the video's current frame, preferring one already on the GPU.
+	 *
+	 * Returns whatever must stay referenced until the native call has been made --
+	 * releasing it early frees the texture out from under the blit.
+	 */
+	private _takeVideoFrame(video: any, into: GPUImageCopyExternalImage, destination: GPUImageCopyTextureTagged): unknown {
+		if (typeof video.getGPUFrameTexture === 'function') {
+			// Apple needs the MTLDevice its texture cache was built on; Android ignores it.
+			const device = this._device?.__metalDevice ?? 0;
+			// The blit renders into the destination, so without RENDER_ATTACHMENT it has
+			// to fall through to the upload path rather than fail validation.
+			const renderable = ((destination?.texture as any)?.usage ?? 0) & GPUTextureUsage.RENDER_ATTACHMENT;
+			if (renderable !== 0 && video.supportsGPUFrames?.(device)) {
+				const frame = video.getGPUFrameTexture(device);
+				if (frame) {
+					(into as any).nativeTexture = frame.texturePointer;
+					(into as any).width = frame.width;
+					(into as any).height = frame.height;
+					return frame;
+				}
+				// Importable, but no new frame decoded -- skip rather than re-send the last.
+				return undefined;
+			}
+		}
+
+		const frame = video.getVideoFrameData();
+		if (frame) {
+			into.source = frame;
+		}
+		return undefined;
+	}
+
 	copyExternalImageToTexture(source: GPUImageCopyExternalImage, destination: GPUImageCopyTextureTagged, copySize: GPUExtent3D) {
 		const src: GPUImageCopyExternalImage = {
 			source: undefined,
@@ -28,6 +64,8 @@ export class GPUQueue {
 
 		// Hold explicit GC roots for all JS wrapper objects until after the native call.
 		let _keepAlive: unknown;
+		// A video frame this call took ownership of, released once the upload is issued.
+		let _frame: any;
 
 		if (source.source) {
 			if (source.source instanceof ImageBitmap) {
@@ -45,15 +83,11 @@ export class GPUQueue {
 					src.source = source.source._asset.native;
 				}
 			} else if (typeof source.source.tagName === 'string' && (source.source.tagName === 'VID' || source.source.tagName === 'VIDEO') && source.source._video && typeof source.source._video.getVideoFrameData === 'function') {
-				const frame = source.source._video.getVideoFrameData();
-				if (frame) {
-					src.source = frame;
-				}
+				_frame = this._takeVideoFrame(source.source._video, src, destination);
+				_keepAlive = _frame;
 			} else if (source.source && typeof source.source.getVideoFrameData === 'function') {
-				const frame = source.source.getVideoFrameData();
-				if (frame) {
-					src.source = frame;
-				}
+				_frame = this._takeVideoFrame(source.source, src, destination);
+				_keepAlive = _frame;
 			} else if (source.source?._type === '2d' || source.source?._type?.indexOf('webgl') > -1 || source.source?._type === 'webgpu') {
 				_keepAlive = source.source;
 				src.source = (source.source as any).native;
@@ -119,6 +153,12 @@ export class GPUQueue {
 		}
 
 		this[native_].copyExternalImageToTexture(src, dst, size);
+
+		// Release only after the upload is issued: on Android the frame pins one of the
+		// decoder's images and the reader starves without it.
+		if (typeof _frame?.close === 'function') {
+			_frame.close();
+		}
 		void _keepAlive;
 	}
 

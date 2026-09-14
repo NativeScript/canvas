@@ -2,7 +2,7 @@ import { VideoBase } from './common';
 import { Source, srcProperty } from '../source';
 import { controlsProperty, playsinlineProperty, mutedProperty, currentTimeProperty, loopProperty, autoplayProperty } from '../common';
 import { booleanConverter, knownFolders, path } from '@nativescript/core';
-declare const NSCCanvasUtils, NSCVideoHelper, NSCRender;
+declare const NSCCanvasUtils, NSCVideoHelper, NSCRender, NSCVideoFrameBridge;
 
 interface NSCVideoHelperListener {}
 
@@ -230,6 +230,42 @@ export class Video extends VideoBase {
 				console.error('drawImageFrame error:', e);
 			}
 		}
+	}
+
+	private _supportsGPUFrames: boolean | undefined;
+
+	/**
+	 * Whether frames can be handed to WebGPU as Metal textures on `device`. A false is
+	 * permanent; a null from `getGPUFrameTexture` only means no new frame.
+	 */
+	supportsGPUFrames(device: number): boolean {
+		if (this._supportsGPUFrames === undefined) {
+			try {
+				this._supportsGPUFrames = typeof NSCVideoFrameBridge !== 'undefined' && NSCVideoFrameBridge.isSupportedForDevice(device);
+			} catch (e) {
+				this._supportsGPUFrames = false;
+			}
+		}
+		return this._supportsGPUFrames;
+	}
+
+	/**
+	 * The current frame as a Metal texture, or null when the decoder has no new one.
+	 * The returned object owns the texture: hold it until the upload has been issued.
+	 */
+	getGPUFrameTexture(device: number): any {
+		if (!this.helper.isInForeground) {
+			return null;
+		}
+		if (this.helper.assetOutput && this.helper.player) {
+			try {
+				return NSCVideoFrameBridge.currentFrameForPlayerOutputDevice(this.helper.player, this.helper.assetOutput, device);
+			} catch (e) {
+				console.error('getGPUFrameTexture error:', e);
+				return null;
+			}
+		}
+		return null;
 	}
 
 	getVideoFrameData(): any {

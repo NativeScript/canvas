@@ -94,6 +94,10 @@ v8::Local<v8::FunctionTemplate> GPUDeviceImpl::GetCtor(v8::Isolate *isolate) {
             v8::FunctionTemplate::New(isolate, &CreateBindGroup));
 
     tmpl->Set(
+            ConvertToV8String(isolate, "__getMetalDevicePointer"),
+            v8::FunctionTemplate::New(isolate, &GetMetalDevicePointer));
+
+    tmpl->Set(
             ConvertToV8String(isolate, "createBindGroupLayout"),
             v8::FunctionTemplate::New(isolate, &CreateBindGroupLayout));
 
@@ -3689,6 +3693,26 @@ void GPUDeviceImpl::CreateTexture(const v8::FunctionCallbackInfo<v8::Value> &arg
 
         args.GetReturnValue().SetUndefined();
     }
+}
+
+/// The `MTLDevice` wgpu renders with, as a number, or 0 where there is none.
+///
+/// Used to build the `CVMetalTextureCache` that video frames are imported through: it has
+/// to be this device and not the system default one. Apple platforms only.
+void GPUDeviceImpl::GetMetalDevicePointer(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    GPUDeviceImpl *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        args.GetReturnValue().Set(0);
+        return;
+    }
+
+#if (defined(TARGET_OS_IOS) || defined(TARGET_OS_MACOS) || defined(TARGET_OS_VISION))
+    auto device = canvas_native_webgpu_device_get_metal_device(ptr->GetGPUDevice());
+    args.GetReturnValue().Set(
+            static_cast<double>(reinterpret_cast<uintptr_t>(device)));
+#else
+    args.GetReturnValue().Set(0);
+#endif
 }
 
 void GPUDeviceImpl::Destroy(const v8::FunctionCallbackInfo<v8::Value> &args) {

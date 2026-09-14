@@ -164,6 +164,7 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
                         instance: Arc::clone(&instance),
                     }),
                     error_sink: error_sink.clone(),
+                    blit: Arc::new(parking_lot::Mutex::new(None)),
                 });
 
                 let ret = Arc::into_raw(Arc::new(CanvasGPUDevice {

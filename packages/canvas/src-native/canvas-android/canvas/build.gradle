@@ -64,7 +64,13 @@ android {
 			}
 		}
 		ndk {
-			abiFilters 'x86', 'x86_64', 'armeabi-v7a', 'arm64-v8a'
+			// `-PcanvasAbis=arm64-v8a` builds a single ABI, which is all an
+			// on-device measurement needs and avoids building the Rust libs for
+			// three other targets. Unset, the default stays all four.
+			def abis = (project.findProperty('canvasAbis') ?: 'x86,x86_64,armeabi-v7a,arm64-v8a')
+				.toString().split(',').collect { it.trim() }.findAll { it }
+			abiFilters.clear()
+			abiFilters.addAll(abis)
 		}
 	}
 

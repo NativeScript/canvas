@@ -999,8 +999,8 @@ void main()
 		await app.init({
 			preference: 'webgpu',
 			canvas,
-			width: canvas.width,
-			height: canvas.height,
+			width: canvas.clientWidth,
+			height: canvas.clientHeight,
 			autoDensity: false,
 			resolution: window.devicePixelRatio,
 		});
@@ -1394,11 +1394,13 @@ void main()
 		canvas.width = canvas.clientWidth * window.devicePixelRatio;
 		canvas.height = canvas.clientHeight * window.devicePixelRatio;
 
+		// CSS pixels; `resolution` scales them to the backing store. Passing
+		// canvas.width (already device pixels) applies the density twice.
 		await app.init({
 			canvas,
 			preference: 'webgpu',
-			width: canvas.width,
-			height: canvas.height,
+			width: canvas.clientWidth,
+			height: canvas.clientHeight,
 			autoDensity: true,
 			resolution: window.devicePixelRatio,
 		});

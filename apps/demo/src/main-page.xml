@@ -5,6 +5,8 @@
   <StackLayout class="p-20">
     <ScrollView class="h-full">
       <StackLayout>
+        <Button text="canvas-spec" tap="{{ viewDemo }}" class="btn btn-primary view-demo"/>
+        <Button text="canvas-perf" tap="{{ viewDemo }}" class="btn btn-primary view-demo"/>
         <Button text="canvas" tap="{{ viewDemo }}" class="btn btn-primary view-demo"/>
         <Button text="canvas-babylon" tap="{{ viewDemo }}" class="btn btn-primary view-demo"/>
         <Button text="canvas-media" tap="{{ viewDemo }}" class="btn btn-primary view-demo"/>

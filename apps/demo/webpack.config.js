@@ -63,6 +63,20 @@ module.exports = (env) => {
 		context: webpack.Utils.project.getProjectFilePath('node_modules'),
 	});
 
+	// The WebView baseline runs the same PixiJS build the NativeScript side bundles.
+	webpack.Utils.addCopyRule({
+		from: 'pixi.js/dist/pixi.min.js',
+		to: 'assets/pixi/webview/pixi.min.js',
+		context: webpack.Utils.project.getProjectFilePath('node_modules'),
+	});
+
+	// One benchmark source, loaded verbatim by both halves of the call-bound A/B.
+	webpack.Utils.addCopyRule({
+		from: '../../../tools/demo/canvas/callbound.js',
+		to: 'assets/pixi/webview/callbound.js',
+		context: webpack.Utils.project.getProjectFilePath('node_modules'),
+	});
+
 	webpack.Utils.addCopyRule({
 		from: '../../../tools/demo/canvas-three/assets',
 		to: 'assets/three',

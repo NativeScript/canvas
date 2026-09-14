@@ -145,6 +145,27 @@ for path, text in sources():
             fail(f'{match.group(1)}.reserve() leaves size() at 0 but size() is passed as a length',
                  [(path.relative_to(ROOT), index + 1, line.strip())])
 
+# 8. A name may be registered on a template only once: a duplicate in the
+#    descriptor array traps inside V8 with a single unwindable frame, so `new Foo()`
+#    kills the process. Only classes JS constructs directly ever hit it.
+TEMPLATE_NAME = re.compile(
+    r'(?:SetFastMethod(?:NoSideEffect|WithOverLoads)?\s*\(\s*isolate\s*,\s*tmpl\s*,\s*"([^"]+)"'
+    r'|tmpl->Set\w*\(\s*ConvertToV8String\(isolate,\s*"([^"]+)"\))')
+for path, text in sources():
+    body = strip_comments(text)
+    for match in re.finditer(r'v8::Local<v8::FunctionTemplate>\s+(\w+)::GetCtor\b[^{]*\{', body):
+        depth, index = 1, match.end()
+        while index < len(body) and depth:
+            depth += (body[index] == '{') - (body[index] == '}')
+            index += 1
+        seen = {}
+        for name_match in TEMPLATE_NAME.finditer(body[match.end():index]):
+            name = name_match.group(1) or name_match.group(2)
+            if name in seen:
+                fail(f'{match.group(1)}::GetCtor registers "{name}" on the template twice',
+                     [(path.relative_to(ROOT), 0, name)])
+            seen[name] = True
+
 if failures:
     for message, hits in failures:
         print(f'FAIL: {message}', file=sys.stderr)

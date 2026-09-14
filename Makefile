@@ -20,7 +20,9 @@ ios-svg: GENERATE_IOS_SVG
 
 visionos-svg: GENERATE_VISIONOS_SVG
 
-svg: GENERATE_IOS_SVG GENERATE_VISIONOS_SVG
+tvos-svg: GENERATE_TVOS_SVG
+
+svg: GENERATE_IOS_SVG GENERATE_VISIONOS_SVG GENERATE_TVOS_SVG
 
 android-svg: GENERATE_ANDROID_SVG
 
@@ -59,8 +61,13 @@ $(ARCHS_VISIONOS): %:
 	cargo +nightly build -Z build-std='std,panic_abort' \
 	    --target $@ --release -p canvas-ios
 
+# TVOS_DEPLOYMENT_TARGET must be set explicitly: rustc defaults to 12.0 but the
+# `cc` crate has no built-in tvOS default and falls back to the SDK version, so
+# ring's C/asm objects come out tagged minos 26.4 and the framework link (12.0)
+# warns on every one of them. iOS/visionOS need no equivalent -- cc knows those.
 .PHONY: $(ARCHS_TVOS)
 $(ARCHS_TVOS): %:
+	TVOS_DEPLOYMENT_TARGET=12.0 \
 	RUSTFLAGS="-Zlocation-detail=none -Zunstable-options -Cpanic=immediate-abort" \
 	cargo +nightly build -Z build-std='std,panic_abort' \
 	    --target $@ --release -p canvas-ios
@@ -90,7 +97,17 @@ $(addsuffix _svg,$(ARCHS_VISIONOS)): %_svg:
 .PHONY: GENERATE_VISIONOS_SVG
 GENERATE_VISIONOS_SVG: $(addsuffix _svg,$(ARCHS_VISIONOS))
 
-.PHONY: ios-svg visionos-svg svg
+.PHONY: $(addsuffix _svg,$(ARCHS_TVOS))
+$(addsuffix _svg,$(ARCHS_TVOS)): %_svg:
+	TVOS_DEPLOYMENT_TARGET=12.0 \
+	RUSTFLAGS="-Zlocation-detail=none -Zunstable-options -Cpanic=immediate-abort" \
+	cargo +nightly build -Z build-std='std,panic_abort' \
+	    --target $* --release -p canvas-svg-ios
+
+.PHONY: GENERATE_TVOS_SVG
+GENERATE_TVOS_SVG: $(addsuffix _svg,$(ARCHS_TVOS))
+
+.PHONY: ios-svg visionos-svg tvos-svg svg
 
 .PHONY: $(addsuffix _svg,$(ARCHS_ANDROID))
 $(addsuffix _svg,$(ARCHS_ANDROID)): %_svg:

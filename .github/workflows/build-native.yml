@@ -14,7 +14,7 @@
 # preserve file permissions.
 #
 # The canvas build mirrors the local flow:
-#   iOS:     make ios && make visionos, then tools/scripts/canvas-build.sh
+#   iOS:     make ios && make visionos && make tvos, then tools/scripts/canvas-build.sh
 #            (what `npm run build.canvas.ios.framework.release` runs, minus nx)
 #   Android: make android, then gradle :canvas:assembleRelease and copy the aar
 #
@@ -69,7 +69,7 @@ jobs:
           if-no-files-found: error
 
   canvas-ios:
-    name: Canvas iOS + visionOS
+    name: Canvas iOS + visionOS + tvOS
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
@@ -82,6 +82,10 @@ jobs:
         run: make ios
       - name: Build Rust libraries (visionOS)
         run: make visionos
+      # canvas-build.sh requires the tvOS static libs whenever the runner has a
+      # usable tvOS destination, which the macOS images do.
+      - name: Build Rust libraries (tvOS)
+        run: make tvos
       # same as `npm run build.canvas.ios.framework.release`, without needing node_modules
       - name: Build CanvasNative.xcframework
         working-directory: tools/scripts

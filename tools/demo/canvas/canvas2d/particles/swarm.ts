@@ -4,10 +4,11 @@ export function swarm(canvas, width?, height?, nativeCanvas?) {
 	var requestAnimFrame = requestAnimationFrame;
 
 	function init() {
-		//canvas.nativeView.setHandleInvalidationManually(true);
-		// Initialize the context of the canvas
-
-		// canvas.nativeView.handleInvalidationManually = true
+		// Otherwise re-entering the demo leaves the previous rAF loop running.
+		if (LAF) {
+			cancelAnimationFrame(LAF);
+			LAF = 0;
+		}
 
 		// Set the canvas width and height to occupy full window
 		var W = width || canvas.clientWidth * window.devicePixelRatio,
@@ -23,8 +24,7 @@ export function swarm(canvas, width?, height?, nativeCanvas?) {
 		// Some variables for later use
 		var particleCount = 1500,
 			particles = [],
-			minDist = 50,
-			dist;
+			minDist = 50;
 
 		// Function to paint the canvas black
 		function paintCanvas() {
@@ -33,7 +33,6 @@ export function swarm(canvas, width?, height?, nativeCanvas?) {
 
 			// This will create a rectangle of white color from the
 			// top left (0,0) to the bottom right corner (W,H)
-			//ctx.clearRect(0,0, W,H);
 			ctx.fillRect(0, 0, W, H);
 		}
 
@@ -64,25 +63,6 @@ export function swarm(canvas, width?, height?, nativeCanvas?) {
 			// Now the radius of the particles. I want all of
 			// them to be equal in size so no Math.random() here..
 			this.radius = 4;
-
-			// This is the method that will draw the Particle on the
-			// canvas. It is using the basic fillStyle, then we start
-			// the path and after we use the `arc` function to
-			// draw our circle. The `arc` function accepts four
-			// parameters in which first two depicts the position
-			// of the center point of our arc as x and y coordinates.
-			// The third value is for radius, then start angle,
-			// end angle and finally a boolean value which decides
-			// whether the arc is to be drawn in counter clockwise or
-			// in a clockwise direction. False for clockwise.
-			this.draw = function () {
-				ctx.fillStyle = 'white';
-				ctx.beginPath();
-				ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
-
-				// Fill the color to the arc that we just created
-				ctx.fill();
-			};
 		}
 
 		// Time to push the particles into an array
@@ -90,20 +70,50 @@ export function swarm(canvas, width?, height?, nativeCanvas?) {
 			particles.push(new Particle());
 		}
 
-		// Function to draw everything on the canvas that we'll use when
-		// animating the whole scene.
-		var p = new Particle();
+		// Bucket particles into minDist-sized cells so each looks at 9 cells, not all
+		// 1500. Only four neighbours are scanned (E, SW, S, SE), plus the own cell from
+		// i+1: that visits each unordered pair exactly once, which matters because a hit
+		// accelerates *both* particles.
+		const cols = Math.max(1, Math.ceil(W / minDist));
+		const rows = Math.max(1, Math.ceil(H / minDist));
+		const buckets: number[][] = new Array(cols * rows);
+		for (let b = 0; b < buckets.length; b++) {
+			buckets[b] = [];
+		}
+		const NEIGHBOUR_OFFSETS = [
+			[1, 0],
+			[-1, 1],
+			[0, 1],
+			[1, 1],
+		];
+
+		// Lines differ only in alpha, so quantise it into levels and collect each
+		// level's segments into one path: one stroke per level instead of ~7500.
+		const ALPHA_LEVELS = 16;
+		const laneColors: string[] = [];
+		const lanes: number[][] = [];
+		for (let l = 0; l < ALPHA_LEVELS; l++) {
+			// Original alpha was 1.2 - dist/minDist, i.e. (0.2 .. 1.2] over the range.
+			const alpha = 0.2 + (1.0 * (l + 0.5)) / ALPHA_LEVELS;
+			laneColors.push('rgba(255,255,255,' + alpha + ')');
+			lanes.push([]);
+		}
 
 		function draw() {
 			// Call the paintCanvas function here so that our canvas
 			// will get re-painted in each next frame
 			paintCanvas();
 
-			// Call the function that will draw the balls using a loop
-			for (var i = 0; i < particles.length; i++) {
-				p = particles[i];
-				p.draw();
+			// One path and one fill for all particles. The moveTo before each arc keeps
+			// them separate subpaths -- without it the circles chain together.
+			ctx.fillStyle = 'white';
+			ctx.beginPath();
+			for (let i = 0; i < particles.length; i++) {
+				const p = particles[i];
+				ctx.moveTo(p.x + p.radius, p.y);
+				ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2, false);
 			}
+			ctx.fill();
 
 			//Finally call the update function
 			update();
@@ -111,10 +121,17 @@ export function swarm(canvas, width?, height?, nativeCanvas?) {
 
 		// Give every particle some life
 		function update() {
+			for (let l = 0; l < ALPHA_LEVELS; l++) {
+				lanes[l].length = 0;
+			}
+			for (let b = 0; b < buckets.length; b++) {
+				buckets[b].length = 0;
+			}
+
 			// In this function, we are first going to update every
 			// particle's position according to their velocities
-			for (var i = 0; i < particles.length; i++) {
-				p = particles[i];
+			for (let i = 0; i < particles.length; i++) {
+				const p = particles[i];
 
 				// Change the velocities
 				p.x += p.vx;
@@ -133,52 +150,88 @@ export function swarm(canvas, width?, height?, nativeCanvas?) {
 					p.y = H - p.radius;
 				}
 
-				// Now we need to make them attract each other
-				// so first, we'll check the distance between
-				// them and compare it to the minDist we have
-				// already set
+				const cx = Math.min(cols - 1, Math.max(0, (p.x / minDist) | 0));
+				const cy = Math.min(rows - 1, Math.max(0, (p.y / minDist) | 0));
+				buckets[cy * cols + cx].push(i);
+			}
 
-				// We will need another loop so that each
-				// particle can be compared to every other particle
-				// except itself
-				for (var j = i + 1; j < particles.length; j++) {
-					let p2 = particles[j];
-					distance(p, p2);
+			// Now we need to make them attract each other, so check the distance
+			// between nearby pairs and compare it to the minDist we have set.
+			for (let cy = 0; cy < rows; cy++) {
+				for (let cx = 0; cx < cols; cx++) {
+					const cell = buckets[cy * cols + cx];
+					if (cell.length === 0) {
+						continue;
+					}
+
+					for (let a = 0; a < cell.length; a++) {
+						const p1 = particles[cell[a]];
+
+						// Same cell: only forward, so each pair is seen once.
+						for (let b = a + 1; b < cell.length; b++) {
+							distance(p1, particles[cell[b]]);
+						}
+
+						for (let n = 0; n < NEIGHBOUR_OFFSETS.length; n++) {
+							const nx = cx + NEIGHBOUR_OFFSETS[n][0];
+							const ny = cy + NEIGHBOUR_OFFSETS[n][1];
+							if (nx < 0 || nx >= cols || ny >= rows) {
+								continue;
+							}
+							const other = buckets[ny * cols + nx];
+							for (let b = 0; b < other.length; b++) {
+								distance(p1, particles[other[b]]);
+							}
+						}
+					}
 				}
+			}
+
+			for (let l = 0; l < ALPHA_LEVELS; l++) {
+				const lane = lanes[l];
+				if (lane.length === 0) {
+					continue;
+				}
+				ctx.strokeStyle = laneColors[l];
+				ctx.beginPath();
+				for (let s = 0; s < lane.length; s += 4) {
+					ctx.moveTo(lane[s], lane[s + 1]);
+					ctx.lineTo(lane[s + 2], lane[s + 3]);
+				}
+				ctx.stroke();
 			}
 		}
 
 		// Distance calculator between two particles
 		function distance(p1, p2) {
-			var dist,
-				dx = p1.x - p2.x,
+			const dx = p1.x - p2.x,
 				dy = p1.y - p2.y;
+			const distSq = dx * dx + dy * dy;
 
-			dist = Math.sqrt(dx * dx + dy * dy);
-
-			// Draw the line when distance is smaller
-			// then the minimum distance
-			if (dist <= minDist) {
-				// Draw the line
-				ctx.beginPath();
-				ctx.strokeStyle = 'rgba(255,255,255,' + (1.2 - dist / minDist) + ')';
-				ctx.moveTo(p1.x, p1.y);
-				ctx.lineTo(p2.x, p2.y);
-				ctx.stroke();
-				ctx.closePath();
-
-				// Some acceleration for the partcles
-				// depending upon their distance
-				var ax = dx / 2000,
-					ay = dy / 2000;
-
-				// Apply the acceleration on the particles
-				p1.vx -= ax;
-				p1.vy -= ay;
-
-				p2.vx += ax;
-				p2.vy += ay;
+			// Squared compare: only in-range pairs pay the square root.
+			if (distSq > minDist * minDist) {
+				return;
 			}
+
+			const dist = Math.sqrt(distSq);
+
+			let level = ((1 - dist / minDist) * ALPHA_LEVELS) | 0;
+			if (level >= ALPHA_LEVELS) level = ALPHA_LEVELS - 1;
+			else if (level < 0) level = 0;
+			const lane = lanes[level];
+			lane.push(p1.x, p1.y, p2.x, p2.y);
+
+			// Some acceleration for the partcles
+			// depending upon their distance
+			const ax = dx / 2000,
+				ay = dy / 2000;
+
+			// Apply the acceleration on the particles
+			p1.vx -= ax;
+			p1.vy -= ay;
+
+			p2.vx += ax;
+			p2.vy += ay;
 		}
 
 		// Start the main animation loop using requestAnimFrame

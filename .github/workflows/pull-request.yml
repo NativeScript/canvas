@@ -7,6 +7,9 @@
 # prerelease of each package.
 name: Canvas Native
 
+permissions:
+  contents: read
+
 on:
   push:
     branches:

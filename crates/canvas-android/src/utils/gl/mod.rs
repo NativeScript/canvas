@@ -137,3 +137,28 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_Utils_nativeContext2D
 
     JNI_FALSE
 }
+
+extern "C" {
+    /// From `<android/hardware_buffer_jni.h>`, API 26+. Declared here because the
+    /// `ndk` crate 0.7 does not wrap it.
+    fn AHardwareBuffer_fromHardwareBuffer(
+        env: *mut jni::sys::JNIEnv,
+        hardware_buffer: jni::sys::jobject,
+    ) -> *mut std::ffi::c_void;
+}
+
+/// The `AHardwareBuffer *` behind a Java `HardwareBuffer`, as a pointer-sized integer.
+///
+/// Borrowed: valid only while the Java object is alive, and no reference is acquired.
+#[no_mangle]
+pub unsafe extern "system" fn Java_org_nativescript_canvas_Utils_nativeHardwareBufferPointer(
+    env: *mut jni::sys::JNIEnv,
+    _: jni::sys::jobject,
+    hardware_buffer: jni::sys::jobject,
+) -> jlong {
+    if env.is_null() || hardware_buffer.is_null() {
+        return 0;
+    }
+
+    AHardwareBuffer_fromHardwareBuffer(env, hardware_buffer) as usize as jlong
+}

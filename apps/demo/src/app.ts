@@ -120,6 +120,7 @@ class CustomPage extends ProtocolWrapper {
 declare const jp, GDPerformanceMonitor, android, java, UIColor;
 let monitor;
 import { Application, path as filePath, knownFolders, Utils, path as nsPath, ImageSource, Trace, Screen, Color } from '@nativescript/core';
+import { captureLaunchArgs, launchArgs } from './launch-args';
 
 function describeAppError(value: unknown): string {
 	if (value == null) {
@@ -175,6 +176,14 @@ Application.on('uncaughtError', (args) => {
 // global.process.env = {} as any;
 
 Application.on('launch', (args) => {
+	captureLaunchArgs(args.android);
+
+	// Must happen before any Canvas is constructed; the constructor reads it once.
+	if (__ANDROID__ && launchArgs.surface !== undefined) {
+		Canvas.useSurface = launchArgs.surface === 'true';
+		console.log(`SURFACE|useSurface=${Canvas.useSurface}`);
+	}
+
 	//require('@nativescript/canvas-polyfill');
 	if (__ANDROID__) {
 		jp.wasabeef.takt.Takt.stock(Utils.android.getApplicationContext()).seat(jp.wasabeef.takt.Seat.TOP_CENTER).color(-65536);

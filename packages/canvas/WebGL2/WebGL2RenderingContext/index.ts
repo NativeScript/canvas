@@ -236,8 +236,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 
 	getFragDataLocation(program: WebGLProgram, name: string): number {
 		const value = program.native;
-		const result = this.native.getFragDataLocation(value, name);
-		return result !== -1 ? result : null;
+		return this.native.getFragDataLocation(value, name);
 	}
 
 	getIndexedParameter(target: number, index: number): any {

@@ -29,7 +29,8 @@
 					{
 						"glob": "**/*",
 						"input": "nativescript-v8/Headers/",
-						"output": "./platforms/ios/NativeScriptV8/Headers/"
+						"output": "./platforms/ios/NativeScriptV8/Headers/",
+						"ignore": ["**/.gitignore"]
 					},
 					{
 						"glob": "**/*",

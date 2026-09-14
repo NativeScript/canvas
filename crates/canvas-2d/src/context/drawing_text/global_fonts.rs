@@ -1,11 +1,12 @@
 use std::collections::HashMap;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use parking_lot::Mutex;
 use skia_safe::font_arguments::variation_position::Coordinate;
 use skia_safe::font_arguments::VariationPosition;
 use skia_safe::font_style::Slant;
 use skia_safe::textlayout::{FontCollection, TextStyle, TypefaceFontProvider};
-use skia_safe::{FontArguments, FontMgr, Typeface};
+use skia_safe::{Data, FontArguments, FontMgr, Typeface};
 use std::sync::LazyLock;
 use ustr::Ustr;
 
@@ -42,6 +43,11 @@ pub struct FontLibrary {
     collection_cache: HashMap<CollectionKey, FontCollection>,
     font_mgr: FontMgr,
 }
+
+/// Bumped whenever the set of registered typefaces changes; keys the shaped-layout
+/// cache so a late-registered family still takes effect. Deliberately outside the
+/// font-library mutex -- every `fillText` reads it.
+static GENERATION: AtomicU64 = AtomicU64::new(0);
 
 unsafe impl Send for FontLibrary {}
 
@@ -104,6 +110,12 @@ impl FontLibrary {
         collection.set_asset_font_manager(Some(assets.into()));
         self.collection = collection;
         self.collection_cache.clear();
+        GENERATION.fetch_add(1, Ordering::Relaxed);
+    }
+
+    /// Identifies the current set of registered typefaces.
+    pub fn generation() -> u64 {
+        GENERATION.load(Ordering::Relaxed)
     }
 
     /// Inserts or replaces a typeface **without** rebuilding the collection.
@@ -200,7 +212,7 @@ impl FontLibrary {
                 Err(why) => return Err(format!("{}: \"{}\"", why, path.display())),
                 Ok(b) => b,
             };
-            match decode_mgr.new_from_data(bytes.as_slice(), None) {
+            match decode_mgr.new_from_data(Data::new_copy(bytes.as_slice()), None) {
                 Some(font) => typefaces.push(font),
                 None => return Err(format!("Could not decode font data in {}", path.display())),
             }
@@ -219,7 +231,7 @@ impl FontLibrary {
         let decode_mgr = FontMgr::new();
         let mut typefaces = Vec::with_capacity(data.len());
         for bytes in data.iter() {
-            match decode_mgr.new_from_data(bytes, None) {
+            match decode_mgr.new_from_data(Data::new_copy(bytes), None) {
                 Some(font) => typefaces.push(font),
                 None => return Err("Could not decode font data".to_string()),
             }
@@ -243,5 +255,6 @@ impl FontLibrary {
         collection.set_default_font_manager(library.font_mgr.clone(), None);
         library.collection = collection;
         library.collection_cache.clear();
+        GENERATION.fetch_add(1, Ordering::Relaxed);
     }
 }

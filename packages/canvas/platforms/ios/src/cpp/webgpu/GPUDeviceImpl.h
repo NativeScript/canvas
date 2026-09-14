@@ -30,7 +30,7 @@ public:
         auto object = GPUDeviceImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType(device, NativeType::GPUDevice);
-        canvas::SetAlignedPointer(object, 0, device);
+        object->SetAlignedPointerInInternalField(0, device, ObjectWrapperImpl::kInternalFieldTag);
         device->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
@@ -79,6 +79,8 @@ public:
     static void CreateShaderModule(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void Destroy(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void GetMetalDevicePointer(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void PopErrorScope(const v8::FunctionCallbackInfo<v8::Value> &args);
 

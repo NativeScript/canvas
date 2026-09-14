@@ -38,13 +38,13 @@ public:
         auto object = WebGLTransformFeedback::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType( feedback, NativeType::WebGLTransformFeedback);
-        canvas::SetAlignedPointer(object, 0, feedback);
+        object->SetAlignedPointerInInternalField(0, feedback, ObjectWrapperImpl::kInternalFieldTag);
         feedback->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 
     static WebGLTransformFeedback *GetPointer(const v8::Local<v8::Object> &object) {
-        auto ptr = canvas::GetAlignedPointer(object, 0);
+        auto ptr = object->GetAlignedPointerFromInternalField(0, ObjectWrapperImpl::kInternalFieldTag);
         if (ptr == nullptr) {
             return nullptr;
         }

@@ -10,6 +10,7 @@
 #include "Helpers.h"
 
 #include "ImageAssetImpl.h"
+#include "canvas2d/ImageDataImpl.h"
 #include "ImageBitmapImpl.h"
 #include "TextDecoderImpl.h"
 #include "TextEncoderImpl.h"

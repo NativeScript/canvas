@@ -14,7 +14,7 @@
 # preserve file permissions.
 #
 # The canvas build mirrors the local flow:
-#   iOS:     make ios && make visionos, then tools/scripts/canvas-build.sh
+#   iOS:     make ios && make visionos && make tvos, then tools/scripts/canvas-build.sh
 #            (what `npm run build.canvas.ios.framework.release` runs, minus nx)
 #   Android: make android, then gradle :canvas:assembleRelease and copy the aar
 #
@@ -49,8 +49,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.ref }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.repository.default_branch || inputs.ref }}
       - uses: ./.github/actions/setup-android-native
+      - name: Fetch V8 + NativeScript runtime headers
+        run: ./tools/scripts/download-v8.sh
+      - name: Build libNativeScript.so stub for linking
+        run: ./tools/scripts/build-android-v8-stub.sh
       - name: Build Rust libraries
         run: make android
       - name: Build canvas AAR
@@ -65,17 +69,23 @@ jobs:
           if-no-files-found: error
 
   canvas-ios:
-    name: Canvas iOS + visionOS
+    name: Canvas iOS + visionOS + tvOS
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.ref }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.repository.default_branch || inputs.ref }}
       - uses: ./.github/actions/setup-apple-native
+      - name: Fetch V8 + NativeScript runtime headers
+        run: ./tools/scripts/download-v8.sh
       - name: Build Rust libraries (iOS)
         run: make ios
       - name: Build Rust libraries (visionOS)
         run: make visionos
+      # canvas-build.sh requires the tvOS static libs whenever the runner has a
+      # usable tvOS destination, which the macOS images do.
+      - name: Build Rust libraries (tvOS)
+        run: make tvos
       # same as `npm run build.canvas.ios.framework.release`, without needing node_modules
       - name: Build CanvasNative.xcframework
         working-directory: tools/scripts
@@ -190,7 +200,7 @@ jobs:
           if-no-files-found: error
 
   audio-context-ios:
-    name: AudioContext iOS + visionOS
+    name: AudioContext iOS + visionOS + tvOS
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4

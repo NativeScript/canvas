@@ -175,18 +175,25 @@ impl Context {
         }
     }
 
-    pub fn point_in_path(&self, path: Option<&Path>, x: f32, y: f32, rule: FillRule) -> bool {
-        let path = path.unwrap_or(&self.path);
-
-        let total_matrix = self.state.matrix;
-        if !is_invertible(&total_matrix) {
-            return false;
-        }
+    /// The point is device-space per spec, paths are user-space. Note `state.matrix`
+    /// is not the live matrix: the transform lives on the Skia canvas.
+    fn point_in_user_space(&mut self, x: f32, y: f32) -> Option<Point> {
         if !x.is_finite() || !y.is_finite() {
-            return false;
+            return None;
         }
-        let inverse = total_matrix.invert().unwrap();
-        let transformed_point = inverse.map_point(Point::new(x, y));
+        let matrix = self.surface.canvas().local_to_device_as_3x3();
+        if !is_invertible(&matrix) {
+            return None;
+        }
+        matrix.invert().map(|inverse| inverse.map_point(Point::new(x, y)))
+    }
+
+    pub fn point_in_path(&mut self, path: Option<&Path>, x: f32, y: f32, rule: FillRule) -> bool {
+        let transformed_point = match self.point_in_user_space(x, y) {
+            Some(point) => point,
+            None => return false,
+        };
+        let path = path.unwrap_or(&self.path);
         let target_fill = rule.to_fill_type();
         let current_fill = path.path().fill_type();
         if current_fill == target_fill {
@@ -198,18 +205,26 @@ impl Context {
         }
     }
 
-    pub fn point_in_stroke(&self, path: Option<&Path>, x: f32, y: f32) -> bool {
+    pub fn point_in_stroke(&mut self, path: Option<&Path>, x: f32, y: f32) -> bool {
+        let transformed_point = match self.point_in_user_space(x, y) {
+            Some(point) => point,
+            None => return false,
+        };
         let path = path.unwrap_or(&self.path);
-        let matrix = self.state.matrix;
-        if !is_invertible(&matrix) {
+        // Hit-test the stroked outline: a line has no area to contain a point.
+        let mut stroke_paint = self.state.paint.stroke_paint().clone();
+        stroke_paint.set_style(skia_safe::paint::Style::Stroke);
+        let mut outline = skia_safe::PathBuilder::new();
+        if !skia_safe::path_utils::fill_path_with_paint(
+            path.path(),
+            &stroke_paint,
+            &mut outline,
+            None,
+            None,
+        ) {
             return false;
         }
-        if !x.is_finite() || !y.is_finite() {
-            return false;
-        }
-        let inverse = matrix.invert().unwrap();
-        let transformed_point = inverse.map_point(Point::new(x, y));
-        path.path().contains(transformed_point)
+        outline.detach().contains(transformed_point)
     }
 }
 

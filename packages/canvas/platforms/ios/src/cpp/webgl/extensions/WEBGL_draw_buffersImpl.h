@@ -7,6 +7,7 @@
 #include "gl.h"
 #include <vector>
 #include "Common.h"
+#include "V8FastApiCalls.h"
 #include "Caches.h"
 #include "Helpers.h"
 #include "ObjectWrapperImpl.h"
@@ -127,13 +128,13 @@ public:
         auto object = WEBGL_draw_buffersImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType(buffers, NativeType::WEBGL_draw_buffers);
-        canvas::SetAlignedPointer(object, 0, buffers);
+        object->SetAlignedPointerInInternalField(0, buffers, ObjectWrapperImpl::kInternalFieldTag);
         buffers->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 
     static WEBGL_draw_buffersImpl *GetPointer(const v8::Local<v8::Object> &object) {
-        auto ptr = canvas::GetAlignedPointer(object, 0);
+        auto ptr = object->GetAlignedPointerFromInternalField(0, ObjectWrapperImpl::kInternalFieldTag);
         if (ptr == nullptr) {
             return nullptr;
         }
@@ -153,9 +154,9 @@ public:
 
         auto len = value->Length();
         std::vector<uint32_t> buf;
-        buf.reserve(len);
+        buf.resize(len);
 
-        auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<uint32_t>::Build().GetId(), uint32_t>(
+        auto copied = v8_helpers::TryToCopyAndConvertArrayToCppBufferUint32(
                 value, buf.data(), len);
 
         if (copied) {

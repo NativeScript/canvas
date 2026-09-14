@@ -207,17 +207,28 @@ export function parseRenderPassDescriptor(value: GPURenderPassDescriptor) {
 			}
 		}
 
+		// Omitted ops stay undefined, as on the web: wgpu requires the stencil
+		// pair to be None for a depth-only format, and vice versa.
 		desc.depthStencilAttachment = {
-			depthLoadOp: value.depthStencilAttachment.depthLoadOp ?? 'load',
-			depthStoreOp: value.depthStencilAttachment.depthStoreOp ?? 'store',
 			view: dsView,
 			depthClearValue: value.depthStencilAttachment.depthClearValue ?? 0,
 			depthReadOnly: value.depthStencilAttachment.depthReadOnly ?? false,
-			stencilLoadOp: value.depthStencilAttachment.stencilLoadOp ?? 'load',
-			stencilStoreOp: value.depthStencilAttachment.stencilStoreOp ?? 'store',
 			stencilClearValue: value.depthStencilAttachment.stencilClearValue ?? 0,
 			stencilReadOnly: value.depthStencilAttachment.stencilReadOnly ?? false,
-		};
+		} as GPURenderPassDepthStencilAttachment;
+
+		if (value.depthStencilAttachment.depthLoadOp !== undefined) {
+			desc.depthStencilAttachment.depthLoadOp = value.depthStencilAttachment.depthLoadOp;
+		}
+		if (value.depthStencilAttachment.depthStoreOp !== undefined) {
+			desc.depthStencilAttachment.depthStoreOp = value.depthStencilAttachment.depthStoreOp;
+		}
+		if (value.depthStencilAttachment.stencilLoadOp !== undefined) {
+			desc.depthStencilAttachment.stencilLoadOp = value.depthStencilAttachment.stencilLoadOp;
+		}
+		if (value.depthStencilAttachment.stencilStoreOp !== undefined) {
+			desc.depthStencilAttachment.stencilStoreOp = value.depthStencilAttachment.stencilStoreOp;
+		}
 	}
 
 	if (value?.occlusionQuerySet) {

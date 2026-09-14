@@ -6,8 +6,10 @@
 
 #include "Common.h"
 #include "Helpers.h"
+#include "V8FastApiCalls.h"
 #include <vector>
 #include "ObjectWrapperImpl.h"
+#include "MatrixImpl.h"
 
 class Path2D : ObjectWrapperImpl {
 public:
@@ -44,10 +46,11 @@ public:
         AddPathImpl(ptr->GetPath(), src->GetPath());
     }
 
-    static void AddPathImpl(Path *receiver_obj, Path *obj) {
-        canvas_native_path_add_path(
+    static void AddPathImpl(Path *receiver_obj, Path *obj, Matrix *matrix = nullptr) {
+        canvas_native_path_add_path_with_matrix(
                 receiver_obj,
-                obj);
+                obj,
+                matrix);
     }
 
     static v8::CFunction fast_add_path_;
@@ -352,10 +355,10 @@ public:
 
         auto len = value->Length();
         std::vector<float> buf;
-        buf.reserve(len);
+        buf.resize(len);
 
-        auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<float>::Build().GetId(), float>(
-                value, nullptr, len);
+        auto copied = v8_helpers::TryToCopyAndConvertArrayToCppBufferFloat(
+                value, buf.data(), len);
 
         if (copied) {
             if (len > 1) {

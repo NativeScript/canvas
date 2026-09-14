@@ -26,7 +26,7 @@ void GPUSupportedLimitsImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolat
 }
 
 GPUSupportedLimitsImpl *GPUSupportedLimitsImpl::GetPointer(v8::Local<v8::Object> object) {
-    auto ptr = canvas::GetAlignedPointer(object, 0);
+    auto ptr = object->GetAlignedPointerFromInternalField(0, ObjectWrapperImpl::kInternalFieldTag);
     if (ptr == nullptr) {
         return nullptr;
     }
@@ -47,226 +47,226 @@ v8::Local<v8::FunctionTemplate> GPUSupportedLimitsImpl::GetCtor(v8::Isolate *iso
     auto tmpl = ctorTmpl->InstanceTemplate();
     tmpl->SetInternalFieldCount(2);
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "maxTextureDimension1D"),
             GetMaxTextureDimension1D,
             SetMaxTextureDimension1D
     );
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "maxTextureDimension2D"),
             GetMaxTextureDimension2D,
             SetMaxTextureDimension2D
     );
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "maxTextureDimension3D"),
             GetMaxTextureDimension3D,
             SetMaxTextureDimension3D
     );
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "maxTextureArrayLayers"),
             GetMaxTextureArrayLayers,
             SetMaxTextureArrayLayers
     );
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "maxBindGroups"),
             GetMaxBindGroups,
             SetMaxBindGroups
     );
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "maxBindingsPerBindGroup"),
             GetMaxBindingsPerBindGroup,
             SetMaxBindingsPerBindGroup
     );
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "maxDynamicUniformBuffersPerPipelineLayout"),
             GetMaxDynamicUniformBuffersPerPipelineLayout,
             SetMaxDynamicUniformBuffersPerPipelineLayout
     );
 
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "maxDynamicStorageBuffersPerPipelineLayout"),
             GetMaxDynamicStorageBuffersPerPipelineLayout,
             SetMaxDynamicStorageBuffersPerPipelineLayout
     );
 
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "maxSampledTexturesPerShaderStage"),
             GetMaxSampledTexturesPerShaderStage,
             SetMaxSampledTexturesPerShaderStage
     );
 
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "maxSamplersPerShaderStage"),
             GetMaxSamplersPerShaderStage,
             SetMaxSamplersPerShaderStage
     );
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "maxStorageBuffersPerShaderStage"),
             GetMaxStorageBuffersPerShaderStage,
             SetMaxStorageBuffersPerShaderStage
     );
 
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "maxStorageTexturesPerShaderStage"),
             GetMaxStorageTexturesPerShaderStage,
             SetMaxStorageTexturesPerShaderStage
     );
 
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "maxUniformBuffersPerShaderStage"),
             GetMaxUniformBuffersPerShaderStage,
             SetMaxUniformBuffersPerShaderStage
     );
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "maxUniformBufferBindingSize"),
             GetMaxUniformBufferBindingSize,
             SetMaxUniformBufferBindingSize
     );
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "maxStorageBufferBindingSize"),
             GetMaxStorageBufferBindingSize,
             SetMaxStorageBufferBindingSize
     );
 
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "maxVertexBuffers"),
             GetMaxVertexBuffers,
             SetMaxVertexBuffers
     );
 
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "maxBufferSize"),
             GetMaxBufferSize,
             SetMaxBufferSize
     );
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "maxVertexAttributes"),
             GetMaxVertexAttributes,
             SetMaxVertexAttributes
     );
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "maxVertexBufferArrayStride"),
             GetMaxVertexBufferArrayStride,
             SetMaxVertexBufferArrayStride
     );
 
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "minUniformBufferOffsetAlignment"),
             GetMinUniformBufferOffsetAlignment,
             SetMinUniformBufferOffsetAlignment
     );
 
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "minStorageBufferOffsetAlignment"),
             GetMinStorageBufferOffsetAlignment,
             SetMinStorageBufferOffsetAlignment
     );
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "maxInterStageShaderVariables"),
             GetMaxInterStageShaderComponents,
             SetMaxInterStageShaderComponents
     );
 
     // Legacy alias for older callers still using the old spec name
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "maxInterStageShaderComponents"),
             GetMaxInterStageShaderComponents,
             SetMaxInterStageShaderComponents
     );
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "maxColorAttachments"),
             GetMaxColorAttachments,
             SetMaxColorAttachments
     );
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "maxColorAttachmentBytesPerSample"),
             GetMaxColorAttachmentBytesPerSample,
             SetMaxColorAttachmentBytesPerSample
     );
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "maxComputeWorkgroupStorageSize"),
             GetMaxComputeWorkgroupStorageSize,
             SetMaxComputeWorkgroupStorageSize
     );
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "maxComputeInvocationsPerWorkgroup"),
             GetMaxComputeInvocationsPerWorkgroup,
             SetMaxComputeInvocationsPerWorkgroup
     );
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "maxComputeWorkgroupSizeX"),
             GetMaxComputeWorkgroupSizeX,
             SetMaxComputeWorkgroupSizeX
     );
 
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "maxComputeWorkgroupSizeY"),
             GetMaxComputeWorkgroupSizeY,
             SetMaxComputeWorkgroupSizeY
     );
 
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "maxComputeWorkgroupSizeZ"),
             GetMaxComputeWorkgroupSizeZ,
             SetMaxComputeWorkgroupSizeZ
     );
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "maxComputeWorkgroupsPerDimension"),
             GetMaxComputeWorkgroupsPerDimension,
             SetMaxComputeWorkgroupsPerDimension
     );
 
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "minSubgroupSize"),
             GetMinSubgroupSize,
             SetMinSubgroupSize
     );
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "maxSubgroupSize"),
             GetMaxSubgroupSize,
             SetMaxSubgroupSize
     );
 
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "maxPushConstantSize"),
             GetMaxPushConstantSize,
             SetMaxPushConstantSize
     );
 
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "maxNonSamplerBindings"),
             GetMaxNonSamplerBindings,
             SetMaxNonSamplerBindings
@@ -286,7 +286,7 @@ void GPUSupportedLimitsImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &arg
     auto limits = canvas_native_webgpu_create_limits();
     auto object = new GPUSupportedLimitsImpl(limits);
 
-    canvas::SetAlignedPointer(ret, 0, object);
+    ret->SetAlignedPointerInInternalField(0, object, ObjectWrapperImpl::kInternalFieldTag);
 
     SetNativeType(object, NativeType::GPUSupportedLimits);
 
@@ -298,7 +298,7 @@ void GPUSupportedLimitsImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &arg
 
 void GPUSupportedLimitsImpl::GetMaxTextureDimension1D(v8::Local<v8::Name> property,
                                                       const v8::PropertyCallbackInfo<v8::Value> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         // return default ??
         info.GetReturnValue().Set(8192);
@@ -314,7 +314,7 @@ void GPUSupportedLimitsImpl::GetMaxTextureDimension1D(v8::Local<v8::Name> proper
 void GPUSupportedLimitsImpl::SetMaxTextureDimension1D(v8::Local<v8::Name> property,
                                                       v8::Local<v8::Value> value,
                                                       const v8::PropertyCallbackInfo<void> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -327,7 +327,7 @@ void GPUSupportedLimitsImpl::SetMaxTextureDimension1D(v8::Local<v8::Name> proper
 
 void GPUSupportedLimitsImpl::GetMaxTextureDimension2D(v8::Local<v8::Name> property,
                                                       const v8::PropertyCallbackInfo<v8::Value> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         // return default ??
         info.GetReturnValue().Set(8192);
@@ -343,7 +343,7 @@ void GPUSupportedLimitsImpl::GetMaxTextureDimension2D(v8::Local<v8::Name> proper
 void GPUSupportedLimitsImpl::SetMaxTextureDimension2D(v8::Local<v8::Name> property,
                                                       v8::Local<v8::Value> value,
                                                       const v8::PropertyCallbackInfo<void> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -356,7 +356,7 @@ void GPUSupportedLimitsImpl::SetMaxTextureDimension2D(v8::Local<v8::Name> proper
 
 void GPUSupportedLimitsImpl::GetMaxTextureDimension3D(v8::Local<v8::Name> property,
                                                       const v8::PropertyCallbackInfo<v8::Value> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         // return default ??
         info.GetReturnValue().Set(2048);
@@ -371,7 +371,7 @@ void GPUSupportedLimitsImpl::GetMaxTextureDimension3D(v8::Local<v8::Name> proper
 void GPUSupportedLimitsImpl::SetMaxTextureDimension3D(v8::Local<v8::Name> property,
                                                       v8::Local<v8::Value> value,
                                                       const v8::PropertyCallbackInfo<void> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -384,7 +384,7 @@ void GPUSupportedLimitsImpl::SetMaxTextureDimension3D(v8::Local<v8::Name> proper
 
 void GPUSupportedLimitsImpl::GetMaxTextureArrayLayers(v8::Local<v8::Name> property,
                                                       const v8::PropertyCallbackInfo<v8::Value> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         // return default ??
         info.GetReturnValue().Set(256);
@@ -400,7 +400,7 @@ void GPUSupportedLimitsImpl::GetMaxTextureArrayLayers(v8::Local<v8::Name> proper
 void GPUSupportedLimitsImpl::SetMaxTextureArrayLayers(v8::Local<v8::Name> property,
                                                       v8::Local<v8::Value> value,
                                                       const v8::PropertyCallbackInfo<void> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -413,7 +413,7 @@ void GPUSupportedLimitsImpl::SetMaxTextureArrayLayers(v8::Local<v8::Name> proper
 
 void GPUSupportedLimitsImpl::GetMaxBindGroups(v8::Local<v8::Name> property,
                                               const v8::PropertyCallbackInfo<v8::Value> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         // return default ??
         info.GetReturnValue().Set(4);
@@ -429,7 +429,7 @@ void GPUSupportedLimitsImpl::GetMaxBindGroups(v8::Local<v8::Name> property,
 void GPUSupportedLimitsImpl::SetMaxBindGroups(v8::Local<v8::Name> property,
                                               v8::Local<v8::Value> value,
                                               const v8::PropertyCallbackInfo<void> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -442,7 +442,7 @@ void GPUSupportedLimitsImpl::SetMaxBindGroups(v8::Local<v8::Name> property,
 
 void GPUSupportedLimitsImpl::GetMaxBindingsPerBindGroup(v8::Local<v8::Name> property,
                                                         const v8::PropertyCallbackInfo<v8::Value> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         // return default ??
         info.GetReturnValue().Set(1000);
@@ -459,7 +459,7 @@ void GPUSupportedLimitsImpl::GetMaxBindingsPerBindGroup(v8::Local<v8::Name> prop
 void GPUSupportedLimitsImpl::SetMaxBindingsPerBindGroup(v8::Local<v8::Name> property,
                                                         v8::Local<v8::Value> value,
                                                         const v8::PropertyCallbackInfo<void> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -473,7 +473,7 @@ void GPUSupportedLimitsImpl::SetMaxBindingsPerBindGroup(v8::Local<v8::Name> prop
 void
 GPUSupportedLimitsImpl::GetMaxDynamicUniformBuffersPerPipelineLayout(v8::Local<v8::Name> property,
                                                                      const v8::PropertyCallbackInfo<v8::Value> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         // return default ??
         info.GetReturnValue().Set(8);
@@ -489,7 +489,7 @@ void
 GPUSupportedLimitsImpl::SetMaxDynamicUniformBuffersPerPipelineLayout(v8::Local<v8::Name> property,
                                                                      v8::Local<v8::Value> value,
                                                                      const v8::PropertyCallbackInfo<void> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -504,7 +504,7 @@ GPUSupportedLimitsImpl::SetMaxDynamicUniformBuffersPerPipelineLayout(v8::Local<v
 void
 GPUSupportedLimitsImpl::GetMaxDynamicStorageBuffersPerPipelineLayout(v8::Local<v8::Name> property,
                                                                      const v8::PropertyCallbackInfo<v8::Value> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         // return default ??
         info.GetReturnValue().Set(4);
@@ -520,7 +520,7 @@ void
 GPUSupportedLimitsImpl::SetMaxDynamicStorageBuffersPerPipelineLayout(v8::Local<v8::Name> property,
                                                                      v8::Local<v8::Value> value,
                                                                      const v8::PropertyCallbackInfo<void> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -534,7 +534,7 @@ GPUSupportedLimitsImpl::SetMaxDynamicStorageBuffersPerPipelineLayout(v8::Local<v
 
 void GPUSupportedLimitsImpl::GetMaxSampledTexturesPerShaderStage(v8::Local<v8::Name> property,
                                                                  const v8::PropertyCallbackInfo<v8::Value> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         // return default ??
         info.GetReturnValue().Set(16);
@@ -549,7 +549,7 @@ void GPUSupportedLimitsImpl::GetMaxSampledTexturesPerShaderStage(v8::Local<v8::N
 void GPUSupportedLimitsImpl::SetMaxSampledTexturesPerShaderStage(v8::Local<v8::Name> property,
                                                                  v8::Local<v8::Value> value,
                                                                  const v8::PropertyCallbackInfo<void> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -564,7 +564,7 @@ void GPUSupportedLimitsImpl::SetMaxSampledTexturesPerShaderStage(v8::Local<v8::N
 
 void GPUSupportedLimitsImpl::GetMaxSamplersPerShaderStage(v8::Local<v8::Name> property,
                                                           const v8::PropertyCallbackInfo<v8::Value> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         // return default ??
         info.GetReturnValue().Set(16);
@@ -580,7 +580,7 @@ void GPUSupportedLimitsImpl::GetMaxSamplersPerShaderStage(v8::Local<v8::Name> pr
 void GPUSupportedLimitsImpl::SetMaxSamplersPerShaderStage(v8::Local<v8::Name> property,
                                                           v8::Local<v8::Value> value,
                                                           const v8::PropertyCallbackInfo<void> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -594,7 +594,7 @@ void GPUSupportedLimitsImpl::SetMaxSamplersPerShaderStage(v8::Local<v8::Name> pr
 
 void GPUSupportedLimitsImpl::GetMaxStorageBuffersPerShaderStage(v8::Local<v8::Name> property,
                                                                 const v8::PropertyCallbackInfo<v8::Value> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         // return default ??
         info.GetReturnValue().Set(8);
@@ -609,7 +609,7 @@ void GPUSupportedLimitsImpl::GetMaxStorageBuffersPerShaderStage(v8::Local<v8::Na
 void GPUSupportedLimitsImpl::SetMaxStorageBuffersPerShaderStage(v8::Local<v8::Name> property,
                                                                 v8::Local<v8::Value> value,
                                                                 const v8::PropertyCallbackInfo<void> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -623,7 +623,7 @@ void GPUSupportedLimitsImpl::SetMaxStorageBuffersPerShaderStage(v8::Local<v8::Na
 
 void GPUSupportedLimitsImpl::GetMaxStorageTexturesPerShaderStage(v8::Local<v8::Name> property,
                                                                  const v8::PropertyCallbackInfo<v8::Value> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         // return default ??
         info.GetReturnValue().Set(4);
@@ -638,7 +638,7 @@ void GPUSupportedLimitsImpl::GetMaxStorageTexturesPerShaderStage(v8::Local<v8::N
 void GPUSupportedLimitsImpl::SetMaxStorageTexturesPerShaderStage(v8::Local<v8::Name> property,
                                                                  v8::Local<v8::Value> value,
                                                                  const v8::PropertyCallbackInfo<void> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -653,7 +653,7 @@ void GPUSupportedLimitsImpl::SetMaxStorageTexturesPerShaderStage(v8::Local<v8::N
 
 void GPUSupportedLimitsImpl::GetMaxUniformBuffersPerShaderStage(v8::Local<v8::Name> property,
                                                                 const v8::PropertyCallbackInfo<v8::Value> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         // return default ??
         info.GetReturnValue().Set(12);
@@ -669,7 +669,7 @@ void GPUSupportedLimitsImpl::GetMaxUniformBuffersPerShaderStage(v8::Local<v8::Na
 void GPUSupportedLimitsImpl::SetMaxUniformBuffersPerShaderStage(v8::Local<v8::Name> property,
                                                                 v8::Local<v8::Value> value,
                                                                 const v8::PropertyCallbackInfo<void> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -682,7 +682,7 @@ void GPUSupportedLimitsImpl::SetMaxUniformBuffersPerShaderStage(v8::Local<v8::Na
 
 void GPUSupportedLimitsImpl::GetMaxUniformBufferBindingSize(v8::Local<v8::Name> property,
                                                             const v8::PropertyCallbackInfo<v8::Value> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         // return default ??
         info.GetReturnValue().Set(64);
@@ -698,7 +698,7 @@ void GPUSupportedLimitsImpl::GetMaxUniformBufferBindingSize(v8::Local<v8::Name> 
 void GPUSupportedLimitsImpl::SetMaxUniformBufferBindingSize(v8::Local<v8::Name> property,
                                                             v8::Local<v8::Value> value,
                                                             const v8::PropertyCallbackInfo<void> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -711,7 +711,7 @@ void GPUSupportedLimitsImpl::SetMaxUniformBufferBindingSize(v8::Local<v8::Name> 
 
 void GPUSupportedLimitsImpl::GetMaxStorageBufferBindingSize(v8::Local<v8::Name> property,
                                                             const v8::PropertyCallbackInfo<v8::Value> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         // return default ??
         info.GetReturnValue().Set(128);
@@ -727,7 +727,7 @@ void GPUSupportedLimitsImpl::GetMaxStorageBufferBindingSize(v8::Local<v8::Name> 
 void GPUSupportedLimitsImpl::SetMaxStorageBufferBindingSize(v8::Local<v8::Name> property,
                                                             v8::Local<v8::Value> value,
                                                             const v8::PropertyCallbackInfo<void> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -740,7 +740,7 @@ void GPUSupportedLimitsImpl::SetMaxStorageBufferBindingSize(v8::Local<v8::Name> 
 
 void GPUSupportedLimitsImpl::GetMaxVertexBuffers(v8::Local<v8::Name> property,
                                                  const v8::PropertyCallbackInfo<v8::Value> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         // return default ??
         info.GetReturnValue().Set(8);
@@ -756,7 +756,7 @@ void GPUSupportedLimitsImpl::GetMaxVertexBuffers(v8::Local<v8::Name> property,
 void GPUSupportedLimitsImpl::SetMaxVertexBuffers(v8::Local<v8::Name> property,
                                                  v8::Local<v8::Value> value,
                                                  const v8::PropertyCallbackInfo<void> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -769,7 +769,7 @@ void GPUSupportedLimitsImpl::SetMaxVertexBuffers(v8::Local<v8::Name> property,
 
 void GPUSupportedLimitsImpl::GetMaxBufferSize(v8::Local<v8::Name> property,
                                               const v8::PropertyCallbackInfo<v8::Value> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         // return default ??
         info.GetReturnValue().Set(256);
@@ -786,7 +786,7 @@ void GPUSupportedLimitsImpl::GetMaxBufferSize(v8::Local<v8::Name> property,
 void GPUSupportedLimitsImpl::SetMaxBufferSize(v8::Local<v8::Name> property,
                                               v8::Local<v8::Value> value,
                                               const v8::PropertyCallbackInfo<void> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -800,7 +800,7 @@ void GPUSupportedLimitsImpl::SetMaxBufferSize(v8::Local<v8::Name> property,
 
 void GPUSupportedLimitsImpl::GetMaxVertexAttributes(v8::Local<v8::Name> property,
                                                     const v8::PropertyCallbackInfo<v8::Value> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         // return default ??
         info.GetReturnValue().Set(16);
@@ -816,7 +816,7 @@ void GPUSupportedLimitsImpl::GetMaxVertexAttributes(v8::Local<v8::Name> property
 void GPUSupportedLimitsImpl::SetMaxVertexAttributes(v8::Local<v8::Name> property,
                                                     v8::Local<v8::Value> value,
                                                     const v8::PropertyCallbackInfo<void> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -830,7 +830,7 @@ void GPUSupportedLimitsImpl::SetMaxVertexAttributes(v8::Local<v8::Name> property
 
 void GPUSupportedLimitsImpl::GetMaxVertexBufferArrayStride(v8::Local<v8::Name> property,
                                                            const v8::PropertyCallbackInfo<v8::Value> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         // return default ??
         info.GetReturnValue().Set(2048);
@@ -847,7 +847,7 @@ void GPUSupportedLimitsImpl::GetMaxVertexBufferArrayStride(v8::Local<v8::Name> p
 void GPUSupportedLimitsImpl::SetMaxVertexBufferArrayStride(v8::Local<v8::Name> property,
                                                            v8::Local<v8::Value> value,
                                                            const v8::PropertyCallbackInfo<void> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -861,7 +861,7 @@ void GPUSupportedLimitsImpl::SetMaxVertexBufferArrayStride(v8::Local<v8::Name> p
 
 void GPUSupportedLimitsImpl::GetMinUniformBufferOffsetAlignment(v8::Local<v8::Name> property,
                                                                 const v8::PropertyCallbackInfo<v8::Value> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         // return default ??
         info.GetReturnValue().Set(256);
@@ -878,7 +878,7 @@ void GPUSupportedLimitsImpl::GetMinUniformBufferOffsetAlignment(v8::Local<v8::Na
 void GPUSupportedLimitsImpl::SetMinUniformBufferOffsetAlignment(v8::Local<v8::Name> property,
                                                                 v8::Local<v8::Value> value,
                                                                 const v8::PropertyCallbackInfo<void> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -892,7 +892,7 @@ void GPUSupportedLimitsImpl::SetMinUniformBufferOffsetAlignment(v8::Local<v8::Na
 
 void GPUSupportedLimitsImpl::GetMinStorageBufferOffsetAlignment(v8::Local<v8::Name> property,
                                                                 const v8::PropertyCallbackInfo<v8::Value> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         // return default ??
         info.GetReturnValue().Set(256);
@@ -909,7 +909,7 @@ void GPUSupportedLimitsImpl::GetMinStorageBufferOffsetAlignment(v8::Local<v8::Na
 void GPUSupportedLimitsImpl::SetMinStorageBufferOffsetAlignment(v8::Local<v8::Name> property,
                                                                 v8::Local<v8::Value> value,
                                                                 const v8::PropertyCallbackInfo<void> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -923,7 +923,7 @@ void GPUSupportedLimitsImpl::SetMinStorageBufferOffsetAlignment(v8::Local<v8::Na
 
 void GPUSupportedLimitsImpl::GetMaxInterStageShaderComponents(v8::Local<v8::Name> property,
                                                               const v8::PropertyCallbackInfo<v8::Value> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         // return default ??
         info.GetReturnValue().Set(60);
@@ -940,7 +940,7 @@ void GPUSupportedLimitsImpl::GetMaxInterStageShaderComponents(v8::Local<v8::Name
 void GPUSupportedLimitsImpl::SetMaxInterStageShaderComponents(v8::Local<v8::Name> property,
                                                               v8::Local<v8::Value> value,
                                                               const v8::PropertyCallbackInfo<void> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -954,7 +954,7 @@ void GPUSupportedLimitsImpl::SetMaxInterStageShaderComponents(v8::Local<v8::Name
 
 void GPUSupportedLimitsImpl::GetMaxColorAttachments(v8::Local<v8::Name> property,
                                                     const v8::PropertyCallbackInfo<v8::Value> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         // return default ??
         info.GetReturnValue().Set(8);
@@ -971,7 +971,7 @@ void GPUSupportedLimitsImpl::GetMaxColorAttachments(v8::Local<v8::Name> property
 void GPUSupportedLimitsImpl::SetMaxColorAttachments(v8::Local<v8::Name> property,
                                                     v8::Local<v8::Value> value,
                                                     const v8::PropertyCallbackInfo<void> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -985,7 +985,7 @@ void GPUSupportedLimitsImpl::SetMaxColorAttachments(v8::Local<v8::Name> property
 
 void GPUSupportedLimitsImpl::GetMaxColorAttachmentBytesPerSample(v8::Local<v8::Name> property,
                                                                  const v8::PropertyCallbackInfo<v8::Value> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         // return default ??
         info.GetReturnValue().Set(32);
@@ -1001,7 +1001,7 @@ void GPUSupportedLimitsImpl::GetMaxColorAttachmentBytesPerSample(v8::Local<v8::N
 void GPUSupportedLimitsImpl::SetMaxColorAttachmentBytesPerSample(v8::Local<v8::Name> property,
                                                                  v8::Local<v8::Value> value,
                                                                  const v8::PropertyCallbackInfo<void> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -1016,7 +1016,7 @@ void GPUSupportedLimitsImpl::SetMaxColorAttachmentBytesPerSample(v8::Local<v8::N
 
 void GPUSupportedLimitsImpl::GetMaxComputeWorkgroupStorageSize(v8::Local<v8::Name> property,
                                                                const v8::PropertyCallbackInfo<v8::Value> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         // return default ??
         info.GetReturnValue().Set(16384);
@@ -1032,7 +1032,7 @@ void GPUSupportedLimitsImpl::GetMaxComputeWorkgroupStorageSize(v8::Local<v8::Nam
 void GPUSupportedLimitsImpl::SetMaxComputeWorkgroupStorageSize(v8::Local<v8::Name> property,
                                                                v8::Local<v8::Value> value,
                                                                const v8::PropertyCallbackInfo<void> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -1046,7 +1046,7 @@ void GPUSupportedLimitsImpl::SetMaxComputeWorkgroupStorageSize(v8::Local<v8::Nam
 
 void GPUSupportedLimitsImpl::GetMaxComputeInvocationsPerWorkgroup(v8::Local<v8::Name> property,
                                                                   const v8::PropertyCallbackInfo<v8::Value> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         // return default ??
         info.GetReturnValue().Set(256);
@@ -1062,7 +1062,7 @@ void GPUSupportedLimitsImpl::GetMaxComputeInvocationsPerWorkgroup(v8::Local<v8::
 void GPUSupportedLimitsImpl::SetMaxComputeInvocationsPerWorkgroup(v8::Local<v8::Name> property,
                                                                   v8::Local<v8::Value> value,
                                                                   const v8::PropertyCallbackInfo<void> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -1076,7 +1076,7 @@ void GPUSupportedLimitsImpl::SetMaxComputeInvocationsPerWorkgroup(v8::Local<v8::
 
 void GPUSupportedLimitsImpl::GetMaxComputeWorkgroupSizeX(v8::Local<v8::Name> property,
                                                          const v8::PropertyCallbackInfo<v8::Value> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         // return default ??
         info.GetReturnValue().Set(256);
@@ -1092,7 +1092,7 @@ void GPUSupportedLimitsImpl::GetMaxComputeWorkgroupSizeX(v8::Local<v8::Name> pro
 void GPUSupportedLimitsImpl::SetMaxComputeWorkgroupSizeX(v8::Local<v8::Name> property,
                                                          v8::Local<v8::Value> value,
                                                          const v8::PropertyCallbackInfo<void> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -1106,7 +1106,7 @@ void GPUSupportedLimitsImpl::SetMaxComputeWorkgroupSizeX(v8::Local<v8::Name> pro
 
 void GPUSupportedLimitsImpl::GetMaxComputeWorkgroupSizeY(v8::Local<v8::Name> property,
                                                          const v8::PropertyCallbackInfo<v8::Value> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         // return default ??
         info.GetReturnValue().Set(256);
@@ -1122,7 +1122,7 @@ void GPUSupportedLimitsImpl::GetMaxComputeWorkgroupSizeY(v8::Local<v8::Name> pro
 void GPUSupportedLimitsImpl::SetMaxComputeWorkgroupSizeY(v8::Local<v8::Name> property,
                                                          v8::Local<v8::Value> value,
                                                          const v8::PropertyCallbackInfo<void> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -1136,7 +1136,7 @@ void GPUSupportedLimitsImpl::SetMaxComputeWorkgroupSizeY(v8::Local<v8::Name> pro
 
 void GPUSupportedLimitsImpl::GetMaxComputeWorkgroupSizeZ(v8::Local<v8::Name> property,
                                                          const v8::PropertyCallbackInfo<v8::Value> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         // return default ??
         info.GetReturnValue().Set(64);
@@ -1152,7 +1152,7 @@ void GPUSupportedLimitsImpl::GetMaxComputeWorkgroupSizeZ(v8::Local<v8::Name> pro
 void GPUSupportedLimitsImpl::SetMaxComputeWorkgroupSizeZ(v8::Local<v8::Name> property,
                                                          v8::Local<v8::Value> value,
                                                          const v8::PropertyCallbackInfo<void> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -1165,7 +1165,7 @@ void GPUSupportedLimitsImpl::SetMaxComputeWorkgroupSizeZ(v8::Local<v8::Name> pro
 
 void GPUSupportedLimitsImpl::GetMaxComputeWorkgroupsPerDimension(v8::Local<v8::Name> property,
                                                                  const v8::PropertyCallbackInfo<v8::Value> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         // return default ??
         info.GetReturnValue().Set(65535);
@@ -1181,7 +1181,7 @@ void GPUSupportedLimitsImpl::GetMaxComputeWorkgroupsPerDimension(v8::Local<v8::N
 void GPUSupportedLimitsImpl::SetMaxComputeWorkgroupsPerDimension(v8::Local<v8::Name> property,
                                                                  v8::Local<v8::Value> value,
                                                                  const v8::PropertyCallbackInfo<void> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -1231,7 +1231,7 @@ void GPUSupportedLimitsImpl::SetMaxPushConstantSize(v8::Local<v8::Name> property
 
 void GPUSupportedLimitsImpl::GetMaxNonSamplerBindings(v8::Local<v8::Name> property,
                                                       const v8::PropertyCallbackInfo<v8::Value> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         // return default ??
         info.GetReturnValue().Set(1000000);
@@ -1247,7 +1247,7 @@ void GPUSupportedLimitsImpl::GetMaxNonSamplerBindings(v8::Local<v8::Name> proper
 void GPUSupportedLimitsImpl::SetMaxNonSamplerBindings(v8::Local<v8::Name> property,
                                                       v8::Local<v8::Value> value,
                                                       const v8::PropertyCallbackInfo<void> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(canvas::Receiver(info));
+    GPUSupportedLimitsImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }

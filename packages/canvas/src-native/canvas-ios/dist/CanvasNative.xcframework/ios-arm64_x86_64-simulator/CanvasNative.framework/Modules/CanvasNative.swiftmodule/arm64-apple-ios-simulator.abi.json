@@ -5482,6 +5482,431 @@
 			},
 			{
 				"kind": "Import",
+				"name": "AVFoundation",
+				"printedName": "AVFoundation",
+				"declKind": "Import",
+				"moduleName": "CanvasNative",
+				"declAttributes": ["RawDocComment"]
+			},
+			{
+				"kind": "Import",
+				"name": "CoreVideo",
+				"printedName": "CoreVideo",
+				"declKind": "Import",
+				"moduleName": "CanvasNative"
+			},
+			{
+				"kind": "Import",
+				"name": "Metal",
+				"printedName": "Metal",
+				"declKind": "Import",
+				"moduleName": "CanvasNative"
+			},
+			{
+				"kind": "TypeDecl",
+				"name": "NSCVideoFrameTexture",
+				"printedName": "NSCVideoFrameTexture",
+				"children": [
+					{
+						"kind": "Var",
+						"name": "width",
+						"printedName": "width",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Int",
+								"printedName": "Swift.Int",
+								"usr": "s:Si"
+							}
+						],
+						"declKind": "Var",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCVideoFrameTexture(py)width",
+						"mangledName": "$s12CanvasNative20NSCVideoFrameTextureC5widthSivp",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["Final", "HasStorage", "AccessControl", "ObjC"],
+						"isLet": true,
+						"hasStorage": true,
+						"accessors": [
+							{
+								"kind": "Accessor",
+								"name": "Get",
+								"printedName": "Get()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Int",
+										"printedName": "Swift.Int",
+										"usr": "s:Si"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "c:@M@CanvasNative@objc(cs)NSCVideoFrameTexture(im)width",
+								"mangledName": "$s12CanvasNative20NSCVideoFrameTextureC5widthSivg",
+								"moduleName": "CanvasNative",
+								"implicit": true,
+								"declAttributes": ["Final", "ObjC"],
+								"accessorKind": "get"
+							}
+						]
+					},
+					{
+						"kind": "Var",
+						"name": "height",
+						"printedName": "height",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Int",
+								"printedName": "Swift.Int",
+								"usr": "s:Si"
+							}
+						],
+						"declKind": "Var",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCVideoFrameTexture(py)height",
+						"mangledName": "$s12CanvasNative20NSCVideoFrameTextureC6heightSivp",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["Final", "HasStorage", "AccessControl", "ObjC"],
+						"isLet": true,
+						"hasStorage": true,
+						"accessors": [
+							{
+								"kind": "Accessor",
+								"name": "Get",
+								"printedName": "Get()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Int",
+										"printedName": "Swift.Int",
+										"usr": "s:Si"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "c:@M@CanvasNative@objc(cs)NSCVideoFrameTexture(im)height",
+								"mangledName": "$s12CanvasNative20NSCVideoFrameTextureC6heightSivg",
+								"moduleName": "CanvasNative",
+								"implicit": true,
+								"declAttributes": ["Final", "ObjC"],
+								"accessorKind": "get"
+							}
+						]
+					},
+					{
+						"kind": "Var",
+						"name": "texturePointer",
+						"printedName": "texturePointer",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Int",
+								"printedName": "Swift.Int",
+								"usr": "s:Si"
+							}
+						],
+						"declKind": "Var",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCVideoFrameTexture(py)texturePointer",
+						"mangledName": "$s12CanvasNative20NSCVideoFrameTextureC14texturePointerSivp",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["AccessControl", "ObjC", "RawDocComment"],
+						"accessors": [
+							{
+								"kind": "Accessor",
+								"name": "Get",
+								"printedName": "Get()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Int",
+										"printedName": "Swift.Int",
+										"usr": "s:Si"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "c:@M@CanvasNative@objc(cs)NSCVideoFrameTexture(im)texturePointer",
+								"mangledName": "$s12CanvasNative20NSCVideoFrameTextureC14texturePointerSivg",
+								"moduleName": "CanvasNative",
+								"declAttributes": ["ObjC"],
+								"accessorKind": "get"
+							}
+						]
+					},
+					{
+						"kind": "Constructor",
+						"name": "init",
+						"printedName": "init()",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "NSCVideoFrameTexture",
+								"printedName": "CanvasNative.NSCVideoFrameTexture",
+								"usr": "c:@M@CanvasNative@objc(cs)NSCVideoFrameTexture"
+							}
+						],
+						"declKind": "Constructor",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCVideoFrameTexture(im)init",
+						"mangledName": "$s12CanvasNative20NSCVideoFrameTextureCACycfc",
+						"moduleName": "CanvasNative",
+						"overriding": true,
+						"implicit": true,
+						"objc_name": "init",
+						"declAttributes": ["Dynamic", "ObjC", "Override"],
+						"init_kind": "Designated"
+					}
+				],
+				"declKind": "Class",
+				"usr": "c:@M@CanvasNative@objc(cs)NSCVideoFrameTexture",
+				"mangledName": "$s12CanvasNative20NSCVideoFrameTextureC",
+				"moduleName": "CanvasNative",
+				"objc_name": "NSCVideoFrameTexture",
+				"declAttributes": ["AccessControl", "ObjC", "RawDocComment"],
+				"superclassUsr": "c:objc(cs)NSObject",
+				"hasMissingDesignatedInitializers": true,
+				"superclassNames": ["ObjectiveC.NSObject"],
+				"conformances": [
+					{
+						"kind": "Conformance",
+						"name": "_KeyValueCodingAndObserving",
+						"printedName": "_KeyValueCodingAndObserving",
+						"usr": "s:10Foundation27_KeyValueCodingAndObservingP",
+						"mangledName": "$s10Foundation27_KeyValueCodingAndObservingP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "_KeyValueCodingAndObservingPublishing",
+						"printedName": "_KeyValueCodingAndObservingPublishing",
+						"usr": "s:10Foundation37_KeyValueCodingAndObservingPublishingP",
+						"mangledName": "$s10Foundation37_KeyValueCodingAndObservingPublishingP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "CVarArg",
+						"printedName": "CVarArg",
+						"usr": "s:s7CVarArgP",
+						"mangledName": "$ss7CVarArgP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Copyable",
+						"printedName": "Copyable",
+						"usr": "s:s8CopyableP",
+						"mangledName": "$ss8CopyableP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "CustomDebugStringConvertible",
+						"printedName": "CustomDebugStringConvertible",
+						"usr": "s:s28CustomDebugStringConvertibleP",
+						"mangledName": "$ss28CustomDebugStringConvertibleP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "CustomStringConvertible",
+						"printedName": "CustomStringConvertible",
+						"usr": "s:s23CustomStringConvertibleP",
+						"mangledName": "$ss23CustomStringConvertibleP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Equatable",
+						"printedName": "Equatable",
+						"usr": "s:SQ",
+						"mangledName": "$sSQ"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Escapable",
+						"printedName": "Escapable",
+						"usr": "s:s9EscapableP",
+						"mangledName": "$ss9EscapableP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Hashable",
+						"printedName": "Hashable",
+						"usr": "s:SH",
+						"mangledName": "$sSH"
+					}
+				]
+			},
+			{
+				"kind": "TypeDecl",
+				"name": "NSCVideoFrameBridge",
+				"printedName": "NSCVideoFrameBridge",
+				"children": [
+					{
+						"kind": "Function",
+						"name": "isSupported",
+						"printedName": "isSupported(device:)",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Bool",
+								"printedName": "Swift.Bool",
+								"usr": "s:Sb"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "Int",
+								"printedName": "Swift.Int",
+								"usr": "s:Si"
+							}
+						],
+						"declKind": "Func",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCVideoFrameBridge(cm)isSupportedForDevice:",
+						"mangledName": "$s12CanvasNative19NSCVideoFrameBridgeC11isSupported6deviceSbSi_tFZ",
+						"moduleName": "CanvasNative",
+						"static": true,
+						"objc_name": "isSupportedForDevice:",
+						"declAttributes": ["Final", "AccessControl", "ObjC", "RawDocComment"],
+						"funcSelfKind": "NonMutating"
+					},
+					{
+						"kind": "Function",
+						"name": "currentFrame",
+						"printedName": "currentFrame(player:output:device:)",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Optional",
+								"printedName": "CanvasNative.NSCVideoFrameTexture?",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "NSCVideoFrameTexture",
+										"printedName": "CanvasNative.NSCVideoFrameTexture",
+										"usr": "c:@M@CanvasNative@objc(cs)NSCVideoFrameTexture"
+									}
+								],
+								"usr": "s:Sq"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "AVPlayer",
+								"printedName": "AVFoundation.AVPlayer",
+								"usr": "c:objc(cs)AVPlayer"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "AVPlayerItemVideoOutput",
+								"printedName": "AVFoundation.AVPlayerItemVideoOutput",
+								"usr": "c:objc(cs)AVPlayerItemVideoOutput"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "Int",
+								"printedName": "Swift.Int",
+								"usr": "s:Si"
+							}
+						],
+						"declKind": "Func",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCVideoFrameBridge(cm)currentFrameForPlayer:output:device:",
+						"mangledName": "$s12CanvasNative19NSCVideoFrameBridgeC07currentD06player6output6deviceAA0cD7TextureCSgSo8AVPlayerC_So0K15ItemVideoOutputCSitFZ",
+						"moduleName": "CanvasNative",
+						"static": true,
+						"objc_name": "currentFrameForPlayer:output:device:",
+						"declAttributes": ["Final", "AccessControl", "ObjC", "RawDocComment"],
+						"funcSelfKind": "NonMutating"
+					},
+					{
+						"kind": "Constructor",
+						"name": "init",
+						"printedName": "init()",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "NSCVideoFrameBridge",
+								"printedName": "CanvasNative.NSCVideoFrameBridge",
+								"usr": "c:@M@CanvasNative@objc(cs)NSCVideoFrameBridge"
+							}
+						],
+						"declKind": "Constructor",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCVideoFrameBridge(im)init",
+						"mangledName": "$s12CanvasNative19NSCVideoFrameBridgeCACycfc",
+						"moduleName": "CanvasNative",
+						"overriding": true,
+						"implicit": true,
+						"objc_name": "init",
+						"declAttributes": ["Dynamic", "ObjC", "Override"],
+						"init_kind": "Designated"
+					}
+				],
+				"declKind": "Class",
+				"usr": "c:@M@CanvasNative@objc(cs)NSCVideoFrameBridge",
+				"mangledName": "$s12CanvasNative19NSCVideoFrameBridgeC",
+				"moduleName": "CanvasNative",
+				"objc_name": "NSCVideoFrameBridge",
+				"declAttributes": ["AccessControl", "ObjC", "RawDocComment"],
+				"superclassUsr": "c:objc(cs)NSObject",
+				"inheritsConvenienceInitializers": true,
+				"superclassNames": ["ObjectiveC.NSObject"],
+				"conformances": [
+					{
+						"kind": "Conformance",
+						"name": "_KeyValueCodingAndObserving",
+						"printedName": "_KeyValueCodingAndObserving",
+						"usr": "s:10Foundation27_KeyValueCodingAndObservingP",
+						"mangledName": "$s10Foundation27_KeyValueCodingAndObservingP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "_KeyValueCodingAndObservingPublishing",
+						"printedName": "_KeyValueCodingAndObservingPublishing",
+						"usr": "s:10Foundation37_KeyValueCodingAndObservingPublishingP",
+						"mangledName": "$s10Foundation37_KeyValueCodingAndObservingPublishingP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "CVarArg",
+						"printedName": "CVarArg",
+						"usr": "s:s7CVarArgP",
+						"mangledName": "$ss7CVarArgP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Copyable",
+						"printedName": "Copyable",
+						"usr": "s:s8CopyableP",
+						"mangledName": "$ss8CopyableP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "CustomDebugStringConvertible",
+						"printedName": "CustomDebugStringConvertible",
+						"usr": "s:s28CustomDebugStringConvertibleP",
+						"mangledName": "$ss28CustomDebugStringConvertibleP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "CustomStringConvertible",
+						"printedName": "CustomStringConvertible",
+						"usr": "s:s23CustomStringConvertibleP",
+						"mangledName": "$ss23CustomStringConvertibleP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Equatable",
+						"printedName": "Equatable",
+						"usr": "s:SQ",
+						"mangledName": "$sSQ"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Escapable",
+						"printedName": "Escapable",
+						"usr": "s:s9EscapableP",
+						"mangledName": "$ss9EscapableP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Hashable",
+						"printedName": "Hashable",
+						"usr": "s:SH",
+						"mangledName": "$sSH"
+					}
+				]
+			},
+			{
+				"kind": "Import",
 				"name": "Foundation",
 				"printedName": "Foundation",
 				"declKind": "Import",
@@ -8017,203 +8442,203 @@
 		{
 			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
 			"kind": "BooleanLiteral",
-			"offset": 1167,
+			"offset": 1207,
 			"length": 5,
 			"value": "false"
 		},
 		{
 			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
 			"kind": "IntegerLiteral",
-			"offset": 1364,
+			"offset": 1404,
 			"length": 4,
 			"value": "1"
 		},
 		{
 			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
 			"kind": "IntegerLiteral",
-			"offset": 1376,
+			"offset": 1416,
 			"length": 4,
 			"value": "2"
 		},
 		{
 			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
 			"kind": "IntegerLiteral",
-			"offset": 1388,
+			"offset": 1428,
 			"length": 4,
 			"value": "3"
 		},
 		{
 			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
 			"kind": "IntegerLiteral",
-			"offset": 1400,
+			"offset": 1440,
 			"length": 9,
 			"value": "4"
 		},
 		{
 			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
 			"kind": "BooleanLiteral",
-			"offset": 2044,
+			"offset": 2084,
 			"length": 4,
 			"value": "true"
 		},
 		{
 			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
 			"kind": "BooleanLiteral",
-			"offset": 1965,
+			"offset": 2005,
 			"length": 5,
 			"value": "false"
 		},
 		{
 			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
 			"kind": "IntegerLiteral",
-			"offset": 3342,
+			"offset": 3382,
 			"length": 1,
 			"value": "1"
 		},
 		{
 			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
 			"kind": "BooleanLiteral",
-			"offset": 3272,
+			"offset": 3312,
 			"length": 4,
 			"value": "true"
 		},
 		{
 			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
 			"kind": "IntegerLiteral",
-			"offset": 3467,
+			"offset": 3507,
 			"length": 1,
 			"value": "0"
 		},
 		{
 			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
 			"kind": "BooleanLiteral",
-			"offset": 3503,
+			"offset": 3543,
 			"length": 5,
 			"value": "false"
 		},
 		{
 			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
 			"kind": "BooleanLiteral",
-			"offset": 3557,
+			"offset": 3597,
 			"length": 5,
 			"value": "false"
 		},
 		{
 			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
 			"kind": "BooleanLiteral",
-			"offset": 6112,
+			"offset": 6163,
 			"length": 4,
 			"value": "true"
 		},
 		{
 			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
 			"kind": "BooleanLiteral",
-			"offset": 6140,
+			"offset": 6191,
 			"length": 4,
 			"value": "true"
 		},
 		{
 			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
 			"kind": "BooleanLiteral",
-			"offset": 6164,
+			"offset": 6215,
 			"length": 4,
 			"value": "true"
 		},
 		{
 			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
 			"kind": "BooleanLiteral",
-			"offset": 6211,
+			"offset": 6262,
 			"length": 5,
 			"value": "false"
 		},
 		{
 			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
 			"kind": "IntegerLiteral",
-			"offset": 6247,
+			"offset": 6298,
 			"length": 1,
 			"value": "0"
 		},
 		{
 			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
 			"kind": "BooleanLiteral",
-			"offset": 6281,
+			"offset": 6332,
 			"length": 4,
 			"value": "true"
 		},
 		{
 			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
 			"kind": "BooleanLiteral",
-			"offset": 6321,
+			"offset": 6372,
 			"length": 5,
 			"value": "false"
 		},
 		{
 			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
 			"kind": "BooleanLiteral",
-			"offset": 6348,
+			"offset": 6399,
 			"length": 5,
 			"value": "false"
 		},
 		{
 			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
 			"kind": "BooleanLiteral",
-			"offset": 6382,
+			"offset": 6433,
 			"length": 5,
 			"value": "false"
 		},
 		{
 			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
 			"kind": "BooleanLiteral",
-			"offset": 6414,
+			"offset": 6465,
 			"length": 5,
 			"value": "false"
 		},
 		{
 			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
 			"kind": "BooleanLiteral",
-			"offset": 6452,
+			"offset": 6503,
 			"length": 5,
 			"value": "false"
 		},
 		{
 			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
 			"kind": "IntegerLiteral",
-			"offset": 6483,
+			"offset": 6534,
 			"length": 1,
 			"value": "0"
 		},
 		{
 			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
 			"kind": "BooleanLiteral",
-			"offset": 15766,
+			"offset": 18443,
 			"length": 5,
 			"value": "false"
 		},
 		{
 			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
 			"kind": "BooleanLiteral",
-			"offset": 16108,
+			"offset": 18785,
 			"length": 5,
 			"value": "false"
 		},
 		{
 			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
 			"kind": "BooleanLiteral",
-			"offset": 16333,
+			"offset": 19010,
 			"length": 5,
 			"value": "false"
 		},
 		{
 			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
 			"kind": "IntegerLiteral",
-			"offset": 16373,
+			"offset": 19050,
 			"length": 3,
 			"value": "300"
 		},
 		{
 			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
 			"kind": "IntegerLiteral",
-			"offset": 16544,
+			"offset": 19221,
 			"length": 3,
 			"value": "150"
 		},
@@ -8267,51 +8692,58 @@
 			"value": "0"
 		},
 		{
+			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCRender.swift",
+			"kind": "Dictionary",
+			"offset": 34375,
+			"length": 3,
+			"value": "[]"
+		},
+		{
 			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
 			"kind": "Array",
-			"offset": 387,
+			"offset": 416,
 			"length": 2,
 			"value": "[]"
 		},
 		{
 			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
 			"kind": "IntegerLiteral",
-			"offset": 425,
+			"offset": 454,
 			"length": 1,
 			"value": "0"
 		},
 		{
 			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
 			"kind": "BooleanLiteral",
-			"offset": 10131,
+			"offset": 10290,
 			"length": 5,
 			"value": "false"
 		},
 		{
 			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
 			"kind": "BooleanLiteral",
-			"offset": 10302,
+			"offset": 10461,
 			"length": 5,
 			"value": "false"
 		},
 		{
 			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
 			"kind": "BooleanLiteral",
-			"offset": 10475,
+			"offset": 10634,
 			"length": 5,
 			"value": "false"
 		},
 		{
 			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
 			"kind": "BooleanLiteral",
-			"offset": 10646,
+			"offset": 10805,
 			"length": 5,
 			"value": "false"
 		},
 		{
 			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
 			"kind": "BooleanLiteral",
-			"offset": 10816,
+			"offset": 10975,
 			"length": 5,
 			"value": "false"
 		},

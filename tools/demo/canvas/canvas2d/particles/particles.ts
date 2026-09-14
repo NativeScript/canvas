@@ -7,6 +7,9 @@ var config = {
 	maxParticleSize: 10,
 	maxSpeed: 40,
 	colorVariation: 10,
+	// Hard ceiling: cleanUpArray only drops particles that leave the canvas, and a
+	// good share of them have a near-zero step and sit where they spawned forever.
+	maxParticles: 600,
 };
 var width = 0,
 	height = 0;
@@ -56,6 +59,13 @@ var Particle = function (x, y) {
 };
 
 function touchParticles(canvas, w?, h?, nativeCanvas?) {
+	// Otherwise re-entering the demo leaves the previous rAF loop running.
+	if (LAF) {
+		cancelAnimationFrame(LAF);
+		LAF = 0;
+	}
+	particles = [];
+
 	canvas.width = canvas.clientWidth * window.devicePixelRatio;
 	canvas.height = canvas.clientHeight * window.devicePixelRatio;
 	width = w || canvas.width;
@@ -124,9 +134,9 @@ function touchParticles(canvas, w?, h?, nativeCanvas?) {
 		cleanUpArray();
 
 		// Update Particle models to new position
-		particles.map((p) => {
-			return updateParticleModel(p);
-		});
+		for (let i = 0; i < particles.length; i++) {
+			updateParticleModel(particles[i]);
+		}
 		// Draw em'
 		for (const p of particles) {
 			drawParticle(p.x, p.y, p.r, p.c);
@@ -169,13 +179,18 @@ function touchParticles(canvas, w?, h?, nativeCanvas?) {
 }
 
 function cleanUpArray() {
+	if (particles.length <= config.particleNumber) {
+		return;
+	}
+
 	const margin = 100 * window.devicePixelRatio;
-	const updatedParticles = particles.filter((p) => {
+	particles = particles.filter((p) => {
 		return p.x > -margin && p.x < width + margin && p.y > -margin && p.y < height + margin;
 	});
 
-	if (particles.length > config.particleNumber) {
-		particles = updatedParticles;
+	// Oldest first, so stalled particles go before freshly spawned ones.
+	if (particles.length > config.maxParticles) {
+		particles.splice(0, particles.length - config.maxParticles);
 	}
 }
 
@@ -185,9 +200,8 @@ function initParticles(x = 0, y = 0) {
 		particles.push(new Particle(x, y));
 	}
 
-	for (const p of particles) {
-		drawParticle(p.x, p.y, p.r, p.c);
-	}
+	// No drawing here: the rAF loop already paints every particle each frame.
+	cleanUpArray();
 }
 
 function cancelTouchParticles() {

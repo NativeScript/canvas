@@ -23,7 +23,7 @@ void TextEncoderImpl::Init(const v8::Local<v8::Object>& canvasModule, v8::Isolat
 
 
 TextEncoderImpl *TextEncoderImpl::GetPointer(v8::Local<v8::Object> object) {
-    auto ptr = canvas::GetAlignedPointer(object, 0);
+    auto ptr = object->GetAlignedPointerFromInternalField(0, ObjectWrapperImpl::kInternalFieldTag);
     if (ptr == nullptr) {
         return nullptr;
     }
@@ -44,7 +44,7 @@ v8::Local<v8::FunctionTemplate> TextEncoderImpl::GetCtor(v8::Isolate *isolate) {
 
     auto tmpl = ctorTmpl->InstanceTemplate();
     tmpl->SetInternalFieldCount(2);
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "encoding"),
             Encoding);
     tmpl->Set(
@@ -79,7 +79,7 @@ void TextEncoderImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
     auto txtEncoder = new TextEncoderImpl(encoder);
 
-    canvas::SetAlignedPointer(ret, 0, txtEncoder);
+    ret->SetAlignedPointerInInternalField(0, txtEncoder, ObjectWrapperImpl::kInternalFieldTag);
 
     txtEncoder->BindFinalizer(isolate, ret);
 
@@ -91,7 +91,7 @@ void TextEncoderImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
 void
 TextEncoderImpl::Encoding(v8::Local<v8::Name> name,
                           const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(canvas::Receiver(info));
+    auto ptr = GetPointer(info.Holder());
     if (ptr != nullptr) {
         auto isolate = info.GetIsolate();
         auto encoding = canvas_native_text_encoder_get_encoding(ptr->GetTextEncoder());

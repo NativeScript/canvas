@@ -35,6 +35,11 @@ export class Path2D {
 	}
 
 	arc(x: number, y: number, radius: number, startAngle: number, endAngle: number, anticlockwise: boolean = false): void {
+		if (radius < 0) {
+			const error: any = new Error(`Failed to execute 'arc' on 'Path2D': The radius provided (${radius}) is negative.`);
+			error.name = 'IndexSizeError';
+			throw error;
+		}
 		this.native.arc(x, y, radius, startAngle, endAngle, anticlockwise ?? false);
 	}
 
@@ -51,6 +56,11 @@ export class Path2D {
 	}
 
 	ellipse(x: number, y: number, radiusX: number, radiusY: number, rotation: number, startAngle: number, endAngle: number, anticlockwise: boolean = false): void {
+		if (radiusX < 0 || radiusY < 0) {
+			const error: any = new Error(`Failed to execute 'ellipse' on 'Path2D': The radius provided (${radiusX < 0 ? radiusX : radiusY}) is negative.`);
+			error.name = 'IndexSizeError';
+			throw error;
+		}
 		this.native.ellipse(x, y, radiusX, radiusY, rotation, startAngle, endAngle, anticlockwise ?? false);
 	}
 

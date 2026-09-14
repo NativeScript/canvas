@@ -1,6 +1,8 @@
+use std::cell::Cell;
 use std::ffi::c_void;
 use std::fmt::Debug;
 use std::ptr::NonNull;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::OnceLock;
 
 use objc2::ffi::BOOL;
@@ -11,6 +13,49 @@ use objc2_foundation::{NSPoint, NSRect, NSSize};
 use crate::context_attributes::ContextAttributes;
 
 pub static IS_GL_SYMBOLS_LOADED: OnceLock<bool> = OnceLock::new();
+
+thread_local! {
+    /// Mirrors what this thread last bound, so `make_current` can skip the call.
+    ///
+    /// Only valid while every `setCurrentContext:` is reflected here: bind through
+    /// `set_current_context`, and clear the mirror anywhere else a context gets
+    /// bound.
+    static CURRENT_EAGL_BINDING: Cell<Binding> = const { Cell::new(UNBOUND) };
+}
+
+/// (context, epoch).
+type Binding = (usize, usize);
+
+const UNBOUND: Binding = (0, 0);
+
+/// Bumped on every context allocation, so a recycled `EAGLContext` address cannot
+/// match a stale mirror entry.
+static CONTEXT_EPOCH: AtomicUsize = AtomicUsize::new(1);
+
+fn context_epoch() -> usize {
+    CONTEXT_EPOCH.load(Ordering::Relaxed)
+}
+
+fn invalidate_context_bindings() {
+    CONTEXT_EPOCH.fetch_add(1, Ordering::Relaxed);
+}
+
+fn binding(context: usize) -> Binding {
+    (context, context_epoch())
+}
+
+fn binding_is_current(binding: Binding) -> bool {
+    binding != UNBOUND && CURRENT_EAGL_BINDING.with(|c| c.get()) == binding
+}
+
+fn set_current_binding(binding: Binding) {
+    CURRENT_EAGL_BINDING.with(|c| c.set(binding));
+}
+
+/// Drops this thread's mirror, so the next `make_current` does a real bind.
+fn forget_current_binding() {
+    set_current_binding(UNBOUND);
+}
 
 #[derive(Debug, Default, Clone)]
 pub(crate) struct GLContextInner {
@@ -96,40 +141,65 @@ pub(crate) struct EAGLContext(Id<NSObject>);
 
 impl EAGLContext {
     pub fn new_with_api(api: EAGLRenderingAPI) -> Option<Self> {
-        unsafe {
+        let context = unsafe {
             let cls = class!(EAGLContext);
             let context = msg_send_id![cls, alloc];
-            let mut context: Option<Id<NSObject>> = msg_send_id![context, initWithAPI: api];
+            let context: Option<Id<NSObject>> = msg_send_id![context, initWithAPI: api];
             context.map(EAGLContext)
-        }
+        };
+        invalidate_context_bindings();
+        context
     }
 
     pub fn new_with_api_sharegroup(
         api: EAGLRenderingAPI,
         sharegroup: &EAGLSharegroup,
     ) -> Option<Self> {
-        unsafe {
+        let context = unsafe {
             let cls = class!(EAGLContext);
             let context = msg_send_id![cls, alloc];
             let context: Option<Id<NSObject>> =
                 msg_send_id![context, initWithAPI: api, sharegroup: &*sharegroup.0];
             context.map(EAGLContext)
-        }
+        };
+        invalidate_context_bindings();
+        context
     }
 
+    fn raw_id(&self) -> usize {
+        Id::as_ptr(&self.0) as usize
+    }
+
+    /// Binds `context` on the calling thread, skipping the call when it is already
+    /// bound. The skip never elides a sharegroup flush, since the context is not
+    /// changing.
     pub fn set_current_context(context: Option<&EAGLContext>) -> bool {
         let cls = class!(EAGLContext);
-        return match context {
-            Some(ctx) => unsafe {
-                let instance: BOOL = msg_send![cls, setCurrentContext: &*ctx.0];
-                instance.into()
-            },
-            None => unsafe {
-                let nil: *mut NSObject = std::ptr::null_mut();
-                let instance: BOOL = msg_send![cls, setCurrentContext: nil];
-                instance.into()
-            },
-        };
+        match context {
+            Some(ctx) => {
+                let binding = binding(ctx.raw_id());
+                if binding_is_current(binding) {
+                    return true;
+                }
+                let bound: bool = unsafe {
+                    let instance: BOOL = msg_send![cls, setCurrentContext: &*ctx.0];
+                    instance.into()
+                };
+                set_current_binding(if bound { binding } else { UNBOUND });
+                bound
+            }
+            None => {
+                let unbound: bool = unsafe {
+                    let nil: *mut NSObject = std::ptr::null_mut();
+                    let instance: BOOL = msg_send![cls, setCurrentContext: nil];
+                    instance.into()
+                };
+                if unbound {
+                    forget_current_binding();
+                }
+                unbound
+            }
+        }
     }
 
     pub fn get_current_context() -> Option<Self> {
@@ -150,8 +220,7 @@ impl EAGLContext {
                 Some(current) => {
                     let is_equal: bool = unsafe { msg_send![&current, isEqual: &*self.0] };
                     if is_equal {
-                        let nil: *mut NSObject = std::ptr::null_mut();
-                        return msg_send![cls, setCurrentContext: nil];
+                        return Self::set_current_context(None);
                     }
                     false
                 }
@@ -301,11 +370,13 @@ impl GLKView {
             )
         };
         let _: () = unsafe { msg_send![&self.0, snapshotWithData: &*data] };
+        forget_current_binding(); // GLKView binds its own context
         buf
     }
 
     pub fn display(&self) {
         let _: () = unsafe { msg_send![&self.0, display] };
+        forget_current_binding(); // GLKView binds its own context
     }
 
     pub fn drawable_width(&self) -> NSInteger {
@@ -318,6 +389,7 @@ impl GLKView {
 
     pub fn bind_drawable(&self) {
         let _: () = unsafe { msg_send![&self.0, bindDrawable] };
+        forget_current_binding(); // GLKView binds its own context
     }
 
     pub fn delete_drawable(&self) {
@@ -468,8 +540,6 @@ impl GLContext {
         view.set_context(context.as_ref());
 
         EAGLContext::set_current_context(context.as_ref());
-        //
-        // view.bind_drawable();
         view.display();
 
         let inner = GLContextInner {
@@ -519,38 +589,6 @@ impl GLContext {
 
     pub fn make_current(&self) -> bool {
         if let Some(context) = self.0.context.as_ref() {
-            // unsafe {
-            //     let cls = class!(EAGLContext);
-            //     let current: Option<Id<NSObject>> = msg_send_id![cls, currentContext];
-            //
-            //     match current {
-            //         Some(current) => {
-            //             let is_equal: bool = unsafe { msg_send![&current, isEqual: &*context.0] };
-            //             if is_equal {
-            //                 return true;
-            //             }
-            //         }
-            //         None => {}
-            //     }
-            // }
-
-            // unsafe {
-            //     let cls = class!(EAGLContext);
-            //     let current: Option<Id<NSObject>> = msg_send_id![cls, currentContext];
-            //
-            //     match current {
-            //         Some(current) => {
-            //             let is_equal: bool = unsafe { msg_send![&current, isEqual: &*context.0] };
-            //             if !is_equal {
-            //                 unsafe {
-            //                     gl_bindings::Flush();
-            //                 }
-            //             }
-            //         }
-            //         None => {}
-            //     }
-            // }
-
             return EAGLContext::set_current_context(Some(context));
         }
 
@@ -573,10 +611,6 @@ impl GLContext {
     pub fn swap_buffers(&self) -> bool {
         if let Some(view) = self.0.view.as_ref() {
             view.display();
-            // // Testing
-            // unsafe {
-            //     gl_bindings::Flush();
-            // }
             return true;
         }
         false

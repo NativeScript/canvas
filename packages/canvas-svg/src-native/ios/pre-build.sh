@@ -89,6 +89,9 @@ elif $IS_TVOS; then
   else
     RUST_BUILD_TARGET="aarch64-apple-tvos"
   fi
+  # `cc` has no tvOS default and falls back to the SDK version, tagging C/asm
+  # objects with the SDK minos. Only needed when run outside Xcode.
+  export TVOS_DEPLOYMENT_TARGET="${TVOS_DEPLOYMENT_TARGET:-12.0}"
 else
   if [[ $CURRENT_ARCH == x86_64 ]]; then
     RUST_BUILD_TARGET="x86_64-apple-ios"

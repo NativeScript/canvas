@@ -8,16 +8,7 @@ use super::gpu::CanvasWebGPUInstance;
 pub struct CanvasGPURenderBundle {
     pub(super) label: Option<Cow<'static, str>>,
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
-    pub(crate) bundle: wgpu_core::id::RenderBundleId,
-}
-
-impl Drop for CanvasGPURenderBundle {
-    fn drop(&mut self) {
-        if !std::thread::panicking() {
-            let global = self.instance.global();
-            global.render_bundle_drop(self.bundle);
-        }
-    }
+    pub(crate) bundle: Arc<wgpu_core::command::RenderBundle>,
 }
 
 #[no_mangle]

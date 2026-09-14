@@ -17,13 +17,8 @@ export class NativeScriptPlatform extends BasePlatform {
 	private _layoutChangeListener?: () => void;
 	acquireContext(canvas: HTMLCanvasElement, options?: CanvasRenderingContext2DSettings): CanvasRenderingContext2D | null {
 		this._layoutChangeListener = () => {
-			if (__APPLE__) {
-				this.chart?.resize?.(canvas.clientWidth * Screen.mainScreen.scale, canvas.clientHeight * Screen.mainScreen.scale);
-			}
-
-			//	if (__ANDROID__) {
-			//	this.chart?.resize?.(canvas.clientWidth, canvas.clientHeight);
-			//	}
+			// CSS pixels: `_resize` multiplies by getDevicePixelRatio() itself.
+			this.chart?.resize?.(canvas.clientWidth, canvas.clientHeight);
 		};
 
 		canvas.addEventListener('layoutChanged', this._layoutChangeListener as never);
@@ -64,18 +59,11 @@ export class NativeScriptPlatform extends BasePlatform {
 	}
 
 	getMaximumSize(canvas: HTMLCanvasElement, width?: number, height?: number, aspectRatio?: number): { width: number; height: number } {
-		const parent = (canvas as any).parent;
-
-		// if (__APPLE__) {
-		// 	return {
-		// 		width: parent?.getMeasuredWidth(),
-		// 		height: parent?.getMeasuredHeight(),
-		// 	};
-		// }
-
+		// CSS pixels, not device pixels: Chart.js applies the ratio itself in
+		// `retinaScale`, so device pixels here get it applied twice.
 		return {
-			width: canvas.clientWidth * Screen.mainScreen.scale,
-			height: canvas.clientHeight * Screen.mainScreen.scale,
+			width: canvas.clientWidth,
+			height: canvas.clientHeight,
 		};
 	}
 }

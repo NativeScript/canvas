@@ -43,7 +43,7 @@ void GPUDeviceImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolat
 }
 
 GPUDeviceImpl *GPUDeviceImpl::GetPointer(const v8::Local<v8::Object> &object) {
-    auto ptr = canvas::GetAlignedPointer(object, 0);
+    auto ptr = object->GetAlignedPointerFromInternalField(0, ObjectWrapperImpl::kInternalFieldTag);
     if (ptr == nullptr) {
         return nullptr;
     }
@@ -92,6 +92,10 @@ v8::Local<v8::FunctionTemplate> GPUDeviceImpl::GetCtor(v8::Isolate *isolate) {
     tmpl->Set(
             ConvertToV8String(isolate, "createBindGroup"),
             v8::FunctionTemplate::New(isolate, &CreateBindGroup));
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "__getMetalDevicePointer"),
+            v8::FunctionTemplate::New(isolate, &GetMetalDevicePointer));
 
     tmpl->Set(
             ConvertToV8String(isolate, "createBindGroupLayout"),
@@ -171,7 +175,7 @@ v8::Local<v8::FunctionTemplate> GPUDeviceImpl::GetCtor(v8::Isolate *isolate) {
 void
 GPUDeviceImpl::GetLabel(v8::Local<v8::Name> name,
                         const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(canvas::Receiver(info));
+    auto ptr = GetPointer(info.Holder());
     if (ptr != nullptr) {
         auto label = canvas_native_webgpu_device_get_label(ptr->device_.get());
         if (label == nullptr) {
@@ -269,7 +273,7 @@ GPUDeviceImpl::SetUncapturedError(const v8::FunctionCallbackInfo<v8::Value> &arg
 void
 GPUDeviceImpl::GetFeatures(v8::Local<v8::Name> name,
                            const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(canvas::Receiver(info));
+    auto ptr = GetPointer(info.Holder());
     auto isolate = info.GetIsolate();
     if (ptr != nullptr) {
         auto context = isolate->GetCurrentContext();
@@ -302,7 +306,7 @@ GPUDeviceImpl::GetFeatures(v8::Local<v8::Name> name,
 void
 GPUDeviceImpl::GetLimits(v8::Local<v8::Name> name,
                          const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(canvas::Receiver(info));
+    auto ptr = GetPointer(info.Holder());
     if (ptr != nullptr) {
         auto limits = canvas_native_webgpu_device_get_limits(ptr->GetGPUDevice());
 
@@ -318,7 +322,7 @@ GPUDeviceImpl::GetLimits(v8::Local<v8::Name> name,
 void
 GPUDeviceImpl::GetQueue(v8::Local<v8::Name> name,
                         const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(canvas::Receiver(info));
+    auto ptr = GetPointer(info.Holder());
     if (ptr != nullptr) {
         auto queue = canvas_native_webgpu_device_get_queue(ptr->GetGPUDevice());
         auto ret = GPUQueueImpl::NewInstance(info.GetIsolate(),
@@ -338,7 +342,7 @@ struct LostData {
 void
 GPUDeviceImpl::GetLost(v8::Local<v8::Name> name,
                        const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(canvas::Receiver(info));
+    auto ptr = GetPointer(info.Holder());
     auto isolate = info.GetIsolate();
     auto resolver = v8::Promise::Resolver::New(isolate->GetCurrentContext()).ToLocalChecked();
     info.GetReturnValue().Set(resolver->GetPromise());
@@ -3689,6 +3693,26 @@ void GPUDeviceImpl::CreateTexture(const v8::FunctionCallbackInfo<v8::Value> &arg
 
         args.GetReturnValue().SetUndefined();
     }
+}
+
+/// The `MTLDevice` wgpu renders with, as a number, or 0 where there is none.
+///
+/// Used to build the `CVMetalTextureCache` that video frames are imported through: it has
+/// to be this device and not the system default one. Apple platforms only.
+void GPUDeviceImpl::GetMetalDevicePointer(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    GPUDeviceImpl *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        args.GetReturnValue().Set(0);
+        return;
+    }
+
+#if (defined(TARGET_OS_IOS) || defined(TARGET_OS_MACOS) || defined(TARGET_OS_VISION))
+    auto device = canvas_native_webgpu_device_get_metal_device(ptr->GetGPUDevice());
+    args.GetReturnValue().Set(
+            static_cast<double>(reinterpret_cast<uintptr_t>(device)));
+#else
+    args.GetReturnValue().Set(0);
+#endif
 }
 
 void GPUDeviceImpl::Destroy(const v8::FunctionCallbackInfo<v8::Value> &args) {

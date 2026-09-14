@@ -51,10 +51,14 @@ export class ImageAsset extends Observable {
 	}
 
 	private _decrementStrongRefAndRemove() {
-		const count = loaders.get(this) ?? 0 - 1;
+		// Parenthesised: `??` binds looser than `-`, so the old form returned the
+		// count undecremented and never released the strong ref.
+		const count = (loaders.get(this) ?? 0) - 1;
 
 		if (count <= 0) {
 			loaders.delete(this);
+		} else {
+			loaders.set(this, count);
 		}
 	}
 

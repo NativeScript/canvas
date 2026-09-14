@@ -330,4 +330,8 @@ pub unsafe fn render_webgpu_three_cube(data: *mut Data, window: AppKitWindowHand
     let command_buffer = canvas_c::webgpu::gpu_command_encoder::canvas_native_webgpu_command_encoder_finish(command_encoder, ptr::null());
     canvas_native_webgpu_queue_submit(queue, &command_buffer as *const _ as *const *const _, 1);
     canvas_native_webgpu_context_present_surface(context, texture);
+
+    // Once a frame has actually presented, exercise the paths this demo does
+    // not otherwise reach. Runs once per process.
+    crate::webgpu_smoke::run_once(device, queue, context);
 }

@@ -58,7 +58,7 @@ opt-level = "z"
 [workspace.dependencies.wgt]
 package = "wgpu-types"
 git = "https://github.com/triniwiz/wgpu"
-rev = "7e0f39f"
+rev = "e5c0aa02"
 
 
 
@@ -74,17 +74,17 @@ canvas-webgl = { path = "./crates/canvas-webgl" }
 canvas-svg = { path = "./crates/canvas-svg" }
 gl-bindings = { path = "./crates/gl-bindings" }
 canvas-c = { path = "./crates/canvas-c" }
-skia-safe = { git = "https://github.com/triniwiz/rust-skia", rev = "d4c4011", features = ["textlayout"] }
+skia-safe = { git = "https://github.com/triniwiz/rust-skia", rev = "1eafe30", features = ["textlayout"] }
 itertools = "0.14.0"
 ustr = "1.1.0"
-wgpu-core = { git = "https://github.com/triniwiz/wgpu", rev = "7e0f39f", features = ["wgsl"] }
-wgpu-hal = { git = "https://github.com/triniwiz/wgpu", rev = "7e0f39f" }
+wgpu-core = { git = "https://github.com/triniwiz/wgpu", rev = "e5c0aa02", features = ["wgsl"] }
+wgpu-hal = { git = "https://github.com/triniwiz/wgpu", rev = "e5c0aa02" }
 ureq = "2.10.1"
 jni = "0.21.1"
 regex-lite = "0.1.9"
 objc2 = { version = "0.6.3", default-features = false }
 objc2-core-foundation = { version = "0.3.2", default-features = false }
-objc2-metal = { version = "0.3.2", default-features = false, features = ["MTLCommandBuffer", "MTLCommandQueue", "MTLDrawable", "MTLPixelFormat", "MTLTexture", "MTLDevice", "objc2-core-foundation"] }
+objc2-metal = { version = "0.3.2", default-features = false, features = ["MTLCommandBuffer", "MTLCommandQueue", "MTLDrawable", "MTLPixelFormat", "MTLTexture", "MTLDevice", "MTLBlitCommandEncoder", "MTLCommandEncoder", "MTLBuffer", "MTLResource", "MTLTypes", "objc2-core-foundation"] }
 objc2-foundation = { version = "0.3.2", features = ["NSGeometry", "NSData", "NSAutoreleasePool", "NSDictionary", "NSObject", "NSValue", "NSString"] }
 objc2-quartz-core = { version = "0.3.2", default-features = false, features = ["std",
     "objc2-core-foundation",

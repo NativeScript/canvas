@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use std::{
     ffi::{CStr, CString},
     os::raw::c_char,
@@ -1945,7 +1946,7 @@ pub struct CanvasBufferBinding {
 impl Into<BufferBinding> for CanvasBufferBinding {
     fn into(self) -> BufferBinding {
         let buffer = unsafe { &*self.buffer };
-        let buffer_id = buffer.buffer;
+        let buffer_id = Arc::clone(&buffer.buffer);
         BufferBinding {
             buffer: buffer_id,
             offset: self.offset.try_into().unwrap_or_default(),
@@ -1984,7 +1985,7 @@ impl Into<BindGroupEntry<'static>> for CanvasBindGroupEntry {
             },
             CanvasBindGroupEntryResource::Sampler(sampler) => {
                 let sampler = unsafe { &*sampler };
-                let sampler_id = sampler.sampler;
+                let sampler_id = Arc::clone(&sampler.sampler);
                 BindGroupEntry {
                     binding: self.binding,
                     resource: wgpu_core::binding_model::BindingResource::Sampler(sampler_id),
@@ -1992,7 +1993,7 @@ impl Into<BindGroupEntry<'static>> for CanvasBindGroupEntry {
             }
             CanvasBindGroupEntryResource::TextureView(view) => {
                 let view = unsafe { &*view };
-                let view_id = view.texture_view;
+                let view_id = Arc::clone(&view.texture_view);
                 BindGroupEntry {
                     binding: self.binding,
                     resource: wgpu_core::binding_model::BindingResource::TextureView(view_id),

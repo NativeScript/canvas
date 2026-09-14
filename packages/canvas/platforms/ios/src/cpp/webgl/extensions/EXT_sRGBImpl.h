@@ -46,13 +46,13 @@ public:
         auto object = EXT_sRGBImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType( extSrgb, NativeType::EXT_sRGB);
-        canvas::SetAlignedPointer(object, 0, extSrgb);
+        object->SetAlignedPointerInInternalField(0, extSrgb, ObjectWrapperImpl::kInternalFieldTag);
         extSrgb->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 
     static EXT_sRGBImpl *GetPointer(const v8::Local<v8::Object> &object) {
-        auto ptr = canvas::GetAlignedPointer(object, 0);
+        auto ptr = object->GetAlignedPointerFromInternalField(0, ObjectWrapperImpl::kInternalFieldTag);
         if (ptr == nullptr) {
             return nullptr;
         }

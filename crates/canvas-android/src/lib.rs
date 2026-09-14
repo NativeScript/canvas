@@ -18,7 +18,7 @@ use log::LevelFilter;
 // #[cfg(feature = "vulkan")]
 use crate::jni_compat::org_nativescript_canvas_NSCCanvas::{nativeCreate2dContextVulkan, nativeGetVulkanVersion, nativeContext2DSetRenderFunc, nativeContext2DClearRenderFunc};
 
-use crate::jni_compat::org_nativescript_canvas_NSCCanvas::{nativeContext2DPathTest, nativeContext2DPathTestNormal, nativeContext2DRender, nativeContext2DTest, nativeContext2DTestNormal, nativeCreate2DContext, nativeCustomWithBitmapFlush, nativeInitWebGL, nativeInitWebGLNoSurface, nativeInitWebGPU, nativeMakeWebGLCurrent, nativeMakeWebGLCurrentNormal, nativeRelease2DContext, nativeRelease2DContextNormal, nativeReleaseWebGL, nativeReleaseWebGLNormal, nativeResizeWebGPU, nativeUpdate2DSurface, nativeUpdate2DSurfaceNoSurface, nativeUpdate2DSurfaceNoSurfaceNormal, nativeUpdateGLNoSurface, nativeUpdateWebGLNoSurfaceNormal, nativeUpdateWebGLSurface, nativeWebGLC2DRender, nativeWriteCurrentWebGLContextToBitmap, nativeContext2DConicTest};
+use crate::jni_compat::org_nativescript_canvas_NSCCanvas::{nativeContext2DPathTest, nativeContext2DPathTestNormal, nativeContext2DRender, nativeContext2DTest, nativeContext2DTestNormal, nativeCreate2DContext, nativeCustomWithBitmapFlush, nativeInitWebGL, nativeInitWebGLNoSurface, nativeInitWebGPU, nativeMakeWebGLCurrent, nativeMakeWebGLCurrentNormal, nativeRelease2DContext, nativeRelease2DContextNormal, nativeReleaseWebGL, nativeReleaseWebGLNormal, nativeReleaseWebGPU, nativeResizeWebGPU, nativeUpdate2DSurface, nativeUpdate2DSurfaceNoSurface, nativeUpdate2DSurfaceNoSurfaceNormal, nativeUpdateGLNoSurface, nativeUpdateWebGLNoSurfaceNormal, nativeUpdateWebGLSurface, nativeWebGLC2DRender, nativeWriteCurrentWebGLContextToBitmap, nativeContext2DConicTest};
 use crate::jni_compat::org_nativescript_canvas_NSCCanvasRenderingContext2D::{nativeCreatePattern, nativeDrawAtlasWithBitmap, nativeDrawImageDxDyDwDhWithAsset, nativeDrawImageDxDyDwDhWithBitmap, nativeDrawImageDxDyWithAsset, nativeDrawImageDxDyWithBitmap, nativeDrawImageWithAsset, nativeDrawImageWithBitmap, nativeScale};
 use crate::jni_compat::org_nativescript_canvas_NSCImageAsset::{nativeCreateImageAsset, nativeDestroyImageAsset, nativeGetDimensions, nativeGetError, nativeLoadFromBitmap, nativeLoadFromBuffer, nativeLoadFromBytes, nativeLoadFromEncodedBuffer, nativeLoadFromEncodedBytes, nativeLoadFromPath, nativeLoadFromUrl};
 use crate::jni_compat::org_nativescript_canvas_NSCImageBitmap::{nativeLoadBitmapFromBuffer, nativeLoadBitmapFromBufferOptions, nativeLoadBitmapFromBufferRectOptions, nativeLoadBitmapFromBytes, nativeLoadBitmapFromBytesOptions, nativeLoadBitmapFromBytesRectOptions};
@@ -95,6 +95,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                 "nativeWebGLC2DRender",
                 "nativeInitWebGPU",
                 "nativeResizeWebGPU",
+                "nativeReleaseWebGPU",
                 "nativeContext2DConicTest"
             ];
 
@@ -127,6 +128,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                     "(JJII)V",
                     "(JLandroid/view/Surface;II)J",
                     "(JLandroid/view/Surface;II)V",
+                    "(J)V",
                     "(J)V"
                 ];
 
@@ -161,6 +163,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                     "!(JJII)V",
                     "!(JLandroid/view/Surface;II)J",
                     "!(JLandroid/view/Surface;II)V",
+                    "!(J)V",
                     "!(J)V"
                 ];
 
@@ -198,6 +201,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                     nativeWebGLC2DRender as *mut c_void,
                     nativeInitWebGPU as *mut c_void,
                     nativeResizeWebGPU as *mut c_void,
+                    nativeReleaseWebGPU as *mut c_void,
                     nativeContext2DConicTest as *mut c_void,
                 ]
             } else {
@@ -222,6 +226,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                     nativeWebGLC2DRender as *mut c_void,
                     nativeInitWebGPU as *mut c_void,
                     nativeResizeWebGPU as *mut c_void,
+                    nativeReleaseWebGPU as *mut c_void,
                     nativeContext2DConicTest as *mut c_void,
                 ]
             };

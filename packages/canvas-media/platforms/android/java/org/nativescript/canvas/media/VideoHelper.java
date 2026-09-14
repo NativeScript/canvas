@@ -107,7 +107,7 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 
 	volatile boolean _hasFrame = false;
 	static int BUFFER_MS = 500;
-	public static boolean IS_DEBUG = true;
+	public static boolean IS_DEBUG = false;
 
 	SurfaceTexture _glSt;
 	Surface _glSurface;
@@ -116,7 +116,7 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 	Object _glRender; // TextureRender — kept alive to own the OES texture
 	private boolean _glInitFailed = false;
 	// Tracks which path currently owns the player's video surface to prevent conflicts.
-	private enum SurfaceOwner { NONE, WEBGL, GL2D, BITMAP }
+	private enum SurfaceOwner { NONE, WEBGL, GL2D, BITMAP, GPU }
 	private SurfaceOwner _surfaceOwner = SurfaceOwner.NONE;
 
 	// ImageReader-backed surface for the CPU/Vulkan bitmap path.
@@ -534,7 +534,7 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 			this._st.setOnFrameAvailableListener(this);
 			this._surface = new Surface(this._st);
 			// Release ImageReader if the bitmap path claimed the surface first.
-			if (_surfaceOwner == SurfaceOwner.BITMAP) {
+			if (_surfaceOwner == SurfaceOwner.BITMAP || _surfaceOwner == SurfaceOwner.GPU) {
 				if (_imageReader != null) { _imageReader.close(); _imageReader = null; }
 				_surfaceOwner = SurfaceOwner.NONE;
 			}
@@ -591,7 +591,7 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 		this._st.setOnFrameAvailableListener(this);
 		this._surface = new Surface(this._st);
 		// Release the ImageReader if the bitmap path previously claimed the surface.
-		if (_surfaceOwner == SurfaceOwner.BITMAP) {
+		if (_surfaceOwner == SurfaceOwner.BITMAP || _surfaceOwner == SurfaceOwner.GPU) {
 			if (_imageReader != null) { _imageReader.close(); _imageReader = null; }
 			_surfaceOwner = SurfaceOwner.NONE;
 		}
@@ -633,6 +633,195 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 			_surfaceOwner = SurfaceOwner.BITMAP;
 		} catch (Exception e) {
 			if (IS_DEBUG) android.util.Log.d("JS", "setupBitmapSurface failed: " + e);
+		}
+	}
+
+	/**
+	 * A decoded frame held as a HardwareBuffer. Owns the Image and the buffer; the
+	 * decoder does not get the frame back until {@link #close()}.
+	 */
+	public static final class GPUFrame {
+		private final Image _image;
+		private final android.hardware.HardwareBuffer _buffer;
+		private final int _width;
+		private final int _height;
+
+		GPUFrame(Image image, android.hardware.HardwareBuffer buffer) {
+			this._image = image;
+			this._buffer = buffer;
+			this._width = image.getWidth();
+			this._height = image.getHeight();
+		}
+
+		public int getWidth() { return _width; }
+
+		public int getHeight() { return _height; }
+
+		/** The native AHardwareBuffer pointer, or 0. Valid until {@link #close()}. */
+		public long getTexturePointer() {
+			// Reflection: the canvas plugin owns this entry point but is not on our
+			// compile classpath.
+			Method method = hardwareBufferPointerMethod();
+			if (method == null) return 0;
+			try {
+				Object result = method.invoke(null, _buffer);
+				return result instanceof Long ? (Long) result : 0;
+			} catch (Throwable t) {
+				return 0;
+			}
+		}
+
+		/** Return the frame to the decoder. Safe to call once the import has been made. */
+		public void close() {
+			try { _buffer.close(); } catch (Throwable ignored) {}
+			try { _image.close(); } catch (Throwable ignored) {}
+		}
+	}
+
+	// Cached reflection for Utils.hardwareBufferPointer.
+	private static Method _hardwareBufferPointer;
+	private static boolean _hardwareBufferPointerResolved = false;
+
+	private static Method hardwareBufferPointerMethod() {
+		if (_hardwareBufferPointerResolved) return _hardwareBufferPointer;
+		_hardwareBufferPointerResolved = true;
+		try {
+			Class<?> utils = Class.forName("org.nativescript.canvas.Utils");
+			_hardwareBufferPointer = utils.getMethod(
+					"hardwareBufferPointer", android.hardware.HardwareBuffer.class);
+		} catch (Throwable t) {
+			if (IS_DEBUG) android.util.Log.d("JS", "hardwareBufferPointer unavailable: " + t);
+			_hardwareBufferPointer = null;
+		}
+		return _hardwareBufferPointer;
+	}
+
+	/** Latches once an unimportable frame is seen, so the GPU path stops retrying. */
+	private boolean _gpuFramesUnsupported = false;
+
+	public boolean supportsGPUFrames() {
+		return Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+				&& !_gpuFramesUnsupported
+				&& hardwareBufferPointerMethod() != null;
+	}
+
+	/**
+	 * Whether Vulkan can import this format as an ordinary sampled texture. YCbCr
+	 * formats cannot: they need an immutable VkSamplerYcbcrConversion in the pipeline
+	 * layout, which WebGPU cannot express.
+	 */
+	private static boolean isImportableFormat(int format) {
+		return format == android.hardware.HardwareBuffer.RGBA_8888
+				|| format == android.hardware.HardwareBuffer.RGBX_8888
+				|| format == android.hardware.HardwareBuffer.RGB_888
+				|| format == android.hardware.HardwareBuffer.RGB_565
+				|| format == android.hardware.HardwareBuffer.RGBA_FP16
+				|| format == android.hardware.HardwareBuffer.RGBA_1010102;
+	}
+
+	/**
+	 * The frame size, from the selected track when no frame has been rendered yet.
+	 * Do not wait for `onVideoSizeChanged`: it needs a surface and a rendered frame,
+	 * but the ImageReader needs the size to be created -- so that deadlocks.
+	 */
+	private int[] resolveVideoSize() {
+		if (_videoWidth > 0 && _videoHeight > 0) {
+			return new int[]{_videoWidth, _videoHeight};
+		}
+		try {
+			androidx.media3.common.Format format = _player.getVideoFormat();
+			if (format != null && format.width > 0 && format.height > 0) {
+				return new int[]{format.width, format.height};
+			}
+		} catch (Throwable ignored) {
+		}
+		return null;
+	}
+
+	private void setupGpuSurface() {
+		if (_surfaceOwner != SurfaceOwner.NONE) return;
+		if (_imageReader != null) return;
+		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return;
+
+		int[] size = resolveVideoSize();
+		if (IS_DEBUG) android.util.Log.d("JS", "setupGpuSurface: owner=" + _surfaceOwner
+				+ " size=" + (size == null ? "unknown" : size[0] + "x" + size[1]));
+		if (size == null) return;
+
+		try {
+			// PRIVATE, not RGBA_8888: a hardware decoder refuses to convert and fails with
+			// "producer output buffer format ... doesn't match the ImageReader's".
+			_imageReader = ImageReader.newInstance(
+					size[0], size[1],
+					ImageFormat.PRIVATE, 2,
+					android.hardware.HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE);
+			_imageReader.setOnImageAvailableListener(reader -> {
+				_hasFrame = true;
+				if (_callback != null) _callback.onVideoFrame();
+			}, handler);
+			_player.setVideoSurface(_imageReader.getSurface());
+			_surfaceOwner = SurfaceOwner.GPU;
+		} catch (Exception e) {
+			if (IS_DEBUG) android.util.Log.d("JS", "setupGpuSurface failed: " + e);
+		}
+	}
+
+	/**
+	 * The current frame as a HardwareBuffer, or null when the decoder has not produced a
+	 * new one. The caller must close the returned frame.
+	 */
+	/** Drop the GPU ImageReader so another path can take the player's surface. */
+	private void releaseGpuSurface() {
+		if (_surfaceOwner != SurfaceOwner.GPU) return;
+		try {
+			_player.setVideoSurface(null);
+		} catch (Throwable ignored) {
+		}
+		if (_imageReader != null) {
+			_imageReader.close();
+			_imageReader = null;
+		}
+		_surfaceOwner = SurfaceOwner.NONE;
+	}
+
+	public GPUFrame getCurrentGPUFrame() {
+		if (!supportsGPUFrames()) return null;
+
+		if (_imageReader == null && _surfaceOwner == SurfaceOwner.NONE) {
+			setupGpuSurface();
+		}
+
+		if (_imageReader == null || _surfaceOwner != SurfaceOwner.GPU) return null;
+
+		Image image = null;
+		try {
+			image = _imageReader.acquireLatestImage();
+			if (image == null) return null;
+
+			android.hardware.HardwareBuffer buffer = image.getHardwareBuffer();
+			if (buffer == null) {
+				image.close();
+				return null;
+			}
+
+			if (!isImportableFormat(buffer.getFormat())) {
+				// Give up for this player and hand the surface back to the upload path.
+				android.util.Log.d("JS", "getCurrentGPUFrame: decoder format "
+						+ buffer.getFormat() + " cannot be imported; using the upload path");
+				_gpuFramesUnsupported = true;
+				buffer.close();
+				image.close();
+				releaseGpuSurface();
+				return null;
+			}
+
+			return new GPUFrame(image, buffer);
+		} catch (Exception e) {
+			if (image != null) {
+				try { image.close(); } catch (Throwable ignored) {}
+			}
+			if (IS_DEBUG) android.util.Log.d("JS", "getCurrentGPUFrame: " + e);
+			return null;
 		}
 	}
 
@@ -890,7 +1079,7 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 			if (_callback != null) _callback.onVideoFrame();
 		});
 		_glSurface = new Surface(_glSt);
-		if (_surfaceOwner == SurfaceOwner.BITMAP) {
+		if (_surfaceOwner == SurfaceOwner.BITMAP || _surfaceOwner == SurfaceOwner.GPU) {
 			if (_imageReader != null) { _imageReader.close(); _imageReader = null; }
 			_surfaceOwner = SurfaceOwner.NONE;
 		}
@@ -1031,7 +1220,7 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 		this._canPlayThroughFired = false;
 		// Video dimensions will change — release the ImageReader so setupBitmapSurface()
 		// recreates it at the new size once onVideoSizeChanged fires.
-		if (_surfaceOwner == SurfaceOwner.BITMAP) {
+		if (_surfaceOwner == SurfaceOwner.BITMAP || _surfaceOwner == SurfaceOwner.GPU) {
 			if (_imageReader != null) { _imageReader.close(); _imageReader = null; }
 			_surfaceOwner = SurfaceOwner.NONE;
 		}

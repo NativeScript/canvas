@@ -10,15 +10,7 @@ use super::gpu::CanvasWebGPUInstance;
 pub struct CanvasGPUBindGroup {
     pub(crate) label: Option<Cow<'static, str>>,
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
-    pub(crate) group: wgpu_core::id::BindGroupId,
-}
-
-impl Drop for CanvasGPUBindGroup {
-    fn drop(&mut self) {
-        let global = self.instance.global();
-        let group_id = self.group;
-        global.bind_group_drop(group_id);
-    }
+    pub(crate) group: Arc<wgpu_core::binding_model::BindGroup>,
 }
 
 #[no_mangle]

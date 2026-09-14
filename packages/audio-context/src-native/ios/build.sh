@@ -52,6 +52,9 @@ xcodebuild \
     BUILD_LIBRARY_FOR_DISTRIBUTION=YES
 
 echo "Build for xros (visionOS)"
+# No ARCHS/ONLY_ACTIVE_ARCH here: device SDKs are arm64-only already, so the
+# override was redundant. The simulator steps do still need it, to keep an
+# x86_64 slice out of a build whose third_party archives are arm64-only.
 xcodebuild \
     -project AudioContextNative.xcodeproj \
     -scheme AudioContextNative \
@@ -61,8 +64,40 @@ xcodebuild \
     -quiet \
     clean build \
     BUILD_DIR=$(PWD)/dist \
+    CODE_SIGN_IDENTITY="" \
+    CODE_SIGNING_REQUIRED=NO \
+    SKIP_INSTALL=NO \
+    BUILD_LIBRARY_FOR_DISTRIBUTION=YES
+
+echo "Build for appletvsimulator (tvOS Simulator)"
+# tvOS slices are arm64-only, matching the third_party deps built by
+# scripts/build_opus_deps_ios.sh (no x86_64 tvOS simulator archives exist).
+# No -destination here, unlike the iOS/visionOS steps above: a generic tvOS
+# destination requires the tvOS *platform* to be installed, not just its SDK,
+# and .github/actions/setup-apple-native only downloads visionOS. -sdk alone
+# builds the framework and keeps CI off a multi-GB platform download.
+xcodebuild \
+    -project AudioContextNative.xcodeproj \
+    -scheme AudioContextNative \
+    -sdk appletvsimulator \
+    -configuration Release \
+    -quiet \
+    clean build \
+    BUILD_DIR=$(PWD)/dist \
     ARCHS=arm64 \
     ONLY_ACTIVE_ARCH=NO \
+    SKIP_INSTALL=NO \
+    BUILD_LIBRARY_FOR_DISTRIBUTION=YES
+
+echo "Build for appletvos (tvOS)"
+xcodebuild \
+    -project AudioContextNative.xcodeproj \
+    -scheme AudioContextNative \
+    -sdk appletvos \
+    -configuration Release \
+    -quiet \
+    clean build \
+    BUILD_DIR=$(PWD)/dist \
     CODE_SIGN_IDENTITY="" \
     CODE_SIGNING_REQUIRED=NO \
     SKIP_INSTALL=NO \
@@ -79,6 +114,10 @@ xcodebuild \
     -debug-symbols $(PWD)/dist/Release-xros/AudioContextNative.framework.dSYM \
     -framework $(PWD)/dist/Release-xrsimulator/AudioContextNative.framework \
     -debug-symbols $(PWD)/dist/Release-xrsimulator/AudioContextNative.framework.dSYM \
+    -framework $(PWD)/dist/Release-appletvos/AudioContextNative.framework \
+    -debug-symbols $(PWD)/dist/Release-appletvos/AudioContextNative.framework.dSYM \
+    -framework $(PWD)/dist/Release-appletvsimulator/AudioContextNative.framework \
+    -debug-symbols $(PWD)/dist/Release-appletvsimulator/AudioContextNative.framework.dSYM \
     -output $(PWD)/dist/AudioContextNative.xcframework
 
 echo "Publishing XCFramework to packages/audio-context/platforms/ios"

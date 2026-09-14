@@ -39,13 +39,13 @@ public:
         auto object = OES_texture_half_floatImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType( texture, NativeType::OES_texture_half_float);
-        canvas::SetAlignedPointer(object, 0, texture);
+        object->SetAlignedPointerInInternalField(0, texture, ObjectWrapperImpl::kInternalFieldTag);
         texture->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 
     static OES_texture_half_floatImpl *GetPointer(const v8::Local<v8::Object> &object) {
-        auto ptr = canvas::GetAlignedPointer(object, 0);
+        auto ptr = object->GetAlignedPointerFromInternalField(0, ObjectWrapperImpl::kInternalFieldTag);
         if (ptr == nullptr) {
             return nullptr;
         }

@@ -31,7 +31,7 @@ public:
         auto object = CanvasPattern::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType(pattern, NativeType::CanvasPattern);
-        canvas::SetAlignedPointer(object, 0, pattern);
+        object->SetAlignedPointerInInternalField(0, pattern, ObjectWrapperImpl::kInternalFieldTag);
         pattern->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }

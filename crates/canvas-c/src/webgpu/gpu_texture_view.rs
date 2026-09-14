@@ -11,16 +11,7 @@ use super::gpu::CanvasWebGPUInstance;
 pub struct CanvasGPUTextureView {
     pub(crate) label: Option<Cow<'static, str>>,
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
-    pub(crate) texture_view: wgpu_core::id::TextureViewId,
-}
-
-impl Drop for CanvasGPUTextureView {
-    fn drop(&mut self) {
-        if !std::thread::panicking() {
-            let global = self.instance.global();
-            let _ = global.texture_view_drop(self.texture_view);
-        }
-    }
+    pub(crate) texture_view: Arc<wgpu_core::resource::TextureView>,
 }
 
 #[no_mangle]

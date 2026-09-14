@@ -30,7 +30,7 @@ function parseOptions(options) {
 		}
 
 		if (typeof options?.resizeHeight === 'number') {
-			opts.setResizeHeight(options.resizeWidth);
+			opts.setResizeHeight(options.resizeHeight);
 		}
 
 		switch (options?.resizeQuality) {
@@ -45,13 +45,64 @@ function parseOptions(options) {
 				break;
 		}
 
-		if (options?.premultiplyAlpha === 'flipY') {
-			opts.setImageOrientation(org.nativescript.canvas.ImageBitmapImageOrientation.FlipY);
-		}
-
 		return opts;
 	}
 	return options;
+}
+
+function invalidSource(source: any) {
+	const error: any = new TypeError(`Failed to execute 'createImageBitmap' : The provided value is not of type '(HTMLImageElement or SVGImageElement or HTMLVideoElement or HTMLCanvasElement or ImageBitmap or OffscreenCanvas or VideoFrame or Blob or ImageData)'.`);
+	error.__source = source;
+	return error;
+}
+
+/** `undefined` for an unrecognised source, so the caller rejects instead of hanging. */
+function resolveSource(source: any): any {
+	if (source instanceof Canvas) {
+		return (source as any).native;
+	}
+	if (source instanceof ImageBitmap) {
+		return source.native;
+	}
+	if (source instanceof ImageAsset) {
+		return source.native;
+	}
+	if (source instanceof ImageData) {
+		return (source as any).native;
+	}
+	if (typeof Blob !== 'undefined' && source instanceof Blob) {
+		const bytes = (Blob as any).InternalAccessor.getBuffer(source) as Uint8Array;
+		if (ArrayBuffer.isView(bytes)) {
+			// A Blob's buffer is often a slice of a larger store; keep the window.
+			return new Uint8Array(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+		}
+		return bytes;
+	}
+	if (source && typeof source === 'object' && typeof source.tagName === 'string') {
+		if (source.tagName === 'IMG' || source.tagName === 'IMAGE') {
+			return source._asset?.native;
+		}
+		if (source.tagName === 'CANVAS' && source._canvas instanceof Canvas) {
+			return source._canvas.native;
+		}
+		return undefined;
+	}
+	if (source instanceof ArrayBuffer) {
+		// Normalise to a view: the native side reads byteOffset/byteLength.
+		return new Uint8Array(source);
+	}
+	if (ArrayBuffer.isView(source)) {
+		return source;
+	}
+	if (source instanceof ImageSource) {
+		if (__ANDROID__) {
+			return source.android; // todo
+		}
+		if (__APPLE__) {
+			return source.ios; // todo
+		}
+	}
+	return undefined;
 }
 
 export class ImageBitmap {
@@ -60,6 +111,10 @@ export class ImageBitmap {
 	}
 
 	_native;
+
+	/** The spec's [[Detached]] slot: a detached bitmap reports 0x0. */
+	private _detached = false;
+
 	get native() {
 		return this._native;
 	}
@@ -69,13 +124,27 @@ export class ImageBitmap {
 	}
 
 	get width(): number {
-		return this.native.width;
+		return this._detached ? 0 : this.native.width;
 	}
+
 	get height(): number {
-		return this.native.height;
+		return this._detached ? 0 : this.native.height;
+	}
+
+	get __detached(): boolean {
+		return this._detached;
+	}
+
+	/** Detach without freeing, for a bitmaprenderer transfer still using the pixels. */
+	__detach() {
+		this._detached = true;
 	}
 
 	close() {
+		if (this._detached) {
+			return;
+		}
+		this._detached = true;
 		this.native.close();
 	}
 
@@ -86,139 +155,76 @@ export class ImageBitmap {
 		return null;
 	}
 
-	static createFrom(source: any, options: any) {
-		return new Promise(function (resolve, reject) {
-			let realSource;
-
-			if (source instanceof Canvas) {
-				realSource = (source as any).native;
-			} else if (source instanceof ImageBitmap) {
-				realSource = source.native;
-			} else if (source instanceof ImageAsset) {
-				realSource = source.native;
-			} else if (source instanceof ImageData) {
-				realSource = source.native;
-			} else if (source instanceof Blob) {
-				const bytes = (Blob as any).InternalAccessor.getBuffer(source) as Uint8Array;
-				realSource = bytes;
-				if (ArrayBuffer.isView(bytes)) {
-					realSource = new Uint8Array(bytes.buffer);
-				}
-			} else if (source && typeof source === 'object' && typeof source.tagName === 'string') {
-				if (source.tagName === 'IMG' || source.tagName === 'IMAGE') {
-					realSource = source._asset.native;
-				} else if (source.tagName === 'CANVAS' && source._canvas instanceof Canvas) {
-					realSource = source._canvas.native;
-				}
-			} else if (source instanceof ArrayBuffer) {
-				// wrapping to create a ref
-				realSource = new Uint8Array(source);
-			} else if (source instanceof ImageSource) {
-				if (__ANDROID__) {
-					realSource = source.android; // todo
-				}
-				if (__APPLE__) {
-					realSource = source.ios; // todo
-				}
+	private static _create(source: any, rect: [number, number, number, number] | null, options: any) {
+		return new Promise<ImageBitmap>((resolve, reject) => {
+			if (source === null || source === undefined) {
+				reject(invalidSource(source));
+				return;
 			}
 
-			if (__ANDROID__) {
-				if (ArrayBuffer.isView(realSource)) {
-					const asset = new global.CanvasModule.ImageAsset();
-					const ptr = long(asset.__getRef());
-					const cb = new org.nativescript.canvas.NSCImageBitmap.Callback({
-						onComplete(done) {
-							if (done) {
-								const value = global.CanvasModule.ImageBitmap.fromAsset(asset);
-								resolve(ImageBitmap.fromNative(value));
-							} else {
-								reject(new Error('Failed to create ImageBitmap'));
+			if (source instanceof ImageBitmap && source.__detached) {
+				const error: any = new Error(`Failed to execute 'createImageBitmap' : The image source is detached.`);
+				error.name = 'InvalidStateError';
+				reject(error);
+				return;
+			}
+
+			const realSource = resolveSource(source);
+
+			if (realSource === undefined || realSource === null) {
+				reject(invalidSource(source));
+				return;
+			}
+
+			if (__ANDROID__ && ArrayBuffer.isView(realSource)) {
+				// Encoded bytes decode on the Java thread pool.
+				const asset = new global.CanvasModule.ImageAsset();
+				const ptr = long(asset.__getRef());
+				const cb = new org.nativescript.canvas.NSCImageBitmap.Callback({
+					onComplete(done) {
+						if (done) {
+							const value = global.CanvasModule.ImageBitmap.fromAsset(asset);
+							const bitmap = ImageBitmap.fromNative(value);
+							if (bitmap) {
+								resolve(bitmap);
+								return;
 							}
-						},
-					});
-					if (options) {
-						const opts = parseOptions(options);
-						org.nativescript.canvas.NSCImageBitmap.createFromOptions(ptr, realSource as never, opts, cb);
-					} else {
-						org.nativescript.canvas.NSCImageBitmap.createFrom(ptr, realSource as never, cb);
-					}
+						}
+						reject(new Error('Failed to create ImageBitmap'));
+					},
+				});
+				if (rect) {
+					org.nativescript.canvas.NSCImageBitmap.createFromRectOptions(ptr, realSource as never, rect[0], rect[1], rect[2], rect[3], parseOptions(options ?? {}), cb);
+				} else if (options) {
+					org.nativescript.canvas.NSCImageBitmap.createFromOptions(ptr, realSource as never, parseOptions(options), cb);
+				} else {
+					org.nativescript.canvas.NSCImageBitmap.createFrom(ptr, realSource as never, cb);
 				}
 				return;
 			}
 
-			global.CanvasModule.createImageBitmap(realSource, options, (error, value) => {
-				if (value) {
-					resolve(ImageBitmap.fromNative(value));
+			const done = (error, value) => {
+				const bitmap = value ? ImageBitmap.fromNative(value) : null;
+				if (bitmap) {
+					resolve(bitmap);
 				} else {
-					reject(new Error(error));
+					reject(new Error(error ?? 'Failed to create ImageBitmap'));
 				}
-			});
+			};
+
+			if (rect) {
+				global.CanvasModule.createImageBitmap(realSource, rect[0], rect[1], rect[2], rect[3], options, done);
+			} else {
+				global.CanvasModule.createImageBitmap(realSource, options, done);
+			}
 		});
 	}
 
-	static createFromRect(source: any, sx: number, sy: number, sWidth: number, sHeight: number, options: any) {
-		return new Promise((resolve, reject) => {
-			let realSource;
-			if (source instanceof Canvas) {
-				realSource = (source as any).native;
-			} else if (source instanceof ImageBitmap) {
-				realSource = source.native;
-			} else if (source instanceof ImageAsset) {
-				realSource = source.native;
-			} else if (source instanceof ImageData) {
-				realSource = source.native;
-			} else if (source instanceof Blob) {
-				const bytes = (Blob as any).InternalAccessor.getBuffer(source);
-				realSource = bytes;
-				if (ArrayBuffer.isView(bytes)) {
-					realSource = new Uint8Array(bytes.buffer);
-				}
-			} else if (source && typeof source === 'object' && typeof source.tagName === 'string') {
-				if (source.tagName === 'IMG' || source.tagName === 'IMAGE') {
-					realSource = source._asset.native;
-				} else if (source.tagName === 'CANVAS' && source._canvas instanceof Canvas) {
-					realSource = source._canvas.native;
-				}
-			} else if (source instanceof ArrayBuffer) {
-				// wrapping to create a ref
-				realSource = new Uint8Array(source);
-			} else if (source instanceof ImageSource) {
-				if (__ANDROID__) {
-					realSource = source.android; // todo
-				}
+	static createFrom(source: any, options?: any) {
+		return ImageBitmap._create(source, null, options);
+	}
 
-				if (__APPLE__) {
-					realSource = source.ios; // todo
-				}
-			}
-
-			if (__ANDROID__) {
-				if (ArrayBuffer.isView(realSource)) {
-					const asset = new global.CanvasModule.ImageAsset();
-					const ptr = long(asset.__getRef());
-					const cb = new org.nativescript.canvas.NSCImageBitmap.Callback({
-						onComplete(done) {
-							if (done) {
-								const value = global.CanvasModule.ImageBitmap.fromAsset(asset);
-								resolve(ImageBitmap.fromNative(value));
-							} else {
-								reject(new Error('Failed to create ImageBitmap'));
-							}
-						},
-					});
-					const opts = parseOptions(options ?? {});
-					org.nativescript.canvas.NSCImageBitmap.createFromRectOptions(ptr, realSource as never, sx, sy, sWidth, sHeight, opts, cb);
-				}
-				return;
-			}
-
-			global.CanvasModule.createImageBitmap(realSource, sx, sy, sWidth, sHeight, options, (error, value) => {
-				if (value) {
-					resolve(ImageBitmap.fromNative(value));
-				} else {
-					reject(new Error(error));
-				}
-			});
-		});
+	static createFromRect(source: any, sx: number, sy: number, sWidth: number, sHeight: number, options?: any) {
+		return ImageBitmap._create(source, [sx, sy, sWidth, sHeight], options);
 	}
 }

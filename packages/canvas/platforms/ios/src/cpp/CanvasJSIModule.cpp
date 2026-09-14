@@ -428,6 +428,24 @@ struct Rect {
 	float height;
 };
 
+/// Work handed to the decode thread for an already-decoded source.
+struct ImageBitmapDecode {
+	/// Owned reference for an ImageAsset/ImageBitmap source.
+	const ImageAsset *source = nullptr;
+	ImageData *image_data = nullptr;
+	/// An ImageData's pixels belong to its JS wrapper, which has to outlive the work.
+	v8::Global<v8::Object> keep_alive;
+	const ImageAsset *output = nullptr;
+
+	~ImageBitmapDecode() {
+		if (source != nullptr) {
+			canvas_native_image_asset_release(source);
+			source = nullptr;
+		}
+		keep_alive.Reset();
+	}
+};
+
 struct ImageBitmapData {
 	char *error_;
 	const ImageAsset *asset_;
@@ -633,131 +651,173 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
 		}
 	}
 	
+	// Every non-encoded source funnels through here. args[1] must always be a
+	// real handle: the previous `default: break;` left it empty and
+	// v8::Function::Call aborts on an empty handle, so createImageBitmap of an
+	// ImageData or a canvas crashed instead of rejecting.
 	auto type = ObjectWrapperImpl::GetNativeType(image);
-	
-	if (len == 1 || len == 2) {
-		if (len == 2) {
-			options = ImageBitmapImpl::HandleOptions(isolate, args[1]);
-		}
-		
+	auto cbFunc = cb.As<v8::Function>();
+
+	auto finish = [&](const ImageAsset *result, const char *error) {
 		v8::Local<v8::Value> retArgs[2];
-		retArgs[0] = v8::Null(isolate);
-		
-		switch (type) {
-			case NativeType::ImageAsset: {
-				auto image_asset = ImageAssetImpl::GetPointer(image.As<v8::Object>());
-				auto ret = canvas_native_image_bitmap_create_from_asset(
-																																image_asset->GetImageAsset(),
-																																options.flipY,
-																																options.premultiplyAlpha,
-																																options.colorSpaceConversion,
-																																options.resizeQuality,
-																																options.resizeWidth,
-																																options.resizeHeight);
-				
-				
-				auto bitmap = new ImageBitmapImpl(ret);
-				auto data = v8::External::New(isolate, bitmap, v8::kExternalPointerTypeTagDefault);
-				
-				auto object = ImageBitmapImpl::NewInstance(isolate, data);
-				
-				retArgs[1] = object;
-			}
-				break;
-			case NativeType::ImageBitmap: {
-				auto image_bitmap = ImageBitmapImpl::GetPointer(image.As<v8::Object>());
-				auto ret = canvas_native_image_bitmap_create_from_asset(
-																																image_bitmap->GetImageAsset(),
-																																options.flipY,
-																																options.premultiplyAlpha,
-																																options.colorSpaceConversion,
-																																options.resizeQuality,
-																																options.resizeWidth,
-																																options.resizeHeight);
-				
-				
-				auto bitmap = new ImageBitmapImpl(ret);
-				auto data = v8::External::New(isolate, bitmap, v8::kExternalPointerTypeTagDefault);
-				auto object = ImageBitmapImpl::NewInstance(isolate, data);
-				
-				retArgs[1] = object;
-				
-			}
-				break;
-			default:
-				break;
+		if (result != nullptr) {
+			retArgs[0] = v8::Null(isolate);
+			auto bitmap = new ImageBitmapImpl(result);
+			auto data = v8::External::New(isolate, bitmap, v8::kExternalPointerTypeTagDefault);
+			retArgs[1] = ImageBitmapImpl::NewInstance(isolate, data);
+		} else {
+			retArgs[0] = ConvertToV8String(isolate, error);
+			retArgs[1] = v8::Null(isolate);
 		}
-		
-		cb.As<v8::Function>()->Call(context, context->Global(), 2, retArgs);
-		
-		return;
+		cbFunc->Call(context, context->Global(), 2, retArgs);
+	};
+
+	std::optional<Rect> rect = std::nullopt;
+
+	if (len == 2) {
+		options = ImageBitmapImpl::HandleOptions(isolate, args[1]);
 	} else if (len == 5 || len == 6) {
-		
 		if (len == 6) {
 			options = ImageBitmapImpl::HandleOptions(isolate, args[5]);
 		}
-		
-		v8::Local<v8::Value> retArgs[2];
-		retArgs[0] = v8::Null(isolate);
-		
-		
-		switch (type) {
-			case NativeType::ImageAsset: {
-				auto image_asset = ImageBitmapImpl::GetPointer(image.As<v8::Object>());
-				auto ret = canvas_native_image_bitmap_create_from_asset_src_rect(
-																																				 image_asset->GetImageAsset(),
-																																				 (float) sx_or_options->NumberValue(context).ToChecked(),
-																																				 (float) sy->NumberValue(context).ToChecked(),
-																																				 (float) sw->NumberValue(context).ToChecked(),
-																																				 (float) sh->NumberValue(context).ToChecked(),
-																																				 options.flipY,
-																																				 options.premultiplyAlpha,
-																																				 options.colorSpaceConversion,
-																																				 options.resizeQuality,
-																																				 options.resizeWidth,
-																																				 options.resizeHeight);
-				
-				
-				auto bitmap = new ImageBitmapImpl(ret);
-				auto data = v8::External::New(isolate, bitmap, v8::kExternalPointerTypeTagDefault);
-				auto object = ImageBitmapImpl::NewInstance(isolate, data);
-				
-				retArgs[1] = object;
-			}
-				break;
-			case NativeType::ImageBitmap: {
-				auto image_bitmap = ImageBitmapImpl::GetPointer(image.As<v8::Object>());
-				auto ret = canvas_native_image_bitmap_create_from_asset_src_rect(
-																																				 image_bitmap->GetImageAsset(),
-																																				 (float) sx_or_options->NumberValue(context).ToChecked(),
-																																				 (float) sy->NumberValue(context).ToChecked(),
-																																				 (float) sw->NumberValue(context).ToChecked(),
-																																				 (float) sh->NumberValue(context).ToChecked(),
-																																				 options.flipY,
-																																				 options.premultiplyAlpha,
-																																				 options.colorSpaceConversion,
-																																				 options.resizeQuality,
-																																				 options.resizeWidth,
-																																				 options.resizeHeight);
-				
-				
-				auto bitmap = new ImageBitmapImpl(ret);
-				auto data = v8::External::New(isolate, bitmap, v8::kExternalPointerTypeTagDefault);
-				auto object = ImageBitmapImpl::NewInstance(isolate, data);
-				
-				retArgs[1] = object;
-				
-			}
-				break;
-			default:
-				break;
-		}
-		
-		
-		cb.As<v8::Function>()->Call(context, context->Global(), 2, retArgs);
-		
+		rect = Rect{(float) sx_or_options->NumberValue(context).ToChecked(),
+					(float) sy->NumberValue(context).ToChecked(),
+					(float) sw->NumberValue(context).ToChecked(),
+					(float) sh->NumberValue(context).ToChecked()};
+	} else if (len != 1) {
+		finish(nullptr, "Failed to execute 'createImageBitmap' : Invalid argument count");
 		return;
 	}
+
+	// Created up front so every source can share the `_with_output` entry points.
+	auto output = canvas_native_image_asset_create();
+
+	if (type == NativeType::ImageAsset || type == NativeType::ImageBitmap ||
+		type == NativeType::ImageData) {
+		// These decode off the JS thread, like the encoded-bytes path above. Only
+		// a canvas has to stay here: its snapshot needs the thread that owns the
+		// GL context.
+		auto work = new ImageBitmapDecode();
+		work->output = output;
+
+		if (type == NativeType::ImageData) {
+			auto source = ImageDataImpl::GetPointer(image.As<v8::Object>());
+			if (source == nullptr) {
+				delete work;
+				canvas_native_image_asset_release(output);
+				finish(nullptr, "Failed to execute 'createImageBitmap' : The provided source could not be decoded");
+				return;
+			}
+			work->image_data = source->GetImageData();
+			work->keep_alive.Reset(isolate, image.As<v8::Object>());
+		} else {
+			const ImageAsset *source =
+					type == NativeType::ImageAsset
+							? ImageAssetImpl::GetPointer(image.As<v8::Object>())->GetImageAsset()
+							: ImageBitmapImpl::GetPointer(image.As<v8::Object>())->GetImageAsset();
+			if (source == nullptr) {
+				delete work;
+				canvas_native_image_asset_release(output);
+				finish(nullptr, "Failed to execute 'createImageBitmap' : The provided source could not be decoded");
+				return;
+			}
+			work->source = canvas_native_image_asset_reference(source);
+		}
+
+		auto callback = new AsyncCallback(isolate, cbFunc, [](bool done, void *data) {
+			if (data == nullptr) { return; }
+			auto async_data = static_cast<AsyncCallback *>(data);
+			auto func = async_data->inner_.get();
+			if (func != nullptr && func->isolate_ != nullptr) {
+				v8::Isolate *isolate = func->isolate_;
+				v8::Locker locker(isolate);
+				v8::Isolate::Scope isolate_scope(isolate);
+				v8::HandleScope handle_scope(isolate);
+				auto callback = func->callback_.Get(isolate);
+				auto context = callback->GetCreationContextChecked();
+				v8::Context::Scope context_scope(context);
+
+				auto work = static_cast<ImageBitmapDecode *>(func->data);
+				v8::Local<v8::Value> args[2];
+				if (done && work != nullptr) {
+					args[0] = v8::Null(isolate);
+					auto bitmap = new ImageBitmapImpl(work->output);
+					auto external = v8::External::New(isolate, bitmap, v8::kExternalPointerTypeTagDefault);
+					args[1] = ImageBitmapImpl::NewInstance(isolate, external);
+				} else {
+					if (work != nullptr && work->output != nullptr) {
+						canvas_native_image_asset_release(work->output);
+					}
+					args[0] = ConvertToV8String(isolate,
+												"Failed to execute 'createImageBitmap' : The provided source could not be decoded");
+					args[1] = v8::Null(isolate);
+				}
+				callback->Call(context, context->Global(), 2, args);
+				delete work;
+				func->data = nullptr;
+			}
+			delete static_cast<AsyncCallback *>(data);
+		});
+
+		callback->inner_->data = work;
+		callback->prepare();
+
+		WorkerPool::Instance().Enqueue([callback, work, options, rect]() mutable {
+			bool done;
+			if (work->image_data != nullptr) {
+				done = rect.has_value()
+						   ? canvas_native_image_bitmap_create_from_image_data_src_rect_with_output(
+									 work->image_data, rect->x, rect->y, rect->width, rect->height,
+									 options.flipY, options.premultiplyAlpha,
+									 options.colorSpaceConversion, options.resizeQuality,
+									 options.resizeWidth, options.resizeHeight, work->output)
+						   : canvas_native_image_bitmap_create_from_image_data_with_output(
+									 work->image_data, options.flipY, options.premultiplyAlpha,
+									 options.colorSpaceConversion, options.resizeQuality,
+									 options.resizeWidth, options.resizeHeight, work->output);
+			} else {
+				done = rect.has_value()
+						   ? canvas_native_image_bitmap_create_from_asset_src_rect_with_output(
+									 work->source, rect->x, rect->y, rect->width, rect->height,
+									 options.flipY, options.premultiplyAlpha,
+									 options.colorSpaceConversion, options.resizeQuality,
+									 options.resizeWidth, options.resizeHeight, work->output)
+						   : canvas_native_image_bitmap_create_from_asset_with_output(
+									 work->source, options.flipY, options.premultiplyAlpha,
+									 options.colorSpaceConversion, options.resizeQuality,
+									 options.resizeWidth, options.resizeHeight, work->output);
+			}
+			callback->execute(done);
+		});
+
+		return;
+	}
+
+	bool done = false;
+
+	if (type == NativeType::CanvasRenderingContext2D) {
+		auto source = CanvasRenderingContext2DImpl::GetPointer(image.As<v8::Object>());
+		if (source != nullptr) {
+			done = canvas_native_image_bitmap_create_from_context_with_output(
+					source->GetContext(),
+					rect.has_value() ? rect->x : 0.f,
+					rect.has_value() ? rect->y : 0.f,
+					rect.has_value() ? rect->width : 0.f,
+					rect.has_value() ? rect->height : 0.f,
+					rect.has_value(),
+					options.flipY, options.premultiplyAlpha,
+					options.colorSpaceConversion, options.resizeQuality,
+					options.resizeWidth, options.resizeHeight, output);
+		}
+	}
+
+	if (done) {
+		finish(output, nullptr);
+	} else {
+		canvas_native_image_asset_release(output);
+		finish(nullptr, "Failed to execute 'createImageBitmap' : The provided source could not be decoded");
+	}
+	return;
 	
 	
 	args.GetReturnValue().SetUndefined();

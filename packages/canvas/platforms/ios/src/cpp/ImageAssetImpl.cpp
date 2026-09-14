@@ -510,23 +510,15 @@ void ImageAssetImpl::FromBytesSync(const v8::FunctionCallbackInfo<v8::Value> &ar
     auto context = args.GetIsolate()->GetCurrentContext();
     auto value = args[2];
     
-    if (value->IsObject()) {
-        if (!value->IsArrayBuffer()) {
-            args.GetReturnValue().Set(false);
-            return;
-        }
-        auto buf = value.As<v8::ArrayBuffer>();
-        
-        auto size = (uintptr_t) buf->ByteLength();
-        auto data = (uint8_t *) buf->GetBackingStore()->Data();
-        
+    auto bytes = GetBufferBytes(value);
+    if (bytes) {
         uint32_t width;
         uint32_t height;
         bool done = false;
         if(args[0]->Uint32Value(context).To(&width)
            && args[1]->Uint32Value(context).To(&height)
            ) {
-            done = canvas_native_image_asset_load_from_raw(ptr->GetImageAsset(), width, height, data, size);
+            done = canvas_native_image_asset_load_from_raw(ptr->GetImageAsset(), width, height, bytes.data, bytes.size);
         }
         
         args.GetReturnValue().Set(done);
@@ -548,12 +540,14 @@ void ImageAssetImpl::FromBytesCb(const v8::FunctionCallbackInfo<v8::Value> &args
     }
     
     
-    auto bytes = args[2].As<v8::ArrayBuffer>();
+    auto buffer = GetBufferBytes(args[2]);
+    if (!buffer) {
+        return;
+    }
 
-    auto size = bytes->ByteLength();
-
-    auto store = bytes->GetBackingStore();
-    auto data = (uint8_t *) store->Data();
+    auto size = buffer.size;
+    auto store = buffer.store;
+    auto data = buffer.data;
 
     auto asset = canvas_native_image_asset_reference(ptr->GetImageAsset());
 
@@ -660,18 +654,10 @@ void ImageAssetImpl::FromEncodedBytesSync(const v8::FunctionCallbackInfo<v8::Val
     
     auto value = args[0];
     
-    if (value->IsObject()) {
-        if (!value->IsArrayBuffer()) {
-            args.GetReturnValue().Set(false);
-            return;
-        }
-        auto buf = value.As<v8::ArrayBuffer>();
-        
-        auto size = (uintptr_t) buf->ByteLength();
-        auto data = (uint8_t *) buf->GetBackingStore()->Data();
-        
-        auto done = canvas_native_image_asset_load_from_raw_encoded(ptr->GetImageAsset(), data,
-                                                                    size);
+    auto bytes = GetBufferBytes(value);
+    if (bytes) {
+        auto done = canvas_native_image_asset_load_from_raw_encoded(ptr->GetImageAsset(), bytes.data,
+                                                                    bytes.size);
         
         args.GetReturnValue().Set(done);
         return;
@@ -692,12 +678,14 @@ void ImageAssetImpl::FromEncodedBytesCb(const v8::FunctionCallbackInfo<v8::Value
     }
     
     
-    auto bytes = args[0].As<v8::ArrayBuffer>();
+    auto buffer = GetBufferBytes(args[0]);
+    if (!buffer) {
+        return;
+    }
 
-    auto size = bytes->ByteLength();
-
-    auto store = bytes->GetBackingStore();
-    auto data = (uint8_t *) store->Data();
+    auto size = buffer.size;
+    auto store = buffer.store;
+    auto data = buffer.data;
 
     auto asset = canvas_native_image_asset_reference(ptr->GetImageAsset());
 

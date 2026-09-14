@@ -5,6 +5,7 @@ import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
 import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
 import { Application, View, Screen, ImageSource, Utils, widthProperty, heightProperty, isUserInteractionEnabledProperty } from '@nativescript/core';
 import { GPUCanvasContext } from '../WebGPU';
+import { ImageBitmapRenderingContext } from '../ImageBitmapRenderingContext';
 import { handleContextOptions, microtask } from './utils';
 
 export function createSVGMatrix(): DOMMatrix {
@@ -32,6 +33,7 @@ const defaultOpts = {
 enum ContextType {
 	None,
 	Canvas,
+	BitmapRenderer,
 	WebGL,
 	WebGL2,
 	WebGPU,
@@ -84,6 +86,7 @@ export class Canvas extends CanvasBase {
 	private _webglContext: WebGLRenderingContext;
 	private _webgl2Context: WebGL2RenderingContext;
 	private _gpuContext: GPUCanvasContext;
+	private _bitmapRendererContext: ImageBitmapRenderingContext;
 	private _canvas: org.nativescript.canvas.NSCCanvas;
 	private _didPause: boolean = false;
 
@@ -225,7 +228,7 @@ export class Canvas extends CanvasBase {
 		return this._canvas.getSurfaceWidth();
 	}
 
-	set width(value: any) {
+	private __setSurfaceWidth(value: any) {
 		if (this._canvas === undefined || this._canvas === null) {
 			return;
 		}
@@ -268,7 +271,7 @@ export class Canvas extends CanvasBase {
 		return this._canvas.getSurfaceHeight();
 	}
 
-	set height(value: any) {
+	private __setSurfaceHeight(value: any) {
 		if (this._canvas === undefined || this._canvas === null) {
 			return;
 		}
@@ -300,12 +303,29 @@ export class Canvas extends CanvasBase {
 		}
 	}
 
+	set width(value: any) {
+		this.__setSurfaceWidth(value);
+		this.__resetAfterResize();
+	}
+
+	set height(value: any) {
+		this.__setSurfaceHeight(value);
+		this.__resetAfterResize();
+	}
+
+	/** A CSS width must not touch the bitmap, so only these setters reset. */
+	private __resetAfterResize() {
+		try {
+			(this._2dContext as any)?.reset?.();
+		} catch (e) {}
+	}
+
 	[widthProperty.setNative](value) {
-		this.width = value;
+		this.__setSurfaceWidth(value);
 	}
 
 	[heightProperty.setNative](value) {
-		this.height = value;
+		this.__setSurfaceHeight(value);
 	}
 
 	static createCustomView() {
@@ -397,6 +417,7 @@ export class Canvas extends CanvasBase {
 		this._webglContext = undefined;
 		this._webgl2Context = undefined;
 		this._gpuContext = undefined;
+		this._bitmapRendererContext = undefined;
 		this._contextType = ContextType.None;
 		this._is2D = false;
 		this._canvas = undefined;
@@ -433,6 +454,8 @@ export class Canvas extends CanvasBase {
 		switch (this._contextType) {
 			case ContextType.Canvas:
 				return this._2dContext.native;
+			case ContextType.BitmapRenderer:
+				return this._bitmapRendererContext?.native;
 			case ContextType.WebGL:
 				return this._webglContext.native;
 			case ContextType.WebGL2:
@@ -448,38 +471,62 @@ export class Canvas extends CanvasBase {
 		return this.__native__context;
 	}
 
+	/**
+	 * Builds the 2D context object. `getContext('2d')` keeps it as the canvas's
+	 * context; `getContext('bitmaprenderer')` keeps it privately as the handle
+	 * onto the output bitmap.
+	 */
+	private __create2DContext(type: string, contextAttributes?: any): CanvasRenderingContext2D {
+		const opts = {
+			...defaultOpts,
+			...handleContextOptions(type, contextAttributes),
+			fontColor: this.parent?.style?.color?.android ?? -16777216,
+		};
+
+		const ctx = this._canvas.create2DContext(opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible, opts.willReadFrequently ?? false, opts.colorSpace ?? 0);
+		const context = new (CanvasRenderingContext2D as any)(ctx, opts);
+		// @ts-ignore
+		context._canvas = this;
+		context._type = '2d';
+		//@ts-ignore
+		context.__engine = this._canvas.getEngine?.()?.getValue?.() ?? 0;
+		return context;
+	}
+
 	getContext(type: string, contextAttributes?: any): CanvasRenderingContext2D | WebGLRenderingContext | WebGL2RenderingContext | GPUCanvasContext | null {
 		if (!this._canvas) {
 			return null;
 		}
 		if (typeof type === 'string') {
 			if (type === '2d') {
-				if (this._webglContext || this._webgl2Context || this._gpuContext) {
+				if (this._webglContext || this._webgl2Context || this._gpuContext || this._bitmapRendererContext) {
 					return null;
 				}
 
 				if (!this._2dContext) {
-					const opts = {
-						...defaultOpts,
-						...handleContextOptions(type, contextAttributes),
-						fontColor: this.parent?.style?.color?.android ?? -16777216,
-					};
-
-					const ctx = this._canvas.create2DContext(opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible, opts.willReadFrequently ?? false, opts.colorSpace ?? 0);
-					this._2dContext = new (CanvasRenderingContext2D as any)(ctx);
-					// @ts-ignore
-					(this._2dContext as any)._canvas = this;
-					this._2dContext._type = '2d';
+					this._2dContext = this.__create2DContext(type, contextAttributes);
 					this._contextType = ContextType.Canvas;
 					this._is2D = true;
-
-					//@ts-ignore
-					this._2dContext.__engine = this._canvas.getEngine?.()?.getValue?.() ?? 0;
 				}
 
 				return this._2dContext;
+			} else if (type === 'bitmaprenderer') {
+				if (this._2dContext || this._webglContext || this._webgl2Context || this._gpuContext) {
+					return null;
+				}
+
+				if (!this._bitmapRendererContext) {
+					// The output bitmap is the canvas's own 2D surface; the 2D context
+					// is the handle onto it and is never handed out as a '2d' context.
+					const backing = this.__create2DContext(type, contextAttributes);
+					this._bitmapRendererContext = new ImageBitmapRenderingContext(this, backing, handleContextOptions(type, contextAttributes));
+					this._contextType = ContextType.BitmapRenderer;
+					this._is2D = true;
+				}
+
+				return this._bitmapRendererContext as never;
 			} else if (type === 'webgl' || type === 'experimental-webgl') {
-				if (this._2dContext || this._webgl2Context || this._gpuContext) {
+				if (this._2dContext || this._webgl2Context || this._gpuContext || this._bitmapRendererContext) {
 					return null;
 				}
 				if (!this._webglContext) {
@@ -494,7 +541,7 @@ export class Canvas extends CanvasBase {
 				}
 				return this._webglContext;
 			} else if (type === 'webgl2' || type === 'experimental-webgl2') {
-				if (this._2dContext || this._webglContext || this._gpuContext) {
+				if (this._2dContext || this._webglContext || this._gpuContext || this._bitmapRendererContext) {
 					return null;
 				}
 				if (!this._webgl2Context) {
@@ -509,7 +556,7 @@ export class Canvas extends CanvasBase {
 				}
 				return this._webgl2Context;
 			} else if (type === 'webgpu') {
-				if (this._2dContext || this._webglContext || this._webgl2Context) {
+				if (this._2dContext || this._webglContext || this._webgl2Context || this._bitmapRendererContext) {
 					return null;
 				}
 				if (!this._gpuContext) {
@@ -551,8 +598,11 @@ export class Canvas extends CanvasBase {
 		if (!this._canvas || !this.parent) {
 			return new DOMRect(0, 0, 0, 0);
 		}
+		// Read the buffer first: on the first call this getter is what hands it to the
+		// view, and a fill before that has nothing to write into.
+		const rect = this._boundingClientRect;
 		org.nativescript.canvas.NSCCanvas.getBoundingClientRect(this._canvas);
-		return new DOMRect(this._boundingClientRect[6], this._boundingClientRect[7], this._boundingClientRect[4], this._boundingClientRect[5], this._boundingClientRect[0], this._boundingClientRect[1], this._boundingClientRect[2], this._boundingClientRect[3]);
+		return new DOMRect(rect[6], rect[7], rect[4], rect[5], rect[0], rect[1], rect[2], rect[3]);
 	}
 
 	setPointerCapture() {}

@@ -3,6 +3,7 @@ import { TouchEvent, PointerEvent, CustomEvent } from './Canvas/common';
 import { TextEncoder } from './TextEncoder';
 import { TextDecoder } from './TextDecoder';
 import { ImageBitmap } from './ImageBitmap';
+import { ImageBitmapRenderingContext } from './ImageBitmapRenderingContext';
 import { ImageAsset } from './ImageAsset';
 
 import { CanvasPattern, CanvasGradient, Path2D, ImageData, DOMMatrix } from './Canvas2D';
@@ -14,6 +15,7 @@ import { GPUBufferUsage, GPUMapMode, GPUShaderStage, GPUTextureUsage } from './W
 
 export * from './Canvas2D';
 export * from './ImageBitmap';
+export * from './ImageBitmapRenderingContext';
 export * from './ImageAsset';
 export * from './TextEncoder';
 export * from './TextDecoder';
@@ -149,6 +151,12 @@ Object.defineProperty(global, 'ImageBitmap', {
 	writable: true,
 });
 
+Object.defineProperty(global, 'ImageBitmapRenderingContext', {
+	value: ImageBitmapRenderingContext,
+	configurable: true,
+	writable: true,
+});
+
 Object.defineProperty(global, 'TouchEvent', {
 	value: TouchEvent,
 	configurable: true,
@@ -198,6 +206,7 @@ Object.defineProperty(global, 'CustomEvent', {
 });
 
 export { ImageBitmap } from './ImageBitmap';
+export { ImageBitmapRenderingContext } from './ImageBitmapRenderingContext';
 export { CanvasRenderingContext2D } from './Canvas2D/CanvasRenderingContext2D';
 export { WebGLRenderingContext } from './WebGL/WebGLRenderingContext';
 export { WebGL2RenderingContext } from './WebGL2/WebGL2RenderingContext';

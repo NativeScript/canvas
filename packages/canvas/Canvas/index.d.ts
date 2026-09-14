@@ -4,6 +4,7 @@ import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
 import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
 import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
 import { GPUCanvasContext } from '../WebGPU';
+import { ImageBitmapRenderingContext } from '../ImageBitmapRenderingContext';
 import { LengthPercentage } from '@nativescript/core/css/parser';
 
 export declare function createSVGMatrix(): DOMMatrix;
@@ -58,7 +59,7 @@ export declare class Canvas extends CanvasBase {
 
 	getContext(type: '2d', options?: any): CanvasRenderingContext2D | null;
 
-	getContext(type: 'bitmaprenderer', options?: any): any;
+	getContext(type: 'bitmaprenderer', options?: { alpha?: boolean }): ImageBitmapRenderingContext | null;
 
 	getContext(type: 'webgl' | 'experimental-webgl', options?: any): WebGLRenderingContext | null;
 
@@ -66,7 +67,7 @@ export declare class Canvas extends CanvasBase {
 
 	getContext(type: 'webgpu'): GPUCanvasContext | null;
 
-	getContext(type: string, options?: any): CanvasRenderingContext2D | WebGLRenderingContext | WebGL2RenderingContext | GPUCanvasContext | null;
+	getContext(type: string, options?: any): CanvasRenderingContext2D | ImageBitmapRenderingContext | WebGLRenderingContext | WebGL2RenderingContext | GPUCanvasContext | null;
 
 	getBoundingClientRect(): {
 		x: number;

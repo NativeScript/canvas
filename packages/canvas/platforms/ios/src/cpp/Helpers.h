@@ -318,3 +318,44 @@ static void SetFastMethodNoSideEffect(v8::Isolate *isolate,
             v8::String::NewFromUtf8(isolate, name, type).ToLocalChecked();
     that->Set(name_string, t);
 }
+
+/// Bytes of an ArrayBuffer or of any view over one (Uint8Array, Uint8ClampedArray, ...).
+/// Views carry a byte offset, so honour it.
+struct BufferBytes {
+    uint8_t *data = nullptr;
+    size_t size = 0;
+    /// Keeps the memory alive for callers that hand `data` to another thread.
+    std::shared_ptr<v8::BackingStore> store;
+
+    explicit operator bool() const { return data != nullptr; }
+};
+
+inline static BufferBytes GetBufferBytes(const v8::Local<v8::Value> &value) {
+    if (value.IsEmpty()) {
+        return {};
+    }
+
+    v8::Local<v8::ArrayBuffer> buffer;
+    size_t offset = 0;
+    size_t length = 0;
+
+    if (value->IsArrayBuffer()) {
+        buffer = value.As<v8::ArrayBuffer>();
+        length = buffer->ByteLength();
+    } else if (value->IsArrayBufferView()) {
+        auto view = value.As<v8::ArrayBufferView>();
+        buffer = view->Buffer();
+        offset = view->ByteOffset();
+        length = view->ByteLength();
+    } else {
+        return {};
+    }
+
+    auto store = buffer->GetBackingStore();
+    auto base = (uint8_t *) store->Data();
+    if (base == nullptr) {
+        return {};
+    }
+
+    return {base + offset, length, std::move(store)};
+}

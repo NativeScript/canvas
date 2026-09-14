@@ -134,11 +134,25 @@ ImageBitmapImpl::HandleOptions(v8::Isolate *isolate, const v8::Local<v8::Value> 
         auto config = options.As<v8::Object>();
 
 
+        // The spec option is `imageOrientation: "flipY"`; this only read
+        // `flipY: true`, so web-shaped calls silently kept the source orientation.
+        v8::Local<v8::Value> imageOrientationValue;
+
+        config->Get(context, ConvertToV8String(isolate, "imageOrientation")).ToLocal(
+                &imageOrientationValue);
+
+        if (!imageOrientationValue.IsEmpty() && imageOrientationValue->IsString()) {
+            auto imageOrientation = ConvertFromV8String(isolate, imageOrientationValue);
+            if (imageOrientation == "flipY") {
+                ret.flipY = true;
+            }
+        }
+
         v8::Local<v8::Value> flipYValue;
 
         config->Get(context, ConvertToV8String(isolate, "flipY")).ToLocal(&flipYValue);
 
-        if (flipYValue->IsBoolean()) {
+        if (!flipYValue.IsEmpty() && flipYValue->IsBoolean()) {
             ret.flipY = flipYValue->BooleanValue(isolate);
         }
 

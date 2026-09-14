@@ -26,10 +26,7 @@ export class PointerEvent {
 export declare class Canvas extends CanvasBase {
 	readonly clientWidth: number;
 	readonly clientHeight: number;
-	private _2dContext;
-	private canvas;
 	native: any;
-	parentElement: any;
 
 	set width(value: LengthPercentage | number | string | undefined);
 	get width(): number;
@@ -38,8 +35,6 @@ export declare class Canvas extends CanvasBase {
 	lang: string;
 
 	constructor();
-
-	flush(): void;
 
 	static useSurface: boolean;
 

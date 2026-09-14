@@ -6,7 +6,7 @@ import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
 import { ImageSource, Utils, Screen, isUserInteractionEnabledProperty, widthProperty, heightProperty } from '@nativescript/core';
 import { GPUCanvasContext } from '../WebGPU';
 import { ImageBitmapRenderingContext } from '../ImageBitmapRenderingContext';
-import { handleContextOptions, microtask } from './utils';
+import { handleContextOptions, microtask, CanvasContextType } from './utils';
 declare var NSCCanvas, NSCCanvasListener;
 
 export function createSVGMatrix(): DOMMatrix {
@@ -192,11 +192,13 @@ export class Canvas extends CanvasBase {
 		this.__setSurfaceWidth(value);
 	}
 
+	// @ts-ignore
 	set width(value: any) {
 		this.__setSurfaceWidth(value);
 		this.__resetAfterResize();
 	}
 
+	// @ts-ignore
 	set height(value: any) {
 		this.__setSurfaceHeight(value);
 		this.__resetAfterResize();
@@ -490,7 +492,7 @@ export class Canvas extends CanvasBase {
 	 * context; `getContext('bitmaprenderer')` keeps it privately as the handle
 	 * onto the output bitmap.
 	 */
-	private __create2DContext(type: string, options?: any): CanvasRenderingContext2D {
+	private __create2DContext(type: CanvasContextType, options?: any): CanvasRenderingContext2D {
 		const opts = { ...defaultOpts, ...handleContextOptions(type, options), fontColor: this.parent?.style?.color?.android || -16777216 };
 
 		const ctx = this._canvas.create2DContext(opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible, opts.fontColor, opts.willReadFrequently ?? false, opts.colorSpace ?? 0);
@@ -529,7 +531,7 @@ export class Canvas extends CanvasBase {
 					// The output bitmap is the canvas's own 2D surface; the 2D context
 					// is the handle onto it and is never handed out as a '2d' context.
 					const backing = this.__create2DContext(type, options);
-					this._bitmapRendererContext = new ImageBitmapRenderingContext(this, backing, handleContextOptions(type, options));
+					this._bitmapRendererContext = new ImageBitmapRenderingContext(this as any, backing, handleContextOptions(type, options));
 					this._contextType = ContextType.BitmapRenderer;
 					this._is2D = true;
 				}

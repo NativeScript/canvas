@@ -215,7 +215,7 @@ export function parseRenderPassDescriptor(value: GPURenderPassDescriptor) {
 			depthReadOnly: value.depthStencilAttachment.depthReadOnly ?? false,
 			stencilClearValue: value.depthStencilAttachment.stencilClearValue ?? 0,
 			stencilReadOnly: value.depthStencilAttachment.stencilReadOnly ?? false,
-		};
+		} as GPURenderPassDepthStencilAttachment;
 
 		if (value.depthStencilAttachment.depthLoadOp !== undefined) {
 			desc.depthStencilAttachment.depthLoadOp = value.depthStencilAttachment.depthLoadOp;

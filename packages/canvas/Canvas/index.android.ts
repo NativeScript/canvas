@@ -6,7 +6,7 @@ import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
 import { Application, View, Screen, ImageSource, Utils, widthProperty, heightProperty, isUserInteractionEnabledProperty } from '@nativescript/core';
 import { GPUCanvasContext } from '../WebGPU';
 import { ImageBitmapRenderingContext } from '../ImageBitmapRenderingContext';
-import { handleContextOptions, microtask } from './utils';
+import { handleContextOptions, microtask, CanvasContextType } from './utils';
 
 export function createSVGMatrix(): DOMMatrix {
 	return new DOMMatrix();
@@ -476,7 +476,7 @@ export class Canvas extends CanvasBase {
 	 * context; `getContext('bitmaprenderer')` keeps it privately as the handle
 	 * onto the output bitmap.
 	 */
-	private __create2DContext(type: string, contextAttributes?: any): CanvasRenderingContext2D {
+	private __create2DContext(type: CanvasContextType, contextAttributes?: any): CanvasRenderingContext2D {
 		const opts = {
 			...defaultOpts,
 			...handleContextOptions(type, contextAttributes),
@@ -519,7 +519,7 @@ export class Canvas extends CanvasBase {
 					// The output bitmap is the canvas's own 2D surface; the 2D context
 					// is the handle onto it and is never handed out as a '2d' context.
 					const backing = this.__create2DContext(type, contextAttributes);
-					this._bitmapRendererContext = new ImageBitmapRenderingContext(this, backing, handleContextOptions(type, contextAttributes));
+					this._bitmapRendererContext = new ImageBitmapRenderingContext(this as any, backing, handleContextOptions(type, contextAttributes));
 					this._contextType = ContextType.BitmapRenderer;
 					this._is2D = true;
 				}

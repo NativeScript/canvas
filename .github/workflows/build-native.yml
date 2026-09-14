@@ -49,7 +49,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.ref }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.repository.default_branch || inputs.ref }}
       - uses: ./.github/actions/setup-android-native
       - name: Fetch V8 + NativeScript runtime headers
         run: ./tools/scripts/download-v8.sh
@@ -74,7 +74,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.ref }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.repository.default_branch || inputs.ref }}
       - uses: ./.github/actions/setup-apple-native
       - name: Fetch V8 + NativeScript runtime headers
         run: ./tools/scripts/download-v8.sh

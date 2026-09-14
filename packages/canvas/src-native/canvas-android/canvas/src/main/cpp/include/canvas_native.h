@@ -806,15 +806,19 @@ typedef struct PaintStyle PaintStyle;
 
 typedef struct Path Path;
 
-#if (defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS))
+#if (defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS) || defined(TARGET_OS_VISION))
 typedef struct Raf Raf;
 #endif
 
-#if ((defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS)) && defined(TARGET_OS_ANDROID))
+#if ((defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS) || defined(TARGET_OS_VISION)) && defined(TARGET_OS_ANDROID))
 typedef struct Raf Raf;
 #endif
 
-#if ((defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS)) && defined(TARGET_OS_IOS))
+#if ((defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS) || defined(TARGET_OS_VISION)) && defined(TARGET_OS_IOS))
+typedef struct Raf Raf;
+#endif
+
+#if ((defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS) || defined(TARGET_OS_VISION)) && defined(TARGET_OS_VISION))
 typedef struct Raf Raf;
 #endif
 
@@ -2081,32 +2085,32 @@ void canvas_native_context_clear_render_func(int64_t value);
 
 void canvas_native_context_release(struct CanvasRenderingContext2D *value);
 
-#if (defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS))
+#if (defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS) || defined(TARGET_OS_VISION))
 struct Raf *canvas_native_raf_create(intptr_t callback, void (*on_frame_callback)(intptr_t callback,
                                                                                   int64_t ts));
 #endif
 
-#if (defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS))
+#if (defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS) || defined(TARGET_OS_VISION))
 void canvas_native_raf_release(struct Raf *value);
 #endif
 
-#if (defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS))
+#if (defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS) || defined(TARGET_OS_VISION))
 void canvas_native_raf_start(struct Raf *raf);
 #endif
 
-#if (defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS))
+#if (defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS) || defined(TARGET_OS_VISION))
 void canvas_native_raf_stop(struct Raf *raf);
 #endif
 
-#if (defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS))
+#if (defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS) || defined(TARGET_OS_VISION))
 bool canvas_native_raf_get_started(const struct Raf *raf);
 #endif
 
-#if (defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS))
+#if (defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS) || defined(TARGET_OS_VISION))
 void canvas_native_raf_stop_and_clear(struct Raf *raf, uint64_t timeout_ms);
 #endif
 
-#if (defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS))
+#if (defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS) || defined(TARGET_OS_VISION))
 void canvas_native_raf_clear_callback(struct Raf *raf);
 #endif
 
@@ -2851,6 +2855,68 @@ bool canvas_native_image_bitmap_create_from_encoded_bytes_src_rect_with_output(c
                                                                                float resize_height,
                                                                                const struct ImageAsset *output);
 
+bool canvas_native_image_bitmap_create_from_asset_with_output(const struct ImageAsset *asset,
+                                                              bool flip_y,
+                                                              enum ImageBitmapPremultiplyAlpha premultiply_alpha,
+                                                              enum ImageBitmapColorSpaceConversion color_space_conversion,
+                                                              enum ImageBitmapResizeQuality resize_quality,
+                                                              float resize_width,
+                                                              float resize_height,
+                                                              const struct ImageAsset *output);
+
+bool canvas_native_image_bitmap_create_from_asset_src_rect_with_output(const struct ImageAsset *asset,
+                                                                       float sx,
+                                                                       float sy,
+                                                                       float s_width,
+                                                                       float s_height,
+                                                                       bool flip_y,
+                                                                       enum ImageBitmapPremultiplyAlpha premultiply_alpha,
+                                                                       enum ImageBitmapColorSpaceConversion color_space_conversion,
+                                                                       enum ImageBitmapResizeQuality resize_quality,
+                                                                       float resize_width,
+                                                                       float resize_height,
+                                                                       const struct ImageAsset *output);
+
+bool canvas_native_image_bitmap_create_from_image_data_with_output(const struct ImageData *image_data,
+                                                                   bool flip_y,
+                                                                   enum ImageBitmapPremultiplyAlpha premultiply_alpha,
+                                                                   enum ImageBitmapColorSpaceConversion color_space_conversion,
+                                                                   enum ImageBitmapResizeQuality resize_quality,
+                                                                   float resize_width,
+                                                                   float resize_height,
+                                                                   const struct ImageAsset *output);
+
+bool canvas_native_image_bitmap_create_from_image_data_src_rect_with_output(const struct ImageData *image_data,
+                                                                            float sx,
+                                                                            float sy,
+                                                                            float s_width,
+                                                                            float s_height,
+                                                                            bool flip_y,
+                                                                            enum ImageBitmapPremultiplyAlpha premultiply_alpha,
+                                                                            enum ImageBitmapColorSpaceConversion color_space_conversion,
+                                                                            enum ImageBitmapResizeQuality resize_quality,
+                                                                            float resize_width,
+                                                                            float resize_height,
+                                                                            const struct ImageAsset *output);
+
+/**
+ * The snapshot needs the thread owning the GL context, so this one cannot move
+ * onto a worker.
+ */
+bool canvas_native_image_bitmap_create_from_context_with_output(struct CanvasRenderingContext2D *context,
+                                                                float sx,
+                                                                float sy,
+                                                                float s_width,
+                                                                float s_height,
+                                                                bool use_rect,
+                                                                bool flip_y,
+                                                                enum ImageBitmapPremultiplyAlpha premultiply_alpha,
+                                                                enum ImageBitmapColorSpaceConversion color_space_conversion,
+                                                                enum ImageBitmapResizeQuality resize_quality,
+                                                                float resize_width,
+                                                                float resize_height,
+                                                                const struct ImageAsset *output);
+
 struct ImageData *canvas_native_image_data_create(int32_t width, int32_t height);
 
 int32_t canvas_native_image_data_get_width(const struct ImageData *image_data);
@@ -3015,6 +3081,10 @@ void canvas_native_pattern_set_transform(struct PaintStyle *pattern, const struc
 void canvas_native_path_trim(struct Path *path, float start, float end);
 
 void canvas_native_path_add_path(struct Path *path, const struct Path *path_to_add);
+
+void canvas_native_path_add_path_with_matrix(struct Path *path,
+                                             const struct Path *path_to_add,
+                                             const struct Matrix *matrix);
 
 struct Path *canvas_native_path_create(void);
 
@@ -3260,21 +3330,21 @@ void canvas_native_webgpu_context_resize(struct CanvasGPUCanvasContext *context,
                                          uint32_t height);
 #endif
 
-#if (defined(TARGET_OS_IOS) || defined(TARGET_OS_MACOS))
+#if (defined(TARGET_OS_IOS) || defined(TARGET_OS_MACOS) || defined(TARGET_OS_VISION))
 const struct CanvasGPUCanvasContext *canvas_native_webgpu_context_create(const struct CanvasWebGPUInstance *instance,
                                                                          void *view,
                                                                          uint32_t width,
                                                                          uint32_t height);
 #endif
 
-#if defined(TARGET_OS_IOS)
+#if (defined(TARGET_OS_IOS) || defined(TARGET_OS_VISION))
 const struct CanvasGPUCanvasContext *canvas_native_webgpu_context_create_uiview(const struct CanvasWebGPUInstance *instance,
                                                                                 void *view,
                                                                                 uint32_t width,
                                                                                 uint32_t height);
 #endif
 
-#if defined(TARGET_OS_IOS)
+#if (defined(TARGET_OS_IOS) || defined(TARGET_OS_VISION))
 void canvas_native_webgpu_context_resize_uiview(const struct CanvasGPUCanvasContext *context,
                                                 void *view,
                                                 uint32_t width,
@@ -3295,7 +3365,7 @@ void canvas_native_webgpu_context_resize_nsview(const struct CanvasGPUCanvasCont
                                                 uint32_t height);
 #endif
 
-#if (defined(TARGET_OS_MACOS) || defined(TARGET_OS_IOS))
+#if (defined(TARGET_OS_MACOS) || defined(TARGET_OS_IOS) || defined(TARGET_OS_VISION))
 void canvas_native_webgpu_context_resize_layer(const struct CanvasGPUCanvasContext *context,
                                                void *layer,
                                                uint32_t width,
@@ -3555,6 +3625,40 @@ const struct CanvasGPUTexture *canvas_native_webgpu_device_create_texture(const 
 
 const struct CanvasGPUSampler *canvas_native_webgpu_device_create_sampler(const struct CanvasGPUDevice *device,
                                                                           const struct CanvasCreateSamplerDescriptor *descriptor);
+
+/**
+ * Copy a platform video frame texture into `destination` without touching the CPU.
+ *
+ * `native_texture` is an `MTLTexture*` on Apple platforms. The caller keeps it alive for
+ * the duration of the call; this function takes its own reference if it needs one.
+ *
+ * Returns `false` when the frame could not be imported, so the caller can fall back to
+ * `canvas_native_webgpu_queue_copy_external_image_to_texture`.
+ */
+bool canvas_native_webgpu_queue_copy_native_texture_to_texture(const struct CanvasGPUQueue *queue,
+                                                               void *native_texture,
+                                                               uint32_t frame_width,
+                                                               uint32_t frame_height,
+                                                               uint32_t source_origin_x,
+                                                               uint32_t source_origin_y,
+                                                               bool flip_y,
+                                                               const struct CanvasImageCopyTexture *destination,
+                                                               const struct CanvasExtent3d *size);
+
+#if (defined(TARGET_OS_IOS) || defined(TARGET_OS_MACOS) || defined(TARGET_OS_VISION))
+/**
+ * The `MTLDevice` wgpu is rendering with.
+ *
+ * A frame texture has to come from a `CVMetalTextureCache` built on *this* device. Using
+ * `MTLCreateSystemDefaultDevice()` happens to match on iOS, where there is one GPU, but on
+ * a multi-GPU Mac it can pick a different device, and a texture from the wrong device
+ * cannot be bound.
+ *
+ * The returned `id<MTLDevice>` is borrowed — it stays valid as long as the `CanvasGPUDevice`
+ * does. Callers that outlive the call must retain it.
+ */
+void *canvas_native_webgpu_device_get_metal_device(const struct CanvasGPUDevice *device);
+#endif
 
 char *canvas_native_webgpu_pipeline_layout_get_label(const struct CanvasGPUPipelineLayout *pipeline_layout);
 
@@ -3983,6 +4087,12 @@ bool canvas_native_image_asset_load_from_raw(const struct ImageAsset *asset,
                                              uint32_t height,
                                              const uint8_t *array,
                                              uintptr_t size);
+
+bool canvas_native_image_asset_load_from_raw_premultiplied(const struct ImageAsset *asset,
+                                                           uint32_t width,
+                                                           uint32_t height,
+                                                           const uint8_t *array,
+                                                           uintptr_t size);
 
 bool canvas_native_image_asset_load_from_raw_encoded(const struct ImageAsset *asset,
                                                      const uint8_t *array,

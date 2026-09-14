@@ -408,8 +408,13 @@ void GPUCanvasContextImpl::GetCapabilities(const v8::FunctionCallbackInfo<v8::Va
 		auto adapter = GPUAdapterImpl::GetPointer(adapterVal.As<v8::Object>());
 		auto ctx = ptr->GetContext();
 		
-		if (adapter != nullptr) {
-			auto cap = canvas_native_webgpu_context_get_capabilities(ctx, adapter->GetGPUAdapter());
+		// Null is the failure return for an unconfigurable surface (a canvas that
+		// was never attached); the empty result below is the right answer.
+		auto cap = adapter != nullptr
+					   ? canvas_native_webgpu_context_get_capabilities(ctx, adapter->GetGPUAdapter())
+					   : nullptr;
+
+		if (cap != nullptr) {
 			auto formats_len = canvas_native_string_buffer_get_length(cap->formats);
 			auto formats = v8::Array::New(isolate, (int) formats_len);
 			for (int i = 0; i < formats_len; i++) {

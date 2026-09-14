@@ -14,6 +14,152 @@ GPURenderBundleEncoderImpl::GPURenderBundleEncoderImpl(const CanvasGPURenderBund
         : encoder_(
         encoder) {}
 
+v8::CFunction GPURenderBundleEncoderImpl::fast_draw_ = v8::CFunction::Make(
+        GPURenderBundleEncoderImpl::FastDraw);
+v8::CFunction GPURenderBundleEncoderImpl::fast_draw_indexed_ = v8::CFunction::Make(
+        GPURenderBundleEncoderImpl::FastDrawIndexed);
+v8::CFunction GPURenderBundleEncoderImpl::fast_set_pipeline_ = v8::CFunction::Make(
+        GPURenderBundleEncoderImpl::FastSetPipeline);
+v8::CFunction GPURenderBundleEncoderImpl::fast_set_vertex_buffer_ = v8::CFunction::Make(
+        GPURenderBundleEncoderImpl::FastSetVertexBuffer);
+v8::CFunction GPURenderBundleEncoderImpl::fast_set_bind_group_[2] = {
+        v8::CFunction::Make(GPURenderBundleEncoderImpl::FastSetBindGroupNoOffsets),
+        v8::CFunction::Make(GPURenderBundleEncoderImpl::FastSetBindGroup),
+};
+
+void GPURenderBundleEncoderImpl::FastDraw(v8::Local<v8::Object> receiver_obj, uint32_t vertexCount,
+                                          uint32_t instanceCount, uint32_t firstVertex,
+                                          uint32_t firstInstance) {
+    auto *ptr = GetPointer(receiver_obj);
+    if (ptr == nullptr) {
+        return;
+    }
+    canvas_native_webgpu_render_bundle_encoder_draw(ptr->GetEncoder(), vertexCount, instanceCount,
+                                                    firstVertex, firstInstance);
+}
+
+void GPURenderBundleEncoderImpl::FastDrawIndexed(v8::Local<v8::Object> receiver_obj,
+                                                 uint32_t indexCount, uint32_t instanceCount,
+                                                 uint32_t firstIndex, int32_t baseVertex,
+                                                 uint32_t firstInstance) {
+    auto *ptr = GetPointer(receiver_obj);
+    if (ptr == nullptr) {
+        return;
+    }
+    canvas_native_webgpu_render_bundle_encoder_draw_indexed(ptr->GetEncoder(), indexCount,
+                                                            instanceCount, firstIndex, baseVertex,
+                                                            firstInstance);
+}
+
+v8::CFunction GPURenderBundleEncoderImpl::fast_set_index_buffer_ = v8::CFunction::Make(
+        GPURenderBundleEncoderImpl::FastSetIndexBuffer);
+
+void GPURenderBundleEncoderImpl::FastSetIndexBuffer(v8::Local<v8::Object> receiver_obj,
+                               v8::Local<v8::Object> buffer_obj, uint32_t indexFormat,
+                               double offset, double size) {
+    auto *ptr = GetPointer(receiver_obj);
+    if (ptr == nullptr) {
+        return;
+    }
+    if (GetNativeType(buffer_obj) != NativeType::GPUBuffer) {
+        return;
+    }
+    auto buffer = GPUBufferImpl::GetPointer(buffer_obj);
+    if (buffer == nullptr) {
+        return;
+    }
+    auto fmt = indexFormat == 0 ? CanvasIndexFormatUint16 : CanvasIndexFormatUint32;
+    canvas_native_webgpu_render_bundle_encoder_set_index_buffer(ptr->GetEncoder(), buffer->GetGPUBuffer(), fmt,
+                                 (int64_t) offset, (int64_t) size);
+}
+
+void GPURenderBundleEncoderImpl::FastSetPipeline(v8::Local<v8::Object> receiver_obj,
+                                                 v8::Local<v8::Object> pipeline_obj) {
+    auto *ptr = GetPointer(receiver_obj);
+    if (ptr == nullptr) {
+        return;
+    }
+    if (GetNativeType(pipeline_obj) != NativeType::GPURenderPipeline) {
+        return;
+    }
+    auto pipeline = GPURenderPipelineImpl::GetPointer(pipeline_obj);
+    if (pipeline == nullptr) {
+        return;
+    }
+    canvas_native_webgpu_render_bundle_encoder_set_pipeline(ptr->GetEncoder(),
+                                                            pipeline->GetGPUPipeline());
+}
+
+void GPURenderBundleEncoderImpl::FastSetVertexBuffer(v8::Local<v8::Object> receiver_obj,
+                                                     uint32_t slot,
+                                                     v8::Local<v8::Object> buffer_obj,
+                                                     double offset, double size) {
+    auto *ptr = GetPointer(receiver_obj);
+    if (ptr == nullptr) {
+        return;
+    }
+    if (GetNativeType(buffer_obj) != NativeType::GPUBuffer) {
+        return;
+    }
+    auto buffer = GPUBufferImpl::GetPointer(buffer_obj);
+    if (buffer == nullptr) {
+        return;
+    }
+    canvas_native_webgpu_render_bundle_encoder_set_vertex_buffer(ptr->GetEncoder(), slot,
+                                                                 buffer->GetGPUBuffer(),
+                                                                 (int64_t) offset, (int64_t) size);
+}
+
+void GPURenderBundleEncoderImpl::FastSetBindGroupNoOffsets(v8::Local<v8::Object> receiver_obj,
+                                                           uint32_t index,
+                                                           v8::Local<v8::Object> bind_group_obj) {
+    auto *ptr = GetPointer(receiver_obj);
+    if (ptr == nullptr) {
+        return;
+    }
+    const CanvasGPUBindGroup *bindGroup = nullptr;
+    if (GetNativeType(bind_group_obj) == NativeType::GPUBindGroup) {
+        auto group = GPUBindGroupImpl::GetPointer(bind_group_obj);
+        if (group != nullptr) {
+            bindGroup = group->GetBindGroup();
+        }
+    }
+    canvas_native_webgpu_render_bundle_encoder_set_bind_group(ptr->GetEncoder(), index, bindGroup,
+                                                              nullptr, 0, 0, 0);
+}
+
+void GPURenderBundleEncoderImpl::FastSetBindGroup(v8::Local<v8::Object> receiver_obj,
+                                                  uint32_t index,
+                                                  v8::Local<v8::Object> bind_group_obj,
+                                                  v8::Local<v8::Value> dynamic_offsets,
+                                                  double start, double length) {
+    auto *ptr = GetPointer(receiver_obj);
+    if (ptr == nullptr) {
+        return;
+    }
+    const CanvasGPUBindGroup *bindGroup = nullptr;
+    if (GetNativeType(bind_group_obj) == NativeType::GPUBindGroup) {
+        auto group = GPUBindGroupImpl::GetPointer(bind_group_obj);
+        if (group != nullptr) {
+            bindGroup = group->GetBindGroup();
+        }
+    }
+
+    if (!dynamic_offsets.IsEmpty() && dynamic_offsets->IsUint32Array()) {
+        auto buf = dynamic_offsets.As<v8::Uint32Array>();
+        auto store = buf->Buffer()->GetBackingStore();
+        auto data = static_cast<uint8_t *>(store->Data()) + buf->ByteOffset();
+        canvas_native_webgpu_render_bundle_encoder_set_bind_group(
+                ptr->GetEncoder(), index, bindGroup,
+                static_cast<const uint32_t *>(static_cast<void *>(data)), buf->Length(),
+                (size_t) start, (size_t) length);
+        return;
+    }
+
+    canvas_native_webgpu_render_bundle_encoder_set_bind_group(ptr->GetEncoder(), index, bindGroup,
+                                                              nullptr, 0, 0, 0);
+}
+
 const CanvasGPURenderBundleEncoder *GPURenderBundleEncoderImpl::GetEncoder() {
     return this->encoder_.get();
 }
@@ -59,14 +205,10 @@ v8::Local<v8::FunctionTemplate> GPURenderBundleEncoderImpl::GetCtor(v8::Isolate 
             ConvertToV8String(isolate, "label"),
             GetLabel
     );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "draw"),
-            v8::FunctionTemplate::New(isolate, &Draw));
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "drawIndexed"),
-            v8::FunctionTemplate::New(isolate, &DrawIndexed));
+    SetFastMethod(isolate, tmpl, "draw", Draw, &fast_draw_,
+                  v8::Local<v8::Value>());
+    SetFastMethod(isolate, tmpl, "drawIndexed", DrawIndexed, &fast_draw_indexed_,
+                  v8::Local<v8::Value>());
 
     tmpl->Set(
             ConvertToV8String(isolate, "drawIndexedIndirect"),
@@ -92,22 +234,14 @@ v8::Local<v8::FunctionTemplate> GPURenderBundleEncoderImpl::GetCtor(v8::Isolate 
     tmpl->Set(
             ConvertToV8String(isolate, "pushDebugGroup"),
             v8::FunctionTemplate::New(isolate, &PushDebugGroup));
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "setBindGroup"),
-            v8::FunctionTemplate::New(isolate, &SetBindGroup));
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "setIndexBuffer"),
-            v8::FunctionTemplate::New(isolate, &SetIndexBuffer));
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "setPipeline"),
-            v8::FunctionTemplate::New(isolate, &SetPipeline));
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "setVertexBuffer"),
-            v8::FunctionTemplate::New(isolate, &SetVertexBuffer));
+    SetFastMethodWithOverLoads(isolate, tmpl, "setBindGroup", SetBindGroup,
+                               fast_set_bind_group_, v8::Local<v8::Value>());
+    SetFastMethod(isolate, tmpl, "setIndexBuffer", SetIndexBuffer, &fast_set_index_buffer_,
+                  v8::Local<v8::Value>());
+    SetFastMethod(isolate, tmpl, "setPipeline", SetPipeline, &fast_set_pipeline_,
+                  v8::Local<v8::Value>());
+    SetFastMethod(isolate, tmpl, "setVertexBuffer", SetVertexBuffer, &fast_set_vertex_buffer_,
+                  v8::Local<v8::Value>());
 
 
     cache->GPURenderBundleEncoderTmpl =
@@ -419,6 +553,20 @@ void GPURenderBundleEncoderImpl::SetIndexBuffer(const v8::FunctionCallbackInfo<v
 
     if (type == NativeType::GPUBuffer) {
         auto buffer = GPUBufferImpl::GetPointer(bufferVal.As<v8::Object>());
+        // 0 = uint16, 1 = uint32; the string form stays for direct callers.
+        if (indexFormatVal->IsUint32()) {
+            auto fmt = indexFormatVal.As<v8::Uint32>()->Value() == 0 ? CanvasIndexFormatUint16
+                                                                    : CanvasIndexFormatUint32;
+            if (offsetVal->IsNumber()) {
+                offset = (int64_t) offsetVal.As<v8::Number>()->Value();
+            }
+            if (sizeVal->IsNumber()) {
+                size = (int64_t) sizeVal.As<v8::Number>()->Value();
+            }
+            canvas_native_webgpu_render_bundle_encoder_set_index_buffer(ptr->GetEncoder(), buffer->GetGPUBuffer(), fmt, offset, size);
+            return;
+        }
+
         auto indexFormat = ConvertFromV8String(isolate, indexFormatVal);
         if (offsetVal->IsNumber()) {
             offset = (int64_t) offsetVal.As<v8::Number>()->Value();

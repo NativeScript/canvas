@@ -11,6 +11,28 @@
 
 class GPUComputePassEncoderImpl : ObjectWrapperImpl {
 public:
+    static v8::CFunction fast_dispatch_workgroups_;
+    static v8::CFunction fast_dispatch_workgroups_indirect_;
+    static v8::CFunction fast_set_pipeline_;
+    static v8::CFunction fast_set_bind_group_[2];
+
+    static void FastDispatchWorkgroups(v8::Local<v8::Object> receiver_obj, uint32_t x, uint32_t y,
+                                       uint32_t z);
+
+    static void FastDispatchWorkgroupsIndirect(v8::Local<v8::Object> receiver_obj,
+                                               v8::Local<v8::Object> buffer_obj, double offset);
+
+    static void FastSetPipeline(v8::Local<v8::Object> receiver_obj,
+                                v8::Local<v8::Object> pipeline_obj);
+
+    static void FastSetBindGroupNoOffsets(v8::Local<v8::Object> receiver_obj, uint32_t index,
+                                          v8::Local<v8::Object> bind_group_obj);
+
+    static void FastSetBindGroup(v8::Local<v8::Object> receiver_obj, uint32_t index,
+                                 v8::Local<v8::Object> bind_group_obj,
+                                 v8::Local<v8::Value> dynamic_offsets, double start,
+                                 double length);
+
     explicit GPUComputePassEncoderImpl(const CanvasGPUComputePassEncoder *computePass);
 
     // Deterministic dispose, called from Destroy() at pass.end(). See ArcHandle.h.

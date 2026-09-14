@@ -13,9 +13,6 @@
 GPURenderPassEncoderImpl::GPURenderPassEncoderImpl(const CanvasGPURenderPassEncoder *pass) : pass_(
         pass) {}
 
-// Fast-API entry points for the per-draw-call methods; the rest of the WebGPU
-// bridge is still on the slow callback.
-
 v8::CFunction GPURenderPassEncoderImpl::fast_draw_ = v8::CFunction::Make(
         GPURenderPassEncoderImpl::FastDraw);
 v8::CFunction GPURenderPassEncoderImpl::fast_draw_indexed_ = v8::CFunction::Make(
@@ -25,11 +22,108 @@ v8::CFunction GPURenderPassEncoderImpl::fast_set_pipeline_ = v8::CFunction::Make
 v8::CFunction GPURenderPassEncoderImpl::fast_set_vertex_buffer_ = v8::CFunction::Make(
         GPURenderPassEncoderImpl::FastSetVertexBuffer);
 
-// Arity 2 (no dynamic offsets) and 5; V8 resolves on arity alone.
 v8::CFunction GPURenderPassEncoderImpl::fast_set_bind_group_[2] = {
         v8::CFunction::Make(GPURenderPassEncoderImpl::FastSetBindGroupNoOffsets),
         v8::CFunction::Make(GPURenderPassEncoderImpl::FastSetBindGroup),
 };
+
+v8::CFunction GPURenderPassEncoderImpl::fast_set_scissor_rect_ = v8::CFunction::Make(
+        GPURenderPassEncoderImpl::FastSetScissorRect);
+v8::CFunction GPURenderPassEncoderImpl::fast_set_viewport_ = v8::CFunction::Make(
+        GPURenderPassEncoderImpl::FastSetViewport);
+v8::CFunction GPURenderPassEncoderImpl::fast_set_stencil_reference_ = v8::CFunction::Make(
+        GPURenderPassEncoderImpl::FastSetStencilReference);
+v8::CFunction GPURenderPassEncoderImpl::fast_begin_occlusion_query_ = v8::CFunction::Make(
+        GPURenderPassEncoderImpl::FastBeginOcclusionQuery);
+v8::CFunction GPURenderPassEncoderImpl::fast_end_occlusion_query_ = v8::CFunction::Make(
+        GPURenderPassEncoderImpl::FastEndOcclusionQuery);
+v8::CFunction GPURenderPassEncoderImpl::fast_draw_indirect_ = v8::CFunction::Make(
+        GPURenderPassEncoderImpl::FastDrawIndirect);
+v8::CFunction GPURenderPassEncoderImpl::fast_draw_indexed_indirect_ = v8::CFunction::Make(
+        GPURenderPassEncoderImpl::FastDrawIndexedIndirect);
+
+void GPURenderPassEncoderImpl::FastSetScissorRect(v8::Local<v8::Object> receiver_obj, uint32_t x,
+                                                  uint32_t y, uint32_t width, uint32_t height) {
+    auto *ptr = GetPointer(receiver_obj);
+    if (ptr == nullptr) {
+        return;
+    }
+    canvas_native_webgpu_render_pass_encoder_set_scissor_rect(ptr->GetPass(), x, y, width, height);
+}
+
+void GPURenderPassEncoderImpl::FastSetViewport(v8::Local<v8::Object> receiver_obj, double x,
+                                               double y, double width, double height,
+                                               double minDepth, double maxDepth) {
+    auto *ptr = GetPointer(receiver_obj);
+    if (ptr == nullptr) {
+        return;
+    }
+    canvas_native_webgpu_render_pass_encoder_set_viewport(ptr->GetPass(), (float) x, (float) y,
+                                                          (float) width, (float) height,
+                                                          (float) minDepth, (float) maxDepth);
+}
+
+void GPURenderPassEncoderImpl::FastSetStencilReference(v8::Local<v8::Object> receiver_obj,
+                                                       uint32_t reference) {
+    auto *ptr = GetPointer(receiver_obj);
+    if (ptr == nullptr) {
+        return;
+    }
+    canvas_native_webgpu_render_pass_encoder_set_stencil_reference(ptr->GetPass(), reference);
+}
+
+void GPURenderPassEncoderImpl::FastBeginOcclusionQuery(v8::Local<v8::Object> receiver_obj,
+                                                       uint32_t queryIndex) {
+    auto *ptr = GetPointer(receiver_obj);
+    if (ptr == nullptr) {
+        return;
+    }
+    canvas_native_webgpu_render_pass_encoder_begin_occlusion_query(ptr->GetPass(), queryIndex);
+}
+
+void GPURenderPassEncoderImpl::FastEndOcclusionQuery(v8::Local<v8::Object> receiver_obj) {
+    auto *ptr = GetPointer(receiver_obj);
+    if (ptr == nullptr) {
+        return;
+    }
+    canvas_native_webgpu_render_pass_encoder_end_occlusion_query(ptr->GetPass());
+}
+
+void GPURenderPassEncoderImpl::FastDrawIndirect(v8::Local<v8::Object> receiver_obj,
+                                                v8::Local<v8::Object> buffer_obj, double offset) {
+    auto *ptr = GetPointer(receiver_obj);
+    if (ptr == nullptr) {
+        return;
+    }
+    if (GetNativeType(buffer_obj) != NativeType::GPUBuffer) {
+        return;
+    }
+    auto buffer = GPUBufferImpl::GetPointer(buffer_obj);
+    if (buffer == nullptr) {
+        return;
+    }
+    canvas_native_webgpu_render_pass_encoder_draw_indirect(ptr->GetPass(), buffer->GetGPUBuffer(),
+                                                           (uint64_t) offset);
+}
+
+void GPURenderPassEncoderImpl::FastDrawIndexedIndirect(v8::Local<v8::Object> receiver_obj,
+                                                       v8::Local<v8::Object> buffer_obj,
+                                                       double offset) {
+    auto *ptr = GetPointer(receiver_obj);
+    if (ptr == nullptr) {
+        return;
+    }
+    if (GetNativeType(buffer_obj) != NativeType::GPUBuffer) {
+        return;
+    }
+    auto buffer = GPUBufferImpl::GetPointer(buffer_obj);
+    if (buffer == nullptr) {
+        return;
+    }
+    canvas_native_webgpu_render_pass_encoder_draw_indexed_indirect(ptr->GetPass(),
+                                                                   buffer->GetGPUBuffer(),
+                                                                   (uint64_t) offset);
+}
 
 void GPURenderPassEncoderImpl::FastDraw(v8::Local<v8::Object> receiver_obj, uint32_t vertexCount,
                                         uint32_t instanceCount, uint32_t firstVertex,
@@ -52,6 +146,28 @@ void GPURenderPassEncoderImpl::FastDrawIndexed(v8::Local<v8::Object> receiver_ob
     }
     canvas_native_webgpu_render_pass_encoder_draw_indexed(ptr->GetPass(), indexCount, instanceCount,
                                                           firstIndex, baseVertex, firstInstance);
+}
+
+v8::CFunction GPURenderPassEncoderImpl::fast_set_index_buffer_ = v8::CFunction::Make(
+        GPURenderPassEncoderImpl::FastSetIndexBuffer);
+
+void GPURenderPassEncoderImpl::FastSetIndexBuffer(v8::Local<v8::Object> receiver_obj,
+                               v8::Local<v8::Object> buffer_obj, uint32_t indexFormat,
+                               double offset, double size) {
+    auto *ptr = GetPointer(receiver_obj);
+    if (ptr == nullptr) {
+        return;
+    }
+    if (GetNativeType(buffer_obj) != NativeType::GPUBuffer) {
+        return;
+    }
+    auto buffer = GPUBufferImpl::GetPointer(buffer_obj);
+    if (buffer == nullptr) {
+        return;
+    }
+    auto fmt = indexFormat == 0 ? CanvasIndexFormatUint16 : CanvasIndexFormatUint32;
+    canvas_native_webgpu_render_pass_encoder_set_index_buffer(ptr->GetPass(), buffer->GetGPUBuffer(), fmt,
+                                 (int64_t) offset, (int64_t) size);
 }
 
 void GPURenderPassEncoderImpl::FastSetPipeline(v8::Local<v8::Object> receiver_obj,
@@ -186,23 +302,17 @@ v8::Local<v8::FunctionTemplate> GPURenderPassEncoderImpl::GetCtor(v8::Isolate *i
             ConvertToV8String(isolate, "label"),
             GetLabel
     );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "beginOcclusionQuery"),
-            v8::FunctionTemplate::New(isolate, &BeginOcclusionQuery));
+    SetFastMethod(isolate, tmpl, "beginOcclusionQuery", BeginOcclusionQuery, &fast_begin_occlusion_query_,
+                  v8::Local<v8::Value>());
 
     SetFastMethod(isolate, tmpl, "draw", Draw, &fast_draw_, v8::Local<v8::Value>());
 
     SetFastMethod(isolate, tmpl, "drawIndexed", DrawIndexed, &fast_draw_indexed_,
                   v8::Local<v8::Value>());
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "drawIndexedIndirect"),
-            v8::FunctionTemplate::New(isolate, &DrawIndexedIndirect));
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "drawIndirect"),
-            v8::FunctionTemplate::New(isolate, &DrawIndirect));
+    SetFastMethod(isolate, tmpl, "drawIndexedIndirect", DrawIndexedIndirect, &fast_draw_indexed_indirect_,
+                  v8::Local<v8::Value>());
+    SetFastMethod(isolate, tmpl, "drawIndirect", DrawIndirect, &fast_draw_indirect_,
+                  v8::Local<v8::Value>());
 
     tmpl->Set(
             ConvertToV8String(isolate, "multiDrawIndexedIndirect"),
@@ -215,10 +325,8 @@ v8::Local<v8::FunctionTemplate> GPURenderPassEncoderImpl::GetCtor(v8::Isolate *i
     tmpl->Set(
             ConvertToV8String(isolate, "end"),
             v8::FunctionTemplate::New(isolate, &End));
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "endOcclusionQuery"),
-            v8::FunctionTemplate::New(isolate, &EndOcclusionQuery));
+    SetFastMethod(isolate, tmpl, "endOcclusionQuery", EndOcclusionQuery, &fast_end_occlusion_query_,
+                  v8::Local<v8::Value>());
 
     tmpl->Set(
             ConvertToV8String(isolate, "executeBundles"),
@@ -242,28 +350,20 @@ v8::Local<v8::FunctionTemplate> GPURenderPassEncoderImpl::GetCtor(v8::Isolate *i
     tmpl->Set(
             ConvertToV8String(isolate, "setBlendConstant"),
             v8::FunctionTemplate::New(isolate, &SetBlendConstant));
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "setIndexBuffer"),
-            v8::FunctionTemplate::New(isolate, &SetIndexBuffer));
+    SetFastMethod(isolate, tmpl, "setIndexBuffer", SetIndexBuffer, &fast_set_index_buffer_,
+                  v8::Local<v8::Value>());
 
     SetFastMethod(isolate, tmpl, "setPipeline", SetPipeline, &fast_set_pipeline_,
                   v8::Local<v8::Value>());
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "setScissorRect"),
-            v8::FunctionTemplate::New(isolate, &SetScissorRect));
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "setStencilReference"),
-            v8::FunctionTemplate::New(isolate, &SetStencilReference));
+    SetFastMethod(isolate, tmpl, "setScissorRect", SetScissorRect, &fast_set_scissor_rect_,
+                  v8::Local<v8::Value>());
+    SetFastMethod(isolate, tmpl, "setStencilReference", SetStencilReference, &fast_set_stencil_reference_,
+                  v8::Local<v8::Value>());
 
     SetFastMethod(isolate, tmpl, "setVertexBuffer", SetVertexBuffer, &fast_set_vertex_buffer_,
                   v8::Local<v8::Value>());
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "setViewport"),
-            v8::FunctionTemplate::New(isolate, &SetViewport));
+    SetFastMethod(isolate, tmpl, "setViewport", SetViewport, &fast_set_viewport_,
+                  v8::Local<v8::Value>());
 
     tmpl->Set(
             ConvertToV8String(isolate, "destroy"),
@@ -678,6 +778,20 @@ void GPURenderPassEncoderImpl::SetIndexBuffer(const v8::FunctionCallbackInfo<v8:
 
     if (type == NativeType::GPUBuffer) {
         auto buffer = GPUBufferImpl::GetPointer(bufferVal.As<v8::Object>());
+        // 0 = uint16, 1 = uint32; the string form stays for direct callers.
+        if (indexFormatVal->IsUint32()) {
+            auto fmt = indexFormatVal.As<v8::Uint32>()->Value() == 0 ? CanvasIndexFormatUint16
+                                                                    : CanvasIndexFormatUint32;
+            if (offsetVal->IsNumber()) {
+                offset = (int64_t) offsetVal.As<v8::Number>()->Value();
+            }
+            if (sizeVal->IsNumber()) {
+                size = (int64_t) sizeVal.As<v8::Number>()->Value();
+            }
+            canvas_native_webgpu_render_pass_encoder_set_index_buffer(ptr->GetPass(), buffer->GetGPUBuffer(), fmt, offset, size);
+            return;
+        }
+
         auto indexFormat = ConvertFromV8String(isolate, indexFormatVal);
         if (offsetVal->IsNumber()) {
             offset = (int64_t) offsetVal.As<v8::Number>()->Value();

@@ -13,6 +13,39 @@
 class GPURenderBundleEncoderImpl : ObjectWrapperImpl {
 
 public:
+    static v8::CFunction fast_draw_;
+    static v8::CFunction fast_draw_indexed_;
+    static v8::CFunction fast_set_pipeline_;
+    static v8::CFunction fast_set_vertex_buffer_;
+    static v8::CFunction fast_set_bind_group_[2];
+    static v8::CFunction fast_set_index_buffer_;
+
+    // indexFormat: 0 = uint16, 1 = uint32.
+    static void FastSetIndexBuffer(v8::Local<v8::Object> receiver_obj,
+                                   v8::Local<v8::Object> buffer_obj, uint32_t indexFormat,
+                                   double offset, double size);
+
+    static void FastDraw(v8::Local<v8::Object> receiver_obj, uint32_t vertexCount,
+                         uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance);
+
+    static void FastDrawIndexed(v8::Local<v8::Object> receiver_obj, uint32_t indexCount,
+                                uint32_t instanceCount, uint32_t firstIndex, int32_t baseVertex,
+                                uint32_t firstInstance);
+
+    static void FastSetPipeline(v8::Local<v8::Object> receiver_obj,
+                                v8::Local<v8::Object> pipeline_obj);
+
+    static void FastSetVertexBuffer(v8::Local<v8::Object> receiver_obj, uint32_t slot,
+                                    v8::Local<v8::Object> buffer_obj, double offset, double size);
+
+    static void FastSetBindGroupNoOffsets(v8::Local<v8::Object> receiver_obj, uint32_t index,
+                                          v8::Local<v8::Object> bind_group_obj);
+
+    static void FastSetBindGroup(v8::Local<v8::Object> receiver_obj, uint32_t index,
+                                 v8::Local<v8::Object> bind_group_obj,
+                                 v8::Local<v8::Value> dynamic_offsets, double start,
+                                 double length);
+
     explicit GPURenderBundleEncoderImpl(const CanvasGPURenderBundleEncoder *encoder);
 
     ~GPURenderBundleEncoderImpl() = default;

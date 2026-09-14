@@ -104,7 +104,8 @@ export class GPURenderPassEncoder {
 	}
 
 	setIndexBuffer(buffer: GPUBuffer, indexFormat: 'uint16' | 'uint32', offset?: number, size?: number) {
-		this[native_].setIndexBuffer(buffer[native_], indexFormat, offset ?? 0, size ?? buffer.size - (offset ?? 0));
+		// 0 = uint16, 1 = uint32: an int keeps the call on the fast path.
+		this[native_].setIndexBuffer(buffer[native_], indexFormat === 'uint16' ? 0 : 1, offset ?? 0, size ?? buffer.size - (offset ?? 0));
 	}
 
 	setPipeline(renderPipeline: GPURenderPipeline) {

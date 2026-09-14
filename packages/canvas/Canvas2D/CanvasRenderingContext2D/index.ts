@@ -12,6 +12,37 @@ import { DOMMatrix } from '../DOMMatrix';
 import type { CanvasRenderingContext } from '../../common';
 declare const NSCCanvasRenderingContext2D;
 
+const REPETITIONS = ['repeat', 'repeat-x', 'repeat-y', 'no-repeat'];
+
+function indexSizeError(message: string) {
+	const error = new Error(message);
+	error.name = 'IndexSizeError';
+	return error;
+}
+
+/** A CSS <length> as the letterSpacing/wordSpacing setters accept. */
+const LENGTH_RE = /^[+-]?(\d+\.?\d*|\.\d+)(px|em|rem|ex|ch|vw|vh|vmin|vmax|cm|mm|in|pt|pc|q)$/i;
+
+const FILTER_FUNCTIONS = ['blur', 'brightness', 'contrast', 'drop-shadow', 'grayscale', 'hue-rotate', 'invert', 'opacity', 'saturate', 'sepia', 'url'];
+
+/** An unparseable filter leaves the previous one in place rather than replacing it. */
+function isValidFilter(value: string): boolean {
+	const trimmed = value.trim();
+	if (trimmed === 'none' || trimmed === '') {
+		return true;
+	}
+	const call = /([a-zA-Z-]+)\s*\(/g;
+	let match: RegExpExecArray | null;
+	let found = false;
+	while ((match = call.exec(trimmed)) !== null) {
+		if (FILTER_FUNCTIONS.indexOf(match[1].toLowerCase()) === -1) {
+			return false;
+		}
+		found = true;
+	}
+	return found;
+}
+
 function ruleToEnum(rule: string): number {
 	switch (rule) {
 		case 'nonzero':
@@ -322,11 +353,69 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 		Helpers.initialize();
 	}
 
+	// The spec wants the specified value; the native side keeps only the parsed form.
+	private _contextAttributes: any;
+	private _direction = 'inherit';
+	private _letterSpacing = '0px';
+	private _wordSpacing = '0px';
+	private _filter = 'none';
+	private _fillStyleObject: CanvasGradient | CanvasPattern | null = null;
+	private _strokeStyleObject: CanvasGradient | CanvasPattern | null = null;
+
 	constructor(context: any, contextOptions) {
 		this.contextPtr = context;
 		const ctxPtr = BigInt(context.toString());
 		this.context = global.CanvasModule.create2DContextWithPointer(ctxPtr);
 		this._type = '2d';
+		this._contextAttributes = {
+			alpha: contextOptions?.alpha ?? true,
+			colorSpace: contextOptions?.colorSpace ?? 'srgb',
+			desynchronized: contextOptions?.desynchronized ?? false,
+			willReadFrequently: contextOptions?.willReadFrequently ?? false,
+		};
+	}
+
+	getContextAttributes() {
+		return { ...this._contextAttributes };
+	}
+
+	reset(): void {
+		// No depth query on the save stack; restore() past the bottom is a no-op.
+		for (let i = 0; i < 64; i++) {
+			this.context.restore();
+		}
+		this.resetTransform();
+		this.beginPath();
+		this.fillStyle = '#000000';
+		this.strokeStyle = '#000000';
+		this.lineWidth = 1;
+		this.lineCap = 'butt';
+		this.lineJoin = 'miter';
+		this.miterLimit = 10;
+		this.lineDashOffset = 0;
+		this.setLineDash([]);
+		this.globalAlpha = 1;
+		this.globalCompositeOperation = 'source-over';
+		this.shadowBlur = 0;
+		this.shadowColor = 'rgba(0, 0, 0, 0)';
+		this.shadowOffsetX = 0;
+		this.shadowOffsetY = 0;
+		this.font = '10px sans-serif';
+		this.textAlign = 'start';
+		this.textBaseline = 'alphabetic';
+		this.direction = 'inherit';
+		this.letterSpacing = '0px';
+		this.wordSpacing = '0px';
+		this.filter = 'none';
+		this.imageSmoothingEnabled = true;
+		this.imageSmoothingQuality = 'low';
+
+		const canvas = this._canvas;
+		const width = canvas?.width ?? 0;
+		const height = canvas?.height ?? 0;
+		if (width > 0 && height > 0) {
+			this.clearRect(0, 0, width, height);
+		}
 	}
 
 	get type() {
@@ -359,10 +448,14 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 	}
 
 	get direction(): string {
-		return this.context.direction;
+		return this._direction;
 	}
 
 	set direction(value: string) {
+		if (value !== 'ltr' && value !== 'rtl' && value !== 'inherit') {
+			return;
+		}
+		this._direction = value;
 		this.context.direction = value;
 	}
 
@@ -399,10 +492,14 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 	}
 
 	get letterSpacing() {
-		return this.context.letterSpacing;
+		return this._letterSpacing;
 	}
 
 	set letterSpacing(spacing: string) {
+		if (typeof spacing !== 'string' || !LENGTH_RE.test(spacing)) {
+			return;
+		}
+		this._letterSpacing = spacing;
 		this.context.letterSpacing = spacing;
 	}
 
@@ -435,6 +532,9 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 	}
 
 	set shadowBlur(blur: number) {
+		if (!isFinite(blur) || blur < 0) {
+			return;
+		}
 		this.context.shadowBlur = blur;
 	}
 
@@ -443,6 +543,9 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 	}
 
 	set shadowOffsetX(x: number) {
+		if (!isFinite(x)) {
+			return;
+		}
 		this.context.shadowOffsetX = x;
 	}
 
@@ -451,6 +554,9 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 	}
 
 	set shadowOffsetY(y: number) {
+		if (!isFinite(y)) {
+			return;
+		}
 		this.context.shadowOffsetY = y;
 	}
 
@@ -487,33 +593,49 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 	}
 
 	get fillStyle() {
-		return this.context.fillStyle;
+		return this._fillStyleObject ?? this.context.fillStyle;
 	}
 
 	set fillStyle(color: CanvasGradient | CanvasPattern | string) {
 		if (color === undefined || color === null) {
 			return;
 		}
-		this.context.fillStyle = typeof color === 'object' ? color.native : color;
+		if (typeof color === 'object') {
+			this._fillStyleObject = color;
+			this.context.fillStyle = color.native;
+			return;
+		}
+		this._fillStyleObject = null;
+		this.context.fillStyle = color;
 	}
 
 	get filter(): string {
-		return this.context.filter;
+		return this._filter;
 	}
 
 	set filter(value: string) {
+		if (typeof value !== 'string' || !isValidFilter(value)) {
+			return;
+		}
+		this._filter = value;
 		this.context.filter = value;
 	}
 
 	get strokeStyle() {
-		return this.context.strokeStyle;
+		return this._strokeStyleObject ?? this.context.strokeStyle;
 	}
 
 	set strokeStyle(color: string | CanvasGradient | CanvasPattern) {
 		if (color === undefined || color === null) {
 			return;
 		}
-		this.context.strokeStyle = typeof color === 'object' ? color.native : color;
+		if (typeof color === 'object') {
+			this._strokeStyleObject = color;
+			this.context.strokeStyle = color.native;
+			return;
+		}
+		this._strokeStyleObject = null;
+		this.context.strokeStyle = color;
 	}
 
 	get lineWidth() {
@@ -525,10 +647,14 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 	}
 
 	get wordSpacing() {
-		return this.context.wordSpacing;
+		return this._wordSpacing;
 	}
 
 	set wordSpacing(spacing: string) {
+		if (typeof spacing !== 'string' || !LENGTH_RE.test(spacing)) {
+			return;
+		}
+		this._wordSpacing = spacing;
 		this.context.wordSpacing = spacing;
 	}
 
@@ -539,6 +665,9 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 	addHitRegion(region: any): void {}
 
 	arc(x: number, y: number, radius: number, startAngle: number, endAngle: number, anticlockwise: boolean = false): void {
+		if (radius < 0) {
+			throw indexSizeError(`Failed to execute 'arc' on 'CanvasRenderingContext2D': The radius provided (${radius}) is negative.`);
+		}
 		this.context.arc(x, y, radius, startAngle, endAngle, anticlockwise ?? false);
 	}
 
@@ -589,9 +718,13 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 	createImageData(width: number | ImageData, height?: number): ImageData {
 		if (width instanceof ImageData) {
 			return new ImageData(width.width, width.height);
-		} else {
-			return new ImageData(width, height);
 		}
+		const w = Math.abs(Math.trunc(Number(width)));
+		const h = Math.abs(Math.trunc(Number(height)));
+		if (!w || !h || !isFinite(w) || !isFinite(h)) {
+			throw indexSizeError("Failed to execute 'createImageData' on 'CanvasRenderingContext2D': The source width is 0.");
+		}
+		return new ImageData(w, h);
 	}
 
 	createLinearGradient(x0: number, y0: number, x1: number, y1: number) {
@@ -599,8 +732,12 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 	}
 
 	createPattern(image: any, repetition: string): CanvasPattern | null {
-		if (repetition === undefined || typeof repetition !== 'string') {
-			const e = new Error('The string did not match the expected pattern.');
+		// null and '' both mean 'repeat'; only an unknown non-empty string throws.
+		if (repetition === null || repetition === undefined || repetition === '') {
+			repetition = 'repeat';
+		}
+		if (typeof repetition !== 'string' || REPETITIONS.indexOf(repetition) === -1) {
+			const e = new Error(`Failed to execute 'createPattern' on 'CanvasRenderingContext2D': The provided type ('${repetition}') is not one of 'repeat', 'no-repeat', 'repeat-x', or 'repeat-y'.`);
 			e.name = 'SyntaxError';
 			throw e;
 		}
@@ -681,6 +818,9 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 	}
 
 	createRadialGradient(x0: number, y0: number, r0: number, x1: number, y1: number, r1: number) {
+		if (r0 < 0 || r1 < 0) {
+			throw indexSizeError(`Failed to execute 'createRadialGradient' on 'CanvasRenderingContext2D': The radius provided (${r0 < 0 ? r0 : r1}) is negative.`);
+		}
 		return CanvasGradient.fromNative(this.context.createRadialGradient(x0, y0, r0, x1, y1, r1));
 	}
 
@@ -935,6 +1075,9 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 	}
 
 	ellipse(x: number, y: number, radiusX: number, radiusY: number, rotation: number, startAngle: number, endAngle: number, anticlockwise: boolean = false): void {
+		if (radiusX < 0 || radiusY < 0) {
+			throw indexSizeError(`Failed to execute 'ellipse' on 'CanvasRenderingContext2D': The radius provided (${radiusX < 0 ? radiusX : radiusY}) is negative.`);
+		}
 		this.context.ellipse(x, y, radiusX, radiusY, rotation, startAngle, endAngle, anticlockwise ?? false);
 	}
 
@@ -976,6 +1119,9 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 	}
 
 	getImageData(sx: number, sy: number, sw: number, sh: number): ImageData {
+		if (!sw || !sh) {
+			throw indexSizeError("Failed to execute 'getImageData' on 'CanvasRenderingContext2D': The source width is 0.");
+		}
 		return ImageData.fromNative(this.context.getImageData(sx, sy, sw, sh));
 	}
 
@@ -987,18 +1133,24 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 		return new DOMMatrix(this.context.getTransform());
 	}
 
-	isPointInPath(x: number, y: number, fillRule: string): boolean;
+	isPointInPath(x: number, y: number, fillRule?: string): boolean;
 
-	isPointInPath(path: Path2D, x: number, y: number, fillRule: string): boolean;
+	isPointInPath(path: Path2D, x: number, y: number, fillRule?: string): boolean;
 
 	isPointInPath(...args): boolean {
-		const length = args.length;
-		if (length === 2) {
-			return this.context.isPointInPath(args[0], args[1]);
-		} else if (length === 3) {
+		// Dispatch on the first argument: (path, x, y) and (x, y, fillRule) are both
+		// three arguments.
+		if (args[0] instanceof Path2D) {
+			if (args.length >= 4) {
+				return this.context.isPointInPath(args[0].native, args[1], args[2], ruleToEnum(args[3]));
+			}
+			return this.context.isPointInPath(args[0].native, args[1], args[2], ruleToEnum('nonzero'));
+		}
+		if (args.length >= 3) {
 			return this.context.isPointInPath(args[0], args[1], ruleToEnum(args[2]));
-		} else if (length === 4 && args[0] instanceof Path2D) {
-			return this.context.isPointInPath(args[0].native, args[1], args[2], ruleToEnum(args[3]));
+		}
+		if (args.length === 2) {
+			return this.context.isPointInPath(args[0], args[1]);
 		}
 		return false;
 	}
@@ -1008,11 +1160,11 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 	isPointInStroke(path: Path2D, x: number, y: number): boolean;
 
 	isPointInStroke(...args): boolean {
-		const length = args.length;
-		if (length === 2) {
-			return this.context.isPointInStroke(args[0], args[1]);
-		} else if (length === 3 && args[0] instanceof Path2D) {
+		if (args[0] instanceof Path2D) {
 			return this.context.isPointInStroke(args[0].native, args[1], args[2]);
+		}
+		if (args.length >= 2) {
+			return this.context.isPointInStroke(args[0], args[1]);
 		}
 		return false;
 	}
@@ -1074,6 +1226,9 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 	}
 
 	rotate(angle: number): void {
+		if (!Number.isFinite(angle)) {
+			return;
+		}
 		this.context.rotate(angle);
 	}
 
@@ -1082,6 +1237,9 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 	}
 
 	scale(x: number, y: number): void {
+		if (!Number.isFinite(x) || !Number.isFinite(y)) {
+			return;
+		}
 		this.context.scale(x, y);
 	}
 
@@ -1092,18 +1250,47 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 	scrollPathIntoView(path?: Path2D): void {}
 
 	setLineDash(segments: number[]): void {
-		this.context.setLineDash(segments);
+		if (!Array.isArray(segments) && !ArrayBuffer.isView(segments)) {
+			return;
+		}
+		const list: number[] = [];
+		for (let i = 0; i < (segments as any).length; i++) {
+			const value = Number(segments[i]);
+			// One bad entry discards the whole list.
+			if (!isFinite(value) || value < 0) {
+				return;
+			}
+			list.push(value);
+		}
+		if (list.length % 2 === 1) {
+			this.context.setLineDash(list.concat(list));
+			return;
+		}
+		this.context.setLineDash(list);
 	}
 
+	setTransform(): void;
 	setTransform(matrix: DOMMatrix): void;
 	setTransform(a: number, b: number, c: number, d: number, e: number, f: number): void;
-	setTransform(a: number | DOMMatrix, b?: number, c?: number, d?: number, e?: number, f?: number): void {
-		if (typeof a === 'object') {
-			// @ts-ignore
-			this.context.setTransform(a.native);
-		} else {
-			this.context.setTransform(a, b, c, d, e, f);
+	setTransform(a?: number | DOMMatrix | any, b?: number, c?: number, d?: number, e?: number, f?: number): void {
+		if (a === undefined) {
+			this.context.resetTransform();
+			return;
 		}
+		if (typeof a === 'object') {
+			if (a instanceof DOMMatrix) {
+				// @ts-ignore
+				this.context.setTransform(a.native);
+				return;
+			}
+			// DOMMatrix2DInit: what setTransform(m) gets when m came from another library.
+			this.setTransform(Number(a.a ?? a.m11 ?? 1), Number(a.b ?? a.m12 ?? 0), Number(a.c ?? a.m21 ?? 0), Number(a.d ?? a.m22 ?? 1), Number(a.e ?? a.m41 ?? 0), Number(a.f ?? a.m42 ?? 0));
+			return;
+		}
+		if (!isFinite(a) || !isFinite(b) || !isFinite(c) || !isFinite(d) || !isFinite(e) || !isFinite(f)) {
+			return;
+		}
+		this.context.setTransform(a, b, c, d, e, f);
 	}
 
 	stroke(): void;
@@ -1133,10 +1320,17 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 	}
 
 	transform(a: number, b: number, c: number, d: number, e: number, f: number): void {
+		if (!Number.isFinite(a) || !Number.isFinite(b) || !Number.isFinite(c) || !Number.isFinite(d) || !Number.isFinite(e) || !Number.isFinite(f)) {
+			return;
+		}
 		this.context.transform(a, b, c, d, e, f);
 	}
 
 	translate(x: number, y: number): void {
+		// Non-finite arguments are a no-op, not a NaN matrix.
+		if (!Number.isFinite(x) || !Number.isFinite(y)) {
+			return;
+		}
 		this.context.translate(x, y);
 	}
 }

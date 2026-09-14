@@ -60,10 +60,11 @@ impl Pattern {
         pattern: &Pattern,
         image_smoothing_quality: FilterQuality,
     ) -> Option<Shader> {
+        // Decal, not Clamp: outside the tile a pattern is transparent.
         let mode: (TileMode, TileMode) = match pattern.repetition {
-            Repetition::NoRepeat => (TileMode::Clamp, TileMode::Clamp),
-            Repetition::RepeatX => (TileMode::Repeat, TileMode::Clamp),
-            Repetition::RepeatY => (TileMode::Clamp, TileMode::Repeat),
+            Repetition::NoRepeat => (TileMode::Decal, TileMode::Decal),
+            Repetition::RepeatX => (TileMode::Repeat, TileMode::Decal),
+            Repetition::RepeatY => (TileMode::Decal, TileMode::Repeat),
             _ => (TileMode::Repeat, TileMode::Repeat),
         };
         match pattern

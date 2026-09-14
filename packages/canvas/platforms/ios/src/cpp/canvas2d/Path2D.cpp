@@ -132,8 +132,15 @@ void Path2D::AddPath(const v8::FunctionCallbackInfo<v8::Value> &args) {
     if (value->IsObject()) {
         auto object = GetPointer(value.As<v8::Object>());
         if (object != nullptr) {
-            AddPathImpl(ptr->GetPath(),
-                        object->GetPath());
+            Matrix *matrix = nullptr;
+            if (args.Length() > 1 && args[1]->IsObject() &&
+                GetNativeType(args[1]) == NativeType::Matrix) {
+                auto matrixImpl = MatrixImpl::GetPointer(args[1].As<v8::Object>());
+                if (matrixImpl != nullptr) {
+                    matrix = matrixImpl->GetMatrix();
+                }
+            }
+            AddPathImpl(ptr->GetPath(), object->GetPath(), matrix);
         }
     }
 }
@@ -437,11 +444,13 @@ v8::Local<v8::FunctionTemplate> Path2D::GetCtor(v8::Isolate *isolate) {
 
     tmpl->SetInternalFieldCount(2);
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "arcTo"),
-            v8::FunctionTemplate::New(isolate, &ArcTo));
-
-    SetFastMethod(isolate, tmpl, "addPath", AddPath, &fast_add_path_, v8::Local<v8::Value>());
+    // One registration per name. `new Path2D()` builds its instance from this
+    // template's descriptor array and a duplicate name traps inside V8, which is
+    // why registering "arcTo" twice crashed on first construction.
+    // ObjectTemplate::NewInstance tolerates it, so only Path2D was affected.
+    // No fast path: addPath takes an optional transform, and the fast function
+    // cannot see it.
+    SetFastMethod(isolate, tmpl, "addPath", AddPath, nullptr, v8::Local<v8::Value>());
     SetFastMethod(isolate, tmpl, "arc", Arc, &fast_arc_, v8::Local<v8::Value>());
     SetFastMethod(isolate, tmpl, "arcTo", ArcTo, &fast_arc_to_, v8::Local<v8::Value>());
     SetFastMethod(isolate, tmpl, "bezierCurveTo", BezierCurveTo, &fast_bezier_curve_to_,

@@ -152,11 +152,25 @@ pub struct Paint {
     fill_style: PaintStyle,
     stroke_style: PaintStyle,
     image_smoothing_quality: FilterQuality,
+    /// Re-applied by update_paint_style, whose set_color would otherwise discard
+    /// globalAlpha on the next fillStyle.
+    global_alpha: f32,
 }
 
 impl Paint {
     pub fn image_smoothing_quality_set(&mut self, image_smoothing_quality: FilterQuality) {
         self.image_smoothing_quality = image_smoothing_quality
+    }
+
+    pub fn set_global_alpha(&mut self, alpha: f32) {
+        self.global_alpha = alpha;
+        self.fill_paint.set_alpha_f(alpha);
+        self.stroke_paint.set_alpha_f(alpha);
+        self.image_paint.set_alpha_f(alpha);
+    }
+
+    pub fn global_alpha(&self) -> f32 {
+        self.global_alpha
     }
 
     fn update_paint_style(&mut self, is_fill: bool) {
@@ -166,45 +180,56 @@ impl Paint {
         } else {
             style = &mut self.stroke_style;
         }
+        let global_alpha = self.global_alpha;
         match style {
             PaintStyle::Color(color) => {
+                let color = *color;
                 if is_fill {
                     self.fill_paint.set_shader(None);
-                    self.fill_paint.set_color(*color);
+                    self.fill_paint.set_color(color);
+                    self.fill_paint
+                        .set_alpha_f(color.a() as f32 / 255. * global_alpha);
                 } else {
                     self.stroke_paint.set_shader(None);
-                    self.stroke_paint.set_color(*color);
+                    self.stroke_paint.set_color(color);
+                    self.stroke_paint
+                        .set_alpha_f(color.a() as f32 / 255. * global_alpha);
                 }
             }
             PaintStyle::Color4f(color) => {
                 // only the p3 is colorSpace is currently supported on the web
                 let color_space: Option<skia_safe::ColorSpace> = ColorSpace::P3.into();
+                let color = *color;
                 if is_fill {
                     self.fill_paint.set_shader(None);
-                    self.fill_paint.set_color4f(*color, color_space.as_ref());
+                    self.fill_paint.set_color4f(color, color_space.as_ref());
+                    self.fill_paint.set_alpha_f(color.a * global_alpha);
                 } else {
                     self.stroke_paint.set_shader(None);
-                    self.stroke_paint.set_color4f(*color, color_space.as_ref());
+                    self.stroke_paint.set_color4f(color, color_space.as_ref());
+                    self.stroke_paint.set_alpha_f(color.a * global_alpha);
                 }
             }
             PaintStyle::Pattern(pattern) => {
+                let shader = Pattern::pattern_shader(pattern, self.image_smoothing_quality);
+                let alpha = if shader.is_some() { global_alpha } else { 0. };
                 if is_fill {
-                    self.fill_paint.set_shader(Pattern::pattern_shader(
-                        pattern,
-                        self.image_smoothing_quality,
-                    ));
+                    self.fill_paint.set_shader(shader);
+                    self.fill_paint.set_alpha_f(alpha);
                 } else {
-                    self.stroke_paint.set_shader(Pattern::pattern_shader(
-                        pattern,
-                        self.image_smoothing_quality,
-                    ));
+                    self.stroke_paint.set_shader(shader);
+                    self.stroke_paint.set_alpha_f(alpha);
                 }
             }
             PaintStyle::Gradient(gradient) => {
+                let shader = Gradient::shader(gradient);
+                let alpha = if shader.is_some() { global_alpha } else { 0. };
                 if is_fill {
-                    self.fill_paint.set_shader(Gradient::shader(gradient));
+                    self.fill_paint.set_shader(shader);
+                    self.fill_paint.set_alpha_f(alpha);
                 } else {
-                    self.stroke_paint.set_shader(Gradient::shader(gradient));
+                    self.stroke_paint.set_shader(shader);
+                    self.stroke_paint.set_alpha_f(alpha);
                 }
             }
         }
@@ -340,6 +365,7 @@ impl Default for Paint {
             fill_style: PaintStyle::Color(Color::BLACK),
             stroke_style: PaintStyle::Color(Color::BLACK),
             image_smoothing_quality: ImageSmoothingQuality::default().into(),
+            global_alpha: 1.0,
         }
     }
 }

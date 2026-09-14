@@ -24,90 +24,74 @@ namespace {
         CacheEntry(bool rgba = false, uint32_t p = 0) : is_rgba(rgba), packed(p) {}
     };
 
-    class ColorLRUCache {
+    /**
+     * A colour set from JS is nearly always one of a handful of string literals
+     * reused every frame, so what matters is not parse cost but what a cache
+     * *hit* costs. The LRU this replaces paid, on every hit, a hash plus an
+     * unordered_map lookup plus a vector scan plus a std::list splice to move
+     * the entry to the front -- linked-list surgery on the hot path, purely to
+     * maintain a recency order a direct-mapped table does not need.
+     *
+     * Direct-mapped, no reordering, no allocation: hash, index, memcmp, done.
+     * Colours longer than kColorKeyMax are simply not cached and take the parse
+     * path every time; 48 bytes covers every CSS colour form that occurs in
+     * practice, including "rgba(255, 255, 255, 0.123456)".
+     */
+    constexpr size_t kColorSlots = 64;   // power of two
+    constexpr size_t kColorKeyMax = 48;
+
+    class ColorCache {
     public:
-        using Key = std::string;
-        using Item = std::pair<Key, CacheEntry>;
-        using List = std::list<Item>;
-        using Iterator = List::iterator;
-
-        explicit ColorLRUCache(size_t cap = 128) : capacity_(cap) {}
-
         bool get(std::string_view key, CacheEntry &out) {
-            size_t h = std::hash<std::string_view>{}(key);
-            auto it = hash_map_.find(h);
-            if (it == hash_map_.end()) return false;
-            auto &vec = it->second;
-            for (auto listIt: vec) {
-                if (listIt->first.size() == key.size() &&
-                    std::memcmp(listIt->first.data(), key.data(), key.size()) == 0) {
-                    items_.splice(items_.begin(), items_, listIt);
-                    out = listIt->second;
-                    return true;
-                }
+            if (key.empty() || key.size() > kColorKeyMax) return false;
+            const Slot &s = slots_[hash(key) & (kColorSlots - 1)];
+            if ((size_t) s.len != key.size() ||
+                std::memcmp(s.key, key.data(), key.size()) != 0) {
+                return false;
             }
-            return false;
+            out = CacheEntry(s.is_rgba, s.packed);
+            return true;
         }
 
-        void put_rgba(std::string_view key_sv, uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
-            std::string key(key_sv);
-            uint32_t packed = ((uint32_t) r << 24) | ((uint32_t) g << 16) | ((uint32_t) b << 8) |
-                              ((uint32_t) a);
-            put_internal(std::move(key), CacheEntry(true, packed));
+        void put_rgba(std::string_view key, uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+            put(key, true,
+                ((uint32_t) r << 24) | ((uint32_t) g << 16) | ((uint32_t) b << 8) | (uint32_t) a);
         }
 
-        void put_rgba(const Key &key, uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
-            uint32_t packed = ((uint32_t) r << 24) | ((uint32_t) g << 16) | ((uint32_t) b << 8) |
-                              ((uint32_t) a);
-            put_internal(key, CacheEntry(true, packed));
-        }
-
-        void put_fallback(std::string_view key_sv) {
-            std::string key(key_sv);
-            put_internal(std::move(key), CacheEntry(false, 0));
-        }
-
-        void put_fallback(const Key &key) {
-            put_internal(key, CacheEntry(false, 0));
+        void put_fallback(std::string_view key) {
+            put(key, false, 0);
         }
 
     private:
-        void put_internal(Key key, const CacheEntry &entry) {
-            size_t h = std::hash<std::string_view>{}(key);
-            auto hit = hash_map_.find(h);
-            if (hit != hash_map_.end()) {
-                for (auto listIt: hit->second) {
-                    if (listIt->first == key) {
-                        listIt->second = entry;
-                        items_.splice(items_.begin(), items_, listIt);
-                        return;
-                    }
-                }
+        struct Slot {
+            uint8_t len;      // 0 means empty; a real key is never empty
+            bool is_rgba;
+            uint32_t packed;
+            char key[kColorKeyMax];
+        };
+
+        static uint32_t hash(std::string_view k) {
+            uint32_t h = 2166136261u;  // FNV-1a
+            for (char c: k) {
+                h ^= (uint8_t) c;
+                h *= 16777619u;
             }
-            items_.emplace_front(std::move(key), entry);
-            hash_map_[h].push_back(items_.begin());
-            if (items_.size() > capacity_) {
-                auto last = items_.end();
-                --last;
-                size_t hlast = std::hash<std::string_view>{}(std::string_view(last->first));
-                auto &vec = hash_map_[hlast];
-                for (auto vit = vec.begin(); vit != vec.end(); ++vit) {
-                    if (*vit == last) {
-                        vec.erase(vit);
-                        break;
-                    }
-                }
-                if (vec.empty()) hash_map_.erase(hlast);
-                items_.pop_back();
-            }
+            return h;
         }
 
-        size_t capacity_;
-        List items_;
-        std::unordered_map<size_t, std::vector<Iterator>> hash_map_;
+        void put(std::string_view key, bool is_rgba, uint32_t packed) {
+            if (key.empty() || key.size() > kColorKeyMax) return;
+            Slot &s = slots_[hash(key) & (kColorSlots - 1)];
+            s.len = (uint8_t) key.size();
+            s.is_rgba = is_rgba;
+            s.packed = packed;
+            std::memcpy(s.key, key.data(), key.size());
+        }
+
+        Slot slots_[kColorSlots] = {};
     };
 
-    thread_local ColorLRUCache g_color_cache(128);
+    thread_local ColorCache g_color_cache;
     thread_local std::vector<char> g_tls_scratch;
 
     class TextMetricsLRUCache {
@@ -177,6 +161,54 @@ namespace {
     enum class PaintTarget {
         Fill, Stroke
     };
+
+    static inline bool ascii_space(char c) {
+        return c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f' || c == '\v';
+    }
+
+    /**
+     * Colour strings are ASCII, so the UTF-8 round trip was wasted work: it
+     * walked the string once to measure, again to encode, and strlen walked it a
+     * third time. Length() is O(1) and WriteOneByteV2 is a straight copy, so the
+     * one-byte path -- every real colour -- touches the characters once.
+     *
+     * IsOneByte() may report true for Latin-1 bytes above 0x7F, which we then
+     * copy raw rather than as UTF-8. No such string is a valid CSS colour, so it
+     * fails to parse and is ignored either way, exactly as before.
+     *
+     * Returns a null-terminated, whitespace-trimmed pointer into the scratch
+     * buffer, valid until the next call on this thread.
+     */
+    static char *extract_color_string(v8::Isolate *isolate, v8::Local<v8::String> val,
+                                      size_t &out_len) {
+        char *buf;
+        size_t slen;
+        if (val->IsOneByte()) {
+            uint32_t n = (uint32_t) val->Length();
+            if (g_tls_scratch.size() < (size_t) n + 1) g_tls_scratch.resize((size_t) n + 1);
+            buf = g_tls_scratch.data();
+            val->WriteOneByteV2(isolate, 0, n, (uint8_t *) buf);
+            buf[n] = 0;
+            slen = n;
+        } else {
+            int len = static_cast<int>(val->Utf8LengthV2(isolate)) + 1;
+            if (g_tls_scratch.size() < (size_t) len) g_tls_scratch.resize((size_t) len);
+            buf = g_tls_scratch.data();
+            val->WriteUtf8V2(isolate, buf, len, v8::String::WriteFlags::kNullTerminate);
+            slen = std::strlen(buf);
+        }
+
+        while (slen > 0 && ascii_space(*buf)) {
+            buf++;
+            --slen;
+        }
+        while (slen > 0 && ascii_space(buf[slen - 1])) {
+            buf[--slen] = 0;
+        }
+
+        out_len = slen;
+        return buf;
+    }
 
     static inline int hexValChar(char c) {
         if (c >= '0' && c <= '9') return c - '0';
@@ -1633,21 +1665,8 @@ void CanvasRenderingContext2DImpl::SetFillStyle(v8::Local<v8::Name> property,
             val = value.As<v8::StringObject>()->ValueOf();
         }
 
-        int len = static_cast<int>(val->Utf8LengthV2(isolate)) + 1;
-        if (g_tls_scratch.size() < (size_t) len) g_tls_scratch.resize((size_t) len);
-        val->WriteUtf8V2(isolate, g_tls_scratch.data(), len,
-                         v8::String::WriteFlags::kNullTerminate);
-
-        char *str = g_tls_scratch.data();
-
-        char *s = str;
-        while (*s && std::isspace((unsigned char) *s)) s++;
-        size_t slen = std::strlen(s);
-        while (slen > 0 && std::isspace((unsigned char) s[slen - 1])) {
-            s[slen - 1] = 0;
-            --slen;
-        }
-
+        size_t slen = 0;
+        char *s = extract_color_string(isolate, val, slen);
         std::string_view sv(s, slen);
         if (parse_and_apply_color(ptr, PaintTarget::Fill, sv, s)) {
             return;
@@ -1748,21 +1767,8 @@ void CanvasRenderingContext2DImpl::SetStrokeStyle(v8::Local<v8::Name> property,
             val = value.As<v8::StringObject>()->ValueOf();
         }
 
-        int len = static_cast<int>(val->Utf8LengthV2(isolate)) + 1;
-        if (g_tls_scratch.size() < (size_t) len) g_tls_scratch.resize((size_t) len);
-        val->WriteUtf8V2(isolate, g_tls_scratch.data(), len,
-                         v8::String::WriteFlags::kNullTerminate);
-
-        char *str = g_tls_scratch.data();
-
-        char *s = str;
-        while (*s && std::isspace((unsigned char) *s)) s++;
-        size_t slen = std::strlen(s);
-        while (slen > 0 && std::isspace((unsigned char) s[slen - 1])) {
-            s[slen - 1] = 0;
-            --slen;
-        }
-
+        size_t slen = 0;
+        char *s = extract_color_string(isolate, val, slen);
         std::string_view sv(s, slen);
         if (parse_and_apply_color(ptr, PaintTarget::Stroke, sv, s)) {
             return;

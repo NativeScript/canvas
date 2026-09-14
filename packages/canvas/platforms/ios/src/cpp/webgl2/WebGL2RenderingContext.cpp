@@ -1668,6 +1668,60 @@ void WebGL2RenderingContext::GetParameter(const v8::FunctionCallbackInfo<v8::Val
 
             canvas_native_webgl_WebGLResult_destroy(result);
             return;
+        // WebGL 2 pnames: the shared GetParameterInternal switch below only
+        // knows the WebGL 1 table and returns null for anything else.
+        case GL_MAX_3D_TEXTURE_SIZE:
+        case GL_MAX_ARRAY_TEXTURE_LAYERS:
+        case GL_MAX_COLOR_ATTACHMENTS:
+        case GL_MAX_COMBINED_UNIFORM_BLOCKS:
+        case GL_MAX_DRAW_BUFFERS:
+        case GL_MAX_ELEMENTS_INDICES:
+        case GL_MAX_ELEMENTS_VERTICES:
+        case GL_MAX_FRAGMENT_INPUT_COMPONENTS:
+        case GL_MAX_FRAGMENT_UNIFORM_BLOCKS:
+        case GL_MAX_FRAGMENT_UNIFORM_COMPONENTS:
+        case GL_MAX_PROGRAM_TEXEL_OFFSET:
+        case GL_MAX_SAMPLES:
+        case GL_MAX_TRANSFORM_FEEDBACK_INTERLEAVED_COMPONENTS:
+        case GL_MAX_TRANSFORM_FEEDBACK_SEPARATE_ATTRIBS:
+        case GL_MAX_TRANSFORM_FEEDBACK_SEPARATE_COMPONENTS:
+        case GL_MAX_UNIFORM_BUFFER_BINDINGS:
+        case GL_MAX_VARYING_COMPONENTS:
+        case GL_MAX_VERTEX_OUTPUT_COMPONENTS:
+        case GL_MAX_VERTEX_UNIFORM_BLOCKS:
+        case GL_MAX_VERTEX_UNIFORM_COMPONENTS:
+        case GL_MIN_PROGRAM_TEXEL_OFFSET:
+        case GL_PACK_ROW_LENGTH:
+        case GL_PACK_SKIP_PIXELS:
+        case GL_PACK_SKIP_ROWS:
+        case GL_READ_BUFFER:
+        case GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT:
+        case GL_UNPACK_IMAGE_HEIGHT:
+        case GL_UNPACK_ROW_LENGTH:
+        case GL_UNPACK_SKIP_IMAGES:
+        case GL_UNPACK_SKIP_PIXELS:
+        case GL_UNPACK_SKIP_ROWS:
+            args.GetReturnValue().Set(canvas_native_webgl_result_get_i32(result));
+            canvas_native_webgl_WebGLResult_destroy(result);
+            return;
+        case 0x9247: // MAX_CLIENT_WAIT_TIMEOUT_WEBGL
+        case GL_MAX_COMBINED_FRAGMENT_UNIFORM_COMPONENTS:
+        case GL_MAX_COMBINED_VERTEX_UNIFORM_COMPONENTS:
+        case GL_MAX_ELEMENT_INDEX:
+        case GL_MAX_SERVER_WAIT_TIMEOUT:
+        case GL_MAX_TEXTURE_LOD_BIAS:
+        case GL_MAX_UNIFORM_BLOCK_SIZE:
+            args.GetReturnValue().Set(
+                    v8::Number::New(isolate, canvas_native_webgl_result_get_f32(result)));
+            canvas_native_webgl_WebGLResult_destroy(result);
+            return;
+        case GL_RASTERIZER_DISCARD:
+        case GL_TRANSFORM_FEEDBACK_ACTIVE:
+        case GL_TRANSFORM_FEEDBACK_PAUSED:
+            args.GetReturnValue().Set(
+                    v8::Boolean::New(isolate, canvas_native_webgl_result_get_bool(result)));
+            canvas_native_webgl_WebGLResult_destroy(result);
+            return;
         default: {
             auto ret = ptr->GetParameterInternal(
                                                  isolate, pname, result);

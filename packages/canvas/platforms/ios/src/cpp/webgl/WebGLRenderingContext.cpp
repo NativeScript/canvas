@@ -2942,8 +2942,14 @@ WebGLRenderingContext::GetSupportedExtensions(const v8::FunctionCallbackInfo<v8:
     for (int i = 0; i < len; ++i) {
         auto item = canvas_native_string_buffer_get_value_at(exts, i);
         if (item != nullptr) {
+            // ConvertToV8OneByteString(char*) hands the pointer to a
+            // OneByteStringResource, which owns it: V8 reads it for as long as
+            // the string is alive and the resource destroys it afterwards.
+            // Freeing it here as well made the returned strings dangle and
+            // double-freed them -- three.js's WebGPURenderer falls back to
+            // WebGL2 and calls getSupportedExtensions() during setup, so it
+            // aborted the process in scudo before drawing a frame.
             array->Set(context, i, ConvertToV8OneByteString(isolate, (char *) item)).FromJust();
-            canvas_native_string_destroy(item);
         }
 
     }
@@ -3017,6 +3023,11 @@ WebGLRenderingContext::GetUniformLocation(const v8::FunctionCallbackInfo<v8::Val
                     name.c_str(),
                     ptr->GetState()
             );
+
+            if (ret == -1) {
+                args.GetReturnValue().SetNull();
+                return;
+            }
 
             auto location = WebGLUniformLocation::NewInstance(isolate, new WebGLUniformLocation(
                     ret));
@@ -4059,15 +4070,15 @@ WebGLRenderingContext::TexImage2D(const v8::FunctionCallbackInfo<v8::Value> &arg
                             internalformat,
                             width,
                             height,
+                            0,
                             format,
                             type,
-                            GL_RGBA,
                             data,
                             size,
                             ptr->GetState()
                     );
                 }
-
+                return;
             }
             default:
                 break;
@@ -4137,7 +4148,7 @@ WebGLRenderingContext::TexImage2D(const v8::FunctionCallbackInfo<v8::Value> &arg
 
             auto array = buf->Buffer();
             auto offset = buf->ByteOffset();
-            auto size = array->ByteLength();
+            auto size = buf->ByteLength();
             auto data = static_cast<const uint8_t *>(array->GetBackingStore()->Data()) + offset;
 
 

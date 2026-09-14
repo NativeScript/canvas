@@ -886,6 +886,73 @@ pub fn canvas_native_webgl2_get_parameter(pname: u32, state: &mut WebGLState) ->
             }
             WebGLResult::I32(params[0])
         }
+        // WebGL 2 pnames the WebGL 1 table does not know; they would otherwise fall
+        // through to WebGLResult::None and read back as an object in JS.
+        MAX_3D_TEXTURE_SIZE
+        | MAX_ARRAY_TEXTURE_LAYERS
+        | MAX_COLOR_ATTACHMENTS
+        | MAX_COMBINED_UNIFORM_BLOCKS
+        | MAX_DRAW_BUFFERS
+        | MAX_ELEMENTS_INDICES
+        | MAX_ELEMENTS_VERTICES
+        | MAX_FRAGMENT_INPUT_COMPONENTS
+        | MAX_FRAGMENT_UNIFORM_BLOCKS
+        | MAX_FRAGMENT_UNIFORM_COMPONENTS
+        | MAX_PROGRAM_TEXEL_OFFSET
+        | MAX_SAMPLES
+        | MAX_TRANSFORM_FEEDBACK_INTERLEAVED_COMPONENTS
+        | MAX_TRANSFORM_FEEDBACK_SEPARATE_ATTRIBS
+        | MAX_TRANSFORM_FEEDBACK_SEPARATE_COMPONENTS
+        | MAX_UNIFORM_BUFFER_BINDINGS
+        | MAX_VARYING_COMPONENTS
+        | MAX_VERTEX_OUTPUT_COMPONENTS
+        | MAX_VERTEX_UNIFORM_BLOCKS
+        | MAX_VERTEX_UNIFORM_COMPONENTS
+        | MIN_PROGRAM_TEXEL_OFFSET
+        | PACK_ROW_LENGTH
+        | PACK_SKIP_PIXELS
+        | PACK_SKIP_ROWS
+        | READ_BUFFER
+        | UNIFORM_BUFFER_OFFSET_ALIGNMENT
+        | UNPACK_IMAGE_HEIGHT
+        | UNPACK_ROW_LENGTH
+        | UNPACK_SKIP_IMAGES
+        | UNPACK_SKIP_PIXELS
+        | UNPACK_SKIP_ROWS => {
+            let mut params = [0i32];
+            unsafe { gl_bindings::GetIntegerv(pname, params.as_mut_ptr()) }
+            WebGLResult::I32(params[0])
+        }
+        // 64-bit by spec.
+        MAX_CLIENT_WAIT_TIMEOUT_WEBGL
+        | MAX_COMBINED_FRAGMENT_UNIFORM_COMPONENTS
+        | MAX_COMBINED_VERTEX_UNIFORM_COMPONENTS
+        | MAX_ELEMENT_INDEX
+        | MAX_SERVER_WAIT_TIMEOUT
+        | MAX_UNIFORM_BLOCK_SIZE => {
+            let mut params = [0i64];
+            unsafe { gl_bindings::GetInteger64v(pname, params.as_mut_ptr()) }
+            WebGLResult::F32(params[0] as f32)
+        }
+        MAX_TEXTURE_LOD_BIAS => {
+            let mut params = [0f32];
+            unsafe { gl_bindings::GetFloatv(pname, params.as_mut_ptr()) }
+            WebGLResult::F32(params[0])
+        }
+        RASTERIZER_DISCARD | TRANSFORM_FEEDBACK_ACTIVE | TRANSFORM_FEEDBACK_PAUSED => {
+            let mut params = [0u8];
+            unsafe { gl_bindings::GetBooleanv(pname, params.as_mut_ptr()) }
+            WebGLResult::Boolean(params[0] == 1)
+        }
+        VERTEX_ARRAY_BINDING | TRANSFORM_FEEDBACK_BINDING | TRANSFORM_FEEDBACK_BUFFER_BINDING
+        | UNIFORM_BUFFER_BINDING => {
+            let mut params = [0i32];
+            unsafe { gl_bindings::GetIntegerv(pname, params.as_mut_ptr()) }
+            if params[0] == 0 {
+                return WebGLResult::None;
+            }
+            WebGLResult::I32(params[0])
+        }
         _ => canvas_native_webgl_get_parameter(pname, state),
     }
 }

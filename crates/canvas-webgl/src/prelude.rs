@@ -450,6 +450,10 @@ impl WebGLState {
         self.get_state().scissor_enabled
     }
 
+    pub fn set_scissor_enabled(&self, enabled: bool) {
+        self.get_state_mut().scissor_enabled = enabled;
+    }
+
     pub fn get_depth_mask(&self) -> bool {
         self.get_state().depth_mask
     }

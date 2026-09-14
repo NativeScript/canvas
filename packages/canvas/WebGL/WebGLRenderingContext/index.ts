@@ -641,7 +641,7 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 	getUniformLocation(program: WebGLProgram, name: string): WebGLUniformLocation {
 		const value = program.native;
 		const id = this.native.getUniformLocation(value, name);
-		if (id === -1) {
+		if (id === null || id === undefined || id === -1) {
 			return null;
 		}
 		return new WebGLUniformLocation(id);

@@ -1,0 +1,1342 @@
+{
+	"ABIRoot": {
+		"kind": "Root",
+		"name": "CanvasSVG",
+		"printedName": "CanvasSVG",
+		"children": [
+			{
+				"kind": "Import",
+				"name": "Foundation",
+				"printedName": "Foundation",
+				"declKind": "Import",
+				"moduleName": "CanvasSVG",
+				"declAttributes": ["RawDocComment"]
+			},
+			{
+				"kind": "Import",
+				"name": "UIKit",
+				"printedName": "UIKit",
+				"declKind": "Import",
+				"moduleName": "CanvasSVG"
+			},
+			{
+				"kind": "TypeDecl",
+				"name": "NSCSVGData",
+				"printedName": "NSCSVGData",
+				"children": [
+					{
+						"kind": "Var",
+						"name": "data",
+						"printedName": "data",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Optional",
+								"printedName": "Foundation.NSMutableData?",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "NSMutableData",
+										"printedName": "Foundation.NSMutableData",
+										"usr": "c:objc(cs)NSMutableData"
+									}
+								],
+								"usr": "s:Sq"
+							}
+						],
+						"declKind": "Var",
+						"usr": "c:@M@CanvasSVG@objc(cs)NSCSVGData(py)data",
+						"mangledName": "$s9CanvasSVG10NSCSVGDataC4dataSo13NSMutableDataCSgvp",
+						"moduleName": "CanvasSVG",
+						"declAttributes": ["HasInitialValue", "HasStorage", "AccessControl", "SetterAccess", "ObjC"],
+						"hasStorage": true,
+						"accessors": [
+							{
+								"kind": "Accessor",
+								"name": "Get",
+								"printedName": "Get()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Optional",
+										"printedName": "Foundation.NSMutableData?",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "NSMutableData",
+												"printedName": "Foundation.NSMutableData",
+												"usr": "c:objc(cs)NSMutableData"
+											}
+										],
+										"usr": "s:Sq"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "c:@M@CanvasSVG@objc(cs)NSCSVGData(im)data",
+								"mangledName": "$s9CanvasSVG10NSCSVGDataC4dataSo13NSMutableDataCSgvg",
+								"moduleName": "CanvasSVG",
+								"implicit": true,
+								"declAttributes": ["ObjC"],
+								"accessorKind": "get"
+							}
+						]
+					},
+					{
+						"kind": "Var",
+						"name": "width",
+						"printedName": "width",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "CGFloat",
+								"printedName": "CoreGraphics.CGFloat",
+								"usr": "s:14CoreFoundation7CGFloatV"
+							}
+						],
+						"declKind": "Var",
+						"usr": "c:@M@CanvasSVG@objc(cs)NSCSVGData(py)width",
+						"mangledName": "$s9CanvasSVG10NSCSVGDataC5width12CoreGraphics7CGFloatVvp",
+						"moduleName": "CanvasSVG",
+						"declAttributes": ["AccessControl", "ObjC"],
+						"accessors": [
+							{
+								"kind": "Accessor",
+								"name": "Get",
+								"printedName": "Get()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "CGFloat",
+										"printedName": "CoreGraphics.CGFloat",
+										"usr": "s:14CoreFoundation7CGFloatV"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "c:@M@CanvasSVG@objc(cs)NSCSVGData(im)width",
+								"mangledName": "$s9CanvasSVG10NSCSVGDataC5width12CoreGraphics7CGFloatVvg",
+								"moduleName": "CanvasSVG",
+								"declAttributes": ["ObjC"],
+								"accessorKind": "get"
+							}
+						]
+					},
+					{
+						"kind": "Var",
+						"name": "height",
+						"printedName": "height",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "CGFloat",
+								"printedName": "CoreGraphics.CGFloat",
+								"usr": "s:14CoreFoundation7CGFloatV"
+							}
+						],
+						"declKind": "Var",
+						"usr": "c:@M@CanvasSVG@objc(cs)NSCSVGData(py)height",
+						"mangledName": "$s9CanvasSVG10NSCSVGDataC6height12CoreGraphics7CGFloatVvp",
+						"moduleName": "CanvasSVG",
+						"declAttributes": ["AccessControl", "ObjC"],
+						"accessors": [
+							{
+								"kind": "Accessor",
+								"name": "Get",
+								"printedName": "Get()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "CGFloat",
+										"printedName": "CoreGraphics.CGFloat",
+										"usr": "s:14CoreFoundation7CGFloatV"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "c:@M@CanvasSVG@objc(cs)NSCSVGData(im)height",
+								"mangledName": "$s9CanvasSVG10NSCSVGDataC6height12CoreGraphics7CGFloatVvg",
+								"moduleName": "CanvasSVG",
+								"declAttributes": ["ObjC"],
+								"accessorKind": "get"
+							}
+						]
+					},
+					{
+						"kind": "Var",
+						"name": "rawData",
+						"printedName": "rawData",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Optional",
+								"printedName": "Swift.UnsafeMutableRawPointer?",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "UnsafeMutableRawPointer",
+										"printedName": "Swift.UnsafeMutableRawPointer",
+										"usr": "s:Sv"
+									}
+								],
+								"usr": "s:Sq"
+							}
+						],
+						"declKind": "Var",
+						"usr": "c:@M@CanvasSVG@objc(cs)NSCSVGData(py)rawData",
+						"mangledName": "$s9CanvasSVG10NSCSVGDataC7rawDataSvSgvp",
+						"moduleName": "CanvasSVG",
+						"declAttributes": ["AccessControl", "ObjC"],
+						"accessors": [
+							{
+								"kind": "Accessor",
+								"name": "Get",
+								"printedName": "Get()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Optional",
+										"printedName": "Swift.UnsafeMutableRawPointer?",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "UnsafeMutableRawPointer",
+												"printedName": "Swift.UnsafeMutableRawPointer",
+												"usr": "s:Sv"
+											}
+										],
+										"usr": "s:Sq"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "c:@M@CanvasSVG@objc(cs)NSCSVGData(im)rawData",
+								"mangledName": "$s9CanvasSVG10NSCSVGDataC7rawDataSvSgvg",
+								"moduleName": "CanvasSVG",
+								"declAttributes": ["ObjC"],
+								"accessorKind": "get"
+							}
+						]
+					},
+					{
+						"kind": "Function",
+						"name": "getImage",
+						"printedName": "getImage()",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Optional",
+								"printedName": "UIKit.UIImage?",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "UIImage",
+										"printedName": "UIKit.UIImage",
+										"usr": "c:objc(cs)UIImage"
+									}
+								],
+								"usr": "s:Sq"
+							}
+						],
+						"declKind": "Func",
+						"usr": "c:@M@CanvasSVG@objc(cs)NSCSVGData(im)getImage",
+						"mangledName": "$s9CanvasSVG10NSCSVGDataC8getImageSo7UIImageCSgyF",
+						"moduleName": "CanvasSVG",
+						"declAttributes": ["AccessControl", "ObjC"],
+						"funcSelfKind": "NonMutating"
+					},
+					{
+						"kind": "Constructor",
+						"name": "init",
+						"printedName": "init()",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "NSCSVGData",
+								"printedName": "CanvasSVG.NSCSVGData",
+								"usr": "c:@M@CanvasSVG@objc(cs)NSCSVGData"
+							}
+						],
+						"declKind": "Constructor",
+						"usr": "c:@M@CanvasSVG@objc(cs)NSCSVGData(im)init",
+						"mangledName": "$s9CanvasSVG10NSCSVGDataCACycfc",
+						"moduleName": "CanvasSVG",
+						"overriding": true,
+						"implicit": true,
+						"objc_name": "init",
+						"declAttributes": ["Dynamic", "ObjC", "Override"],
+						"init_kind": "Designated"
+					}
+				],
+				"declKind": "Class",
+				"usr": "c:@M@CanvasSVG@objc(cs)NSCSVGData",
+				"mangledName": "$s9CanvasSVG10NSCSVGDataC",
+				"moduleName": "CanvasSVG",
+				"objc_name": "NSCSVGData",
+				"declAttributes": ["AccessControl", "ObjC", "ObjCMembers"],
+				"superclassUsr": "c:objc(cs)NSObject",
+				"inheritsConvenienceInitializers": true,
+				"superclassNames": ["ObjectiveC.NSObject"],
+				"conformances": [
+					{
+						"kind": "Conformance",
+						"name": "_KeyValueCodingAndObserving",
+						"printedName": "_KeyValueCodingAndObserving",
+						"usr": "s:10Foundation27_KeyValueCodingAndObservingP",
+						"mangledName": "$s10Foundation27_KeyValueCodingAndObservingP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "_KeyValueCodingAndObservingPublishing",
+						"printedName": "_KeyValueCodingAndObservingPublishing",
+						"usr": "s:10Foundation37_KeyValueCodingAndObservingPublishingP",
+						"mangledName": "$s10Foundation37_KeyValueCodingAndObservingPublishingP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "CVarArg",
+						"printedName": "CVarArg",
+						"usr": "s:s7CVarArgP",
+						"mangledName": "$ss7CVarArgP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Copyable",
+						"printedName": "Copyable",
+						"usr": "s:s8CopyableP",
+						"mangledName": "$ss8CopyableP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "CustomDebugStringConvertible",
+						"printedName": "CustomDebugStringConvertible",
+						"usr": "s:s28CustomDebugStringConvertibleP",
+						"mangledName": "$ss28CustomDebugStringConvertibleP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "CustomStringConvertible",
+						"printedName": "CustomStringConvertible",
+						"usr": "s:s23CustomStringConvertibleP",
+						"mangledName": "$ss23CustomStringConvertibleP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Equatable",
+						"printedName": "Equatable",
+						"usr": "s:SQ",
+						"mangledName": "$sSQ"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Escapable",
+						"printedName": "Escapable",
+						"usr": "s:s9EscapableP",
+						"mangledName": "$ss9EscapableP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Hashable",
+						"printedName": "Hashable",
+						"usr": "s:SH",
+						"mangledName": "$sSH"
+					}
+				]
+			},
+			{
+				"kind": "TypeDecl",
+				"name": "NSCSVG",
+				"printedName": "NSCSVG",
+				"children": [
+					{
+						"kind": "Var",
+						"name": "sync",
+						"printedName": "sync",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Bool",
+								"printedName": "Swift.Bool",
+								"usr": "s:Sb"
+							}
+						],
+						"declKind": "Var",
+						"usr": "c:@M@CanvasSVG@objc(cs)NSCSVG(py)sync",
+						"mangledName": "$s9CanvasSVG6NSCSVGC4syncSbvp",
+						"moduleName": "CanvasSVG",
+						"declAttributes": ["HasInitialValue", "Preconcurrency", "Custom", "HasStorage", "AccessControl", "ObjC"],
+						"hasStorage": true,
+						"accessors": [
+							{
+								"kind": "Accessor",
+								"name": "Get",
+								"printedName": "Get()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Bool",
+										"printedName": "Swift.Bool",
+										"usr": "s:Sb"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "c:@M@CanvasSVG@objc(cs)NSCSVG(im)sync",
+								"mangledName": "$s9CanvasSVG6NSCSVGC4syncSbvg",
+								"moduleName": "CanvasSVG",
+								"implicit": true,
+								"declAttributes": ["ObjC"],
+								"accessorKind": "get"
+							},
+							{
+								"kind": "Accessor",
+								"name": "Set",
+								"printedName": "Set()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Void",
+										"printedName": "()"
+									},
+									{
+										"kind": "TypeNominal",
+										"name": "Bool",
+										"printedName": "Swift.Bool",
+										"usr": "s:Sb"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "c:@M@CanvasSVG@objc(cs)NSCSVG(im)setSync:",
+								"mangledName": "$s9CanvasSVG6NSCSVGC4syncSbvs",
+								"moduleName": "CanvasSVG",
+								"implicit": true,
+								"declAttributes": ["ObjC"],
+								"accessorKind": "set"
+							},
+							{
+								"kind": "Accessor",
+								"name": "Modify",
+								"printedName": "Modify()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Void",
+										"printedName": "()"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "s:9CanvasSVG6NSCSVGC4syncSbvM",
+								"mangledName": "$s9CanvasSVG6NSCSVGC4syncSbvM",
+								"moduleName": "CanvasSVG",
+								"implicit": true,
+								"accessorKind": "_modify"
+							}
+						]
+					},
+					{
+						"kind": "Var",
+						"name": "autoScale",
+						"printedName": "autoScale",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Bool",
+								"printedName": "Swift.Bool",
+								"usr": "s:Sb"
+							}
+						],
+						"declKind": "Var",
+						"usr": "c:@M@CanvasSVG@objc(cs)NSCSVG(py)autoScale",
+						"mangledName": "$s9CanvasSVG6NSCSVGC9autoScaleSbvp",
+						"moduleName": "CanvasSVG",
+						"declAttributes": ["HasInitialValue", "Preconcurrency", "Custom", "HasStorage", "AccessControl", "ObjC"],
+						"hasStorage": true,
+						"accessors": [
+							{
+								"kind": "Accessor",
+								"name": "Get",
+								"printedName": "Get()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Bool",
+										"printedName": "Swift.Bool",
+										"usr": "s:Sb"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "c:@M@CanvasSVG@objc(cs)NSCSVG(im)autoScale",
+								"mangledName": "$s9CanvasSVG6NSCSVGC9autoScaleSbvg",
+								"moduleName": "CanvasSVG",
+								"implicit": true,
+								"declAttributes": ["ObjC"],
+								"accessorKind": "get"
+							},
+							{
+								"kind": "Accessor",
+								"name": "Set",
+								"printedName": "Set()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Void",
+										"printedName": "()"
+									},
+									{
+										"kind": "TypeNominal",
+										"name": "Bool",
+										"printedName": "Swift.Bool",
+										"usr": "s:Sb"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "c:@M@CanvasSVG@objc(cs)NSCSVG(im)setAutoScale:",
+								"mangledName": "$s9CanvasSVG6NSCSVGC9autoScaleSbvs",
+								"moduleName": "CanvasSVG",
+								"implicit": true,
+								"declAttributes": ["ObjC"],
+								"accessorKind": "set"
+							},
+							{
+								"kind": "Accessor",
+								"name": "Modify",
+								"printedName": "Modify()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Void",
+										"printedName": "()"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "s:9CanvasSVG6NSCSVGC9autoScaleSbvM",
+								"mangledName": "$s9CanvasSVG6NSCSVGC9autoScaleSbvM",
+								"moduleName": "CanvasSVG",
+								"implicit": true,
+								"accessorKind": "_modify"
+							}
+						]
+					},
+					{
+						"kind": "Var",
+						"name": "src",
+						"printedName": "src",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Optional",
+								"printedName": "Swift.String?",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "String",
+										"printedName": "Swift.String",
+										"usr": "s:SS"
+									}
+								],
+								"usr": "s:Sq"
+							}
+						],
+						"declKind": "Var",
+						"usr": "c:@M@CanvasSVG@objc(cs)NSCSVG(py)src",
+						"mangledName": "$s9CanvasSVG6NSCSVGC3srcSSSgvp",
+						"moduleName": "CanvasSVG",
+						"declAttributes": ["HasInitialValue", "Preconcurrency", "Custom", "HasStorage", "AccessControl", "ObjC"],
+						"hasStorage": true,
+						"accessors": [
+							{
+								"kind": "Accessor",
+								"name": "Get",
+								"printedName": "Get()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Optional",
+										"printedName": "Swift.String?",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "String",
+												"printedName": "Swift.String",
+												"usr": "s:SS"
+											}
+										],
+										"usr": "s:Sq"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "c:@M@CanvasSVG@objc(cs)NSCSVG(im)src",
+								"mangledName": "$s9CanvasSVG6NSCSVGC3srcSSSgvg",
+								"moduleName": "CanvasSVG",
+								"implicit": true,
+								"declAttributes": ["ObjC"],
+								"accessorKind": "get"
+							},
+							{
+								"kind": "Accessor",
+								"name": "Set",
+								"printedName": "Set()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Void",
+										"printedName": "()"
+									},
+									{
+										"kind": "TypeNominal",
+										"name": "Optional",
+										"printedName": "Swift.String?",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "String",
+												"printedName": "Swift.String",
+												"usr": "s:SS"
+											}
+										],
+										"usr": "s:Sq"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "c:@M@CanvasSVG@objc(cs)NSCSVG(im)setSrc:",
+								"mangledName": "$s9CanvasSVG6NSCSVGC3srcSSSgvs",
+								"moduleName": "CanvasSVG",
+								"implicit": true,
+								"declAttributes": ["ObjC"],
+								"accessorKind": "set"
+							},
+							{
+								"kind": "Accessor",
+								"name": "Modify",
+								"printedName": "Modify()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Void",
+										"printedName": "()"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "s:9CanvasSVG6NSCSVGC3srcSSSgvM",
+								"mangledName": "$s9CanvasSVG6NSCSVGC3srcSSSgvM",
+								"moduleName": "CanvasSVG",
+								"implicit": true,
+								"accessorKind": "_modify"
+							}
+						]
+					},
+					{
+						"kind": "Var",
+						"name": "srcPath",
+						"printedName": "srcPath",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Optional",
+								"printedName": "Swift.String?",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "String",
+										"printedName": "Swift.String",
+										"usr": "s:SS"
+									}
+								],
+								"usr": "s:Sq"
+							}
+						],
+						"declKind": "Var",
+						"usr": "c:@M@CanvasSVG@objc(cs)NSCSVG(py)srcPath",
+						"mangledName": "$s9CanvasSVG6NSCSVGC7srcPathSSSgvp",
+						"moduleName": "CanvasSVG",
+						"declAttributes": ["HasInitialValue", "Preconcurrency", "Custom", "HasStorage", "AccessControl", "ObjC"],
+						"hasStorage": true,
+						"accessors": [
+							{
+								"kind": "Accessor",
+								"name": "Get",
+								"printedName": "Get()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Optional",
+										"printedName": "Swift.String?",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "String",
+												"printedName": "Swift.String",
+												"usr": "s:SS"
+											}
+										],
+										"usr": "s:Sq"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "c:@M@CanvasSVG@objc(cs)NSCSVG(im)srcPath",
+								"mangledName": "$s9CanvasSVG6NSCSVGC7srcPathSSSgvg",
+								"moduleName": "CanvasSVG",
+								"implicit": true,
+								"declAttributes": ["ObjC"],
+								"accessorKind": "get"
+							},
+							{
+								"kind": "Accessor",
+								"name": "Set",
+								"printedName": "Set()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Void",
+										"printedName": "()"
+									},
+									{
+										"kind": "TypeNominal",
+										"name": "Optional",
+										"printedName": "Swift.String?",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "String",
+												"printedName": "Swift.String",
+												"usr": "s:SS"
+											}
+										],
+										"usr": "s:Sq"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "c:@M@CanvasSVG@objc(cs)NSCSVG(im)setSrcPath:",
+								"mangledName": "$s9CanvasSVG6NSCSVGC7srcPathSSSgvs",
+								"moduleName": "CanvasSVG",
+								"implicit": true,
+								"declAttributes": ["ObjC"],
+								"accessorKind": "set"
+							},
+							{
+								"kind": "Accessor",
+								"name": "Modify",
+								"printedName": "Modify()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Void",
+										"printedName": "()"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "s:9CanvasSVG6NSCSVGC7srcPathSSSgvM",
+								"mangledName": "$s9CanvasSVG6NSCSVGC7srcPathSSSgvM",
+								"moduleName": "CanvasSVG",
+								"implicit": true,
+								"accessorKind": "_modify"
+							}
+						]
+					},
+					{
+						"kind": "Function",
+						"name": "loadData",
+						"printedName": "loadData(_:)",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Void",
+								"printedName": "()"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "NSCSVGData",
+								"printedName": "CanvasSVG.NSCSVGData",
+								"usr": "c:@M@CanvasSVG@objc(cs)NSCSVGData"
+							}
+						],
+						"declKind": "Func",
+						"usr": "c:@M@CanvasSVG@objc(cs)NSCSVG(im)loadData:",
+						"mangledName": "$s9CanvasSVG6NSCSVGC8loadDatayyAA10NSCSVGDataCF",
+						"moduleName": "CanvasSVG",
+						"declAttributes": ["Preconcurrency", "Custom", "AccessControl", "ObjC"],
+						"funcSelfKind": "NonMutating"
+					},
+					{
+						"kind": "Function",
+						"name": "update",
+						"printedName": "update()",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Void",
+								"printedName": "()"
+							}
+						],
+						"declKind": "Func",
+						"usr": "c:@M@CanvasSVG@objc(cs)NSCSVG(im)update",
+						"mangledName": "$s9CanvasSVG6NSCSVGC6updateyyF",
+						"moduleName": "CanvasSVG",
+						"declAttributes": ["Preconcurrency", "Custom", "AccessControl", "ObjC"],
+						"funcSelfKind": "NonMutating"
+					},
+					{
+						"kind": "Function",
+						"name": "layoutSubviews",
+						"printedName": "layoutSubviews()",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Void",
+								"printedName": "()"
+							}
+						],
+						"declKind": "Func",
+						"usr": "c:@M@CanvasSVG@objc(cs)NSCSVG(im)layoutSubviews",
+						"mangledName": "$s9CanvasSVG6NSCSVGC14layoutSubviewsyyF",
+						"moduleName": "CanvasSVG",
+						"overriding": true,
+						"objc_name": "layoutSubviews",
+						"declAttributes": ["Dynamic", "ObjC", "Preconcurrency", "Custom", "Override", "AccessControl"],
+						"funcSelfKind": "NonMutating"
+					},
+					{
+						"kind": "Constructor",
+						"name": "init",
+						"printedName": "init(frame:)",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "NSCSVG",
+								"printedName": "CanvasSVG.NSCSVG",
+								"usr": "c:@M@CanvasSVG@objc(cs)NSCSVG"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "CGRect",
+								"printedName": "CoreFoundation.CGRect",
+								"usr": "c:@S@CGRect"
+							}
+						],
+						"declKind": "Constructor",
+						"usr": "c:@M@CanvasSVG@objc(cs)NSCSVG(im)initWithFrame:",
+						"mangledName": "$s9CanvasSVG6NSCSVGC5frameACSo6CGRectV_tcfc",
+						"moduleName": "CanvasSVG",
+						"overriding": true,
+						"objc_name": "initWithFrame:",
+						"declAttributes": ["Dynamic", "ObjC", "Preconcurrency", "Custom", "Override", "AccessControl"],
+						"init_kind": "Designated"
+					},
+					{
+						"kind": "Function",
+						"name": "draw",
+						"printedName": "draw(_:)",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Void",
+								"printedName": "()"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "CGRect",
+								"printedName": "CoreFoundation.CGRect",
+								"usr": "c:@S@CGRect"
+							}
+						],
+						"declKind": "Func",
+						"usr": "c:@M@CanvasSVG@objc(cs)NSCSVG(im)drawRect:",
+						"mangledName": "$s9CanvasSVG6NSCSVGC4drawyySo6CGRectVF",
+						"moduleName": "CanvasSVG",
+						"overriding": true,
+						"objc_name": "drawRect:",
+						"declAttributes": ["Dynamic", "ObjC", "Preconcurrency", "Custom", "Override", "AccessControl"],
+						"funcSelfKind": "NonMutating"
+					},
+					{
+						"kind": "Function",
+						"name": "toImage",
+						"printedName": "toImage()",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Optional",
+								"printedName": "UIKit.UIImage?",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "UIImage",
+										"printedName": "UIKit.UIImage",
+										"usr": "c:objc(cs)UIImage"
+									}
+								],
+								"usr": "s:Sq"
+							}
+						],
+						"declKind": "Func",
+						"usr": "c:@M@CanvasSVG@objc(cs)NSCSVG(im)toImage",
+						"mangledName": "$s9CanvasSVG6NSCSVGC7toImageSo7UIImageCSgyF",
+						"moduleName": "CanvasSVG",
+						"declAttributes": ["Preconcurrency", "Custom", "AccessControl", "ObjC"],
+						"funcSelfKind": "NonMutating"
+					},
+					{
+						"kind": "Function",
+						"name": "toData",
+						"printedName": "toData()",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Optional",
+								"printedName": "Foundation.NSData?",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "NSData",
+										"printedName": "Foundation.NSData",
+										"usr": "c:objc(cs)NSData"
+									}
+								],
+								"usr": "s:Sq"
+							}
+						],
+						"declKind": "Func",
+						"usr": "c:@M@CanvasSVG@objc(cs)NSCSVG(im)toData",
+						"mangledName": "$s9CanvasSVG6NSCSVGC6toDataSo6NSDataCSgyF",
+						"moduleName": "CanvasSVG",
+						"declAttributes": ["Preconcurrency", "Custom", "AccessControl", "ObjC"],
+						"funcSelfKind": "NonMutating"
+					},
+					{
+						"kind": "Function",
+						"name": "fromStringSync",
+						"printedName": "fromStringSync(_:)",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Optional",
+								"printedName": "CanvasSVG.NSCSVGData?",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "NSCSVGData",
+										"printedName": "CanvasSVG.NSCSVGData",
+										"usr": "c:@M@CanvasSVG@objc(cs)NSCSVGData"
+									}
+								],
+								"usr": "s:Sq"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "String",
+								"printedName": "Swift.String",
+								"usr": "s:SS"
+							}
+						],
+						"declKind": "Func",
+						"usr": "c:@M@CanvasSVG@objc(cs)NSCSVG(cm)fromStringSync:",
+						"mangledName": "$s9CanvasSVG6NSCSVGC14fromStringSyncyAA10NSCSVGDataCSgSSFZ",
+						"moduleName": "CanvasSVG",
+						"static": true,
+						"declAttributes": ["Final", "Preconcurrency", "Custom", "AccessControl", "ObjC"],
+						"funcSelfKind": "NonMutating"
+					},
+					{
+						"kind": "Function",
+						"name": "fromPathSync",
+						"printedName": "fromPathSync(_:)",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Optional",
+								"printedName": "CanvasSVG.NSCSVGData?",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "NSCSVGData",
+										"printedName": "CanvasSVG.NSCSVGData",
+										"usr": "c:@M@CanvasSVG@objc(cs)NSCSVGData"
+									}
+								],
+								"usr": "s:Sq"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "String",
+								"printedName": "Swift.String",
+								"usr": "s:SS"
+							}
+						],
+						"declKind": "Func",
+						"usr": "c:@M@CanvasSVG@objc(cs)NSCSVG(cm)fromPathSync:",
+						"mangledName": "$s9CanvasSVG6NSCSVGC12fromPathSyncyAA10NSCSVGDataCSgSSFZ",
+						"moduleName": "CanvasSVG",
+						"static": true,
+						"declAttributes": ["Final", "Preconcurrency", "Custom", "AccessControl", "ObjC"],
+						"funcSelfKind": "NonMutating"
+					},
+					{
+						"kind": "Function",
+						"name": "fromRemoteSync",
+						"printedName": "fromRemoteSync(_:)",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Optional",
+								"printedName": "CanvasSVG.NSCSVGData?",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "NSCSVGData",
+										"printedName": "CanvasSVG.NSCSVGData",
+										"usr": "c:@M@CanvasSVG@objc(cs)NSCSVGData"
+									}
+								],
+								"usr": "s:Sq"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "String",
+								"printedName": "Swift.String",
+								"usr": "s:SS"
+							}
+						],
+						"declKind": "Func",
+						"usr": "c:@M@CanvasSVG@objc(cs)NSCSVG(cm)fromRemoteSync:",
+						"mangledName": "$s9CanvasSVG6NSCSVGC14fromRemoteSyncyAA10NSCSVGDataCSgSSFZ",
+						"moduleName": "CanvasSVG",
+						"static": true,
+						"declAttributes": ["Final", "Preconcurrency", "Custom", "AccessControl", "ObjC"],
+						"funcSelfKind": "NonMutating"
+					},
+					{
+						"kind": "Function",
+						"name": "fromString",
+						"printedName": "fromString(_:_:)",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Void",
+								"printedName": "()"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "String",
+								"printedName": "Swift.String",
+								"usr": "s:SS"
+							},
+							{
+								"kind": "TypeFunc",
+								"name": "Function",
+								"printedName": "(CanvasSVG.NSCSVGData?) -> ()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Void",
+										"printedName": "()"
+									},
+									{
+										"kind": "TypeNominal",
+										"name": "Optional",
+										"printedName": "CanvasSVG.NSCSVGData?",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "NSCSVGData",
+												"printedName": "CanvasSVG.NSCSVGData",
+												"usr": "c:@M@CanvasSVG@objc(cs)NSCSVGData"
+											}
+										],
+										"usr": "s:Sq"
+									}
+								]
+							}
+						],
+						"declKind": "Func",
+						"usr": "c:@M@CanvasSVG@objc(cs)NSCSVG(cm)fromString::",
+						"mangledName": "$s9CanvasSVG6NSCSVGC10fromStringyySS_yAA10NSCSVGDataCSgctFZ",
+						"moduleName": "CanvasSVG",
+						"static": true,
+						"declAttributes": ["Final", "Preconcurrency", "Custom", "AccessControl", "ObjC"],
+						"funcSelfKind": "NonMutating"
+					},
+					{
+						"kind": "Function",
+						"name": "fromPath",
+						"printedName": "fromPath(_:_:)",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Void",
+								"printedName": "()"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "String",
+								"printedName": "Swift.String",
+								"usr": "s:SS"
+							},
+							{
+								"kind": "TypeFunc",
+								"name": "Function",
+								"printedName": "(CanvasSVG.NSCSVGData?) -> ()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Void",
+										"printedName": "()"
+									},
+									{
+										"kind": "TypeNominal",
+										"name": "Optional",
+										"printedName": "CanvasSVG.NSCSVGData?",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "NSCSVGData",
+												"printedName": "CanvasSVG.NSCSVGData",
+												"usr": "c:@M@CanvasSVG@objc(cs)NSCSVGData"
+											}
+										],
+										"usr": "s:Sq"
+									}
+								]
+							}
+						],
+						"declKind": "Func",
+						"usr": "c:@M@CanvasSVG@objc(cs)NSCSVG(cm)fromPath::",
+						"mangledName": "$s9CanvasSVG6NSCSVGC8fromPathyySS_yAA10NSCSVGDataCSgctFZ",
+						"moduleName": "CanvasSVG",
+						"static": true,
+						"declAttributes": ["Final", "Preconcurrency", "Custom", "AccessControl", "ObjC"],
+						"funcSelfKind": "NonMutating"
+					},
+					{
+						"kind": "Function",
+						"name": "fromRemote",
+						"printedName": "fromRemote(_:_:)",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Void",
+								"printedName": "()"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "String",
+								"printedName": "Swift.String",
+								"usr": "s:SS"
+							},
+							{
+								"kind": "TypeFunc",
+								"name": "Function",
+								"printedName": "(CanvasSVG.NSCSVGData?) -> ()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Void",
+										"printedName": "()"
+									},
+									{
+										"kind": "TypeNominal",
+										"name": "Optional",
+										"printedName": "CanvasSVG.NSCSVGData?",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "NSCSVGData",
+												"printedName": "CanvasSVG.NSCSVGData",
+												"usr": "c:@M@CanvasSVG@objc(cs)NSCSVGData"
+											}
+										],
+										"usr": "s:Sq"
+									}
+								]
+							}
+						],
+						"declKind": "Func",
+						"usr": "c:@M@CanvasSVG@objc(cs)NSCSVG(cm)fromRemote::",
+						"mangledName": "$s9CanvasSVG6NSCSVGC10fromRemoteyySS_yAA10NSCSVGDataCSgctFZ",
+						"moduleName": "CanvasSVG",
+						"static": true,
+						"declAttributes": ["Final", "Preconcurrency", "Custom", "AccessControl", "ObjC"],
+						"funcSelfKind": "NonMutating"
+					}
+				],
+				"declKind": "Class",
+				"usr": "c:@M@CanvasSVG@objc(cs)NSCSVG",
+				"mangledName": "$s9CanvasSVG6NSCSVGC",
+				"moduleName": "CanvasSVG",
+				"objc_name": "NSCSVG",
+				"declAttributes": ["Preconcurrency", "Custom", "AccessControl", "ObjC", "ObjCMembers"],
+				"superclassUsr": "c:objc(cs)UIView",
+				"hasMissingDesignatedInitializers": true,
+				"inheritsConvenienceInitializers": true,
+				"superclassNames": ["UIKit.UIView", "UIKit.UIResponder", "ObjectiveC.NSObject"],
+				"conformances": [
+					{
+						"kind": "Conformance",
+						"name": "_KeyValueCodingAndObserving",
+						"printedName": "_KeyValueCodingAndObserving",
+						"usr": "s:10Foundation27_KeyValueCodingAndObservingP",
+						"mangledName": "$s10Foundation27_KeyValueCodingAndObservingP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "_KeyValueCodingAndObservingPublishing",
+						"printedName": "_KeyValueCodingAndObservingPublishing",
+						"usr": "s:10Foundation37_KeyValueCodingAndObservingPublishingP",
+						"mangledName": "$s10Foundation37_KeyValueCodingAndObservingPublishingP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "CVarArg",
+						"printedName": "CVarArg",
+						"usr": "s:s7CVarArgP",
+						"mangledName": "$ss7CVarArgP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Copyable",
+						"printedName": "Copyable",
+						"usr": "s:s8CopyableP",
+						"mangledName": "$ss8CopyableP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "CustomDebugStringConvertible",
+						"printedName": "CustomDebugStringConvertible",
+						"usr": "s:s28CustomDebugStringConvertibleP",
+						"mangledName": "$ss28CustomDebugStringConvertibleP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "CustomStringConvertible",
+						"printedName": "CustomStringConvertible",
+						"usr": "s:s23CustomStringConvertibleP",
+						"mangledName": "$ss23CustomStringConvertibleP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Equatable",
+						"printedName": "Equatable",
+						"usr": "s:SQ",
+						"mangledName": "$sSQ"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Escapable",
+						"printedName": "Escapable",
+						"usr": "s:s9EscapableP",
+						"mangledName": "$ss9EscapableP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Hashable",
+						"printedName": "Hashable",
+						"usr": "s:SH",
+						"mangledName": "$sSH"
+					},
+					{
+						"kind": "Conformance",
+						"name": "__DefaultCustomPlaygroundQuickLookable",
+						"printedName": "__DefaultCustomPlaygroundQuickLookable",
+						"usr": "s:s38__DefaultCustomPlaygroundQuickLookableP",
+						"mangledName": "$ss38__DefaultCustomPlaygroundQuickLookableP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "UITraitChangeObservable",
+						"printedName": "UITraitChangeObservable",
+						"usr": "s:5UIKit23UITraitChangeObservableP",
+						"mangledName": "$s5UIKit23UITraitChangeObservableP"
+					}
+				]
+			}
+		],
+		"json_format_version": 8
+	},
+	"ConstValues": [
+		{
+			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
+			"kind": "IntegerLiteral",
+			"offset": 236,
+			"length": 1,
+			"value": "0"
+		},
+		{
+			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
+			"kind": "BooleanLiteral",
+			"offset": 1576,
+			"length": 5,
+			"value": "false"
+		},
+		{
+			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
+			"kind": "BooleanLiteral",
+			"offset": 1601,
+			"length": 5,
+			"value": "false"
+		},
+		{
+			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
+			"kind": "BooleanLiteral",
+			"offset": 1626,
+			"length": 5,
+			"value": "false"
+		},
+		{
+			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
+			"kind": "BooleanLiteral",
+			"offset": 1679,
+			"length": 5,
+			"value": "false"
+		},
+		{
+			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
+			"kind": "BooleanLiteral",
+			"offset": 1710,
+			"length": 5,
+			"value": "false"
+		},
+		{
+			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
+			"kind": "BooleanLiteral",
+			"offset": 1775,
+			"length": 4,
+			"value": "true"
+		},
+		{
+			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
+			"kind": "BooleanLiteral",
+			"offset": 1740,
+			"length": 4,
+			"value": "true"
+		},
+		{
+			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
+			"kind": "BooleanLiteral",
+			"offset": 1926,
+			"length": 4,
+			"value": "true"
+		},
+		{
+			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
+			"kind": "BooleanLiteral",
+			"offset": 1948,
+			"length": 5,
+			"value": "false"
+		},
+		{
+			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
+			"kind": "BooleanLiteral",
+			"offset": 2147,
+			"length": 4,
+			"value": "true"
+		},
+		{
+			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
+			"kind": "BooleanLiteral",
+			"offset": 2169,
+			"length": 5,
+			"value": "false"
+		},
+		{
+			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
+			"kind": "BooleanLiteral",
+			"offset": 2220,
+			"length": 5,
+			"value": "false"
+		}
+	]
+}

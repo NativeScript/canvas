@@ -10,22 +10,14 @@
 
 typedef struct RenderThread RenderThread;
 
-/**
- * FFI wrapper around a live, mutable SVG document (`canvas_svg::SvgDocument`).
- */
 typedef struct SvgDocument SvgDocument;
 
 /**
- * Owns the context *and* what it takes to build another one, because a GPU context does not
- * only die when the window goes away: a driver reset, a device suspend, or the compositor
- * reclaiming the GPU kills it while the window is still perfectly valid. The window pointer,
- * the requested backend and the size are kept so `render` can rebuild in place.
+ * Keeps the window, backend and size so `render` can rebuild the context in place after a
+ * driver reset or GPU reclaim, which can happen while the window is still valid.
  */
 typedef struct SvgGpuSurface SvgGpuSurface;
 
-/**
- * FFI wrapper around one SVG element.
- */
 typedef struct SvgNode SvgNode;
 
 struct SvgDocument *canvas_native_svg_document_create(void);
@@ -35,18 +27,17 @@ struct SvgDocument *canvas_native_svg_document_create_with_string(const char *sv
 void canvas_native_svg_document_release(struct SvgDocument *doc);
 
 /**
- * Promotes a node out of the static content; pass null to clear. See
- * `SvgDocument::set_layer` for the compositing order this implies.
+ * Promotes a node out of the static content; null clears. See `SvgDocument::set_layer`.
  */
 void canvas_native_svg_document_set_layer(struct SvgDocument *doc, const char *id);
 
 /**
- * Drops the cached static raster — call when anything outside the promoted node changes.
+ * Drops the cached static raster; call when anything outside the promoted node changes.
  */
 void canvas_native_svg_document_invalidate_backdrop(struct SvgDocument *doc);
 
 /**
- * Every view replays one recording per frame. Direct node mutations need `invalidate_frames`.
+ * Views share one recording per frame; direct node mutations then need `invalidate_frames`.
  */
 void canvas_native_svg_document_set_frame_sharing(struct SvgDocument *doc, bool enabled);
 
@@ -56,11 +47,7 @@ void canvas_native_svg_document_set_frame_sharing(struct SvgDocument *doc, bool 
 void canvas_native_svg_document_invalidate_frames(struct SvgDocument *doc);
 
 /**
- * Renders the document's current (possibly mutated) tree into a caller-supplied RGBA
- * pixel buffer — no re-parse, and no dependency on any other native module. `width`/
- * `height` are the buffer's physical pixel size; `scale` maps the document's logical
- * (CSS/`set_container_size`) coordinate space onto it, so callers can rasterize at the
- * device's actual pixel density instead of a 1:1 logical-unit buffer.
+ * `width`/`height` are physical pixels; `scale` maps logical (`set_container_size`) units onto them.
  */
 void canvas_native_svg_document_render_to_buffer(struct SvgDocument *doc,
                                                  uint8_t *pixels,
@@ -70,9 +57,7 @@ void canvas_native_svg_document_render_to_buffer(struct SvgDocument *doc,
                                                  float scale);
 
 /**
- * As above, but into pixels the caller already owns (an Android `Bitmap`'s locked pixels),
- * which may be padded — hence the explicit `row_bytes`. Lets the platform skip staging the
- * frame in an intermediate buffer and copying it back out.
+ * As above, into caller-owned pixels (e.g. a locked Android `Bitmap`) that may be row-padded.
  */
 void canvas_native_svg_document_render_to_pixels(struct SvgDocument *doc,
                                                  uint8_t *pixels,
@@ -87,7 +72,7 @@ void canvas_native_svg_document_set_container_size(struct SvgDocument *doc,
                                                    float height);
 
 /**
- * The root `<svg>` element, wrapped fresh each call with an empty children mirror.
+ * Wrapped fresh each call with an empty children mirror.
  */
 struct SvgNode *canvas_native_svg_document_root(struct SvgDocument *doc);
 
@@ -103,30 +88,20 @@ void canvas_native_svg_document_unregister_id(struct SvgDocument *doc, const cha
 struct SvgNode *canvas_native_svg_document_get_element_by_id(struct SvgDocument *doc,
                                                              const char *id);
 
-/**
- * Whether the document carries any SMIL animation, so the caller knows whether it needs to
- * drive a clock at all.
- */
 bool canvas_native_svg_document_has_animations(const struct SvgDocument *doc);
 
 uintptr_t canvas_native_svg_document_animation_count(const struct SvgDocument *doc);
 
 /**
- * How long until every animation has finished, in seconds. Negative when one of them repeats
- * forever, which has no end to report.
+ * Seconds until every animation ends; negative if any repeats indefinitely.
  */
 double canvas_native_svg_document_animation_duration(const struct SvgDocument *doc);
 
 double canvas_native_svg_document_current_time(const struct SvgDocument *doc);
 
 /**
- * Moves the animation clock to `seconds` and writes every animated attribute.
- *
- * Returns whether anything is still animating — false means the document has gone static and
- * the caller should stop scheduling frames.
- * Moves the animation clock. Returns a bitmask: bit 0 is set while something is still
- * animating, bit 1 when a value actually changed this frame. Callers redraw on bit 1 and keep
- * scheduling frames on bit 0; a frame where nothing moved does not need rasterizing.
+ * Returns a bitmask: bit 0 while anything is still animating (keep scheduling frames),
+ * bit 1 when a value changed this frame (redraw).
  */
 int32_t canvas_native_svg_document_set_current_time(struct SvgDocument *doc, double seconds);
 
@@ -147,18 +122,10 @@ char *canvas_native_svg_node_get_attribute(const struct SvgNode *node, const cha
 void canvas_native_string_destroy(char *value);
 
 /**
- * Does not take ownership of `child` — its own `SvgNode` allocation (and the JS
- * wrapper pointing at it) keeps its own independent lifetime, released exactly once
- * when that JS object is garbage-collected. Appending only clones the underlying
- * native node handle into `parent`.
+ * Does not take ownership of `child`: only its node handle is cloned into `parent`,
+ * and the caller still releases `child` itself.
  */
 bool canvas_native_svg_node_append_child(struct SvgNode *parent, const struct SvgNode *child);
-
-/**
- * Detaches the child at `index`, returning it wrapped in a fresh `SvgNode` the caller
- * now owns. Null on an out-of-range index.
- */
-struct SvgNode *canvas_native_svg_node_remove_child(struct SvgNode *parent, uintptr_t index);
 
 /**
  * A text node's text, or null for any other node. Free with `canvas_native_string_destroy`.
@@ -166,13 +133,17 @@ struct SvgNode *canvas_native_svg_node_remove_child(struct SvgNode *parent, uint
 char *canvas_native_svg_node_get_text(const struct SvgNode *node);
 
 /**
- * Rewrites a text node's text. False for any other node.
+ * False for any node that is not a text node.
  */
 bool canvas_native_svg_node_set_text(struct SvgNode *node, const char *text);
 
 /**
- * `backend` is a `Backend` discriminant; 0 (auto) is what callers should pass unless the
- * user has explicitly forced one.
+ * Returns a fresh `SvgNode` the caller owns, or null on an out-of-range index.
+ */
+struct SvgNode *canvas_native_svg_node_remove_child(struct SvgNode *parent, uintptr_t index);
+
+/**
+ * `backend` is a `Backend` discriminant; pass 0 (auto) unless the user forced one.
  */
 struct SvgGpuSurface *canvas_native_svg_gpu_create(void *window,
                                                    int32_t width,
@@ -187,31 +158,26 @@ int32_t canvas_native_svg_gpu_backend(const struct SvgGpuSurface *gpu);
 void canvas_native_svg_gpu_resize(struct SvgGpuSurface *gpu, int32_t width, int32_t height);
 
 /**
- * Returns a `FrameStatus` discriminant: 0 presented, 1 skipped, 2 presented after the context
- * was rebuilt, 3 lost. Anything but 3 means the GPU path is still good.
+ * Returns a `FrameStatus` discriminant; only 3 (lost) means the GPU path is unusable.
  */
 int32_t canvas_native_svg_gpu_render(struct SvgGpuSurface *gpu,
                                      struct SvgDocument *doc,
                                      float scale);
 
 /**
- * The window the surface was created against. The caller owns whatever reference it passed to
- * `create` and needs this to give it back before `destroy`.
+ * The caller still owns the reference it passed to `create` and must release it after `destroy`.
  */
 void *canvas_native_svg_gpu_window(const struct SvgGpuSurface *gpu);
 
 /**
- * Simulates a context loss, so the recovery path can be exercised from a test or a demo.
+ * Simulates a context loss to exercise the recovery path.
  */
 void canvas_native_svg_gpu_debug_lose_context(struct SvgGpuSurface *gpu);
 
 void canvas_native_svg_gpu_destroy(struct SvgGpuSurface *gpu);
 
 /**
- * Starts a render thread that owns its own GPU surface for `window`.
- *
- * Null means the GPU path is unavailable and the caller should keep using the bitmap, exactly
- * as with `canvas_native_svg_gpu_create`.
+ * Starts a render thread that owns its own GPU surface for `window`. Null means use the bitmap.
  */
 struct RenderThread *canvas_native_svg_render_thread_create(void *window,
                                                             int32_t width,
@@ -219,11 +185,8 @@ struct RenderThread *canvas_native_svg_render_thread_create(void *window,
                                                             int32_t backend);
 
 /**
- * Records `doc` **on the calling thread** and hands the finished display list to the renderer.
- *
- * The recording has to happen here: it reads the document, and the document belongs to whoever
- * is calling. Only the display list crosses to the render thread. Returns false when there was
- * nothing to record.
+ * Records `doc` on the calling thread (which owns it); only the display list crosses to the
+ * render thread. Returns false when there was nothing to record.
  */
 bool canvas_native_svg_render_thread_commit(struct RenderThread *render,
                                             struct SvgDocument *doc,
@@ -237,13 +200,11 @@ void canvas_native_svg_render_thread_resize(struct RenderThread *render,
 
 /**
  * The `FrameStatus` of the last present, or -1 if nothing has presented since the last call.
- * Polled by the view layer so context loss still reaches JS.
  */
 int32_t canvas_native_svg_render_thread_status(struct RenderThread *render);
 
 /**
- * Stops the thread and tears its surface down. Blocks until it has finished, because the
- * caller releases the window next and the GPU objects were built against it.
+ * Blocks until the thread has torn down its surface, since the caller releases the window next.
  */
 void canvas_native_svg_render_thread_destroy(struct RenderThread *render);
 

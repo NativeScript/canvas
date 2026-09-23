@@ -302,6 +302,13 @@ class NSCSVG : FrameLayout {
 	}
 
 	private fun createGpuContext(): Boolean {
+		val created = createGpuContextImpl()
+		// Otherwise Android keeps replaying the last onDraw, bitmap included, under the GPU frames.
+		if (created) invalidate()
+		return created
+	}
+
+	private fun createGpuContextImpl(): Boolean {
 		val surface = this.surface ?: return false
 		if (surfaceWidth <= 0 || surfaceHeight <= 0) {
 			return false
@@ -444,7 +451,7 @@ class NSCSVG : FrameLayout {
 	}
 
 	override fun onDraw(canvas: Canvas) {
-		if (gpuContext != 0L) {
+		if (isGpuActive) {
 			return
 		}
 		data?.toImage()?.let {

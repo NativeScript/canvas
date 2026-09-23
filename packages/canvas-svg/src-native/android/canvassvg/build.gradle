@@ -51,6 +51,13 @@ android {
 			proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
 		}
 	}
+	// Linked at build time only; the app ships its own, and a bundled stale copy can win at boot.
+	packagingOptions {
+		jniLibs {
+			excludes += '**/libNativeScript.so'
+		}
+	}
+
 	compileOptions {
 		sourceCompatibility JavaVersion.VERSION_17
 		targetCompatibility JavaVersion.VERSION_17

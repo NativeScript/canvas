@@ -1,5 +1,5 @@
 import { Canvas } from '../Canvas';
-import { ImageAsset } from '../ImageAsset';
+import { ImageAsset, fromSvgSource } from '../ImageAsset';
 import { GPUTextureUsage, native_ } from './Constants';
 import { GPUBuffer } from './GPUBuffer';
 import { GPUCommandBuffer } from './GPUCommandBuffer';
@@ -68,6 +68,10 @@ export class GPUQueue {
 		let _frame: any;
 
 		if (source.source) {
+			const svgAsset = fromSvgSource(source.source);
+			if (svgAsset instanceof ImageAsset && svgAsset !== source.source) {
+				source = { ...source, source: svgAsset as never };
+			}
 			if (source.source instanceof ImageBitmap) {
 				_keepAlive = source.source;
 				src.source = (source.source as any).native;

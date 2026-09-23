@@ -84,6 +84,9 @@ export class SvgNodeWrapper {
 		if (!this.__isInPromotedLayer()) {
 			this.ownerDocument?.invalidateBackdrop();
 		}
+		if (this.ownerDocument) {
+			this.ownerDocument.revision++;
+		}
 		this.ownerDocument?.owner?.__invalidate?.(this, attribute);
 	}
 
@@ -194,6 +197,8 @@ export class SvgDocumentWrapper {
 	// the view tree, so this is their only route back to something that can redraw.
 	owner: { __invalidate?(node?: unknown, attribute?: string): void } | null = null;
 	layerId: string | null = null;
+	/** Bumped on any visual change. */
+	revision = 0;
 	private __nativePointer = 0;
 	private __containerWidth = 0;
 	private __containerHeight = 0;
@@ -295,7 +300,11 @@ export class SvgDocumentWrapper {
 	 * is deliberately allocation-free.
 	 */
 	setCurrentTime(seconds: number): number {
-		return this.__native.setCurrentTime(seconds);
+		const state = this.__native.setCurrentTime(seconds);
+		if ((state & ANIMATION_CHANGED) !== 0) {
+			this.revision++;
+		}
+		return state;
 	}
 
 	/**

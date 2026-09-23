@@ -1,6 +1,7 @@
 import { GridLayout, Screen } from '@nativescript/core';
 import { DemoSharedBase } from '../utils';
 import { Svg } from '@nativescript/canvas-svg';
+import { Canvas, ImageAsset } from '@nativescript/canvas';
 require('@nativescript/canvas-polyfill');
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -22,6 +23,23 @@ function mountSvg(view, row: number, col: number, width = 150, height = 150): an
 	(svgView as any).col = col;
 	view.addChild(svgView);
 	return svg;
+}
+
+function mountCanvas(view, row: number, col: number, onReady: (canvas: Canvas) => void): Canvas {
+	const canvas = new Canvas();
+	(canvas as any).row = row;
+	(canvas as any).col = col;
+	// Layout size goes through style: on Canvas, `width`/`height` are the backing store.
+	canvas.style.width = '100%' as any;
+	canvas.style.height = '100%' as any;
+	canvas.on('ready', () => {
+		// Like a web canvas, the backing store starts at 300x150 whatever the layout size.
+		canvas.width = Math.round(canvas.clientWidth * Screen.mainScreen.scale) as any;
+		canvas.height = Math.round(canvas.clientHeight * Screen.mainScreen.scale) as any;
+		onReady(canvas);
+	});
+	view.addChild(canvas);
+	return canvas;
 }
 
 function mountSvgWithSrc(view, row: number, col: number, src: string, gpu = true, threaded = false): Svg {
@@ -145,6 +163,53 @@ export class DemoSharedCanvasSvg extends DemoSharedBase {
 		for (let i = 0; i < 4; i++) {
 			mountSvgWithSrc(grid, Math.floor(i / 2), i % 2, SMIL_SOURCE, true, i % 2 === 1);
 		}
+
+		// Test 9 (row 4, col 0): drawImage(svgView) every frame, whole and a 3x crop; tracks tile 5.
+		mountCanvas(view, 4, 0, (canvas) => {
+			const ctx = canvas.getContext('2d') as any;
+			let frames = 0;
+			let spent = 0;
+			const draw = () => {
+				const w = canvas.width as number;
+				const h = canvas.height as number;
+				const side = Math.min(w / 2, h);
+				ctx.clearRect(0, 0, w, h);
+				const start = Date.now();
+				ctx.drawImage(smil, 0, 0, side, side);
+				ctx.drawImage(smil, 0, 0, 75, 75, w / 2, 0, side, side);
+				spent += Date.now() - start;
+				if (++frames === 120) {
+					console.log(`[canvas-svg test] drawImage(svg) x2: ${(spent / frames).toFixed(2)} ms/frame`);
+					frames = spent = 0;
+				}
+				requestAnimationFrame(draw);
+			};
+			requestAnimationFrame(draw);
+		});
+
+		// Test 10 (row 4, col 1): ImageAsset.loadSvg from a file, as a pattern, and sized by width.
+		mountCanvas(view, 4, 1, (canvas) => {
+			const ctx = canvas.getContext('2d') as any;
+			const w = canvas.width as number;
+			const h = canvas.height as number;
+			const dot = `<svg xmlns="${SVG_NS}" width="16" height="16"><circle cx="8" cy="8" r="5" fill="#ccc"/></svg>`;
+			const tile = new ImageAsset();
+			const sized = new ImageAsset();
+			console.log('[canvas-svg test] loadSvgSync pattern:', tile.loadSvgSync(dot, { scale: Screen.mainScreen.scale }), tile.width, 'x', tile.height);
+			console.log('[canvas-svg test] loadSvgSync width-only:', sized.loadSvgSync(SMIL_SOURCE, { width: 60, time: 2.5 }), sized.width, 'x', sized.height);
+			const rocketAsset = new ImageAsset();
+			rocketAsset
+				.loadSvg('~/assets/file-assets/svg/rocket.svg', { scale: Screen.mainScreen.scale })
+				.then((ok) => {
+					console.log('[canvas-svg test] loadSvg rocket:', ok, rocketAsset.width, 'x', rocketAsset.height);
+					ctx.fillStyle = ctx.createPattern(tile, 'repeat');
+					ctx.fillRect(0, 0, w, h);
+					const k = Math.min(w / rocketAsset.width, h / rocketAsset.height);
+					ctx.drawImage(rocketAsset, 0, 0, rocketAsset.width * k, rocketAsset.height * k);
+					ctx.drawImage(sized, w - sized.width, h - sized.height);
+				})
+				.catch((error) => console.log('[canvas-svg test] loadSvg rocket failed:', error));
+		});
 
 		// Both tiles also stand in for the GPU context-loss path: losing a context mid-animation
 		// is the case that matters, because a static picture hides a failure to recover.

@@ -1,4 +1,5 @@
 import { SVGBase, backendProperty, gpuProperty, srcProperty, surfaceTypeProperty, syncProperty, type SvgBackend, type SvgSurfaceType, threadedProperty } from './common';
+import './canvas-image';
 import { Application, Http, knownFolders, path, Screen, Utils } from '@nativescript/core';
 import { SVGItem } from './Elements/SVGItem';
 export * from './Elements';

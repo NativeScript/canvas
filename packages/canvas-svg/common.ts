@@ -131,7 +131,7 @@ export const surfaceTypeProperty = new Property<SVGBase, SvgSurfaceType>({
 });
 
 /** Resolves inline markup, a path or a URL to markup. Inline markup answers synchronously. */
-function readSrc(value: string, done: (source: string) => void, failed: (error: unknown) => void) {
+export function readSrc(value: string, done: (source: string) => void, failed: (error: unknown) => void) {
 	if (value.indexOf('<svg') > -1) {
 		done(value);
 		return;

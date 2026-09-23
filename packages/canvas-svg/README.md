@@ -94,9 +94,29 @@ Skia's SVG renderer does not animate, so this plugin includes its own animation 
 
 Only changes that are actually visible trigger a redraw, so an animation that is holding still costs nothing.
 
+## Drawing into a canvas
+
+Once this package is imported, `@nativescript/canvas` accepts an SVG anywhere it takes an image.
+
+**A view as an image source.** Pass an `Svg` view, or the polyfill's `<svg>` element, to `drawImage`, `createPattern`, `createImageBitmap`, `texImage2D`/`texSubImage2D`/`texImage3D` or WebGPU's `copyExternalImageToTexture`. You get the current frame, so drawing every frame follows its animation. Sizes are the view's CSS pixels, as for an `<img>` of an SVG on the web. `drawImage` rasterizes at the size the image lands at, so it stays sharp when scaled. An unchanged frame is not rasterized again.
+
+```ts
+ctx.drawImage(svgView, 0, 0, 300, 300);
+```
+
+**Loading into an `ImageAsset`.** `loadSvg` (async) and `loadSvgSync` take markup, an app-relative (`~/`) or absolute path, or a view. `loadSvg` also takes a URL. Options: `width` and/or `height` in CSS pixels (the aspect ratio is kept), `scale` in pixels per CSS pixel (default 1), and `time`, the animation time in seconds to capture (default 0).
+
+```ts
+const asset = new ImageAsset();
+await asset.loadSvg('~/assets/icon.svg', { width: 48, scale: Screen.mainScreen.scale });
+ctx.drawImage(asset, 0, 0);
+```
+
+An `<img>` whose `src` is an SVG goes through the same loader.
+
 ## Rendering a source once
 
-To get pixels without a view, use `Svg.fromSrc` (async) or `Svg.fromSrcSync`. Both return an `SvgData` with `width`, `height` and the RGBA `data`.
+`Svg.fromSrc` (async) and `Svg.fromSrcSync` return an `SvgData` with `width`, `height` and premultiplied RGBA `data`. They use Skia's static renderer, so there is no animation and markup must state its own size. `ImageAsset.loadSvg` has neither limit.
 
 ```ts
 const data = await Svg.fromSrc('~/assets/icon.svg');

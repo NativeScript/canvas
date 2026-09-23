@@ -130,8 +130,7 @@ export class DemoSharedCanvasSvg extends DemoSharedBase {
 		const rocket = mountSvgWithSrc(view, 2, 1, '~/assets/file-assets/svg/rocket.svg', true, true);
 
 		// Test 7 (row 3, col 0): the same shape of export as the rocket, but animated with CSS
-		// @keyframes rather than SMIL. Neither Skia nor our own engine drives those, so this
-		// tile is here to show what a CSS-animated source actually does.
+		// @keyframes rather than SMIL, driven by the same clock.
 		const solar = mountSvgWithSrc(view, 3, 0, '~/assets/file-assets/svg/solar-system-animation.svg');
 		solar.on('animationEnd', () => console.log('[canvas-svg test] solar animation ended'));
 

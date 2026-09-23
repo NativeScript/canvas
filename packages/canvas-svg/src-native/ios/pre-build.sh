@@ -112,7 +112,9 @@ export RUST_SRC_PATH="$(rustc --print sysroot)/lib/rustlib/src/rust/src"
 export DYLD_LIBRARY_PATH="$(rustc --print sysroot)/lib:$DYLD_LIBRARY_PATH:$DYLD_FALLBACK_LIBRARY_PATH"
 export RUST_BUILD_TARGET="$RUST_BUILD_TARGET"
 
-cbindgen --config "$CWD/canvas-svg-ios/cbindgen.toml"  "$CWD/canvas-svg-ios/src/lib.rs" -l c >"$SRCROOT/CanvasSVG/include/canvas_svg.h"
+# --crate, not a path to lib.rs: only the crate form resolves dependencies, and the live
+# document + gpu entry points all live in the re-exported canvas-svg-c.
+(cd "$CWD/canvas-svg-ios" && cbindgen --config cbindgen.toml --crate canvas-svg-ios -l c) >"$SRCROOT/CanvasSVG/include/canvas_svg.h"
 
 
 # Build the staticlib crate (canvas-svg-ios → libcanvassvg.a) that the framework links via -lcanvassvg.

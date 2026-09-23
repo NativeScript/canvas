@@ -189,6 +189,15 @@ impl AshGraphics {
     }
 }
 
+/// What came back from a present. `OutOfDate` is recoverable by rebuilding the swapchain;
+/// `Lost` means the device or surface is gone and the whole context has to be rebuilt.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum PresentStatus {
+    Ok,
+    OutOfDate,
+    Lost,
+}
+
 pub struct VulkanContext {
     ash: AshGraphics,
     view: *mut c_void,
@@ -354,32 +363,41 @@ impl VulkanContext {
         (formats[0], ColorSpace::Srgb)
     }
 
-    unsafe fn create_swap_chain(&mut self, surface: vk::SurfaceKHR, width: u32, height: u32) {
+    /// Returns false when the swapchain could not be (re)built. Runs on the recovery path, so
+    /// nothing here may panic.
+    unsafe fn create_swap_chain(
+        &mut self,
+        surface: vk::SurfaceKHR,
+        width: u32,
+        height: u32,
+    ) -> bool {
         unsafe {
-            self.ash.device.device_wait_idle().unwrap();
+            if let Err(cause) = self.ash.device.device_wait_idle() {
+                log::warn!("vulkan: device_wait_idle before swapchain rebuild: {cause}");
+                return false;
+            }
         }
 
         self.ash.current_index = None;
 
-        let formats = unsafe {
-            self.ash
-                .surface_loader
-                .get_physical_device_surface_formats(self.ash.physical_device, surface)
-                .unwrap()
-        };
-
-        let capabilities = unsafe {
-            self.ash
-                .surface_loader
-                .get_physical_device_surface_capabilities(self.ash.physical_device, surface)
-                .unwrap()
-        };
-
-        let present_modes = unsafe {
-            self.ash
-                .surface_loader
-                .get_physical_device_surface_present_modes(self.ash.physical_device, surface)
-                .unwrap()
+        let (formats, capabilities, present_modes) = unsafe {
+            let loader = &self.ash.surface_loader;
+            let device = self.ash.physical_device;
+            match (
+                loader.get_physical_device_surface_formats(device, surface),
+                loader.get_physical_device_surface_capabilities(device, surface),
+                loader.get_physical_device_surface_present_modes(device, surface),
+            ) {
+                (Ok(formats), Ok(capabilities), Ok(modes))
+                    if !formats.is_empty() && !modes.is_empty() =>
+                {
+                    (formats, capabilities, modes)
+                }
+                _ => {
+                    log::warn!("vulkan: surface no longer describes itself, cannot rebuild");
+                    return false;
+                }
+            }
         };
 
         let raw_flags = vk::SwapchainCreateFlagsKHR::empty();
@@ -496,6 +514,7 @@ impl VulkanContext {
             .ok();
 
         self.ash.surface_size = Extent2D { width, height };
+        self.ash.swap_chain.is_some()
     }
 
     pub fn set_view(&mut self, view: *mut c_void, width: u32, height: u32) {
@@ -527,43 +546,56 @@ impl VulkanContext {
         }
     }
 
-    pub fn resize(&mut self, width: u32, height: u32) {
-        let mut surface = None;
-        if let Some(value) = self.ash.surface.as_ref() {
-            surface = Some(*value);
-        }
-
-        if let Some(surface) = surface {
-            unsafe {
-                self.create_swap_chain(surface, width, height);
-            }
-        }
+    /// Rebuilds the swapchain; also how an out-of-date one is recovered. False means the whole
+    /// context has to be rebuilt.
+    pub fn resize(&mut self, width: u32, height: u32) -> bool {
+        let Some(surface) = self.ash.surface.as_ref().copied() else {
+            return false;
+        };
+        unsafe { self.create_swap_chain(surface, width, height) }
     }
 
-    pub fn present(&mut self) {
+    /// Presents the acquired image. `OutOfDate` (rotation, fold, resize) means call `resize`.
+    pub fn present(&mut self) -> PresentStatus {
         let _ = self.current_image();
         unsafe {
-            let wait_semaphores = [self.ash.present_semaphore];
-            if let (Some(image_index), Some(swapchain)) =
+            let (Some(image_index), Some(swapchain)) =
                 (self.ash.current_index, self.ash.swap_chain.as_ref())
+            else {
+                // `current_image` swallowed an acquire failure.
+                return PresentStatus::OutOfDate;
+            };
+
+            let swapchains = [*swapchain];
+            let image_indices = [image_index];
+
+            // No wait semaphore: nothing signals `present_semaphore` (Skia submits on its own),
+            // so waiting on it hangs. The caller must `flush_submit_and_sync_cpu` first.
+            let present_info = vk::PresentInfoKHR::default()
+                .swapchains(&swapchains)
+                .image_indices(&image_indices);
+
+            let status = match self
+                .ash
+                .swap_chain_loader
+                .queue_present(self.ash.queue_and_index.0, &present_info)
             {
-                let swapchains = [*swapchain];
-                let image_indices = [image_index];
-
-                let present_info = vk::PresentInfoKHR::default()
-                    .wait_semaphores(&wait_semaphores)
-                    .swapchains(&swapchains)
-                    .image_indices(&image_indices);
-
-                unsafe {
-                    self.ash
-                        .swap_chain_loader
-                        .queue_present(self.ash.queue_and_index.0, &present_info)
-                        .expect("Queue Present Failed.");
+                // `true` is VK_SUBOPTIMAL_KHR: the frame was presented. Don't rebuild on it,
+                // gfxstream and some drivers report it every frame.
+                Ok(_) => PresentStatus::Ok,
+                Err(vk::Result::ERROR_OUT_OF_DATE_KHR) => PresentStatus::OutOfDate,
+                Err(cause) => {
+                    log::warn!("vulkan: present failed: {cause}");
+                    PresentStatus::Lost
                 }
+            };
 
+            if status == PresentStatus::Ok {
                 let _ = self.next_image();
+            } else {
+                self.ash.current_index = None;
             }
+            status
         }
     }
 

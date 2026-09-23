@@ -1,5 +1,5 @@
 import { SVGItem } from './SVGItem';
-import { DOMParser } from '@xmldom/xmldom';
+import { createSvgElement } from '../NativeNode';
 
 export class RadialGradient extends SVGItem {
 	_views: any[];
@@ -13,6 +13,6 @@ export class RadialGradient extends SVGItem {
 
 	constructor() {
 		super();
-		this.__domElement = new DOMParser().parseFromString('<radialGradient></radialGradient>', 'image/svg+xml').documentElement;
+		this.__domElement = createSvgElement('radialGradient');
 	}
 }

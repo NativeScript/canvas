@@ -26,6 +26,8 @@ svg: GENERATE_IOS_SVG GENERATE_VISIONOS_SVG GENERATE_TVOS_SVG
 
 android-svg: GENERATE_ANDROID_SVG
 
+apple: ios visionos tvos
+
 # Host-side tests. The workspace pins `-C panic=abort` for the Apple host
 # targets in .cargo/config.toml (needed by the macOS dylib build) and libtest
 # cannot link against that, so the rustflags are replaced for this run.
@@ -64,7 +66,7 @@ $(ARCHS_VISIONOS): %:
 # TVOS_DEPLOYMENT_TARGET must be set explicitly: rustc defaults to 12.0 but the
 # `cc` crate has no built-in tvOS default and falls back to the SDK version, so
 # ring's C/asm objects come out tagged minos 26.4 and the framework link (12.0)
-# warns on every one of them. iOS/visionOS need no equivalent -- cc knows those.
+# warns on every one of them. iOS/visionOS need no equivalent, since cc knows those.
 .PHONY: $(ARCHS_TVOS)
 $(ARCHS_TVOS): %:
 	TVOS_DEPLOYMENT_TARGET=12.0 \
@@ -111,7 +113,7 @@ GENERATE_TVOS_SVG: $(addsuffix _svg,$(ARCHS_TVOS))
 
 .PHONY: $(addsuffix _svg,$(ARCHS_ANDROID))
 $(addsuffix _svg,$(ARCHS_ANDROID)): %_svg:
-	./tools/scripts/build-svg-android.sh $* svg
+	./tools/scripts/build-svg-android.sh $*
 
 .PHONY: GENERATE_ANDROID_SVG
 GENERATE_ANDROID_SVG: $(addsuffix _svg,$(ARCHS_ANDROID))

@@ -1,4 +1,4 @@
-import { SVGBase, srcProperty, syncProperty, initialSVG } from './common';
+import { SVGBase, backendProperty, gpuProperty, srcProperty, syncProperty, type SvgBackend, threadedProperty } from './common';
 import { Http, knownFolders, path, Screen, Utils } from '@nativescript/core';
 import { SVGItem } from './Elements/SVGItem';
 
@@ -82,6 +82,18 @@ export class Svg extends SVGBase {
 		super();
 		this._svg = NSCSVG.alloc().initWithFrame(CGRectZero);
 		this._svg.backgroundColor = UIColor.clearColor;
+		const owner = new WeakRef(this);
+		this._svg.onContextLost = () => {
+			owner.get()?.__notifyContextLost();
+		};
+		this._svg.onContextRestored = () => {
+			owner.get()?.__notifyContextRestored();
+		};
+		this.on('layoutChanged', () => {
+			// A percentage root size is relative to the view, so a new layout can change it.
+			this.__rootSizeValid = false;
+			this.__redraw();
+		});
 	}
 
 	createNativeView() {
@@ -99,29 +111,29 @@ export class Svg extends SVGBase {
 	}
 
 	[srcProperty.setNative](value: string) {
-		if (typeof value === 'string') {
-			if (value.indexOf('<svg') > -1) {
-				this._svg.src = value;
-			} else {
-				if (value.startsWith('~')) {
-					this._svg.srcPath = path.join(knownFolders.currentApp().path, value.replace('~', ''));
-				} else if (value.startsWith('/')) {
-					this._svg.srcPath = value;
-				} else if (value.startsWith('http')) {
-					Http.getFile(value)
-						.then((res) => {
-							this._svg.srcPath = res.path;
-						})
-						.catch((e) => {
-							console.error(e);
-						});
-				}
-			}
-		}
+		this.__loadSrc(value);
 	}
 
 	[syncProperty.setNative](value: boolean) {
 		this._svg.sync = value;
+	}
+
+	[gpuProperty.setNative](value: boolean) {
+		this._svg.gpu = value;
+	}
+
+	[threadedProperty.setNative](value: boolean) {
+		this._svg.threaded = value;
+	}
+
+	[backendProperty.setNative](value: SvgBackend) {
+		// Metal is the only GPU backend on Apple platforms; anything else means auto.
+		this._svg.backend = value === 'metal' ? NSCSVG.Backend.Metal : NSCSVG.Backend.Auto;
+	}
+
+	/** Which rasterizer is actually running: `auto` until a surface exists. */
+	get activeBackend(): SvgBackend {
+		return this._svg?.activeBackend === NSCSVG.Backend.Metal ? 'metal' : 'auto';
 	}
 
 	public onLayout(left: number, top: number, right: number, bottom: number): void {
@@ -139,37 +151,40 @@ export class Svg extends SVGBase {
 		}
 	}
 
+	/** Throws the GPU context away so the next frame exercises recovery. For testing. */
+	debugLoseContext() {
+		this._svg?.debugLoseContext?.();
+	}
+
 	__redraw() {
-		if (this._attachedToDom && !this.src) {
-			const domCopy = this.__domElement.valueOf() as Element;
-			const width = domCopy.getAttribute('width');
-			const height = domCopy.getAttribute('height');
-			const viewBox = domCopy.getAttribute('viewBox');
-			if (!width) {
-				domCopy.setAttribute('width', `300`);
-			}
-			if (!height) {
-				domCopy.setAttribute('height', `150`);
-			}
+		if (this._attachedToDom) {
+			// Cached: reading these crosses into native and allocates a string each time, and
+			// only a write to them can change them. Deliberately no viewBox default either:
+			// inventing one rescales the whole tree.
+			this.__resolveRootSize();
 
-			if (!viewBox) {
-				domCopy.setAttribute('viewBox', '0 0 100 100');
-			}
+			const width = this.__rootWidth;
+			const height = this.__rootHeight;
+			const scale = Screen.mainScreen.scale * this.__fitScale;
+			const pixelWidth = Math.round(width * scale);
+			const pixelHeight = Math.round(height * scale);
 
-			const serialized = this._serializer.serializeToString(domCopy as never);
-			if (serialized !== initialSVG) {
-				this.src = serialized;
-			}
+			this.__document.setContainerSize(width, height);
+			// Renders into the view's own pixels directly, with no intermediate buffer, and
+			// nothing allocated per frame.
+			this._svg.renderDocument(this.__document.nativePointer, pixelWidth, pixelHeight, scale);
 		}
 	}
 
 	onLoaded() {
 		super.onLoaded();
 		this._attachedToDom = true;
+		this.__startAnimations();
 	}
 
 	onUnloaded() {
 		this._attachedToDom = false;
+		this.__stopAnimations();
 		super.onUnloaded();
 	}
 

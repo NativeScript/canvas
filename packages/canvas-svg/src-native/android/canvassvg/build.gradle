@@ -3,16 +3,46 @@ plugins {
 	id 'org.jetbrains.kotlin.android'
 }
 
+def NDK_PATH = ""
+def hasNdkDirectory = project.hasProperty("ndkDirectory")
+if (!hasNdkDirectory) {
+	NDK_PATH = "$System.env.ANDROID_NDK"
+	if (NDK_PATH == null || NDK_PATH == "null") {
+		NDK_PATH = "$System.env.ANDROID_NDK_ROOT"
+	}
+	if (NDK_PATH == null || NDK_PATH == "null") {
+		NDK_PATH = "$System.env.ANDROID_NDK_HOME"
+	}
+} else {
+	NDK_PATH = ndkDirectory
+}
+
 android {
 	namespace 'org.nativescript.canvas.svg'
 	compileSdk 34
 
 	defaultConfig {
-		minSdk 17
+		minSdk 21
 		targetSdk 34
 
 		testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 		consumerProguardFiles "consumer-rules.pro"
+
+		externalNativeBuild {
+			cmake {
+				cppFlags "-std=c++20"
+				arguments "-DANDROID_TOOLCHAIN=clang",
+					"-DANDROID_STL=c++_static",
+					"-DANDROID_NDK_ROOT=${NDK_PATH}",
+					"-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"
+			}
+		}
+		ndk {
+			def abis = (project.findProperty('canvasSvgAbis') ?: 'x86,x86_64,armeabi-v7a,arm64-v8a')
+				.toString().split(',').collect { it.trim() }.findAll { it }
+			abiFilters.clear()
+			abiFilters.addAll(abis)
+		}
 	}
 
 	buildTypes {
@@ -29,7 +59,13 @@ android {
 		jvmTarget = '17'
 	}
 
-	ndkVersion "23.2.8568313"
+	externalNativeBuild {
+		cmake {
+			path "CMakeLists.txt"
+		}
+	}
+
+	ndkVersion "29.0.14206865"
 }
 
 dependencies {

@@ -1,4 +1,4 @@
-import { initialSVG, SVGBase, srcProperty, syncProperty } from './common';
+import { SVGBase, backendProperty, gpuProperty, srcProperty, surfaceTypeProperty, syncProperty, type SvgBackend, type SvgSurfaceType, threadedProperty } from './common';
 import { Application, Http, knownFolders, path, Screen, Utils } from '@nativescript/core';
 import { SVGItem } from './Elements/SVGItem';
 export * from './Elements';
@@ -82,7 +82,20 @@ export class Svg extends SVGBase {
 		super();
 		const context = Application.android.foregroundActivity || Application.android.startActivity || Utils.android.getApplicationContext();
 		this._svg = new org.nativescript.canvas.svg.NSCSVG(context);
+		const owner = new WeakRef(this);
+		this._svg.setContextListener(
+			new org.nativescript.canvas.svg.NSCSVG.ContextListener({
+				onContextLost() {
+					owner.get()?.__notifyContextLost();
+				},
+				onContextRestored() {
+					owner.get()?.__notifyContextRestored();
+				},
+			}),
+		);
 		this.on('layoutChanged', (args) => {
+			// A percentage root size is relative to the view, so a new layout can change it.
+			this.__rootSizeValid = false;
 			this.__redraw();
 		});
 	}
@@ -102,63 +115,85 @@ export class Svg extends SVGBase {
 	}
 
 	[srcProperty.setNative](value: string) {
-		if (typeof value === 'string') {
-			if (value.indexOf('<svg') > -1) {
-				this._svg.setSrc(value);
-			} else {
-				if (value.startsWith('~')) {
-					this._svg.setSrcPath(path.join(knownFolders.currentApp().path, value.replace('~', '')));
-				} else if (value.startsWith('/')) {
-					this._svg.setSrcPath(value);
-				} else if (value.startsWith('http')) {
-					Http.getFile(value)
-						.then((res) => {
-							this._svg.setSrcPath(res.path);
-						})
-						.catch((e) => {
-							console.log(e);
-						});
-				}
-			}
-		}
+		this.__loadSrc(value);
 	}
 
 	[syncProperty.setNative](value: boolean) {
 		this._svg.setSync(value);
 	}
 
+	[gpuProperty.setNative](value: boolean) {
+		this._svg.setGpu(value);
+	}
+
+	[threadedProperty.setNative](value: boolean) {
+		this._svg.setThreaded(value);
+	}
+
+	[backendProperty.setNative](value: SvgBackend) {
+		const Backend = org.nativescript.canvas.svg.NSCSVG.Backend;
+		switch (value) {
+			case 'gl':
+				this._svg.setBackend(Backend.Gl);
+				break;
+			case 'vulkan':
+				this._svg.setBackend(Backend.Vulkan);
+				break;
+			case 'metal':
+				// No Metal on Android; auto picks whatever the device actually has.
+				this._svg.setBackend(Backend.Auto);
+				break;
+			default:
+				this._svg.setBackend(Backend.Auto);
+				break;
+		}
+	}
+
+	[surfaceTypeProperty.setNative](value: SvgSurfaceType) {
+		const SurfaceType = org.nativescript.canvas.svg.NSCSVG.SurfaceType;
+		this._svg.setSurfaceType(value === 'surface' ? SurfaceType.Surface : SurfaceType.Texture);
+	}
+
+	/** Which rasterizer is actually running: `auto` until a surface exists. */
+	get activeBackend(): SvgBackend {
+		const backend = this._svg?.getActiveBackend?.();
+		return (backend ? String(backend.name()).toLowerCase() : 'auto') as SvgBackend;
+	}
+
+	/** Throws the GPU context away so the next frame exercises recovery. For testing. */
+	debugLoseContext() {
+		this._svg?.debugLoseContext?.();
+	}
+
 	__redraw() {
 		if (this._attachedToDom) {
-			const domCopy = this.__domElement.valueOf() as Element;
-			const width = domCopy.getAttribute('width');
-			const height = domCopy.getAttribute('height');
-			const viewBox = domCopy.getAttribute('viewBox');
-			if (!width) {
-				domCopy.setAttribute('width', `300`);
-			}
-			if (!height) {
-				domCopy.setAttribute('height', `150`);
-			}
+			// Cached: reading these crosses into native and allocates a string each time, and
+			// only a write to them can change them. Deliberately no viewBox default either:
+			// inventing one rescales the whole tree.
+			this.__resolveRootSize();
 
-			if (!viewBox) {
-				domCopy.setAttribute('viewBox', '0 0 100 100');
-			}
+			const width = this.__rootWidth;
+			const height = this.__rootHeight;
+			const scale = Screen.mainScreen.scale * this.__fitScale;
+			const pixelWidth = Math.round(width * scale);
+			const pixelHeight = Math.round(height * scale);
 
-			const serialized = this._serializer.serializeToString(domCopy as never);
-
-			if (serialized !== initialSVG) {
-				this.src = serialized;
-			}
+			this.__document.setContainerSize(width, height);
+			// Renders into the view's bitmap directly, with no intermediate buffer, and nothing
+			// allocated per frame.
+			this._svg.renderDocument(this.__document.nativePointer, pixelWidth, pixelHeight, scale);
 		}
 	}
 
 	onLoaded() {
 		super.onLoaded();
 		this._attachedToDom = true;
+		this.__startAnimations();
 	}
 
 	onUnloaded() {
 		this._attachedToDom = false;
+		this.__stopAnimations();
 		super.onUnloaded();
 	}
 

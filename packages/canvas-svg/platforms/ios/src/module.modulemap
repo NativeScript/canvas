@@ -1,0 +1,4 @@
+module CanvasSVGModule {
+    header "CanvasSVGModule.h"
+    export *
+}

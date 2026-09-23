@@ -722,8 +722,8 @@ fn main() -> @location(0) vec4f {
 		// const renderBundles = require('./webgpu/renderBundles');
 		// renderBundles.run(this.canvas);
 
-		const occlusionQuery = require('./webgpu/occlusionQuery');
-		occlusionQuery.run(this.canvas);
+		// const occlusionQuery = require('./webgpu/occlusionQuery');
+		// occlusionQuery.run(this.canvas);
 
 		// const particles = require('./webgpu/particles');
 		// particles.run(this.canvas);
@@ -898,7 +898,7 @@ fn main() -> @location(0) vec4f {
 		// ctx.fillRect(0,0,400,400)
 		//ellipse(this.canvas);
 		//this.drawPatternWithCanvas(this.canvas);
-		//this.clock(this.canvas);
+		this.clock(this.canvas);
 		//this.solar(this.canvas);
 		//console.log('ready ??');
 		//this.coloredParticles(this.canvas);

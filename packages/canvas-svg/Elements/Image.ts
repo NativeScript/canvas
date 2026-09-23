@@ -25,7 +25,7 @@ function getMIMEforBase64String(b64) {
 	return mime;
 }
 
-import { DOMParser } from '@xmldom/xmldom';
+import { createSvgElement } from '../NativeNode';
 
 export class Image extends SVGItem {
 	xlink: { href?: string } = {};
@@ -39,6 +39,6 @@ export class Image extends SVGItem {
 
 	constructor() {
 		super();
-		this.__domElement = new DOMParser().parseFromString('<image></image>', 'image/svg+xml').documentElement;
+		this.__domElement = createSvgElement('image');
 	}
 }

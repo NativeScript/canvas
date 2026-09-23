@@ -6,7 +6,7 @@
 	<dict>
 		<key>Headers/CanvasSVG-Swift.h</key>
 		<data>
-		pLwgunMx7AvdUTTvDQ4nfKpjAkA=
+		DRYSaRp+1I5/8+F1CEhqkPwElOM=
 		</data>
 		<key>Headers/CanvasSVG.h</key>
 		<data>
@@ -14,11 +14,11 @@
 		</data>
 		<key>Headers/CanvasSVGHelper.h</key>
 		<data>
-		MefR2lomK2+EX5bEb93hGXh2ByU=
+		LPADW/D82eGCuryKOFwKDcPhzyU=
 		</data>
 		<key>Headers/canvas_svg.h</key>
 		<data>
-		kgRpTJeHhaOj/zr4FwDvrDCYDrI=
+		eSflMxPxhxBMO23j1EeKzeuEEq8=
 		</data>
 		<key>Info.plist</key>
 		<data>
@@ -26,27 +26,27 @@
 		</data>
 		<key>Modules/CanvasSVG.swiftmodule/Project/arm64-apple-tvos-simulator.swiftsourceinfo</key>
 		<data>
-		zIUTTKD+GhpKwUk0xQwUO3X/nNo=
+		+m8GJl2q7eE9Ej7udxHSUfKw3jw=
 		</data>
 		<key>Modules/CanvasSVG.swiftmodule/arm64-apple-tvos-simulator.abi.json</key>
 		<data>
-		rJa+zv+dNGB3qE9lBuL9LuGxCNc=
+		dMdAqM1yPe0Ymc5O6HMJKZEyw8k=
 		</data>
 		<key>Modules/CanvasSVG.swiftmodule/arm64-apple-tvos-simulator.private.swiftinterface</key>
 		<data>
-		aAGc/Laq2aqZfgCNRPkRakFhQCQ=
+		/Znlh+q2FmaQUQw5ZT7mo68tCGM=
 		</data>
 		<key>Modules/CanvasSVG.swiftmodule/arm64-apple-tvos-simulator.swiftdoc</key>
 		<data>
-		UZcWTqFyC+cqtHgfiMkc6UfHDMk=
+		taj8VbxJCS5KG+x4i0fuFws4ACY=
 		</data>
 		<key>Modules/CanvasSVG.swiftmodule/arm64-apple-tvos-simulator.swiftinterface</key>
 		<data>
-		aAGc/Laq2aqZfgCNRPkRakFhQCQ=
+		/Znlh+q2FmaQUQw5ZT7mo68tCGM=
 		</data>
 		<key>Modules/CanvasSVG.swiftmodule/arm64-apple-tvos-simulator.swiftmodule</key>
 		<data>
-		pLvNMDJpKIrMyJpdaZOd9Hvsj+c=
+		2EvaqJfwaX6eMjsxeaZqazASVLY=
 		</data>
 		<key>Modules/module.modulemap</key>
 		<data>
@@ -59,7 +59,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			kycbD6PXRUJFLctL1VfRBqPyegoGCMK2+T5uXvfMMBY=
+			GUHefsLiln/k8v420eeCbkatc/CNbWK3hTXPzQM2Tys=
 			</data>
 		</dict>
 		<key>Headers/CanvasSVG.h</key>
@@ -73,56 +73,56 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			FiqZ2f7WKlNLBBDQoVl1MZNQMpLpUbZmDhqta5JZHmE=
+			KBF4PxSQOffp0ZINTaivU8zQ+MyXbfhSEfDT3bWy2Ys=
 			</data>
 		</dict>
 		<key>Headers/canvas_svg.h</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			I4r8Yi/CllzP9EIUReLmWVXYz4WZSf9cZIbo6BhHn54=
+			QfamDqcXKAadWd4XjxhKAZFsf3OVt7qYzmqoL8niEok=
 			</data>
 		</dict>
 		<key>Modules/CanvasSVG.swiftmodule/Project/arm64-apple-tvos-simulator.swiftsourceinfo</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			Bls9IXutZlxpncQ5nzIUUmTY/NTAXTRZZRtAj1f/t+4=
+			giWZcyITlOCWkkb50CItgSNfa2uGRfpw/TNOiXznkXA=
 			</data>
 		</dict>
 		<key>Modules/CanvasSVG.swiftmodule/arm64-apple-tvos-simulator.abi.json</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			lUsYhX7DVpRBg9FVGAo958qz2rRwD/qWxGShGNYJ9RA=
+			1gy8vv2zUw8rcDPtpXiuMq/wWSk4/wCXisc+1KlQPiE=
 			</data>
 		</dict>
 		<key>Modules/CanvasSVG.swiftmodule/arm64-apple-tvos-simulator.private.swiftinterface</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			SvYIfp+mOHnScaGySVpnHQ8E2Al01NOwfrQ5j+ireko=
+			XXCsE8nWH+NUPudW9EJLorwUwr10SvkSZkvZD8epQwk=
 			</data>
 		</dict>
 		<key>Modules/CanvasSVG.swiftmodule/arm64-apple-tvos-simulator.swiftdoc</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			wCyMlE7AuEpnq0D5aY7LYaQ7rsWC9DEyYuH0ZfWvmbc=
+			YE9yIv3l5ID1bgP2D/tDhlKCie3OrwhKsJyxrWoPoHY=
 			</data>
 		</dict>
 		<key>Modules/CanvasSVG.swiftmodule/arm64-apple-tvos-simulator.swiftinterface</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			SvYIfp+mOHnScaGySVpnHQ8E2Al01NOwfrQ5j+ireko=
+			XXCsE8nWH+NUPudW9EJLorwUwr10SvkSZkvZD8epQwk=
 			</data>
 		</dict>
 		<key>Modules/CanvasSVG.swiftmodule/arm64-apple-tvos-simulator.swiftmodule</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			Rc7zRX7s6e6BaJ9LIYXv/powBQB8BNGe/LKRnFhhfc4=
+			U4+wmBJHaswfTNsljf/xUki7Ff8mk2nnVF/YwU9Q3Ss=
 			</data>
 		</dict>
 		<key>Modules/module.modulemap</key>

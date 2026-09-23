@@ -1,8 +1,23 @@
+mod attr;
+mod dom;
+mod frame;
+mod node;
+mod smil;
+
+pub use attr::{get_attribute, set_attribute};
+pub use dom::SvgDocument;
+pub use frame::{FrameSlot, RecordedFrame};
+pub use smil::Applied;
+pub use node::{
+    append_child, create_element, create_text_node, set_text, tag_name, text, SvgElementHandle,
+};
+
 use std::io::{Read, Seek, SeekFrom};
 
 use skia_safe::svg::Dom;
 use skia_safe::FontMgr;
 
+/// One-shot rasterization for `Svg.fromSrcSync`/`fromSrc`; the live view uses `SvgDocument`.
 pub fn draw_svg_from_path(surface: &mut skia_safe::Surface, path: &str) {
     let file = std::fs::File::open(path);
     match file {

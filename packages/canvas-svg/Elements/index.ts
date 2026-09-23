@@ -2,6 +2,7 @@ export { Circle } from './Circle';
 export { G } from './G';
 export { Path } from './Path';
 export { Text } from './Text';
+export { TSpan } from './TSpan';
 export { Ellipse } from './Ellipse';
 export { Line } from './Line';
 export { Polygon } from './Polygon';

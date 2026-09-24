@@ -166,7 +166,7 @@ relocations:
   - { offset: 0xE0D9E, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative13NSCVideoFrameC5cloneACyKF', symObjAddr: 0x6EC, symBinAddr: 0x5AB4, symSize: 0x10C }
   - { offset: 0xE0E6B, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative13NSCVideoFrameC9codedRectSo6CGRectVvg', symObjAddr: 0x864, symBinAddr: 0x5C2C, symSize: 0x70 }
   - { offset: 0xE0F08, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative13NSCVideoFrameC11visibleRectSo6CGRectVvg', symObjAddr: 0x8D4, symBinAddr: 0x5C9C, symSize: 0xBC }
-  - { offset: 0xE103C, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative13NSCVideoFrameCACycfc', symObjAddr: 0x9A8, symBinAddr: 0x7FB98C, symSize: 0x2C }
+  - { offset: 0xE103C, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative13NSCVideoFrameCACycfc', symObjAddr: 0x9A8, symBinAddr: 0x7FBC20, symSize: 0x2C }
   - { offset: 0xE1095, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative13NSCVideoFrameCACycfcTo', symObjAddr: 0x9D4, symBinAddr: 0x5D58, symSize: 0x2C }
   - { offset: 0xE10F4, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative13NSCVideoFrameCfD', symObjAddr: 0xA00, symBinAddr: 0x5D84, symSize: 0x30 }
   - { offset: 0xE1117, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative13NSCVideoFrameC0cD6FormatO8rawValueAESgs6UInt32V_tcfCTf4nd_n', symObjAddr: 0xA40, symBinAddr: 0x5DC4, symSize: 0x10 }
@@ -384,7 +384,7 @@ relocations:
   - { offset: 0xE8D38, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative20NSCVideoFrameTextureC14texturePointerSivgTo', symObjAddr: 0x40, symBinAddr: 0xCD5C, symSize: 0x10 }
   - { offset: 0xE8D50, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative20NSCVideoFrameTextureC14texturePointerSivgTo', symObjAddr: 0x40, symBinAddr: 0xCD5C, symSize: 0x10 }
   - { offset: 0xE8D6C, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative20NSCVideoFrameTextureC14texturePointerSivg', symObjAddr: 0x50, symBinAddr: 0xCD6C, symSize: 0x10 }
-  - { offset: 0xE8D94, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative20NSCVideoFrameTextureCACycfc', symObjAddr: 0x60, symBinAddr: 0x7FB9B8, symSize: 0x2C }
+  - { offset: 0xE8D94, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative20NSCVideoFrameTextureCACycfc', symObjAddr: 0x60, symBinAddr: 0x7FBC4C, symSize: 0x2C }
   - { offset: 0xE8DEF, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative20NSCVideoFrameTextureCACycfcTo', symObjAddr: 0x8C, symBinAddr: 0xCD7C, symSize: 0x2C }
   - { offset: 0xE8EBE, size: 0x8, addend: 0x0, symName: '_$sSDyq_SgxcisSO_So22CVMetalTextureCacheRefaTg5', symObjAddr: 0x158, symBinAddr: 0xCE48, symSize: 0xBC }
   - { offset: 0xE903D, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative19NSCVideoFrameBridgeC11isSupported6deviceSbSi_tFZ', symObjAddr: 0x214, symBinAddr: 0xCF04, symSize: 0x74 }
@@ -554,158 +554,158 @@ relocations:
   - { offset: 0xF184A, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative25NSCCanvasRenderingContextCACycfc', symObjAddr: 0x18, symBinAddr: 0x13D3C, symSize: 0x30 }
   - { offset: 0xF1882, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative25NSCCanvasRenderingContextCACycfcTo', symObjAddr: 0x68, symBinAddr: 0x13D8C, symSize: 0x3C }
   - { offset: 0xF18C2, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative25NSCCanvasRenderingContextCfD', symObjAddr: 0xA4, symBinAddr: 0x13DC8, symSize: 0x30 }
-  - { offset: 0xF1A5B, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__x25519_ge_frombytes_vartime, symObjAddr: 0x0, symBinAddr: 0x23F334, symSize: 0x4F0 }
+  - { offset: 0xF1A5B, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__x25519_ge_frombytes_vartime, symObjAddr: 0x0, symBinAddr: 0x23F5B0, symSize: 0x4F0 }
   - { offset: 0xF1A75, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__k25519Precomp, symObjAddr: 0x3DC0, symBinAddr: 0x96DBE0, symSize: 0x0 }
   - { offset: 0xF1AC7, size: 0x8, addend: 0x0, symName: _d, symObjAddr: 0x9DC0, symBinAddr: 0x973BE0, symSize: 0x0 }
-  - { offset: 0xF1B1F, size: 0x8, addend: 0x0, symName: _fe_isnonzero, symObjAddr: 0x708, symBinAddr: 0x23FA3C, symSize: 0x78 }
+  - { offset: 0xF1B1F, size: 0x8, addend: 0x0, symName: _fe_isnonzero, symObjAddr: 0x708, symBinAddr: 0x23FCB8, symSize: 0x78 }
   - { offset: 0xF1B47, size: 0x8, addend: 0x0, symName: _fe_isnonzero.zero, symObjAddr: 0x9E10, symBinAddr: 0x973C30, symSize: 0x0 }
   - { offset: 0xF1BF3, size: 0x8, addend: 0x0, symName: _sqrtm1, symObjAddr: 0x9DE8, symBinAddr: 0x973C08, symSize: 0x0 }
   - { offset: 0xF1C09, size: 0x8, addend: 0x0, symName: _d2, symObjAddr: 0xA1F0, symBinAddr: 0x974010, symSize: 0x0 }
   - { offset: 0xF1C20, size: 0x8, addend: 0x0, symName: _Bi, symObjAddr: 0x9E30, symBinAddr: 0x973C50, symSize: 0x0 }
-  - { offset: 0xF220A, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__x25519_ge_frombytes_vartime, symObjAddr: 0x0, symBinAddr: 0x23F334, symSize: 0x4F0 }
-  - { offset: 0xF305B, size: 0x8, addend: 0x0, symName: _fe_frombytes_strict, symObjAddr: 0x3708, symBinAddr: 0x2428C4, symSize: 0xC0 }
-  - { offset: 0xF3093, size: 0x8, addend: 0x0, symName: _fe_frombytes_strict, symObjAddr: 0x3708, symBinAddr: 0x2428C4, symSize: 0xC0 }
-  - { offset: 0xF337E, size: 0x8, addend: 0x0, symName: _fe_sq_tt, symObjAddr: 0x4F0, symBinAddr: 0x23F824, symSize: 0x178 }
-  - { offset: 0xF35D3, size: 0x8, addend: 0x0, symName: _fe_mul_impl, symObjAddr: 0x37C8, symBinAddr: 0x242984, symSize: 0x210 }
-  - { offset: 0xF3852, size: 0x8, addend: 0x0, symName: _fe_tobytes, symObjAddr: 0x1D20, symBinAddr: 0x240EDC, symSize: 0x1B8 }
-  - { offset: 0xF3F66, size: 0x8, addend: 0x0, symName: _fe_carry, symObjAddr: 0x6AC, symBinAddr: 0x23F9E0, symSize: 0x5C }
-  - { offset: 0xF3F8E, size: 0x8, addend: 0x0, symName: _fe_carry, symObjAddr: 0x6AC, symBinAddr: 0x23F9E0, symSize: 0x5C }
-  - { offset: 0xF42D2, size: 0x8, addend: 0x0, symName: _fe_sub, symObjAddr: 0x668, symBinAddr: 0x23F99C, symSize: 0x44 }
-  - { offset: 0xF4302, size: 0x8, addend: 0x0, symName: _fe_sub, symObjAddr: 0x668, symBinAddr: 0x23F99C, symSize: 0x44 }
-  - { offset: 0xF450A, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__x25519_ge_scalarmult_base, symObjAddr: 0x780, symBinAddr: 0x23FAB4, symSize: 0x280 }
-  - { offset: 0xF4A39, size: 0x8, addend: 0x0, symName: _table_select, symObjAddr: 0xA00, symBinAddr: 0x23FD34, symSize: 0x224 }
-  - { offset: 0xF4F83, size: 0x8, addend: 0x0, symName: _ge_madd, symObjAddr: 0xC24, symBinAddr: 0x23FF58, symSize: 0x1B8 }
-  - { offset: 0xF53B5, size: 0x8, addend: 0x0, symName: _x25519_ge_p1p1_to_p3, symObjAddr: 0xDDC, symBinAddr: 0x240110, symSize: 0x54 }
-  - { offset: 0xF54DC, size: 0x8, addend: 0x0, symName: _ge_p2_dbl, symObjAddr: 0xE74, symBinAddr: 0x2401A8, symSize: 0x218 }
-  - { offset: 0xF59C3, size: 0x8, addend: 0x0, symName: _x25519_ge_p1p1_to_p2, symObjAddr: 0xE30, symBinAddr: 0x240164, symSize: 0x44 }
-  - { offset: 0xF5EA3, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__x25519_sc_reduce, symObjAddr: 0x108C, symBinAddr: 0x2403C0, symSize: 0x61C }
-  - { offset: 0xF687F, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__x25519_scalar_mult_generic_masked, symObjAddr: 0x16A8, symBinAddr: 0x2409DC, symSize: 0x500 }
-  - { offset: 0xF7626, size: 0x8, addend: 0x0, symName: _fe_loose_invert, symObjAddr: 0x200C, symBinAddr: 0x2411C8, symSize: 0x224 }
-  - { offset: 0xF8302, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__x25519_public_from_private_generic_masked, symObjAddr: 0x1ED8, symBinAddr: 0x241094, symSize: 0x134 }
-  - { offset: 0xF8589, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__x25519_fe_invert, symObjAddr: 0x2230, symBinAddr: 0x2413EC, symSize: 0x30 }
-  - { offset: 0xF867E, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__x25519_fe_isnegative, symObjAddr: 0x2260, symBinAddr: 0x24141C, symSize: 0x58 }
-  - { offset: 0xF86F3, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__x25519_fe_mul_ttt, symObjAddr: 0x22B8, symBinAddr: 0x241474, symSize: 0x4 }
-  - { offset: 0xF873B, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__x25519_fe_mul_ttt, symObjAddr: 0x22B8, symBinAddr: 0x241474, symSize: 0x4 }
-  - { offset: 0xF876A, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__x25519_fe_mul_ttt, symObjAddr: 0x22B8, symBinAddr: 0x241474, symSize: 0x4 }
-  - { offset: 0xF878E, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__x25519_fe_neg, symObjAddr: 0x22BC, symBinAddr: 0x241478, symSize: 0x4C }
-  - { offset: 0xF883D, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__x25519_fe_tobytes, symObjAddr: 0x2308, symBinAddr: 0x2414C4, symSize: 0x4 }
-  - { offset: 0xF8876, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__x25519_fe_tobytes, symObjAddr: 0x2308, symBinAddr: 0x2414C4, symSize: 0x4 }
-  - { offset: 0xF8A66, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__x25519_ge_double_scalarmult_vartime, symObjAddr: 0x230C, symBinAddr: 0x2414C8, symSize: 0x7F0 }
-  - { offset: 0xF9D3F, size: 0x8, addend: 0x0, symName: _slide, symObjAddr: 0x39D8, symBinAddr: 0x242B94, symSize: 0xF0 }
-  - { offset: 0xF9DAA, size: 0x8, addend: 0x0, symName: _x25519_ge_p3_to_cached, symObjAddr: 0x3AC8, symBinAddr: 0x242C84, symSize: 0x84 }
-  - { offset: 0xF9EE7, size: 0x8, addend: 0x0, symName: _x25519_ge_add, symObjAddr: 0x3B4C, symBinAddr: 0x242D08, symSize: 0x1C8 }
-  - { offset: 0xFA36B, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__x25519_sc_mask, symObjAddr: 0x2AFC, symBinAddr: 0x241CB8, symSize: 0x20 }
-  - { offset: 0xFA808, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__x25519_sc_muladd, symObjAddr: 0x2B1C, symBinAddr: 0x241CD8, symSize: 0xBEC }
-  - { offset: 0xFBC64, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__aes_nohw_encrypt, symObjAddr: 0x3E0, symBinAddr: 0x242ED0, symSize: 0x88 }
-  - { offset: 0xFBD52, size: 0x8, addend: 0x0, symName: _aes_nohw_expand_round_keys, symObjAddr: 0x468, symBinAddr: 0x242F58, symSize: 0x6C }
-  - { offset: 0xFBE4F, size: 0x8, addend: 0x0, symName: _aes_nohw_to_batch, symObjAddr: 0x4D4, symBinAddr: 0x242FC4, symSize: 0xAC }
-  - { offset: 0xFBE99, size: 0x8, addend: 0x0, symName: _aes_nohw_to_batch, symObjAddr: 0x4D4, symBinAddr: 0x242FC4, symSize: 0xAC }
-  - { offset: 0xFC0F1, size: 0x8, addend: 0x0, symName: _aes_nohw_encrypt_batch, symObjAddr: 0x580, symBinAddr: 0x243070, symSize: 0x284 }
-  - { offset: 0xFC7EA, size: 0x8, addend: 0x0, symName: _aes_nohw_from_batch, symObjAddr: 0x804, symBinAddr: 0x2432F4, symSize: 0xE4 }
-  - { offset: 0xFCAE6, size: 0x8, addend: 0x0, symName: _aes_nohw_transpose, symObjAddr: 0xAE8, symBinAddr: 0x243570, symSize: 0xA4 }
-  - { offset: 0xFCB10, size: 0x8, addend: 0x0, symName: _aes_nohw_transpose, symObjAddr: 0xAE8, symBinAddr: 0x243570, symSize: 0xA4 }
-  - { offset: 0xFCFDE, size: 0x8, addend: 0x0, symName: _aes_nohw_sub_bytes, symObjAddr: 0xB8C, symBinAddr: 0x243614, symSize: 0x22C }
-  - { offset: 0xFE905, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__aes_nohw_ctr32_encrypt_blocks, symObjAddr: 0x8E8, symBinAddr: 0x2433D8, symSize: 0x198 }
-  - { offset: 0xFED7E, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__bn_from_montgomery_in_place, symObjAddr: 0x0, symBinAddr: 0x243840, symSize: 0x140 }
-  - { offset: 0xFEF26, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__bn_from_montgomery_in_place, symObjAddr: 0x0, symBinAddr: 0x243840, symSize: 0x140 }
-  - { offset: 0xFF1CF, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__bn_neg_inv_mod_r_u64, symObjAddr: 0x0, symBinAddr: 0x243980, symSize: 0x38 }
-  - { offset: 0xFF1DD, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__bn_neg_inv_mod_r_u64, symObjAddr: 0x0, symBinAddr: 0x243980, symSize: 0x38 }
-  - { offset: 0xFF2ED, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__little_endian_bytes_from_scalar, symObjAddr: 0x0, symBinAddr: 0x2439B8, symSize: 0x34 }
-  - { offset: 0xFF2FB, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__little_endian_bytes_from_scalar, symObjAddr: 0x0, symBinAddr: 0x2439B8, symSize: 0x34 }
+  - { offset: 0xF220A, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__x25519_ge_frombytes_vartime, symObjAddr: 0x0, symBinAddr: 0x23F5B0, symSize: 0x4F0 }
+  - { offset: 0xF305B, size: 0x8, addend: 0x0, symName: _fe_frombytes_strict, symObjAddr: 0x3708, symBinAddr: 0x242B40, symSize: 0xC0 }
+  - { offset: 0xF3093, size: 0x8, addend: 0x0, symName: _fe_frombytes_strict, symObjAddr: 0x3708, symBinAddr: 0x242B40, symSize: 0xC0 }
+  - { offset: 0xF337E, size: 0x8, addend: 0x0, symName: _fe_sq_tt, symObjAddr: 0x4F0, symBinAddr: 0x23FAA0, symSize: 0x178 }
+  - { offset: 0xF35D3, size: 0x8, addend: 0x0, symName: _fe_mul_impl, symObjAddr: 0x37C8, symBinAddr: 0x242C00, symSize: 0x210 }
+  - { offset: 0xF3852, size: 0x8, addend: 0x0, symName: _fe_tobytes, symObjAddr: 0x1D20, symBinAddr: 0x241158, symSize: 0x1B8 }
+  - { offset: 0xF3F66, size: 0x8, addend: 0x0, symName: _fe_carry, symObjAddr: 0x6AC, symBinAddr: 0x23FC5C, symSize: 0x5C }
+  - { offset: 0xF3F8E, size: 0x8, addend: 0x0, symName: _fe_carry, symObjAddr: 0x6AC, symBinAddr: 0x23FC5C, symSize: 0x5C }
+  - { offset: 0xF42D2, size: 0x8, addend: 0x0, symName: _fe_sub, symObjAddr: 0x668, symBinAddr: 0x23FC18, symSize: 0x44 }
+  - { offset: 0xF4302, size: 0x8, addend: 0x0, symName: _fe_sub, symObjAddr: 0x668, symBinAddr: 0x23FC18, symSize: 0x44 }
+  - { offset: 0xF450A, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__x25519_ge_scalarmult_base, symObjAddr: 0x780, symBinAddr: 0x23FD30, symSize: 0x280 }
+  - { offset: 0xF4A39, size: 0x8, addend: 0x0, symName: _table_select, symObjAddr: 0xA00, symBinAddr: 0x23FFB0, symSize: 0x224 }
+  - { offset: 0xF4F83, size: 0x8, addend: 0x0, symName: _ge_madd, symObjAddr: 0xC24, symBinAddr: 0x2401D4, symSize: 0x1B8 }
+  - { offset: 0xF53B5, size: 0x8, addend: 0x0, symName: _x25519_ge_p1p1_to_p3, symObjAddr: 0xDDC, symBinAddr: 0x24038C, symSize: 0x54 }
+  - { offset: 0xF54DC, size: 0x8, addend: 0x0, symName: _ge_p2_dbl, symObjAddr: 0xE74, symBinAddr: 0x240424, symSize: 0x218 }
+  - { offset: 0xF59C3, size: 0x8, addend: 0x0, symName: _x25519_ge_p1p1_to_p2, symObjAddr: 0xE30, symBinAddr: 0x2403E0, symSize: 0x44 }
+  - { offset: 0xF5EA3, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__x25519_sc_reduce, symObjAddr: 0x108C, symBinAddr: 0x24063C, symSize: 0x61C }
+  - { offset: 0xF687F, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__x25519_scalar_mult_generic_masked, symObjAddr: 0x16A8, symBinAddr: 0x240C58, symSize: 0x500 }
+  - { offset: 0xF7626, size: 0x8, addend: 0x0, symName: _fe_loose_invert, symObjAddr: 0x200C, symBinAddr: 0x241444, symSize: 0x224 }
+  - { offset: 0xF8302, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__x25519_public_from_private_generic_masked, symObjAddr: 0x1ED8, symBinAddr: 0x241310, symSize: 0x134 }
+  - { offset: 0xF8589, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__x25519_fe_invert, symObjAddr: 0x2230, symBinAddr: 0x241668, symSize: 0x30 }
+  - { offset: 0xF867E, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__x25519_fe_isnegative, symObjAddr: 0x2260, symBinAddr: 0x241698, symSize: 0x58 }
+  - { offset: 0xF86F3, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__x25519_fe_mul_ttt, symObjAddr: 0x22B8, symBinAddr: 0x2416F0, symSize: 0x4 }
+  - { offset: 0xF873B, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__x25519_fe_mul_ttt, symObjAddr: 0x22B8, symBinAddr: 0x2416F0, symSize: 0x4 }
+  - { offset: 0xF876A, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__x25519_fe_mul_ttt, symObjAddr: 0x22B8, symBinAddr: 0x2416F0, symSize: 0x4 }
+  - { offset: 0xF878E, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__x25519_fe_neg, symObjAddr: 0x22BC, symBinAddr: 0x2416F4, symSize: 0x4C }
+  - { offset: 0xF883D, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__x25519_fe_tobytes, symObjAddr: 0x2308, symBinAddr: 0x241740, symSize: 0x4 }
+  - { offset: 0xF8876, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__x25519_fe_tobytes, symObjAddr: 0x2308, symBinAddr: 0x241740, symSize: 0x4 }
+  - { offset: 0xF8A66, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__x25519_ge_double_scalarmult_vartime, symObjAddr: 0x230C, symBinAddr: 0x241744, symSize: 0x7F0 }
+  - { offset: 0xF9D3F, size: 0x8, addend: 0x0, symName: _slide, symObjAddr: 0x39D8, symBinAddr: 0x242E10, symSize: 0xF0 }
+  - { offset: 0xF9DAA, size: 0x8, addend: 0x0, symName: _x25519_ge_p3_to_cached, symObjAddr: 0x3AC8, symBinAddr: 0x242F00, symSize: 0x84 }
+  - { offset: 0xF9EE7, size: 0x8, addend: 0x0, symName: _x25519_ge_add, symObjAddr: 0x3B4C, symBinAddr: 0x242F84, symSize: 0x1C8 }
+  - { offset: 0xFA36B, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__x25519_sc_mask, symObjAddr: 0x2AFC, symBinAddr: 0x241F34, symSize: 0x20 }
+  - { offset: 0xFA808, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__x25519_sc_muladd, symObjAddr: 0x2B1C, symBinAddr: 0x241F54, symSize: 0xBEC }
+  - { offset: 0xFBC64, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__aes_nohw_encrypt, symObjAddr: 0x3E0, symBinAddr: 0x24314C, symSize: 0x88 }
+  - { offset: 0xFBD52, size: 0x8, addend: 0x0, symName: _aes_nohw_expand_round_keys, symObjAddr: 0x468, symBinAddr: 0x2431D4, symSize: 0x6C }
+  - { offset: 0xFBE4F, size: 0x8, addend: 0x0, symName: _aes_nohw_to_batch, symObjAddr: 0x4D4, symBinAddr: 0x243240, symSize: 0xAC }
+  - { offset: 0xFBE99, size: 0x8, addend: 0x0, symName: _aes_nohw_to_batch, symObjAddr: 0x4D4, symBinAddr: 0x243240, symSize: 0xAC }
+  - { offset: 0xFC0F1, size: 0x8, addend: 0x0, symName: _aes_nohw_encrypt_batch, symObjAddr: 0x580, symBinAddr: 0x2432EC, symSize: 0x284 }
+  - { offset: 0xFC7EA, size: 0x8, addend: 0x0, symName: _aes_nohw_from_batch, symObjAddr: 0x804, symBinAddr: 0x243570, symSize: 0xE4 }
+  - { offset: 0xFCAE6, size: 0x8, addend: 0x0, symName: _aes_nohw_transpose, symObjAddr: 0xAE8, symBinAddr: 0x2437EC, symSize: 0xA4 }
+  - { offset: 0xFCB10, size: 0x8, addend: 0x0, symName: _aes_nohw_transpose, symObjAddr: 0xAE8, symBinAddr: 0x2437EC, symSize: 0xA4 }
+  - { offset: 0xFCFDE, size: 0x8, addend: 0x0, symName: _aes_nohw_sub_bytes, symObjAddr: 0xB8C, symBinAddr: 0x243890, symSize: 0x22C }
+  - { offset: 0xFE905, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__aes_nohw_ctr32_encrypt_blocks, symObjAddr: 0x8E8, symBinAddr: 0x243654, symSize: 0x198 }
+  - { offset: 0xFED7E, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__bn_from_montgomery_in_place, symObjAddr: 0x0, symBinAddr: 0x243ABC, symSize: 0x140 }
+  - { offset: 0xFEF26, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__bn_from_montgomery_in_place, symObjAddr: 0x0, symBinAddr: 0x243ABC, symSize: 0x140 }
+  - { offset: 0xFF1CF, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__bn_neg_inv_mod_r_u64, symObjAddr: 0x0, symBinAddr: 0x243BFC, symSize: 0x38 }
+  - { offset: 0xFF1DD, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__bn_neg_inv_mod_r_u64, symObjAddr: 0x0, symBinAddr: 0x243BFC, symSize: 0x38 }
+  - { offset: 0xFF2ED, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__little_endian_bytes_from_scalar, symObjAddr: 0x0, symBinAddr: 0x243C34, symSize: 0x34 }
+  - { offset: 0xFF2FB, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__little_endian_bytes_from_scalar, symObjAddr: 0x0, symBinAddr: 0x243C34, symSize: 0x34 }
   - { offset: 0xFF414, size: 0x8, addend: 0x0, symName: _Q_PLUS_1_SHR_1, symObjAddr: 0xFE8, symBinAddr: 0x9740A8, symSize: 0x0 }
   - { offset: 0xFF475, size: 0x8, addend: 0x0, symName: _Q_N0, symObjAddr: 0x1018, symBinAddr: 0x9740D8, symSize: 0x0 }
   - { offset: 0xFF4A7, size: 0x8, addend: 0x0, symName: _Q, symObjAddr: 0xF78, symBinAddr: 0x974038, symSize: 0x0 }
   - { offset: 0xFF4C9, size: 0x8, addend: 0x0, symName: _N, symObjAddr: 0xFA8, symBinAddr: 0x974068, symSize: 0x0 }
   - { offset: 0xFF4DF, size: 0x8, addend: 0x0, symName: _N_N0, symObjAddr: 0xFD8, symBinAddr: 0x974098, symSize: 0x0 }
   - { offset: 0xFF507, size: 0x8, addend: 0x0, symName: _ONE, symObjAddr: 0x1028, symBinAddr: 0x9740E8, symSize: 0x0 }
-  - { offset: 0xFF596, size: 0x8, addend: 0x0, symName: _elem_div_by_2, symObjAddr: 0x14, symBinAddr: 0x2439EC, symSize: 0x108 }
-  - { offset: 0xFF9AA, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__p384_elem_mul_mont, symObjAddr: 0x11C, symBinAddr: 0x243AF4, symSize: 0x18 }
-  - { offset: 0xFF9EE, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__p384_elem_mul_mont, symObjAddr: 0x11C, symBinAddr: 0x243AF4, symSize: 0x18 }
-  - { offset: 0xFFA1B, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__p384_elem_mul_mont, symObjAddr: 0x11C, symBinAddr: 0x243AF4, symSize: 0x18 }
-  - { offset: 0xFFBAF, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__p384_elem_neg, symObjAddr: 0x134, symBinAddr: 0x243B0C, symSize: 0x9C }
-  - { offset: 0xFFD45, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__p384_scalar_mul_mont, symObjAddr: 0x1D0, symBinAddr: 0x243BA8, symSize: 0x18 }
-  - { offset: 0xFFD89, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__p384_scalar_mul_mont, symObjAddr: 0x1D0, symBinAddr: 0x243BA8, symSize: 0x18 }
-  - { offset: 0xFFE39, size: 0x8, addend: 0x0, symName: _nistz384_point_double, symObjAddr: 0x268, symBinAddr: 0x243BC0, symSize: 0x26C }
-  - { offset: 0x100997, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__p384_point_add, symObjAddr: 0x4D4, symBinAddr: 0x243E2C, symSize: 0xAC }
-  - { offset: 0x100CFA, size: 0x8, addend: 0x0, symName: _nistz384_point_add, symObjAddr: 0x580, symBinAddr: 0x243ED8, symSize: 0x540 }
-  - { offset: 0x102317, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__p384_point_mul, symObjAddr: 0xAC0, symBinAddr: 0x244418, symSize: 0x28C }
-  - { offset: 0x102947, size: 0x8, addend: 0x0, symName: _p384_point_select_w5, symObjAddr: 0xD4C, symBinAddr: 0x2446A4, symSize: 0x118 }
-  - { offset: 0x102BC5, size: 0x8, addend: 0x0, symName: _add_precomputed_w5, symObjAddr: 0xE64, symBinAddr: 0x2447BC, symSize: 0x114 }
-  - { offset: 0x102DF3, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__LIMB_is_zero, symObjAddr: 0x0, symBinAddr: 0x2448D0, symSize: 0xC }
-  - { offset: 0x102EAB, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__LIMB_is_zero, symObjAddr: 0x0, symBinAddr: 0x2448D0, symSize: 0xC }
-  - { offset: 0x102ECD, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__LIMB_is_zero, symObjAddr: 0x0, symBinAddr: 0x2448D0, symSize: 0xC }
-  - { offset: 0x102EEA, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__LIMB_is_zero, symObjAddr: 0x0, symBinAddr: 0x2448D0, symSize: 0xC }
-  - { offset: 0x102F28, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__LIMBS_are_zero, symObjAddr: 0xC, symBinAddr: 0x2448DC, symSize: 0x2C }
-  - { offset: 0x102F72, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__LIMBS_are_zero, symObjAddr: 0xC, symBinAddr: 0x2448DC, symSize: 0x2C }
-  - { offset: 0x10301F, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__LIMBS_equal, symObjAddr: 0x38, symBinAddr: 0x244908, symSize: 0x3C }
-  - { offset: 0x103079, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__LIMBS_equal, symObjAddr: 0x38, symBinAddr: 0x244908, symSize: 0x3C }
-  - { offset: 0x1031A0, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__LIMBS_less_than, symObjAddr: 0x74, symBinAddr: 0x244944, symSize: 0x50 }
-  - { offset: 0x10327D, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__LIMBS_reduce_once, symObjAddr: 0xC4, symBinAddr: 0x244994, symSize: 0x8C }
-  - { offset: 0x10351A, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__LIMBS_add_mod, symObjAddr: 0x150, symBinAddr: 0x244A20, symSize: 0xF4 }
-  - { offset: 0x1037BE, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__LIMBS_sub_mod, symObjAddr: 0x244, symBinAddr: 0x244B14, symSize: 0xB0 }
-  - { offset: 0x103842, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__LIMBS_sub_mod, symObjAddr: 0x244, symBinAddr: 0x244B14, symSize: 0xB0 }
-  - { offset: 0x1039BB, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__LIMBS_shl_mod, symObjAddr: 0x2F4, symBinAddr: 0x244BC4, symSize: 0xD0 }
-  - { offset: 0x103C33, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__LIMBS_select_512_32, symObjAddr: 0x3C4, symBinAddr: 0x244C94, symSize: 0xB0 }
-  - { offset: 0x103DD6, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__LIMBS_window5_split_window, symObjAddr: 0x474, symBinAddr: 0x244D44, symSize: 0x18 }
-  - { offset: 0x103E3D, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__LIMBS_window5_unsplit_window, symObjAddr: 0x48C, symBinAddr: 0x244D5C, symSize: 0xC }
-  - { offset: 0x103E76, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__LIMB_shr, symObjAddr: 0x498, symBinAddr: 0x244D68, symSize: 0x8 }
-  - { offset: 0x103EFA, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__limbs_mul_add_limb, symObjAddr: 0x4A0, symBinAddr: 0x244D70, symSize: 0x3C }
-  - { offset: 0x1040C1, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__CRYPTO_memcmp, symObjAddr: 0x0, symBinAddr: 0x244DAC, symSize: 0x30 }
-  - { offset: 0x1040CF, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__CRYPTO_memcmp, symObjAddr: 0x0, symBinAddr: 0x244DAC, symSize: 0x30 }
-  - { offset: 0x104149, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__CRYPTO_memcmp, symObjAddr: 0x0, symBinAddr: 0x244DAC, symSize: 0x30 }
-  - { offset: 0x1041D5, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__p256_point_mul, symObjAddr: 0x0, symBinAddr: 0x244DDC, symSize: 0x348 }
+  - { offset: 0xFF596, size: 0x8, addend: 0x0, symName: _elem_div_by_2, symObjAddr: 0x14, symBinAddr: 0x243C68, symSize: 0x108 }
+  - { offset: 0xFF9AA, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__p384_elem_mul_mont, symObjAddr: 0x11C, symBinAddr: 0x243D70, symSize: 0x18 }
+  - { offset: 0xFF9EE, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__p384_elem_mul_mont, symObjAddr: 0x11C, symBinAddr: 0x243D70, symSize: 0x18 }
+  - { offset: 0xFFA1B, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__p384_elem_mul_mont, symObjAddr: 0x11C, symBinAddr: 0x243D70, symSize: 0x18 }
+  - { offset: 0xFFBAF, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__p384_elem_neg, symObjAddr: 0x134, symBinAddr: 0x243D88, symSize: 0x9C }
+  - { offset: 0xFFD45, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__p384_scalar_mul_mont, symObjAddr: 0x1D0, symBinAddr: 0x243E24, symSize: 0x18 }
+  - { offset: 0xFFD89, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__p384_scalar_mul_mont, symObjAddr: 0x1D0, symBinAddr: 0x243E24, symSize: 0x18 }
+  - { offset: 0xFFE39, size: 0x8, addend: 0x0, symName: _nistz384_point_double, symObjAddr: 0x268, symBinAddr: 0x243E3C, symSize: 0x26C }
+  - { offset: 0x100997, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__p384_point_add, symObjAddr: 0x4D4, symBinAddr: 0x2440A8, symSize: 0xAC }
+  - { offset: 0x100CFA, size: 0x8, addend: 0x0, symName: _nistz384_point_add, symObjAddr: 0x580, symBinAddr: 0x244154, symSize: 0x540 }
+  - { offset: 0x102317, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__p384_point_mul, symObjAddr: 0xAC0, symBinAddr: 0x244694, symSize: 0x28C }
+  - { offset: 0x102947, size: 0x8, addend: 0x0, symName: _p384_point_select_w5, symObjAddr: 0xD4C, symBinAddr: 0x244920, symSize: 0x118 }
+  - { offset: 0x102BC5, size: 0x8, addend: 0x0, symName: _add_precomputed_w5, symObjAddr: 0xE64, symBinAddr: 0x244A38, symSize: 0x114 }
+  - { offset: 0x102DF3, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__LIMB_is_zero, symObjAddr: 0x0, symBinAddr: 0x244B4C, symSize: 0xC }
+  - { offset: 0x102EAB, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__LIMB_is_zero, symObjAddr: 0x0, symBinAddr: 0x244B4C, symSize: 0xC }
+  - { offset: 0x102ECD, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__LIMB_is_zero, symObjAddr: 0x0, symBinAddr: 0x244B4C, symSize: 0xC }
+  - { offset: 0x102EEA, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__LIMB_is_zero, symObjAddr: 0x0, symBinAddr: 0x244B4C, symSize: 0xC }
+  - { offset: 0x102F28, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__LIMBS_are_zero, symObjAddr: 0xC, symBinAddr: 0x244B58, symSize: 0x2C }
+  - { offset: 0x102F72, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__LIMBS_are_zero, symObjAddr: 0xC, symBinAddr: 0x244B58, symSize: 0x2C }
+  - { offset: 0x10301F, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__LIMBS_equal, symObjAddr: 0x38, symBinAddr: 0x244B84, symSize: 0x3C }
+  - { offset: 0x103079, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__LIMBS_equal, symObjAddr: 0x38, symBinAddr: 0x244B84, symSize: 0x3C }
+  - { offset: 0x1031A0, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__LIMBS_less_than, symObjAddr: 0x74, symBinAddr: 0x244BC0, symSize: 0x50 }
+  - { offset: 0x10327D, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__LIMBS_reduce_once, symObjAddr: 0xC4, symBinAddr: 0x244C10, symSize: 0x8C }
+  - { offset: 0x10351A, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__LIMBS_add_mod, symObjAddr: 0x150, symBinAddr: 0x244C9C, symSize: 0xF4 }
+  - { offset: 0x1037BE, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__LIMBS_sub_mod, symObjAddr: 0x244, symBinAddr: 0x244D90, symSize: 0xB0 }
+  - { offset: 0x103842, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__LIMBS_sub_mod, symObjAddr: 0x244, symBinAddr: 0x244D90, symSize: 0xB0 }
+  - { offset: 0x1039BB, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__LIMBS_shl_mod, symObjAddr: 0x2F4, symBinAddr: 0x244E40, symSize: 0xD0 }
+  - { offset: 0x103C33, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__LIMBS_select_512_32, symObjAddr: 0x3C4, symBinAddr: 0x244F10, symSize: 0xB0 }
+  - { offset: 0x103DD6, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__LIMBS_window5_split_window, symObjAddr: 0x474, symBinAddr: 0x244FC0, symSize: 0x18 }
+  - { offset: 0x103E3D, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__LIMBS_window5_unsplit_window, symObjAddr: 0x48C, symBinAddr: 0x244FD8, symSize: 0xC }
+  - { offset: 0x103E76, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__LIMB_shr, symObjAddr: 0x498, symBinAddr: 0x244FE4, symSize: 0x8 }
+  - { offset: 0x103EFA, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__limbs_mul_add_limb, symObjAddr: 0x4A0, symBinAddr: 0x244FEC, symSize: 0x3C }
+  - { offset: 0x1040C1, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__CRYPTO_memcmp, symObjAddr: 0x0, symBinAddr: 0x245028, symSize: 0x30 }
+  - { offset: 0x1040CF, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__CRYPTO_memcmp, symObjAddr: 0x0, symBinAddr: 0x245028, symSize: 0x30 }
+  - { offset: 0x104149, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__CRYPTO_memcmp, symObjAddr: 0x0, symBinAddr: 0x245028, symSize: 0x30 }
+  - { offset: 0x1041D5, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__p256_point_mul, symObjAddr: 0x0, symBinAddr: 0x245058, symSize: 0x348 }
   - { offset: 0x104225, size: 0x8, addend: 0x0, symName: _ecp_nistz256_precomputed, symObjAddr: 0x1000, symBinAddr: 0x975000, symSize: 0x0 }
   - { offset: 0x1042A9, size: 0x8, addend: 0x0, symName: _ONE_MONT, symObjAddr: 0x26000, symBinAddr: 0x99A000, symSize: 0x0 }
-  - { offset: 0x10450F, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__p256_point_mul, symObjAddr: 0x0, symBinAddr: 0x244DDC, symSize: 0x348 }
-  - { offset: 0x104DEE, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__p256_point_mul_base, symObjAddr: 0x348, symBinAddr: 0x245124, symSize: 0x224 }
-  - { offset: 0x1052A7, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__p256_point_mul_base_vartime, symObjAddr: 0x56C, symBinAddr: 0x245348, symSize: 0x1AC }
-  - { offset: 0x1056B4, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__ChaCha20_ctr32_nohw, symObjAddr: 0x0, symBinAddr: 0x245500, symSize: 0x380 }
-  - { offset: 0x1056CA, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__ChaCha20_ctr32_neon, symObjAddr: 0x380, symBinAddr: 0x245880, symSize: 0x6C0 }
-  - { offset: 0x1056E0, size: 0x8, addend: 0x0, symName: ChaCha20_512_neon, symObjAddr: 0xA40, symBinAddr: 0x245F40, symSize: 0x1138 }
-  - { offset: 0x105716, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__chacha20_poly1305_seal, symObjAddr: 0x140, symBinAddr: 0x2471C0, symSize: 0x1180 }
-  - { offset: 0x10572C, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__chacha20_poly1305_open, symObjAddr: 0x12C0, symBinAddr: 0x248340, symSize: 0x1410 }
-  - { offset: 0x105762, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__aes_hw_set_encrypt_key, symObjAddr: 0x0, symBinAddr: 0x249760, symSize: 0x1A0 }
-  - { offset: 0x105778, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__aes_hw_ctr32_encrypt_blocks, symObjAddr: 0x1A0, symBinAddr: 0x249900, symSize: 0x288 }
-  - { offset: 0x1057AE, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__aes_gcm_enc_kernel, symObjAddr: 0x0, symBinAddr: 0x249B90, symSize: 0xB90 }
-  - { offset: 0x1057C4, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__aes_gcm_dec_kernel, symObjAddr: 0xB90, symBinAddr: 0x24A720, symSize: 0xB98 }
-  - { offset: 0x1057FA, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__gcm_init_neon, symObjAddr: 0x0, symBinAddr: 0x24B2C0, symSize: 0x50 }
-  - { offset: 0x105810, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__gcm_gmult_neon, symObjAddr: 0x50, symBinAddr: 0x24B310, symSize: 0x30 }
-  - { offset: 0x105826, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__gcm_ghash_neon, symObjAddr: 0x80, symBinAddr: 0x24B340, symSize: 0x284 }
-  - { offset: 0x10585C, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__gcm_init_clmul, symObjAddr: 0x0, symBinAddr: 0x24B5D0, symSize: 0x130 }
-  - { offset: 0x105872, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__gcm_gmult_clmul, symObjAddr: 0x130, symBinAddr: 0x24B700, symSize: 0x9C }
-  - { offset: 0x1058A8, size: 0x8, addend: 0x0, symName: _vpaes_encrypt_preheat, symObjAddr: 0x0, symBinAddr: 0x24B7A0, symSize: 0x20 }
-  - { offset: 0x1058BE, size: 0x8, addend: 0x0, symName: _vpaes_encrypt_core, symObjAddr: 0x20, symBinAddr: 0x24B7C0, symSize: 0xD0 }
-  - { offset: 0x1058D4, size: 0x8, addend: 0x0, symName: _vpaes_encrypt_2x, symObjAddr: 0xF0, symBinAddr: 0x24B890, symSize: 0x170 }
-  - { offset: 0x1058EA, size: 0x8, addend: 0x0, symName: _vpaes_key_preheat, symObjAddr: 0x260, symBinAddr: 0x24BA00, symSize: 0x50 }
-  - { offset: 0x105900, size: 0x8, addend: 0x0, symName: _vpaes_schedule_core, symObjAddr: 0x2B0, symBinAddr: 0x24BA50, symSize: 0x140 }
-  - { offset: 0x105916, size: 0x8, addend: 0x0, symName: _vpaes_schedule_192_smear, symObjAddr: 0x3F0, symBinAddr: 0x24BB90, symSize: 0x30 }
-  - { offset: 0x10592C, size: 0x8, addend: 0x0, symName: _vpaes_schedule_round, symObjAddr: 0x420, symBinAddr: 0x24BBC0, symSize: 0x18 }
-  - { offset: 0x105942, size: 0x8, addend: 0x0, symName: _vpaes_schedule_low_round, symObjAddr: 0x438, symBinAddr: 0x24BBD8, symSize: 0x68 }
-  - { offset: 0x105958, size: 0x8, addend: 0x0, symName: _vpaes_schedule_transform, symObjAddr: 0x4A0, symBinAddr: 0x24BC40, symSize: 0x20 }
-  - { offset: 0x10596E, size: 0x8, addend: 0x0, symName: _vpaes_schedule_mangle, symObjAddr: 0x4C0, symBinAddr: 0x24BC60, symSize: 0x40 }
-  - { offset: 0x105984, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__vpaes_set_encrypt_key, symObjAddr: 0x500, symBinAddr: 0x24BCA0, symSize: 0x40 }
-  - { offset: 0x10599A, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__vpaes_ctr32_encrypt_blocks, symObjAddr: 0x540, symBinAddr: 0x24BCE0, symSize: 0xC0 }
-  - { offset: 0x1059D0, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__bn_mul_mont_nohw, symObjAddr: 0x0, symBinAddr: 0x24BDA0, symSize: 0x240 }
-  - { offset: 0x1059E6, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__bn_sqr8x_mont, symObjAddr: 0x240, symBinAddr: 0x24BFE0, symSize: 0x9E0 }
-  - { offset: 0x1059FC, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__bn_mul4x_mont, symObjAddr: 0xC20, symBinAddr: 0x24C9C0, symSize: 0x650 }
-  - { offset: 0x105A32, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__p256_mul_mont, symObjAddr: 0x0, symBinAddr: 0x24D020, symSize: 0x40 }
-  - { offset: 0x105A48, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__p256_sqr_mont, symObjAddr: 0x40, symBinAddr: 0x24D060, symSize: 0x40 }
-  - { offset: 0x105A5E, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__ecp_nistz256_neg, symObjAddr: 0x80, symBinAddr: 0x24D0A0, symSize: 0x40 }
-  - { offset: 0x105A74, size: 0x8, addend: 0x0, symName: __ecp_nistz256_mul_mont, symObjAddr: 0xC0, symBinAddr: 0x24D0E0, symSize: 0x1E0 }
-  - { offset: 0x105A8A, size: 0x8, addend: 0x0, symName: __ecp_nistz256_sqr_mont, symObjAddr: 0x2A0, symBinAddr: 0x24D2C0, symSize: 0x170 }
-  - { offset: 0x105AA0, size: 0x8, addend: 0x0, symName: __ecp_nistz256_add_to, symObjAddr: 0x410, symBinAddr: 0x24D430, symSize: 0x50 }
-  - { offset: 0x105AB6, size: 0x8, addend: 0x0, symName: __ecp_nistz256_sub_from, symObjAddr: 0x460, symBinAddr: 0x24D480, symSize: 0x50 }
-  - { offset: 0x105ACC, size: 0x8, addend: 0x0, symName: __ecp_nistz256_sub_morf, symObjAddr: 0x4B0, symBinAddr: 0x24D4D0, symSize: 0x50 }
-  - { offset: 0x105AE2, size: 0x8, addend: 0x0, symName: __ecp_nistz256_div_by_2, symObjAddr: 0x500, symBinAddr: 0x24D520, symSize: 0x60 }
-  - { offset: 0x105AF8, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__p256_point_double, symObjAddr: 0x560, symBinAddr: 0x24D580, symSize: 0x1E0 }
-  - { offset: 0x105B0E, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__p256_point_add, symObjAddr: 0x740, symBinAddr: 0x24D760, symSize: 0x360 }
-  - { offset: 0x105B24, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__p256_point_add_affine, symObjAddr: 0xAA0, symBinAddr: 0x24DAC0, symSize: 0x2D0 }
-  - { offset: 0x105B3A, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__p256_scalar_mul_mont, symObjAddr: 0xD70, symBinAddr: 0x24DD90, symSize: 0x2B0 }
-  - { offset: 0x105B50, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__p256_scalar_sqr_rep_mont, symObjAddr: 0x1020, symBinAddr: 0x24E040, symSize: 0x250 }
-  - { offset: 0x105B66, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__ecp_nistz256_select_w5, symObjAddr: 0x1270, symBinAddr: 0x24E290, symSize: 0x60 }
-  - { offset: 0x105B7C, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__ecp_nistz256_select_w7, symObjAddr: 0x12D0, symBinAddr: 0x24E2F0, symSize: 0x44 }
-  - { offset: 0x105BB2, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__sha512_block_data_order_nohw, symObjAddr: 0x0, symBinAddr: 0x24E340, symSize: 0xE40 }
-  - { offset: 0x105BC8, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__sha512_block_data_order_hw, symObjAddr: 0xE40, symBinAddr: 0x24F180, symSize: 0x7E0 }
-  - { offset: 0x105BFE, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__sha256_block_data_order_nohw, symObjAddr: 0x0, symBinAddr: 0x24F980, symSize: 0xE40 }
-  - { offset: 0x105C14, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__sha256_block_data_order_hw, symObjAddr: 0xE40, symBinAddr: 0x2507C0, symSize: 0x1F0 }
+  - { offset: 0x10450F, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__p256_point_mul, symObjAddr: 0x0, symBinAddr: 0x245058, symSize: 0x348 }
+  - { offset: 0x104DEE, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__p256_point_mul_base, symObjAddr: 0x348, symBinAddr: 0x2453A0, symSize: 0x224 }
+  - { offset: 0x1052A7, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__p256_point_mul_base_vartime, symObjAddr: 0x56C, symBinAddr: 0x2455C4, symSize: 0x1AC }
+  - { offset: 0x1056B4, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__ChaCha20_ctr32_nohw, symObjAddr: 0x0, symBinAddr: 0x245780, symSize: 0x380 }
+  - { offset: 0x1056CA, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__ChaCha20_ctr32_neon, symObjAddr: 0x380, symBinAddr: 0x245B00, symSize: 0x6C0 }
+  - { offset: 0x1056E0, size: 0x8, addend: 0x0, symName: ChaCha20_512_neon, symObjAddr: 0xA40, symBinAddr: 0x2461C0, symSize: 0x1138 }
+  - { offset: 0x105716, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__chacha20_poly1305_seal, symObjAddr: 0x140, symBinAddr: 0x247440, symSize: 0x1180 }
+  - { offset: 0x10572C, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__chacha20_poly1305_open, symObjAddr: 0x12C0, symBinAddr: 0x2485C0, symSize: 0x1410 }
+  - { offset: 0x105762, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__aes_hw_set_encrypt_key, symObjAddr: 0x0, symBinAddr: 0x2499E0, symSize: 0x1A0 }
+  - { offset: 0x105778, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__aes_hw_ctr32_encrypt_blocks, symObjAddr: 0x1A0, symBinAddr: 0x249B80, symSize: 0x288 }
+  - { offset: 0x1057AE, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__aes_gcm_enc_kernel, symObjAddr: 0x0, symBinAddr: 0x249E10, symSize: 0xB90 }
+  - { offset: 0x1057C4, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__aes_gcm_dec_kernel, symObjAddr: 0xB90, symBinAddr: 0x24A9A0, symSize: 0xB98 }
+  - { offset: 0x1057FA, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__gcm_init_neon, symObjAddr: 0x0, symBinAddr: 0x24B540, symSize: 0x50 }
+  - { offset: 0x105810, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__gcm_gmult_neon, symObjAddr: 0x50, symBinAddr: 0x24B590, symSize: 0x30 }
+  - { offset: 0x105826, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__gcm_ghash_neon, symObjAddr: 0x80, symBinAddr: 0x24B5C0, symSize: 0x284 }
+  - { offset: 0x10585C, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__gcm_init_clmul, symObjAddr: 0x0, symBinAddr: 0x24B850, symSize: 0x130 }
+  - { offset: 0x105872, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__gcm_gmult_clmul, symObjAddr: 0x130, symBinAddr: 0x24B980, symSize: 0x9C }
+  - { offset: 0x1058A8, size: 0x8, addend: 0x0, symName: _vpaes_encrypt_preheat, symObjAddr: 0x0, symBinAddr: 0x24BA20, symSize: 0x20 }
+  - { offset: 0x1058BE, size: 0x8, addend: 0x0, symName: _vpaes_encrypt_core, symObjAddr: 0x20, symBinAddr: 0x24BA40, symSize: 0xD0 }
+  - { offset: 0x1058D4, size: 0x8, addend: 0x0, symName: _vpaes_encrypt_2x, symObjAddr: 0xF0, symBinAddr: 0x24BB10, symSize: 0x170 }
+  - { offset: 0x1058EA, size: 0x8, addend: 0x0, symName: _vpaes_key_preheat, symObjAddr: 0x260, symBinAddr: 0x24BC80, symSize: 0x50 }
+  - { offset: 0x105900, size: 0x8, addend: 0x0, symName: _vpaes_schedule_core, symObjAddr: 0x2B0, symBinAddr: 0x24BCD0, symSize: 0x140 }
+  - { offset: 0x105916, size: 0x8, addend: 0x0, symName: _vpaes_schedule_192_smear, symObjAddr: 0x3F0, symBinAddr: 0x24BE10, symSize: 0x30 }
+  - { offset: 0x10592C, size: 0x8, addend: 0x0, symName: _vpaes_schedule_round, symObjAddr: 0x420, symBinAddr: 0x24BE40, symSize: 0x18 }
+  - { offset: 0x105942, size: 0x8, addend: 0x0, symName: _vpaes_schedule_low_round, symObjAddr: 0x438, symBinAddr: 0x24BE58, symSize: 0x68 }
+  - { offset: 0x105958, size: 0x8, addend: 0x0, symName: _vpaes_schedule_transform, symObjAddr: 0x4A0, symBinAddr: 0x24BEC0, symSize: 0x20 }
+  - { offset: 0x10596E, size: 0x8, addend: 0x0, symName: _vpaes_schedule_mangle, symObjAddr: 0x4C0, symBinAddr: 0x24BEE0, symSize: 0x40 }
+  - { offset: 0x105984, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__vpaes_set_encrypt_key, symObjAddr: 0x500, symBinAddr: 0x24BF20, symSize: 0x40 }
+  - { offset: 0x10599A, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__vpaes_ctr32_encrypt_blocks, symObjAddr: 0x540, symBinAddr: 0x24BF60, symSize: 0xC0 }
+  - { offset: 0x1059D0, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__bn_mul_mont_nohw, symObjAddr: 0x0, symBinAddr: 0x24C020, symSize: 0x240 }
+  - { offset: 0x1059E6, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__bn_sqr8x_mont, symObjAddr: 0x240, symBinAddr: 0x24C260, symSize: 0x9E0 }
+  - { offset: 0x1059FC, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__bn_mul4x_mont, symObjAddr: 0xC20, symBinAddr: 0x24CC40, symSize: 0x650 }
+  - { offset: 0x105A32, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__p256_mul_mont, symObjAddr: 0x0, symBinAddr: 0x24D2A0, symSize: 0x40 }
+  - { offset: 0x105A48, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__p256_sqr_mont, symObjAddr: 0x40, symBinAddr: 0x24D2E0, symSize: 0x40 }
+  - { offset: 0x105A5E, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__ecp_nistz256_neg, symObjAddr: 0x80, symBinAddr: 0x24D320, symSize: 0x40 }
+  - { offset: 0x105A74, size: 0x8, addend: 0x0, symName: __ecp_nistz256_mul_mont, symObjAddr: 0xC0, symBinAddr: 0x24D360, symSize: 0x1E0 }
+  - { offset: 0x105A8A, size: 0x8, addend: 0x0, symName: __ecp_nistz256_sqr_mont, symObjAddr: 0x2A0, symBinAddr: 0x24D540, symSize: 0x170 }
+  - { offset: 0x105AA0, size: 0x8, addend: 0x0, symName: __ecp_nistz256_add_to, symObjAddr: 0x410, symBinAddr: 0x24D6B0, symSize: 0x50 }
+  - { offset: 0x105AB6, size: 0x8, addend: 0x0, symName: __ecp_nistz256_sub_from, symObjAddr: 0x460, symBinAddr: 0x24D700, symSize: 0x50 }
+  - { offset: 0x105ACC, size: 0x8, addend: 0x0, symName: __ecp_nistz256_sub_morf, symObjAddr: 0x4B0, symBinAddr: 0x24D750, symSize: 0x50 }
+  - { offset: 0x105AE2, size: 0x8, addend: 0x0, symName: __ecp_nistz256_div_by_2, symObjAddr: 0x500, symBinAddr: 0x24D7A0, symSize: 0x60 }
+  - { offset: 0x105AF8, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__p256_point_double, symObjAddr: 0x560, symBinAddr: 0x24D800, symSize: 0x1E0 }
+  - { offset: 0x105B0E, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__p256_point_add, symObjAddr: 0x740, symBinAddr: 0x24D9E0, symSize: 0x360 }
+  - { offset: 0x105B24, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__p256_point_add_affine, symObjAddr: 0xAA0, symBinAddr: 0x24DD40, symSize: 0x2D0 }
+  - { offset: 0x105B3A, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__p256_scalar_mul_mont, symObjAddr: 0xD70, symBinAddr: 0x24E010, symSize: 0x2B0 }
+  - { offset: 0x105B50, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__p256_scalar_sqr_rep_mont, symObjAddr: 0x1020, symBinAddr: 0x24E2C0, symSize: 0x250 }
+  - { offset: 0x105B66, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__ecp_nistz256_select_w5, symObjAddr: 0x1270, symBinAddr: 0x24E510, symSize: 0x60 }
+  - { offset: 0x105B7C, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__ecp_nistz256_select_w7, symObjAddr: 0x12D0, symBinAddr: 0x24E570, symSize: 0x44 }
+  - { offset: 0x105BB2, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__sha512_block_data_order_nohw, symObjAddr: 0x0, symBinAddr: 0x24E5C0, symSize: 0xE40 }
+  - { offset: 0x105BC8, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__sha512_block_data_order_hw, symObjAddr: 0xE40, symBinAddr: 0x24F400, symSize: 0x7E0 }
+  - { offset: 0x105BFE, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__sha256_block_data_order_nohw, symObjAddr: 0x0, symBinAddr: 0x24FC00, symSize: 0xE40 }
+  - { offset: 0x105C14, size: 0x8, addend: 0x0, symName: _ring_core_0_17_14__sha256_block_data_order_hw, symObjAddr: 0xE40, symBinAddr: 0x250A40, symSize: 0x1F0 }
 ...

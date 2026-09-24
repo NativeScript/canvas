@@ -384,11 +384,11 @@ SWIFT_CLASS_NAMED("NSCSVG")
 @property (nonatomic, copy) NSString * _Nullable src;
 @property (nonatomic, copy) NSString * _Nullable srcPath;
 /// Told when the GPU context dies and when one comes back. A context survives neither the
-/// GPU being reclaimed nor a driver reset, and the view keeps drawing either way – this
+/// GPU being reclaimed nor a driver reset, and the view keeps drawing either way; this
 /// exists so the JS side can say which path it is on.
 @property (nonatomic, copy) void (^ _Nullable onContextLost)(void);
 @property (nonatomic, copy) void (^ _Nullable onContextRestored)(void);
-/// Rasterize on a separate thread so a heavy document doesn’t block the UI. Off by default.
+/// Rasterize on the shared render thread so a heavy document doesn’t block the UI.
 @property (nonatomic) BOOL threaded;
 /// Falls back to the raster path when no GPU surface can be made.
 @property (nonatomic) BOOL gpu;
@@ -401,7 +401,7 @@ SWIFT_CLASS_NAMED("NSCSVG")
 - (void)debugLoseContext;
 /// Renders a live document. On the GPU that draws straight into the layer’s drawable; on
 /// the CPU it renders into the backing buffer in place. Neither stages the frame in an
-/// intermediate buffer – the copy an animated svg would otherwise pay every frame.
+/// intermediate buffer (the copy an animated svg would otherwise pay every frame).
 - (void)renderDocument:(int64_t)document :(int32_t)width :(int32_t)height :(float)scale;
 - (void)loadBuffer:(NSData * _Nonnull)buffer :(CGFloat)width :(CGFloat)height;
 - (void)loadData:(NSCSVGData * _Nonnull)data;
@@ -437,7 +437,7 @@ SWIFT_CLASS_NAMED("NSCSVGData")
 @property (nonatomic, readonly) void * _Nullable rawData;
 - (UIImage * _Nullable)getImage SWIFT_WARN_UNUSED_RESULT;
 /// <code>scale</code> is the device scale the pixels were rendered at. Without it the image is taken
-/// as 1x and draws at pixel size – oversized on every Retina screen.
+/// as 1x and draws at pixel size, oversized on every Retina screen.
 - (UIImage * _Nullable)getImage:(CGFloat)scale SWIFT_WARN_UNUSED_RESULT;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
@@ -850,11 +850,11 @@ SWIFT_CLASS_NAMED("NSCSVG")
 @property (nonatomic, copy) NSString * _Nullable src;
 @property (nonatomic, copy) NSString * _Nullable srcPath;
 /// Told when the GPU context dies and when one comes back. A context survives neither the
-/// GPU being reclaimed nor a driver reset, and the view keeps drawing either way – this
+/// GPU being reclaimed nor a driver reset, and the view keeps drawing either way; this
 /// exists so the JS side can say which path it is on.
 @property (nonatomic, copy) void (^ _Nullable onContextLost)(void);
 @property (nonatomic, copy) void (^ _Nullable onContextRestored)(void);
-/// Rasterize on a separate thread so a heavy document doesn’t block the UI. Off by default.
+/// Rasterize on the shared render thread so a heavy document doesn’t block the UI.
 @property (nonatomic) BOOL threaded;
 /// Falls back to the raster path when no GPU surface can be made.
 @property (nonatomic) BOOL gpu;
@@ -867,7 +867,7 @@ SWIFT_CLASS_NAMED("NSCSVG")
 - (void)debugLoseContext;
 /// Renders a live document. On the GPU that draws straight into the layer’s drawable; on
 /// the CPU it renders into the backing buffer in place. Neither stages the frame in an
-/// intermediate buffer – the copy an animated svg would otherwise pay every frame.
+/// intermediate buffer (the copy an animated svg would otherwise pay every frame).
 - (void)renderDocument:(int64_t)document :(int32_t)width :(int32_t)height :(float)scale;
 - (void)loadBuffer:(NSData * _Nonnull)buffer :(CGFloat)width :(CGFloat)height;
 - (void)loadData:(NSCSVGData * _Nonnull)data;
@@ -903,7 +903,7 @@ SWIFT_CLASS_NAMED("NSCSVGData")
 @property (nonatomic, readonly) void * _Nullable rawData;
 - (UIImage * _Nullable)getImage SWIFT_WARN_UNUSED_RESULT;
 /// <code>scale</code> is the device scale the pixels were rendered at. Without it the image is taken
-/// as 1x and draws at pixel size – oversized on every Retina screen.
+/// as 1x and draws at pixel size, oversized on every Retina screen.
 - (UIImage * _Nullable)getImage:(CGFloat)scale SWIFT_WARN_UNUSED_RESULT;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end

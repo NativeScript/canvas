@@ -86,15 +86,12 @@ export const gpuProperty = new Property<SVGBase, boolean>({
 });
 
 /**
- * Rasterize on a thread of its own. The frame is painted into a display list on this thread
- * (a fraction of a millisecond even for a heavy document) and rasterized elsewhere, so one
- * expensive svg stops holding up the rest of the UI.
- *
- * Off by default until it has device mileage.
+ * Rasterize off the UI thread. The frame is recorded into a display list here and rasterized on
+ * one render thread shared by every threaded view, so an expensive svg does not hold up the UI.
  */
 export const threadedProperty = new Property<SVGBase, boolean>({
 	name: 'threaded',
-	defaultValue: false,
+	defaultValue: true,
 	valueConverter: booleanConverter,
 });
 

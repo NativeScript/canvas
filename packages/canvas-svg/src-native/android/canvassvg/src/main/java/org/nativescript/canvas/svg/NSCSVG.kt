@@ -160,8 +160,8 @@ class NSCSVG : FrameLayout {
 	private var renderThread: Long = 0
 	private var hostView: View? = null
 
-	/** Rasterize on a separate thread so a heavy document doesn't block the UI. Off by default. */
-	var threaded: Boolean = false
+	/** Rasterize on the shared render thread so a heavy document doesn't block the UI. */
+	var threaded: Boolean = true
 		set(value) {
 			if (field == value) return
 			field = value

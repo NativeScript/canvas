@@ -185,8 +185,8 @@ public class NSCSVG: UIView {
 	public var onContextLost: (() -> Void)?
 	public var onContextRestored: (() -> Void)?
 
-	/// Rasterize on a separate thread so a heavy document doesn't block the UI. Off by default.
-	public var threaded = false {
+	/// Rasterize on the shared render thread so a heavy document doesn't block the UI.
+	public var threaded = true {
 		didSet {
 			if threaded != oldValue { applySurfaceMode() }
 		}

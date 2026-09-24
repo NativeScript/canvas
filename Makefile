@@ -49,9 +49,14 @@ GENERATE_V8_HEADERS:
 GENERATE_ANDROID_V8_STUB:
 	./tools/scripts/build-android-v8-stub.sh
 
+# Match Xcode's pre-build env: cargo tracks SDKROOT and the deployment targets, so a mismatch
+# rebuilds the whole tree (std too) on every switch. tvOS also needs it because cc has no default.
+apple_sdk = $(if $(findstring visionos-sim,$1),xrsimulator,$(if $(findstring visionos,$1),xros,$(if $(findstring tvos-sim,$1),appletvsimulator,$(if $(findstring tvos,$1),appletvos,$(if $(or $(findstring ios-sim,$1),$(findstring x86_64-apple-ios,$1)),iphonesimulator,iphoneos)))))
+apple_env = SDKROOT="$$(xcrun --sdk $(call apple_sdk,$1) --show-sdk-path)" IPHONEOS_DEPLOYMENT_TARGET=12.0 TVOS_DEPLOYMENT_TARGET=12.0 XROS_DEPLOYMENT_TARGET=1.0
+
 .PHONY: $(ARCHS_IOS)
 $(ARCHS_IOS): %:
-	RUSTFLAGS="-Zlocation-detail=none -Zunstable-options -Cpanic=immediate-abort" \
+	$(call apple_env,$@) RUSTFLAGS="-Zlocation-detail=none -Zunstable-options -Cpanic=immediate-abort" \
 	cargo +nightly build -Z build-std='std,panic_abort' \
 	    --target $@ --release -p canvas-ios
 
@@ -59,18 +64,13 @@ $(XCFRAMEWORK): $(ARCHS_IOS)
 
 .PHONY: $(ARCHS_VISIONOS)
 $(ARCHS_VISIONOS): %:
-	RUSTFLAGS="-Zlocation-detail=none -Zunstable-options -Cpanic=immediate-abort" \
+	$(call apple_env,$@) RUSTFLAGS="-Zlocation-detail=none -Zunstable-options -Cpanic=immediate-abort" \
 	cargo +nightly build -Z build-std='std,panic_abort' \
 	    --target $@ --release -p canvas-ios
 
-# TVOS_DEPLOYMENT_TARGET must be set explicitly: rustc defaults to 12.0 but the
-# `cc` crate has no built-in tvOS default and falls back to the SDK version, so
-# ring's C/asm objects come out tagged minos 26.4 and the framework link (12.0)
-# warns on every one of them. iOS/visionOS need no equivalent, since cc knows those.
 .PHONY: $(ARCHS_TVOS)
 $(ARCHS_TVOS): %:
-	TVOS_DEPLOYMENT_TARGET=12.0 \
-	RUSTFLAGS="-Zlocation-detail=none -Zunstable-options -Cpanic=immediate-abort" \
+	$(call apple_env,$@) RUSTFLAGS="-Zlocation-detail=none -Zunstable-options -Cpanic=immediate-abort" \
 	cargo +nightly build -Z build-std='std,panic_abort' \
 	    --target $@ --release -p canvas-ios
 
@@ -83,7 +83,7 @@ GENERATE_ANDROID: $(ARCHS_ANDROID)
 
 .PHONY: $(addsuffix _svg,$(ARCHS_IOS))
 $(addsuffix _svg,$(ARCHS_IOS)): %_svg:
-	RUSTFLAGS="-Zlocation-detail=none -Zunstable-options -Cpanic=immediate-abort" \
+	$(call apple_env,$*) RUSTFLAGS="-Zlocation-detail=none -Zunstable-options -Cpanic=immediate-abort" \
 	cargo +nightly build -Z build-std='std,panic_abort' \
 	    --target $* --release -p canvas-svg-ios
 
@@ -92,7 +92,7 @@ GENERATE_IOS_SVG: $(addsuffix _svg,$(ARCHS_IOS))
 
 .PHONY: $(addsuffix _svg,$(ARCHS_VISIONOS))
 $(addsuffix _svg,$(ARCHS_VISIONOS)): %_svg:
-	RUSTFLAGS="-Zlocation-detail=none -Zunstable-options -Cpanic=immediate-abort" \
+	$(call apple_env,$*) RUSTFLAGS="-Zlocation-detail=none -Zunstable-options -Cpanic=immediate-abort" \
 	cargo +nightly build -Z build-std='std,panic_abort' \
 	    --target $* --release -p canvas-svg-ios
 
@@ -101,8 +101,7 @@ GENERATE_VISIONOS_SVG: $(addsuffix _svg,$(ARCHS_VISIONOS))
 
 .PHONY: $(addsuffix _svg,$(ARCHS_TVOS))
 $(addsuffix _svg,$(ARCHS_TVOS)): %_svg:
-	TVOS_DEPLOYMENT_TARGET=12.0 \
-	RUSTFLAGS="-Zlocation-detail=none -Zunstable-options -Cpanic=immediate-abort" \
+	$(call apple_env,$*) RUSTFLAGS="-Zlocation-detail=none -Zunstable-options -Cpanic=immediate-abort" \
 	cargo +nightly build -Z build-std='std,panic_abort' \
 	    --target $* --release -p canvas-svg-ios
 

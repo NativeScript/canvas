@@ -52,6 +52,7 @@ fn render_into(
     height: i32,
     row_bytes: usize,
     scale: f32,
+    shared: bool,
 ) {
     let info = skia_safe::ImageInfo::new_n32_premul(skia_safe::ISize::new(width, height), None);
     let row_bytes = if row_bytes == 0 {
@@ -65,7 +66,11 @@ fn render_into(
         let canvas = surface.canvas();
         // Callers reuse buffers across frames and drawing composites over existing pixels.
         canvas.clear(skia_safe::Color::TRANSPARENT);
-        doc.0.draw(canvas, width, height, scale);
+        if shared {
+            doc.0.draw(canvas, width, height, scale);
+        } else {
+            doc.0.render_frame(canvas, width, height, scale);
+        }
     }
 }
 
@@ -109,6 +114,7 @@ pub extern "C" fn canvas_native_svg_document_invalidate_frames(doc: *mut SvgDocu
 }
 
 /// `width`/`height` are physical pixels; `scale` maps logical (`set_container_size`) units onto them.
+/// A one-off snapshot, so it bypasses the frame cache that views share.
 #[unsafe(no_mangle)]
 pub extern "C" fn canvas_native_svg_document_render_to_buffer(
     doc: *mut SvgDocument,
@@ -123,7 +129,7 @@ pub extern "C" fn canvas_native_svg_document_render_to_buffer(
     }
     let doc = unsafe { &mut *doc };
     let slice = unsafe { std::slice::from_raw_parts_mut(pixels, pixels_len) };
-    render_into(doc, slice, width, height, 0, scale);
+    render_into(doc, slice, width, height, 0, scale, false);
 }
 
 /// As above, into caller-owned pixels (e.g. a locked Android `Bitmap`) that may be row-padded.
@@ -142,7 +148,7 @@ pub extern "C" fn canvas_native_svg_document_render_to_pixels(
     }
     let doc = unsafe { &mut *doc };
     let slice = unsafe { std::slice::from_raw_parts_mut(pixels, pixels_len) };
-    render_into(doc, slice, width, height, row_bytes, scale);
+    render_into(doc, slice, width, height, row_bytes, scale, true);
 }
 
 #[unsafe(no_mangle)]
@@ -401,5 +407,39 @@ pub extern "C" fn canvas_native_svg_node_remove_child(
     match parent.0.remove_child(index) {
         Ok(typed) => Box::into_raw(Box::new(SvgNode(canvas_svg::SvgElementHandle::new(typed)))),
         Err(_) => std::ptr::null_mut(),
+    }
+}
+
+#[cfg(test)]
+mod snapshot_tests {
+    use super::*;
+
+    const SMIL: &str = r#"<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 150 150">
+        <circle cx="30" cy="30" r="10" fill="crimson"><animate attributeName="r" values="6;18;6" dur="1.5s" repeatCount="indefinite"/></circle>
+        <rect x="90" y="15" width="30" height="30" fill="seagreen"/>
+    </svg>"#;
+
+    fn opaque(pixels: &[u8]) -> usize {
+        pixels.chunks(4).filter(|p| p[3] != 0).count()
+    }
+
+    fn snapshot(doc: &mut SvgDocument, w: i32, h: i32, scale: f32) -> usize {
+        let mut buf = vec![0u8; (w * h * 4) as usize];
+        canvas_native_svg_document_render_to_buffer(doc, buf.as_mut_ptr(), buf.len(), w, h, scale);
+        opaque(&buf)
+    }
+
+    #[test]
+    fn snapshot_of_a_shared_animating_document_draws() {
+        let mut doc = SvgDocument(canvas_svg::SvgDocument::from_bytes(SMIL.as_bytes()).unwrap());
+        doc.0.set_frame_sharing(true);
+        doc.0.set_container_size(150., 150.);
+        for t in 0..5 {
+            doc.0.advance(t as f64 * 0.1);
+            // A view records its frame first, as the render-thread commit does.
+            let _ = doc.0.frame(403, 403, 2.685);
+            assert!(snapshot(&mut doc, 270, 270, 1.8) > 0, "whole view, frame {t}");
+            assert!(snapshot(&mut doc, 540, 540, 3.6) > 0, "crop size, frame {t}");
+        }
     }
 }

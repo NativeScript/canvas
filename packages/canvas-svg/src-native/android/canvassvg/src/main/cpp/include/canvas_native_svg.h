@@ -8,6 +8,9 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+/**
+ * A view's registration on the shared render thread.
+ */
 typedef struct RenderThread RenderThread;
 
 typedef struct SvgDocument SvgDocument;
@@ -48,6 +51,7 @@ void canvas_native_svg_document_invalidate_frames(struct SvgDocument *doc);
 
 /**
  * `width`/`height` are physical pixels; `scale` maps logical (`set_container_size`) units onto them.
+ * A one-off snapshot, so it bypasses the frame cache that views share.
  */
 void canvas_native_svg_document_render_to_buffer(struct SvgDocument *doc,
                                                  uint8_t *pixels,
@@ -177,7 +181,8 @@ void canvas_native_svg_gpu_debug_lose_context(struct SvgGpuSurface *gpu);
 void canvas_native_svg_gpu_destroy(struct SvgGpuSurface *gpu);
 
 /**
- * Starts a render thread that owns its own GPU surface for `window`. Null means use the bitmap.
+ * Registers `window` with the shared render thread, which builds its GPU surface there. Null
+ * means use the bitmap.
  */
 struct RenderThread *canvas_native_svg_render_thread_create(void *window,
                                                             int32_t width,

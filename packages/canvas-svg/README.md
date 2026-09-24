@@ -67,7 +67,7 @@ Supported on elements: `setAttribute`, `getAttribute`, `appendChild`, `append`, 
 | --- | --- | --- |
 | `src` | | Path, URL or inline markup to render. |
 | `gpu` | `true` | Rasterize on the GPU (Metal on iOS, Vulkan or GL on Android). Falls back to the CPU automatically if no GPU context can be created. |
-| `threaded` | `false` | Rasterize on a background thread. The frame is recorded on the UI thread and drawn elsewhere, so a heavy SVG no longer holds up the rest of the UI. |
+| `threaded` | `true` | Rasterize off the UI thread. The frame is recorded on the UI thread and drawn on one render thread shared by every threaded view, so a heavy SVG does not hold up the rest of the UI. |
 | `shareSrc` | `true` | Views with the same `src` share one parsed document, one animation clock and one recording per frame, like `<img>` tags pointing at the same file on the web. Shared copies animate in step. Set it to `false` to give a view its own copy. |
 | `backend` | `auto` | Force `gl`, `vulkan` or `metal`. Only needed to work around a driver problem. |
 | `surfaceType` | `texture` | Android only. `texture` behaves like a normal view. `surface` is faster to composite but cannot be transformed or overlapped. |

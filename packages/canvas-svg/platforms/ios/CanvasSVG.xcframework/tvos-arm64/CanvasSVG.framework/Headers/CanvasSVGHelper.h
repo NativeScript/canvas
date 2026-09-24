@@ -24,13 +24,13 @@
               rowBytes:(uintptr_t)rowBytes
                  scale:(float)scale;
 
-/// Returns 0 when no GPU surface could be made -- the caller's cue to fall back to the raster
+/// Returns 0 when no GPU surface could be made, the caller's cue to fall back to the raster
 /// path. `backend` is a Backend discriminant; 0 auto-selects.
 +(int64_t) gpuCreate:(void*)view width:(int32_t)width height:(int32_t)height backend:(int32_t)backend;
 +(int32_t) gpuBackend:(int64_t)gpu;
 +(void) gpuResize:(int64_t)gpu width:(int32_t)width height:(int32_t)height;
 /// Returns a FrameStatus: 0 presented, 1 skipped, 2 presented after the context was rebuilt,
-/// 3 lost -- the caller's cue to fall back to the raster path.
+/// 3 lost (the caller's cue to fall back to the raster path).
 +(int32_t) gpuRender:(int64_t)gpu document:(int64_t)document scale:(float)scale;
 /// The view pointer the surface was created with, so the caller can give back the reference it
 /// handed over. Must be read before `gpuDestroy`, which frees the surface holding it.
@@ -40,7 +40,7 @@
 +(void) gpuDestroy:(int64_t)gpu;
 
 /// Starts a render thread that owns its own GPU surface. Returns 0 when one could not be
-/// started. Does not wait for the surface to be built -- whether the GPU came up is reported
+/// started. Does not wait for the surface to be built; whether the GPU came up is reported
 /// through `renderThreadStatus`, because blocking the caller here deadlocks the UI thread.
 +(int64_t) renderThreadCreate:(void*)view width:(int32_t)width height:(int32_t)height backend:(int32_t)backend;
 /// Records the document on the *calling* thread and hands the display list over; the

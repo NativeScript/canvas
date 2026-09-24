@@ -42,7 +42,7 @@ function mountCanvas(view, row: number, col: number, onReady: (canvas: Canvas) =
 	return canvas;
 }
 
-function mountSvgWithSrc(view, row: number, col: number, src: string, gpu = true, threaded = false): Svg {
+function mountSvgWithSrc(view, row: number, col: number, src: string, gpu = true, threaded = true): Svg {
 	const svgView = new Svg();
 	(svgView as any).row = row;
 	(svgView as any).col = col;

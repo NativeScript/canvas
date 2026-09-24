@@ -351,7 +351,8 @@ pub extern "C" fn canvas_native_svg_gpu_destroy(gpu: *mut SvgGpuSurface) {
 
 use thread::RenderThread;
 
-/// Starts a render thread that owns its own GPU surface for `window`. Null means use the bitmap.
+/// Registers `window` with the shared render thread, which builds its GPU surface there. Null
+/// means use the bitmap.
 #[unsafe(no_mangle)]
 pub extern "C" fn canvas_native_svg_render_thread_create(
     window: *mut std::ffi::c_void,

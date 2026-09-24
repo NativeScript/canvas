@@ -518,13 +518,19 @@ void ImageAssetImpl::FromBytesSync(const v8::FunctionCallbackInfo<v8::Value> &ar
         if(args[0]->Uint32Value(context).To(&width)
            && args[1]->Uint32Value(context).To(&height)
            ) {
-            done = canvas_native_image_asset_load_from_raw(ptr->GetImageAsset(), width, height, bytes.data, bytes.size);
+            // Optional 4th arg: the bytes are already premultiplied.
+            bool premultiplied = args.Length() > 3 && args[3]->BooleanValue(args.GetIsolate());
+            if (premultiplied) {
+                done = canvas_native_image_asset_load_from_raw_premultiplied(ptr->GetImageAsset(), width, height, bytes.data, bytes.size);
+            } else {
+                done = canvas_native_image_asset_load_from_raw(ptr->GetImageAsset(), width, height, bytes.data, bytes.size);
+            }
         }
-        
+
         args.GetReturnValue().Set(done);
         return;
     }
-    
+
     args.GetReturnValue().Set(false);
 }
 

@@ -1,4 +1,4 @@
-import { ImageAsset } from '../ImageAsset';
+import { ImageAsset, fromSvgSource } from '../ImageAsset';
 import { ImageData } from '../Canvas2D';
 import { Canvas } from '../Canvas';
 import { ImageSource } from '@nativescript/core';
@@ -58,6 +58,7 @@ function invalidSource(source: any) {
 
 /** `undefined` for an unrecognised source, so the caller rejects instead of hanging. */
 function resolveSource(source: any): any {
+	source = fromSvgSource(source);
 	if (source instanceof Canvas) {
 		return (source as any).native;
 	}

@@ -14,3 +14,6 @@ skia-safe = { workspace = true, features = ["svg", "textlayout"] }
 jni = { workspace = true }
 ndk = { version = "0.7.0", features = ["bitmap"] }
 canvas-svg = { workspace = true }
+canvas-svg-c = { workspace = true, features = ["gl", "vulkan"] }
+log = { workspace = true }
+android_logger = "0.14.1"

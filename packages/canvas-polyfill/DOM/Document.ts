@@ -81,9 +81,11 @@ export class Document extends Node {
 					return new SVGLineElement();
 				case 'text':
 					return new SVGTextElement();
-				case 'radialGradient':
+				case 'tspan':
+					return new SVGTSpanElement();
+				case 'radialgradient':
 					return new SVGRadialGradientElement();
-				case 'linearGradient':
+				case 'lineargradient':
 					return new SVGLinearGradientElement();
 				case 'use':
 					return new SVGUseElement();

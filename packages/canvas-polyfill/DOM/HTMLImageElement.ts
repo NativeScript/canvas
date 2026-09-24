@@ -205,18 +205,13 @@ export class HTMLImageElement extends HTMLElement {
 						})
 						.then((res) => {
 							if (typeof res === 'string') {
-								return Svg.fromSrc(res)
-									.then((svg) => {
-										const data = svg.data;
-										return this._asset.loadFromBytes(svg.width, svg.height, data as any);
-									})
-									.then((done: boolean) => {
-										this.width = this._asset.width;
-										this.height = this._asset.height;
-										this.complete = done;
-										this._loading = false;
-										this._dispatchDecode(done);
-									});
+								return this._asset.loadSvg(res).then((done: boolean) => {
+									this.width = this._asset.width;
+									this.height = this._asset.height;
+									this.complete = done;
+									this._loading = false;
+									this._dispatchDecode(done);
+								});
 							}
 						})
 						.catch((e) => {
@@ -243,10 +238,8 @@ export class HTMLImageElement extends HTMLElement {
 							isSvg = src.indexOf('<svg') > -1;
 						}
 
-						const svg = Svg.fromSrcSync(this.src);
-
-						if (svg) {
-							if (this._asset.loadFromBytesSync(svg.width, svg.height, svg.data as any)) {
+						if (isSvg) {
+							if (this._asset.loadSvgSync(src)) {
 								this.width = this._asset.width;
 								this.height = this._asset.height;
 								this.complete = true;
@@ -373,7 +366,8 @@ export class HTMLImageElement extends HTMLElement {
 						const svg = Svg.fromSrcSync(this.src);
 
 						if (svg) {
-							if (this._asset.loadFromBytesSync(svg.width, svg.height, svg.data as any)) {
+							// Only the old rasterizer fetches URLs synchronously; its pixels are premultiplied.
+							if (this._asset.loadFromBytesSync(svg.width, svg.height, new Uint8Array(svg.data), true)) {
 								this.width = this._asset.width;
 								this.height = this._asset.height;
 								this.complete = true;
@@ -403,11 +397,8 @@ export class HTMLImageElement extends HTMLElement {
 							this._dispatchDecode(true);
 						})
 						.catch((e) => {
-							Svg.fromSrc(this.src)
-								.then((svg) => {
-									const data = svg.data;
-									return this._asset.loadFromBytes(svg.width, svg.height, data as any);
-								})
+							this._asset
+								.loadSvg(this.src)
 								.then((done: boolean) => {
 									this.width = this._asset.width;
 									this.height = this._asset.height;
@@ -439,21 +430,17 @@ export class HTMLImageElement extends HTMLElement {
 						this._dispatchDecode(true);
 					} else {
 						// try svg ?
-						const svg = Svg.fromSrcSync(this.src);
+						let isSvg = false;
+						try {
+							isSvg = this._asset.loadSvgSync(this.src);
+						} catch (e) {}
 
-						if (svg) {
-							if (this._asset.loadFromBytesSync(svg.width, svg.height, svg.data as any)) {
-								this.width = this._asset.width;
-								this.height = this._asset.height;
-								this.complete = true;
-								this._loading = false;
-								this._dispatchDecode(true);
-							} else {
-								this.dispatchEvent({ type: 'error', target: this });
-								this._onerror?.();
-								this._loading = false;
-								this._dispatchDecode();
-							}
+						if (isSvg) {
+							this.width = this._asset.width;
+							this.height = this._asset.height;
+							this.complete = true;
+							this._loading = false;
+							this._dispatchDecode(true);
 						} else {
 							this.dispatchEvent({ type: 'error', target: this });
 							this._onerror?.();
@@ -472,11 +459,8 @@ export class HTMLImageElement extends HTMLElement {
 							this._dispatchDecode(true);
 						})
 						.catch((e) => {
-							Svg.fromSrc(this.src)
-								.then((svg) => {
-									const data = svg.data;
-									return this._asset.loadFromBytes(svg.width, svg.height, data as any);
-								})
+							this._asset
+								.loadSvg(this.src)
 								.then((done: boolean) => {
 									this.width = this._asset.width;
 									this.height = this._asset.height;

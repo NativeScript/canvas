@@ -2,8 +2,8 @@
 triple:          'x86_64-apple-darwin'
 binary-path:     '/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/dist/Release-iphonesimulator/CanvasNative.framework/CanvasNative'
 relocations:
-  - { offset: 0xE8ACC, size: 0x8, addend: 0x0, symName: _CanvasNativeVersionString, symObjAddr: 0x0, symBinAddr: 0x9F9000, symSize: 0x0 }
-  - { offset: 0xE8B01, size: 0x8, addend: 0x0, symName: _CanvasNativeVersionNumber, symObjAddr: 0x38, symBinAddr: 0x9F9038, symSize: 0x0 }
+  - { offset: 0xE8ACC, size: 0x8, addend: 0x0, symName: _CanvasNativeVersionString, symObjAddr: 0x0, symBinAddr: 0x9FA000, symSize: 0x0 }
+  - { offset: 0xE8B01, size: 0x8, addend: 0x0, symName: _CanvasNativeVersionNumber, symObjAddr: 0x38, symBinAddr: 0x9FA038, symSize: 0x0 }
   - { offset: 0xE8B3E, size: 0x8, addend: 0x0, symName: '-[NSCMTLView canvasView]', symObjAddr: 0x0, symBinAddr: 0x1D00, symSize: 0x20 }
   - { offset: 0xE8C23, size: 0x8, addend: 0x0, symName: '-[NSCMTLView canvasView]', symObjAddr: 0x0, symBinAddr: 0x1D00, symSize: 0x20 }
   - { offset: 0xE8C6D, size: 0x8, addend: 0x0, symName: '+[NSCMTLView layerClass]', symObjAddr: 0x20, symBinAddr: 0x1D20, symSize: 0x20 }
@@ -166,7 +166,7 @@ relocations:
   - { offset: 0xEEB02, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative13NSCVideoFrameC9codedRectSo6CGRectVvg', symObjAddr: 0x870, symBinAddr: 0x6780, symSize: 0x60 }
   - { offset: 0xEEB9D, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative13NSCVideoFrameC11visibleRectSo6CGRectVvg', symObjAddr: 0x8D0, symBinAddr: 0x67E0, symSize: 0xA0 }
   - { offset: 0xEECCD, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative13NSCVideoFrameCACycfC', symObjAddr: 0x970, symBinAddr: 0x6880, symSize: 0x20 }
-  - { offset: 0xEECE1, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative13NSCVideoFrameCACycfc', symObjAddr: 0x990, symBinAddr: 0x9D3600, symSize: 0x30 }
+  - { offset: 0xEECE1, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative13NSCVideoFrameCACycfc', symObjAddr: 0x990, symBinAddr: 0x9D3DF0, symSize: 0x30 }
   - { offset: 0xEED3A, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative13NSCVideoFrameCACycfcTo', symObjAddr: 0x9C0, symBinAddr: 0x68A0, symSize: 0x30 }
   - { offset: 0xEED99, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative13NSCVideoFrameCfD', symObjAddr: 0x9F0, symBinAddr: 0x68D0, symSize: 0x30 }
   - { offset: 0xEEDBC, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative13NSCVideoFrameC0cD6FormatO8rawValueAESgs6UInt32V_tcfCTf4nd_n', symObjAddr: 0xA40, symBinAddr: 0x6920, symSize: 0x20 }
@@ -416,7 +416,7 @@ relocations:
   - { offset: 0xFA74C, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative20NSCVideoFrameTextureC6heightSivg', symObjAddr: 0xD40, symBinAddr: 0x11120, symSize: 0x20 }
   - { offset: 0xFA77E, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative20NSCVideoFrameTextureC14texturePointerSivgTo', symObjAddr: 0xD60, symBinAddr: 0x11140, symSize: 0x20 }
   - { offset: 0xFA7B2, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative20NSCVideoFrameTextureC14texturePointerSivg', symObjAddr: 0xD80, symBinAddr: 0x11160, symSize: 0x20 }
-  - { offset: 0xFA7CF, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative20NSCVideoFrameTextureCACycfc', symObjAddr: 0xDA0, symBinAddr: 0x9D3630, symSize: 0x30 }
+  - { offset: 0xFA7CF, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative20NSCVideoFrameTextureCACycfc', symObjAddr: 0xDA0, symBinAddr: 0x9D3E20, symSize: 0x30 }
   - { offset: 0xFA82A, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative20NSCVideoFrameTextureCACycfcTo', symObjAddr: 0xDD0, symBinAddr: 0x11180, symSize: 0x30 }
   - { offset: 0xFA9AC, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative19NSCVideoFrameBridgeC11isSupported6deviceSbSi_tFZ', symObjAddr: 0xEA0, symBinAddr: 0x11250, symSize: 0x80 }
   - { offset: 0xFA9D4, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative19NSCVideoFrameBridgeC11isSupported6deviceSbSi_tFZ', symObjAddr: 0xEA0, symBinAddr: 0x11250, symSize: 0x80 }
@@ -556,7 +556,7 @@ relocations:
   - { offset: 0x104A6D, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative0A7GLKViewC14deleteDrawableyyFTo', symObjAddr: 0xA70, symBinAddr: 0x19A00, symSize: 0x60 }
   - { offset: 0x104B0C, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative0A7GLKViewC7glkView_6drawInySo0C0C_So6CGRectVtFTo', symObjAddr: 0xAE0, symBinAddr: 0x19A60, symSize: 0x10 }
   - { offset: 0x104B2B, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative0A7GLKViewC5frame7contextACSo6CGRectV_So11EAGLContextCtcfC', symObjAddr: 0xAF0, symBinAddr: 0x19A70, symSize: 0x90 }
-  - { offset: 0x104B3F, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative0A7GLKViewC5frame7contextACSo6CGRectV_So11EAGLContextCtcfc', symObjAddr: 0xB80, symBinAddr: 0x9D3660, symSize: 0x30 }
+  - { offset: 0x104B3F, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative0A7GLKViewC5frame7contextACSo6CGRectV_So11EAGLContextCtcfc', symObjAddr: 0xB80, symBinAddr: 0x9D3E50, symSize: 0x30 }
   - { offset: 0x104BBD, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative0A7GLKViewC5frame7contextACSo6CGRectV_So11EAGLContextCtcfcTo', symObjAddr: 0xBB0, symBinAddr: 0x19B00, symSize: 0x30 }
   - { offset: 0x104C8E, size: 0x8, addend: 0x0, symName: '_$sSo7GLKViewC12CanvasNativeE16snapshotWithDatayy10Foundation0F0VF', symObjAddr: 0xC20, symBinAddr: 0x19B70, symSize: 0x2C0 }
   - { offset: 0x104F9C, size: 0x8, addend: 0x0, symName: '_$sSaySayxGqd__c7ElementQyd__RszSTRd__lufCs5UInt8V_10Foundation4DataVTt0g5', symObjAddr: 0xEE0, symBinAddr: 0x19E30, symSize: 0x120 }

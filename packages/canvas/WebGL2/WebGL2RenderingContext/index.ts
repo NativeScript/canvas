@@ -13,7 +13,7 @@ import { WebGLRenderbuffer } from '../../WebGL/WebGLRenderbuffer';
 import { WebGLShaderPrecisionFormat } from '../../WebGL/WebGLShaderPrecisionFormat';
 import { WebGLBuffer } from '../../WebGL/WebGLBuffer';
 
-import { ImageAsset } from '../../ImageAsset';
+import { ImageAsset, fromSvgSource } from '../../ImageAsset';
 import { ImageSource, Screen } from '@nativescript/core';
 import { WebGL2RenderingContextBase } from './common';
 import { Canvas } from '../../Canvas';
@@ -391,6 +391,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 			}
 			return;
 		}
+		source = fromSvgSource(source);
 		if (source && typeof source.tagName === 'string' && (source.tagName === 'VID' || source.tagName === 'VIDEO') && source._video && typeof source._video.getFrameForTexImage3D === 'function') {
 			source._video.getFrameForTexImage3D(this.native, this, target, level, internalformat, width, height, depth, border, format, type);
 			return;

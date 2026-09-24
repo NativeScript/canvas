@@ -192,13 +192,18 @@ impl Context {
 
             surfaces::raster(&info, None, None)
         } else {
-            let interface = Interface::new_native();
-            let ctx = gpu::direct_contexts::make_gl(interface.unwrap(), None);
-            if ctx.is_none() {
-                return;
-            }
-            let mut ctx = ctx.unwrap();
-            // ctx.reset(None);
+            // Reuse the Skia context: the EGL context is unchanged, and a second Skia context on it
+            // would free GL names the first may still hold images for.
+            let mut ctx = match context.direct_context.take() {
+                Some(mut ctx) => {
+                    ctx.reset(None);
+                    ctx
+                }
+                None => match Interface::new_native().and_then(|i| gpu::direct_contexts::make_gl(i, None)) {
+                    Some(ctx) => ctx,
+                    None => return,
+                },
+            };
 
             let mut frame_buffer = gpu::gl::FramebufferInfo::from_fboid(buffer_id as u32);
 
@@ -249,6 +254,8 @@ impl Context {
             context.path = Path::default();
             context.reset_state();
             context.surface = surface;
+        } else if context.direct_context.is_none() {
+            context.direct_context = direct_context;
         }
     }
 }

@@ -3,7 +3,7 @@ import { Path2D } from '../Path2D';
 import { ImageData } from '../ImageData';
 import { TextMetrics } from '../TextMetrics';
 import { ImageSource, Screen, Color, ImageAsset as NSImageAsset } from '@nativescript/core';
-import { ImageAsset } from '../../ImageAsset';
+import { ImageAsset, fromSvgSource, getSvgNaturalSize, resolveSvgSource, svgToImageAsset } from '../../ImageAsset';
 import { CanvasPattern } from '../CanvasPattern';
 import { Canvas } from '../../Canvas';
 
@@ -162,6 +162,9 @@ function _canvasToImageAssetIOS(canvas: Canvas): any {
 	tempAsset.loadFromEncodedBytesSync(new Uint8Array(interop.bufferFromData(nsData)));
 	return tempAsset.native;
 }
+
+// Caps the SVG raster under extreme scales.
+const MAX_SVG_RASTER = 4096;
 
 function drawNativeImage(args: any[], image, context: any) {
 	let dirty = false;
@@ -745,6 +748,7 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 		//const createPattern = this._getMethod('createPattern');
 		//const createPattern = this.context.createPattern;
 		let img;
+		image = fromSvgSource(image);
 
 		if (image?._type === '2d' || image?._type?.indexOf('webgl') > -1 || image?._type === 'webgpu') {
 			img = (image as any).native;
@@ -866,6 +870,11 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 
 	drawImage(...args): void {
 		let image = args[0];
+		const svg = resolveSvgSource(image);
+		if (svg) {
+			this._drawSvg(svg, args);
+			return;
+		}
 		if (image?._type === '2d' || image?._type?.indexOf('webgl') > -1 || image?._type === 'webgpu') {
 			image = (image as any).native;
 		} else if (image instanceof ImageAsset) {
@@ -901,12 +910,6 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 			} else if (__ANDROID__ && image._image instanceof android.graphics.Bitmap) {
 				drawNativeImage(args, image._image, this);
 				return;
-			} else if (__ANDROID__ && image._svg) {
-				const bitmap = image._svg?._svg?.getBitmap?.();
-				if (bitmap) {
-					drawNativeImage(args, bitmap, this);
-				}
-				return;
 			} else if (__APPLE__ && image._image instanceof UIImage) {
 				drawNativeImage(args, image._image, this);
 				return;
@@ -934,6 +937,51 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 		}
 	}
 
+	/** Rasterized at the size it lands at; sizes are the view's CSS pixels. */
+	private _drawSvg(svg: object, args: any[]) {
+		const natural = getSvgNaturalSize(svg);
+		if (!natural || natural.width <= 0 || natural.height <= 0) {
+			return;
+		}
+		let sx = 0,
+			sy = 0,
+			sw = natural.width,
+			sh = natural.height;
+		let dx = args[1],
+			dy = args[2],
+			dw = natural.width,
+			dh = natural.height;
+		if (args.length === 5) {
+			dw = args[3];
+			dh = args[4];
+		} else if (args.length === 9) {
+			[sx, sy, sw, sh, dx, dy, dw, dh] = args.slice(1, 9);
+		} else if (args.length !== 3) {
+			return;
+		}
+		if (!sw || !sh || !dw || !dh) {
+			return;
+		}
+
+		// User units are device pixels; the transform decides how many each one covers.
+		const m = this.getTransform();
+		const scaleX = Math.hypot(m.a, m.b) * Math.abs(dw / sw);
+		const scaleY = Math.hypot(m.c, m.d) * Math.abs(dh / sh);
+		const longest = Math.max(natural.width, natural.height);
+		const scale = Math.min(Math.max(scaleX, scaleY), MAX_SVG_RASTER / longest);
+		if (!(scale > 0)) {
+			return;
+		}
+
+		const asset = svgToImageAsset(svg, scale);
+		if (!asset) {
+			return;
+		}
+		const kx = asset.width / natural.width;
+		const ky = asset.height / natural.height;
+		this.context.drawImage(asset.native, sx * kx, sy * ky, sw * kx, sh * ky, dx, dy, dw, dh);
+	}
+
 	drawAtlas(
 		image: any,
 		xform: {
@@ -947,6 +995,7 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 		blendMode: GlobalCompositeOperation = 'destination-over',
 	): void {
 		let isNativeSource = false;
+		image = fromSvgSource(image);
 		if (image?._type === '2d' || image?._type?.indexOf('webgl') > -1 || image?._type === 'webgpu') {
 			image = (image as any).native;
 		} else if (image instanceof ImageAsset) {

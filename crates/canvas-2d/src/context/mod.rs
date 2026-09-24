@@ -356,7 +356,13 @@ impl Context {
     // callback on tvOS. Keep the previous surface until the next operation needs
     // to draw, then retain its contents when swapping the backing texture.
     #[inline]
-    fn ensure_metal_drawable(&mut self) {
+    /// Runs before every draw. Skia uploads a raster image the moment a draw records it (a pattern
+    /// fill, say), so another canvas's GL context being current puts the texture in the wrong one.
+    pub(crate) fn ensure_current(&mut self) {
+        #[cfg(feature = "gl")]
+        if let Some(ref context) = self.gl_context {
+            context.make_current();
+        }
         #[cfg(all(feature = "metal", target_os = "tvos"))]
         if self.metal_context.as_ref().is_some_and(|c| !c.has_current_drawable()) {
             Self::acquire_drawable(self);
@@ -368,7 +374,7 @@ impl Context {
     where
         F: FnOnce(&skia_safe::Canvas),
     {
-        self.ensure_metal_drawable();
+        self.ensure_current();
         f(self.surface.canvas());
     }
 
@@ -377,7 +383,7 @@ impl Context {
     where
         F: FnOnce(&skia_safe::Canvas, &mut Path),
     {
-        self.ensure_metal_drawable();
+        self.ensure_current();
         f(self.surface.canvas(), &mut self.path);
         self.surface_state = self.surface_state | SurfaceState::Pending;
     }
@@ -387,7 +393,7 @@ impl Context {
     where
         F: FnOnce(&skia_safe::Canvas),
     {
-        self.ensure_metal_drawable();
+        self.ensure_current();
         f(self.surface.canvas());
         self.surface_state = self.surface_state | SurfaceState::Pending;
     }
@@ -397,7 +403,7 @@ impl Context {
     where
         F: FnOnce(&skia_safe::Canvas, &Paint),
     {
-        self.ensure_metal_drawable();
+        self.ensure_current();
         f(self.surface.canvas(), &self.state.paint);
         self.surface_state = self.surface_state | SurfaceState::Pending;
     }
@@ -414,7 +420,7 @@ impl Context {
     where
         F: FnOnce(&skia_safe::Canvas),
     {
-        self.ensure_metal_drawable();
+        self.ensure_current();
         f(self.surface.canvas());
         self.surface_state = self.surface_state | SurfaceState::Pending;
     }
@@ -572,7 +578,7 @@ impl Context {
     where
         F: Fn(&skia_safe::Canvas, &skia_safe::Paint, &mut Path),
     {
-        self.ensure_metal_drawable();
+        self.ensure_current();
         let blend = self.state.global_composite_operation.get_blend_mode();
         // Fast path: most draw calls use SrcOver (the default)
         if !matches!(
@@ -634,7 +640,7 @@ impl Context {
     where
         F: Fn(&skia_safe::Canvas, &skia_safe::Paint),
     {
-        self.ensure_metal_drawable();
+        self.ensure_current();
         let blend = self.state.global_composite_operation.get_blend_mode();
         // Fast path: most draw calls use SrcOver (the default)
         if !matches!(
@@ -692,7 +698,7 @@ impl Context {
     where
         F: Fn(&skia_safe::Canvas, &skia_safe::Paint),
     {
-        self.ensure_metal_drawable();
+        self.ensure_current();
         let blend = self.state.global_composite_operation.get_blend_mode();
         if !matches!(
             blend,

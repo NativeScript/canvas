@@ -13,7 +13,6 @@ use std::os::raw::c_void;
 
 #[derive(Debug)]
 pub struct MetalTexture {
-    pool: Retained<NSAutoreleasePool>,
     texture: Retained<ProtocolObject<dyn MTLTexture>>,
 }
 
@@ -34,10 +33,7 @@ impl MetalTexture {
         let obj = texture as *mut AnyObject;
 
         match Retained::retain(obj.cast()) {
-            Some(texture) => Some(Self {
-                texture,
-                pool: NSAutoreleasePool::new(),
-            }),
+            Some(texture) => Some(Self { texture }),
             None => None,
         }
     }
@@ -51,7 +47,6 @@ impl MetalTexture {
 pub struct MetalContext {
     queue: Retained<ProtocolObject<dyn MTLCommandQueue>>,
     device: Retained<ProtocolObject<dyn MTLDevice>>,
-    pool: Retained<NSAutoreleasePool>,
     layer: Retained<CAMetalLayer>,
     view: Option<Retained<NSObject>>,
     current_drawable: Option<Retained<ProtocolObject<dyn CAMetalDrawable>>>,
@@ -67,7 +62,7 @@ impl MetalContext {
         self.is_offscreen
     }
     pub fn new(view: *mut c_void) -> Self {
-        let pool = unsafe { NSAutoreleasePool::new() };
+        let _pool = unsafe { NSAutoreleasePool::new() };
         let device = MTLCreateSystemDefaultDevice().expect("no Metal device");
         let queue = device.newCommandQueue().unwrap();
         let view = unsafe { Retained::from_raw(view as _).unwrap() };
@@ -105,7 +100,6 @@ impl MetalContext {
         Self {
             queue,
             device,
-            pool,
             layer,
             view: Some(view),
             current_drawable,
@@ -114,7 +108,7 @@ impl MetalContext {
     }
 
     pub fn new_offscreen(width: f32, height: f32) -> Self {
-        let pool = unsafe { NSAutoreleasePool::new() };
+        let _pool = unsafe { NSAutoreleasePool::new() };
         let device = MTLCreateSystemDefaultDevice().expect("no Metal device");
         let queue = device.newCommandQueue().unwrap();
         let layer = CAMetalLayer::new();
@@ -135,7 +129,6 @@ impl MetalContext {
         Self {
             queue,
             device,
-            pool,
             layer,
             view: None,
             current_drawable,
@@ -148,7 +141,7 @@ impl MetalContext {
         device: *mut c_void,
         queue: *mut c_void,
     ) -> Self {
-        let pool = NSAutoreleasePool::new();
+        let _pool = NSAutoreleasePool::new();
         let device: Retained<ProtocolObject<dyn MTLDevice>> =
             Retained::retain((device as *mut AnyObject).cast()).unwrap();
         // view is non null
@@ -161,7 +154,6 @@ impl MetalContext {
         Self {
             queue,
             device,
-            pool,
             layer,
             view: Some(view),
             current_drawable,

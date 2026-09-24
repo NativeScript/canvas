@@ -7,7 +7,9 @@ use crate::context::Context;
 
 impl Context {
     #[cfg(feature = "2d")]
+    /// Uploads now, so it must bind first or the texture lands in another canvas's GL context.
     fn promote_to_gpu(&mut self, img: Image) -> Image {
+        self.ensure_current();
         if let Some(ctx) = self.direct_context.as_mut() {
             img.new_texture_image(ctx, skia_safe::gpu::Mipmapped::No)
                 .unwrap_or(img)

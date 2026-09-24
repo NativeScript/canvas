@@ -11,6 +11,7 @@ members = [
     "crates/playground",
     "crates/canvas-c",
     "crates/canvas-svg",
+    "crates/canvas-svg-c",
     "crates/canvas-napi",
     "crates/canvas-svg-ios",
     "crates/canvas-svg-android",
@@ -72,9 +73,11 @@ canvas-2d = { path = "./crates/canvas-2d" }
 canvas-core = { path = "./crates/canvas-core" }
 canvas-webgl = { path = "./crates/canvas-webgl" }
 canvas-svg = { path = "./crates/canvas-svg" }
+canvas-svg-c = { path = "./crates/canvas-svg-c" }
 gl-bindings = { path = "./crates/gl-bindings" }
 canvas-c = { path = "./crates/canvas-c" }
-skia-safe = { git = "https://github.com/triniwiz/rust-skia", rev = "1eafe30", features = ["textlayout"] }
+quick-xml = "0.34"
+skia-safe = { git = "https://github.com/triniwiz/rust-skia", rev = "b9d29071cd8876b2447d58a14346b9fe6a5d21e2", features = ["textlayout"] }
 itertools = "0.14.0"
 ustr = "1.1.0"
 wgpu-core = { git = "https://github.com/triniwiz/wgpu", rev = "e5c0aa02", features = ["wgsl"] }

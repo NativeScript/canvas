@@ -28,8 +28,8 @@ export class SVGElement extends Element {
 			(<any>this.nativeValue)?.addChild?.(view.nativeElement);
 			return view;
 		} else if (view instanceof Text) {
-			const dom = this.__domElement ?? this.nativeElement.__domElement;
-			const text = dom.createTextNode?.(view.data);
+			const dom = <any>(this.__domElement ?? this.nativeElement.__domElement);
+			const text = dom?.createTextNode?.(view.data);
 			view.__domNode = text;
 			dom?.appendChild?.(text);
 			return view;
@@ -58,7 +58,7 @@ export class SVGElement extends Element {
 		if (!child) {
 			return null;
 		}
-		const parent = this.__domElement ?? this.nativeElement?.__domElement;
+		const parent = <any>(this.__domElement ?? this.nativeElement?.__domElement);
 		if (!parent?.removeChild?.(child)) {
 			return null;
 		}

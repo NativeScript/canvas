@@ -28,6 +28,14 @@ class NSCVideoHelperListenerImpl extends NSObject implements NSCVideoHelperListe
 					owner._playPromise = null;
 				}
 				owner._notifyListener(Video.playingEvent);
+			} else if (owner._playReject) {
+				// pause() before the first frame rejects play(), as on the web.
+				const error: any = new Error('The play() request was interrupted by a call to pause().');
+				error.name = 'AbortError';
+				owner._playReject(error);
+				owner._playResolve = null;
+				owner._playReject = null;
+				owner._playPromise = null;
 			}
 		}
 	}
@@ -383,10 +391,11 @@ export class Video extends VideoBase {
 
 	_playPromise: Promise<void> | null = null;
 	_playResolve: (() => void) | null = null;
-	_playReject: (() => void) | null = null;
+	_playReject: ((reason?: any) => void) | null = null;
 
 	play() {
-		if (this.helper.state === 1) {
+		// With autoplay the player can be running before a frame is decoded.
+		if (this.helper.state === 1 && this.helper.firstFrameReady) {
 			return Promise.resolve();
 		}
 		if (this._playPromise) {

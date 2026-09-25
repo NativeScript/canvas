@@ -103,7 +103,10 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
     }
 
     let adapter = unsafe { &*adapter };
-    let features = parse_required_features(required_features, required_features_length);
+    let mut features = parse_required_features(required_features, required_features_length);
+
+    // importExternalTexture is core WebGPU, so enable it wherever the backend can.
+    features |= adapter.adapter.features() & wgt::Features::EXTERNAL_TEXTURE;
 
     let limits = if required_limits.is_null() {
         adapter.limits.clone()

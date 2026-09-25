@@ -164,6 +164,7 @@ add_library(
 
         ${CPP_DIR}/webgpu/GPUCanvasContextImpl.cpp
         ${CPP_DIR}/webgpu/GPUTextureImpl.cpp
+        ${CPP_DIR}/webgpu/GPUExternalTextureImpl.cpp
         ${CPP_DIR}/webgpu/GPUComputePassEncoderImpl.cpp
         ${CPP_DIR}/webgpu/GPUQuerySetImpl.cpp
         ${CPP_DIR}/webgpu/GPUCommandEncoderImpl.cpp

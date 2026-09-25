@@ -199,7 +199,7 @@ impl BlitCache {
     target_os = "visionos",
     target_os = "tvos"
 ))]
-unsafe fn import_platform_texture(
+pub(crate) unsafe fn import_platform_texture(
     device: &Arc<wgpu_core::device::Device>,
     handle: *mut c_void,
     width: u32,
@@ -265,7 +265,7 @@ unsafe fn import_platform_texture(
 /// the call; the Vulkan import takes one of its own, so the caller may release theirs as
 /// soon as this returns.
 #[cfg(target_os = "android")]
-unsafe fn import_platform_texture(
+pub(crate) unsafe fn import_platform_texture(
     device: &Arc<wgpu_core::device::Device>,
     handle: *mut c_void,
     width: u32,
@@ -340,7 +340,7 @@ unsafe fn import_platform_texture(
     target_os = "tvos",
     target_os = "android"
 )))]
-unsafe fn import_platform_texture(
+pub(crate) unsafe fn import_platform_texture(
     _device: &Arc<wgpu_core::device::Device>,
     _handle: *mut c_void,
     _width: u32,

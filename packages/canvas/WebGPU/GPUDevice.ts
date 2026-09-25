@@ -410,6 +410,56 @@ export class GPUDevice extends EventTarget {
 		return this._queue;
 	}
 
+	// Last import per video, reused until a new frame is decoded.
+	private _externalTextures = new WeakMap<object, GPUExternalTexture>();
+
+	importExternalTexture(descriptor: { source: any; label?: string; colorSpace?: 'srgb' | 'display-p3' }): GPUExternalTexture {
+		const source = descriptor?.source;
+		// The polyfill's <video> element wraps a canvas-media Video; accept either.
+		const video = source?._video ?? source;
+		if (!video || typeof video.getGPUFrameTexture !== 'function') {
+			throw new TypeError(`Failed to execute 'importExternalTexture' on 'GPUDevice': source must be a video element.`);
+		}
+
+		const device = this.__metalDevice;
+		if (!device || !video.supportsGPUFrames?.(device)) {
+			const error: any = new Error(`Failed to execute 'importExternalTexture' on 'GPUDevice': external textures are not supported on this platform yet.`);
+			error.name = 'NotSupportedError';
+			throw error;
+		}
+
+		const frame = video.getGPUFrameTexture(device);
+		if (!frame) {
+			// No new frame: the previous import is still current.
+			const current = this._externalTextures.get(video);
+			if (current) {
+				return current;
+			}
+			const error: any = new Error(`Failed to execute 'importExternalTexture' on 'GPUDevice': the video has no frame available yet.`);
+			error.name = 'InvalidStateError';
+			throw error;
+		}
+
+		const texture = GPUExternalTexture.fromNative(
+			this.native.importExternalTexture({
+				label: descriptor.label,
+				nativeTexture: frame.texturePointer,
+				width: frame.width,
+				height: frame.height,
+			}),
+			frame,
+		);
+
+		if (!texture) {
+			const error: any = new Error(`Failed to execute 'importExternalTexture' on 'GPUDevice': the frame could not be imported.`);
+			error.name = 'OperationError';
+			throw error;
+		}
+
+		this._externalTextures.set(video, texture);
+		return texture;
+	}
+
 	private _metalDevice: number | undefined;
 	/**
 	 * The `MTLDevice` wgpu renders with, as a number, or 0 where there is none (non-Apple

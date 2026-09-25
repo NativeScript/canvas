@@ -17,6 +17,7 @@
 #include "GPUTextureViewImpl.h"
 #include "GPUBufferImpl.h"
 #include "GPUTextureImpl.h"
+#include "GPUExternalTextureImpl.h"
 #include "GPUComputePipelineImpl.h"
 #include "GPUQuerySetImpl.h"
 #include "GPURenderBundleEncoderImpl.h"
@@ -148,6 +149,10 @@ v8::Local<v8::FunctionTemplate> GPUDeviceImpl::GetCtor(v8::Isolate *isolate) {
     tmpl->Set(
             ConvertToV8String(isolate, "createTexture"),
             v8::FunctionTemplate::New(isolate, &CreateTexture));
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "importExternalTexture"),
+            v8::FunctionTemplate::New(isolate, &ImportExternalTexture));
 
     tmpl->Set(
             ConvertToV8String(isolate, "destroy"),
@@ -3697,6 +3702,61 @@ void GPUDeviceImpl::CreateTexture(const v8::FunctionCallbackInfo<v8::Value> &arg
 
 /// The `MTLDevice` wgpu renders with, as a number, or 0 where there is none.
 ///
+/// `importExternalTexture({ nativeTexture, width, height, label? })`: JS resolves the video to
+/// its current frame. Undefined when the backend has no external texture support.
+void GPUDeviceImpl::ImportExternalTexture(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    GPUDeviceImpl *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto optionsVal = args[0];
+    if (!optionsVal->IsObject()) {
+        args.GetReturnValue().SetUndefined();
+        return;
+    }
+    auto options = optionsVal.As<v8::Object>();
+
+    v8::Local<v8::Value> labelVal;
+    options->Get(context, ConvertToV8String(isolate, "label")).ToLocal(&labelVal);
+    GPULabel label(isolate, labelVal);
+
+    void *nativeTexture = nullptr;
+    v8::Local<v8::Value> nativeTextureVal;
+    if (options->Get(context, ConvertToV8String(isolate, "nativeTexture")).ToLocal(
+            &nativeTextureVal) && nativeTextureVal->IsNumber()) {
+        nativeTexture = reinterpret_cast<void *>(
+                (uintptr_t) nativeTextureVal->NumberValue(context).FromJust());
+    }
+
+    uint32_t width = 0;
+    v8::Local<v8::Value> widthVal;
+    if (options->Get(context, ConvertToV8String(isolate, "width")).ToLocal(&widthVal) &&
+        widthVal->IsUint32()) {
+        width = widthVal->Uint32Value(context).FromJust();
+    }
+
+    uint32_t height = 0;
+    v8::Local<v8::Value> heightVal;
+    if (options->Get(context, ConvertToV8String(isolate, "height")).ToLocal(&heightVal) &&
+        heightVal->IsUint32()) {
+        height = heightVal->Uint32Value(context).FromJust();
+    }
+
+    auto texture = canvas_native_webgpu_device_import_external_texture(ptr->GetGPUDevice(),
+                                                                        *label, nativeTexture,
+                                                                        width, height);
+    if (texture == nullptr) {
+        args.GetReturnValue().SetUndefined();
+        return;
+    }
+
+    auto ret = GPUExternalTextureImpl::NewInstance(isolate, new GPUExternalTextureImpl(texture));
+    args.GetReturnValue().Set(ret);
+}
+
 /// Used to build the `CVMetalTextureCache` that video frames are imported through: it has
 /// to be this device and not the system default one. Apple platforms only.
 void GPUDeviceImpl::GetMetalDevicePointer(const v8::FunctionCallbackInfo<v8::Value> &args) {

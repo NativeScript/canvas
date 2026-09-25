@@ -309,6 +309,12 @@ impl CanvasGPUDevice {
                         let view = unsafe { &**view };
                         wgpu_core::binding_model::BindingResource::TextureView(Arc::clone(&view.texture_view))
                     }
+                    CanvasBindGroupEntryResource::ExternalTexture(texture) => {
+                        let texture = unsafe { &**texture };
+                        wgpu_core::binding_model::BindingResource::ExternalTexture(Arc::clone(
+                            &texture.external_texture,
+                        ))
+                    }
                 },
             })
             .collect::<Vec<_>>();

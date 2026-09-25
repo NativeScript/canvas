@@ -12,6 +12,7 @@ use wgt::{
 };
 
 use crate::webgpu::gpu_buffer::CanvasGPUBuffer;
+use crate::webgpu::gpu_external_texture::CanvasGPUExternalTexture;
 use crate::webgpu::gpu_sampler::CanvasGPUSampler;
 use crate::webgpu::gpu_texture_view::CanvasGPUTextureView;
 
@@ -1967,6 +1968,7 @@ pub enum CanvasBindGroupEntryResource {
     Buffer(CanvasBufferBinding),
     Sampler(*const CanvasGPUSampler),
     TextureView(*const CanvasGPUTextureView),
+    ExternalTexture(*const CanvasGPUExternalTexture),
 }
 
 #[repr(C)]
@@ -1997,6 +1999,15 @@ impl Into<BindGroupEntry<'static>> for CanvasBindGroupEntry {
                 BindGroupEntry {
                     binding: self.binding,
                     resource: wgpu_core::binding_model::BindingResource::TextureView(view_id),
+                }
+            }
+            CanvasBindGroupEntryResource::ExternalTexture(texture) => {
+                let texture = unsafe { &*texture };
+                BindGroupEntry {
+                    binding: self.binding,
+                    resource: wgpu_core::binding_model::BindingResource::ExternalTexture(
+                        Arc::clone(&texture.external_texture),
+                    ),
                 }
             }
         }
@@ -2237,6 +2248,7 @@ pub enum CanvasBindingType {
     Sampler(CanvasSamplerBindingLayout),
     Texture(CanvasTextureBindingLayout),
     StorageTexture(CanvasStorageTextureBindingLayout),
+    ExternalTexture,
 }
 
 #[repr(C)]
@@ -2279,6 +2291,7 @@ impl Into<BindGroupLayoutEntry> for CanvasBindGroupLayoutEntry {
                         view_dimension: storage_texture.view_dimension.into(),
                     }
                 }
+                CanvasBindingType::ExternalTexture => wgt::BindingType::ExternalTexture,
             },
             count: None, // native-only
         }

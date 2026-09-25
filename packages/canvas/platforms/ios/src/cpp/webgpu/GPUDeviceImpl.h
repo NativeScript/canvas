@@ -76,6 +76,8 @@ public:
 
     static void CreateTexture(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void ImportExternalTexture(const v8::FunctionCallbackInfo<v8::Value> &args);
+
     static void CreateShaderModule(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void Destroy(const v8::FunctionCallbackInfo<v8::Value> &args);

@@ -83,7 +83,8 @@ enum class NativeType {
     GPURenderBundleEncoder,
     GPURenderBundle,
     GPUCompilationInfo,
-    GPUCompilationMessage
+    GPUCompilationMessage,
+    GPUExternalTexture
 };
 
 #endif //CANVAS_ANDROID_NATIVETYPE_H

@@ -736,6 +736,8 @@ typedef struct CanvasGPUDevice CanvasGPUDevice;
 
 typedef struct CanvasGPUError CanvasGPUError;
 
+typedef struct CanvasGPUExternalTexture CanvasGPUExternalTexture;
+
 typedef struct CanvasGPUPipelineLayout CanvasGPUPipelineLayout;
 
 typedef struct CanvasGPUQuerySet CanvasGPUQuerySet;
@@ -1596,6 +1598,7 @@ typedef enum CanvasBindingType_Tag {
   CanvasBindingTypeSampler,
   CanvasBindingTypeTexture,
   CanvasBindingTypeStorageTexture,
+  CanvasBindingTypeExternalTexture,
 } CanvasBindingType_Tag;
 
 typedef struct CanvasBindingType {
@@ -1632,6 +1635,7 @@ typedef enum CanvasBindGroupEntryResource_Tag {
   CanvasBindGroupEntryResourceBuffer,
   CanvasBindGroupEntryResourceSampler,
   CanvasBindGroupEntryResourceTextureView,
+  CanvasBindGroupEntryResourceExternalTexture,
 } CanvasBindGroupEntryResource_Tag;
 
 typedef struct CanvasBindGroupEntryResource {
@@ -1645,6 +1649,9 @@ typedef struct CanvasBindGroupEntryResource {
     };
     struct {
       const struct CanvasGPUTextureView *texture_view;
+    };
+    struct {
+      const struct CanvasGPUExternalTexture *external_texture;
     };
   };
 } CanvasBindGroupEntryResource;
@@ -3624,6 +3631,22 @@ const struct CanvasGPUTexture *canvas_native_webgpu_device_create_texture(const 
 
 const struct CanvasGPUSampler *canvas_native_webgpu_device_create_sampler(const struct CanvasGPUDevice *device,
                                                                           const struct CanvasCreateSamplerDescriptor *descriptor);
+
+/**
+ * `native_texture` is a borrowed `MTLTexture*`. Keep the platform frame alive while the result
+ * can be sampled: the decoder recycles its buffer once the frame is released.
+ */
+const struct CanvasGPUExternalTexture *canvas_native_webgpu_device_import_external_texture(const struct CanvasGPUDevice *device,
+                                                                                           const char *label,
+                                                                                           void *native_texture,
+                                                                                           uint32_t width,
+                                                                                           uint32_t height);
+
+char *canvas_native_webgpu_external_texture_get_label(const struct CanvasGPUExternalTexture *external_texture);
+
+void canvas_native_webgpu_external_texture_reference(const struct CanvasGPUExternalTexture *external_texture);
+
+void canvas_native_webgpu_external_texture_release(const struct CanvasGPUExternalTexture *external_texture);
 
 /**
  * Copy a platform video frame texture into `destination` without touching the CPU.

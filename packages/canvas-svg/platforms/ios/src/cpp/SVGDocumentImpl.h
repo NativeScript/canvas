@@ -56,6 +56,9 @@ public:
     // SMIL. `hasAnimations` is what tells JS whether to drive a clock at all.
     static void HasAnimations(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    // Returns whether the timeline is now running, so JS knows to (re)start its clock.
+    static void AddStylesheet(const v8::FunctionCallbackInfo<v8::Value> &args);
+
     static void AnimationDuration(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void CurrentTime(const v8::FunctionCallbackInfo<v8::Value> &args);

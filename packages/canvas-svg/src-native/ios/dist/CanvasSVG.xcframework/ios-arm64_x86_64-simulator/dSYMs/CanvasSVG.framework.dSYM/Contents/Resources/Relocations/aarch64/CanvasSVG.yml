@@ -2,8 +2,8 @@
 triple:          'arm64-apple-darwin'
 binary-path:     '/Users/triniwiz/Documents/GitHub/canvas/packages/canvas-svg/src-native/ios/dist/Release-iphonesimulator/CanvasSVG.framework/CanvasSVG'
 relocations:
-  - { offset: 0xAF8BD, size: 0x8, addend: 0x0, symName: _CanvasSVGVersionString, symObjAddr: 0x0, symBinAddr: 0x5B6810, symSize: 0x0 }
-  - { offset: 0xAF8F2, size: 0x8, addend: 0x0, symName: _CanvasSVGVersionNumber, symObjAddr: 0x30, symBinAddr: 0x5B6840, symSize: 0x0 }
+  - { offset: 0xAF8BD, size: 0x8, addend: 0x0, symName: _CanvasSVGVersionString, symObjAddr: 0x0, symBinAddr: 0x5B6590, symSize: 0x0 }
+  - { offset: 0xAF8F2, size: 0x8, addend: 0x0, symName: _CanvasSVGVersionNumber, symObjAddr: 0x30, symBinAddr: 0x5B65C0, symSize: 0x0 }
   - { offset: 0xAF92F, size: 0x8, addend: 0x0, symName: '+[CanvasSVGHelper drawFromString:size:width:height:svg:]', symObjAddr: 0x0, symBinAddr: 0x1738, symSize: 0x84 }
   - { offset: 0xAF96C, size: 0x8, addend: 0x0, symName: '+[CanvasSVGHelper drawFromString:size:width:height:svg:]', symObjAddr: 0x0, symBinAddr: 0x1738, symSize: 0x84 }
   - { offset: 0xAFA07, size: 0x8, addend: 0x0, symName: _nscSVGNativeScale, symObjAddr: 0x84, symBinAddr: 0x17BC, symSize: 0x4C }

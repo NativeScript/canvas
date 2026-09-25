@@ -109,6 +109,14 @@ impl SvgDocument {
         self.dom.find_node_by_id(id)
     }
 
+    /// Adds CSS `@keyframes` animations from a stylesheet outside the document. Only `#id`
+    /// selectors that exist in the document apply. Returns whether the timeline is now running,
+    /// so a caller whose loop had stopped knows to restart it.
+    pub fn add_stylesheet(&mut self, css: &str) -> bool {
+        self.timeline.extend(crate::smil::extract_from_css(css));
+        self.timeline.is_running()
+    }
+
     pub fn has_animations(&self) -> bool {
         !self.timeline.is_empty()
     }

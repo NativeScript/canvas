@@ -207,6 +207,23 @@ pub extern "C" fn canvas_native_svg_document_unregister_id(
     doc.0.unregister_id(&id);
 }
 
+/// Adds CSS `@keyframes` animations from a stylesheet supplied apart from the document's own
+/// source. Returns whether the timeline is now running.
+#[unsafe(no_mangle)]
+pub extern "C" fn canvas_native_svg_document_add_stylesheet(
+    doc: *mut SvgDocument,
+    css: *const c_char,
+) -> bool {
+    if doc.is_null() {
+        return false;
+    }
+    let Some(css) = c_str_to_string(css) else {
+        return false;
+    };
+    let doc = unsafe { &mut *doc };
+    doc.0.add_stylesheet(&css)
+}
+
 /// Resolves an id registered either by us or by Skia's parser.
 #[unsafe(no_mangle)]
 pub extern "C" fn canvas_native_svg_document_get_element_by_id(

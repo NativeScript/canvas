@@ -113,6 +113,12 @@ void canvas_native_svg_document_register_id(struct SvgDocument *doc,
 void canvas_native_svg_document_unregister_id(struct SvgDocument *doc, const char *id);
 
 /**
+ * Adds CSS `@keyframes` animations from a stylesheet supplied apart from the document's own
+ * source. Returns whether the timeline is now running.
+ */
+bool canvas_native_svg_document_add_stylesheet(struct SvgDocument *doc, const char *css);
+
+/**
  * Resolves an id registered either by us or by Skia's parser.
  */
 struct SvgNode *canvas_native_svg_document_get_element_by_id(struct SvgDocument *doc,

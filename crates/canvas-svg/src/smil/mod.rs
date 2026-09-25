@@ -9,6 +9,7 @@ mod timing;
 mod value;
 
 pub use parse::extract;
+pub(crate) use css::extract_from_css;
 
 use skia_safe::svg::{Dom, Node};
 
@@ -165,6 +166,43 @@ impl Timeline {
 
     pub fn is_empty(&self) -> bool {
         self.animations.is_empty()
+    }
+
+    /// Merges animations added after construction into their (target, attribute) groups. Order
+    /// is renumbered across the combined set; it is only a tie-break.
+    pub fn extend(&mut self, added: Vec<Animation>) {
+        if added.is_empty() {
+            return;
+        }
+        let start = self.animations.len();
+        self.animations.extend(added);
+        for index in start..self.animations.len() {
+            let animation = &self.animations[index];
+            let slot = animation.kind.slot().to_owned();
+            match self
+                .groups
+                .iter_mut()
+                .find(|g| g.target == animation.target && g.attribute == slot)
+            {
+                Some(group) => group.members.push(index),
+                None => self.groups.push(Group {
+                    target: animation.target.clone(),
+                    ancestors: animation.ancestors.clone(),
+                    attribute: slot,
+                    members: vec![index],
+                    node: None,
+                    looked_up: false,
+                    baseline: None,
+                    base: None,
+                    written: false,
+                    last_written: String::new(),
+                    buffer: Vec::new(),
+                }),
+            }
+        }
+        for (order, animation) in self.animations.iter_mut().enumerate() {
+            animation.order = order;
+        }
     }
 
     pub fn len(&self) -> usize {

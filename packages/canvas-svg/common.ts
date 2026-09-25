@@ -493,6 +493,16 @@ export class SVGBase extends View {
 		this.__animationScheduled = false;
 	}
 
+	/**
+	 * Adds CSS `@keyframes` from a stylesheet outside the document; only `#id` selectors that
+	 * exist apply. Restarts the animation clock if nothing was running.
+	 */
+	addStylesheet(css: string) {
+		if (this.__document.addStylesheet(css)) {
+			this.__startAnimations();
+		}
+	}
+
 	disposeNativeView() {
 		// The last view out frees the source; `__startAnimations` rejoins if set up again.
 		this.__releaseShared();

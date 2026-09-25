@@ -51,17 +51,25 @@ pub(super) fn extract(source: &[u8]) -> Vec<Animation> {
 
     let mut animations = Vec::new();
     for css in style_blocks(text) {
-        let (keyframes, rules) = parse(&css);
-        for (selector, declarations) in rules {
-            let Some(id) = selector.strip_prefix('#') else {
+        animations.extend(extract_from_css(&css));
+    }
+    animations
+}
+
+/// The same extraction for CSS supplied outside the document. `#id` selectors must match ids
+/// already in it.
+pub(crate) fn extract_from_css(css: &str) -> Vec<Animation> {
+    let mut animations = Vec::new();
+    let (keyframes, rules) = parse(css);
+    for (selector, declarations) in rules {
+        let Some(id) = selector.strip_prefix('#') else {
+            continue;
+        };
+        for spec in animation_specs(&declarations) {
+            let Some(frames) = keyframes.get(&spec.name) else {
                 continue;
             };
-            for spec in animation_specs(&declarations) {
-                let Some(frames) = keyframes.get(&spec.name) else {
-                    continue;
-                };
-                build(id, &spec, frames, &mut animations);
-            }
+            build(id, &spec, frames, &mut animations);
         }
     }
     animations

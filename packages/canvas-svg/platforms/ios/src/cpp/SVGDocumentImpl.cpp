@@ -238,6 +238,19 @@ void SVGDocumentImpl::HasAnimations(const v8::FunctionCallbackInfo<v8::Value> &a
     args.GetReturnValue().Set(canvas_native_svg_document_has_animations(ptr->GetDocument()));
 }
 
+// CSS `@keyframes` from a stylesheet outside the document.
+void SVGDocumentImpl::AddStylesheet(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto isolate = args.GetIsolate();
+    SVGDocumentImpl *ptr = GetPointer(args.This());
+    if (ptr == nullptr || args.Length() < 1 || !args[0]->IsString()) {
+        args.GetReturnValue().Set(false);
+        return;
+    }
+
+    auto css = ConvertFromV8String(isolate, args[0]);
+    args.GetReturnValue().Set(canvas_native_svg_document_add_stylesheet(ptr->GetDocument(), css.c_str()));
+}
+
 // Seconds until every animation has finished; -1 when one of them repeats forever.
 void SVGDocumentImpl::AnimationDuration(const v8::FunctionCallbackInfo<v8::Value> &args) {
     SVGDocumentImpl *ptr = GetPointer(args.This());
@@ -339,6 +352,8 @@ v8::Local<v8::FunctionTemplate> SVGDocumentImpl::GetCtor(v8::Isolate *isolate) {
               v8::FunctionTemplate::New(isolate, &RenderToBuffer));
     tmpl->Set(ConvertToV8String(isolate, "hasAnimations"),
               v8::FunctionTemplate::New(isolate, &HasAnimations));
+    tmpl->Set(ConvertToV8String(isolate, "addStylesheet"),
+              v8::FunctionTemplate::New(isolate, &AddStylesheet));
     tmpl->Set(ConvertToV8String(isolate, "animationDuration"),
               v8::FunctionTemplate::New(isolate, &AnimationDuration));
     tmpl->Set(ConvertToV8String(isolate, "currentTime"),

@@ -80,3 +80,50 @@ fn a_document_with_no_stylesheet_is_unaffected() {
     let doc = SvgDocument::from_bytes(source.as_bytes()).expect("parse");
     assert!(!doc.has_animations());
 }
+
+/// CSS kept outside the SVG, as in a CodePen CSS panel, still animates it through
+/// `add_stylesheet`. Reproduces codepen.io/shahbokhari/pen/oBbmXG.
+#[test]
+fn a_stylesheet_added_after_load_animates_the_element_it_names() {
+    let source = r##"<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
+        <rect id="dot" x="0" y="40" width="20" height="20" fill="red"/>
+    </svg>"##;
+    let css = r##"
+        #dot { animation: slide 2s linear infinite }
+        @keyframes slide {
+            0% { transform: translate(0px,0px) }
+            100% { transform: translate(60px,0px) }
+        }
+    "##;
+
+    let mut doc = SvgDocument::from_bytes(source.as_bytes()).expect("parse");
+    doc.set_container_size(100.0, 100.0);
+    assert!(!doc.has_animations(), "nothing to animate before the stylesheet is added");
+
+    assert!(doc.add_stylesheet(css), "the added animation should be running");
+    assert_eq!(doc.animation_count(), 1);
+
+    doc.advance(0.0);
+    let start = frame_hash(&mut doc, 100, 100);
+    doc.advance(1.0);
+    let middle = frame_hash(&mut doc, 100, 100);
+    assert_ne!(start, middle, "the separately-supplied stylesheet never reached the element");
+}
+
+/// Ids are resolved per frame, not at extraction, so an unknown id is harmless.
+#[test]
+fn a_stylesheet_with_no_matching_id_resolves_to_nothing_safely() {
+    let source = r##"<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10"/></svg>"##;
+    let mut doc = SvgDocument::from_bytes(source.as_bytes()).expect("parse");
+    doc.set_container_size(10.0, 10.0);
+    doc.add_stylesheet(
+        "#missing { animation: spin 1s linear infinite } \
+         @keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }",
+    );
+
+    doc.advance(0.0);
+    let start = frame_hash(&mut doc, 10, 10);
+    doc.advance(0.5);
+    let later = frame_hash(&mut doc, 10, 10);
+    assert_eq!(start, later, "an animation targeting a nonexistent id should not change the frame");
+}

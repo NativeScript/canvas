@@ -274,6 +274,14 @@ export class SvgDocumentWrapper {
 		return this.__native.hasAnimations();
 	}
 
+	/**
+	 * Adds CSS `@keyframes` from a stylesheet outside the document; only `#id` selectors that
+	 * exist apply. Returns whether the timeline is now running.
+	 */
+	addStylesheet(css: string): boolean {
+		return this.__native.addStylesheet(css);
+	}
+
 	/** Seconds until every animation has finished, or Infinity when one repeats forever. */
 	get animationDuration(): number {
 		const duration = this.__native.animationDuration();

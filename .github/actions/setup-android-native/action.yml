@@ -8,7 +8,7 @@ inputs:
   ndk-version:
     description: NDK version to install via sdkmanager (must match ndkVersion in canvas build.gradle and the default in tools/scripts/build-android.sh)
     required: false
-    default: '27.3.13750724'
+    default: '29.0.14206865'
   api-level:
     description: Android API level used for the NDK clang wrappers
     required: false

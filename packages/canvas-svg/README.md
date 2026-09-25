@@ -1,12 +1,131 @@
 # @nativescript/canvas-svg
 
-```javascript
+Renders SVG natively on iOS and Android with Skia, including SMIL and CSS animations and a live DOM you can script.
+
+```bash
 npm install @nativescript/canvas-svg
 ```
 
 ## Usage
 
-// TODO
+### From a source
+
+`src` accepts an app relative path, an absolute path, a URL, or inline markup.
+
+```xml
+<Page xmlns:svg="@nativescript/canvas-svg">
+  <svg:Svg src="~/assets/rocket.svg" width="100%" height="100%" />
+</Page>
+```
+
+```ts
+import { Svg } from '@nativescript/canvas-svg';
+
+const view = new Svg();
+view.src = '~/assets/rocket.svg';
+```
+
+Animations in the source start as soon as the view is loaded and pause while it is off screen.
+
+### Building it with the DOM
+
+With `@nativescript/canvas-polyfill` installed you can build and change an SVG the same way you would in a browser. The `nativeElement` of the root `<svg>` is the view to add to your layout.
+
+```ts
+require('@nativescript/canvas-polyfill');
+
+const NS = 'http://www.w3.org/2000/svg';
+const svg = document.createElementNS(NS, 'svg');
+svg.setAttribute('width', '150');
+svg.setAttribute('height', '150');
+
+const circle = document.createElementNS(NS, 'circle');
+circle.setAttribute('cx', '75');
+circle.setAttribute('cy', '75');
+circle.setAttribute('r', '40');
+circle.setAttribute('fill', 'gold');
+svg.appendChild(circle);
+
+const label = document.createElementNS(NS, 'text');
+label.setAttribute('x', '10');
+label.setAttribute('y', '140');
+label.textContent = 'Hello';
+svg.appendChild(label);
+
+layout.addChild(svg.nativeElement);
+
+// Later changes are batched into a single redraw on the next frame.
+circle.setAttribute('fill', 'orange');
+label.textContent = 'Updated';
+```
+
+Supported on elements: `setAttribute`, `getAttribute`, `appendChild`, `append`, `removeChild` and `textContent`. Animating by changing attributes in a `requestAnimationFrame` loop works too.
+
+## Properties
+
+| Property | Default | Description |
+| --- | --- | --- |
+| `src` | | Path, URL or inline markup to render. |
+| `gpu` | `true` | Rasterize on the GPU (Metal on iOS, Vulkan or GL on Android). Falls back to the CPU automatically if no GPU context can be created. |
+| `threaded` | `true` | Rasterize off the UI thread. The frame is recorded on the UI thread and drawn on one render thread shared by every threaded view, so a heavy SVG does not hold up the rest of the UI. |
+| `shareSrc` | `true` | Views with the same `src` share one parsed document, one animation clock and one recording per frame, like `<img>` tags pointing at the same file on the web. Shared copies animate in step. Set it to `false` to give a view its own copy. |
+| `backend` | `auto` | Force `gl`, `vulkan` or `metal`. Only needed to work around a driver problem. |
+| `surfaceType` | `texture` | Android only. `texture` behaves like a normal view. `surface` is faster to composite but cannot be transformed or overlapped. |
+
+## Events
+
+| Event | When |
+| --- | --- |
+| `animationEnd` | Every animation in the document has finished. Never fires for one that repeats forever. |
+| `contextLost` | The GPU context could not be rebuilt and drawing has moved to the CPU. |
+| `contextRestored` | A lost GPU context was rebuilt and GPU drawing has resumed. |
+
+```ts
+view.on('animationEnd', () => console.log('done'));
+```
+
+## Animation
+
+Skia's SVG renderer does not animate, so this plugin includes its own animation engine. Both common export formats work.
+
+**SMIL:** `<animate>`, `<animateTransform>`, `<animateMotion>` (including `rotate="auto"`) and `<set>`, with `values`, `from`/`to`/`by`, `keyTimes`, `keySplines`, `calcMode`, `repeatCount`, `fill="freeze"`, `additive` and `accumulate`. A `begin` that waits for an event (such as `click`) does not start on its own.
+
+**CSS:** `@keyframes` in a `<style>` block, applied through the `animation` shorthand or its longhands (duration, delay, iteration count, direction, fill mode and timing function). Keyword and `cubic-bezier()` easings are supported; `steps()` runs as linear. Only `#id` selectors are read, which is what SVG exporters produce.
+
+Only changes that are actually visible trigger a redraw, so an animation that is holding still costs nothing.
+
+## Drawing into a canvas
+
+Once this package is imported, `@nativescript/canvas` accepts an SVG anywhere it takes an image.
+
+**A view as an image source.** Pass an `Svg` view, or the polyfill's `<svg>` element, to `drawImage`, `createPattern`, `createImageBitmap`, `texImage2D`/`texSubImage2D`/`texImage3D` or WebGPU's `copyExternalImageToTexture`. You get the current frame, so drawing every frame follows its animation. Sizes are the view's CSS pixels, as for an `<img>` of an SVG on the web. `drawImage` rasterizes at the size the image lands at, so it stays sharp when scaled. An unchanged frame is not rasterized again.
+
+```ts
+ctx.drawImage(svgView, 0, 0, 300, 300);
+```
+
+**Loading into an `ImageAsset`.** `loadSvg` (async) and `loadSvgSync` take markup, an app-relative (`~/`) or absolute path, or a view. `loadSvg` also takes a URL. Options: `width` and/or `height` in CSS pixels (the aspect ratio is kept), `scale` in pixels per CSS pixel (default 1), and `time`, the animation time in seconds to capture (default 0).
+
+```ts
+const asset = new ImageAsset();
+await asset.loadSvg('~/assets/icon.svg', { width: 48, scale: Screen.mainScreen.scale });
+ctx.drawImage(asset, 0, 0);
+```
+
+An `<img>` whose `src` is an SVG goes through the same loader.
+
+## Rendering a source once
+
+`Svg.fromSrc` (async) and `Svg.fromSrcSync` return an `SvgData` with `width`, `height` and premultiplied RGBA `data`. They use Skia's static renderer, so there is no animation and markup must state its own size. `ImageAsset.loadSvg` has neither limit.
+
+```ts
+const data = await Svg.fromSrc('~/assets/icon.svg');
+```
+
+## Limitations
+
+* A document loaded from `src` is not scriptable. That is what lets views share it.
+* Text elements loaded from a source only report and replace text that was added through the DOM.
 
 ## License
 

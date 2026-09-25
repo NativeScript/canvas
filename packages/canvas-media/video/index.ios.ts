@@ -2,7 +2,7 @@ import { VideoBase } from './common';
 import { Source, srcProperty } from '../source';
 import { controlsProperty, playsinlineProperty, mutedProperty, currentTimeProperty, loopProperty, autoplayProperty } from '../common';
 import { booleanConverter, knownFolders, path } from '@nativescript/core';
-declare const NSCCanvasUtils, NSCVideoHelper, NSCRender;
+declare const NSCCanvasUtils, NSCVideoHelper, NSCRender, NSCVideoFrameBridge;
 
 interface NSCVideoHelperListener {}
 
@@ -28,6 +28,14 @@ class NSCVideoHelperListenerImpl extends NSObject implements NSCVideoHelperListe
 					owner._playPromise = null;
 				}
 				owner._notifyListener(Video.playingEvent);
+			} else if (owner._playReject) {
+				// pause() before the first frame rejects play(), as on the web.
+				const error: any = new Error('The play() request was interrupted by a call to pause().');
+				error.name = 'AbortError';
+				owner._playReject(error);
+				owner._playResolve = null;
+				owner._playReject = null;
+				owner._playPromise = null;
 			}
 		}
 	}
@@ -232,6 +240,42 @@ export class Video extends VideoBase {
 		}
 	}
 
+	private _supportsGPUFrames: boolean | undefined;
+
+	/**
+	 * Whether frames can be handed to WebGPU as Metal textures on `device`. A false is
+	 * permanent; a null from `getGPUFrameTexture` only means no new frame.
+	 */
+	supportsGPUFrames(device: number): boolean {
+		if (this._supportsGPUFrames === undefined) {
+			try {
+				this._supportsGPUFrames = typeof NSCVideoFrameBridge !== 'undefined' && NSCVideoFrameBridge.isSupportedForDevice(device);
+			} catch (e) {
+				this._supportsGPUFrames = false;
+			}
+		}
+		return this._supportsGPUFrames;
+	}
+
+	/**
+	 * The current frame as a Metal texture, or null when the decoder has no new one.
+	 * The returned object owns the texture: hold it until the upload has been issued.
+	 */
+	getGPUFrameTexture(device: number): any {
+		if (!this.helper.isInForeground) {
+			return null;
+		}
+		if (this.helper.assetOutput && this.helper.player) {
+			try {
+				return NSCVideoFrameBridge.currentFrameForPlayerOutputDevice(this.helper.player, this.helper.assetOutput, device);
+			} catch (e) {
+				console.error('getGPUFrameTexture error:', e);
+				return null;
+			}
+		}
+		return null;
+	}
+
 	getVideoFrameData(): any {
 		if (!this.helper.isInForeground) {
 			return null;
@@ -347,10 +391,11 @@ export class Video extends VideoBase {
 
 	_playPromise: Promise<void> | null = null;
 	_playResolve: (() => void) | null = null;
-	_playReject: (() => void) | null = null;
+	_playReject: ((reason?: any) => void) | null = null;
 
 	play() {
-		if (this.helper.state === 1) {
+		// With autoplay the player can be running before a frame is decoded.
+		if (this.helper.state === 1 && this.helper.firstFrameReady) {
 			return Promise.resolve();
 		}
 		if (this._playPromise) {

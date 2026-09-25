@@ -7,6 +7,7 @@
 
 #include <vector>
 #include "Common.h"
+#include "V8FastApiCalls.h"
 
 #include "WebGLRenderingContextBase.h"
 
@@ -100,31 +101,12 @@ public:
 
     static v8::CFunction fast_buffer_data_os_;
     static v8::CFunction fast_buffer_data_target_usage_;
-    static v8::CFunction fast_buffer_data_u8_;
-    static v8::CFunction fast_buffer_data_i8_;
-    static v8::CFunction fast_buffer_data_u16_;
-    static v8::CFunction fast_buffer_data_i16_;
-    static v8::CFunction fast_buffer_data_u32_;
-    static v8::CFunction fast_buffer_data_i32_;
-    static v8::CFunction fast_buffer_data_f32_;
-    static v8::CFunction fast_buffer_data_f64_;
-    static v8::CFunction fast_buffer_data_array_buffer_;
+    // Single collapsed overload for every typed array / ArrayBuffer source.
+    static v8::CFunction fast_buffer_data_;
 
     static v8::CFunction fast_buffer_sub_data_target_offset_;
-
-    static v8::CFunction fast_buffer_sub_data_u8_;
-    static v8::CFunction fast_buffer_sub_data_i8_;
-
-    static v8::CFunction fast_buffer_sub_data_u16_;
-    static v8::CFunction fast_buffer_sub_data_i16_;
-
-    static v8::CFunction fast_buffer_sub_data_u32_;
-    static v8::CFunction fast_buffer_sub_data_i32_;
-
-    static v8::CFunction fast_buffer_sub_data_f32_;
-    static v8::CFunction fast_buffer_sub_data_f64_;
-
-    static v8::CFunction fast_buffer_sub_data_array_buffer_;
+    // Single collapsed overload for every typed array / ArrayBuffer source.
+    static v8::CFunction fast_buffer_sub_data_;
 
     static v8::CFunction fast_check_framebuffer_status_;
 
@@ -185,47 +167,25 @@ public:
 
     static v8::CFunction fast_uniform_matrix2fv_;
 
-    static v8::CFunction fast_uniform_matrix2fv_array_;
-
     static v8::CFunction fast_uniform_matrix3fv_;
-
-    static v8::CFunction fast_uniform_matrix3fv_array_;
 
     static v8::CFunction fast_uniform_matrix4fv_;
 
-    static v8::CFunction fast_uniform_matrix4fv_array_;
-
     static v8::CFunction fast_uniform_1fv_;
-
-    static v8::CFunction fast_uniform_1fv_array_;
 
     static v8::CFunction fast_uniform_2fv_;
 
-    static v8::CFunction fast_uniform_2fv_array_;
-
     static v8::CFunction fast_uniform_3fv_;
-
-    static v8::CFunction fast_uniform_3fv_array_;
 
     static v8::CFunction fast_uniform_4fv_;
 
-    static v8::CFunction fast_uniform_4fv_array_;
-
     static v8::CFunction fast_uniform_1iv_;
-
-    static v8::CFunction fast_uniform_1iv_array_;
 
     static v8::CFunction fast_uniform_2iv_;
 
-    static v8::CFunction fast_uniform_2iv_array_;
-
     static v8::CFunction fast_uniform_3iv_;
 
-    static v8::CFunction fast_uniform_3iv_array_;
-
     static v8::CFunction fast_uniform_4iv_;
-
-    static v8::CFunction fast_uniform_4iv_array_;
 
     static v8::CFunction fast_vertex_attrib_pointer_;
 
@@ -302,7 +262,7 @@ public:
         auto object = WebGLRenderingContext::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType(renderingContext, NativeType::WebGLRenderingContextBase);
-        canvas::SetAlignedPointer(object, 0, renderingContext);
+        object->SetAlignedPointerInInternalField(0, renderingContext, ObjectWrapperImpl::kInternalFieldTag);
         renderingContext->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
@@ -333,7 +293,6 @@ public:
 
     static void __Resized(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void __FastResized(v8::Local<v8::Object> receiver_obj) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -344,11 +303,9 @@ public:
                 ptr->GetState());
 
     }
-#endif
 
     static void __StartRaf(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void __FastStartRaf(v8::Local<v8::Object> receiver_obj) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -358,11 +315,9 @@ public:
         ptr->StartRaf();
 
     }
-#endif
 
     static void __StopRaf(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void __FastStopRaf(v8::Local<v8::Object> receiver_obj) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -372,12 +327,10 @@ public:
         ptr->StopRaf();
 
     }
-#endif
 
     static void ActiveTexture(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 
-#if V8_MAJOR_VERSION < 14
     static void FastActiveTexture(v8::Local<v8::Object> receiver_obj, uint32_t texture) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -386,7 +339,6 @@ public:
         canvas_native_webgl_active_texture(texture,
                                            ptr->GetState());
     }
-#endif
 
 
     static void AttachShader(const v8::FunctionCallbackInfo<v8::Value> &args);
@@ -404,7 +356,6 @@ public:
         );
     }
 
-#if V8_MAJOR_VERSION < 14
     static void
     FastAttachShader(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> program_obj,
                      v8::Local<v8::Object> shader_obj) {
@@ -432,14 +383,12 @@ public:
                 shader
         );
     }
-#endif
 
     static void BindAttribLocation(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 
     // todo with fast string
     /*
-#if V8_MAJOR_VERSION < 14
     static void FastBindAttribLocation(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> program_obj, uint32_t index) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -461,12 +410,9 @@ public:
 
         }
     }
-#endif
-
 */
     static void BindBuffer(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void FastBindBuffer(v8::Local<v8::Object> receiver_obj, uint32_t target,
                                v8::Local<v8::Object> buffer_obj) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
@@ -486,9 +432,7 @@ public:
             );
         }
     }
-#endif
 
-#if V8_MAJOR_VERSION < 14
     static void
     FastBindBufferNull(v8::Local<v8::Object> receiver_obj, uint32_t target, int32_t buffer_obj) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
@@ -502,11 +446,9 @@ public:
                 ptr->GetState()
         );
     }
-#endif
 
     static void BindFramebuffer(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void FastBindFramebuffer(v8::Local<v8::Object> receiver_obj, uint32_t target,
                                     v8::Local<v8::Object> buffer_obj) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
@@ -524,9 +466,7 @@ public:
             );
         }
     }
-#endif
 
-#if V8_MAJOR_VERSION < 14
     static void FastBindFramebufferNull(v8::Local<v8::Object> receiver_obj, uint32_t target,
                                         int32_t buffer_obj) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
@@ -542,12 +482,10 @@ public:
                 ptr->GetState()
         );
     }
-#endif
 
     static void BindRenderbuffer(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 
-#if V8_MAJOR_VERSION < 14
     static void FastBindRenderbuffer(v8::Local<v8::Object> receiver_obj, uint32_t target,
                                      v8::Local<v8::Object> buffer_obj) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
@@ -569,9 +507,7 @@ public:
             );
         }
     }
-#endif
 
-#if V8_MAJOR_VERSION < 14
     static void FastBindRenderbufferNull(v8::Local<v8::Object> receiver_obj, uint32_t target,
                                          int32_t buffer_obj) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
@@ -585,11 +521,9 @@ public:
                 ptr->GetState()
         );
     }
-#endif
 
     static void BindTexture(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void FastBindTexture(v8::Local<v8::Object> receiver_obj, uint32_t target,
                                 v8::Local<v8::Object> texture_obj) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
@@ -607,9 +541,7 @@ public:
             );
         }
     }
-#endif
 
-#if V8_MAJOR_VERSION < 14
     static void FastBindTextureNull(v8::Local<v8::Object> receiver_obj, uint32_t target,
                                     int32_t texture_obj) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
@@ -623,11 +555,9 @@ public:
                 ptr->GetState()
         );
     }
-#endif
 
     static void BlendColor(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void
     FastBlendColor(v8::Local<v8::Object> receiver_obj, double red, double green, double blue,
                    double alpha) {
@@ -644,11 +574,9 @@ public:
                 ptr->GetState()
         );
     }
-#endif
 
     static void BlendEquationSeparate(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void FastBlendEquationSeparate(v8::Local<v8::Object> receiver_obj, uint32_t modeRGB,
                                           uint32_t modeAlpha) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
@@ -662,11 +590,9 @@ public:
                 ptr->GetState()
         );
     }
-#endif
 
     static void BlendEquation(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void FastBlendEquation(v8::Local<v8::Object> receiver_obj, uint32_t mode) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -677,11 +603,9 @@ public:
                 ptr->GetState()
         );
     }
-#endif
 
     static void BlendFuncSeparate(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void
     FastBlendFuncSeparate(v8::Local<v8::Object> receiver_obj, uint32_t srcRGB, uint32_t dstRGB,
                           uint32_t srcAlpha, uint32_t dstAlpha) {
@@ -698,11 +622,9 @@ public:
                 ptr->GetState()
         );
     }
-#endif
 
     static void BlendFunc(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void
     FastBlendFunc(v8::Local<v8::Object> receiver_obj, uint32_t sfactor, uint32_t dfactor) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
@@ -716,12 +638,10 @@ public:
                 ptr->GetState()
         );
     }
-#endif
 
     static void BufferData(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 
-#if V8_MAJOR_VERSION < 14
     static void
     FastBufferDataTargetUsage(v8::Local<v8::Object> receiver_obj, uint32_t target, uint32_t usage) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
@@ -736,12 +656,10 @@ public:
                 ptr->GetState()
         );
     }
-#endif
 
     /*
      *
-#if V8_MAJOR_VERSION < 14
-    static void FastBufferDataU8(v8::Local<v8::Object> receiver_obj, uint32_t target,
+   static void FastBufferDataU8(v8::Local<v8::Object> receiver_obj, uint32_t target,
                                 const v8::FastApiArrayBufferView &srcData, uint32_t usage) {
        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
        if (ptr == nullptr) {
@@ -756,11 +674,9 @@ public:
                ptr->GetState()
        );
    }
-#endif
 
 
-#if V8_MAJOR_VERSION < 14
-    static void FastBufferDataI8(v8::Local<v8::Object> receiver_obj, uint32_t target,
+   static void FastBufferDataI8(v8::Local<v8::Object> receiver_obj, uint32_t target,
                                  const v8::FastApiArrayBufferView &srcData, uint32_t usage) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -774,9 +690,7 @@ public:
                 ptr->GetState()
         );
     }
-#endif
 
-#if V8_MAJOR_VERSION < 14
     static void FastBufferDataU16(v8::Local<v8::Object> receiver_obj, uint32_t target,
                                   const v8::FastApiArrayBufferView &srcData, uint32_t usage) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
@@ -791,9 +705,7 @@ public:
                 ptr->GetState()
         );
     }
-#endif
 
-#if V8_MAJOR_VERSION < 14
     static void FastBufferDataI16(v8::Local<v8::Object> receiver_obj, uint32_t target,
                                   const v8::FastApiArrayBufferView &srcData, uint32_t usage) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
@@ -809,117 +721,66 @@ public:
                 ptr->GetState()
         );
     }
-#endif
 
     */
 
-#if V8_MAJOR_VERSION < 14
-    static void FastBufferDataF32(v8::Local<v8::Object> receiver_obj, uint32_t target,
-                                  const v8::FastApiTypedArray<float> &srcData, uint32_t usage) {
+    /**
+     * Collapsed replacement for the former per-element-type fast overloads
+     * (FastBufferDataU8/I8/U16/I16/U32/I32/F32/F64/ArrayBuffer).
+     *
+     * V8 14.9 removed v8::FastApiTypedArray<T> / v8::FastApiArrayBuffer, so the
+     * typed array now arrives as a plain v8::Local<v8::Value> (still a genuine
+     * fast call: kV8Value args skip the slow marshaling path) and we do the type
+     * dispatch + backing store extraction ourselves.
+     *
+     * bufferData is byte-agnostic, so this mirrors the slow path
+     * (WebGLRenderingContext::BufferData, count == 3 branch) exactly and uses the
+     * byte-oriented canvas_native_webgl_buffer_data for every view type.
+     */
+    static void FastBufferData(v8::Local<v8::Object> receiver_obj, uint32_t target,
+                               v8::Local<v8::Value> srcData, uint32_t usage) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
             return;
         }
 
-        auto size = srcData.length();
-        float *data;
-        srcData.getStorageIfAligned(&data);
+        if (srcData->IsArrayBufferView()) {
+            auto buf = srcData.As<v8::ArrayBufferView>();
 
+            auto array = buf->Buffer();
+            auto offset = buf->ByteOffset();
+            auto size = buf->ByteLength();
+            auto data_ptr = static_cast<uint8_t *>(array->GetBackingStore()->Data()) + offset;
+            auto data = static_cast<uint8_t *>((void *) data_ptr);
 
-        canvas_native_webgl_buffer_data_f32(
-                target,
-                data, size,
-                usage,
-                ptr->GetState()
-        );
-    }
-#endif
+            canvas_native_webgl_buffer_data(
+                    target,
+                    data, size,
+                    usage,
+                    ptr->GetState()
+            );
+        } else if (srcData->IsArrayBuffer()) {
+            auto array = srcData.As<v8::ArrayBuffer>();
 
-#if V8_MAJOR_VERSION < 14
-    static void FastBufferDataF64(v8::Local<v8::Object> receiver_obj, uint32_t target,
-                                  const v8::FastApiTypedArray<double> &srcData, uint32_t usage) {
-        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
-        if (ptr == nullptr) {
-            return;
+            auto size = array->ByteLength();
+            auto data = (uint8_t *) array->GetBackingStore()->Data();
+
+            canvas_native_webgl_buffer_data(
+                    target,
+                    data, size,
+                    usage,
+                    ptr->GetState()
+            );
+        } else if (srcData->IsNumber()) {
+            canvas_native_webgl_buffer_data_none(
+                    target,
+                    static_cast<ssize_t>(srcData.As<v8::Number>()->Value()),
+                    usage,
+                    ptr->GetState()
+            );
         }
-
-        auto size = srcData.length();
-        double *data;
-        srcData.getStorageIfAligned(&data);
-
-
-        canvas_native_webgl_buffer_data_f64(
-                target,
-                data, size,
-                usage,
-                ptr->GetState()
-        );
     }
-#endif
 
-#if V8_MAJOR_VERSION < 14
-    static void FastBufferDataU32(v8::Local<v8::Object> receiver_obj, uint32_t target,
-                                  const v8::FastApiTypedArray<uint32_t> &srcData, uint32_t usage) {
-        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
-        if (ptr == nullptr) {
-            return;
-        }
-
-        auto size = srcData.length();
-        uint32_t *data;
-        srcData.getStorageIfAligned(&data);
-
-
-        canvas_native_webgl_buffer_data_u32(
-                target,
-                data, size,
-                usage,
-                ptr->GetState()
-        );
-    }
-#endif
-
-#if V8_MAJOR_VERSION < 14
-    static void FastBufferDataI32(v8::Local<v8::Object> receiver_obj, uint32_t target,
-                                  const v8::FastApiTypedArray<int32_t> &srcData, uint32_t usage) {
-        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
-        if (ptr == nullptr) {
-            return;
-        }
-
-        auto size = srcData.length();
-        int32_t *data;
-        srcData.getStorageIfAligned(&data);
-
-
-        canvas_native_webgl_buffer_data_i32(
-                target,
-                data, size,
-                usage,
-                ptr->GetState()
-        );
-    }
-#endif
-
-#if V8_MAJOR_VERSION < 14
-    static void FastBufferDataArrayBuffer(v8::Local<v8::Object> receiver_obj, uint32_t target,
-                                          const v8::FastApiArrayBuffer &srcData, uint32_t usage) {
-        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
-        if (ptr == nullptr) {
-            return;
-        }
-
-
-        canvas_native_webgl_buffer_data(
-                target,
-                (uint8_t *) srcData.data, srcData.byte_length,
-                usage,
-                ptr->GetState()
-        );
-    }
-#endif
-
-#if V8_MAJOR_VERSION < 14
     static void
     FastBufferDataOS(v8::Local<v8::Object> receiver_obj, uint32_t target, uint32_t offset,
                      uint32_t usage) {
@@ -936,11 +797,9 @@ public:
                 ptr->GetState()
         );
     }
-#endif
 
     static void BufferSubData(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void FastBufferSubDataTargetOffset(v8::Local<v8::Object> receiver_obj, uint32_t target,
                                               int32_t offset) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
@@ -954,11 +813,9 @@ public:
                 ptr->GetState()
         );
     }
-#endif
 
     /*
-#if V8_MAJOR_VERSION < 14
-    static void
+   static void
    FastBufferSubDataU8(v8::Local<v8::Object> receiver_obj, uint32_t target, int32_t offset,
                        const v8::FastApiArrayBufferView &srcData) {
        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
@@ -974,11 +831,9 @@ public:
                ptr->GetState()
        );
    }
-#endif
 
 
-#if V8_MAJOR_VERSION < 14
-    static void
+   static void
    FastBufferSubDataI8(v8::Local<v8::Object> receiver_obj, uint32_t target, int32_t offset,
                      const v8::FastApiArrayBufferView &srcData) {
        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
@@ -998,11 +853,9 @@ public:
                ptr->GetState()
        );
    }
-#endif
 
 
-#if V8_MAJOR_VERSION < 14
-    static void
+   static void
    FastBufferSubDataU16(v8::Local<v8::Object> receiver_obj, uint32_t target, int32_t offset,
                        const v8::FastApiArrayBufferView &srcData) {
        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
@@ -1022,11 +875,9 @@ public:
                ptr->GetState()
        );
    }
-#endif
 
 
-#if V8_MAJOR_VERSION < 14
-    static void
+   static void
    FastBufferSubDataI16(v8::Local<v8::Object> receiver_obj, uint32_t target, int32_t offset,
                         const v8::FastApiArrayBufferView&srcData) {
        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
@@ -1046,127 +897,55 @@ public:
                ptr->GetState()
        );
    }
-#endif
 
 
    */
-#if V8_MAJOR_VERSION < 14
+    /**
+     * Collapsed replacement for the former per-element-type fast overloads
+     * (FastBufferSubDataU8/I8/U16/I16/U32/I32/F32/F64/ArrayBuffer). See the note on
+     * FastBufferData above. Mirrors WebGLRenderingContext::BufferSubData's
+     * count == 3 branch, which is byte-oriented.
+     */
     static void
-    FastBufferSubDataU32(v8::Local<v8::Object> receiver_obj, uint32_t target, int32_t offset,
-                         const v8::FastApiTypedArray<uint32_t> &srcData) {
+    FastBufferSubData(v8::Local<v8::Object> receiver_obj, uint32_t target, int32_t offset,
+                      v8::Local<v8::Value> srcData) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
             return;
         }
 
-        auto size = srcData.length();
-        uint32_t *data;
-        srcData.getStorageIfAligned(&data);
+        if (srcData->IsArrayBufferView()) {
+            auto buff = srcData.As<v8::ArrayBufferView>();
 
+            auto array = buff->Buffer();
+            auto os = buff->ByteOffset();
+            auto size = buff->ByteLength();
+            auto data_ptr = static_cast<uint8_t *>(array->GetBackingStore()->Data()) + os;
+            auto data = static_cast<uint8_t *>((void *) data_ptr);
 
-        canvas_native_webgl_buffer_sub_data_u32(
-                target,
-                static_cast<ssize_t>(offset),
-                data, size,
-                ptr->GetState()
-        );
-    }
-#endif
+            canvas_native_webgl_buffer_sub_data(
+                    target,
+                    static_cast<ssize_t>(offset),
+                    data, size,
+                    ptr->GetState()
+            );
+        } else if (srcData->IsArrayBuffer()) {
+            auto arrayBuffer = srcData.As<v8::ArrayBuffer>();
 
+            auto size = arrayBuffer->ByteLength();
+            auto data = (uint8_t *) arrayBuffer->GetBackingStore()->Data();
 
-#if V8_MAJOR_VERSION < 14
-    static void
-    FastBufferSubDataI32(v8::Local<v8::Object> receiver_obj, uint32_t target, int32_t offset,
-                         const v8::FastApiTypedArray<int32_t> &srcData) {
-        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
-        if (ptr == nullptr) {
-            return;
+            canvas_native_webgl_buffer_sub_data(
+                    target,
+                    static_cast<intptr_t>(offset),
+                    data, size,
+                    ptr->GetState()
+            );
         }
-
-        auto size = srcData.length();
-        int32_t *data;
-        srcData.getStorageIfAligned(&data);
-
-
-        canvas_native_webgl_buffer_sub_data_i32(
-                target,
-                static_cast<ssize_t>(offset),
-                data, size,
-                ptr->GetState()
-        );
     }
-#endif
-
-
-#if V8_MAJOR_VERSION < 14
-    static void
-    FastBufferSubDataF32(v8::Local<v8::Object> receiver_obj, uint32_t target, int32_t offset,
-                         const v8::FastApiTypedArray<float> &srcData) {
-        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
-        if (ptr == nullptr) {
-            return;
-        }
-
-        auto size = srcData.length();
-        float *data;
-        srcData.getStorageIfAligned(&data);
-
-
-        canvas_native_webgl_buffer_sub_data_f32(
-                target,
-                static_cast<ssize_t>(offset),
-                data, size,
-                ptr->GetState()
-        );
-    }
-#endif
-
-
-#if V8_MAJOR_VERSION < 14
-    static void
-    FastBufferSubDataF64(v8::Local<v8::Object> receiver_obj, uint32_t target, int32_t offset,
-                         const v8::FastApiTypedArray<double> &srcData) {
-        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
-        if (ptr == nullptr) {
-            return;
-        }
-
-        auto size = srcData.length();
-        double *data;
-        srcData.getStorageIfAligned(&data);
-
-
-        canvas_native_webgl_buffer_sub_data_f64(
-                target,
-                static_cast<ssize_t>(offset),
-                data, size,
-                ptr->GetState()
-        );
-    }
-#endif
-
-
-#if V8_MAJOR_VERSION < 14
-    static void FastBufferSubDataArrayBuffer(v8::Local<v8::Object> receiver_obj, uint32_t target,
-                                             int32_t offset,
-                                             const v8::FastApiArrayBuffer &srcData) {
-        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
-        if (ptr == nullptr) {
-            return;
-        }
-
-        canvas_native_webgl_buffer_sub_data(
-                target,
-                static_cast<intptr_t>(offset),
-                (uint8_t *) srcData.data, srcData.byte_length,
-                ptr->GetState()
-        );
-    }
-#endif
 
     static void CheckFramebufferStatus(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static uint32_t
     FastCheckFramebufferStatus(v8::Local<v8::Object> receiver_obj, uint32_t target) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
@@ -1179,7 +958,6 @@ public:
                 ptr->GetState()
         );
     }
-#endif
 
     static void ClearColor(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -1191,7 +969,6 @@ public:
         );
     }
 
-#if V8_MAJOR_VERSION < 14
     static void
     FastClearColor(v8::Local<v8::Object> receiver_obj, double red, double green, double blue,
                    double alpha) {
@@ -1207,11 +984,9 @@ public:
                 static_cast<float>(alpha)
         );
     }
-#endif
 
     static void ClearDepth(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void FastClearDepth(v8::Local<v8::Object> receiver_obj, double depth) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -1223,11 +998,9 @@ public:
                 ptr->GetState()
         );
     }
-#endif
 
     static void ClearStencil(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void FastClearStencil(v8::Local<v8::Object> receiver_obj, int32_t stencil) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -1239,7 +1012,6 @@ public:
                 ptr->GetState()
         );
     }
-#endif
 
     static void Clear(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -1253,7 +1025,6 @@ public:
         ptr->UpdateInvalidateState();
     }
 
-#if V8_MAJOR_VERSION < 14
     static void FastClear(v8::Local<v8::Object> receiver_obj, uint32_t mask) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -1265,11 +1036,9 @@ public:
                 mask
         );
     }
-#endif
 
     static void ColorMask(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void
     FastColorMask(v8::Local<v8::Object> receiver_obj, bool red, bool green, bool blue, bool alpha) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
@@ -1285,13 +1054,11 @@ public:
                 ptr->GetState()
         );
     }
-#endif
 
     static void Commit(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void CompileShader(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void
     FastCompileShader(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> shader_obj) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
@@ -1310,7 +1077,6 @@ public:
         }
 
     }
-#endif
 
     static void CompressedTexImage2D(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -1318,7 +1084,6 @@ public:
 
     static void CopyTexImage2D(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void
     FastCopyTexImage2D(v8::Local<v8::Object> receiver_obj, uint32_t target, int32_t level,
                        uint32_t internalformat, int32_t x, int32_t y, int32_t width, int32_t height,
@@ -1341,11 +1106,9 @@ public:
         );
 
     }
-#endif
 
     static void CopyTexSubImage2D(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void
     FastCopyTexSubImage2D(v8::Local<v8::Object> receiver_obj, uint32_t target, int32_t level,
                           int32_t xoffset, int32_t yoffset, int32_t x, int32_t y, int32_t width,
@@ -1369,7 +1132,6 @@ public:
         );
 
     }
-#endif
 
     static void CreateBuffer(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -1385,7 +1147,6 @@ public:
 
     static void CullFace(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void FastCullFace(v8::Local<v8::Object> receiver_obj, uint32_t mode) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -1399,11 +1160,9 @@ public:
         );
 
     }
-#endif
 
     static void DeleteBuffer(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void FastDeleteBuffer(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> value) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -1423,11 +1182,9 @@ public:
         }
 
     }
-#endif
 
     static void DeleteFramebuffer(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void
     FastDeleteFramebuffer(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> value) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
@@ -1447,11 +1204,9 @@ public:
         }
 
     }
-#endif
 
     static void DeleteProgram(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void FastDeleteProgram(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> value) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -1472,11 +1227,9 @@ public:
 
 
     }
-#endif
 
     static void DeleteRenderbuffer(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void
     FastDeleteRenderbuffer(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> value) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
@@ -1499,11 +1252,9 @@ public:
 
 
     }
-#endif
 
     static void DeleteShader(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void FastDeleteShader(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> value) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -1523,11 +1274,9 @@ public:
             }
         }
     }
-#endif
 
     static void DeleteTexture(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void FastDeleteTexture(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> value) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -1546,11 +1295,9 @@ public:
             }
         }
     }
-#endif
 
     static void DepthFunc(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void FastDepthFunc(v8::Local<v8::Object> receiver_obj, uint32_t func) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -1562,11 +1309,9 @@ public:
                 ptr->GetState()
         );
     }
-#endif
 
     static void DepthMask(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void FastDepthMask(v8::Local<v8::Object> receiver_obj, bool mask) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -1577,11 +1322,9 @@ public:
                 ptr->GetState()
         );
     }
-#endif
 
     static void DepthRange(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void FastDepthRange(v8::Local<v8::Object> receiver_obj, double zNear, double zFar) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -1594,11 +1337,9 @@ public:
                 ptr->GetState()
         );
     }
-#endif
 
     static void DetachShader(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void
     FastDetachShader(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> program_obj,
                      v8::Local<v8::Object> shader_obj) {
@@ -1627,11 +1368,9 @@ public:
             );
         }
     }
-#endif
 
     static void DisableVertexAttribArray(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void FastDisableVertexAttribArray(v8::Local<v8::Object> receiver_obj, uint32_t index) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -1644,11 +1383,9 @@ public:
                 ptr->GetState()
         );
     }
-#endif
 
     static void Disable(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void FastDisable(v8::Local<v8::Object> receiver_obj, uint32_t cap) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -1660,7 +1397,6 @@ public:
                 ptr->GetState()
         );
     }
-#endif
 
     static void DrawArrays(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -1675,7 +1411,6 @@ public:
         ptr->UpdateInvalidateState();
     }
 
-#if V8_MAJOR_VERSION < 14
     static void FastDrawArrays(v8::Local<v8::Object> receiver_obj, uint32_t mode, int32_t first,
                                int32_t count) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
@@ -1691,12 +1426,10 @@ public:
         );
         ptr->UpdateInvalidateState();
     }
-#endif
 
     static void DrawElements(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 
-#if V8_MAJOR_VERSION < 14
     static void
     FastDrawElements(v8::Local<v8::Object> receiver_obj, uint32_t mode, int32_t count, int32_t type,
                      int32_t offset) {
@@ -1715,11 +1448,9 @@ public:
         );
         ptr->UpdateInvalidateState();
     }
-#endif
 
     static void EnableVertexAttribArray(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void FastEnableVertexAttribArray(v8::Local<v8::Object> receiver_obj, uint32_t index) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -1732,7 +1463,6 @@ public:
                 ptr->GetState()
         );
     }
-#endif
 
     static void Enable(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -1742,7 +1472,6 @@ public:
         );
     }
 
-#if V8_MAJOR_VERSION < 14
     static void FastEnable(v8::Local<v8::Object> receiver_obj, uint32_t cap) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -1754,11 +1483,9 @@ public:
                 cap
         );
     }
-#endif
 
     static void Finish(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void FastFinish(v8::Local<v8::Object> receiver_obj) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -1769,9 +1496,7 @@ public:
                 ptr->GetState()
         );
     }
-#endif
 
-#if V8_MAJOR_VERSION < 14
     static void FastFlush(v8::Local<v8::Object> receiver_obj) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -1782,13 +1507,11 @@ public:
                 ptr->GetState()
         );
     }
-#endif
 
     static void Flush(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void FramebufferRenderbuffer(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void FastFramebufferRenderbuffer(v8::Local<v8::Object> receiver_obj, uint32_t target,
                                             uint32_t attachment,
                                             uint32_t renderbuffertarget,
@@ -1813,11 +1536,9 @@ public:
             }
         }
     }
-#endif
 
     static void FramebufferTexture2D(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void FastFramebufferTexture2D(v8::Local<v8::Object> receiver_obj, uint32_t target,
                                          uint32_t attachment, uint32_t textarget, int32_t level,
                                          v8::Local<v8::Object> texture_obj) {
@@ -1841,11 +1562,9 @@ public:
             }
         }
     }
-#endif
 
     static void FrontFace(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void FastFrontFace(v8::Local<v8::Object> receiver_obj, uint32_t mode) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -1857,11 +1576,9 @@ public:
                 ptr->GetState()
         );
     }
-#endif
 
     static void GenerateMipmap(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void FastGenerateMipmap(v8::Local<v8::Object> receiver_obj, uint32_t target) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -1873,7 +1590,6 @@ public:
                 ptr->GetState()
         );
     }
-#endif
 
     static void GetActiveAttrib(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -1885,7 +1601,6 @@ public:
 
     static void GetBufferParameter(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static uint32_t
     FastGetBufferParameter(v8::Local<v8::Object> receiver_obj, uint32_t target, uint32_t pname) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
@@ -1901,7 +1616,6 @@ public:
         );
 
     }
-#endif
 
     static void GetContextAttributes(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -1937,7 +1651,6 @@ public:
 
     static void GetVertexAttribOffset(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static int32_t
     FastGetVertexAttribOffset(v8::Local<v8::Object> receiver_obj, uint32_t index, uint32_t pname) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
@@ -1951,13 +1664,11 @@ public:
                 pname,
                 ptr->GetState());
     }
-#endif
 
     static void GetVertexAttrib(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void Hint(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void FastHint(v8::Local<v8::Object> receiver_obj, uint32_t target, uint32_t mode) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -1968,11 +1679,9 @@ public:
                                  mode,
                                  ptr->GetState());
     }
-#endif
 
     static void IsBuffer(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static bool FastIsBuffer(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> value) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -1992,11 +1701,9 @@ public:
 
         return false;
     }
-#endif
 
     static void IsContextLost(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static bool FastIsContextLost(v8::Local<v8::Object> receiver_obj) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -2009,11 +1716,9 @@ public:
 
         return ret;
     }
-#endif
 
     static void IsEnabled(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static bool FastIsEnabled(v8::Local<v8::Object> receiver_obj, uint32_t cap) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -2023,11 +1728,9 @@ public:
         return canvas_native_webgl_is_enabled(
                 cap, ptr->GetState());
     }
-#endif
 
     static void IsFramebuffer(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static bool FastIsFramebuffer(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> value) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -2047,11 +1750,9 @@ public:
 
         return false;
     }
-#endif
 
     static void IsProgram(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static bool FastIsProgram(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> value) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -2072,11 +1773,9 @@ public:
 
         return false;
     }
-#endif
 
     static void IsRenderbuffer(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static bool
     FastIsRenderbuffer(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> value) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
@@ -2099,11 +1798,9 @@ public:
 
         return false;
     }
-#endif
 
     static void IsShader(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static bool FastIsShader(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> value) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -2124,11 +1821,9 @@ public:
 
         return false;
     }
-#endif
 
     static void IsTexture(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static bool FastIsTexture(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> value) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -2149,11 +1844,9 @@ public:
 
         return false;
     }
-#endif
 
     static void LineWidth(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void FastLineWidth(v8::Local<v8::Object> receiver_obj, double width) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -2165,11 +1858,9 @@ public:
                 ptr->GetState());
 
     }
-#endif
 
     static void LinkProgram(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void FastLinkProgram(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> value) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -2186,11 +1877,9 @@ public:
             }
         }
     }
-#endif
 
     static void PixelStorei(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void
     FastPixelStoreiBool(v8::Local<v8::Object> receiver_obj, uint32_t pname, bool param) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
@@ -2204,9 +1893,7 @@ public:
                 ptr->GetState()
         );
     }
-#endif
 
-#if V8_MAJOR_VERSION < 14
     static void FastPixelStorei(v8::Local<v8::Object> receiver_obj, uint32_t pname, int32_t param) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -2219,11 +1906,9 @@ public:
                 ptr->GetState()
         );
     }
-#endif
 
     static void PolygonOffset(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void FastPolygonOffset(v8::Local<v8::Object> receiver_obj, double factor, double units) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -2237,13 +1922,11 @@ public:
         );
 
     }
-#endif
 
     static void ReadPixels(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void RenderbufferStorage(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void FastRenderbufferStorage(v8::Local<v8::Object> receiver_obj, uint32_t target,
                                         uint32_t internalFormat, int32_t width, int32_t height) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
@@ -2260,11 +1943,9 @@ public:
         );
 
     }
-#endif
 
     static void SampleCoverage(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void FastSampleCoverage(v8::Local<v8::Object> receiver_obj, double value, bool invert) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -2278,11 +1959,9 @@ public:
         );
 
     }
-#endif
 
     static void Scissor(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void FastScissor(v8::Local<v8::Object> receiver_obj, int32_t x, int32_t y, int32_t width,
                             int32_t height) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
@@ -2299,13 +1978,11 @@ public:
         );
 
     }
-#endif
 
     static void ShaderSource(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void StencilFuncSeparate(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void
     FastStencilFuncSeparate(v8::Local<v8::Object> receiver_obj, uint32_t face, uint32_t func,
                             int32_t ref, uint32_t mask) {
@@ -2323,11 +2000,9 @@ public:
         );
 
     }
-#endif
 
     static void StencilFunc(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void
     FastStencilFunc(v8::Local<v8::Object> receiver_obj, uint32_t func, int32_t ref, uint32_t mask) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
@@ -2343,11 +2018,9 @@ public:
         );
 
     }
-#endif
 
     static void StencilMaskSeparate(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void
     FastStencilMaskSeparate(v8::Local<v8::Object> receiver_obj, uint32_t face, uint32_t mask) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
@@ -2362,11 +2035,9 @@ public:
         );
 
     }
-#endif
 
     static void StencilMask(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void FastStencilMask(v8::Local<v8::Object> receiver_obj, uint32_t mask) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -2380,11 +2051,9 @@ public:
         );
 
     }
-#endif
 
     static void StencilOpSeparate(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void
     FastStencilOpSeparate(v8::Local<v8::Object> receiver_obj, uint32_t face, uint32_t fail,
                           uint32_t zfail, uint32_t zpass) {
@@ -2402,11 +2071,9 @@ public:
         );
 
     }
-#endif
 
     static void StencilOp(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void FastStencilOp(v8::Local<v8::Object> receiver_obj, uint32_t fail, uint32_t zfail,
                               uint32_t zpass) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
@@ -2422,13 +2089,11 @@ public:
         );
 
     }
-#endif
 
     static void TexImage2D(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void TexParameterf(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void
     FastTexParameterf(v8::Local<v8::Object> receiver_obj, uint32_t target, uint32_t pname,
                       double param) {
@@ -2445,11 +2110,9 @@ public:
         );
 
     }
-#endif
 
     static void TexParameteri(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void FastTexParameteri(v8::Local<v8::Object> receiver_obj, uint32_t target,
                                   uint32_t pname, int32_t
                                   param) {
@@ -2466,7 +2129,6 @@ public:
         );
 
     }
-#endif
 
     static void TexSubImage2D(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -2480,7 +2142,6 @@ public:
         );
     }
 
-#if V8_MAJOR_VERSION < 14
     static void
     FastUniform1f(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
                   double v0) {
@@ -2499,14 +2160,12 @@ public:
             );
         }
     }
-#endif
 
     static void Uniform1iv(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void
     FastUniform1iv(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
-                   const v8::FastApiTypedArray<int32_t> &value) {
+                   v8::Local<v8::Value> value) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
             return;
@@ -2515,58 +2174,46 @@ public:
         auto location = WebGLUniformLocation::GetPointer(location_obj);
 
         if (location != nullptr) {
-            auto size = value.length();
-            int32_t *data;
-            value.getStorageIfAligned(&data);
+            if (value->IsInt32Array()) {
+                auto buf = value.As<v8::Int32Array>();
+                auto array = buf->Buffer();
+                auto offset = buf->ByteOffset();
+                auto size = buf->Length();
+                auto data_ptr = static_cast<uint8_t *>(array->GetBackingStore()->Data()) + offset;
+                auto data = static_cast<int32_t *>((void *) data_ptr);
 
-            canvas_native_webgl_uniform1iv(
-                    location->GetUniformLocation(),
-                    data, size,
-                    ptr->GetState());
-        }
-    }
-#endif
-
-#if V8_MAJOR_VERSION < 14
-    static void
-    FastUniform1ivArray(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
-                        v8::Local<v8::Array> value) {
-        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
-        if (ptr == nullptr) {
-            return;
-        }
-
-        auto location = WebGLUniformLocation::GetPointer(location_obj);
-
-        if (location != nullptr) {
-            auto len = value->Length();
-            std::vector<int32_t> buf;
-            buf.reserve(len);
-
-            auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<int32_t>::Build().GetId(), int32_t>(
-                    value, buf.data(), len);
-
-            if (copied) {
                 canvas_native_webgl_uniform1iv(
                         location->GetUniformLocation(),
-                        buf.data(),
-                        buf.size(),
+                        data, size,
                         ptr->GetState());
+            } else if (value->IsArray()) {
+                auto array = value.As<v8::Array>();
+                auto len = array->Length();
+                std::vector<int32_t> buf;
+                buf.resize(len);
+
+                auto copied = v8_helpers::TryToCopyAndConvertArrayToCppBufferInt32(
+                        array, buf.data(), len);
+
+                if (copied) {
+                    canvas_native_webgl_uniform1iv(
+                            location->GetUniformLocation(),
+                            buf.data(),
+                            buf.size(),
+                            ptr->GetState());
+                }
             }
-
-
         }
     }
-#endif
+
 
 
     static void Uniform1fv(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 
-#if V8_MAJOR_VERSION < 14
     static void
     FastUniform1fv(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
-                   const v8::FastApiTypedArray<float> &value) {
+                   v8::Local<v8::Value> value) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
             return;
@@ -2575,49 +2222,38 @@ public:
         auto location = WebGLUniformLocation::GetPointer(location_obj);
 
         if (location != nullptr) {
-            auto size = value.length();
-            float *data;
-            value.getStorageIfAligned(&data);
+            if (value->IsFloat32Array()) {
+                auto buf = value.As<v8::Float32Array>();
+                auto array = buf->Buffer();
+                auto offset = buf->ByteOffset();
+                auto size = buf->Length();
+                auto data_ptr = static_cast<uint8_t *>(array->GetBackingStore()->Data()) + offset;
+                auto data = static_cast<float *>((void *) data_ptr);
 
-            canvas_native_webgl_uniform1fv(
-                    location->GetUniformLocation(),
-                    data, size,
-                    ptr->GetState());
-        }
-    }
-#endif
-
-#if V8_MAJOR_VERSION < 14
-    static void
-    FastUniform1fvArray(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
-                        v8::Local<v8::Array> value) {
-        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
-        if (ptr == nullptr) {
-            return;
-        }
-
-        auto location = WebGLUniformLocation::GetPointer(location_obj);
-
-        if (location != nullptr) {
-            auto len = value->Length();
-            std::vector<float> buf;
-            buf.reserve(len);
-
-            auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<float>::Build().GetId(), float>(
-                    value, buf.data(), len);
-
-            if (copied) {
                 canvas_native_webgl_uniform1fv(
                         location->GetUniformLocation(),
-                        buf.data(),
-                        buf.size(),
+                        data, size,
                         ptr->GetState());
+            } else if (value->IsArray()) {
+                auto array = value.As<v8::Array>();
+                auto len = array->Length();
+                std::vector<float> buf;
+                buf.resize(len);
+
+                auto copied = v8_helpers::TryToCopyAndConvertArrayToCppBufferFloat(
+                        array, buf.data(), len);
+
+                if (copied) {
+                    canvas_native_webgl_uniform1fv(
+                            location->GetUniformLocation(),
+                            buf.data(),
+                            buf.size(),
+                            ptr->GetState());
+                }
             }
-
-
         }
     }
-#endif
+
 
 
     static void Uniform1i(const v8::FunctionCallbackInfo<v8::Value> &args);
@@ -2631,7 +2267,6 @@ public:
         );
     }
 
-#if V8_MAJOR_VERSION < 14
     static void
     FastUniform1i(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
                   int32_t v0) {
@@ -2650,11 +2285,9 @@ public:
             );
         }
     }
-#endif
 
     static void Uniform2f(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void
     FastUniform2f(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
                   double v0, double v1) {
@@ -2674,16 +2307,14 @@ public:
             );
         }
     }
-#endif
 
 
     static void Uniform2iv(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 
-#if V8_MAJOR_VERSION < 14
     static void
     FastUniform2iv(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
-                   const v8::FastApiTypedArray<int32_t> &value) {
+                   v8::Local<v8::Value> value) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
             return;
@@ -2692,56 +2323,45 @@ public:
         auto location = WebGLUniformLocation::GetPointer(location_obj);
 
         if (location != nullptr) {
-            auto size = value.length();
-            int32_t *data;
-            value.getStorageIfAligned(&data);
+            if (value->IsInt32Array()) {
+                auto buf = value.As<v8::Int32Array>();
+                auto array = buf->Buffer();
+                auto offset = buf->ByteOffset();
+                auto size = buf->Length();
+                auto data_ptr = static_cast<uint8_t *>(array->GetBackingStore()->Data()) + offset;
+                auto data = static_cast<int32_t *>((void *) data_ptr);
 
-            canvas_native_webgl_uniform2iv(
-                    location->GetUniformLocation(),
-                    data, size,
-                    ptr->GetState());
-        }
-    }
-#endif
-
-#if V8_MAJOR_VERSION < 14
-    static void
-    FastUniform2ivArray(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
-                        v8::Local<v8::Array> value) {
-        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
-        if (ptr == nullptr) {
-            return;
-        }
-
-        auto location = WebGLUniformLocation::GetPointer(location_obj);
-
-        if (location != nullptr) {
-            auto len = value->Length();
-            std::vector<int32_t> buf;
-            buf.reserve(len);
-
-            auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<int32_t>::Build().GetId(), int32_t>(
-                    value, buf.data(), len);
-
-            if (copied) {
                 canvas_native_webgl_uniform2iv(
                         location->GetUniformLocation(),
-                        buf.data(),
-                        buf.size(),
+                        data, size,
                         ptr->GetState());
-            }
+            } else if (value->IsArray()) {
+                auto array = value.As<v8::Array>();
+                auto len = array->Length();
+                std::vector<int32_t> buf;
+                buf.resize(len);
 
+                auto copied = v8_helpers::TryToCopyAndConvertArrayToCppBufferInt32(
+                        array, buf.data(), len);
+
+                if (copied) {
+                    canvas_native_webgl_uniform2iv(
+                            location->GetUniformLocation(),
+                            buf.data(),
+                            buf.size(),
+                            ptr->GetState());
+                }
+            }
         }
     }
-#endif
+
 
 
     static void Uniform2fv(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void
     FastUniform2fv(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
-                   const v8::FastApiTypedArray<float> &value) {
+                   v8::Local<v8::Value> value) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
             return;
@@ -2750,53 +2370,42 @@ public:
         auto location = WebGLUniformLocation::GetPointer(location_obj);
 
         if (location != nullptr) {
-            auto size = value.length();
-            float *data;
-            value.getStorageIfAligned(&data);
+            if (value->IsFloat32Array()) {
+                auto buf = value.As<v8::Float32Array>();
+                auto array = buf->Buffer();
+                auto offset = buf->ByteOffset();
+                auto size = buf->Length();
+                auto data_ptr = static_cast<uint8_t *>(array->GetBackingStore()->Data()) + offset;
+                auto data = static_cast<float *>((void *) data_ptr);
 
-            canvas_native_webgl_uniform2fv(
-                    location->GetUniformLocation(),
-                    data, size,
-                    ptr->GetState());
-        }
-    }
-#endif
-
-#if V8_MAJOR_VERSION < 14
-    static void
-    FastUniform2fvArray(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
-                        v8::Local<v8::Array> value) {
-        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
-        if (ptr == nullptr) {
-            return;
-        }
-
-        auto location = WebGLUniformLocation::GetPointer(location_obj);
-
-        if (location != nullptr) {
-            auto len = value->Length();
-            std::vector<float> buf;
-            buf.reserve(len);
-
-            auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<float>::Build().GetId(), float>(
-                    value, buf.data(), len);
-
-            if (copied) {
                 canvas_native_webgl_uniform2fv(
                         location->GetUniformLocation(),
-                        buf.data(),
-                        buf.size(),
+                        data, size,
                         ptr->GetState());
-            }
+            } else if (value->IsArray()) {
+                auto array = value.As<v8::Array>();
+                auto len = array->Length();
+                std::vector<float> buf;
+                buf.resize(len);
 
+                auto copied = v8_helpers::TryToCopyAndConvertArrayToCppBufferFloat(
+                        array, buf.data(), len);
+
+                if (copied) {
+                    canvas_native_webgl_uniform2fv(
+                            location->GetUniformLocation(),
+                            buf.data(),
+                            buf.size(),
+                            ptr->GetState());
+                }
+            }
         }
     }
-#endif
+
 
 
     static void Uniform2i(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void
     FastUniform2i(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
                   int32_t v0, int32_t v1) {
@@ -2816,12 +2425,10 @@ public:
             );
         }
     }
-#endif
 
 
     static void Uniform3f(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void
     FastUniform3f(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
                   double v0, double v1, double v2) {
@@ -2842,16 +2449,14 @@ public:
             );
         }
     }
-#endif
 
 
     static void Uniform3iv(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 
-#if V8_MAJOR_VERSION < 14
     static void
     FastUniform3fv(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
-                   const v8::FastApiTypedArray<float> &value) {
+                   v8::Local<v8::Value> value) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
             return;
@@ -2860,57 +2465,46 @@ public:
         auto location = WebGLUniformLocation::GetPointer(location_obj);
 
         if (location != nullptr) {
-            auto size = value.length();
-            float *data;
-            value.getStorageIfAligned(&data);
+            if (value->IsFloat32Array()) {
+                auto buf = value.As<v8::Float32Array>();
+                auto array = buf->Buffer();
+                auto offset = buf->ByteOffset();
+                auto size = buf->Length();
+                auto data_ptr = static_cast<uint8_t *>(array->GetBackingStore()->Data()) + offset;
+                auto data = static_cast<float *>((void *) data_ptr);
 
-            canvas_native_webgl_uniform3fv(
-                    location->GetUniformLocation(),
-                    data, size,
-                    ptr->GetState());
-        }
-    }
-#endif
-
-#if V8_MAJOR_VERSION < 14
-    static void
-    FastUniform3fvArray(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
-                        v8::Local<v8::Array> value) {
-        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
-        if (ptr == nullptr) {
-            return;
-        }
-
-        auto location = WebGLUniformLocation::GetPointer(location_obj);
-
-        if (location != nullptr) {
-            auto len = value->Length();
-            std::vector<float> buf;
-            buf.reserve(len);
-
-            auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<float>::Build().GetId(), float>(
-                    value, buf.data(), len);
-
-            if (copied) {
                 canvas_native_webgl_uniform3fv(
                         location->GetUniformLocation(),
-                        buf.data(),
-                        buf.size(),
+                        data, size,
                         ptr->GetState());
-            }
+            } else if (value->IsArray()) {
+                auto array = value.As<v8::Array>();
+                auto len = array->Length();
+                std::vector<float> buf;
+                buf.resize(len);
 
+                auto copied = v8_helpers::TryToCopyAndConvertArrayToCppBufferFloat(
+                        array, buf.data(), len);
+
+                if (copied) {
+                    canvas_native_webgl_uniform3fv(
+                            location->GetUniformLocation(),
+                            buf.data(),
+                            buf.size(),
+                            ptr->GetState());
+                }
+            }
         }
     }
-#endif
+
 
 
     static void Uniform3fv(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 
-#if V8_MAJOR_VERSION < 14
     static void
     FastUniform3iv(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
-                   const v8::FastApiTypedArray<int32_t> &value) {
+                   v8::Local<v8::Value> value) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
             return;
@@ -2919,54 +2513,43 @@ public:
         auto location = WebGLUniformLocation::GetPointer(location_obj);
 
         if (location != nullptr) {
-            auto size = value.length();
-            int32_t *data;
-            value.getStorageIfAligned(&data);
+            if (value->IsInt32Array()) {
+                auto buf = value.As<v8::Int32Array>();
+                auto array = buf->Buffer();
+                auto offset = buf->ByteOffset();
+                auto size = buf->Length();
+                auto data_ptr = static_cast<uint8_t *>(array->GetBackingStore()->Data()) + offset;
+                auto data = static_cast<int32_t *>((void *) data_ptr);
 
-            canvas_native_webgl_uniform3iv(
-                    location->GetUniformLocation(),
-                    data, size,
-                    ptr->GetState());
-        }
-    }
-#endif
-
-#if V8_MAJOR_VERSION < 14
-    static void
-    FastUniform3ivArray(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
-                        v8::Local<v8::Array> value) {
-        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
-        if (ptr == nullptr) {
-            return;
-        }
-
-        auto location = WebGLUniformLocation::GetPointer(location_obj);
-
-        if (location != nullptr) {
-            auto len = value->Length();
-            std::vector<int32_t> buf;
-            buf.reserve(len);
-
-            auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<int32_t>::Build().GetId(), int32_t>(
-                    value, buf.data(), len);
-
-            if (copied) {
                 canvas_native_webgl_uniform3iv(
                         location->GetUniformLocation(),
-                        buf.data(),
-                        buf.size(),
+                        data, size,
                         ptr->GetState());
-            }
+            } else if (value->IsArray()) {
+                auto array = value.As<v8::Array>();
+                auto len = array->Length();
+                std::vector<int32_t> buf;
+                buf.resize(len);
 
+                auto copied = v8_helpers::TryToCopyAndConvertArrayToCppBufferInt32(
+                        array, buf.data(), len);
+
+                if (copied) {
+                    canvas_native_webgl_uniform3iv(
+                            location->GetUniformLocation(),
+                            buf.data(),
+                            buf.size(),
+                            ptr->GetState());
+                }
+            }
         }
     }
-#endif
+
 
 
     static void Uniform3i(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 
-#if V8_MAJOR_VERSION < 14
     static void
     FastUniform3i(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
                   int32_t v0, int32_t v1, int32_t v2) {
@@ -2987,12 +2570,10 @@ public:
             );
         }
     }
-#endif
 
     static void Uniform4f(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 
-#if V8_MAJOR_VERSION < 14
     static void
     FastUniform4f(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
                   double v0, double v1, double v2, double v3) {
@@ -3014,15 +2595,13 @@ public:
             );
         }
     }
-#endif
 
 
     static void Uniform4iv(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void
     FastUniform4iv(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
-                   const v8::FastApiTypedArray<int32_t> &value) {
+                   v8::Local<v8::Value> value) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
             return;
@@ -3031,57 +2610,45 @@ public:
         auto location = WebGLUniformLocation::GetPointer(location_obj);
 
         if (location != nullptr) {
-            auto size = value.length();
-            int32_t *data;
-            value.getStorageIfAligned(&data);
+            if (value->IsInt32Array()) {
+                auto buf = value.As<v8::Int32Array>();
+                auto array = buf->Buffer();
+                auto offset = buf->ByteOffset();
+                auto size = buf->Length();
+                auto data_ptr = static_cast<uint8_t *>(array->GetBackingStore()->Data()) + offset;
+                auto data = static_cast<int32_t *>((void *) data_ptr);
 
-            canvas_native_webgl_uniform4iv(
-                    location->GetUniformLocation(),
-                    data, size,
-                    ptr->GetState());
-        }
-    }
-#endif
-
-#if V8_MAJOR_VERSION < 14
-    static void
-    FastUniform4ivArray(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
-                        v8::Local<v8::Array> value) {
-        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
-        if (ptr == nullptr) {
-            return;
-        }
-
-        auto location = WebGLUniformLocation::GetPointer(location_obj);
-
-        if (location != nullptr) {
-            auto len = value->Length();
-            std::vector<int32_t> buf;
-            buf.reserve(len);
-
-            auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<int32_t>::Build().GetId(), int32_t>(
-                    value, buf.data(), len);
-
-            if (copied) {
                 canvas_native_webgl_uniform4iv(
                         location->GetUniformLocation(),
-                        buf.data(),
-                        buf.size(),
+                        data, size,
                         ptr->GetState());
+            } else if (value->IsArray()) {
+                auto array = value.As<v8::Array>();
+                auto len = array->Length();
+                std::vector<int32_t> buf;
+                buf.resize(len);
+
+                auto copied = v8_helpers::TryToCopyAndConvertArrayToCppBufferInt32(
+                        array, buf.data(), len);
+
+                if (copied) {
+                    canvas_native_webgl_uniform4iv(
+                            location->GetUniformLocation(),
+                            buf.data(),
+                            buf.size(),
+                            ptr->GetState());
+                }
             }
-
-
         }
     }
-#endif
+
 
     static void Uniform4fv(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 
-#if V8_MAJOR_VERSION < 14
     static void
     FastUniform4fv(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
-                   const v8::FastApiTypedArray<float> &value) {
+                   v8::Local<v8::Value> value) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
             return;
@@ -3090,54 +2657,42 @@ public:
         auto location = WebGLUniformLocation::GetPointer(location_obj);
 
         if (location != nullptr) {
-            auto size = value.length();
-            float *data;
-            value.getStorageIfAligned(&data);
+            if (value->IsFloat32Array()) {
+                auto buf = value.As<v8::Float32Array>();
+                auto array = buf->Buffer();
+                auto offset = buf->ByteOffset();
+                auto size = buf->Length();
+                auto data_ptr = static_cast<uint8_t *>(array->GetBackingStore()->Data()) + offset;
+                auto data = static_cast<float *>((void *) data_ptr);
 
-            canvas_native_webgl_uniform4fv(
-                    location->GetUniformLocation(),
-                    data, size,
-                    ptr->GetState());
-        }
-    }
-#endif
-
-#if V8_MAJOR_VERSION < 14
-    static void
-    FastUniform4fvArray(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
-                        v8::Local<v8::Array> value) {
-        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
-        if (ptr == nullptr) {
-            return;
-        }
-
-        auto location = WebGLUniformLocation::GetPointer(location_obj);
-
-        if (location != nullptr) {
-            auto len = value->Length();
-            std::vector<float> buf;
-            buf.reserve(len);
-
-            auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<float>::Build().GetId(), float>(
-                    value, buf.data(), len);
-
-            if (copied) {
                 canvas_native_webgl_uniform4fv(
                         location->GetUniformLocation(),
-                        buf.data(),
-                        buf.size(),
+                        data, size,
                         ptr->GetState());
+            } else if (value->IsArray()) {
+                auto array = value.As<v8::Array>();
+                auto len = array->Length();
+                std::vector<float> buf;
+                buf.resize(len);
+
+                auto copied = v8_helpers::TryToCopyAndConvertArrayToCppBufferFloat(
+                        array, buf.data(), len);
+
+                if (copied) {
+                    canvas_native_webgl_uniform4fv(
+                            location->GetUniformLocation(),
+                            buf.data(),
+                            buf.size(),
+                            ptr->GetState());
+                }
             }
-
-
         }
     }
-#endif
+
 
 
     static void Uniform4i(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void
     FastUniform4i(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
                   int32_t v0, int32_t v1, int32_t v2, int32_t v3) {
@@ -3159,16 +2714,14 @@ public:
             );
         }
     }
-#endif
 
 
     static void UniformMatrix2fv(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 
-#if V8_MAJOR_VERSION < 14
     static void
     FastUniformMatrix2fv(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
-                         bool transpose, const v8::FastApiTypedArray<float> &value) {
+                         bool transpose, v8::Local<v8::Value> value) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
             return;
@@ -3177,62 +2730,46 @@ public:
         auto location = WebGLUniformLocation::GetPointer(location_obj);
 
         if (location != nullptr) {
+            if (value->IsFloat32Array()) {
+                auto buf = value.As<v8::Float32Array>();
+                auto array = buf->Buffer();
+                auto offset = buf->ByteOffset();
+                auto size = buf->Length();
+                auto data_ptr = static_cast<uint8_t *>(array->GetBackingStore()->Data()) + offset;
+                auto data = static_cast<float *>((void *) data_ptr);
 
-            float *data;
-
-            value.getStorageIfAligned(&data);
-            auto size = value.length();
-
-
-            canvas_native_webgl_uniform_matrix2fv(
-                    location->GetUniformLocation(),
-                    transpose, data, size,
-                    ptr->GetState());
-
-        }
-
-    }
-#endif
-
-#if V8_MAJOR_VERSION < 14
-    static void FastUniformMatrix2fvArray(v8::Local<v8::Object> receiver_obj,
-                                          v8::Local<v8::Object> location_obj, bool transpose,
-                                          v8::Local<v8::Array> value) {
-        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
-        if (ptr == nullptr) {
-            return;
-        }
-
-        auto location = WebGLUniformLocation::GetPointer(location_obj);
-
-        if (location != nullptr) {
-            auto len = value->Length();
-            std::vector<float> buf;
-            buf.reserve(len);
-
-            auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<float>::Build().GetId(), float>(
-                    value, buf.data(), len);
-
-            if (copied) {
                 canvas_native_webgl_uniform_matrix2fv(
                         location->GetUniformLocation(),
-                        transpose, buf.data(),
-                        buf.size(),
+                        transpose, data, size,
                         ptr->GetState());
-            }
+            } else if (value->IsArray()) {
+                auto array = value.As<v8::Array>();
+                auto len = array->Length();
+                std::vector<float> buf;
+                buf.resize(len);
 
+                auto copied = v8_helpers::TryToCopyAndConvertArrayToCppBufferFloat(
+                        array, buf.data(), len);
+
+                if (copied) {
+                    canvas_native_webgl_uniform_matrix2fv(
+                            location->GetUniformLocation(),
+                            transpose, buf.data(),
+                            buf.size(),
+                            ptr->GetState());
+                }
+            }
         }
     }
-#endif
+
 
 
     static void UniformMatrix3fv(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 
-#if V8_MAJOR_VERSION < 14
     static void
     FastUniformMatrix3fv(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
-                         bool transpose, const v8::FastApiTypedArray<float> &value) {
+                         bool transpose, v8::Local<v8::Value> value) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
             return;
@@ -3241,61 +2778,45 @@ public:
         auto location = WebGLUniformLocation::GetPointer(location_obj);
 
         if (location != nullptr) {
+            if (value->IsFloat32Array()) {
+                auto buf = value.As<v8::Float32Array>();
+                auto array = buf->Buffer();
+                auto offset = buf->ByteOffset();
+                auto size = buf->Length();
+                auto data_ptr = static_cast<uint8_t *>(array->GetBackingStore()->Data()) + offset;
+                auto data = static_cast<float *>((void *) data_ptr);
 
-            float *data;
-
-            value.getStorageIfAligned(&data);
-            auto size = value.length();
-
-
-            canvas_native_webgl_uniform_matrix3fv(
-                    location->GetUniformLocation(),
-                    transpose, data, size,
-                    ptr->GetState());
-
-        }
-
-    }
-#endif
-
-#if V8_MAJOR_VERSION < 14
-    static void FastUniformMatrix3fvArray(v8::Local<v8::Object> receiver_obj,
-                                          v8::Local<v8::Object> location_obj, bool transpose,
-                                          v8::Local<v8::Array> value) {
-        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
-        if (ptr == nullptr) {
-            return;
-        }
-
-        auto location = WebGLUniformLocation::GetPointer(location_obj);
-
-        if (location != nullptr) {
-            auto len = value->Length();
-            std::vector<float> buf;
-            buf.reserve(len);
-
-            auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<float>::Build().GetId(), float>(
-                    value, buf.data(), len);
-
-            if (copied) {
                 canvas_native_webgl_uniform_matrix3fv(
                         location->GetUniformLocation(),
-                        transpose, buf.data(),
-                        buf.size(),
+                        transpose, data, size,
                         ptr->GetState());
-            }
+            } else if (value->IsArray()) {
+                auto array = value.As<v8::Array>();
+                auto len = array->Length();
+                std::vector<float> buf;
+                buf.resize(len);
 
+                auto copied = v8_helpers::TryToCopyAndConvertArrayToCppBufferFloat(
+                        array, buf.data(), len);
+
+                if (copied) {
+                    canvas_native_webgl_uniform_matrix3fv(
+                            location->GetUniformLocation(),
+                            transpose, buf.data(),
+                            buf.size(),
+                            ptr->GetState());
+                }
+            }
         }
     }
-#endif
+
 
 
     static void UniformMatrix4fv(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void
     FastUniformMatrix4fv(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
-                         bool transpose, const v8::FastApiTypedArray<float> &value) {
+                         bool transpose, v8::Local<v8::Value> value) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
             return;
@@ -3304,52 +2825,38 @@ public:
         auto location = WebGLUniformLocation::GetPointer(location_obj);
 
         if (location != nullptr) {
+            if (value->IsFloat32Array()) {
+                auto buf = value.As<v8::Float32Array>();
+                auto array = buf->Buffer();
+                auto offset = buf->ByteOffset();
+                auto size = buf->Length();
+                auto data_ptr = static_cast<uint8_t *>(array->GetBackingStore()->Data()) + offset;
+                auto data = static_cast<float *>((void *) data_ptr);
 
-            float *data;
-            value.getStorageIfAligned(&data);
-            auto size = value.length();
-
-
-            canvas_native_webgl_uniform_matrix4fv(
-                    location->GetUniformLocation(),
-                    transpose, data, size,
-                    ptr->GetState());
-
-        }
-
-    }
-#endif
-
-#if V8_MAJOR_VERSION < 14
-    static void FastUniformMatrix4fvArray(v8::Local<v8::Object> receiver_obj,
-                                          v8::Local<v8::Object> location_obj, bool transpose,
-                                          v8::Local<v8::Array> value) {
-        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
-        if (ptr == nullptr) {
-            return;
-        }
-
-        auto location = WebGLUniformLocation::GetPointer(location_obj);
-
-        if (location != nullptr) {
-            auto len = value->Length();
-            std::vector<float> buf;
-            buf.reserve(len);
-
-            auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<float>::Build().GetId(), float>(
-                    value, buf.data(), len);
-
-            if (copied) {
                 canvas_native_webgl_uniform_matrix4fv(
                         location->GetUniformLocation(),
-                        transpose, buf.data(),
-                        buf.size(),
+                        transpose, data, size,
                         ptr->GetState());
-            }
+            } else if (value->IsArray()) {
+                auto array = value.As<v8::Array>();
+                auto len = array->Length();
+                std::vector<float> buf;
+                buf.resize(len);
 
+                auto copied = v8_helpers::TryToCopyAndConvertArrayToCppBufferFloat(
+                        array, buf.data(), len);
+
+                if (copied) {
+                    canvas_native_webgl_uniform_matrix4fv(
+                            location->GetUniformLocation(),
+                            transpose, buf.data(),
+                            buf.size(),
+                            ptr->GetState());
+                }
+            }
         }
     }
-#endif
+
 
     static void UseProgram(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -3363,7 +2870,6 @@ public:
     }
 
 
-#if V8_MAJOR_VERSION < 14
     static void FastUseProgramNull(v8::Local<v8::Object> receiver_obj, uint32_t program) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -3375,9 +2881,7 @@ public:
                 program
         );
     }
-#endif
 
-#if V8_MAJOR_VERSION < 14
     static void
     FastUseProgram(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> program_obj) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
@@ -3396,11 +2900,9 @@ public:
 
 
     }
-#endif
 
     static void ValidateProgram(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void
     FastValidateProgram(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> program_obj) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
@@ -3421,11 +2923,9 @@ public:
         }
 
     }
-#endif
 
     static void VertexAttrib1f(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void FastVertexAttrib1f(v8::Local<v8::Object> receiver_obj, uint32_t index, float v0) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
@@ -3436,33 +2936,36 @@ public:
                 index, v0, ptr->GetState());
 
     }
-#endif
 
     static void VertexAttrib1fv(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void FastVertexAttrib1fv(v8::Local<v8::Object> receiver_obj, uint32_t index,
-                                    const v8::FastApiTypedArray<float> &value) {
+                                    v8::Local<v8::Value> value) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
             return;
         }
 
 
-        auto size = value.length();
-        float *data;
-        value.getStorageIfAligned(&data);
+        if (!value->IsFloat32Array()) {
+            return;
+        }
+
+        auto buf = value.As<v8::Float32Array>();
+        auto array = buf->Buffer();
+        auto offset = buf->ByteOffset();
+        auto size = buf->Length();
+        auto data_ptr = static_cast<uint8_t *>(array->GetBackingStore()->Data()) + offset;
+        auto data = static_cast<float *>((void *) data_ptr);
 
 
         canvas_native_webgl_vertex_attrib1fv(
                 index, data, size,
                 ptr->GetState());
     }
-#endif
 
     static void VertexAttrib2f(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void
     FastVertexAttrib2f(v8::Local<v8::Object> receiver_obj, uint32_t index, float v0, float v1) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
@@ -3474,33 +2977,36 @@ public:
                 index, v0, v1, ptr->GetState());
 
     }
-#endif
 
     static void VertexAttrib2fv(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void FastVertexAttrib2fv(v8::Local<v8::Object> receiver_obj, uint32_t index,
-                                    const v8::FastApiTypedArray<float> &value) {
+                                    v8::Local<v8::Value> value) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
             return;
         }
 
 
-        auto size = value.length();
-        float *data;
-        value.getStorageIfAligned(&data);
+        if (!value->IsFloat32Array()) {
+            return;
+        }
+
+        auto buf = value.As<v8::Float32Array>();
+        auto array = buf->Buffer();
+        auto offset = buf->ByteOffset();
+        auto size = buf->Length();
+        auto data_ptr = static_cast<uint8_t *>(array->GetBackingStore()->Data()) + offset;
+        auto data = static_cast<float *>((void *) data_ptr);
 
 
         canvas_native_webgl_vertex_attrib2fv(
                 index, data, size,
                 ptr->GetState());
     }
-#endif
 
     static void VertexAttrib3f(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void
     FastVertexAttrib3f(v8::Local<v8::Object> receiver_obj, uint32_t index, float v0, float v1,
                        float v2) {
@@ -3513,33 +3019,36 @@ public:
                 index, v0, v1, v2, ptr->GetState());
 
     }
-#endif
 
     static void VertexAttrib3fv(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void FastVertexAttrib3fv(v8::Local<v8::Object> receiver_obj, uint32_t index,
-                                    const v8::FastApiTypedArray<float> &value) {
+                                    v8::Local<v8::Value> value) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
             return;
         }
 
 
-        auto size = value.length();
-        float *data;
-        value.getStorageIfAligned(&data);
+        if (!value->IsFloat32Array()) {
+            return;
+        }
+
+        auto buf = value.As<v8::Float32Array>();
+        auto array = buf->Buffer();
+        auto offset = buf->ByteOffset();
+        auto size = buf->Length();
+        auto data_ptr = static_cast<uint8_t *>(array->GetBackingStore()->Data()) + offset;
+        auto data = static_cast<float *>((void *) data_ptr);
 
 
         canvas_native_webgl_vertex_attrib3fv(
                 index, data, size,
                 ptr->GetState());
     }
-#endif
 
     static void VertexAttrib4f(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void
     FastVertexAttrib4f(v8::Local<v8::Object> receiver_obj, uint32_t index, float v0, float v1,
                        float v2, float v3) {
@@ -3552,33 +3061,36 @@ public:
                 index, v0, v1, v2, v3, ptr->GetState());
 
     }
-#endif
 
     static void VertexAttrib4fv(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void FastVertexAttrib4fv(v8::Local<v8::Object> receiver_obj, uint32_t index,
-                                    const v8::FastApiTypedArray<float> &value) {
+                                    v8::Local<v8::Value> value) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
             return;
         }
 
 
-        auto size = value.length();
-        float *data;
-        value.getStorageIfAligned(&data);
+        if (!value->IsFloat32Array()) {
+            return;
+        }
+
+        auto buf = value.As<v8::Float32Array>();
+        auto array = buf->Buffer();
+        auto offset = buf->ByteOffset();
+        auto size = buf->Length();
+        auto data_ptr = static_cast<uint8_t *>(array->GetBackingStore()->Data()) + offset;
+        auto data = static_cast<float *>((void *) data_ptr);
 
 
         canvas_native_webgl_vertex_attrib4fv(
                 index, data, size,
                 ptr->GetState());
     }
-#endif
 
     static void VertexAttribPointer(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-#if V8_MAJOR_VERSION < 14
     static void
     FastVertexAttribPointer(v8::Local<v8::Object> receiver_obj, uint32_t index, int32_t size,
                             uint32_t type, bool normalized, int32_t stride, int32_t offset) {
@@ -3593,7 +3105,6 @@ public:
                 stride, os,
                 ptr->GetState());
     }
-#endif
 
 
     static void Viewport(const v8::FunctionCallbackInfo<v8::Value> &args);
@@ -3609,7 +3120,6 @@ public:
 
     }
 
-#if V8_MAJOR_VERSION < 14
     static void FastViewport(v8::Local<v8::Object> receiver_obj, double x, double y, double width,
                              double height) {
         WebGLRenderingContext *ptr = GetPointer(receiver_obj);
@@ -3622,7 +3132,6 @@ public:
                 x, y, width, height
         );
     }
-#endif
 
     static void __ToDataURL(const v8::FunctionCallbackInfo<v8::Value> &args);
 

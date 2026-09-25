@@ -1709,13 +1709,15 @@ pub extern "C" fn canvas_native_context_create_pattern_canvas2d(
     assert!(!source.is_null());
     assert!(!context.is_null());
     let source = unsafe { &mut *source };
-    let context = unsafe { &*context };
+    let context = unsafe { &mut *context };
     let repetition: Repetition = repetition.into();
+    let image = source.context.get_image();
+    // Snapshotting left the source's GL context current; restore the destination.
     #[cfg(feature = "gl")]
     {
-        source.make_current();
+        context.make_current();
     }
-    match source.context.get_image() {
+    match image {
         None => std::ptr::null_mut(),
         Some(image) => Box::into_raw(Box::new(PaintStyle(
             canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
@@ -2028,16 +2030,20 @@ pub extern "C" fn canvas_native_context_draw_image_context(
     }
 }
 
+/// Read a WebGL canvas's drawing buffer back so it can be used as an image source.
+///
+/// `format` is the pixel format (`GL_RGBA`), `pixel_type` the component type
+/// (`GL_UNSIGNED_BYTE`) -- swapping them fails with `GL_INVALID_ENUM` and writes nothing.
 fn canvas_native_context_read_webgl_pixels(
     source: &mut canvas_webgl::prelude::WebGLState,
-    internalformat: i32,
     format: i32,
+    pixel_type: i32,
 ) -> (i32, i32, Vec<u8>) {
     source.make_current();
     let width = source.get_drawing_buffer_width();
     let height = source.get_drawing_buffer_height();
 
-    let row_size = bytes_per_pixel(internalformat as u32, format as u32) as i32;
+    let row_size = bytes_per_pixel(pixel_type as u32, format as u32) as i32;
 
     let mut buf = vec![255u8; (width * height * row_size) as usize];
     unsafe {
@@ -2047,8 +2053,8 @@ fn canvas_native_context_read_webgl_pixels(
             0,
             width,
             height,
-            internalformat as u32,
             format as u32,
+            pixel_type as u32,
             buf.as_mut_ptr() as *mut c_void,
         );
     }
@@ -2077,7 +2083,7 @@ pub extern "C" fn canvas_native_context_draw_image_dx_dy_webgl(
     let pixels = canvas_native_context_read_webgl_pixels(
         &mut source.0,
         gl_bindings::RGBA as i32,
-        gl_bindings::RGBA as i32,
+        gl_bindings::UNSIGNED_BYTE as i32,
     );
 
     let ptr = pixels.2.as_ptr();
@@ -2109,7 +2115,7 @@ pub extern "C" fn canvas_native_context_draw_image_dx_dy_dw_dh_webgl(
     let pixels = canvas_native_context_read_webgl_pixels(
         &mut source.0,
         gl_bindings::RGBA as i32,
-        gl_bindings::RGBA as i32,
+        gl_bindings::UNSIGNED_BYTE as i32,
     );
 
     let ptr = pixels.2.as_ptr();
@@ -2148,7 +2154,7 @@ pub extern "C" fn canvas_native_context_draw_image_webgl(
     let pixels = canvas_native_context_read_webgl_pixels(
         &mut source.0,
         gl_bindings::RGBA as i32,
-        gl_bindings::RGBA as i32,
+        gl_bindings::UNSIGNED_BYTE as i32,
     );
 
     let ptr = pixels.2.as_ptr();
@@ -2460,7 +2466,7 @@ pub extern "C" fn canvas_native_context_is_point_in_path_str(
     y: f32,
     rule: CanvasFillRule,
 ) -> bool {
-    let context = unsafe { &*context };
+    let context = unsafe { &mut *context };
     context.context.point_in_path(None, x, y, rule.into())
 }
 
@@ -2472,7 +2478,7 @@ pub extern "C" fn canvas_native_context_is_point_in_path_with_path_str(
     y: f32,
     rule: CanvasFillRule,
 ) -> bool {
-    let context = unsafe { &*context };
+    let context = unsafe { &mut *context };
     let path = unsafe { &*path };
     context
         .context
@@ -2486,7 +2492,7 @@ pub extern "C" fn canvas_native_context_is_point_in_path(
     y: f32,
     rule: CanvasFillRule,
 ) -> bool {
-    let context = unsafe { &*context };
+    let context = unsafe { &mut *context };
     context.context.point_in_path(None, x, y, rule.into())
 }
 
@@ -2498,7 +2504,7 @@ pub extern "C" fn canvas_native_context_is_point_in_path_with_path(
     y: f32,
     rule: CanvasFillRule,
 ) -> bool {
-    let context = unsafe { &*context };
+    let context = unsafe { &mut *context };
     let path = unsafe { &*path };
     context
         .context
@@ -2511,7 +2517,7 @@ pub extern "C" fn canvas_native_context_is_point_in_stroke(
     x: f32,
     y: f32,
 ) -> bool {
-    let context = unsafe { &*context };
+    let context = unsafe { &mut *context };
     context.context.point_in_stroke(None, x, y)
 }
 
@@ -2522,7 +2528,7 @@ pub extern "C" fn canvas_native_context_is_point_in_stroke_with_path(
     x: f32,
     y: f32,
 ) -> bool {
-    let context = unsafe { &*context };
+    let context = unsafe { &mut *context };
     let path = unsafe { &*path };
     context.context.point_in_stroke(Some(&path.0), x, y)
 }

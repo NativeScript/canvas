@@ -195,6 +195,20 @@ extension UIKit.UIView {
   @objc public static func getVideoFrameData(_ player: AVFoundation.AVPlayer, _ output: AVFoundation.AVPlayerItemVideoOutput, _ videoSize: CoreFoundation.CGSize) -> Foundation.NSDictionary?
   @objc deinit
 }
+@_hasMissingDesignatedInitializers @objc(NSCVideoFrameTexture) public class NSCVideoFrameTexture : ObjectiveC.NSObject {
+  @objc final public let width: Swift.Int
+  @objc final public let height: Swift.Int
+  @objc public var texturePointer: Swift.Int {
+    @objc get
+  }
+  @objc deinit
+}
+@_inheritsConvenienceInitializers @objc(NSCVideoFrameBridge) public class NSCVideoFrameBridge : ObjectiveC.NSObject {
+  @objc(isSupportedForDevice:) public static func isSupported(device deviceHandle: Swift.Int) -> Swift.Bool
+  @objc(currentFrameForPlayer:output:device:) public static func currentFrame(player: AVFoundation.AVPlayer, output: AVFoundation.AVPlayerItemVideoOutput, device deviceHandle: Swift.Int) -> CanvasNative.NSCVideoFrameTexture?
+  @objc override dynamic public init()
+  @objc deinit
+}
 @_inheritsConvenienceInitializers @objcMembers @objc(NSCImageBitmap) public class NSCImageBitmap : ObjectiveC.NSObject {
   @objc public static let queue: Dispatch.DispatchQueue
   @objc override dynamic public init()

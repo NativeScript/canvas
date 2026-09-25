@@ -2,8 +2,7 @@
 use super::gpu_adapter::CanvasGPUAdapter;
 use std::fmt::{Debug, Formatter};
 use std::{os::raw::c_void, sync::Arc};
-use wgpu_core::global::Global;
-use wgpu_core::id::SurfaceId;
+use wgpu_core::instance::{Instance, Surface};
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -60,7 +59,7 @@ impl Default for CanvasGPURequestAdapterOptions {
 
 #[derive(Clone)]
 struct CanvasWebGPUInstanceInner {
-    pub(crate) global: Arc<Global>,
+    pub(crate) instance: Arc<Instance>,
 }
 
 impl Debug for CanvasWebGPUInstanceInner {
@@ -74,17 +73,17 @@ pub struct CanvasWebGPUInstance(CanvasWebGPUInstanceInner);
 impl Clone for CanvasWebGPUInstance {
     fn clone(&self) -> Self {
         Self(CanvasWebGPUInstanceInner {
-            global: Arc::clone(&self.0.global),
+            instance: Arc::clone(&self.0.instance),
         })
     }
 
     fn clone_from(&mut self, source: &Self) {
-        self.0.global = Arc::clone(&source.0.global)
+        self.0.instance = Arc::clone(&source.0.instance)
     }
 }
 impl CanvasWebGPUInstance {
-    pub(crate) fn global(&self) -> &Arc<Global> {
-        &self.0.global
+    pub(crate) fn instance(&self) -> &Arc<Instance> {
+        &self.0.instance
     }
 }
 
@@ -103,7 +102,7 @@ pub extern "C" fn canvas_native_webgpu_instance_create() -> *const CanvasWebGPUI
     #[cfg(target_os = "windows")]
     let backends = wgt::Backends::DX12;
 
-    let instance = Global::new(
+    let instance = Instance::new(
         "webgpu",
         wgt::InstanceDescriptor {
             backends,
@@ -115,9 +114,7 @@ pub extern "C" fn canvas_native_webgpu_instance_create() -> *const CanvasWebGPUI
         None,
     );
 
-    let inner = CanvasWebGPUInstanceInner {
-        global: Arc::new(instance),
-    };
+    let inner = CanvasWebGPUInstanceInner { instance };
 
     Arc::into_raw(Arc::new(CanvasWebGPUInstance(inner)))
 }
@@ -156,7 +153,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_request_adapter(
         *options
     };
 
-    let opts: wgt::RequestAdapterOptions<SurfaceId> = wgt::RequestAdapterOptions {
+    let opts: wgt::RequestAdapterOptions<&Surface> = wgt::RequestAdapterOptions {
         power_preference: options.power_preference.into(),
         force_fallback_adapter: options.force_fallback_adapter,
         compatible_surface: None,
@@ -166,33 +163,32 @@ pub unsafe extern "C" fn canvas_native_webgpu_request_adapter(
     let callback = callback as i64;
     let callback_data = callback_data as i64;
     let instance = Arc::from_raw(instance);
-    let global = Arc::clone(instance.global());
+    let inner = Arc::clone(instance.instance());
     std::thread::spawn(move || {
         let adapter_id = {
             #[cfg(any(target_os = "ios", target_os = "macos", target_os = "visionos", target_os = "tvos"))]
             {
-                global.request_adapter(&opts, wgt::Backends::METAL, None)
+                inner.request_adapter(&opts, wgt::Backends::METAL)
             }
 
             #[cfg(target_os = "android")]
             {
                 if options.feature_level == CanvasGPUFeatureLevel::Compatibility {
-                    global.request_adapter(&opts, wgt::Backends::GL, None)
+                    inner.request_adapter(&opts, wgt::Backends::GL)
                 } else {
-                    let vulkan_adapter = global.request_adapter(&opts, wgt::Backends::VULKAN, None);
+                    let vulkan_adapter = inner.request_adapter(&opts, wgt::Backends::VULKAN);
 
-                    let is_hardware_vulkan = vulkan_adapter.as_ref().map_or(false, |id| {
-                        global.adapter_get_info(*id).device_type != wgt::DeviceType::Cpu
+                    let is_hardware_vulkan = vulkan_adapter.as_ref().map_or(false, |adapter| {
+                        adapter.get_info().device_type != wgt::DeviceType::Cpu
                     });
 
                     if is_hardware_vulkan {
                         vulkan_adapter
                     } else {
-                        let gl_adapter = global.request_adapter(&opts, wgt::Backends::GL, None);
+                        let gl_adapter = inner.request_adapter(&opts, wgt::Backends::GL);
                         if gl_adapter.is_ok() {
-                            if let Ok(id) = vulkan_adapter {
-                                global.adapter_drop(id);
-                            }
+                            // dropping the Arc releases it; there is no adapter_drop any more
+                            drop(vulkan_adapter);
                             gl_adapter
                         } else {
                             vulkan_adapter
@@ -203,19 +199,19 @@ pub unsafe extern "C" fn canvas_native_webgpu_request_adapter(
 
             #[cfg(target_os = "windows")]
             {
-                global.request_adapter(&opts, wgt::Backends::DX12, None)
+                inner.request_adapter(&opts, wgt::Backends::DX12)
             }
         };
 
-        let adapter = adapter_id.map(|adapter_id| {
-            let mut features = build_features(global.adapter_features(adapter_id));
+        let adapter = adapter_id.map(|adapter| {
+            let mut features = build_features(adapter.features());
             if options.feature_level != CanvasGPUFeatureLevel::Compatibility {
                 features.push("core-features-and-limits");
             }
-            let limits = global.adapter_limits(adapter_id);
+            let limits = adapter.limits();
             let ret = CanvasGPUAdapter {
                 instance,
-                adapter: adapter_id,
+                adapter,
                 is_fallback_adapter: options.force_fallback_adapter,
                 feature_level: options.feature_level.into(),
                 features,

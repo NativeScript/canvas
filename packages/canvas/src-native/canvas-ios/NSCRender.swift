@@ -908,3 +908,126 @@ public class NSCRender: NSObject {
 	}
 }
 #endif
+
+// MARK: - Zero-copy video frames for WebGPU
+//
+// Metal-only, so it sits outside the `#if !os(visionOS)` guard above.
+
+import AVFoundation
+import CoreVideo
+import Metal
+
+/// A decoded video frame held as a Metal texture. The `MTLTexture` is only valid while
+/// this object is alive, so hold it until the GPU work has been submitted.
+@objc(NSCVideoFrameTexture)
+public class NSCVideoFrameTexture: NSObject {
+	private let cvTexture: CVMetalTexture
+	private let metalTexture: MTLTexture
+
+	@objc public let width: Int
+	@objc public let height: Int
+
+	init(cvTexture: CVMetalTexture, metalTexture: MTLTexture, width: Int, height: Int) {
+		self.cvTexture = cvTexture
+		self.metalTexture = metalTexture
+		self.width = width
+		self.height = height
+	}
+
+	/// Borrowed `id<MTLTexture>` as an integer, for handing to the Rust side. Valid only
+	/// while this object is alive.
+	@objc public var texturePointer: Int {
+		Int(bitPattern: Unmanaged.passUnretained(metalTexture).toOpaque())
+	}
+}
+
+/// Bridges `AVPlayerItemVideoOutput` frames to Metal textures for the WebGPU upload path.
+@objc(NSCVideoFrameBridge)
+public class NSCVideoFrameBridge: NSObject {
+	/// One texture cache per `MTLDevice`. Must be the device wgpu renders with, not the
+	/// system default -- a texture built on the wrong device cannot be bound.
+	private static var caches: [ObjectIdentifier: CVMetalTextureCache] = [:]
+	private static let cachesLock = NSLock()
+
+	private static func cache(for device: MTLDevice) -> CVMetalTextureCache? {
+		cachesLock.lock()
+		defer { cachesLock.unlock() }
+
+		let key = ObjectIdentifier(device as AnyObject)
+		if let existing = caches[key] {
+			return existing
+		}
+
+		var created: CVMetalTextureCache?
+		guard CVMetalTextureCacheCreate(kCFAllocatorDefault, nil, device, nil, &created)
+			== kCVReturnSuccess, let cache = created else {
+			return nil
+		}
+
+		caches[key] = cache
+		return cache
+	}
+
+	private static func device(from handle: Int) -> MTLDevice? {
+		guard let pointer = UnsafeMutableRawPointer(bitPattern: handle) else { return nil }
+		return Unmanaged<AnyObject>.fromOpaque(pointer).takeUnretainedValue() as? MTLDevice
+	}
+
+	/// Whether frames can be imported on this device at all. Resolve once: a nil frame
+	/// from `currentFrame` means "no new frame", not "unsupported".
+	@objc(isSupportedForDevice:)
+	public static func isSupported(device deviceHandle: Int) -> Bool {
+		guard let metalDevice = device(from: deviceHandle) else { return false }
+		return cache(for: metalDevice) != nil
+	}
+
+	/// The current frame as a Metal texture, or nil if the decoder has not produced a new
+	/// one since the last call — in which case there is nothing to upload.
+	@objc(currentFrameForPlayer:output:device:)
+	public static func currentFrame(
+		player: AVPlayer,
+		output: AVPlayerItemVideoOutput,
+		device deviceHandle: Int
+	) -> NSCVideoFrameTexture? {
+		let currentTime = player.currentTime()
+		guard output.hasNewPixelBuffer(forItemTime: currentTime) else { return nil }
+
+		var presentationTime = CMTime.zero
+		guard let buffer = output.copyPixelBuffer(
+			forItemTime: currentTime,
+			itemTimeForDisplay: &presentationTime
+		) else {
+			return nil
+		}
+
+		guard let metalDevice = device(from: deviceHandle),
+		      let cache = cache(for: metalDevice) else {
+			return nil
+		}
+
+		let width = CVPixelBufferGetWidth(buffer)
+		let height = CVPixelBufferGetHeight(buffer)
+
+		var cvTexture: CVMetalTexture?
+		let status = CVMetalTextureCacheCreateTextureFromImage(
+			kCFAllocatorDefault, cache, buffer, nil,
+			.bgra8Unorm, width, height, 0, &cvTexture
+		)
+
+		guard status == kCVReturnSuccess,
+		      let cvTexture,
+		      let metalTexture = CVMetalTextureGetTexture(cvTexture) else {
+			return nil
+		}
+
+		// Drop entries whose frames were let go; still-referenced textures are kept.
+		CVMetalTextureCacheFlush(cache, 0)
+
+		return NSCVideoFrameTexture(
+			cvTexture: cvTexture,
+			metalTexture: metalTexture,
+			width: width,
+			height: height
+		)
+	}
+}

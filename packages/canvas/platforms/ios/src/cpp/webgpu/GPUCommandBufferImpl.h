@@ -34,7 +34,7 @@ public:
         auto object = GPUCommandBufferImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType(commandBuffer, NativeType::GPUCommandBuffer);
-        canvas::SetAlignedPointer(object, 0, commandBuffer);
+        object->SetAlignedPointerInInternalField(0, commandBuffer, ObjectWrapperImpl::kInternalFieldTag);
         commandBuffer->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }

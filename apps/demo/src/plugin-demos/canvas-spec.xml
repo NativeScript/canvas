@@ -1,0 +1,14 @@
+<Page xmlns="http://schemas.nativescript.org/tns.xsd" xmlns:canvas="@nativescript/canvas" navigatingTo="navigatingTo" class="page">
+	<Page.actionBar>
+		<ActionBar title="canvas spec" icon="" class="action-bar" />
+	</Page.actionBar>
+	<GridLayout rows="auto, 64, *" columns="*" style="width:100%;height:100%">
+		<Label row="0" col="0" text="{{ status }}" textWrap="true" class="p-10" />
+		<!-- A real on-screen surface for the tests that cannot use an offscreen
+		     canvas (WebGPU needs a window to configure against). -->
+		<canvas:Canvas row="1" col="0" id="surface" ready="{{ canvasReady }}" style="width:64;height:64;" />
+		<ScrollView row="2" col="0">
+			<Label text="{{ report }}" textWrap="true" class="p-10" style="font-family:monospace;font-size:11;" />
+		</ScrollView>
+	</GridLayout>
+</Page>

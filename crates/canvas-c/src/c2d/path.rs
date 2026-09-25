@@ -36,6 +36,25 @@ pub extern "C" fn canvas_native_path_add_path(path: *mut Path, path_to_add: *con
 }
 
 #[no_mangle]
+pub extern "C" fn canvas_native_path_add_path_with_matrix(
+    path: *mut Path,
+    path_to_add: *const Path,
+    matrix: *const crate::c2d::Matrix,
+) {
+    if path.is_null() || path_to_add.is_null() {
+        return;
+    }
+    let path = unsafe { &mut *path };
+    let path_to_add = unsafe { &*path_to_add };
+    if matrix.is_null() {
+        path.0.add_path(&path_to_add.0, None);
+        return;
+    }
+    let matrix = unsafe { &*matrix };
+    path.0.add_path(&path_to_add.0, Some(&matrix.0));
+}
+
+#[no_mangle]
 pub extern "C" fn canvas_native_path_create() -> *mut Path {
     Box::into_raw(Box::new(Path::default()))
 }

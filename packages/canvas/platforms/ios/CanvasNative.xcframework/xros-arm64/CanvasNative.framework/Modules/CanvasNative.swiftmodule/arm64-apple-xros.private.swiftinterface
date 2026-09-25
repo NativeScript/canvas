@@ -6,6 +6,7 @@ import AVFoundation
 @_exported import CanvasNative
 import CoreVideo
 import Foundation
+import Metal
 import MetalKit
 import Photos
 import Swift
@@ -177,6 +178,20 @@ import _SwiftConcurrencyShims
 }
 extension UIKit.UIView {
   @objc @_Concurrency.MainActor @preconcurrency dynamic public func getBoundingClientRect(_ buffer: Swift.UnsafeMutableRawPointer)
+}
+@_hasMissingDesignatedInitializers @objc(NSCVideoFrameTexture) public class NSCVideoFrameTexture : ObjectiveC.NSObject {
+  @objc final public let width: Swift.Int
+  @objc final public let height: Swift.Int
+  @objc public var texturePointer: Swift.Int {
+    @objc get
+  }
+  @objc deinit
+}
+@_inheritsConvenienceInitializers @objc(NSCVideoFrameBridge) public class NSCVideoFrameBridge : ObjectiveC.NSObject {
+  @objc(isSupportedForDevice:) public static func isSupported(device deviceHandle: Swift.Int) -> Swift.Bool
+  @objc(currentFrameForPlayer:output:device:) public static func currentFrame(player: AVFoundation.AVPlayer, output: AVFoundation.AVPlayerItemVideoOutput, device deviceHandle: Swift.Int) -> CanvasNative.NSCVideoFrameTexture?
+  @objc override dynamic public init()
+  @objc deinit
 }
 @_inheritsConvenienceInitializers @objcMembers @objc(NSCImageBitmap) public class NSCImageBitmap : ObjectiveC.NSObject {
   @objc public static let queue: Dispatch.DispatchQueue

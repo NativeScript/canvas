@@ -12,6 +12,110 @@ GPUComputePassEncoderImpl::GPUComputePassEncoderImpl(const CanvasGPUComputePassE
         : computePass_(
         pass) {}
 
+v8::CFunction GPUComputePassEncoderImpl::fast_dispatch_workgroups_ = v8::CFunction::Make(
+        GPUComputePassEncoderImpl::FastDispatchWorkgroups);
+v8::CFunction GPUComputePassEncoderImpl::fast_dispatch_workgroups_indirect_ = v8::CFunction::Make(
+        GPUComputePassEncoderImpl::FastDispatchWorkgroupsIndirect);
+v8::CFunction GPUComputePassEncoderImpl::fast_set_pipeline_ = v8::CFunction::Make(
+        GPUComputePassEncoderImpl::FastSetPipeline);
+v8::CFunction GPUComputePassEncoderImpl::fast_set_bind_group_[2] = {
+        v8::CFunction::Make(GPUComputePassEncoderImpl::FastSetBindGroupNoOffsets),
+        v8::CFunction::Make(GPUComputePassEncoderImpl::FastSetBindGroup),
+};
+
+void GPUComputePassEncoderImpl::FastDispatchWorkgroups(v8::Local<v8::Object> receiver_obj,
+                                                       uint32_t x, uint32_t y, uint32_t z) {
+    auto *ptr = GetPointer(receiver_obj);
+    if (ptr == nullptr) {
+        return;
+    }
+    canvas_native_webgpu_compute_pass_encoder_dispatch_workgroups(ptr->GetComputePass(), x, y, z);
+}
+
+void GPUComputePassEncoderImpl::FastDispatchWorkgroupsIndirect(v8::Local<v8::Object> receiver_obj,
+                                                               v8::Local<v8::Object> buffer_obj,
+                                                               double offset) {
+    auto *ptr = GetPointer(receiver_obj);
+    if (ptr == nullptr) {
+        return;
+    }
+    if (GetNativeType(buffer_obj) != NativeType::GPUBuffer) {
+        return;
+    }
+    auto buffer = GPUBufferImpl::GetPointer(buffer_obj);
+    if (buffer == nullptr) {
+        return;
+    }
+    canvas_native_webgpu_compute_pass_encoder_dispatch_workgroups_indirect(
+            ptr->GetComputePass(), buffer->GetGPUBuffer(), (uint64_t) offset);
+}
+
+void GPUComputePassEncoderImpl::FastSetPipeline(v8::Local<v8::Object> receiver_obj,
+                                                v8::Local<v8::Object> pipeline_obj) {
+    auto *ptr = GetPointer(receiver_obj);
+    if (ptr == nullptr) {
+        return;
+    }
+    if (GetNativeType(pipeline_obj) != NativeType::GPUComputePipeline) {
+        return;
+    }
+    auto pipeline = GPUComputePipelineImpl::GetPointer(pipeline_obj);
+    if (pipeline == nullptr) {
+        return;
+    }
+    canvas_native_webgpu_compute_pass_encoder_set_pipeline(ptr->GetComputePass(),
+                                                           pipeline->GetGPUPipeline());
+}
+
+void GPUComputePassEncoderImpl::FastSetBindGroupNoOffsets(v8::Local<v8::Object> receiver_obj,
+                                                          uint32_t index,
+                                                          v8::Local<v8::Object> bind_group_obj) {
+    auto *ptr = GetPointer(receiver_obj);
+    if (ptr == nullptr) {
+        return;
+    }
+    const CanvasGPUBindGroup *bindGroup = nullptr;
+    if (GetNativeType(bind_group_obj) == NativeType::GPUBindGroup) {
+        auto group = GPUBindGroupImpl::GetPointer(bind_group_obj);
+        if (group != nullptr) {
+            bindGroup = group->GetBindGroup();
+        }
+    }
+    canvas_native_webgpu_compute_pass_encoder_set_bind_group(ptr->GetComputePass(), index, bindGroup,
+                                                             nullptr, 0, 0, 0);
+}
+
+void GPUComputePassEncoderImpl::FastSetBindGroup(v8::Local<v8::Object> receiver_obj, uint32_t index,
+                                                 v8::Local<v8::Object> bind_group_obj,
+                                                 v8::Local<v8::Value> dynamic_offsets, double start,
+                                                 double length) {
+    auto *ptr = GetPointer(receiver_obj);
+    if (ptr == nullptr) {
+        return;
+    }
+    const CanvasGPUBindGroup *bindGroup = nullptr;
+    if (GetNativeType(bind_group_obj) == NativeType::GPUBindGroup) {
+        auto group = GPUBindGroupImpl::GetPointer(bind_group_obj);
+        if (group != nullptr) {
+            bindGroup = group->GetBindGroup();
+        }
+    }
+
+    if (!dynamic_offsets.IsEmpty() && dynamic_offsets->IsUint32Array()) {
+        auto buf = dynamic_offsets.As<v8::Uint32Array>();
+        auto store = buf->Buffer()->GetBackingStore();
+        auto data = static_cast<uint8_t *>(store->Data()) + buf->ByteOffset();
+        canvas_native_webgpu_compute_pass_encoder_set_bind_group(
+                ptr->GetComputePass(), index, bindGroup,
+                static_cast<const uint32_t *>(static_cast<void *>(data)), buf->Length(),
+                (size_t) start, (size_t) length);
+        return;
+    }
+
+    canvas_native_webgpu_compute_pass_encoder_set_bind_group(ptr->GetComputePass(), index, bindGroup,
+                                                             nullptr, 0, 0, 0);
+}
+
 const CanvasGPUComputePassEncoder *GPUComputePassEncoderImpl::GetComputePass() {
     return this->computePass_.get();
 }
@@ -32,7 +136,7 @@ void GPUComputePassEncoderImpl::Init(v8::Local<v8::Object> canvasModule, v8::Iso
 
 GPUComputePassEncoderImpl *
 GPUComputePassEncoderImpl::GetPointer(const v8::Local<v8::Object> &object) {
-    auto ptr = canvas::GetAlignedPointer(object, 0);
+    auto ptr = object->GetAlignedPointerFromInternalField(0, ObjectWrapperImpl::kInternalFieldTag);
     if (ptr == nullptr) {
         return nullptr;
     }
@@ -58,13 +162,11 @@ v8::Local<v8::FunctionTemplate> GPUComputePassEncoderImpl::GetCtor(v8::Isolate *
             GetLabel
     );
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "dispatchWorkgroups"),
-            v8::FunctionTemplate::New(isolate, &DispatchWorkgroups));
+    SetFastMethod(isolate, tmpl, "dispatchWorkgroups", DispatchWorkgroups,
+                  &fast_dispatch_workgroups_, v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "dispatchWorkgroupsIndirect"),
-            v8::FunctionTemplate::New(isolate, &DispatchWorkgroupsIndirect));
+    SetFastMethod(isolate, tmpl, "dispatchWorkgroupsIndirect", DispatchWorkgroupsIndirect,
+                  &fast_dispatch_workgroups_indirect_, v8::Local<v8::Value>());
 
     tmpl->Set(
             ConvertToV8String(isolate, "end"),
@@ -82,13 +184,11 @@ v8::Local<v8::FunctionTemplate> GPUComputePassEncoderImpl::GetCtor(v8::Isolate *
             ConvertToV8String(isolate, "pushDebugGroup"),
             v8::FunctionTemplate::New(isolate, &PushDebugGroup));
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "setBindGroup"),
-            v8::FunctionTemplate::New(isolate, &SetBindGroup));
+    SetFastMethodWithOverLoads(isolate, tmpl, "setBindGroup", SetBindGroup,
+                               fast_set_bind_group_, v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "setPipeline"),
-            v8::FunctionTemplate::New(isolate, &SetPipeline));
+    SetFastMethod(isolate, tmpl, "setPipeline", SetPipeline, &fast_set_pipeline_,
+                  v8::Local<v8::Value>());
 
     tmpl->Set(
             ConvertToV8String(isolate, "destroy"),
@@ -111,7 +211,7 @@ void GPUComputePassEncoderImpl::Destroy(const v8::FunctionCallbackInfo<v8::Value
 void
 GPUComputePassEncoderImpl::GetLabel(v8::Local<v8::Name> name,
                                     const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(canvas::Receiver(info));
+    auto ptr = GetPointer(info.Holder());
     if (ptr != nullptr) {
         auto label = canvas_native_webgpu_compute_pass_encoder_get_label(ptr->computePass_.get());
         if (label == nullptr) {

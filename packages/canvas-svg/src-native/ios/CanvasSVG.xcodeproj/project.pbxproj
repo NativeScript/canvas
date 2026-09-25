@@ -15,6 +15,7 @@
 		F17435E72BA82D8400134EC8 /* CanvasSVGTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F17435E62BA82D8400134EC8 /* CanvasSVGTests.swift */; };
 		F17435E82BA82D8400134EC8 /* CanvasSVG.h in Headers */ = {isa = PBXBuildFile; fileRef = F17435DA2BA82D8300134EC8 /* CanvasSVG.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		F17435F32BA835BF00134EC8 /* NSCSVG.swift in Sources */ = {isa = PBXBuildFile; fileRef = F17435F22BA835BF00134EC8 /* NSCSVG.swift */; };
+		F17435F52BA835BF00134EC8 /* SVGMetalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F17435F42BA835BF00134EC8 /* SVGMetalView.swift */; };
 		F17435FE2BA83E3800134EC8 /* canvas_svg.h in Headers */ = {isa = PBXBuildFile; fileRef = F17435FD2BA83E3800134EC8 /* canvas_svg.h */; settings = {ATTRIBUTES = (Public, ); }; };
 /* End PBXBuildFile section */
 
@@ -38,6 +39,7 @@
 		F17435E12BA82D8400134EC8 /* CanvasSVGTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CanvasSVGTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F17435E62BA82D8400134EC8 /* CanvasSVGTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasSVGTests.swift; sourceTree = "<group>"; };
 		F17435F22BA835BF00134EC8 /* NSCSVG.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSCSVG.swift; sourceTree = "<group>"; };
+		F17435F42BA835BF00134EC8 /* SVGMetalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SVGMetalView.swift; sourceTree = "<group>"; };
 		F17435FD2BA83E3800134EC8 /* canvas_svg.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = canvas_svg.h; path = CanvasSVG/include/canvas_svg.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -96,6 +98,7 @@
 				F17435DA2BA82D8300134EC8 /* CanvasSVG.h */,
 				F17435DB2BA82D8300134EC8 /* CanvasSVG.docc */,
 				F17435F22BA835BF00134EC8 /* NSCSVG.swift */,
+				F17435F42BA835BF00134EC8 /* SVGMetalView.swift */,
 				F104451C2BA8F579009434E9 /* CanvasSVGHelper.m */,
 			);
 			path = CanvasSVG;
@@ -248,6 +251,7 @@
 				F17435DC2BA82D8300134EC8 /* CanvasSVG.docc in Sources */,
 				F104451D2BA8F579009434E9 /* CanvasSVGHelper.m in Sources */,
 				F17435F32BA835BF00134EC8 /* NSCSVG.swift in Sources */,
+				F17435F52BA835BF00134EC8 /* SVGMetalView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

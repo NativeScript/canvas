@@ -5,286 +5,198 @@
 #include "WebGL2RenderingContext.h"
 
 v8::CFunction WebGL2RenderingContext::fast_begin_query_(
-                                                        CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastBeginQuery));
+                                                        v8::CFunction::Make(WebGL2RenderingContext::FastBeginQuery));
 
 v8::CFunction WebGL2RenderingContext::fast_begin_transform_feedback_(
-                                                                     CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastBeginTransformFeedback));
+                                                                     v8::CFunction::Make(WebGL2RenderingContext::FastBeginTransformFeedback));
 
 v8::CFunction WebGL2RenderingContext::fast_bind_vertex_array_(
-                                                              CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastBindVertexArray));
+                                                              v8::CFunction::Make(WebGL2RenderingContext::FastBindVertexArray));
 
 
 v8::CFunction WebGL2RenderingContext::fast_bind_buffer_base_(
-                                                             CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastBindBufferBase));
+                                                             v8::CFunction::Make(WebGL2RenderingContext::FastBindBufferBase));
 
 v8::CFunction WebGL2RenderingContext::fast_bind_buffer_range_(
-                                                              CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastBindBufferRange));
+                                                              v8::CFunction::Make(WebGL2RenderingContext::FastBindBufferRange));
 
 v8::CFunction WebGL2RenderingContext::fast_bind_sampler_(
-                                                         CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastBindSampler));
+                                                         v8::CFunction::Make(WebGL2RenderingContext::FastBindSampler));
 
 v8::CFunction WebGL2RenderingContext::fast_bind_transform_feedback_(
-                                                                    CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastBindTransformFeedback));
+                                                                    v8::CFunction::Make(WebGL2RenderingContext::FastBindTransformFeedback));
 
 v8::CFunction WebGL2RenderingContext::fast_blit_framebuffer_(
-                                                             CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastBlitFramebuffer));
+                                                             v8::CFunction::Make(WebGL2RenderingContext::FastBlitFramebuffer));
 
 v8::CFunction WebGL2RenderingContext::fast_clear_buffer_fi_(
-                                                            CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastClearBufferfi));
+                                                            v8::CFunction::Make(WebGL2RenderingContext::FastClearBufferfi));
 
 v8::CFunction WebGL2RenderingContext::fast_clear_buffer_fv_(
-                                                            CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastClearBufferfv));
-
-v8::CFunction WebGL2RenderingContext::fast_clear_buffer_fv_array_(
-                                                                  CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastClearBufferfvArray));
-
-const v8::CFunction fast_clear_buffer_fv_overloads_[] = {
-    WebGL2RenderingContext::fast_clear_buffer_fv_,
-    WebGL2RenderingContext::fast_clear_buffer_fv_array_
-};
+                                                            v8::CFunction::Make(WebGL2RenderingContext::FastClearBufferfv));
 
 v8::CFunction WebGL2RenderingContext::fast_clear_buffer_iv_(
-                                                            CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastClearBufferiv));
-
-v8::CFunction WebGL2RenderingContext::fast_clear_buffer_iv_array_(
-                                                                  CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastClearBufferivArray));
-
-const v8::CFunction fast_clear_buffer_iv_overloads_[] = {
-    WebGL2RenderingContext::fast_clear_buffer_iv_,
-    WebGL2RenderingContext::fast_clear_buffer_iv_array_
-};
+                                                            v8::CFunction::Make(WebGL2RenderingContext::FastClearBufferiv));
 
 
 v8::CFunction WebGL2RenderingContext::fast_clear_buffer_uiv_(
-                                                             CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastClearBufferuiv));
-
-v8::CFunction WebGL2RenderingContext::fast_clear_buffer_uiv_array_(
-                                                                   CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastClearBufferuivArray));
-
-const v8::CFunction fast_clear_buffer_uiv_overloads_[] = {
-    WebGL2RenderingContext::fast_clear_buffer_uiv_,
-    WebGL2RenderingContext::fast_clear_buffer_uiv_array_
-};
+                                                             v8::CFunction::Make(WebGL2RenderingContext::FastClearBufferuiv));
 
 v8::CFunction WebGL2RenderingContext::fast_draw_arrays_instanced_(
-                                                                  CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastDrawArraysInstanced));
+                                                                  v8::CFunction::Make(WebGL2RenderingContext::FastDrawArraysInstanced));
 
 v8::CFunction WebGL2RenderingContext::fast_draw_buffers_(
-                                                         CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastDrawBuffers));
+                                                         v8::CFunction::Make(WebGL2RenderingContext::FastDrawBuffers));
 
 
 v8::CFunction WebGL2RenderingContext::fast_draw_elements_instanced_(
-                                                                    CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastDrawElementsInstanced));
+                                                                    v8::CFunction::Make(WebGL2RenderingContext::FastDrawElementsInstanced));
 
 v8::CFunction WebGL2RenderingContext::fast_draw_range_elements_(
-                                                                CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastDrawRangeElements));
+                                                                v8::CFunction::Make(WebGL2RenderingContext::FastDrawRangeElements));
 
 v8::CFunction WebGL2RenderingContext::fast_resume_transform_feedback_(
-                                                                      CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastResumeTransformFeedback));
+                                                                      v8::CFunction::Make(WebGL2RenderingContext::FastResumeTransformFeedback));
 
 v8::CFunction WebGL2RenderingContext::fast_sampler_parameterf_(
-                                                               CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastSamplerParameterf));
+                                                               v8::CFunction::Make(WebGL2RenderingContext::FastSamplerParameterf));
 
 v8::CFunction WebGL2RenderingContext::fast_sampler_parameteri_(
-                                                               CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastSamplerParameteri));
+                                                               v8::CFunction::Make(WebGL2RenderingContext::FastSamplerParameteri));
 
 
 v8::CFunction WebGL2RenderingContext::fast_uniform_1ui_(
-                                                        CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastUniform1ui));
+                                                        v8::CFunction::Make(WebGL2RenderingContext::FastUniform1ui));
 
 v8::CFunction WebGL2RenderingContext::fast_uniform_1uiv_(
-                                                         CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastUniform1uiv));
+                                                         v8::CFunction::Make(WebGL2RenderingContext::FastUniform1uiv));
 
 v8::CFunction WebGL2RenderingContext::fast_uniform_2ui_(
-                                                        CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastUniform2ui));
+                                                        v8::CFunction::Make(WebGL2RenderingContext::FastUniform2ui));
 
 v8::CFunction WebGL2RenderingContext::fast_uniform_2uiv_(
-                                                         CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastUniform2uiv));
+                                                         v8::CFunction::Make(WebGL2RenderingContext::FastUniform2uiv));
 
 v8::CFunction WebGL2RenderingContext::fast_uniform_3ui_(
-                                                        CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastUniform3ui));
+                                                        v8::CFunction::Make(WebGL2RenderingContext::FastUniform3ui));
 
 v8::CFunction WebGL2RenderingContext::fast_uniform_3uiv_(
-                                                         CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastUniform3uiv));
+                                                         v8::CFunction::Make(WebGL2RenderingContext::FastUniform3uiv));
 
 v8::CFunction WebGL2RenderingContext::fast_uniform_4ui_(
-                                                        CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastUniform4ui));
+                                                        v8::CFunction::Make(WebGL2RenderingContext::FastUniform4ui));
 
 v8::CFunction WebGL2RenderingContext::fast_uniform_4uiv_(
-                                                         CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastUniform4uiv));
+                                                         v8::CFunction::Make(WebGL2RenderingContext::FastUniform4uiv));
 
 
 v8::CFunction WebGL2RenderingContext::fast_uniform_matrix_2x3fv_(
-                                                                 CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastUniformMatrix2x3fv));
-
-v8::CFunction WebGL2RenderingContext::fast_uniform_matrix_2x3fv_array_(
-                                                                       CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastUniformMatrix2x3fvArray));
-
-const v8::CFunction fast_uniform_matrix_2x3fv_overloads_[] = {
-    WebGL2RenderingContext::fast_uniform_matrix_2x3fv_,
-    WebGL2RenderingContext::fast_uniform_matrix_2x3fv_array_
-};
+                                                                 v8::CFunction::Make(WebGL2RenderingContext::FastUniformMatrix2x3fv));
 
 
 v8::CFunction WebGL2RenderingContext::fast_uniform_matrix_2x4fv_(
-                                                                 CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastUniformMatrix2x4fv));
-
-v8::CFunction WebGL2RenderingContext::fast_uniform_matrix_2x4fv_array_(
-                                                                       CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastUniformMatrix2x4fvArray));
-
-const v8::CFunction fast_uniform_matrix_2x4fv_overloads_[] = {
-    WebGL2RenderingContext::fast_uniform_matrix_2x4fv_,
-    WebGL2RenderingContext::fast_uniform_matrix_2x4fv_array_
-};
+                                                                 v8::CFunction::Make(WebGL2RenderingContext::FastUniformMatrix2x4fv));
 
 
 v8::CFunction WebGL2RenderingContext::fast_uniform_matrix_3x2fv_(
-                                                                 CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastUniformMatrix3x2fv));
-
-v8::CFunction WebGL2RenderingContext::fast_uniform_matrix_3x2fv_array_(
-                                                                       CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastUniformMatrix3x2fvArray));
-
-const v8::CFunction fast_uniform_matrix_3x2fv_overloads_[] = {
-    WebGL2RenderingContext::fast_uniform_matrix_3x2fv_,
-    WebGL2RenderingContext::fast_uniform_matrix_3x2fv_array_
-};
+                                                                 v8::CFunction::Make(WebGL2RenderingContext::FastUniformMatrix3x2fv));
 
 v8::CFunction WebGL2RenderingContext::fast_uniform_matrix_3x4fv_(
-                                                                 CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastUniformMatrix3x4fv));
-
-v8::CFunction WebGL2RenderingContext::fast_uniform_matrix_3x4fv_array_(
-                                                                       CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastUniformMatrix3x4fvArray));
-
-const v8::CFunction fast_uniform_matrix_3x4fv_overloads_[] = {
-    WebGL2RenderingContext::fast_uniform_matrix_3x4fv_,
-    WebGL2RenderingContext::fast_uniform_matrix_3x4fv_array_
-};
+                                                                 v8::CFunction::Make(WebGL2RenderingContext::FastUniformMatrix3x4fv));
 
 
 v8::CFunction WebGL2RenderingContext::fast_uniform_matrix_4x2fv_(
-                                                                 CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastUniformMatrix4x2fv));
-
-v8::CFunction WebGL2RenderingContext::fast_uniform_matrix_4x2fv_array_(
-                                                                       CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastUniformMatrix4x2fvArray));
-
-const v8::CFunction fast_uniform_matrix_4x2fv_overloads_[] = {
-    WebGL2RenderingContext::fast_uniform_matrix_4x2fv_,
-    WebGL2RenderingContext::fast_uniform_matrix_4x2fv_array_
-};
+                                                                 v8::CFunction::Make(WebGL2RenderingContext::FastUniformMatrix4x2fv));
 
 
 v8::CFunction WebGL2RenderingContext::fast_uniform_matrix_4x3fv_(
-                                                                 CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastUniformMatrix4x3fv));
-
-v8::CFunction WebGL2RenderingContext::fast_uniform_matrix_4x3fv_array_(
-                                                                       CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastUniformMatrix4x3fvArray));
-
-const v8::CFunction fast_uniform_matrix_4x3fv_overloads_[] = {
-    WebGL2RenderingContext::fast_uniform_matrix_4x3fv_,
-    WebGL2RenderingContext::fast_uniform_matrix_4x3fv_array_
-};
+                                                                 v8::CFunction::Make(WebGL2RenderingContext::FastUniformMatrix4x3fv));
 
 v8::CFunction WebGL2RenderingContext::fast_vertex_attrib_divisor_(
-                                                                  CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastVertexAttribDivisor));
+                                                                  v8::CFunction::Make(WebGL2RenderingContext::FastVertexAttribDivisor));
 
 
 v8::CFunction WebGL2RenderingContext::fast_vertex_attrib_i_4i_(
-                                                               CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastVertexAttribI4i));
+                                                               v8::CFunction::Make(WebGL2RenderingContext::FastVertexAttribI4i));
 
 
 v8::CFunction WebGL2RenderingContext::fast_vertex_attrib_i_4iv_(
-                                                                CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastVertexAttribI4iv));
-
-v8::CFunction WebGL2RenderingContext::fast_vertex_attrib_i_4iv_array_(
-                                                                      CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastVertexAttribI4ivArray));
-
-const v8::CFunction fast_vertex_attrib_i_4iv_overloads_[] = {
-    WebGL2RenderingContext::fast_vertex_attrib_i_4iv_,
-    WebGL2RenderingContext::fast_vertex_attrib_i_4iv_array_
-};
+                                                                v8::CFunction::Make(WebGL2RenderingContext::FastVertexAttribI4iv));
 
 
 v8::CFunction WebGL2RenderingContext::fast_vertex_attrib_i_4ui_(
-                                                                CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastVertexAttribI4ui));
+                                                                v8::CFunction::Make(WebGL2RenderingContext::FastVertexAttribI4ui));
 
 
 v8::CFunction WebGL2RenderingContext::fast_vertex_attrib_i_4uiv_(
-                                                                 CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastVertexAttribI4uiv));
-
-v8::CFunction WebGL2RenderingContext::fast_vertex_attrib_i_4uiv_array_(
-                                                                       CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastVertexAttribI4uivArray));
-
-const v8::CFunction fast_vertex_attrib_i_4uiv_overloads_[] = {
-    WebGL2RenderingContext::fast_vertex_attrib_i_4uiv_,
-    WebGL2RenderingContext::fast_vertex_attrib_i_4uiv_array_
-};
+                                                                 v8::CFunction::Make(WebGL2RenderingContext::FastVertexAttribI4uiv));
 
 v8::CFunction WebGL2RenderingContext::fast_uniform_block_binding_(
-                                                                  CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastUniformBlockBinding));
+                                                                  v8::CFunction::Make(WebGL2RenderingContext::FastUniformBlockBinding));
 
 
 v8::CFunction WebGL2RenderingContext::fast_invalidate_framebuffer_(
-                                                                   CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastInvalidateFramebuffer));
+                                                                   v8::CFunction::Make(WebGL2RenderingContext::FastInvalidateFramebuffer));
 
 v8::CFunction WebGL2RenderingContext::fast_invalidate_sub_framebuffer_(
-                                                                       CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastInvalidateSubFramebuffer));
+                                                                       v8::CFunction::Make(WebGL2RenderingContext::FastInvalidateSubFramebuffer));
 
 
 v8::CFunction WebGL2RenderingContext::fast_copy_tex_sub_image_3d_(
-                                                                  CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastCopyTexSubImage3D));
+                                                                  v8::CFunction::Make(WebGL2RenderingContext::FastCopyTexSubImage3D));
 
 v8::CFunction WebGL2RenderingContext::fast_copy_buffer_sub_data_(
-                                                                 CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastCopyBufferSubData));
+                                                                 v8::CFunction::Make(WebGL2RenderingContext::FastCopyBufferSubData));
 
 v8::CFunction WebGL2RenderingContext::fast_delete_query_(
-                                                         CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastDeleteQuery));
+                                                         v8::CFunction::Make(WebGL2RenderingContext::FastDeleteQuery));
 v8::CFunction WebGL2RenderingContext::fast_delete_sampler_(
-                                                           CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastDeleteSampler));
+                                                           v8::CFunction::Make(WebGL2RenderingContext::FastDeleteSampler));
 v8::CFunction WebGL2RenderingContext::fast_delete_sync_(
-                                                        CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastDeleteSync));
+                                                        v8::CFunction::Make(WebGL2RenderingContext::FastDeleteSync));
 v8::CFunction WebGL2RenderingContext::fast_delete_transform_feedback_(
-                                                                      CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastDeleteTransformFeedback));
+                                                                      v8::CFunction::Make(WebGL2RenderingContext::FastDeleteTransformFeedback));
 v8::CFunction WebGL2RenderingContext::fast_delete_vertex_array_(
-                                                                CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastDeleteVertexArray));
+                                                                v8::CFunction::Make(WebGL2RenderingContext::FastDeleteVertexArray));
 
 v8::CFunction WebGL2RenderingContext::fast_end_query_(
-                                                      CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastEndQuery));
+                                                      v8::CFunction::Make(WebGL2RenderingContext::FastEndQuery));
 
 v8::CFunction WebGL2RenderingContext::fast_end_transform_feedback_(
-                                                                   CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastEndTransformFeedback));
+                                                                   v8::CFunction::Make(WebGL2RenderingContext::FastEndTransformFeedback));
 
 v8::CFunction WebGL2RenderingContext::fast_framebuffer_texture_layer_(
-                                                                      CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastFramebufferTextureLayer));
+                                                                      v8::CFunction::Make(WebGL2RenderingContext::FastFramebufferTextureLayer));
 
 v8::CFunction WebGL2RenderingContext::fast_pause_transform_feedback_(
-                                                                     CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastPauseTransformFeedback));
+                                                                     v8::CFunction::Make(WebGL2RenderingContext::FastPauseTransformFeedback));
 
 
 v8::CFunction WebGL2RenderingContext::fast_read_buffer_(
-                                                        CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastReadBuffer));
+                                                        v8::CFunction::Make(WebGL2RenderingContext::FastReadBuffer));
 
 v8::CFunction WebGL2RenderingContext::fast_renderbuffer_storage_multisample_(
-                                                                             CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastRenderbufferStorageMultisample));
+                                                                             v8::CFunction::Make(WebGL2RenderingContext::FastRenderbufferStorageMultisample));
 
 
 v8::CFunction WebGL2RenderingContext::fast_is_query_(
-                                                     CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastIsQuery));
+                                                     v8::CFunction::Make(WebGL2RenderingContext::FastIsQuery));
 
 
 v8::CFunction WebGL2RenderingContext::fast_is_sampler_(
-                                                       CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastIsSampler));
+                                                       v8::CFunction::Make(WebGL2RenderingContext::FastIsSampler));
 
 
 v8::CFunction WebGL2RenderingContext::fast_is_sync_(
-                                                    CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastIsSync));
+                                                    v8::CFunction::Make(WebGL2RenderingContext::FastIsSync));
 
 
 v8::CFunction WebGL2RenderingContext::fast_is_transform_feedback_(
-                                                                  CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastIsTransformFeedback));
+                                                                  v8::CFunction::Make(WebGL2RenderingContext::FastIsTransformFeedback));
 
 
 v8::CFunction WebGL2RenderingContext::fast_is_vertex_array_(
-                                                            CANVAS_FAST_FUNCTION(WebGL2RenderingContext::FastIsVertexArray));
+                                                            v8::CFunction::Make(WebGL2RenderingContext::FastIsVertexArray));
 
 
 
@@ -327,7 +239,7 @@ v8::Local<v8::FunctionTemplate> WebGL2RenderingContext::GetCtor(v8::Isolate *iso
 }
 
 WebGL2RenderingContext *WebGL2RenderingContext::GetPointer(const v8::Local<v8::Object> &object) {
-    auto ptr = canvas::GetAlignedPointer(object, 0);
+    auto ptr = object->GetAlignedPointerFromInternalField(0, ObjectWrapperImpl::kInternalFieldTag);
     if (ptr == nullptr) {
         return nullptr;
     }
@@ -1754,6 +1666,60 @@ void WebGL2RenderingContext::GetParameter(const v8::FunctionCallbackInfo<v8::Val
             args.GetReturnValue().Set(canvas_native_webgl_result_get_i32(
                                                                          result));
 
+            canvas_native_webgl_WebGLResult_destroy(result);
+            return;
+        // WebGL 2 pnames: the shared GetParameterInternal switch below only
+        // knows the WebGL 1 table and returns null for anything else.
+        case GL_MAX_3D_TEXTURE_SIZE:
+        case GL_MAX_ARRAY_TEXTURE_LAYERS:
+        case GL_MAX_COLOR_ATTACHMENTS:
+        case GL_MAX_COMBINED_UNIFORM_BLOCKS:
+        case GL_MAX_DRAW_BUFFERS:
+        case GL_MAX_ELEMENTS_INDICES:
+        case GL_MAX_ELEMENTS_VERTICES:
+        case GL_MAX_FRAGMENT_INPUT_COMPONENTS:
+        case GL_MAX_FRAGMENT_UNIFORM_BLOCKS:
+        case GL_MAX_FRAGMENT_UNIFORM_COMPONENTS:
+        case GL_MAX_PROGRAM_TEXEL_OFFSET:
+        case GL_MAX_SAMPLES:
+        case GL_MAX_TRANSFORM_FEEDBACK_INTERLEAVED_COMPONENTS:
+        case GL_MAX_TRANSFORM_FEEDBACK_SEPARATE_ATTRIBS:
+        case GL_MAX_TRANSFORM_FEEDBACK_SEPARATE_COMPONENTS:
+        case GL_MAX_UNIFORM_BUFFER_BINDINGS:
+        case GL_MAX_VARYING_COMPONENTS:
+        case GL_MAX_VERTEX_OUTPUT_COMPONENTS:
+        case GL_MAX_VERTEX_UNIFORM_BLOCKS:
+        case GL_MAX_VERTEX_UNIFORM_COMPONENTS:
+        case GL_MIN_PROGRAM_TEXEL_OFFSET:
+        case GL_PACK_ROW_LENGTH:
+        case GL_PACK_SKIP_PIXELS:
+        case GL_PACK_SKIP_ROWS:
+        case GL_READ_BUFFER:
+        case GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT:
+        case GL_UNPACK_IMAGE_HEIGHT:
+        case GL_UNPACK_ROW_LENGTH:
+        case GL_UNPACK_SKIP_IMAGES:
+        case GL_UNPACK_SKIP_PIXELS:
+        case GL_UNPACK_SKIP_ROWS:
+            args.GetReturnValue().Set(canvas_native_webgl_result_get_i32(result));
+            canvas_native_webgl_WebGLResult_destroy(result);
+            return;
+        case 0x9247: // MAX_CLIENT_WAIT_TIMEOUT_WEBGL
+        case GL_MAX_COMBINED_FRAGMENT_UNIFORM_COMPONENTS:
+        case GL_MAX_COMBINED_VERTEX_UNIFORM_COMPONENTS:
+        case GL_MAX_ELEMENT_INDEX:
+        case GL_MAX_SERVER_WAIT_TIMEOUT:
+        case GL_MAX_TEXTURE_LOD_BIAS:
+        case GL_MAX_UNIFORM_BLOCK_SIZE:
+            args.GetReturnValue().Set(
+                    v8::Number::New(isolate, canvas_native_webgl_result_get_f32(result)));
+            canvas_native_webgl_WebGLResult_destroy(result);
+            return;
+        case GL_RASTERIZER_DISCARD:
+        case GL_TRANSFORM_FEEDBACK_ACTIVE:
+        case GL_TRANSFORM_FEEDBACK_PAUSED:
+            args.GetReturnValue().Set(
+                    v8::Boolean::New(isolate, canvas_native_webgl_result_get_bool(result)));
             canvas_native_webgl_WebGLResult_destroy(result);
             return;
         default: {
@@ -4361,15 +4327,15 @@ void WebGL2RenderingContext::SetMethods(v8::Isolate *isolate,
     SetFastMethod(isolate, tmpl, "clearBufferfi", ClearBufferfi, &fast_clear_buffer_fi_,
                   v8::Local<v8::Value>());
 
-    SetFastMethodWithOverLoads(isolate, tmpl, "clearBufferfv", ClearBufferfv,
-                               fast_clear_buffer_fv_overloads_, v8::Local<v8::Value>());
+    SetFastMethod(isolate, tmpl, "clearBufferfv", ClearBufferfv,
+                  &fast_clear_buffer_fv_, v8::Local<v8::Value>());
 
 
-    SetFastMethodWithOverLoads(isolate, tmpl, "clearBufferiv", ClearBufferiv,
-                               fast_clear_buffer_iv_overloads_, v8::Local<v8::Value>());
+    SetFastMethod(isolate, tmpl, "clearBufferiv", ClearBufferiv,
+                  &fast_clear_buffer_iv_, v8::Local<v8::Value>());
 
-    SetFastMethodWithOverLoads(isolate, tmpl, "clearBufferuiv", ClearBufferuiv,
-                               fast_clear_buffer_uiv_overloads_, v8::Local<v8::Value>());
+    SetFastMethod(isolate, tmpl, "clearBufferuiv", ClearBufferuiv,
+                  &fast_clear_buffer_uiv_, v8::Local<v8::Value>());
 
 
     tmpl->Set(
@@ -4484,27 +4450,27 @@ void WebGL2RenderingContext::SetMethods(v8::Isolate *isolate,
                   &fast_uniform_block_binding_, v8::Local<v8::Value>());
 
 
-    SetFastMethodWithOverLoads(isolate, tmpl, "uniformMatrix2x3fv", UniformMatrix2x3fv,
-                               fast_uniform_matrix_2x3fv_overloads_, v8::Local<v8::Value>());
+    SetFastMethod(isolate, tmpl, "uniformMatrix2x3fv", UniformMatrix2x3fv,
+                  &fast_uniform_matrix_2x3fv_, v8::Local<v8::Value>());
 
 
-    SetFastMethodWithOverLoads(isolate, tmpl, "uniformMatrix2x4fv", UniformMatrix2x4fv,
-                               fast_uniform_matrix_2x4fv_overloads_, v8::Local<v8::Value>());
+    SetFastMethod(isolate, tmpl, "uniformMatrix2x4fv", UniformMatrix2x4fv,
+                  &fast_uniform_matrix_2x4fv_, v8::Local<v8::Value>());
 
 
-    SetFastMethodWithOverLoads(isolate, tmpl, "uniformMatrix3x2fv", UniformMatrix3x2fv,
-                               fast_uniform_matrix_3x2fv_overloads_, v8::Local<v8::Value>());
+    SetFastMethod(isolate, tmpl, "uniformMatrix3x2fv", UniformMatrix3x2fv,
+                  &fast_uniform_matrix_3x2fv_, v8::Local<v8::Value>());
 
-    SetFastMethodWithOverLoads(isolate, tmpl, "uniformMatrix3x4fv", UniformMatrix3x4fv,
-                               fast_uniform_matrix_3x4fv_overloads_, v8::Local<v8::Value>());
-
-
-    SetFastMethodWithOverLoads(isolate, tmpl, "uniformMatrix4x2fv", UniformMatrix4x2fv,
-                               fast_uniform_matrix_4x2fv_overloads_, v8::Local<v8::Value>());
+    SetFastMethod(isolate, tmpl, "uniformMatrix3x4fv", UniformMatrix3x4fv,
+                  &fast_uniform_matrix_3x4fv_, v8::Local<v8::Value>());
 
 
-    SetFastMethodWithOverLoads(isolate, tmpl, "uniformMatrix4x3fv", UniformMatrix4x3fv,
-                               fast_uniform_matrix_4x3fv_overloads_, v8::Local<v8::Value>());
+    SetFastMethod(isolate, tmpl, "uniformMatrix4x2fv", UniformMatrix4x2fv,
+                  &fast_uniform_matrix_4x2fv_, v8::Local<v8::Value>());
+
+
+    SetFastMethod(isolate, tmpl, "uniformMatrix4x3fv", UniformMatrix4x3fv,
+                  &fast_uniform_matrix_4x3fv_, v8::Local<v8::Value>());
 
 
     SetFastMethod(isolate, tmpl, "vertexAttribDivisor", VertexAttribDivisor,
@@ -4514,16 +4480,16 @@ void WebGL2RenderingContext::SetMethods(v8::Isolate *isolate,
     SetFastMethod(isolate, tmpl, "vertexAttribI4i", VertexAttribI4i, &fast_vertex_attrib_i_4i_,
                   v8::Local<v8::Value>());
 
-    SetFastMethodWithOverLoads(isolate, tmpl, "vertexAttribI4iv", VertexAttribI4iv,
-                               fast_vertex_attrib_i_4iv_overloads_, v8::Local<v8::Value>());
+    SetFastMethod(isolate, tmpl, "vertexAttribI4iv", VertexAttribI4iv,
+                  &fast_vertex_attrib_i_4iv_, v8::Local<v8::Value>());
 
 
     SetFastMethod(isolate, tmpl, "vertexAttribI4ui", VertexAttribI4ui, &fast_vertex_attrib_i_4ui_,
                   v8::Local<v8::Value>());
 
 
-    SetFastMethodWithOverLoads(isolate, tmpl, "vertexAttribI4uiv", VertexAttribI4uiv,
-                               fast_vertex_attrib_i_4uiv_overloads_, v8::Local<v8::Value>());
+    SetFastMethod(isolate, tmpl, "vertexAttribI4uiv", VertexAttribI4uiv,
+                  &fast_vertex_attrib_i_4uiv_, v8::Local<v8::Value>());
 
 
     tmpl->Set(

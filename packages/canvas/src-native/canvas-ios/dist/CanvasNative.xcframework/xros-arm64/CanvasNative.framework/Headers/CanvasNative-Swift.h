@@ -545,6 +545,32 @@ typedef SWIFT_ENUM_NAMED(NSInteger, NSCVideoFrameFormat, "NSCVideoFrameFormat", 
   NSCVideoFrameFormatBGRX = 8,
 };
 
+@class NSCVideoFrameTexture;
+/// Bridges <code>AVPlayerItemVideoOutput</code> frames to Metal textures for the WebGPU upload path.
+SWIFT_CLASS_NAMED("NSCVideoFrameBridge")
+@interface NSCVideoFrameBridge : NSObject
+/// Whether frames can be imported on this device at all. Resolve once: a nil frame
+/// from <code>currentFrame</code> means “no new frame”, not “unsupported”.
++ (BOOL)isSupportedForDevice:(NSInteger)deviceHandle SWIFT_WARN_UNUSED_RESULT;
+/// The current frame as a Metal texture, or nil if the decoder has not produced a new
+/// one since the last call — in which case there is nothing to upload.
++ (NSCVideoFrameTexture * _Nullable)currentFrameForPlayer:(AVPlayer * _Nonnull)player output:(AVPlayerItemVideoOutput * _Nonnull)output device:(NSInteger)deviceHandle SWIFT_WARN_UNUSED_RESULT;
+- (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
+@end
+
+/// A decoded video frame held as a Metal texture. The <code>MTLTexture</code> is only valid while
+/// this object is alive, so hold it until the GPU work has been submitted.
+SWIFT_CLASS_NAMED("NSCVideoFrameTexture")
+@interface NSCVideoFrameTexture : NSObject
+@property (nonatomic, readonly) NSInteger width;
+@property (nonatomic, readonly) NSInteger height;
+/// Borrowed <code>id<MTLTexture></code> as an integer, for handing to the Rust side. Valid only
+/// while this object is alive.
+@property (nonatomic, readonly) NSInteger texturePointer;
+- (nonnull instancetype)init SWIFT_UNAVAILABLE;
++ (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
+@end
+
 SWIFT_CLASS_NAMED("NSCWebGLRenderingContext")
 @interface NSCWebGLRenderingContext : NSObject
 + (void)texImage2D:(int64_t)context :(int32_t)target :(int32_t)level :(int32_t)internalformat :(int32_t)format :(int32_t)type :(uint8_t * _Nonnull)data :(NSUInteger)size :(CGSize)dimensions :(BOOL)flipY;

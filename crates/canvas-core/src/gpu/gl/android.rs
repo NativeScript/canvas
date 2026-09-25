@@ -3,6 +3,7 @@ use std::ffi::CString;
 use std::fmt::{Debug, Formatter};
 use std::num::NonZeroU32;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::OnceLock;
 
 use crate::context_attributes::ContextAttributes;
@@ -51,8 +52,62 @@ fn shared_display() -> Option<Display> {
 }
 
 
+/// Mirrors what this thread last bound, so `make_current` can skip the call.
+///
+/// Keyed on the surface as well as the context: a context can be rebound to a new
+/// surface on resize, and skipping that would draw into the dead one. Only valid
+/// while every `eglMakeCurrent` goes through this file.
 thread_local! {
-    static CURRENT_EGL_CONTEXT: Cell<usize> = const { Cell::new(0) };
+    static CURRENT_EGL_BINDING: Cell<Binding> = const { Cell::new(UNBOUND) };
+}
+
+/// (context, draw surface, epoch). See `SURFACE_EPOCH` for the third field.
+type Binding = (usize, usize, usize);
+
+const UNBOUND: Binding = (0, 0, 0);
+
+/// Bumped on every surface replacement, so a recycled `EGLSurface` address cannot
+/// match a stale mirror entry.
+static SURFACE_EPOCH: AtomicUsize = AtomicUsize::new(1);
+
+fn surface_epoch() -> usize {
+    SURFACE_EPOCH.load(Ordering::Relaxed)
+}
+
+/// Called wherever a `GLContext`'s surface is replaced.
+fn invalidate_surface_bindings() {
+    SURFACE_EPOCH.fetch_add(1, Ordering::Relaxed);
+}
+
+fn binding(context: usize, surface: usize) -> Binding {
+    (context, surface, surface_epoch())
+}
+
+fn binding_is_current(binding: Binding) -> bool {
+    binding != UNBOUND && CURRENT_EGL_BINDING.with(|c| c.get()) == binding
+}
+
+fn set_current_binding(binding: Binding) {
+    CURRENT_EGL_BINDING.with(|c| c.set(binding));
+}
+
+fn raw_surface_id(surface: &SurfaceHelper) -> usize {
+    let raw = match surface {
+        SurfaceHelper::Window(window) => window.raw_surface(),
+        SurfaceHelper::Pbuffer(buffer) => buffer.raw_surface(),
+        SurfaceHelper::Pixmap(map) => map.raw_surface(),
+    };
+    match raw {
+        RawSurface::Egl(surface) => surface as usize,
+        _ => 0,
+    }
+}
+
+fn raw_context_id(context: &PossiblyCurrentContext) -> usize {
+    match context.raw_context() {
+        RawContext::Egl(context) => context as usize,
+        _ => 0,
+    }
 }
 
 pub(crate) enum SurfaceHelper {
@@ -73,20 +128,14 @@ impl GLContextRaw {
     pub fn make_current(&self) -> bool {
         match (self.display, self.surface, self.context) {
             (RawDisplay::Egl(display), RawSurface::Egl(surface), RawContext::Egl(context)) => {
-                let ctx_id = context as usize;
-                let is_current = CURRENT_EGL_CONTEXT.with(|c| {
-                    if c.get() == ctx_id {
-                        true
-                    } else {
-                        false
-                    }
-                });
-                if is_current {
+                let binding = binding(context as usize, surface as usize);
+                if binding_is_current(binding) {
                     return true;
                 }
-                let result = egl::make_current(display as _, surface as _, surface as _, context as _);
+                let result =
+                    egl::make_current(display as _, surface as _, surface as _, context as _);
                 if result {
-                    CURRENT_EGL_CONTEXT.with(|c| c.set(ctx_id));
+                    set_current_binding(binding);
                 }
                 result
             }
@@ -98,7 +147,7 @@ impl GLContextRaw {
         let current = egl::get_current_context();
         if let (Some(current), RawContext::Egl(context)) = (current, self.context) {
             if std::ptr::eq(current, context) {
-                CURRENT_EGL_CONTEXT.with(|c| c.set(0));
+                set_current_binding(UNBOUND);
                 return true;
             }
         }
@@ -406,6 +455,7 @@ impl GLContext {
                         let ret = surface.is_some();
 
                         self.0.surface = surface;
+                        invalidate_surface_bindings();
 
                         {
                             *self.0.dimensions.write() = Dimensions { width, height };
@@ -768,6 +818,7 @@ impl GLContext {
                                 .ok();
 
                             self.0.surface = surface;
+                            invalidate_surface_bindings();
                             let ctx = match (context, self.0.surface.as_ref()) {
                                 (Some(context), Some(surface)) => match surface {
                                     SurfaceHelper::Window(window) => {
@@ -871,6 +922,7 @@ impl GLContext {
                     }
 
                     self.0.surface = surface;
+                    invalidate_surface_bindings();
                 }
             }
         }
@@ -1100,15 +1152,18 @@ impl GLContext {
     pub fn make_current(&self) -> bool {
         match (self.0.context.as_ref(), self.0.surface.as_ref()) {
             (Some(context), Some(surface)) => {
-                if context.is_current() {
+                let binding = binding(raw_context_id(context), raw_surface_id(surface));
+                if binding_is_current(binding) {
                     return true;
                 }
 
-                return match surface {
+                let bound = match surface {
                     SurfaceHelper::Window(window) => context.make_current(window).is_ok(),
                     SurfaceHelper::Pbuffer(buffer) => context.make_current(buffer).is_ok(),
                     SurfaceHelper::Pixmap(map) => context.make_current(map).is_ok(),
                 };
+                set_current_binding(if bound { binding } else { UNBOUND });
+                bound
             }
             _ => false,
         }
@@ -1145,12 +1200,16 @@ impl GLContext {
                 })
                 .unwrap_or(egl::EGL_NO_DISPLAY as _);
 
-            return egl::make_current(
+            let unbound = egl::make_current(
                 display as _,
                 egl::EGL_NO_SURFACE,
                 egl::EGL_NO_SURFACE,
                 egl::EGL_NO_CONTEXT,
             );
+            if unbound {
+                set_current_binding(UNBOUND);
+            }
+            return unbound;
         }
     }
 

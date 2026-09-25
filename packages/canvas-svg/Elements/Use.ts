@@ -1,9 +1,9 @@
 import { SVGItem } from './SVGItem';
-import { DOMParser } from '@xmldom/xmldom';
+import { createSvgElement } from '../NativeNode';
 
 export class Use extends SVGItem {
 	constructor() {
 		super();
-		this.__domElement = new DOMParser().parseFromString('<use></use>', 'image/svg+xml').documentElement;
+		this.__domElement = createSvgElement('use');
 	}
 }

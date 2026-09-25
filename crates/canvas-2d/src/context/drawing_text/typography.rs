@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+use std::sync::Arc;
 use std::str::FromStr;
 
 use regex_lite::Regex;
@@ -26,7 +28,7 @@ pub const FONT_MEDIUM_PX: f32 = 16.0;
 pub struct Font {
     pub size: f32,
     pub style: FontStyle,
-    pub family: Vec<Ustr>,
+    pub family: Arc<[Ustr]>,
     pub variant: FontVariant,
     pub stretch: FontStretch,
     pub weight: u32,
@@ -37,7 +39,7 @@ impl Default for Font {
         Font {
             size: 10.0,
             style: FontStyle::Normal,
-            family: vec![Ustr::from(DEFAULT_FONT)],
+            family: Arc::from([Ustr::from(DEFAULT_FONT)]),
             variant: FontVariant::Normal,
             stretch: FontStretch::Normal,
             weight: 400,
@@ -50,8 +52,33 @@ impl Default for Font {
  InvalidFontStyle(String),
  #[error("[`{0}`] is not valid font variant")]
 */
+/// Memoizes the CSS font shorthand parse, which is a regex match plus a `Ustr`
+/// intern per family.
+static FONT_CACHE: OnceLock<parking_lot::RwLock<HashMap<String, Font>>> = OnceLock::new();
+
+/// Bounded, so shorthands built from an animated size cannot grow it without limit.
+/// Once full it stops accepting entries rather than evicting.
+const FONT_CACHE_CAPACITY: usize = 256;
+
 impl Font {
     pub fn new(font_rules: &str) -> Result<Font, String> {
+        let cache = FONT_CACHE.get_or_init(|| parking_lot::RwLock::new(HashMap::new()));
+
+        if let Some(font) = cache.read().get(font_rules) {
+            return Ok(font.clone());
+        }
+
+        let parsed = Self::parse(font_rules)?;
+
+        let mut guard = cache.write();
+        if guard.len() < FONT_CACHE_CAPACITY {
+            guard.insert(font_rules.to_owned(), parsed.clone());
+        }
+
+        Ok(parsed)
+    }
+
+    fn parse(font_rules: &str) -> Result<Font, String> {
         let font_regexp = FONT_REGEXP.get_or_init(init_font_regexp);
         let default_font = Font::default();
 
@@ -93,7 +120,7 @@ impl Font {
                         }
                     })
                     .map(Ustr::from)
-                    .collect::<Vec<Ustr>>();
+                    .collect::<Arc<[Ustr]>>();
 
                 Ok(Font {
                     style,
@@ -147,7 +174,7 @@ pub(crate) fn init_color_p3_regexp()-> Regex {
         r"color\(display-p3\s+([0-9]*\.?[0-9]+)\s+([0-9]*\.?[0-9]+)\s+([0-9]*\.?[0-9]+)(?:\s*/\s*([0-9]*\.?[0-9]+))?\)"
     ).unwrap()
 }
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum FontStyle {
     Normal,
     Italic,
@@ -216,7 +243,7 @@ impl FromStr for FontVariant {
 }
 
 #[repr(i32)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum FontStretch {
     UltraCondensed = 1,
     ExtraCondensed = 2,
@@ -505,13 +532,30 @@ fn test_font_regexp_order1() {
 }
 
 #[test]
+fn test_font_new_is_cached() {
+    // A cache hit must be indistinguishable from a fresh parse, and unreachable by a
+    // different string.
+    let first = Font::new("italic bold 20px/30px Arial, sans-serif").unwrap();
+    let second = Font::new("italic bold 20px/30px Arial, sans-serif").unwrap();
+    assert_eq!(first, second);
+    assert_eq!(Font::parse("italic bold 20px/30px Arial, sans-serif").unwrap(), second);
+
+    let other = Font::new("12px monospace").unwrap();
+    assert_ne!(other, second);
+
+    // Failures are not cached, and stay failures.
+    assert!(Font::new("definitely not a font").is_err());
+    assert!(Font::new("definitely not a font").is_err());
+}
+
+#[test]
 fn test_font_new() {
     let fixtures: Vec<(&'static str, Font)> = vec![
         (
             "20px Arial",
             Font {
                 size: 20.0,
-                family: vec![Ustr::from("Arial")],
+                family: Arc::from([Ustr::from("Arial")]),
                 ..Default::default()
             },
         ),
@@ -519,7 +563,7 @@ fn test_font_new() {
             "20pt Arial",
             Font {
                 size: 26.666_666,
-                family: vec![Ustr::from("Arial")],
+                family: Arc::from([Ustr::from("Arial")]),
                 ..Default::default()
             },
         ),
@@ -527,7 +571,7 @@ fn test_font_new() {
             "20.5pt Arial",
             Font {
                 size: 27.333_334,
-                family: vec![Ustr::from("Arial")],
+                family: Arc::from([Ustr::from("Arial")]),
                 ..Default::default()
             },
         ),
@@ -535,7 +579,7 @@ fn test_font_new() {
             "50% Arial",
             Font {
                 size: 8.0,
-                family: vec![Ustr::from("Arial")],
+                family: Arc::from([Ustr::from("Arial")]),
                 ..Default::default()
             },
         ),
@@ -543,7 +587,7 @@ fn test_font_new() {
             "62.5% 50% Arial",
             Font {
                 size: 8.0,
-                family: vec![Ustr::from("Arial")],
+                family: Arc::from([Ustr::from("Arial")]),
                 stretch: FontStretch::ExtraCondensed,
                 ..Default::default()
             },
@@ -552,7 +596,7 @@ fn test_font_new() {
             "20mm Arial",
             Font {
                 size: 75.590_55,
-                family: vec![Ustr::from("Arial")],
+                family: Arc::from([Ustr::from("Arial")]),
                 ..Default::default()
             },
         ),
@@ -560,7 +604,7 @@ fn test_font_new() {
             "20px sans-serif",
             Font {
                 size: 20.0,
-                family: vec![Ustr::from("sans-serif")],
+                family: Arc::from([Ustr::from("sans-serif")]),
                 ..Default::default()
             },
         ),
@@ -568,7 +612,7 @@ fn test_font_new() {
             "20px monospace",
             Font {
                 size: 20.0,
-                family: vec![Ustr::from("monospace")],
+                family: Arc::from([Ustr::from("monospace")]),
                 ..Default::default()
             },
         ),
@@ -576,7 +620,7 @@ fn test_font_new() {
             "50px Arial, sans-serif",
             Font {
                 size: 50.0,
-                family: vec![Ustr::from("Arial"), Ustr::from("sans-serif")],
+                family: Arc::from([Ustr::from("Arial"), Ustr::from("sans-serif")]),
                 ..Default::default()
             },
         ),
@@ -586,7 +630,7 @@ fn test_font_new() {
                 size: 50.0,
                 weight: 700,
                 style: FontStyle::Italic,
-                family: vec![Ustr::from("Arial"), Ustr::from("sans-serif")],
+                family: Arc::from([Ustr::from("Arial"), Ustr::from("sans-serif")]),
                 ..Default::default()
             },
         ),
@@ -594,7 +638,7 @@ fn test_font_new() {
             "50px Helvetica ,  Arial, sans-serif",
             Font {
                 size: 50.0,
-                family: vec![Ustr::from("Helvetica"), Ustr::from("Arial"), Ustr::from("sans-serif")],
+                family: Arc::from([Ustr::from("Helvetica"), Ustr::from("Arial"), Ustr::from("sans-serif")]),
                 ..Default::default()
             },
         ),
@@ -602,7 +646,7 @@ fn test_font_new() {
             "50px \"Helvetica Neue\", sans-serif",
             Font {
                 size: 50.0,
-                family: vec![Ustr::from("Helvetica Neue"), Ustr::from("sans-serif")],
+                family: Arc::from([Ustr::from("Helvetica Neue"), Ustr::from("sans-serif")]),
                 ..Default::default()
             },
         ),
@@ -610,7 +654,7 @@ fn test_font_new() {
             "100px 'Microsoft YaHei'",
             Font {
                 size: 100.0,
-                family: vec![Ustr::from("Microsoft YaHei")],
+                family: Arc::from([Ustr::from("Microsoft YaHei")]),
                 ..Default::default()
             },
         ),
@@ -619,7 +663,7 @@ fn test_font_new() {
             Font {
                 size: 20.0,
                 weight: 300,
-                family: vec![Ustr::from("Arial")],
+                family: Arc::from([Ustr::from("Arial")]),
                 ..Default::default()
             },
         ),
@@ -627,7 +671,7 @@ fn test_font_new() {
             "50px",
             Font {
                 size: 50.0,
-                family: vec![Ustr::from("sans-serif")],
+                family: Arc::from([Ustr::from("sans-serif")]),
                 ..Default::default()
             },
         ),
@@ -638,12 +682,12 @@ fn test_font_new() {
             Font {
                 size: 12.0,
                 style: FontStyle::Normal,
-                family: vec![
+                family: Arc::from([
                     Ustr::from("Helvetica Neue"),
                     Ustr::from("Helvetica"),
                     Ustr::from("Arial"),
                     Ustr::from("sans-serif"),
-                ],
+                ]),
                 ..Default::default()
             },
         ),
@@ -654,7 +698,7 @@ fn test_font_new() {
                 size: 16.0,
                 style: FontStyle::Italic,
                 weight: 700,
-                family: vec![Ustr::from("Helvetica Neue"), Ustr::from("Arial")],
+                family: Arc::from([Ustr::from("Helvetica Neue"), Ustr::from("Arial")]),
                 ..Default::default()
             },
         ),

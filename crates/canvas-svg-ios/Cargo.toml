@@ -11,3 +11,4 @@ crate-type = ["staticlib"]
 [dependencies]
 skia-safe = { workspace = true, features = ["svg", "textlayout"] }
 canvas-svg = { workspace = true }
+canvas-svg-c = { workspace = true, features = ["metal"] }

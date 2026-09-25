@@ -580,18 +580,15 @@ fn clear_if_composited(mask: u32, state: &mut WebGLState) -> HowToClear {
 // #[cfg(target_os = "ios")]
 pub fn canvas_native_webgl_clear(mask: u32, state: &mut WebGLState) {
     state.make_current();
+    // clear_if_composited wipes the whole buffer with the scissor test off.
+    if state.get_scissor_enabled() {
+        unsafe { gl_bindings::Clear(mask) }
+        return;
+    }
     if clear_if_composited(mask, state) != HowToClear::CombinedClear {
         unsafe { gl_bindings::Clear(mask) }
     }
-    // Flush context
 }
-
-// #[cfg(not(target_os = "ios"))]
-// pub fn canvas_native_webgl_clear(mask: u32, state: &mut WebGLState) {
-//     state.make_current();
-//     unsafe { gl_bindings::Clear(mask) }
-//     // Flush context
-// }
 
 pub fn canvas_native_webgl_clear_color(
     red: f32,
@@ -855,6 +852,9 @@ pub fn canvas_native_webgl_detach_shader(program: u32, shader: u32, state: &mut 
 
 pub fn canvas_native_webgl_disable(cap: u32, state: &mut WebGLState) {
     state.make_current();
+    if cap == gl_bindings::SCISSOR_TEST {
+        state.set_scissor_enabled(false);
+    }
     unsafe { gl_bindings::Disable(cap) }
 }
 
@@ -863,37 +863,11 @@ pub fn canvas_native_webgl_disable_vertex_attrib_array(index: u32, state: &mut W
     unsafe { gl_bindings::DisableVertexAttribArray(index) }
 }
 
-// #[cfg(target_os = "ios")]
-// pub fn canvas_native_webgl_draw_arrays(mode: u32, first: i32, count: i32, state: &mut WebGLState) {
-//     state.make_current();
-//     clear_if_composited(0, state);
-//     unsafe { gl_bindings::DrawArrays(mode, first, count) }
-//     // Flush Context
-// }
-
-// #[cfg(not(target_os = "ios"))]
 pub fn canvas_native_webgl_draw_arrays(mode: u32, first: i32, count: i32, state: &mut WebGLState) {
     state.make_current();
     unsafe { gl_bindings::DrawArrays(mode, first, count) }
-
-    // Flush Context
 }
 
-// #[cfg(target_os = "ios")]
-// pub fn canvas_native_webgl_draw_elements(
-//     mode: u32,
-//     count: i32,
-//     element_type: u32,
-//     offset: isize,
-//     state: &mut WebGLState,
-// ) {
-//     state.make_current();
-//     clear_if_composited(0, state);
-//     unsafe { gl_bindings::DrawElements(mode, count, element_type, offset as *const c_void) }
-//     // Flush Context
-// }
-
-// #[cfg(not(target_os = "ios"))]
 pub fn canvas_native_webgl_draw_elements(
     mode: u32,
     count: i32,
@@ -903,11 +877,14 @@ pub fn canvas_native_webgl_draw_elements(
 ) {
     state.make_current();
     unsafe { gl_bindings::DrawElements(mode, count, element_type, offset as *const c_void) }
-    // Flush Context
 }
 
 pub fn canvas_native_webgl_enable(cap: u32, state: &mut WebGLState) {
     state.make_current();
+    // clear_if_composited reads this back.
+    if cap == gl_bindings::SCISSOR_TEST {
+        state.set_scissor_enabled(true);
+    }
     unsafe { gl_bindings::Enable(cap) }
 }
 
@@ -3018,8 +2995,6 @@ pub const STENCIL_BACK_VALUE_MASK: u32 = 0x8CA4;
 
 pub const STENCIL_BACK_WRITEMASK: u32 = 0x8CA5;
 
-// getCanvas(): Canvas;
-
 pub const VIEWPORT: u32 = 0x0BA2;
 
 pub const SCISSOR_BOX: u32 = 0x0C10;
@@ -3518,8 +3493,6 @@ pub const NONE: u32 = 0;
 /* Pixel formats */
 
 /* Pixel types */
-
-// pub const UNSIGNED_BYTE(): number { return this.native.UNSIGNED_BYTE
 
 pub const FRAMEBUFFER_COMPLETE: u32 = 0x8CD5;
 

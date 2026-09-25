@@ -33,7 +33,7 @@ void ImageAssetImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isola
 }
 
 ImageAssetImpl *ImageAssetImpl::GetPointer(const v8::Local<v8::Object> &object) {
-    auto ptr = canvas::GetAlignedPointer(object, 0);
+    auto ptr = object->GetAlignedPointerFromInternalField(0, ObjectWrapperImpl::kInternalFieldTag);
     if (ptr == nullptr) {
         return nullptr;
     }
@@ -53,17 +53,17 @@ v8::Local<v8::FunctionTemplate> ImageAssetImpl::GetCtor(v8::Isolate *isolate) {
     
     auto tmpl = ctorTmpl->InstanceTemplate();
     tmpl->SetInternalFieldCount(2);
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
                       ConvertToV8String(isolate, "width"),
                       GetWidth);
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
                       ConvertToV8String(isolate, "height"),
                       GetHeight);
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
                       ConvertToV8String(isolate, "error"),
                       GetError);
     
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
                       ConvertToV8String(isolate, "__addr"),
                       GetAddr);
     
@@ -138,7 +138,7 @@ void ImageAssetImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
     
     SetNativeType(object, NativeType::ImageAsset);
     
-    canvas::SetAlignedPointer(ret, 0, object);
+    ret->SetAlignedPointerInInternalField(0, object, ObjectWrapperImpl::kInternalFieldTag);
     
     object->BindFinalizer(isolate, ret);
     
@@ -148,7 +148,7 @@ void ImageAssetImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
 void
 ImageAssetImpl::GetWidth(v8::Local<v8::Name> name,
                          const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(canvas::Receiver(info));
+    auto ptr = GetPointer(info.Holder());
     if (ptr != nullptr) {
         auto ret = canvas_native_image_asset_width(ptr->GetImageAsset());
         info.GetReturnValue().Set(ret);
@@ -160,7 +160,7 @@ ImageAssetImpl::GetWidth(v8::Local<v8::Name> name,
 void
 ImageAssetImpl::GetHeight(v8::Local<v8::Name> name,
                           const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(canvas::Receiver(info));
+    auto ptr = GetPointer(info.Holder());
     if (ptr != nullptr) {
         auto ret = canvas_native_image_asset_height(ptr->GetImageAsset());
         info.GetReturnValue().Set(ret);
@@ -173,7 +173,7 @@ ImageAssetImpl::GetHeight(v8::Local<v8::Name> name,
 void
 ImageAssetImpl::GetAddr(v8::Local<v8::Name> name,
                         const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(canvas::Receiver(info));
+    auto ptr = GetPointer(info.Holder());
     if (ptr != nullptr) {
         auto isolate = info.GetIsolate();
         auto ret = std::to_string(canvas_native_image_asset_get_addr(ptr->GetImageAsset()));
@@ -202,7 +202,7 @@ ImageAssetImpl::GetReference(const v8::FunctionCallbackInfo<v8::Value> &args) {
 void
 ImageAssetImpl::GetError(v8::Local<v8::Name> name,
                          const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(canvas::Receiver(info));
+    auto ptr = GetPointer(info.Holder());
     if (ptr != nullptr) {
         auto ret = canvas_native_image_asset_get_error(ptr->GetImageAsset());
         auto isolate = info.GetIsolate();
@@ -510,29 +510,27 @@ void ImageAssetImpl::FromBytesSync(const v8::FunctionCallbackInfo<v8::Value> &ar
     auto context = args.GetIsolate()->GetCurrentContext();
     auto value = args[2];
     
-    if (value->IsObject()) {
-        if (!value->IsArrayBuffer()) {
-            args.GetReturnValue().Set(false);
-            return;
-        }
-        auto buf = value.As<v8::ArrayBuffer>();
-        
-        auto size = (uintptr_t) buf->ByteLength();
-        auto data = (uint8_t *) buf->GetBackingStore()->Data();
-        
+    auto bytes = GetBufferBytes(value);
+    if (bytes) {
         uint32_t width;
         uint32_t height;
         bool done = false;
         if(args[0]->Uint32Value(context).To(&width)
            && args[1]->Uint32Value(context).To(&height)
            ) {
-            done = canvas_native_image_asset_load_from_raw(ptr->GetImageAsset(), width, height, data, size);
+            // Optional 4th arg: the bytes are already premultiplied.
+            bool premultiplied = args.Length() > 3 && args[3]->BooleanValue(args.GetIsolate());
+            if (premultiplied) {
+                done = canvas_native_image_asset_load_from_raw_premultiplied(ptr->GetImageAsset(), width, height, bytes.data, bytes.size);
+            } else {
+                done = canvas_native_image_asset_load_from_raw(ptr->GetImageAsset(), width, height, bytes.data, bytes.size);
+            }
         }
-        
+
         args.GetReturnValue().Set(done);
         return;
     }
-    
+
     args.GetReturnValue().Set(false);
 }
 
@@ -548,12 +546,14 @@ void ImageAssetImpl::FromBytesCb(const v8::FunctionCallbackInfo<v8::Value> &args
     }
     
     
-    auto bytes = args[2].As<v8::ArrayBuffer>();
+    auto buffer = GetBufferBytes(args[2]);
+    if (!buffer) {
+        return;
+    }
 
-    auto size = bytes->ByteLength();
-
-    auto store = bytes->GetBackingStore();
-    auto data = (uint8_t *) store->Data();
+    auto size = buffer.size;
+    auto store = buffer.store;
+    auto data = buffer.data;
 
     auto asset = canvas_native_image_asset_reference(ptr->GetImageAsset());
 
@@ -608,6 +608,7 @@ void ImageAssetImpl::FromBytesCb(const v8::FunctionCallbackInfo<v8::Value> &args
 
 #endif
 
+
 #ifdef __APPLE__
 
     auto cache = Caches::Get(isolate);
@@ -659,18 +660,10 @@ void ImageAssetImpl::FromEncodedBytesSync(const v8::FunctionCallbackInfo<v8::Val
     
     auto value = args[0];
     
-    if (value->IsObject()) {
-        if (!value->IsArrayBuffer()) {
-            args.GetReturnValue().Set(false);
-            return;
-        }
-        auto buf = value.As<v8::ArrayBuffer>();
-        
-        auto size = (uintptr_t) buf->ByteLength();
-        auto data = (uint8_t *) buf->GetBackingStore()->Data();
-        
-        auto done = canvas_native_image_asset_load_from_raw_encoded(ptr->GetImageAsset(), data,
-                                                                    size);
+    auto bytes = GetBufferBytes(value);
+    if (bytes) {
+        auto done = canvas_native_image_asset_load_from_raw_encoded(ptr->GetImageAsset(), bytes.data,
+                                                                    bytes.size);
         
         args.GetReturnValue().Set(done);
         return;
@@ -691,12 +684,14 @@ void ImageAssetImpl::FromEncodedBytesCb(const v8::FunctionCallbackInfo<v8::Value
     }
     
     
-    auto bytes = args[0].As<v8::ArrayBuffer>();
+    auto buffer = GetBufferBytes(args[0]);
+    if (!buffer) {
+        return;
+    }
 
-    auto size = bytes->ByteLength();
-
-    auto store = bytes->GetBackingStore();
-    auto data = (uint8_t *) store->Data();
+    auto size = buffer.size;
+    auto store = buffer.store;
+    auto data = buffer.data;
 
     auto asset = canvas_native_image_asset_reference(ptr->GetImageAsset());
 
@@ -741,6 +736,7 @@ void ImageAssetImpl::FromEncodedBytesCb(const v8::FunctionCallbackInfo<v8::Value
     });
 
 #endif
+
 
 #ifdef __APPLE__
 

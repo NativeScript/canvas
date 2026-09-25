@@ -23,7 +23,7 @@ public:
         auto object = GPUSupportedLimitsImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType(limits, NativeType::GPUSupportedLimits);
-        canvas::SetAlignedPointer(object, 0, limits);
+        object->SetAlignedPointerInInternalField(0, limits, ObjectWrapperImpl::kInternalFieldTag);
         limits->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }

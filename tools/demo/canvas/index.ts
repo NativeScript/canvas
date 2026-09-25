@@ -70,6 +70,16 @@ import { Svg } from '@nativescript/canvas-svg';
 import { videoFrame2DDemo, videoFrameWebGLDemo } from './webgl/video-frame';
 import { initDemo as webglPanner } from '../webgl-panner';
 var Vex;
+export { runSpecTests, specResults, setSpecPageCanvas } from './spec';
+export { runCanvasPerf } from './canvas2d/perf';
+export { runImageBitmapPerf } from './canvas2d/imagebitmap-perf';
+export { runWebGLPerf } from './webgl/perf';
+export { runBoundsProbe } from './bounds-probe';
+export { runCallBound } from './callbound-native';
+export { profileDemo } from './canvas2d/profile';
+export { swarm, cancelSwarm } from './canvas2d/particles/swarm';
+export { touchParticles, cancelTouchParticles } from './canvas2d/particles/particles';
+
 export class DemoSharedCanvas extends DemoSharedBase {
 	private canvas: any;
 
@@ -712,8 +722,8 @@ fn main() -> @location(0) vec4f {
 		// const renderBundles = require('./webgpu/renderBundles');
 		// renderBundles.run(this.canvas);
 
-		const occlusionQuery = require('./webgpu/occlusionQuery');
-		occlusionQuery.run(this.canvas);
+		// const occlusionQuery = require('./webgpu/occlusionQuery');
+		// occlusionQuery.run(this.canvas);
 
 		// const particles = require('./webgpu/particles');
 		// particles.run(this.canvas);
@@ -888,7 +898,7 @@ fn main() -> @location(0) vec4f {
 		// ctx.fillRect(0,0,400,400)
 		//ellipse(this.canvas);
 		//this.drawPatternWithCanvas(this.canvas);
-		//this.clock(this.canvas);
+		this.clock(this.canvas);
 		//this.solar(this.canvas);
 		//console.log('ready ??');
 		//this.coloredParticles(this.canvas);

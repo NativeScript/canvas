@@ -39,7 +39,7 @@ import { Navigator } from './navigator';
 (global as any).window.HTMLUnknownElement = (global as any).HTMLUnknownElement = (global as any).HTMLUnknownElement || HTMLUnknownElement;
 
 // svg
-import { SVGMarkerElement, SVGAnimatedTransformList, SVGUseElement, SVGStopElement, SVGRadialGradientElement, SVGLinearGradientElement, SVGGradientElement, SVGTextElement, SVGPolygonElement, SVGEllipseElement, SVGImageElement, SVGAnimatedRect, SVGPointList, SVGTransformList, SVGTransform, SVGRect, SVGNumber, SVGMatrix, SVGPoint, SVGAngle, SVGCircleElement, SVGElement, SVGSVGElement, SVGGraphicsElement, SVGMaskElement, SVGLineElement, SVGLength, SVGAnimatedLength, SVGPolylineElement, SVGGElement, SVGPathElement, SVGRectElement, SVGAnimatedString } from './DOM/svg';
+import { SVGMarkerElement, SVGAnimatedTransformList, SVGUseElement, SVGStopElement, SVGRadialGradientElement, SVGLinearGradientElement, SVGGradientElement, SVGTextElement, SVGTSpanElement, SVGPolygonElement, SVGEllipseElement, SVGImageElement, SVGAnimatedRect, SVGPointList, SVGTransformList, SVGTransform, SVGRect, SVGNumber, SVGMatrix, SVGPoint, SVGAngle, SVGCircleElement, SVGElement, SVGSVGElement, SVGGraphicsElement, SVGMaskElement, SVGLineElement, SVGLength, SVGAnimatedLength, SVGPolylineElement, SVGGElement, SVGPathElement, SVGRectElement, SVGAnimatedString } from './DOM/svg';
 
 (global as any).window.SVGCircleElement = (global as any).SVGCircleElement = (global as any).SVGCircleElement || SVGCircleElement;
 (global as any).window.SVGSVGElement = (global as any).SVGSVGElement = (global as any).SVGSVGElement || SVGSVGElement;
@@ -69,6 +69,7 @@ import { SVGMarkerElement, SVGAnimatedTransformList, SVGUseElement, SVGStopEleme
 (global as any).window.SVGImageElement = (global as any).SVGImageElement = (global as any).SVGImageElement || SVGImageElement;
 (global as any).window.SVGEllipseElement = (global as any).SVGEllipseElement = (global as any).SVGEllipseElement || SVGEllipseElement;
 (global as any).window.SVGTextElement = (global as any).SVGTextElement = (global as any).SVGTextElement || SVGTextElement;
+(global as any).window.SVGTSpanElement = (global as any).SVGTSpanElement = (global as any).SVGTSpanElement || SVGTSpanElement;
 
 (global as any).window.SVGGradientElement = (global as any).SVGGradientElement = (global as any).SVGGradientElement || SVGGradientElement;
 (global as any).window.SVGRadialGradientElement = (global as any).SVGRadialGradientElement = (global as any).SVGRadialGradientElement || SVGRadialGradientElement;

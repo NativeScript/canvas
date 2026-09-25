@@ -1,5 +1,6 @@
 use std::cmp::PartialEq;
 use std::ffi::c_uint;
+use std::sync::Arc;
 
 use base64::Engine;
 use skia_safe::image::CachingHint;
@@ -64,7 +65,7 @@ pub mod surface_metal;
 pub struct State {
     pub(crate) direction: TextDirection,
     pub(crate) paint: Paint,
-    pub(crate) font: String,
+    pub(crate) font: Arc<str>,
     pub(crate) font_style: Font,
     pub(crate) text_align: TextAlign,
     pub(crate) text_baseline: TextBaseLine,
@@ -79,12 +80,12 @@ pub struct State {
     pub(crate) miter_limit: f32,
     pub(crate) line_dash_list: Vec<f32>,
     pub(crate) line_dash_offset: f32,
-    pub(crate) filter: String,
+    pub(crate) filter: Arc<str>,
     pub(crate) global_alpha: f32,
     pub(crate) global_composite_operation: CompositeOperationType,
-    pub(crate) word_spacing_value: String,
+    pub(crate) word_spacing_value: Arc<str>,
     pub(crate) word_spacing: f32,
-    pub(crate) letter_spacing_value: String,
+    pub(crate) letter_spacing_value: Arc<str>,
     pub(crate) letter_spacing: f32,
     pub(crate) matrix: skia_safe::Matrix,
     pub(crate) clip: Option<Path>,
@@ -100,14 +101,14 @@ impl Default for State {
         Self {
             direction: TextDirection::LTR,
             paint,
-            font: "10px sans-serif".to_owned(),
+            font: Arc::from("10px sans-serif"),
             font_style: Font::default(),
             text_align: TextAlign::default(),
             text_baseline: TextBaseLine::default(),
             shadow_color: Color::TRANSPARENT,
             shadow_offset: (0.0, 0.0).into(),
             shadow_blur: 0.0,
-            image_smoothing_enabled: false,
+            image_smoothing_enabled: true,
             image_smoothing_quality: ImageSmoothingQuality::default(),
             line_width: 1.,
             line_cap: LineCap::default(),
@@ -115,12 +116,12 @@ impl Default for State {
             miter_limit: 10.0,
             line_dash_list: Default::default(),
             line_dash_offset: 0.0,
-            filter: "none".into(),
+            filter: Arc::from("none"),
             global_alpha: 1.0,
             global_composite_operation: CompositeOperationType::default(),
-            word_spacing_value: "0px".to_string(),
+            word_spacing_value: Arc::from("0px"),
             word_spacing: 0.,
-            letter_spacing_value: "0px".to_string(),
+            letter_spacing_value: Arc::from("0px"),
             letter_spacing: 0.,
             matrix: skia_safe::Matrix::new_identity(),
             clip: None,
@@ -198,8 +199,20 @@ impl SurfaceData {
 
 pub struct Context {
     pub(crate) surface_data: SurfaceData,
+    // `surface` (its internal Skia GPU device holds its own strong ref on
+    // `direct_context`'s underlying GrDirectContext) and `direct_context`
+    // itself must both be declared — and therefore dropped, since Rust drops
+    // struct fields in declaration order — before the native
+    // vulkan_context/gl_context/metal_context fields below. Those own the
+    // real VkDevice/EGLContext/MTLDevice; GrDirectContext's destructor needs
+    // that native context to still be alive to release its own GPU-side
+    // resource cache (pipelines, allocations, command buffers). Dropping the
+    // native context first leaves GrDirectContext tearing itself down against
+    // an already-destroyed device.
     pub(crate) surface: Surface,
     pub(crate) surface_state: SurfaceState,
+    #[cfg(any(feature = "gl", feature = "vulkan", feature = "metal"))]
+    pub(crate) direct_context: Option<skia_safe::gpu::DirectContext>,
     #[cfg(feature = "vulkan")]
     pub vulkan_context: Option<canvas_core::gpu::vulkan::VulkanContext>,
     #[cfg(feature = "vulkan")]
@@ -211,8 +224,6 @@ pub struct Context {
     #[cfg(feature = "gl")]
     pub gl_context: Option<canvas_core::gpu::gl::GLContext>,
     pub cpu_context: Option<canvas_core::cpu::CPUContext>,
-    #[cfg(any(feature = "gl", feature = "vulkan", feature = "metal"))]
-    pub(crate) direct_context: Option<skia_safe::gpu::DirectContext>,
     pub(crate) path: Path,
     pub(crate) state: State,
     pub(crate) state_stack: Vec<State>,
@@ -345,7 +356,13 @@ impl Context {
     // callback on tvOS. Keep the previous surface until the next operation needs
     // to draw, then retain its contents when swapping the backing texture.
     #[inline]
-    fn ensure_metal_drawable(&mut self) {
+    /// Runs before every draw. Skia uploads a raster image the moment a draw records it (a pattern
+    /// fill, say), so another canvas's GL context being current puts the texture in the wrong one.
+    pub(crate) fn ensure_current(&mut self) {
+        #[cfg(feature = "gl")]
+        if let Some(ref context) = self.gl_context {
+            context.make_current();
+        }
         #[cfg(all(feature = "metal", target_os = "tvos"))]
         if self.metal_context.as_ref().is_some_and(|c| !c.has_current_drawable()) {
             Self::acquire_drawable(self);
@@ -357,7 +374,7 @@ impl Context {
     where
         F: FnOnce(&skia_safe::Canvas),
     {
-        self.ensure_metal_drawable();
+        self.ensure_current();
         f(self.surface.canvas());
     }
 
@@ -366,7 +383,7 @@ impl Context {
     where
         F: FnOnce(&skia_safe::Canvas, &mut Path),
     {
-        self.ensure_metal_drawable();
+        self.ensure_current();
         f(self.surface.canvas(), &mut self.path);
         self.surface_state = self.surface_state | SurfaceState::Pending;
     }
@@ -376,7 +393,7 @@ impl Context {
     where
         F: FnOnce(&skia_safe::Canvas),
     {
-        self.ensure_metal_drawable();
+        self.ensure_current();
         f(self.surface.canvas());
         self.surface_state = self.surface_state | SurfaceState::Pending;
     }
@@ -386,7 +403,7 @@ impl Context {
     where
         F: FnOnce(&skia_safe::Canvas, &Paint),
     {
-        self.ensure_metal_drawable();
+        self.ensure_current();
         f(self.surface.canvas(), &self.state.paint);
         self.surface_state = self.surface_state | SurfaceState::Pending;
     }
@@ -403,7 +420,7 @@ impl Context {
     where
         F: FnOnce(&skia_safe::Canvas),
     {
-        self.ensure_metal_drawable();
+        self.ensure_current();
         f(self.surface.canvas());
         self.surface_state = self.surface_state | SurfaceState::Pending;
     }
@@ -561,7 +578,7 @@ impl Context {
     where
         F: Fn(&skia_safe::Canvas, &skia_safe::Paint, &mut Path),
     {
-        self.ensure_metal_drawable();
+        self.ensure_current();
         let blend = self.state.global_composite_operation.get_blend_mode();
         // Fast path: most draw calls use SrcOver (the default)
         if !matches!(
@@ -623,7 +640,7 @@ impl Context {
     where
         F: Fn(&skia_safe::Canvas, &skia_safe::Paint),
     {
-        self.ensure_metal_drawable();
+        self.ensure_current();
         let blend = self.state.global_composite_operation.get_blend_mode();
         // Fast path: most draw calls use SrcOver (the default)
         if !matches!(
@@ -679,9 +696,9 @@ impl Context {
     #[inline]
     pub fn render_text_to_canvas<F>(&mut self, paint: &skia_safe::Paint, f: F)
     where
-        F: Fn(&skia_safe::Canvas, &skia_safe::Paint, &Font),
+        F: Fn(&skia_safe::Canvas, &skia_safe::Paint),
     {
-        self.ensure_metal_drawable();
+        self.ensure_current();
         let blend = self.state.global_composite_operation.get_blend_mode();
         if !matches!(
             blend,
@@ -692,7 +709,7 @@ impl Context {
                 | BlendMode::DstATop
                 | BlendMode::Src
         ) {
-            f(self.surface.canvas(), paint, &self.state.font_style);
+            f(self.surface.canvas(), paint);
             self.surface_state = self.surface_state | SurfaceState::Pending;
             return;
         }
@@ -702,7 +719,7 @@ impl Context {
     #[cold]
     fn render_text_to_canvas_slow<F>(&mut self, paint: &skia_safe::Paint, blend: BlendMode, f: F)
     where
-        F: Fn(&skia_safe::Canvas, &skia_safe::Paint, &Font),
+        F: Fn(&skia_safe::Canvas, &skia_safe::Paint),
     {
         let mut layer_paint = paint.clone();
         layer_paint.set_anti_alias(true);
@@ -712,7 +729,7 @@ impl Context {
         let current_matrix = skia_safe::M44::from(&self.state.matrix);
         if let Some(layer) = layer_recorder.recording_canvas() {
             layer.set_matrix(&current_matrix);
-            f(layer, &layer_paint, &self.state.font_style);
+            f(layer, &layer_paint);
         }
 
         if let Some(pict) =

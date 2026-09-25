@@ -194,22 +194,6 @@ class NSCCanvas : FrameLayout {
 	internal fun surfaceDestroyed() {
 		listener?.surfaceDestroyed()
 		if (engine == Engine.GL && nativeContext != 0L) {
-			// The window surface is going away. Do NOT leave the EGL context bound
-			// to the (now dead) window surface — any GL command or buffer swap a
-			// consumer issues before it reacts to surfaceDestroyed would then run
-			// against a torn-down surface and SIGSEGV in libcanvasnative (fault
-			// ~0x38: a null deref on the missing surface/framebuffer). This bit any
-			// render loop driven by the Choreographer/requestAnimationFrame, which
-			// keeps firing while backgrounded — e.g. a pixi/three ticker rendering
-			// behind a full-screen rewarded-ad activity.
-			//
-			// Instead, switch the context to an OFFSCREEN surface using the existing
-			// no-surface path. The context stays valid, so stray GL work + swaps
-			// render harmlessly off-screen until the window returns (surfaceCreated
-			// → resize() → nativeUpdateWebGLSurface rebinds). Previously this only
-			// did eglMakeCurrent(EGL_NO_SURFACE), which left the native WebGL state
-			// pointing at the destroyed surface — the root of the crash.
-			makeContextCurrent()
 			if (is2D) {
 				nativeUpdate2DSurfaceNoSurface(surfaceWidth, surfaceHeight, nativeContext)
 			} else {
@@ -265,6 +249,8 @@ class NSCCanvas : FrameLayout {
 				Engine.GPU -> {
 					if (is2D) {
 						nativeRelease2DContext(ctx)
+					} else {
+						nativeReleaseWebGPU(ctx)
 					}
 				}
 			}
@@ -1213,6 +1199,10 @@ class NSCCanvas : FrameLayout {
 		external fun nativeResizeWebGPU(
 			context: Long, surface: Surface, width: Int, height: Int
 		)
+
+		@JvmStatic
+		@FastNative
+		external fun nativeReleaseWebGPU(context: Long)
 
 		@JvmStatic
 		@FastNative

@@ -3,8 +3,18 @@ language = "C"
 namespace = "ffi"
 include_guard = "CANVAS_SVG_IOS_H"
 
+# The crate re-exports canvas-svg-c wholesale; without this the Swift side only sees the few
+# one-shot raster helpers declared here and nothing of the live document or GPU surface.
+[parse]
+parse_deps = true
+include = ["canvas-svg-c"]
+extra_bindings = ["canvas-svg-c"]
+
 
 [defines]
+"feature = gl" = "CANVAS_SVG_GL"
+"feature = vulkan" = "CANVAS_SVG_VULKAN"
+"feature = metal" = "CANVAS_SVG_METAL"
 "target_os = ios" = "TARGET_OS_IOS"
 "target_os = macos" = "TARGET_OS_MACOS"
 "target_os = android" = "TARGET_OS_ANDROID"

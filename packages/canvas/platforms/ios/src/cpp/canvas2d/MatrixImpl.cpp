@@ -21,7 +21,7 @@ void MatrixImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate) 
 }
 
 MatrixImpl *MatrixImpl::GetPointer(v8::Local<v8::Object> object) {
-    auto ptr = canvas::GetAlignedPointer(object, 0);
+    auto ptr = object->GetAlignedPointerFromInternalField(0, ObjectWrapperImpl::kInternalFieldTag);
     if (ptr == nullptr) {
         return nullptr;
     }
@@ -42,141 +42,141 @@ v8::Local<v8::FunctionTemplate> MatrixImpl::GetCtor(v8::Isolate *isolate) {
     auto tmpl = ctorTmpl->InstanceTemplate();
     tmpl->SetInternalFieldCount(2);
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "a"),
             GetA,
             SetA
     );
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "b"),
             GetB,
             SetB
     );
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "c"),
             GetC,
             SetC
     );
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "d"),
             GetD,
             SetD
     );
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "e"),
             GetE,
             SetE
     );
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "f"),
             GetF,
             SetF
     );
 
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "m11"),
             GetM11,
             SetM11
     );
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "m12"),
             GetM12,
             SetM12
     );
 
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "m13"),
             GetM13,
             SetM13
     );
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "m14"),
             GetM14,
             SetM14
     );
 
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "m21"),
             GetM21,
             SetM21
     );
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "m22"),
             GetM22,
             SetM22
     );
 
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "m23"),
             GetM23,
             SetM23
     );
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "m24"),
             GetM24,
             SetM24
     );
 
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "m31"),
             GetM31,
             SetM31
     );
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "m32"),
             GetM32,
             SetM32
     );
 
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "m33"),
             GetM33,
             SetM33
     );
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "m34"),
             GetM34,
             SetM34
     );
 
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "m41"),
             GetM41,
             SetM41
     );
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "m42"),
             GetM42,
             SetM42
     );
 
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "m43"),
             GetM43,
             SetM43
     );
 
-    canvas::SetAccessor(tmpl,
+    tmpl->SetNativeDataProperty(
             ConvertToV8String(isolate, "m44"),
             GetM44,
             SetM44
@@ -279,7 +279,7 @@ void MatrixImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
                 auto object = new MatrixImpl(matrix);
 
-                canvas::SetAlignedPointer(ret, 0, object);
+                ret->SetAlignedPointerInInternalField(0, object, ObjectWrapperImpl::kInternalFieldTag);
 
                 SetNativeType(object, NativeType::Matrix);
 
@@ -305,7 +305,7 @@ void MatrixImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
                 auto object = new MatrixImpl(matrix);
 
 
-                canvas::SetAlignedPointer(ret, 0, object);
+                ret->SetAlignedPointerInInternalField(0, object, ObjectWrapperImpl::kInternalFieldTag);
 
                 SetNativeType(object, NativeType::Matrix);
 
@@ -320,7 +320,7 @@ void MatrixImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
         auto matrix = canvas_native_matrix_create();
         auto object = new MatrixImpl(matrix);
 
-        canvas::SetAlignedPointer(ret, 0, object);
+        ret->SetAlignedPointerInInternalField(0, object, ObjectWrapperImpl::kInternalFieldTag);
 
         SetNativeType(object, NativeType::Matrix);
 
@@ -335,7 +335,7 @@ void MatrixImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
 void MatrixImpl::GetA(v8::Local<v8::Name> property,
                       const v8::PropertyCallbackInfo<v8::Value> &info) {
-    MatrixImpl *ptr = GetPointer(canvas::Receiver(info));
+    MatrixImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         info.GetReturnValue().SetUndefined();
         return;
@@ -348,7 +348,7 @@ void MatrixImpl::GetA(v8::Local<v8::Name> property,
 void MatrixImpl::SetA(v8::Local<v8::Name> property,
                       v8::Local<v8::Value> value,
                       const v8::PropertyCallbackInfo<void> &info) {
-    MatrixImpl *ptr = GetPointer(canvas::Receiver(info));
+    MatrixImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -360,7 +360,7 @@ void MatrixImpl::SetA(v8::Local<v8::Name> property,
 
 void MatrixImpl::GetB(v8::Local<v8::Name> property,
                       const v8::PropertyCallbackInfo<v8::Value> &info) {
-    MatrixImpl *ptr = GetPointer(canvas::Receiver(info));
+    MatrixImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         info.GetReturnValue().SetUndefined();
         return;
@@ -373,7 +373,7 @@ void MatrixImpl::GetB(v8::Local<v8::Name> property,
 void MatrixImpl::SetB(v8::Local<v8::Name> property,
                       v8::Local<v8::Value> value,
                       const v8::PropertyCallbackInfo<void> &info) {
-    MatrixImpl *ptr = GetPointer(canvas::Receiver(info));
+    MatrixImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -385,7 +385,7 @@ void MatrixImpl::SetB(v8::Local<v8::Name> property,
 
 void MatrixImpl::GetC(v8::Local<v8::Name> property,
                       const v8::PropertyCallbackInfo<v8::Value> &info) {
-    MatrixImpl *ptr = GetPointer(canvas::Receiver(info));
+    MatrixImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         info.GetReturnValue().SetUndefined();
         return;
@@ -398,7 +398,7 @@ void MatrixImpl::GetC(v8::Local<v8::Name> property,
 void MatrixImpl::SetC(v8::Local<v8::Name> property,
                       v8::Local<v8::Value> value,
                       const v8::PropertyCallbackInfo<void> &info) {
-    MatrixImpl *ptr = GetPointer(canvas::Receiver(info));
+    MatrixImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -410,7 +410,7 @@ void MatrixImpl::SetC(v8::Local<v8::Name> property,
 
 void MatrixImpl::GetD(v8::Local<v8::Name> property,
                       const v8::PropertyCallbackInfo<v8::Value> &info) {
-    MatrixImpl *ptr = GetPointer(canvas::Receiver(info));
+    MatrixImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         info.GetReturnValue().SetUndefined();
         return;
@@ -423,7 +423,7 @@ void MatrixImpl::GetD(v8::Local<v8::Name> property,
 void MatrixImpl::SetD(v8::Local<v8::Name> property,
                       v8::Local<v8::Value> value,
                       const v8::PropertyCallbackInfo<void> &info) {
-    MatrixImpl *ptr = GetPointer(canvas::Receiver(info));
+    MatrixImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -435,7 +435,7 @@ void MatrixImpl::SetD(v8::Local<v8::Name> property,
 
 void MatrixImpl::GetE(v8::Local<v8::Name> property,
                       const v8::PropertyCallbackInfo<v8::Value> &info) {
-    MatrixImpl *ptr = GetPointer(canvas::Receiver(info));
+    MatrixImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         info.GetReturnValue().SetUndefined();
         return;
@@ -448,7 +448,7 @@ void MatrixImpl::GetE(v8::Local<v8::Name> property,
 void MatrixImpl::SetE(v8::Local<v8::Name> property,
                       v8::Local<v8::Value> value,
                       const v8::PropertyCallbackInfo<void> &info) {
-    MatrixImpl *ptr = GetPointer(canvas::Receiver(info));
+    MatrixImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -460,7 +460,7 @@ void MatrixImpl::SetE(v8::Local<v8::Name> property,
 
 void MatrixImpl::GetF(v8::Local<v8::Name> property,
                       const v8::PropertyCallbackInfo<v8::Value> &info) {
-    MatrixImpl *ptr = GetPointer(canvas::Receiver(info));
+    MatrixImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         info.GetReturnValue().SetUndefined();
         return;
@@ -473,7 +473,7 @@ void MatrixImpl::GetF(v8::Local<v8::Name> property,
 void MatrixImpl::SetF(v8::Local<v8::Name> property,
                       v8::Local<v8::Value> value,
                       const v8::PropertyCallbackInfo<void> &info) {
-    MatrixImpl *ptr = GetPointer(canvas::Receiver(info));
+    MatrixImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -484,7 +484,7 @@ void MatrixImpl::SetF(v8::Local<v8::Name> property,
 
 void MatrixImpl::GetM11(v8::Local<v8::Name> property,
                         const v8::PropertyCallbackInfo<v8::Value> &info) {
-    MatrixImpl *ptr = GetPointer(canvas::Receiver(info));
+    MatrixImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         info.GetReturnValue().SetUndefined();
         return;
@@ -497,7 +497,7 @@ void MatrixImpl::GetM11(v8::Local<v8::Name> property,
 void MatrixImpl::SetM11(v8::Local<v8::Name> property,
                         v8::Local<v8::Value> value,
                         const v8::PropertyCallbackInfo<void> &info) {
-    MatrixImpl *ptr = GetPointer(canvas::Receiver(info));
+    MatrixImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -508,7 +508,7 @@ void MatrixImpl::SetM11(v8::Local<v8::Name> property,
 
 void MatrixImpl::GetM12(v8::Local<v8::Name> property,
                         const v8::PropertyCallbackInfo<v8::Value> &info) {
-    MatrixImpl *ptr = GetPointer(canvas::Receiver(info));
+    MatrixImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         info.GetReturnValue().SetUndefined();
         return;
@@ -521,7 +521,7 @@ void MatrixImpl::GetM12(v8::Local<v8::Name> property,
 void MatrixImpl::SetM12(v8::Local<v8::Name> property,
                         v8::Local<v8::Value> value,
                         const v8::PropertyCallbackInfo<void> &info) {
-    MatrixImpl *ptr = GetPointer(canvas::Receiver(info));
+    MatrixImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -532,7 +532,7 @@ void MatrixImpl::SetM12(v8::Local<v8::Name> property,
 
 void MatrixImpl::GetM13(v8::Local<v8::Name> property,
                         const v8::PropertyCallbackInfo<v8::Value> &info) {
-    MatrixImpl *ptr = GetPointer(canvas::Receiver(info));
+    MatrixImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         info.GetReturnValue().SetUndefined();
         return;
@@ -545,7 +545,7 @@ void MatrixImpl::GetM13(v8::Local<v8::Name> property,
 void MatrixImpl::SetM13(v8::Local<v8::Name> property,
                         v8::Local<v8::Value> value,
                         const v8::PropertyCallbackInfo<void> &info) {
-    MatrixImpl *ptr = GetPointer(canvas::Receiver(info));
+    MatrixImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -556,7 +556,7 @@ void MatrixImpl::SetM13(v8::Local<v8::Name> property,
 
 void MatrixImpl::GetM14(v8::Local<v8::Name> property,
                         const v8::PropertyCallbackInfo<v8::Value> &info) {
-    MatrixImpl *ptr = GetPointer(canvas::Receiver(info));
+    MatrixImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         info.GetReturnValue().SetUndefined();
         return;
@@ -569,7 +569,7 @@ void MatrixImpl::GetM14(v8::Local<v8::Name> property,
 void MatrixImpl::SetM14(v8::Local<v8::Name> property,
                         v8::Local<v8::Value> value,
                         const v8::PropertyCallbackInfo<void> &info) {
-    MatrixImpl *ptr = GetPointer(canvas::Receiver(info));
+    MatrixImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -580,7 +580,7 @@ void MatrixImpl::SetM14(v8::Local<v8::Name> property,
 
 void MatrixImpl::GetM21(v8::Local<v8::Name> property,
                         const v8::PropertyCallbackInfo<v8::Value> &info) {
-    MatrixImpl *ptr = GetPointer(canvas::Receiver(info));
+    MatrixImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         info.GetReturnValue().SetUndefined();
         return;
@@ -593,7 +593,7 @@ void MatrixImpl::GetM21(v8::Local<v8::Name> property,
 void MatrixImpl::SetM21(v8::Local<v8::Name> property,
                         v8::Local<v8::Value> value,
                         const v8::PropertyCallbackInfo<void> &info) {
-    MatrixImpl *ptr = GetPointer(canvas::Receiver(info));
+    MatrixImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -604,7 +604,7 @@ void MatrixImpl::SetM21(v8::Local<v8::Name> property,
 
 void MatrixImpl::GetM22(v8::Local<v8::Name> property,
                         const v8::PropertyCallbackInfo<v8::Value> &info) {
-    MatrixImpl *ptr = GetPointer(canvas::Receiver(info));
+    MatrixImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         info.GetReturnValue().SetUndefined();
         return;
@@ -617,7 +617,7 @@ void MatrixImpl::GetM22(v8::Local<v8::Name> property,
 void MatrixImpl::SetM22(v8::Local<v8::Name> property,
                         v8::Local<v8::Value> value,
                         const v8::PropertyCallbackInfo<void> &info) {
-    MatrixImpl *ptr = GetPointer(canvas::Receiver(info));
+    MatrixImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -628,7 +628,7 @@ void MatrixImpl::SetM22(v8::Local<v8::Name> property,
 
 void MatrixImpl::GetM23(v8::Local<v8::Name> property,
                         const v8::PropertyCallbackInfo<v8::Value> &info) {
-    MatrixImpl *ptr = GetPointer(canvas::Receiver(info));
+    MatrixImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         info.GetReturnValue().SetUndefined();
         return;
@@ -641,7 +641,7 @@ void MatrixImpl::GetM23(v8::Local<v8::Name> property,
 void MatrixImpl::SetM23(v8::Local<v8::Name> property,
                         v8::Local<v8::Value> value,
                         const v8::PropertyCallbackInfo<void> &info) {
-    MatrixImpl *ptr = GetPointer(canvas::Receiver(info));
+    MatrixImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -652,7 +652,7 @@ void MatrixImpl::SetM23(v8::Local<v8::Name> property,
 
 void MatrixImpl::GetM24(v8::Local<v8::Name> property,
                         const v8::PropertyCallbackInfo<v8::Value> &info) {
-    MatrixImpl *ptr = GetPointer(canvas::Receiver(info));
+    MatrixImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         info.GetReturnValue().SetUndefined();
         return;
@@ -665,7 +665,7 @@ void MatrixImpl::GetM24(v8::Local<v8::Name> property,
 void MatrixImpl::SetM24(v8::Local<v8::Name> property,
                         v8::Local<v8::Value> value,
                         const v8::PropertyCallbackInfo<void> &info) {
-    MatrixImpl *ptr = GetPointer(canvas::Receiver(info));
+    MatrixImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -677,7 +677,7 @@ void MatrixImpl::SetM24(v8::Local<v8::Name> property,
 
 void MatrixImpl::GetM31(v8::Local<v8::Name> property,
                         const v8::PropertyCallbackInfo<v8::Value> &info) {
-    MatrixImpl *ptr = GetPointer(canvas::Receiver(info));
+    MatrixImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         info.GetReturnValue().SetUndefined();
         return;
@@ -690,7 +690,7 @@ void MatrixImpl::GetM31(v8::Local<v8::Name> property,
 void MatrixImpl::SetM31(v8::Local<v8::Name> property,
                         v8::Local<v8::Value> value,
                         const v8::PropertyCallbackInfo<void> &info) {
-    MatrixImpl *ptr = GetPointer(canvas::Receiver(info));
+    MatrixImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -701,7 +701,7 @@ void MatrixImpl::SetM31(v8::Local<v8::Name> property,
 
 void MatrixImpl::GetM32(v8::Local<v8::Name> property,
                         const v8::PropertyCallbackInfo<v8::Value> &info) {
-    MatrixImpl *ptr = GetPointer(canvas::Receiver(info));
+    MatrixImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         info.GetReturnValue().SetUndefined();
         return;
@@ -714,7 +714,7 @@ void MatrixImpl::GetM32(v8::Local<v8::Name> property,
 void MatrixImpl::SetM32(v8::Local<v8::Name> property,
                         v8::Local<v8::Value> value,
                         const v8::PropertyCallbackInfo<void> &info) {
-    MatrixImpl *ptr = GetPointer(canvas::Receiver(info));
+    MatrixImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -725,7 +725,7 @@ void MatrixImpl::SetM32(v8::Local<v8::Name> property,
 
 void MatrixImpl::GetM33(v8::Local<v8::Name> property,
                         const v8::PropertyCallbackInfo<v8::Value> &info) {
-    MatrixImpl *ptr = GetPointer(canvas::Receiver(info));
+    MatrixImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         info.GetReturnValue().SetUndefined();
         return;
@@ -738,7 +738,7 @@ void MatrixImpl::GetM33(v8::Local<v8::Name> property,
 void MatrixImpl::SetM33(v8::Local<v8::Name> property,
                         v8::Local<v8::Value> value,
                         const v8::PropertyCallbackInfo<void> &info) {
-    MatrixImpl *ptr = GetPointer(canvas::Receiver(info));
+    MatrixImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -749,7 +749,7 @@ void MatrixImpl::SetM33(v8::Local<v8::Name> property,
 
 void MatrixImpl::GetM34(v8::Local<v8::Name> property,
                         const v8::PropertyCallbackInfo<v8::Value> &info) {
-    MatrixImpl *ptr = GetPointer(canvas::Receiver(info));
+    MatrixImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         info.GetReturnValue().SetUndefined();
         return;
@@ -762,7 +762,7 @@ void MatrixImpl::GetM34(v8::Local<v8::Name> property,
 void MatrixImpl::SetM34(v8::Local<v8::Name> property,
                         v8::Local<v8::Value> value,
                         const v8::PropertyCallbackInfo<void> &info) {
-    MatrixImpl *ptr = GetPointer(canvas::Receiver(info));
+    MatrixImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -773,7 +773,7 @@ void MatrixImpl::SetM34(v8::Local<v8::Name> property,
 
 void MatrixImpl::GetM41(v8::Local<v8::Name> property,
                         const v8::PropertyCallbackInfo<v8::Value> &info) {
-    MatrixImpl *ptr = GetPointer(canvas::Receiver(info));
+    MatrixImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         info.GetReturnValue().SetUndefined();
         return;
@@ -786,7 +786,7 @@ void MatrixImpl::GetM41(v8::Local<v8::Name> property,
 void MatrixImpl::SetM41(v8::Local<v8::Name> property,
                         v8::Local<v8::Value> value,
                         const v8::PropertyCallbackInfo<void> &info) {
-    MatrixImpl *ptr = GetPointer(canvas::Receiver(info));
+    MatrixImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -797,7 +797,7 @@ void MatrixImpl::SetM41(v8::Local<v8::Name> property,
 
 void MatrixImpl::GetM42(v8::Local<v8::Name> property,
                         const v8::PropertyCallbackInfo<v8::Value> &info) {
-    MatrixImpl *ptr = GetPointer(canvas::Receiver(info));
+    MatrixImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         info.GetReturnValue().SetUndefined();
         return;
@@ -810,7 +810,7 @@ void MatrixImpl::GetM42(v8::Local<v8::Name> property,
 void MatrixImpl::SetM42(v8::Local<v8::Name> property,
                         v8::Local<v8::Value> value,
                         const v8::PropertyCallbackInfo<void> &info) {
-    MatrixImpl *ptr = GetPointer(canvas::Receiver(info));
+    MatrixImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -821,7 +821,7 @@ void MatrixImpl::SetM42(v8::Local<v8::Name> property,
 
 void MatrixImpl::GetM43(v8::Local<v8::Name> property,
                         const v8::PropertyCallbackInfo<v8::Value> &info) {
-    MatrixImpl *ptr = GetPointer(canvas::Receiver(info));
+    MatrixImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         info.GetReturnValue().SetUndefined();
         return;
@@ -834,7 +834,7 @@ void MatrixImpl::GetM43(v8::Local<v8::Name> property,
 void MatrixImpl::SetM43(v8::Local<v8::Name> property,
                         v8::Local<v8::Value> value,
                         const v8::PropertyCallbackInfo<void> &info) {
-    MatrixImpl *ptr = GetPointer(canvas::Receiver(info));
+    MatrixImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -845,7 +845,7 @@ void MatrixImpl::SetM43(v8::Local<v8::Name> property,
 
 void MatrixImpl::GetM44(v8::Local<v8::Name> property,
                         const v8::PropertyCallbackInfo<v8::Value> &info) {
-    MatrixImpl *ptr = GetPointer(canvas::Receiver(info));
+    MatrixImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         info.GetReturnValue().SetUndefined();
         return;
@@ -858,7 +858,7 @@ void MatrixImpl::GetM44(v8::Local<v8::Name> property,
 void MatrixImpl::SetM44(v8::Local<v8::Name> property,
                         v8::Local<v8::Value> value,
                         const v8::PropertyCallbackInfo<void> &info) {
-    MatrixImpl *ptr = GetPointer(canvas::Receiver(info));
+    MatrixImpl *ptr = GetPointer(info.Holder());
     if (ptr == nullptr) {
         return;
     }
@@ -895,7 +895,7 @@ void MatrixImpl::Translate(const v8::FunctionCallbackInfo<v8::Value> &args) {
                     context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
             auto object = new MatrixImpl(matrix);
 
-            canvas::SetAlignedPointer(ret, 0, object);
+            ret->SetAlignedPointerInInternalField(0, object, ObjectWrapperImpl::kInternalFieldTag);
 
             SetNativeType(object, NativeType::Matrix);
 
@@ -987,7 +987,7 @@ void MatrixImpl::ScaleNonUniform(const v8::FunctionCallbackInfo<v8::Value> &args
                     context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
             auto object = new MatrixImpl(matrix);
 
-            canvas::SetAlignedPointer(ret, 0, object);
+            ret->SetAlignedPointerInInternalField(0, object, ObjectWrapperImpl::kInternalFieldTag);
 
             SetNativeType(object, NativeType::Matrix);
 
@@ -1046,7 +1046,7 @@ void MatrixImpl::Rotate(const v8::FunctionCallbackInfo<v8::Value> &args) {
                     context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
             auto object = new MatrixImpl(matrix);
 
-            canvas::SetAlignedPointer(ret, 0, object);
+            ret->SetAlignedPointerInInternalField(0, object, ObjectWrapperImpl::kInternalFieldTag);
 
             SetNativeType(object, NativeType::Matrix);
 
@@ -1103,7 +1103,7 @@ void MatrixImpl::SkewX(const v8::FunctionCallbackInfo<v8::Value> &args) {
                     context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
             auto object = new MatrixImpl(matrix);
 
-            canvas::SetAlignedPointer(ret, 0, object);
+            ret->SetAlignedPointerInInternalField(0, object, ObjectWrapperImpl::kInternalFieldTag);
 
             SetNativeType(object, NativeType::Matrix);
 
@@ -1156,7 +1156,7 @@ void MatrixImpl::SkewY(const v8::FunctionCallbackInfo<v8::Value> &args) {
                     context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
             auto object = new MatrixImpl(matrix);
 
-            canvas::SetAlignedPointer(ret, 0, object);
+            ret->SetAlignedPointerInInternalField(0, object, ObjectWrapperImpl::kInternalFieldTag);
 
             SetNativeType(object, NativeType::Matrix);
 
@@ -1196,7 +1196,7 @@ void MatrixImpl::Clone(const v8::FunctionCallbackInfo<v8::Value> &args) {
             context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
     auto object = new MatrixImpl(matrix);
 
-    canvas::SetAlignedPointer(ret, 0, object);
+    ret->SetAlignedPointerInInternalField(0, object, ObjectWrapperImpl::kInternalFieldTag);
 
     SetNativeType(object, NativeType::Matrix);
 

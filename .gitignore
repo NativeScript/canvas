@@ -82,3 +82,5 @@ rust-skia
 # tools/scripts/build-android-v8-stub.sh (see /V8_RELEASE) -- not committed,
 # regenerated on demand. Real apps supply their own copy at runtime.
 /packages/canvas/src-native/canvas-android/canvas/src/main/jniLibs/*/libNativeScript.so
+# Local benchmark results (machine-specific)
+crates/canvas-napi/bench/results/

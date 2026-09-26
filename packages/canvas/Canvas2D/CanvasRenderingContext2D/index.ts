@@ -10,6 +10,8 @@ import { Canvas } from '../../Canvas';
 import { Helpers } from '../../helpers';
 import { DOMMatrix } from '../DOMMatrix';
 import type { CanvasRenderingContext } from '../../common';
+import { NAPI_HOST } from '../../platform';
+import { imageAssetFor } from '../../platform/index';
 declare const NSCCanvasRenderingContext2D;
 
 const REPETITIONS = ['repeat', 'repeat-x', 'repeat-y', 'no-repeat'];
@@ -767,7 +769,10 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 				return new CanvasPattern(this.context.__createPatternWithNative(pattern));
 			}
 
-			return null;
+			if (!NAPI_HOST) {
+				return null;
+			}
+			img = imageAssetFor(image)?.native;
 		} else if (__ANDROID__ && image instanceof android.graphics.Bitmap) {
 			//const ptr = this.context.__getPointer; //this._getMethod('__getPointer');
 			const createPattern = this.context.__createPatternWithNative; //this._getMethod('__createPatternWithNative');
@@ -886,7 +891,13 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 			if (__APPLE__) {
 				drawNativeImage(args, image.ios, this);
 			}
-			return;
+			if (!NAPI_HOST) {
+				return;
+			}
+			image = imageAssetFor(image)?.native;
+			if (!image) {
+				return;
+			}
 		} else if (image instanceof NSImageAsset) {
 			drawNativeImage(args, image.nativeImage, this);
 			return;
@@ -899,7 +910,7 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 		} else if (image instanceof Canvas) {
 			image = (image as any).native;
 		} else if (image && typeof image.tagName === 'string' && (image.tagName === 'IMG' || image.tagName === 'IMAGE')) {
-			if (image._imageSource instanceof ImageSource) {
+			if (image._imageSource instanceof ImageSource && !NAPI_HOST) {
 				if (__ANDROID__) {
 					drawNativeImage(args, image._imageSource.android, this);
 				}
@@ -907,6 +918,11 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 					drawNativeImage(args, image._imageSource.ios, this);
 				}
 				return;
+			} else if (image._imageSource instanceof ImageSource) {
+				image = imageAssetFor(image._imageSource)?.native;
+				if (!image) {
+					return;
+				}
 			} else if (__ANDROID__ && image._image instanceof android.graphics.Bitmap) {
 				drawNativeImage(args, image._image, this);
 				return;
@@ -1009,6 +1025,9 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 				isNativeSource = true;
 				image = image.ios;
 			}
+			if (NAPI_HOST) {
+				image = imageAssetFor(image)?.native;
+			}
 		} else if (__ANDROID__ && image instanceof android.graphics.Bitmap) {
 			isNativeSource = true;
 		} else if (__APPLE__ && image instanceof UIImage) {
@@ -1020,7 +1039,9 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 				image = (image as any).native;
 			}
 		} else if (image && typeof image.tagName === 'string' && (image.tagName === 'IMG' || image.tagName === 'IMAGE')) {
-			if (image._imageSource instanceof ImageSource) {
+			if (image._imageSource instanceof ImageSource && NAPI_HOST) {
+				image = imageAssetFor(image._imageSource)?.native;
+			} else if (image._imageSource instanceof ImageSource) {
 				if (__ANDROID__) {
 					isNativeSource = true;
 					image = image._imageSource.android;

@@ -117,7 +117,12 @@ where
 
 /// Frame-end flush for WebGL / WebGL2 contexts: presents on screen, flushes offscreen.
 pub(crate) unsafe fn present_webgl(state: *mut std::ffi::c_void) {
-  canvas_c::canvas_native_webgl_present(state as *mut WebGLState);
+  let state = state as *mut WebGLState;
+  if !canvas_c::canvas_native_webgl_present(state)
+    && canvas_webgl::webgl::canvas_native_webgl_get_is_context_lost((*state).get_inner_mut())
+  {
+    crate::frame::report_lost();
+  }
 }
 
 impl web_g_l_rendering_context {

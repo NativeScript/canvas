@@ -1,5 +1,7 @@
 import { File, knownFolders, path as filePath, Utils, Observable, EventData } from '@nativescript/core';
 import { Helpers } from '../helpers';
+import { NAPI_HOST } from '../platform';
+import { loadNativeImage } from '../platform/index';
 
 let ctor;
 // store ref if loading
@@ -281,6 +283,9 @@ export class ImageAsset extends Observable {
 
 	loadFromNativeSync(image: any): boolean {
 		try {
+			if (NAPI_HOST) {
+				return loadNativeImage(this.native, image);
+			}
 			if (__ANDROID__) {
 				const asset = long(this.native.__getRef());
 				return (<any>org).nativescript.canvas.NSCImageAsset.loadImageFromBitmap(asset, image);
@@ -299,6 +304,16 @@ export class ImageAsset extends Observable {
 
 	loadFromNative(image: any): Promise<boolean> {
 		return new Promise((resolve, reject) => {
+			if (NAPI_HOST) {
+				const loaded = loadNativeImage(this.native, image);
+				this.emitComplete(loaded, loaded ? undefined : 'Failed to load image from native source');
+				if (loaded) {
+					resolve(true);
+				} else {
+					reject('Failed to load image from native source');
+				}
+				return;
+			}
 			if (__ANDROID__) {
 				const ref = new WeakRef(this);
 				const asset = long(this.native.__getRef());

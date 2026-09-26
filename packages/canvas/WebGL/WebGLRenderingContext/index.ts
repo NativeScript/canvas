@@ -27,6 +27,7 @@ import {
 	OES_texture_half_float_linear,
 	OES_vertex_array_object,
 	WEBGL_color_buffer_float,
+	EXT_color_buffer_float,
 	WEBGL_compressed_texture_atc,
 	WEBGL_compressed_texture_etc,
 	WEBGL_compressed_texture_etc1,
@@ -41,7 +42,8 @@ import { Canvas } from '../../Canvas';
 import { ImageBitmap } from '../../ImageBitmap';
 
 import { Helpers } from '../../helpers';
-import { POINTER_CONTEXT_HOST } from '../../platform';
+import { NAPI_HOST, POINTER_CONTEXT_HOST } from '../../platform';
+import { imageAssetFor } from '../../platform/index';
 
 enum ContextType {
 	None,
@@ -492,6 +494,8 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 					return new OES_vertex_array_object(ext);
 				case 'WEBGL_color_buffer_float':
 					return new WEBGL_color_buffer_float(ext);
+				case 'EXT_color_buffer_float':
+					return new EXT_color_buffer_float(ext);
 				case 'WEBGL_compressed_texture_atc':
 					return new WEBGL_compressed_texture_atc(ext);
 				case 'WEBGL_compressed_texture_etc':
@@ -847,6 +851,11 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 				//this.native.texImage2D(target, level, internalformat, width, height, pixels);
 			} else if (__APPLE__ && pixels instanceof UIImage) {
 				this.native.texImage2D(target, level, internalformat, width, height, pixels);
+			} else if (pixels instanceof ImageSource && NAPI_HOST) {
+				const asset = imageAssetFor(pixels);
+				if (asset) {
+					this.native.texImage2D(target, level, internalformat, width, height, border, format, type ?? internalformat, asset.native);
+				}
 			} else if (pixels instanceof ImageSource) {
 				if (__ANDROID__) {
 					(<any>org).nativescript.canvas.NSCWebGLRenderingContext.texImage2D(java.lang.Long.valueOf(this._contextPtr), target, level, internalformat, width, height, pixels.android, this.native.__flipY);
@@ -854,6 +863,11 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 			} else if (pixels && typeof pixels.tagName === 'string' && (pixels.tagName === 'IMG' || pixels.tagName === 'IMAGE')) {
 				if (pixels._asset instanceof ImageAsset) {
 					this.native.texImage2D(target, level, internalformat, width, height, border, format, type, pixels._asset.native);
+				} else if (pixels._imageSource instanceof ImageSource && NAPI_HOST) {
+					const asset = imageAssetFor(pixels._imageSource);
+					if (asset) {
+						this.native.texImage2D(target, level, internalformat, width, height, border, format, type, asset.native);
+					}
 				} else if (pixels._imageSource instanceof ImageSource) {
 					if (__ANDROID__) {
 						(<any>org).nativescript.canvas.NSCWebGLRenderingContext.texImage2D(java.lang.Long.valueOf(this._contextPtr), target, level, internalformat, width, height, pixels._imageSource.android, this.native.__flipY);

@@ -11,7 +11,7 @@ use windows::core::{Interface, Result};
 use windows::Win32::Graphics::Direct3D::D3D_FEATURE_LEVEL_11_0;
 use windows::Win32::Graphics::Direct3D12::{
     D3D12CreateDevice, D3D12GetDebugInterface, ID3D12CommandQueue, ID3D12Debug, ID3D12Device,
-    D3D12_COMMAND_LIST_TYPE_DIRECT, D3D12_COMMAND_QUEUE_DESC,
+    ID3D12Device5, D3D12_COMMAND_LIST_TYPE_DIRECT, D3D12_COMMAND_QUEUE_DESC,
 };
 use windows::Win32::Graphics::Dxgi::{
     CreateDXGIFactory2, IDXGIAdapter1, IDXGIFactory4, IDXGIFactory6, DXGI_ADAPTER_FLAG,
@@ -56,13 +56,16 @@ fn env_flag(name: &str) -> bool {
 }
 
 impl D3D12Context {
-    /// The device shared by every canvas on this thread, created on first use. `preference` only
-    /// applies to that first creation -- it is a hint, like the web attribute it mirrors.
+    /// The device shared by every canvas on this thread, created on first use (and again after
+    /// the device is removed). `preference` only applies to a creation -- it is a hint, like the
+    /// web attribute it mirrors.
     pub fn shared(preference: PowerPreference) -> Option<Rc<D3D12Context>> {
         SHARED.with(|shared| {
             let mut shared = shared.borrow_mut();
             if let Some(context) = shared.as_ref() {
-                return Some(context.clone());
+                if !context.is_removed() {
+                    return Some(context.clone());
+                }
             }
             match D3D12Context::new(preference) {
                 Ok(context) => {
@@ -180,6 +183,28 @@ impl D3D12Context {
 
     pub fn is_warp(&self) -> bool {
         self.is_warp
+    }
+
+    /// The device was removed (a driver update or reset, the GPU gone, `simulate_removal`):
+    /// everything made on it is lost and a new device has to be created.
+    pub fn is_removed(&self) -> bool {
+        unsafe { self.device.GetDeviceRemovedReason() }.is_err()
+    }
+
+    /// Removes the device, as a driver reset would (tests). `false` before Windows 10 1809.
+    pub fn simulate_removal(&self) -> bool {
+        match self.device.cast::<ID3D12Device5>() {
+            Ok(device) => {
+                unsafe { device.RemoveDevice() };
+                true
+            }
+            Err(_) => false,
+        }
+    }
+
+    /// `simulate_removal` on this thread's shared device, if there is one.
+    pub fn simulate_shared_removal() -> bool {
+        SHARED.with(|shared| shared.borrow().as_ref().is_some_and(|context| context.simulate_removal()))
     }
 
     pub fn backend_context(&self) -> skia_safe::gpu::d3d::BackendContext {

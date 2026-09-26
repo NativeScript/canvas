@@ -11,6 +11,7 @@ use std::ffi::c_void;
 use std::rc::{Rc, Weak};
 
 use napi::sys;
+use napi::JsValue;
 
 /// Per-context frame state. The owning wrapper holds the `Rc`; dropping it removes the context
 /// from any pending flush.
@@ -55,6 +56,9 @@ impl FrameSlot {
 thread_local! {
   static PENDING: RefCell<Vec<Weak<FrameSlot>>> = const { RefCell::new(Vec::new()) };
   static SCHEDULER: RefCell<Option<Box<dyn Fn()>>> = const { RefCell::new(None) };
+  /// A flush found a context's GPU device lost.
+  static LOST: Cell<bool> = const { Cell::new(false) };
+  static LOST_LISTENER: Cell<sys::napi_ref> = const { Cell::new(std::ptr::null_mut()) };
 }
 
 fn enqueue(slot: &Rc<FrameSlot>) {
@@ -85,6 +89,55 @@ pub fn flush_all() {
   }
 }
 
+/// A context found its GPU device lost while flushing. The listener
+/// (`__setContextLostListener`) hears about it once the flush is done.
+pub fn report_lost() {
+  LOST.with(|lost| lost.set(true));
+}
+
+/// Calls the context-lost listener if the flush reported a loss.
+fn dispatch_lost(env: sys::napi_env) {
+  if !LOST.with(|lost| lost.replace(false)) {
+    return;
+  }
+  let listener = LOST_LISTENER.with(|l| l.get());
+  if listener.is_null() {
+    return;
+  }
+  unsafe {
+    let (mut function, mut global, mut result) = (std::ptr::null_mut(), std::ptr::null_mut(), std::ptr::null_mut());
+    if sys::napi_get_reference_value(env, listener, &mut function) == sys::Status::napi_ok
+      && !function.is_null()
+      && sys::napi_get_global(env, &mut global) == sys::Status::napi_ok
+    {
+      // A throwing listener leaves its exception pending for the caller's JS.
+      sys::napi_call_function(env, global, function, 0, std::ptr::null(), &mut result);
+    }
+  }
+}
+
+/// `CanvasModule.__setContextLostListener(listener | null)`: `listener()` runs after a flush in
+/// which a context found its GPU device lost (driver reset or update, GPU removed); packages/canvas
+/// then asks its canvases which are lost (`NSCCanvas.isContextLost`).
+#[napi_derive::napi(js_name = "__setContextLostListener", ts_args_type = "listener: (() => void) | null")]
+pub fn set_context_lost_listener(env: napi::Env, listener: napi::bindgen_prelude::Unknown) -> napi::Result<()> {
+  let env = env.raw();
+  unsafe {
+    let old = LOST_LISTENER.with(|l| l.replace(std::ptr::null_mut()));
+    if !old.is_null() {
+      sys::napi_delete_reference(env, old);
+    }
+    let mut kind = 0;
+    napi::check_status!(sys::napi_typeof(env, listener.raw(), &mut kind))?;
+    if kind == sys::ValueType::napi_function {
+      let mut reference = std::ptr::null_mut();
+      napi::check_status!(sys::napi_create_reference(env, listener.raw(), 1, &mut reference))?;
+      LOST_LISTENER.with(|l| l.set(reference));
+    }
+  }
+  Ok(())
+}
+
 /// How the host is asked for a frame when a context becomes dirty. Hosts without one leave it
 /// unset and flush explicitly.
 pub fn set_scheduler(request_frame: Option<Box<dyn Fn()>>) {
@@ -93,8 +146,9 @@ pub fn set_scheduler(request_frame: Option<Box<dyn Fn()>>) {
 
 /// `CanvasModule.__flushAll()`: flush every dirty context now (tests, and hosts without frame hooks).
 #[napi_derive::napi(js_name = "__flushAll")]
-pub fn flush_all_js() {
+pub fn flush_all_js(env: napi::Env) {
   flush_all();
+  dispatch_lost(env.raw());
 }
 
 /// The default scheduler: the first context dirtied in a JS turn queues one microtask that
@@ -116,6 +170,7 @@ unsafe extern "C" fn microtask_flush(env: sys::napi_env, _: sys::napi_callback_i
     scheduler.queued.set(false);
   }
   flush_all();
+  dispatch_lost(env);
   let mut undefined = std::ptr::null_mut();
   unsafe { sys::napi_get_undefined(env, &mut undefined) };
   undefined
@@ -144,6 +199,8 @@ impl MicrotaskScheduler {
 unsafe extern "C" fn microtask_teardown(_: *mut c_void) {
   MICROTASK.with(|m| m.borrow_mut().take());
   set_scheduler(None);
+  // The env is going away with its references.
+  LOST_LISTENER.with(|l| l.set(std::ptr::null_mut()));
 }
 
 /// Installs the microtask scheduler for `env`'s thread (no-op without `queueMicrotask`).

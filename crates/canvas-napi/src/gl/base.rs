@@ -589,6 +589,7 @@ macro_rules! impl_webgl_context {
                             .to_js(env)
                     }
                     "EXT_texture_filter_anisotropic" => {
+                        canvas_c::canvas_native_webgl_extension_destroy(ext);
                         EXT_texture_filter_anisotropic
                             .to_js(env)
                     }
@@ -612,7 +613,7 @@ macro_rules! impl_webgl_context {
                         OES_texture_float_linear
                             .to_js(env)
                     }
-                    "OES_texture_half_floatr" => {
+                    "OES_texture_half_float" => {
                         canvas_c::canvas_native_webgl_extension_destroy(ext);
                         OES_texture_half_float
                             .to_js(env)
@@ -630,6 +631,11 @@ macro_rules! impl_webgl_context {
                     "WEBGL_color_buffer_float" => {
                         canvas_c::canvas_native_webgl_extension_destroy(ext);
                         WEBGL_color_buffer_float
+                            .to_js(env)
+                    }
+                    "EXT_color_buffer_float" => {
+                        canvas_c::canvas_native_webgl_extension_destroy(ext);
+                        EXT_color_buffer_float
                             .to_js(env)
                     }
                     "WEBGL_compressed_texture_atc" => {

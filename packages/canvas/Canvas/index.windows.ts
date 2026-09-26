@@ -16,6 +16,43 @@ type PointerEvent = 'Pressed' | 'Moved' | 'Released' | 'Canceled' | 'CaptureLost
 
 const POINTER_EVENTS: PointerEvent[] = ['Pressed', 'Moved', 'Released', 'Canceled', 'CaptureLost', 'WheelChanged'];
 
+/** Web `key` / `code` for a `Windows.System.VirtualKey`. */
+function keyInfo(virtualKey: number): { key: string; code: string } {
+	if (virtualKey >= 0x41 && virtualKey <= 0x5a) {
+		const letter = String.fromCharCode(virtualKey);
+		return { key: letter.toLowerCase(), code: `Key${letter}` };
+	}
+	if (virtualKey >= 0x30 && virtualKey <= 0x39) {
+		const digit = String.fromCharCode(virtualKey);
+		return { key: digit, code: `Digit${digit}` };
+	}
+	if (virtualKey >= 0x70 && virtualKey <= 0x87) {
+		const name = `F${virtualKey - 0x6f}`;
+		return { key: name, code: name };
+	}
+	const named: Record<number, [string, string]> = {
+		0x08: ['Backspace', 'Backspace'],
+		0x09: ['Tab', 'Tab'],
+		0x0d: ['Enter', 'Enter'],
+		0x10: ['Shift', 'ShiftLeft'],
+		0x11: ['Control', 'ControlLeft'],
+		0x12: ['Alt', 'AltLeft'],
+		0x1b: ['Escape', 'Escape'],
+		0x20: [' ', 'Space'],
+		0x21: ['PageUp', 'PageUp'],
+		0x22: ['PageDown', 'PageDown'],
+		0x23: ['End', 'End'],
+		0x24: ['Home', 'Home'],
+		0x25: ['ArrowLeft', 'ArrowLeft'],
+		0x26: ['ArrowUp', 'ArrowUp'],
+		0x27: ['ArrowRight', 'ArrowRight'],
+		0x28: ['ArrowDown', 'ArrowDown'],
+		0x2e: ['Delete', 'Delete'],
+	};
+	const [key, code] = named[virtualKey] ?? ['Unidentified', 'Unidentified'];
+	return { key, code };
+}
+
 /** Web `deltaY` pixels per wheel notch (`WHEEL_DELTA`, 120), as Chromium reports on Windows. */
 const WHEEL_PIXELS_PER_NOTCH = 100;
 
@@ -28,6 +65,7 @@ export class Canvas extends NapiCanvas {
 	private _pointerDelegates: Map<PointerEvent, any> | null = null;
 	private _scaleDelegate: any;
 	private _sizeDelegate: any;
+	private _keyDelegates: any[] = [];
 
 	constructor(nativeInstance?: any) {
 		super();
@@ -61,6 +99,17 @@ export class Canvas extends NapiCanvas {
 		this._scaleDelegate = NSWinRT.asDelegate('Windows.Foundation.TypedEventHandler`2<Microsoft.UI.Xaml.Controls.SwapChainPanel,Object>', () => ref.deref()?._syncCompositionScale());
 		panel.CompositionScaleChanged = this._scaleDelegate;
 		this._syncCompositionScale();
+		// Keyboard: the panel takes focus when pressed and forwards keys like the other hosts do.
+		panel.IsTabStop = true;
+		for (const [name, phase] of [
+			['KeyDown', 'down'],
+			['KeyUp', 'up'],
+		] as const) {
+			const delegate = NSWinRT.asDelegate('Microsoft.UI.Xaml.Input.KeyEventHandler', (_sender: any, args: any) => ref.deref()?._onKey(phase, args));
+			this._keyDelegates.push(delegate);
+			panel[name] = delegate;
+		}
+
 		// XAML lays the panel out (NativeScript's measure/layout pass does not run for it).
 		this._sizeDelegate = NSWinRT.asDelegate('Microsoft.UI.Xaml.SizeChangedEventHandler', () => ref.deref()?._syncViewSize());
 		panel.SizeChanged = this._sizeDelegate;
@@ -81,11 +130,14 @@ export class Canvas extends NapiCanvas {
 			try {
 				panel.CompositionScaleChanged = null;
 				panel.SizeChanged = null;
+				panel.KeyDown = null;
+				panel.KeyUp = null;
 				this._pointerDelegates?.forEach((_, name) => (panel[`Pointer${name}`] = null));
 			} catch (e) {}
 		}
 		this._scaleDelegate = undefined;
 		this._sizeDelegate = undefined;
+		this._keyDelegates = [];
 		this._pointerDelegates = null;
 		this._down.clear();
 		this._panel = undefined;
@@ -132,6 +184,14 @@ export class Canvas extends NapiCanvas {
 		}
 	}
 
+	private _onKey(phase: 'down' | 'up', args: any) {
+		if (this._ignoreTouchEvents) {
+			return;
+		}
+		const { key, code } = keyInfo(args.Key);
+		this._handleEvents({ event: 'key', phase, key, code, repeat: phase === 'down' && !!args.KeyStatus?.WasKeyDown });
+	}
+
 	private _onPointer(name: PointerEvent, args: any) {
 		const panel = this._panel;
 		if (!panel || this._ignoreTouchEvents) {
@@ -146,6 +206,9 @@ export class Canvas extends NapiCanvas {
 			case 'Pressed':
 				this._down.add(ptrId);
 				panel.CapturePointer(pointer);
+				try {
+					panel.Focus(Microsoft.UI.Xaml.FocusState.Pointer);
+				} catch (e) {}
 				this._handleEvents({ event: 'down', ptrId, x, y, isPrimary });
 				break;
 			case 'Moved':

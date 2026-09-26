@@ -461,10 +461,8 @@ impl Context {
 
         let snapshot = self.surface.image_snapshot();
 
-        let ret = if self.surface_data.engine == SurfaceEngine::GL
-            || self.surface_data.engine == SurfaceEngine::Vulkan
-            || self.surface_data.engine == SurfaceEngine::Metal
-        {
+        // A GPU snapshot is only readable through its context: copy it to the CPU.
+        let ret = if self.surface_data.engine != SurfaceEngine::CPU {
             snapshot.make_raster_image(self.direct_context.as_mut(), CachingHint::Allow)
         } else {
             Some(snapshot)
@@ -482,10 +480,8 @@ impl Context {
         }
 
         let snapshot = self.surface.image_snapshot();
-        if self.surface_data.engine == SurfaceEngine::GL
-            || self.surface_data.engine == SurfaceEngine::Vulkan
-            || self.surface_data.engine == SurfaceEngine::Metal
-        {
+        // A GPU snapshot is only readable through its context: copy it to the CPU.
+        if self.surface_data.engine != SurfaceEngine::CPU {
             snapshot.make_raster_image(self.direct_context.as_mut(), Some(CachingHint::Allow))
         } else {
             Some(snapshot)

@@ -1231,12 +1231,7 @@ pub extern "C" fn canvas_native_webgl2_tex_image3d_webgl(
 
 
 
-    let (width, height, bytes) = canvas_webgl::webgl::canvas_native_webgl_read_webgl_pixels(
-        &mut webgl.0,
-        &mut state.0,
-        internalformat,
-        format as i32,
-    );
+    let (width, height, bytes) = canvas_webgl::webgl::canvas_native_webgl_read_webgl_pixels(&mut webgl.0, &mut state.0);
 
     // todo handle pre-multipied
     // let premultiply = state.get_inner().get_premultiplied_alpha();
@@ -1545,12 +1540,7 @@ pub extern "C" fn canvas_native_webgl2_tex_sub_image3d_webgl(
     let state = unsafe { &mut *state };
     let webgl = unsafe { &mut *webgl };
 
-    let (width, height, bytes) = canvas_webgl::webgl::canvas_native_webgl_read_webgl_pixels(
-        &mut webgl.0,
-        &mut state.0,
-        gl_bindings::RGBA as _,
-        gl_bindings::RGBA as _,
-    );
+    let (width, height, bytes) = canvas_webgl::webgl::canvas_native_webgl_read_webgl_pixels(&mut webgl.0, &mut state.0);
 
 
     // canvas.make_current();
@@ -2080,12 +2070,7 @@ pub extern "C" fn canvas_native_webgl2_tex_image2d_webgl(
 
     let state = unsafe { &mut *state };
     let webgl = unsafe { &mut *webgl };
-    let mut pixels = canvas_webgl::webgl::canvas_native_webgl_read_webgl_pixels(
-        &mut webgl.0,
-        &mut state.0,
-        internalformat,
-        format,
-    );
+    let mut pixels = canvas_webgl::webgl::canvas_native_webgl_read_webgl_pixels(&mut webgl.0, &mut state.0);
 
 
     state.0.make_current();

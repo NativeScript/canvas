@@ -4,6 +4,8 @@ import { Canvas } from '../Canvas';
 import { ImageSource } from '@nativescript/core';
 
 import { Helpers } from '../helpers';
+import { NAPI_HOST } from '../platform';
+import { imageAssetFor } from '../platform/index';
 
 function parseOptions(options) {
 	if (__ANDROID__) {
@@ -101,6 +103,9 @@ function resolveSource(source: any): any {
 		}
 		if (__APPLE__) {
 			return source.ios; // todo
+		}
+		if (NAPI_HOST) {
+			return imageAssetFor(source)?.native;
 		}
 	}
 	return undefined;

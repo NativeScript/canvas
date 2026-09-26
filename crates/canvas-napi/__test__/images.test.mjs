@@ -421,3 +421,28 @@ test('async churn: many decodes in flight, buffers kept alive until done', async
 	}
 	globalThis.gc?.();
 });
+
+test('ImageAsset: saveSync / saveCb write PNG and JPG that load back', async () => {
+	const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'canvas-save-'));
+	const asset = new ImageAsset();
+	assert.equal(asset.fromBytesSync(2, 1, new Uint8Array([255, 0, 0, 255, 0, 0, 255, 255])), true);
+
+	const png = path.join(dir, 'a.png');
+	assert.equal(asset.saveSync(png, 1), true);
+	assert.deepEqual([...fs.readFileSync(png).subarray(1, 4)].map((c) => String.fromCharCode(c)).join(''), 'PNG');
+	const loaded = new ImageAsset();
+	assert.equal(loaded.fromFileSync(png), true);
+	assert.deepEqual([loaded.width, loaded.height], [2, 1]);
+
+	const jpg = path.join(dir, 'a.jpg');
+	const [success, error] = await new Promise((resolve) => asset.saveCb(jpg, 0, (...args) => resolve(args)));
+	assert.equal(success, true, error);
+	assert.deepEqual([...fs.readFileSync(jpg).subarray(0, 2)], [0xff, 0xd8]);
+
+	// No encoder for TIFF; nothing to save in an empty asset.
+	assert.equal(asset.saveSync(path.join(dir, 'a.tiff'), 4), false);
+	const [emptySuccess, emptyError] = await new Promise((resolve) => new ImageAsset().saveCb(path.join(dir, 'b.png'), 1, (...args) => resolve(args)));
+	assert.equal(emptySuccess, false);
+	assert.match(emptyError, /No image/);
+	fs.rmSync(dir, { recursive: true, force: true });
+});

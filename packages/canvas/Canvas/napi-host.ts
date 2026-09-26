@@ -86,6 +86,27 @@ export function fitForStyle(styleWidth: any, styleHeight: any, surfaceDips: { wi
 	return CanvasFit.Fill;
 }
 
+/** Live canvases, asked which are lost when the native module reports a GPU device loss. */
+const liveCanvases = new Set<WeakRef<NapiCanvas>>();
+let contextLostListener = false;
+
+function listenForContextLoss() {
+	if (contextLostListener) {
+		return;
+	}
+	contextLostListener = true;
+	global.CanvasModule?.__setContextLostListener?.(() => {
+		for (const ref of liveCanvases) {
+			const canvas = ref.deref();
+			if (canvas) {
+				canvas._checkContextLost();
+			} else {
+				liveCanvases.delete(ref);
+			}
+		}
+	});
+}
+
 export abstract class NapiCanvas extends CanvasBase {
 	private _2dContext: CanvasRenderingContext2D | null = null;
 	private _webglContext: WebGLRenderingContext | null = null;
@@ -107,6 +128,8 @@ export abstract class NapiCanvas extends CanvasBase {
 
 	/** `CanvasModule.NSCCanvas`. */
 	protected _canvas: any;
+	private _liveRef: WeakRef<NapiCanvas> | undefined;
+	private _contextLost = false;
 
 	static useSurface = false;
 	static forceGL = false;
@@ -128,6 +151,56 @@ export abstract class NapiCanvas extends CanvasBase {
 	/** Called by the platform once its native view exists: `host` is its `CanvasModule.NSCCanvas`. */
 	protected _attachHost(host: any) {
 		this._canvas = host;
+		this._liveRef ??= new WeakRef(this);
+		liveCanvases.add(this._liveRef);
+		listenForContextLoss();
+	}
+
+	/**
+	 * The native module reported a GPU device loss (driver reset or update, GPU removed): if it
+	 * took this canvas's context, fire `contextlost` / `webglcontextlost`. A 2D context comes back
+	 * cleared (`contextrestored`) unless a listener called preventDefault(), as in browsers; a
+	 * WebGL context stays lost (`isContextLost()`).
+	 * @internal
+	 */
+	_checkContextLost() {
+		if (this._contextLost || !this._canvas?.isContextLost?.()) {
+			return;
+		}
+		this._contextLost = true;
+		const webgl = this._contextType === ContextType.WebGL || this._contextType === ContextType.WebGL2;
+		const type = webgl ? 'webglcontextlost' : 'contextlost';
+		let defaultPrevented = false;
+		this.notify({
+			eventName: type,
+			type,
+			object: this,
+			get defaultPrevented() {
+				return defaultPrevented;
+			},
+			preventDefault() {
+				defaultPrevented = true;
+			},
+		} as any);
+		if (webgl || defaultPrevented) {
+			return;
+		}
+		// A device can only be recreated once the driver is back (a reset takes a few seconds).
+		const delays = [0, 100, 250, 500, 1000, 2000, 4000, 8000];
+		const attempt = (index: number) => {
+			if (!this._canvas || !this._contextLost) {
+				return;
+			}
+			if (this._canvas.restoreContext?.()) {
+				this._contextLost = false;
+				this.notify({ eventName: 'contextrestored', type: 'contextrestored', object: this } as any);
+			} else if (index + 1 < delays.length) {
+				setTimeout(() => attempt(index + 1), delays[index + 1]);
+			} else {
+				console.warn('Canvas: the 2D context could not be restored after a GPU device loss');
+			}
+		};
+		setTimeout(() => attempt(0), 0);
 	}
 
 	get lang() {
@@ -399,6 +472,10 @@ export abstract class NapiCanvas extends CanvasBase {
 		this._bitmapRendererContext = undefined;
 		this._contextType = ContextType.None;
 		this._isReady = false;
+		this._contextLost = false;
+		if (this._liveRef) {
+			liveCanvases.delete(this._liveRef);
+		}
 		this._canvas = undefined;
 		super.disposeNativeView();
 	}
@@ -520,8 +597,13 @@ export abstract class NapiCanvas extends CanvasBase {
 	}
 
 	snapshot(flip: boolean = false): ImageSource | null {
-		// todo: ImageSource from the platform's native image type.
-		return null;
+		// The drawing buffer as a PNG ImageSource (`flip` is for the iOS GL readback only).
+		const url = this.toDataURL('image/png');
+		const comma = typeof url === 'string' ? url.indexOf(',') : -1;
+		if (comma < 0 || comma === url.length - 1) {
+			return null;
+		}
+		return ImageSource.fromBase64Sync(url.substring(comma + 1));
 	}
 
 	/** A native view's rectangle in window DIPs, null when it is not laid out. */

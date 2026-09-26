@@ -58,6 +58,10 @@ impl ObjectFinalize for CanvasRenderingContext2D {
 
 unsafe fn render_2d(context: *mut c_void) {
   canvas_c::canvas_native_context_render(context as *mut CCanvasRenderingContext2D);
+  #[cfg(target_os = "windows")]
+  if canvas_c::canvas_native_context_is_lost(context as *const CCanvasRenderingContext2D) {
+    crate::frame::report_lost();
+  }
 }
 
 impl CanvasRenderingContext2D {

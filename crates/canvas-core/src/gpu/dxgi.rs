@@ -119,6 +119,30 @@ impl Drop for PanelSurfaceTarget {
     }
 }
 
+/// A stand-in `SwapChainPanel` for tests without a XAML window: it accepts (and holds) the
+/// swapchain it is given, so the on-screen paths (binding, presenting, resizing, restoring) run
+/// headless. Nothing is shown.
+#[windows_core::implement(ISwapChainPanelNative)]
+struct HeadlessPanel {
+    swap_chain: parking_lot::Mutex<Option<windows::core::IUnknown>>,
+}
+
+impl ISwapChainPanelNative_Impl for HeadlessPanel_Impl {
+    unsafe fn SetSwapChain(&self, swap_chain: *mut c_void) -> HRESULT {
+        *self.swap_chain.lock() = unsafe { windows::core::IUnknown::from_raw_borrowed(&swap_chain) }.cloned();
+        HRESULT(0)
+    }
+}
+
+/// A new `HeadlessPanel`, as a COM pointer the caller owns one reference to.
+pub fn headless_panel() -> windows::core::IUnknown {
+    let panel: ISwapChainPanelNative = HeadlessPanel {
+        swap_chain: parking_lot::Mutex::new(None),
+    }
+    .into();
+    panel.into()
+}
+
 pub struct CompositionSwapChain {
     swap_chain: IDXGISwapChain3,
     waitable: HANDLE,

@@ -1,13 +1,16 @@
 import { BasePlatform, Chart, ChartEvent } from 'chart.js';
 import { Screen } from '@nativescript/core';
 
-import '@formatjs/intl-getcanonicallocales/polyfill';
-import '@formatjs/intl-locale/polyfill';
-import '@formatjs/intl-pluralrules/polyfill';
-import '@formatjs/intl-numberformat/polyfill';
-
-import '@formatjs/intl-pluralrules/locale-data/en';
-import '@formatjs/intl-numberformat/locale-data/en';
+// Intl polyfills for engines without (full) Intl. Their feature probes can throw where Intl has
+// no locale data (e.g. V8 without ICU data rejects 'und-x-private'); a failed probe must not keep
+// the plugin from loading.
+for (const load of [() => require('@formatjs/intl-getcanonicallocales/polyfill'), () => require('@formatjs/intl-locale/polyfill'), () => require('@formatjs/intl-pluralrules/polyfill'), () => require('@formatjs/intl-numberformat/polyfill'), () => require('@formatjs/intl-pluralrules/locale-data/en'), () => require('@formatjs/intl-numberformat/locale-data/en')]) {
+	try {
+		load();
+	} catch (e) {
+		console.warn('@nativescript/canvas-chartjs: an Intl polyfill failed to load:', e?.message ?? e);
+	}
+}
 
 import { registerables } from 'chart.js';
 Chart.register(...registerables);

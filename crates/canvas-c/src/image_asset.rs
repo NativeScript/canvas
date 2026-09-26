@@ -244,6 +244,22 @@ pub extern "C" fn canvas_native_image_asset_load_from_path(
     asset.load_from_path(path.as_ref())
 }
 
+/// Encodes the image to `path`; `format` 0 JPG, 1 PNG (`ImageAssetSaveFormat`).
+#[cfg(feature = "2d")]
+#[no_mangle]
+pub extern "C" fn canvas_native_image_asset_save_path(
+    asset: *const ImageAsset,
+    path: *const c_char,
+    format: u32,
+) -> bool {
+    if asset.is_null() || path.is_null() {
+        return false;
+    }
+    let asset = unsafe { &*asset };
+    let path = unsafe { CStr::from_ptr(path) }.to_string_lossy();
+    asset.0.save_to_path(path.as_ref(), format)
+}
+
 #[no_mangle]
 pub extern "C" fn canvas_native_image_asset_load_from_raw(
     asset: *const ImageAsset,

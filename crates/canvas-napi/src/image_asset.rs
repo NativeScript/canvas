@@ -2,7 +2,7 @@ use canvas_c::{
   canvas_native_image_asset_load_from_path, canvas_native_image_asset_load_from_url,
   ImageAsset as CImageAsset,
 };
-use napi::bindgen_prelude::{AsyncTask, Function};
+use napi::bindgen_prelude::{AsyncTask, FnArgs, Function};
 use napi::threadsafe_function::{ThreadsafeFunctionCallMode, UnknownReturnValue};
 use napi::{Env, Error, JsString, Result, Task};
 use napi_derive::napi;
@@ -64,6 +64,14 @@ fn load_raw(
 
 /// The V8 bindings call load callbacks with one argument: `done`.
 type DoneCallback<'a> = Function<'a, bool, UnknownReturnValue>;
+type SaveCallback<'a> = Function<'a, FnArgs<(bool, Option<String>)>, UnknownReturnValue>;
+
+fn save(asset: &CImageAsset, path: &str, format: u32) -> bool {
+  match CString::new(path) {
+    Ok(path) => canvas_c::canvas_native_image_asset_save_path(asset, path.as_ptr(), format),
+    Err(_) => false,
+  }
+}
 
 /// Runs `load` on the worker pool, then `callback(done)` on the JS thread.
 fn load_cb(callback: DoneCallback, load: impl FnOnce() -> bool + Send + 'static) -> Result<()> {
@@ -229,6 +237,30 @@ impl ImageAsset {
   #[napi(js_name = "__getRef")]
   pub fn get_ref(&self) -> String {
     self.addr()
+  }
+
+  /// Encodes the image to `path`; `format` is `ImageAssetSaveFormat` (0 JPG, 1 PNG).
+  #[napi]
+  pub fn save_sync(&self, path: String, format: u32) -> bool {
+    save(&self.asset, &path, format)
+  }
+
+  /// `saveCb(path, format, callback(success, error))`, encoded and written off the JS thread;
+  /// `error` is the asset's error message when it failed.
+  #[napi(
+    ts_args_type = "path: string, format: number, callback: (success: boolean, error?: string) => void"
+  )]
+  pub fn save_cb(&self, path: String, format: u32, callback: SaveCallback) -> Result<()> {
+    let asset = Arc::clone(&self.asset);
+    let tsfn = callback
+      .build_threadsafe_function::<(bool, Option<String>)>()
+      .build_callback(|ctx| Ok(FnArgs::from(ctx.value)))?;
+    spawn(move || {
+      let done = save(&asset, &path, format);
+      let error = (!done).then(|| asset.error().to_string());
+      tsfn.call((done, error), ThreadsafeFunctionCallMode::NonBlocking);
+    });
+    Ok(())
   }
 
   #[napi]

@@ -37,6 +37,10 @@ const EGL_D3D11_DEVICE_ANGLE: egl::Int = 0x33A1;
 const EGL_D3D_TEXTURE_ANGLE: egl::Enum = 0x33A3;
 const EGL_CONTEXT_WEBGL_COMPATIBILITY_ANGLE: egl::Int = 0x33AC;
 const EGL_ROBUST_RESOURCE_INITIALIZATION_ANGLE: egl::Int = 0x3453;
+// EGL_EXT_create_context_robustness: a device loss (driver reset, TDR) is reported to the
+// context (glGetGraphicsResetStatusEXT) instead of going unnoticed.
+const EGL_CONTEXT_OPENGL_RESET_NOTIFICATION_STRATEGY_EXT: egl::Int = 0x3138;
+const EGL_LOSE_CONTEXT_ON_RESET_EXT: egl::Int = 0x31BF;
 
 type QueryDisplayAttribExt =
     unsafe extern "system" fn(egl::EGLDisplay, egl::Int, *mut egl::Attrib) -> egl::Boolean;
@@ -322,6 +326,9 @@ pub(crate) struct GLContextInner {
     #[cfg(target_os = "windows")]
     presenter: Option<Presenter>,
     dimensions: Arc<RwLock<Dimensions>>,
+    /// Set once the context reports a reset: a lost context stays lost.
+    #[cfg(target_os = "windows")]
+    lost: std::sync::atomic::AtomicBool,
 }
 
 #[cfg(target_os = "windows")]
@@ -450,6 +457,12 @@ fn create_context(egl: &Egl, config: egl::Config, attrs: &ContextAttributes) -> 
         if egl.has_extension("EGL_ANGLE_robust_resource_initialization") {
             context_attribs.extend([EGL_ROBUST_RESOURCE_INITIALIZATION_ANGLE, egl::TRUE as i32]);
         }
+        if egl.has_extension("EGL_EXT_create_context_robustness") {
+            context_attribs.extend([
+                EGL_CONTEXT_OPENGL_RESET_NOTIFICATION_STRATEGY_EXT,
+                EGL_LOSE_CONTEXT_ON_RESET_EXT,
+            ]);
+        }
     }
     context_attribs.push(egl::NONE);
     match egl.instance.create_context(egl.display, config, None, &context_attribs) {
@@ -515,6 +528,8 @@ impl GLContext {
                 width: width.max(1),
                 height: height.max(1),
             })),
+            #[cfg(target_os = "windows")]
+            lost: Default::default(),
         }))
     }
 
@@ -656,11 +671,37 @@ impl GLContext {
             .is_ok()
     }
 
+    /// The context was lost with its device (a driver reset or update, the GPU gone). It stays
+    /// lost; WebGL reports it through `isContextLost()` / `webglcontextlost`.
+    #[cfg(target_os = "windows")]
+    pub fn is_lost(&self) -> bool {
+        use std::sync::atomic::Ordering;
+        if self.0.lost.load(Ordering::Relaxed) {
+            return true;
+        }
+        type GetGraphicsResetStatus = unsafe extern "system" fn() -> u32;
+        static RESET_STATUS: OnceLock<Option<GetGraphicsResetStatus>> = OnceLock::new();
+        let reset_status = RESET_STATUS.get_or_init(|| {
+            let proc = get_proc_address("glGetGraphicsResetStatusEXT");
+            (!proc.is_null()).then(|| unsafe { std::mem::transmute::<_, GetGraphicsResetStatus>(proc) })
+        });
+        let lost = if self.make_current() {
+            reset_status.is_some_and(|status| unsafe { status() } != gl_bindings::NO_ERROR)
+        } else {
+            // EGL_CONTEXT_LOST
+            shared().is_some_and(|egl| egl.instance.get_error() == Some(egl::Error::ContextLost))
+        };
+        if lost {
+            self.0.lost.store(true, Ordering::Relaxed);
+        }
+        lost
+    }
+
     /// Finishes the frame and, on screen, copies it into the swapchain and presents it. A copy
     /// leaves ANGLE's cached D3D11 pipeline state untouched, unlike a draw would.
     #[cfg(target_os = "windows")]
     pub fn present(&self) -> bool {
-        if !self.make_current() {
+        if self.0.lost.load(std::sync::atomic::Ordering::Relaxed) || !self.make_current() {
             return false;
         }
         unsafe { gl_bindings::Flush() };

@@ -3275,9 +3275,12 @@ pub extern "C" fn canvas_native_webgl_get_vertex_attrib(
 }
 
 #[no_mangle]
-pub extern "C" fn canvas_native_webgl_get_is_context_lost(_: *mut WebGLState) -> bool {
-    // TODO improve
-    false
+pub extern "C" fn canvas_native_webgl_get_is_context_lost(state: *mut WebGLState) -> bool {
+    if state.is_null() {
+        return false;
+    }
+    let state = unsafe { &mut *state };
+    canvas_webgl::webgl::canvas_native_webgl_get_is_context_lost(state.get_inner_mut())
 }
 
 #[no_mangle]
@@ -3665,12 +3668,7 @@ pub extern "C" fn canvas_native_webgl_tex_image2d_webgl(
     assert!(!webgl.is_null());
     let state = unsafe { &mut *state };
     let webgl = unsafe { &mut *webgl };
-    let mut pixels = canvas_webgl::webgl::canvas_native_webgl_read_webgl_pixels(
-        &mut webgl.0,
-        &mut state.0,
-        internalformat,
-        format,
-    );
+    let mut pixels = canvas_webgl::webgl::canvas_native_webgl_read_webgl_pixels(&mut webgl.0, &mut state.0);
     canvas_webgl::webgl::canvas_native_webgl_tex_image2d(
         target,
         level,
@@ -3883,12 +3881,7 @@ pub extern "C" fn canvas_native_webgl_tex_sub_image2d_webgl(
     let width = source.drawing_buffer_width();
     let height = source.drawing_buffer_height();
 
-    let mut pixels = canvas_webgl::webgl::canvas_native_webgl_read_webgl_pixels(
-        &mut webgl.0,
-        &mut state.0,
-        image_type,
-        format as i32,
-    );
+    let mut pixels = canvas_webgl::webgl::canvas_native_webgl_read_webgl_pixels(&mut webgl.0, &mut state.0);
 
     canvas_webgl::webgl::canvas_native_webgl_tex_sub_image2d(
         target,

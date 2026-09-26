@@ -464,6 +464,39 @@ pub extern "C" fn canvas_native_context_set_swap_chain_transform(
         .set_swap_chain_transform(scale_x, scale_y, offset_x, offset_y)
 }
 
+/// The context's Direct3D 12 device was removed; it draws nothing until restored.
+#[cfg(all(feature = "d3d", target_os = "windows"))]
+#[no_mangle]
+pub extern "C" fn canvas_native_context_is_lost(context: *const CanvasRenderingContext2D) -> bool {
+    if context.is_null() {
+        return false;
+    }
+    let context = unsafe { &*context };
+    context.context.d3d_lost()
+}
+
+/// Moves a lost context to a new device, cleared and in its default state, shown in `panel`
+/// again (null offscreen). UI thread.
+#[cfg(all(feature = "d3d", target_os = "windows"))]
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_context_restore_d3d(
+    context: *mut CanvasRenderingContext2D,
+    panel: *mut c_void,
+) -> bool {
+    if context.is_null() {
+        return false;
+    }
+    let context = unsafe { &mut *context };
+    unsafe { context.context.restore_d3d(panel) }
+}
+
+/// Removes this thread's shared Direct3D 12 device, as a driver reset would (tests).
+#[cfg(all(feature = "d3d", target_os = "windows"))]
+#[no_mangle]
+pub extern "C" fn canvas_native_d3d_simulate_device_removal() -> bool {
+    canvas_core::gpu::d3d::D3D12Context::simulate_shared_removal()
+}
+
 #[no_mangle]
 pub extern "C" fn canvas_native_context_create(
     width: f32,

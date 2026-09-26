@@ -17,6 +17,27 @@ use napi::{Env, Error, Result};
 use napi_derive::napi;
 use windows_core::{IUnknown, Interface};
 
+/// `CanvasModule.__simulateD3DDeviceRemoval()`: removes the thread's Direct3D 12 device (2D
+/// canvases), as a driver reset would, to exercise context loss. `false` where unsupported.
+#[napi(js_name = "__simulateD3DDeviceRemoval")]
+pub fn simulate_d3d_device_removal() -> bool {
+  canvas_c::canvas_native_d3d_simulate_device_removal()
+}
+
+thread_local! {
+  static HEADLESS_PANELS: std::cell::RefCell<Vec<IUnknown>> = const { std::cell::RefCell::new(Vec::new()) };
+}
+
+/// `CanvasModule.__createHeadlessPanel()`: the pointer key of a stand-in SwapChainPanel (tests):
+/// `new NSCCanvas(key)` then takes the on-screen paths, headless. Kept alive for the thread.
+#[napi(js_name = "__createHeadlessPanel")]
+pub fn create_headless_panel() -> String {
+  let panel = canvas_core::gpu::dxgi::headless_panel();
+  let key = format!("0x{:x}", panel.as_raw() as usize);
+  HEADLESS_PANELS.with(|panels| panels.borrow_mut().push(panel));
+  key
+}
+
 /// Parses `NSWinRT.interop.pointerKey(...)` output (`"0x…"`) or a decimal address.
 fn parse_pointer_key(key: &str) -> Option<usize> {
   let key = key.trim();
@@ -361,6 +382,36 @@ impl NSCCanvas {
     self.context = Context::WebGPU(context);
     self.apply_transform();
     Ok(())
+  }
+
+  /// The context's GPU device was lost (driver reset or update, GPU removed). A 2D context can
+  /// be `restoreContext()`d; a WebGL one stays lost; WebGPU reports it through `device.lost`.
+  #[napi]
+  pub fn is_context_lost(&self) -> bool {
+    match self.context {
+      Context::TwoD(context) => canvas_c::canvas_native_context_is_lost(context),
+      Context::WebGL(state) => {
+        canvas_webgl::webgl::canvas_native_webgl_get_is_context_lost(unsafe { &mut *state }.get_inner_mut())
+      }
+      Context::None | Context::WebGPU(_) => false,
+    }
+  }
+
+  /// Moves a lost 2D context to a new device: cleared, in its default state, shown in the panel
+  /// again (the web's `contextrestored`). `false` if it cannot be restored.
+  #[napi]
+  pub fn restore_context(&self) -> bool {
+    let Context::TwoD(context) = self.context else {
+      return false;
+    };
+    if !canvas_c::canvas_native_context_is_lost(context) {
+      return true;
+    }
+    let restored = unsafe { canvas_c::canvas_native_context_restore_d3d(context, self.panel_ptr()) };
+    if restored {
+      self.apply_transform();
+    }
+    restored
   }
 
   /// Renders pending drawing and presents it now.

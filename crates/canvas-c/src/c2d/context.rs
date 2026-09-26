@@ -34,6 +34,7 @@ pub enum Engine {
     GL,
     Vulkan,
     Metal,
+    D3D,
 }
 
 #[allow(dead_code)]
@@ -158,6 +159,14 @@ pub fn resize(context: &mut CanvasRenderingContext2D, width: f32, height: f32) {
         }
     }
 
+    #[cfg(all(feature = "d3d", target_os = "windows"))]
+    {
+        if context.engine == Engine::D3D {
+            Context::resize_d3d(&mut context.context, width, height);
+            return;
+        }
+    }
+
     let alpha = context.alpha;
     let context = &mut context.context;
     let density = context.surface_data().scale();
@@ -224,6 +233,13 @@ impl CanvasRenderingContext2D {
         #[cfg(feature = "vulkan")]
         if self.engine == Engine::Vulkan {
             flush = false;
+        }
+
+        // D3D flushes as part of presenting.
+        #[cfg(all(feature = "d3d", target_os = "windows"))]
+        if self.engine == Engine::D3D {
+            self.context.present_d3d();
+            return;
         }
 
         {
@@ -380,6 +396,72 @@ pub extern "C" fn canvas_native_context_resize(
 ) {
     let context = unsafe { &mut *context };
     context.resize(width, height);
+}
+
+/// A 2D context on the shared Direct3D 12 device (Windows). Offscreen until
+/// `canvas_native_context_attach_swap_chain_panel`. Null when there is no usable device.
+#[cfg(all(feature = "d3d", target_os = "windows"))]
+#[no_mangle]
+pub extern "C" fn canvas_native_context_create_d3d(
+    width: f32,
+    height: f32,
+    density: f32,
+    alpha: bool,
+    font_color: i32,
+    ppi: f32,
+    direction: u32,
+    color_space: CanvasColorSpace,
+) -> *mut CanvasRenderingContext2D {
+    match Context::new_d3d(
+        width,
+        height,
+        density,
+        alpha,
+        font_color,
+        ppi,
+        TextDirection::from(direction),
+        color_space.into(),
+    ) {
+        Some(context) => Box::into_raw(Box::new(CanvasRenderingContext2D {
+            context,
+            alpha,
+            engine: Engine::D3D,
+        })),
+        None => std::ptr::null_mut(),
+    }
+}
+
+/// Presents a D3D context in a WinUI `SwapChainPanel` (`panel`: any COM pointer to it). UI thread.
+#[cfg(all(feature = "d3d", target_os = "windows"))]
+#[no_mangle]
+pub extern "C" fn canvas_native_context_attach_swap_chain_panel(
+    context: *mut CanvasRenderingContext2D,
+    panel: *mut c_void,
+) -> bool {
+    if context.is_null() || panel.is_null() {
+        return false;
+    }
+    let context = unsafe { &mut *context };
+    context.engine == Engine::D3D && unsafe { context.context.attach_swap_chain_panel(panel) }
+}
+
+/// Maps the context's swapchain into its panel: DIPs = pixels * scale + offset.
+#[cfg(all(feature = "d3d", target_os = "windows"))]
+#[no_mangle]
+pub extern "C" fn canvas_native_context_set_swap_chain_transform(
+    context: *mut CanvasRenderingContext2D,
+    scale_x: f32,
+    scale_y: f32,
+    offset_x: f32,
+    offset_y: f32,
+) -> bool {
+    if context.is_null() {
+        return false;
+    }
+    let context = unsafe { &*context };
+    context
+        .context
+        .set_swap_chain_transform(scale_x, scale_y, offset_x, offset_y)
 }
 
 #[no_mangle]

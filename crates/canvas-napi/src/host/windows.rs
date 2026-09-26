@@ -1,0 +1,198 @@
+//! `CanvasModule.NSCCanvas` on Windows: the native side of a canvas view, backed by a WinUI 3
+//! `SwapChainPanel` the TS view creates.
+//!
+//! Like the iOS view object of the same name, it owns the rendering context and hands its pointer
+//! to `packages/canvas` (`create2DContext` → `create2DContextWithPointer`). Sizes are physical
+//! pixels; `setCompositionScale` maps them back to the panel's DIPs.
+
+use std::ffi::c_void;
+
+use canvas_c::CanvasRenderingContext2D as CCanvasRenderingContext2D;
+use napi::bindgen_prelude::ObjectFinalize;
+use napi::{Env, Error, Result};
+use napi_derive::napi;
+use windows_core::{IUnknown, Interface};
+
+/// Parses `NSWinRT.interop.pointerKey(...)` output (`"0x…"`) or a decimal address.
+fn parse_pointer_key(key: &str) -> Option<usize> {
+  let key = key.trim();
+  match key.strip_prefix("0x").or_else(|| key.strip_prefix("0X")) {
+    Some(hex) => usize::from_str_radix(hex, 16).ok(),
+    None => key.parse().ok(),
+  }
+}
+
+#[napi(js_name = "NSCCanvas", custom_finalize)]
+pub struct NSCCanvas {
+  /// A reference on the panel, so detaching at teardown never touches a released object.
+  panel: Option<IUnknown>,
+  surface_width: u32,
+  surface_height: u32,
+  scale_x: f32,
+  scale_y: f32,
+  context_2d: *mut CCanvasRenderingContext2D,
+}
+
+impl ObjectFinalize for NSCCanvas {
+  fn finalize(self, _: Env) -> Result<()> {
+    if let Some(panel) = self.panel.as_ref() {
+      unsafe { canvas_core::gpu::dxgi::CompositionSwapChain::unbind_panel(panel.as_raw()) };
+    }
+    canvas_c::canvas_native_context_release(self.context_2d);
+    Ok(())
+  }
+}
+
+impl NSCCanvas {
+  fn panel_ptr(&self) -> *mut c_void {
+    self.panel.as_ref().map_or(std::ptr::null_mut(), |p| p.as_raw())
+  }
+
+  fn apply_transform(&self) {
+    if self.context_2d.is_null() {
+      return;
+    }
+    let (sx, sy) = (
+      if self.scale_x > 0. { 1. / self.scale_x } else { 1. },
+      if self.scale_y > 0. { 1. / self.scale_y } else { 1. },
+    );
+    canvas_c::canvas_native_context_set_swap_chain_transform(self.context_2d, sx, sy, 0., 0.);
+  }
+}
+
+#[napi]
+impl NSCCanvas {
+  /// `panelKey`: the `SwapChainPanel`'s pointer key. Without one the canvas is offscreen.
+  #[napi(constructor)]
+  pub fn new(panel_key: Option<String>) -> Result<Self> {
+    let panel = match panel_key.as_deref() {
+      None | Some("") => None,
+      Some(key) => {
+        let address = parse_pointer_key(key)
+          .filter(|a| *a != 0)
+          .ok_or_else(|| Error::from_reason(format!("Invalid SwapChainPanel pointer: {key}")))?;
+        let raw = address as *mut c_void;
+        let panel = unsafe { IUnknown::from_raw_borrowed(&raw) }.cloned();
+        Some(panel.ok_or_else(|| Error::from_reason("Invalid SwapChainPanel pointer"))?)
+      }
+    };
+    Ok(Self {
+      panel,
+      surface_width: 1,
+      surface_height: 1,
+      scale_x: 1.,
+      scale_y: 1.,
+      context_2d: std::ptr::null_mut(),
+    })
+  }
+
+  #[napi(getter)]
+  pub fn surface_width(&self) -> u32 {
+    self.surface_width
+  }
+
+  #[napi(getter)]
+  pub fn surface_height(&self) -> u32 {
+    self.surface_height
+  }
+
+  #[napi(getter)]
+  pub fn drawing_buffer_width(&self) -> u32 {
+    self.surface_width
+  }
+
+  #[napi(getter)]
+  pub fn drawing_buffer_height(&self) -> u32 {
+    self.surface_height
+  }
+
+  /// The drawing buffer size in physical pixels; resizes (and clears) an existing context.
+  #[napi]
+  pub fn set_surface_size(&mut self, width: f64, height: f64) {
+    let (width, height) = ((width.max(1.)) as u32, (height.max(1.)) as u32);
+    if (width, height) == (self.surface_width, self.surface_height) {
+      return;
+    }
+    self.surface_width = width;
+    self.surface_height = height;
+    if !self.context_2d.is_null() {
+      let context = unsafe { &mut *self.context_2d };
+      canvas_c::resize(context, width as f32, height as f32);
+      self.apply_transform();
+    }
+  }
+
+  /// The panel's `CompositionScaleX/Y` (DPI scale and any render transform).
+  #[napi]
+  pub fn set_composition_scale(&mut self, scale_x: f64, scale_y: f64) {
+    self.scale_x = scale_x as f32;
+    self.scale_y = scale_y as f32;
+    self.apply_transform();
+  }
+
+  /// Creates (once) the 2D context and returns its pointer as a decimal string, like the iOS view.
+  /// Arguments mirror `NSCCanvas.create2DContext` on iOS; only alpha, fontColor and colorSpace
+  /// affect a D3D canvas.
+  #[napi(js_name = "create2DContext")]
+  pub fn create_2d_context(
+    &mut self,
+    alpha: bool,
+    _antialias: bool,
+    _depth: bool,
+    _fail_if_major_performance_caveat: bool,
+    _power_preference: i32,
+    _premultiplied_alpha: bool,
+    _preserve_drawing_buffer: bool,
+    _stencil: bool,
+    _desynchronized: bool,
+    _xr_compatible: bool,
+    font_color: i32,
+    _will_read_frequently: bool,
+    color_space: Option<i32>,
+  ) -> Result<String> {
+    if self.context_2d.is_null() {
+      let color_space = match color_space.unwrap_or(0) {
+        1 => canvas_c::CanvasColorSpace::P3,
+        _ => canvas_c::CanvasColorSpace::Srgb,
+      };
+      let (width, height) = (self.surface_width as f32, self.surface_height as f32);
+      let density = self.scale_x.max(1.);
+      let mut context = canvas_c::canvas_native_context_create_d3d(
+        width,
+        height,
+        density,
+        alpha,
+        font_color,
+        density * 96.,
+        0,
+        color_space,
+      );
+      if context.is_null() {
+        // No usable D3D12 device: a CPU canvas still works offscreen (readback, toDataURL).
+        context = canvas_c::canvas_native_context_create(
+          width,
+          height,
+          density,
+          alpha,
+          font_color,
+          density * 96.,
+          0,
+          color_space,
+        );
+      } else if !self.panel_ptr().is_null()
+        && !canvas_c::canvas_native_context_attach_swap_chain_panel(context, self.panel_ptr())
+      {
+        log::error!("canvas: could not attach the canvas to its SwapChainPanel");
+      }
+      self.context_2d = context;
+      self.apply_transform();
+    }
+    Ok((self.context_2d as usize).to_string())
+  }
+
+  /// Renders pending drawing and presents it now.
+  #[napi]
+  pub fn present(&self) {
+    canvas_c::canvas_native_context_render(self.context_2d);
+  }
+}

@@ -18,6 +18,7 @@ mod text_decoder;
 pub mod gl;
 pub mod gl2;
 mod js;
+mod host;
 mod frame;
 mod image_bitmap;
 mod module;

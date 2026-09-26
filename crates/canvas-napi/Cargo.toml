@@ -23,10 +23,13 @@ canvas-2d = { workspace = true, features = ["gl"] }
 canvas-webgl.workspace = true
 gl-bindings.workspace = true
 parking_lot.workspace = true
+log.workspace = true
 
 # Windows renders 2D with Skia on Direct3D 12 (and WebGL on ANGLE, via `gl`).
 [target.'cfg(target_os = "windows")'.dependencies]
 canvas-core = { workspace = true, features = ["2d", "gl", "d3d"] }
+canvas-c = { workspace = true, features = ["2d", "webgl", "gl", "d3d"] }
+windows-core = "0.62"
 
 [build-dependencies]
 napi-build = "2.5.0"

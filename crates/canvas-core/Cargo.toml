@@ -10,7 +10,7 @@ gl = ["gl-bindings", "egl", "glutin", "skia-safe/gl", "dep:khronos-egl", "dep:li
 vulkan = ["ash", "ash-window"]
 mtl = ["objc2-metal", "skia-safe/metal"]
 metal = ["mtl"]
-d3d = ["2d", "skia-safe/d3d", "dep:windows"]
+d3d = ["2d", "skia-safe/d3d", "dep:windows", "dep:windows-core"]
 
 [dependencies]
 gl-bindings = { path = "../gl-bindings", optional = true }
@@ -37,6 +37,8 @@ glutin = { version = "0.32.0", features = ["egl"], optional = true }
 jni = { workspace = true }
 
 [target.'cfg(target_os = "windows")'.dependencies]
+# `#[windows::core::interface]` (ISwapChainPanelNative) expands to `windows_core` paths.
+windows-core = { version = "0.62", optional = true }
 khronos-egl = { version = "6.0", features = ["dynamic"], optional = true }
 libloading = { version = "0.8", optional = true }
 windows = { workspace = true, optional = true, features = [
@@ -46,6 +48,7 @@ windows = { workspace = true, optional = true, features = [
     "Win32_Graphics_Direct3D12",
     "Win32_Graphics_Dxgi",
     "Win32_Graphics_Dxgi_Common",
+    "Win32_System_Threading",
 ] }
 
 [[example]]

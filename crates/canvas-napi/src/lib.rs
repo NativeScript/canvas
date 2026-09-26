@@ -20,6 +20,7 @@ pub mod gl2;
 mod js;
 mod frame;
 mod image_bitmap;
+mod module;
 /// Like the V8 bindings' `install()`: `globalThis.CanvasModule = exports` unless one is already
 /// installed.
 #[napi_derive::napi(module_exports)]

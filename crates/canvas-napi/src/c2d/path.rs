@@ -4,6 +4,8 @@ use napi::*;
 use napi_derive::napi;
 use std::ffi::CString;
 
+use crate::dom_matrix::MatrixArg;
+
 #[napi(custom_finalize)]
 pub struct Path2D {
     pub(crate) path: *mut Path,
@@ -45,9 +47,18 @@ impl Path2D {
         }
     }
 
-    #[napi]
-    pub fn add_path(&self, path: ClassInstance<Path2D>) {
-        canvas_c::canvas_native_path_add_path(self.path, path.path)
+    /// `addPath(path, transform?)`: `transform` is a DOMMatrix (or null).
+    #[napi(ts_args_type = "path: Path2D, transform?: DOMMatrix | null")]
+    pub fn add_path(&self, path: &Path2D, transform: Option<MatrixArg>) {
+        let matrix = transform.and_then(|m| m.get()).unwrap_or(std::ptr::null_mut());
+        if std::ptr::eq(path.path, self.path) {
+            // Adding a path to itself: add a copy, canvas-c reads it while it grows this one.
+            let copy = canvas_c::canvas_native_path_create_with_path(path.path);
+            canvas_c::canvas_native_path_add_path_with_matrix(self.path, copy, matrix);
+            canvas_c::canvas_native_path_release(copy);
+        } else {
+            canvas_c::canvas_native_path_add_path_with_matrix(self.path, path.path, matrix);
+        }
     }
 
     #[napi]
@@ -110,9 +121,11 @@ impl Path2D {
             self.path, x as f32, y as f32, width as f32, height as f32)
     }
 
+    /// `radii` is one radius or 1–4 of them (`[all]`, `[tl-br, tr-bl]`, `[tl, tr-bl, br]`,
+    /// `[tl, tr, br, bl]`); omitted, the corners are square.
     #[napi]
-    pub fn round_rect(&self, x: f64, y: f64, width: f64, height: f64, radii: Either<f64, Vec<f64>>) {
-        match radii {
+    pub fn round_rect(&self, x: f64, y: f64, width: f64, height: f64, radii: Option<Either<f64, Vec<f64>>>) {
+        match radii.unwrap_or(Either::A(0.)) {
             Either::A(radii) => {
                 canvas_c::canvas_native_path_round_rect_tl_tr_br_bl(
                     self.path, x as f32, y as f32, width as f32, height as f32, radii as f32, radii as f32, radii as f32, radii as f32,
@@ -120,11 +133,9 @@ impl Path2D {
             }
             Either::B(radii) => {
                 let radii = radii.into_iter().map(|v| v as f32).collect::<Vec<f32>>();
-                unsafe {
-                    canvas_c::canvas_native_path_round_rect(
-                        self.path, x as f32, y as f32, width as f32, height as f32, radii.as_ptr() as _, radii.len(),
-                    )
-                }
+                canvas_c::canvas_native_path_round_rect(
+                    self.path, x as f32, y as f32, width as f32, height as f32, radii.as_ptr(), radii.len(),
+                )
             }
         }
     }

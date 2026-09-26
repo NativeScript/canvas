@@ -21,5 +21,10 @@ export class Helpers {
 			csm.install();
 			this._initialized = true;
 		}
+
+		if (!this._initialized) {
+			// e.g. Windows, until its native SVG module exists.
+			throw new Error('@nativescript/canvas-svg is not supported on this platform yet');
+		}
 	}
 }

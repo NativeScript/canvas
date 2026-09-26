@@ -69,6 +69,7 @@ rust-skia
 # .gitignore keeps git ignoring them for commits while staying invisible to
 # the asset copier.
 /.v8-prebuilt/
+/.angle-prebuilt/
 /packages/canvas/src-native/canvas-android/canvas/src/main/cpp/include/*
 !/packages/canvas/src-native/canvas-android/canvas/src/main/cpp/include/canvas_native.h
 !/packages/canvas/src-native/canvas-android/canvas/src/main/cpp/include/canvas_android.h

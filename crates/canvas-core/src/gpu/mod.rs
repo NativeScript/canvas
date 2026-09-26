@@ -8,6 +8,8 @@
 pub mod metal;
 #[cfg(feature = "vulkan")]
 pub mod vulkan;
+#[cfg(all(feature = "d3d", target_os = "windows"))]
+pub mod d3d;
 
 #[cfg(feature = "gl")]
 pub mod gl;

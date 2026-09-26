@@ -19,8 +19,13 @@ use crate::gpu::context::g_p_u_canvas_context;
 use crate::image_asset::ImageAsset;
 use crate::image_bitmap::ImageBitmap;
 use crate::{impl_webgl_context, impl_webgl_context_constants};
+use crate::frame::FrameSlot;
+use crate::module::{as_bool, as_number, property, type_of};
+use napi::bindgen_prelude::BigInt;
 use napi::*;
 use napi_derive::napi;
+use std::cell::Cell;
+use std::rc::Rc;
 
 #[napi(object)]
 pub struct HTMLImageSource<'env> {
@@ -43,13 +48,181 @@ pub struct HTMLCanvasSource<'env> {
 pub struct web_g_l_rendering_context {
   pub(crate) state: *mut WebGLState,
   pub(crate) invalidate_state: u32,
+  /// `createWebGLContext(options, pointer)` wraps a state the host view owns.
+  pub(crate) owns_state: bool,
+  /// Dirty tracking: drawing marks the context, the host presents it at frame end.
+  pub(crate) frame: Rc<FrameSlot>,
+  pub(crate) continuous_render: Cell<bool>,
 }
 
 impl ObjectFinalize for web_g_l_rendering_context {
   fn finalize(self, _: Env) -> Result<()> {
-    canvas_c::canvas_native_webgl_state_destroy(self.state);
+    if self.owns_state {
+      canvas_c::canvas_native_webgl_state_destroy(self.state);
+    }
     Ok(())
   }
+}
+
+/// A WebGL object argument that may be absent. `null`, `undefined` and `0` (what packages/canvas
+/// passes for "no object", e.g. `bindFramebuffer(target, framebuffer ? framebuffer.native : 0)`)
+/// are none, as in the V8 bindings; an object must be the class instance.
+pub struct GLObject<'a, T: 'a>(pub Option<bindgen_prelude::ClassInstance<'a, T>>);
+
+impl<'a, T: 'a> GLObject<'a, T> {
+  /// The object's GL name, 0 when absent.
+  pub fn name(&self, name: impl Fn(&T) -> u32) -> u32 {
+    self.0.as_ref().map_or(0, |object| name(object))
+  }
+}
+
+impl<'a, T: 'a> bindgen_prelude::TypeName for GLObject<'a, T> {
+  fn type_name() -> &'static str {
+    "WebGLObject | null"
+  }
+
+  fn value_type() -> ValueType {
+    ValueType::Unknown
+  }
+}
+
+impl<'a, T: 'a> bindgen_prelude::ValidateNapiValue for GLObject<'a, T>
+where
+  bindgen_prelude::ClassInstance<'a, T>: bindgen_prelude::FromNapiValue + bindgen_prelude::ValidateNapiValue,
+{
+  unsafe fn validate(env: sys::napi_env, value: sys::napi_value) -> Result<sys::napi_value> {
+    let mut kind = 0;
+    check_status!(unsafe { sys::napi_typeof(env, value, &mut kind) })?;
+    if kind == sys::ValueType::napi_object {
+      return unsafe { <bindgen_prelude::ClassInstance<'a, T> as bindgen_prelude::ValidateNapiValue>::validate(env, value) };
+    }
+    Ok(std::ptr::null_mut())
+  }
+}
+
+impl<'a, T: 'a> bindgen_prelude::FromNapiValue for GLObject<'a, T>
+where
+  bindgen_prelude::ClassInstance<'a, T>: bindgen_prelude::FromNapiValue + bindgen_prelude::ValidateNapiValue,
+{
+  unsafe fn from_napi_value(env: sys::napi_env, value: sys::napi_value) -> Result<Self> {
+    let mut kind = 0;
+    check_status!(unsafe { sys::napi_typeof(env, value, &mut kind) })?;
+    if kind != sys::ValueType::napi_object {
+      return Ok(GLObject(None));
+    }
+    unsafe { <bindgen_prelude::ClassInstance<'a, T> as bindgen_prelude::FromNapiValue>::from_napi_value(env, value) }
+      .map(|object| GLObject(Some(object)))
+  }
+}
+
+/// Frame-end flush for WebGL / WebGL2 contexts: presents on screen, flushes offscreen.
+pub(crate) unsafe fn present_webgl(state: *mut std::ffi::c_void) {
+  canvas_c::canvas_native_webgl_present(state as *mut WebGLState);
+}
+
+impl web_g_l_rendering_context {
+  pub(crate) fn from_raw(state: *mut WebGLState, owns_state: bool) -> Self {
+    Self {
+      state,
+      invalidate_state: 0,
+      owns_state,
+      frame: FrameSlot::new(state as *mut std::ffi::c_void, present_webgl),
+      continuous_render: Cell::new(false),
+    }
+  }
+}
+
+/// The options object `createWebGLContext` / `createWebGL2Context` take (the V8 bindings'
+/// GLOptions): fields of the wrong type keep their defaults.
+pub(crate) struct GLOptions {
+  pub version: i32,
+  pub alpha: bool,
+  pub antialias: bool,
+  pub depth: bool,
+  pub fail_if_major_performance_caveat: bool,
+  pub power_preference: i32,
+  pub premultiplied_alpha: bool,
+  pub preserve_drawing_buffer: bool,
+  pub stencil: bool,
+  pub desynchronized: bool,
+  pub xr_compatible: bool,
+}
+
+impl GLOptions {
+  pub(crate) fn parse(options: &Unknown) -> Self {
+    let flag = |name: &std::ffi::CStr, default: bool| {
+      property(options, name).and_then(|v| as_bool(&v)).unwrap_or(default)
+    };
+    let int = |name: &std::ffi::CStr, default: i32| {
+      property(options, name).and_then(|v| as_number(&v)).map_or(default, |v| v as i32)
+    };
+    Self {
+      version: int(c"version", 0),
+      alpha: flag(c"alpha", true),
+      antialias: flag(c"antialias", true),
+      depth: flag(c"depth", true),
+      fail_if_major_performance_caveat: flag(c"failIfMajorPerformanceCaveat", false),
+      power_preference: int(c"powerPreference", 0),
+      premultiplied_alpha: flag(c"premultipliedAlpha", true),
+      preserve_drawing_buffer: flag(c"preserveDrawingBuffer", false),
+      stencil: flag(c"stencil", false),
+      desynchronized: flag(c"desynchronized", false),
+      xr_compatible: flag(c"xrCompatible", false),
+    }
+  }
+
+  /// A new offscreen context of this version.
+  pub(crate) fn create_offscreen(&self, width: i32, height: i32) -> *mut WebGLState {
+    canvas_c::canvas_native_webgl_create_no_window(
+      width,
+      height,
+      self.version,
+      self.alpha,
+      self.antialias,
+      self.depth,
+      self.fail_if_major_performance_caveat,
+      self.power_preference,
+      self.premultiplied_alpha,
+      self.preserve_drawing_buffer,
+      self.stencil,
+      self.desynchronized,
+      self.xr_compatible,
+      false,
+    )
+  }
+}
+
+/// `(options, pointer, ...)`: wrap the host's state; `(options, width, height, ...)`: a new
+/// offscreen one. None when `options.version` is not `version`.
+pub(crate) fn resolve_webgl_state(
+  version: i32,
+  options: &Unknown,
+  target: &Unknown,
+  height: Option<f64>,
+) -> Option<(*mut WebGLState, bool)> {
+  let options = GLOptions::parse(options);
+  if options.version != version {
+    return None;
+  }
+  if type_of(target) == ValueType::BigInt {
+    let (pointer, _) = unsafe { target.cast::<BigInt>() }.ok()?.get_i64();
+    return (pointer != 0).then_some((pointer as *mut WebGLState, false));
+  }
+  let width = as_number(target).unwrap_or(300.) as i32;
+  let state = options.create_offscreen(width, height.unwrap_or(150.) as i32);
+  (!state.is_null()).then_some((state, true))
+}
+
+/// `CanvasModule.createWebGLContext(options, pointer, scale, color, ppi, direction)` wraps the
+/// host view's context; `(options, width, height, ...)` creates an offscreen one.
+#[napi(js_name = "createWebGLContext")]
+pub fn create_web_g_l_context(
+  options: Unknown,
+  target: Unknown,
+  height: Option<f64>,
+) -> Option<web_g_l_rendering_context> {
+  let (state, owns) = resolve_webgl_state(1, &options, &target, height)?;
+  Some(web_g_l_rendering_context::from_raw(state, owns))
 }
 
 impl_webgl_context!(web_g_l_rendering_context);
@@ -272,10 +445,7 @@ impl web_g_l_rendering_context {
       return Err(napi::Error::from_reason("Invalid parameter"));
     }
 
-    Ok(web_g_l_rendering_context {
-      state: ret,
-      invalidate_state: 0,
-    })
+    Ok(web_g_l_rendering_context::from_raw(ret, true))
   }
 
   #[napi]

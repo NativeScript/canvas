@@ -117,3 +117,73 @@ test('NSCCanvas: renders on WARP', { skip: skip || (process.env.CANVAS_FORCE_WAR
 	});
 	assert.equal(result.status, 0, result.stdout + result.stderr);
 });
+
+// WebGL on ANGLE: the view owns the state, packages/canvas wraps its pointer.
+const GL_COLOR_BUFFER_BIT = 0x4000;
+const GL_RGBA = 0x1908;
+const GL_UNSIGNED_BYTE = 0x1401;
+// (type, alpha, antialias, depth, failIfMajorPerformanceCaveat, powerPreference, premultipliedAlpha,
+//  preserveDrawingBuffer, stencil, desynchronized, xrCompatible, isCanvas, colorSpace), as on iOS.
+const glArgs = (type) => [type, true, true, true, false, 0, true, false, false, false, false, false, 0];
+
+function hostWebGL(type, width, height) {
+	const host = new NSCCanvas();
+	host.setSurfaceSize(width, height);
+	host.initContext(...glArgs(type));
+	const version = type === 'webgl2' ? 2 : 1;
+	const create = version === 2 ? CanvasModule.createWebGL2Context : CanvasModule.createWebGLContext;
+	const gl = create({ version }, BigInt(host.nativeContext), 1, -16777216, 160, 0);
+	return { host, gl };
+}
+
+function glPixel(gl, x, y) {
+	const out = new Uint8Array(4);
+	gl.readPixels(x, y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, out);
+	return Array.from(out);
+}
+
+for (const type of ['webgl', 'webgl2']) {
+	test(`NSCCanvas: ${type} clears, reads back and presents`, { skip }, () => {
+		const { host, gl } = hostWebGL(type, 64, 32);
+		assert.notEqual(host.nativeContext, '0');
+		assert.equal(gl.drawingBufferWidth, 64);
+		assert.equal(gl.drawingBufferHeight, 32);
+		gl.clearColor(0, 0.5, 1, 1);
+		gl.clear(GL_COLOR_BUFFER_BIT);
+		const [r, g, b, a] = glPixel(gl, 1, 1);
+		assert.deepEqual([r, b, a], [0, 255, 255]);
+		assert.ok(g >= 127 && g <= 128, `green ${g}`);
+		host.present();
+		assert.match(gl.__toDataURL('image/png'), /^data:image\/png;base64,/);
+		// Texture-backed on Windows: single-sampled, so antialias is reported as off.
+		assert.equal(gl.getContextAttributes().antialias, false);
+	});
+
+	test(`NSCCanvas: ${type} resize keeps the context, clears the buffer`, { skip }, () => {
+		const { host, gl } = hostWebGL(type, 16, 16);
+		gl.clearColor(1, 0, 0, 1);
+		gl.clear(GL_COLOR_BUFFER_BIT);
+		host.setSurfaceSize(40, 20);
+		assert.equal(gl.drawingBufferWidth, 40);
+		assert.equal(gl.drawingBufferHeight, 20);
+		gl.viewport(0, 0, 40, 20);
+		gl.clearColor(0, 1, 0, 1);
+		gl.clear(GL_COLOR_BUFFER_BIT);
+		assert.deepEqual(glPixel(gl, 39, 19), [0, 255, 0, 255]);
+	});
+}
+
+test('NSCCanvas: one context kind per view', { skip }, () => {
+	const { host } = hostWebGL('webgl', 8, 8);
+	assert.throws(() => host.create2DContext(true, true, false, false, 0, true, false, false, false, false, 0, false, 0), /already has a WebGL context/);
+});
+
+test('createWebGLContext: options pick the version; width/height create an offscreen context', { skip }, () => {
+	assert.equal(CanvasModule.createWebGLContext({ version: 2 }, 16, 16), null);
+	const gl = CanvasModule.createWebGLContext({ version: 1, alpha: false }, 16, 8, 1, -16777216, 160, 0);
+	assert.equal(gl.drawingBufferWidth, 16);
+	assert.equal(gl.getContextAttributes().alpha, false);
+	assert.ok(gl.__getSupportedExtensions().length > 0);
+	const gl2 = CanvasModule.createWebGL2Context({ version: 2 }, 8, 8, 1, -16777216, 160, 0);
+	assert.equal(gl2.drawingBufferHeight, 8);
+});

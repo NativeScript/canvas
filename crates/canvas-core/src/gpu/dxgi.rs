@@ -1,4 +1,5 @@
-//! Composition swapchains presented through a WinUI `SwapChainPanel`.
+//! Composition swapchains presented through a WinUI `SwapChainPanel`, on a D3D12 queue (2D) or
+//! a D3D11 device (WebGL on ANGLE).
 //!
 //! The panel only accepts swapchains created with `CreateSwapChainForComposition`, and the panel
 //! lays them out in DIPs: the swapchain is sized in physical pixels and `SetMatrixTransform`
@@ -9,19 +10,21 @@ use std::ffi::c_void;
 
 use windows::core::{Interface, Result, HRESULT};
 use windows::Win32::Foundation::{CloseHandle, HANDLE, WAIT_OBJECT_0};
-use windows::Win32::Graphics::Direct3D12::ID3D12Resource;
+#[cfg(feature = "gl")]
+use windows::Win32::Graphics::Direct3D11::ID3D11Device;
 use windows::Win32::Graphics::Dxgi::Common::{
     DXGI_ALPHA_MODE_IGNORE, DXGI_ALPHA_MODE_PREMULTIPLIED, DXGI_FORMAT_B8G8R8A8_UNORM,
     DXGI_SAMPLE_DESC,
 };
 use windows::Win32::Graphics::Dxgi::{
-    IDXGIFactory2, IDXGISwapChain1, IDXGISwapChain2, IDXGISwapChain3, DXGI_MATRIX_3X2_F,
+    IDXGIAdapter, IDXGIDevice, IDXGIFactory2, IDXGISwapChain1, IDXGISwapChain2, IDXGISwapChain3, DXGI_MATRIX_3X2_F,
     DXGI_PRESENT, DXGI_PRESENT_DO_NOT_WAIT, DXGI_SCALING_STRETCH, DXGI_SWAP_CHAIN_DESC1,
     DXGI_SWAP_CHAIN_FLAG, DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT,
     DXGI_SWAP_EFFECT_FLIP_DISCARD, DXGI_USAGE_RENDER_TARGET_OUTPUT,
 };
 use windows::Win32::System::Threading::WaitForSingleObjectEx;
 
+#[cfg(feature = "d3d")]
 use crate::gpu::d3d::D3D12Context;
 
 /// WinUI 3's `ISwapChainPanelNative` (microsoft.ui.xaml.media.dxinterop.h). Not the UWP interface
@@ -43,8 +46,28 @@ pub struct CompositionSwapChain {
 
 impl CompositionSwapChain {
     /// A flip-model BGRA swapchain on `device`'s direct queue, `width` x `height` physical pixels.
+    #[cfg(feature = "d3d")]
     pub fn new(device: &D3D12Context, width: u32, height: u32, alpha: bool) -> Result<Self> {
         let factory: IDXGIFactory2 = device.factory().cast()?;
+        Self::create(&factory, &device.queue().cast()?, width, height, alpha)
+    }
+
+    /// The same on a D3D11 device (ANGLE's, for WebGL).
+    #[cfg(feature = "gl")]
+    pub fn new_d3d11(device: &ID3D11Device, width: u32, height: u32, alpha: bool) -> Result<Self> {
+        let adapter: IDXGIAdapter = unsafe { device.cast::<IDXGIDevice>()?.GetAdapter() }?;
+        let factory: IDXGIFactory2 = unsafe { adapter.GetParent() }?;
+        Self::create(&factory, &device.cast()?, width, height, alpha)
+    }
+
+    /// `device`: the D3D12 command queue or the D3D11 device that renders into the buffers.
+    fn create(
+        factory: &IDXGIFactory2,
+        device: &windows::core::IUnknown,
+        width: u32,
+        height: u32,
+        alpha: bool,
+    ) -> Result<Self> {
         let flags = DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
         let desc = DXGI_SWAP_CHAIN_DESC1 {
             Width: width.max(1),
@@ -64,7 +87,7 @@ impl CompositionSwapChain {
             ..Default::default()
         };
         let swap_chain: IDXGISwapChain1 =
-            unsafe { factory.CreateSwapChainForComposition(device.queue(), &desc, None) }?;
+            unsafe { factory.CreateSwapChainForComposition(device, &desc, None) }?;
         let swap_chain: IDXGISwapChain3 = swap_chain.cast()?;
         let waitable = {
             let swap_chain2: IDXGISwapChain2 = swap_chain.cast()?;
@@ -110,7 +133,9 @@ impl CompositionSwapChain {
         unsafe { self.swap_chain.GetCurrentBackBufferIndex() }
     }
 
-    pub fn buffer(&self, index: u32) -> Result<ID3D12Resource> {
+    /// Back buffer `index` as a D3D12 resource, or (D3D11, where only buffer 0 -- the current
+    /// back buffer -- is accessible) an `ID3D11Texture2D`.
+    pub fn buffer<T: Interface>(&self, index: u32) -> Result<T> {
         unsafe { self.swap_chain.GetBuffer(index) }
     }
 

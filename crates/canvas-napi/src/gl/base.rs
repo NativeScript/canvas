@@ -13,7 +13,9 @@ macro_rules! impl_webgl_context {
 
     pub fn update_invalidate_state(&mut self) {
         let state = self.invalidate_state();
-        self.invalidate_state = state | InvalidateState::Pending as u32
+        self.invalidate_state = state | InvalidateState::Pending as u32;
+        // The host presents dirty contexts at the end of the frame (crate::frame).
+        crate::frame::mark_dirty(&self.frame);
     }
 
     pub fn invalidate_state(&self) -> u32 {
@@ -87,23 +89,23 @@ macro_rules! impl_webgl_context {
       }
 
       #[napi]
-      pub fn bind_buffer(&self, target: u32, buffer: &WebGLBuffer) {
-        canvas_c::canvas_native_webgl_bind_buffer(target, buffer.0, self.state);
+      pub fn bind_buffer(&self, target: u32, buffer: crate::gl::GLObject<WebGLBuffer>) {
+        canvas_c::canvas_native_webgl_bind_buffer(target, buffer.name(|b| b.0), self.state);
       }
 
       #[napi]
-      pub fn bind_framebuffer(&self, target: u32, framebuffer: Option<&web_g_l_framebuffer>) {
-       canvas_c::canvas_native_webgl_bind_frame_buffer(target, framebuffer.map(|framebuffer| framebuffer.buffer).unwrap_or(0) , self.state);
+      pub fn bind_framebuffer(&self, target: u32, framebuffer: crate::gl::GLObject<web_g_l_framebuffer>) {
+       canvas_c::canvas_native_webgl_bind_frame_buffer(target, framebuffer.name(|f| f.buffer), self.state);
       }
 
       #[napi]
-      pub fn bind_renderbuffer(&self, target: u32, renderbuffer: Option<&WebGLRenderbuffer>) {
-        canvas_c::canvas_native_webgl_bind_render_buffer(target, renderbuffer.map(|renderbuffer|renderbuffer.0).unwrap_or(0), self.state);
+      pub fn bind_renderbuffer(&self, target: u32, renderbuffer: crate::gl::GLObject<WebGLRenderbuffer>) {
+        canvas_c::canvas_native_webgl_bind_render_buffer(target, renderbuffer.name(|r| r.0), self.state);
       }
 
       #[napi]
-      pub fn bind_texture(&self, target: u32, texture: Option<&WebGLTexture>) {
-        canvas_c::canvas_native_webgl_bind_texture(target, texture.map(|texture| texture.0).unwrap_or(0), self.state);
+      pub fn bind_texture(&self, target: u32, texture: crate::gl::GLObject<WebGLTexture>) {
+        canvas_c::canvas_native_webgl_bind_texture(target, texture.name(|t| t.0), self.state);
       }
 
       #[napi]
@@ -805,6 +807,8 @@ macro_rules! impl_webgl_context {
     pub fn get_uniform<'env>(&self, env: &'env Env, program: ClassInstance<WebGLProgram>, location: ClassInstance<WebGLUniformLocation>) -> Result<Unknown<'env>> {
         let result = canvas_c::canvas_native_webgl_get_uniform(program.0, location.0, self.state);
         let type_ = canvas_c::canvas_native_webgl_result_get_type(result);
+        // The into_* accessors take the result over (and free it).
+        let consumed = matches!(type_, WebGLResultType::I32Array | WebGLResultType::U32Array | WebGLResultType::F32Array);
         let uniform = match type_ {
             WebGLResultType::Boolean => {
                 let ret = canvas_c::canvas_native_webgl_result_get_bool(result);
@@ -884,7 +888,9 @@ macro_rules! impl_webgl_context {
             }
         };
 
-        canvas_c::canvas_native_webgl_WebGLResult_destroy(result);
+        if !consumed {
+            canvas_c::canvas_native_webgl_WebGLResult_destroy(result);
+        }
 
         uniform
     }
@@ -943,12 +949,8 @@ macro_rules! impl_webgl_context {
     }
 
     #[napi]
-    pub fn is_framebuffer(&self, framebuffer: Option<&web_g_l_framebuffer>) -> bool {
-        let framebuffer = match framebuffer {
-            None => 0,
-            Some(framebuffer) => framebuffer.buffer
-        };
-        canvas_c::canvas_native_webgl_is_framebuffer(framebuffer, self.state)
+    pub fn is_framebuffer(&self, framebuffer: crate::gl::GLObject<web_g_l_framebuffer>) -> bool {
+        canvas_c::canvas_native_webgl_is_framebuffer(framebuffer.name(|f| f.buffer), self.state)
     }
 
     #[napi]
@@ -1047,6 +1049,9 @@ macro_rules! impl_webgl_context {
     pub fn shader_source(&self, shader: ClassInstance<WebGLShader>, source: String) {
         let state = unsafe { &mut *self.state };
         let mut source = source;
+        // macOS runs WebGL on desktop OpenGL, which needs a desktop GLSL version; EGL/GLES
+        // backends (ANGLE on Windows) take the WebGL source as is.
+        #[cfg(target_os = "macos")]
         if(source.contains("#version 300 es")){
               source =  source.replace("#version 300 es", "#version 330 core");
         }else if(!source.contains("#version")){
@@ -1094,83 +1099,106 @@ macro_rules! impl_webgl_context {
         canvas_c::canvas_native_webgl_stencil_op(fail, zfail, zpass, self.state);
     }
 
-          #[napi]
-    pub fn tex_image_2_d(&self, target: i32, level: i32, internalformat: i32, width_or_format: i32, height_or_type: i32, border_or_pixels: Either7<i32, ClassInstance<crate::c2d::CanvasRenderingContext2D>, ClassInstance<web_g_l_rendering_context>, ClassInstance<web_g_l_2_rendering_context>, ClassInstance<crate::image_asset::ImageAsset>, HTMLImageSource, HTMLCanvasSource>, format: Option<i32>, type_: Option<i32>, pixels: Option<Either<Buffer, i64>>, offset: Option<i64>) -> Result<()> {
-    match border_or_pixels {
-        Either7::A(border) => {
-            match (format, type_, pixels) {
-                (Some(format), Some(type_), Some(pixels)) => {
-                    match pixels {
-                        Either::A(buffer) => {
-                            canvas_c::canvas_native_webgl_tex_image2d(
-                                target, level, internalformat, width_or_format, height_or_type, border, format, type_, buffer.as_ptr(), buffer.len(), self.state,
-                            )
-                        }
-                        Either::B(offset) => {
-                            canvas_c::canvas_native_webgl2_tex_image2d_offset(
-                                target, level, internalformat, width_or_format as u32, height_or_type as u32, border, format, type_, offset as u64, self.state,
-                            )
-                        }
-                    }
-                }
-                (Some(format), Some(type_), None) => {
-                    canvas_c::canvas_native_webgl_tex_image2d_none(
-                        target, level, internalformat, width_or_format, height_or_type, border, format, type_, self.state,
+    /// `texImage2D(target, level, internalformat, width, height, border, format, type, pixels | offset)`
+    /// or `texImage2D(target, level, internalformat, format, type, source)`. Pixels may be any
+    /// ArrayBuffer or view (read in place); sources are the native image/canvas objects.
+    #[napi]
+    pub fn tex_image_2_d(
+        &self,
+        target: i32,
+        level: i32,
+        internalformat: i32,
+        width_or_format: i32,
+        height_or_type: i32,
+        border_or_pixels: Either9<
+            i32,
+            &crate::image_bitmap::ImageBitmap,
+            &crate::image_asset::ImageAsset,
+            &crate::c2d::CanvasRenderingContext2D,
+            &crate::gl::web_g_l_rendering_context,
+            &crate::gl2::web_g_l_2_rendering_context,
+            &crate::c2d::image_data::ImageData,
+            HTMLImageSource,
+            HTMLCanvasSource,
+        >,
+        format: Option<i32>,
+        type_: Option<i32>,
+        pixels: Option<Either<crate::module::JsBytes, i64>>,
+        offset: Option<i64>,
+    ) -> Result<()> {
+        let _ = offset;
+        let (format_or_width, type_or_height) = (width_or_format, height_or_type);
+        match border_or_pixels {
+            Either9::A(border) => match (format, type_, pixels) {
+                (Some(format), Some(type_), Some(Either::A(bytes))) => {
+                    let bytes = bytes.as_slice();
+                    canvas_c::canvas_native_webgl_tex_image2d(
+                        target, level, internalformat, width_or_format, height_or_type, border, format, type_,
+                        bytes.as_ptr(), bytes.len(), self.state,
                     )
                 }
+                (Some(format), Some(type_), Some(Either::B(offset))) => {
+                    canvas_c::canvas_native_webgl2_tex_image2d_offset(
+                        target, level, internalformat, width_or_format as u32, height_or_type as u32, border, format,
+                        type_, offset as u64, self.state,
+                    )
+                }
+                (Some(format), Some(type_), None) => canvas_c::canvas_native_webgl_tex_image2d_none(
+                    target, level, internalformat, width_or_format, height_or_type, border, format, type_, self.state,
+                ),
                 _ => {}
+            },
+            Either9::B(bitmap) => canvas_c::canvas_native_webgl_tex_image2d_image_asset(
+                target, level, internalformat, format_or_width, type_or_height, Arc::as_ptr(&bitmap.asset), self.state,
+            ),
+            Either9::C(asset) => canvas_c::canvas_native_webgl_tex_image2d_image_asset(
+                target, level, internalformat, format_or_width, type_or_height, Arc::as_ptr(&asset.asset), self.state,
+            ),
+            Either9::D(c2d) => {
+                c2d.flush_pending();
+                canvas_c::canvas_native_webgl_tex_image2d_canvas2d(
+                    target, level, internalformat, format_or_width, type_or_height, c2d.context, self.state,
+                )
             }
-        }
-        Either7::B(c2d) => {
-            canvas_c::canvas_native_webgl_tex_image2d_canvas2d(
-                target, level, internalformat, width_or_format, height_or_type, c2d.context, self.state,
-            )
-        }
-        Either7::C(gl) => {
-            canvas_c::canvas_native_webgl_tex_image2d_webgl(
-                target, level, internalformat, width_or_format, height_or_type, gl.state, self.state,
-            )
-        }
-        Either7::D(gl2) => {
-            canvas_c::canvas_native_webgl_tex_image2d_webgl(
-                target, level, internalformat, width_or_format, height_or_type, gl2.state, self.state,
-            )
-        }
-        Either7::E(image) => {
-            canvas_c::canvas_native_webgl_tex_image2d_image_asset(
-                target, level, internalformat, width_or_format, height_or_type, Arc::as_ptr(&image.asset), self.state,
-            )
-        }
-        Either7::F(source) => {
-            canvas_c::canvas_native_webgl_tex_image2d_image_asset(
-                target, level, internalformat, width_or_format, height_or_type, Arc::as_ptr(&source.image.asset), self.state,
-            )
-        }
-        Either7::G(source) => {
-            match source.context {
+            Either9::E(gl) => canvas_c::canvas_native_webgl_tex_image2d_webgl(
+                target, level, internalformat, format_or_width, type_or_height, gl.state, self.state,
+            ),
+            Either9::F(gl2) => canvas_c::canvas_native_webgl_tex_image2d_webgl(
+                target, level, internalformat, format_or_width, type_or_height, gl2.state, self.state,
+            ),
+            Either9::G(image_data) => {
+                let inner = image_data.data.inner();
+                let (width, height) = inner.dimensions();
+                let data = inner.data();
+                canvas_c::canvas_native_webgl_tex_image2d(
+                    target, level, internalformat, width, height, 0, format_or_width, type_or_height, data.as_ptr(),
+                    data.len(), self.state,
+                )
+            }
+            Either9::H(source) => canvas_c::canvas_native_webgl_tex_image2d_image_asset(
+                target, level, internalformat, format_or_width, type_or_height, Arc::as_ptr(&source.image.asset),
+                self.state,
+            ),
+            Either9::I(source) => match source.context {
                 Either4::A(c2d) => {
+                    c2d.flush_pending();
                     canvas_c::canvas_native_webgl_tex_image2d_canvas2d(
-                        target, level, internalformat, width_or_format, height_or_type, c2d.context, self.state,
+                        target, level, internalformat, format_or_width, type_or_height, c2d.context, self.state,
                     )
                 }
-                Either4::B(gl) => {
-                    canvas_c::canvas_native_webgl_tex_image2d_webgl(
-                        target, level, internalformat, width_or_format, height_or_type, gl.state, self.state,
-                    )
+                Either4::B(gl) => canvas_c::canvas_native_webgl_tex_image2d_webgl(
+                    target, level, internalformat, format_or_width, type_or_height, gl.state, self.state,
+                ),
+                Either4::C(gl2) => canvas_c::canvas_native_webgl_tex_image2d_webgl(
+                    target, level, internalformat, format_or_width, type_or_height, gl2.state, self.state,
+                ),
+                Either4::D(_) => {
+                    return Err(Error::from_reason("texImage2D from a WebGPU canvas is not supported"));
                 }
-                Either4::C(gl2) => {
-                    canvas_c::canvas_native_webgl_tex_image2d_webgl(
-                        target, level, internalformat, width_or_format, height_or_type, gl2.state, self.state,
-                    )
-                }
-                Either4::D(gpu) => {
-                    todo!("Implement drawImage for GPUContext")
-                }
-            }
+            },
         }
+        Ok(())
     }
-    Ok(())
-}
 
 
     #[napi]
@@ -1353,7 +1381,7 @@ macro_rules! impl_webgl_context {
           width,
           height,
           format_or_width as u32,
-          gl_bindings::RGBA as i32,
+          type_or_height,
           data.as_ptr(),
           data.len(),
           self.state,
@@ -1604,8 +1632,8 @@ macro_rules! impl_webgl_context {
     }
 
     #[napi]
-    pub fn use_program(&self, program: Option<ClassInstance<WebGLProgram>>) {
-        let program = program.map(|p| p.0).unwrap_or(0);
+    pub fn use_program(&self, program: crate::gl::GLObject<WebGLProgram>) {
+        let program = program.name(|p| p.0);
         canvas_c::canvas_native_webgl_use_program(program, self.state)
     }
 
@@ -1701,6 +1729,53 @@ macro_rules! impl_webgl_context {
         canvas_c::canvas_native_webgl_viewport(x, y, width, height, self.state);
     }
 
+
+    #[napi(js_name = "__toDataURL")]
+    pub fn __to_data_url(&self, format: Option<String>, encoderOptions: Option<f64>) -> String {
+        self.to_data_url(format, encoderOptions)
+    }
+
+    /// Whether the drawing buffer is read back bottom-up (UNPACK_FLIP_Y_WEBGL state).
+    #[napi(getter, js_name = "__flipY")]
+    pub fn __flip_y(&self) -> bool {
+        canvas_c::canvas_native_webgl_state_get_flip_y(self.state)
+    }
+
+    /// The supported extension names, comma-separated.
+    #[napi(js_name = "__getSupportedExtensions")]
+    pub fn __get_supported_extensions(&self) -> String {
+        let ret = canvas_c::canvas_native_webgl_get_supported_extensions_to_string(self.state);
+        if ret.is_null() {
+            return String::new();
+        }
+        unsafe { CString::from_raw(ret as _) }.to_string_lossy().into_owned()
+    }
+
+    #[napi(js_name = "__resized")]
+    pub fn __resized(&self) {
+        canvas_c::canvas_native_webgl_resized(self.state);
+    }
+
+    /// `__startRaf` / `__stopRaf`: a paused context keeps its pending frame but is not presented.
+    #[napi(js_name = "__startRaf")]
+    pub fn __start_raf(&self) {
+        self.frame.set_paused(false);
+    }
+
+    #[napi(js_name = "__stopRaf")]
+    pub fn __stop_raf(&self) {
+        self.frame.set_paused(true);
+    }
+
+    #[napi(getter)]
+    pub fn continuous_render_mode(&self) -> bool {
+        self.continuous_render.get()
+    }
+
+    #[napi(setter)]
+    pub fn set_continuous_render_mode(&self, value: bool) {
+        self.continuous_render.set(value);
+    }
 
     #[napi(js_name = "toDataURL")]
     pub fn to_data_url(&self, format: Option<String>, encoderOptions: Option<f64>) -> String {

@@ -1799,6 +1799,125 @@ pub extern "C" fn canvas_native_webgl_create_no_window(
     }
 }
 
+/// Windows: a WebGL context whose drawing buffer can be shown in a `SwapChainPanel`
+/// (`canvas_native_webgl_attach_swap_chain_panel`). Null when ANGLE is unavailable.
+#[cfg(target_os = "windows")]
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_create_d3d(
+    width: i32,
+    height: i32,
+    version: i32,
+    alpha: bool,
+    antialias: bool,
+    depth: bool,
+    fail_if_major_performance_caveat: bool,
+    power_preference: i32,
+    premultiplied_alpha: bool,
+    preserve_drawing_buffer: bool,
+    stencil: bool,
+    desynchronized: bool,
+    xr_compatible: bool,
+) -> *mut WebGLState {
+    let (Ok(version), Ok(power_preference)) = (
+        WebGLVersion::try_from(version),
+        PowerPreference::try_from(power_preference),
+    ) else {
+        return std::ptr::null_mut();
+    };
+    let mut attrs = canvas_core::context_attributes::ContextAttributes::new(
+        alpha,
+        antialias,
+        depth,
+        fail_if_major_performance_caveat,
+        power_preference.into(),
+        premultiplied_alpha,
+        preserve_drawing_buffer,
+        stencil,
+        desynchronized,
+        xr_compatible,
+        false,
+        version == WebGLVersion::V1,
+        ColorSpace::Srgb,
+    );
+    let Some(ctx) = GLContext::create_texture_context(&mut attrs, width, height) else {
+        return std::ptr::null_mut();
+    };
+    let state = WebGLState(canvas_webgl::prelude::WebGLState::new_with_context_attributes(
+        ctx,
+        version,
+        attrs.get_alpha(),
+        attrs.get_antialias(),
+        attrs.get_depth(),
+        attrs.get_fail_if_major_performance_caveat(),
+        PowerPreference::from(attrs.get_power_preference()),
+        attrs.get_premultiplied_alpha(),
+        attrs.get_preserve_drawing_buffer(),
+        attrs.get_stencil(),
+        attrs.get_desynchronized(),
+        attrs.get_xr_compatible(),
+        false,
+        version == WebGLVersion::V1,
+    ));
+    webgl_state_register(Box::into_raw(Box::new(state)))
+}
+
+/// Windows: shows a `canvas_native_webgl_create_d3d` context in a `SwapChainPanel` (any COM
+/// pointer to it). UI thread.
+#[cfg(target_os = "windows")]
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_attach_swap_chain_panel(state: *mut WebGLState, panel: *mut c_void) -> bool {
+    if state.is_null() || panel.is_null() {
+        return false;
+    }
+    let state = unsafe { &mut *state };
+    unsafe { state.get_inner_mut().attach_swap_chain_panel(panel) }
+}
+
+/// Windows: maps the drawing buffer into its panel (DIPs = pixels * scale + offset).
+#[cfg(target_os = "windows")]
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_set_swap_chain_transform(
+    state: *mut WebGLState,
+    scale_x: f32,
+    scale_y: f32,
+    offset_x: f32,
+    offset_y: f32,
+) -> bool {
+    if state.is_null() {
+        return false;
+    }
+    let state = unsafe { &*state };
+    state.get_inner().set_swap_chain_transform(scale_x, scale_y, offset_x, offset_y)
+}
+
+/// Windows: resizes (and clears) a `canvas_native_webgl_create_d3d` drawing buffer.
+#[cfg(target_os = "windows")]
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_resize_d3d(state: *mut WebGLState, width: i32, height: i32) -> bool {
+    if state.is_null() {
+        return false;
+    }
+    let state = unsafe { &mut *state };
+    state.get_inner_mut().resize_texture_surface(width, height)
+}
+
+/// Ends a frame: presents it where the context is on screen (Windows panels), else flushes.
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_present(state: *mut WebGLState) -> bool {
+    if state.is_null() {
+        return false;
+    }
+    let state = unsafe { &*state };
+    #[cfg(target_os = "windows")]
+    {
+        state.get_inner().present()
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        state.get_inner().make_current_and_swap_buffers()
+    }
+}
+
 pub(crate) fn canvas_native_webgl_create_no_window_internal(
     width: i32,
     height: i32,

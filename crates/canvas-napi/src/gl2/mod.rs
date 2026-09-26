@@ -23,13 +23,42 @@ use crate::{impl_webgl2_context_constants, impl_webgl_context, impl_webgl_contex
 pub struct web_g_l_2_rendering_context {
   pub(crate) state: *mut WebGLState,
   pub(crate) invalidate_state: u32,
+  /// `createWebGL2Context(options, pointer)` wraps a state the host view owns.
+  pub(crate) owns_state: bool,
+  pub(crate) frame: std::rc::Rc<crate::frame::FrameSlot>,
+  pub(crate) continuous_render: std::cell::Cell<bool>,
+}
+
+impl web_g_l_2_rendering_context {
+  pub(crate) fn from_raw(state: *mut WebGLState, owns_state: bool) -> Self {
+    Self {
+      state,
+      invalidate_state: 0,
+      owns_state,
+      frame: crate::frame::FrameSlot::new(state as *mut std::ffi::c_void, crate::gl::present_webgl),
+      continuous_render: std::cell::Cell::new(false),
+    }
+  }
+}
+
+/// `CanvasModule.createWebGL2Context`: as `createWebGLContext`, for WebGL 2.
+#[napi(js_name = "createWebGL2Context")]
+pub fn create_web_g_l_2_context(
+  options: napi::bindgen_prelude::Unknown,
+  target: napi::bindgen_prelude::Unknown,
+  height: Option<f64>,
+) -> Option<web_g_l_2_rendering_context> {
+  let (state, owns) = crate::gl::resolve_webgl_state(2, &options, &target, height)?;
+  Some(web_g_l_2_rendering_context::from_raw(state, owns))
 }
 
 impl_webgl_context!(web_g_l_2_rendering_context);
 
 impl ObjectFinalize for web_g_l_2_rendering_context {
   fn finalize(self, _: Env) -> napi::Result<()> {
-    canvas_c::canvas_native_webgl_state_destroy(self.state);
+    if self.owns_state {
+      canvas_c::canvas_native_webgl_state_destroy(self.state);
+    }
     Ok(())
   }
 }
@@ -73,7 +102,7 @@ impl web_g_l_2_rendering_context {
       return Err(napi::Error::from_reason("Invalid parameter"));
     }
 
-    Ok(web_g_l_2_rendering_context { state: ret, invalidate_state: 0 })
+    Ok(web_g_l_2_rendering_context::from_raw(ret, true))
   }
 
   /* Transform feedback */
@@ -89,8 +118,8 @@ impl web_g_l_2_rendering_context {
   }
 
   #[napi]
-  pub fn bind_buffer_base(&self, target: u32, index: u32, buffer: ClassInstance<WebGLBuffer>) {
-    canvas_c::canvas_native_webgl2_bind_buffer_base(target, index, buffer.0, self.state);
+  pub fn bind_buffer_base(&self, target: u32, index: u32, buffer: crate::gl::GLObject<WebGLBuffer>) {
+    canvas_c::canvas_native_webgl2_bind_buffer_base(target, index, buffer.name(|b| b.0), self.state);
   }
 
   #[napi]
@@ -98,14 +127,14 @@ impl web_g_l_2_rendering_context {
     &self,
     target: u32,
     index: u32,
-    buffer: ClassInstance<WebGLBuffer>,
+    buffer: crate::gl::GLObject<WebGLBuffer>,
     offset: i64,
     size: i64,
   ) {
     canvas_c::canvas_native_webgl2_bind_buffer_range(
       target,
       index,
-      buffer.0,
+      buffer.name(|b| b.0),
       offset as isize,
       size as isize,
       self.state,
@@ -113,22 +142,22 @@ impl web_g_l_2_rendering_context {
   }
 
   #[napi]
-  pub fn bind_sampler(&self, unit: u32, sampler: ClassInstance<WebGLSampler>) {
-    canvas_c::canvas_native_webgl2_bind_sampler(unit, sampler.0, self.state);
+  pub fn bind_sampler(&self, unit: u32, sampler: crate::gl::GLObject<WebGLSampler>) {
+    canvas_c::canvas_native_webgl2_bind_sampler(unit, sampler.name(|s| s.0), self.state);
   }
 
   #[napi]
-  pub fn bind_transform_feedback(&self, target: u32, transform_feedback: &WebGLTransformFeedback) {
+  pub fn bind_transform_feedback(&self, target: u32, transform_feedback: crate::gl::GLObject<WebGLTransformFeedback>) {
     canvas_c::canvas_native_webgl2_bind_transform_feedback(
       target,
-      transform_feedback.0,
+      transform_feedback.name(|t| t.0),
       self.state,
     );
   }
 
   #[napi]
-  pub fn bind_vertex_array(&self, vertex_array: &WebGLVertexArrayObject) {
-    canvas_c::canvas_native_webgl2_bind_vertex_array(vertex_array.0, self.state);
+  pub fn bind_vertex_array(&self, vertex_array: crate::gl::GLObject<WebGLVertexArrayObject>) {
+    canvas_c::canvas_native_webgl2_bind_vertex_array(vertex_array.name(|v| v.0), self.state);
   }
 
   #[napi]
@@ -601,7 +630,10 @@ impl web_g_l_2_rendering_context {
         canvas_c::canvas_native_webgl_WebGLResult_destroy(result);
         (ret).to_js(env)
       }
-      _ => Null.to_js(env),
+      _ => {
+        canvas_c::canvas_native_webgl_WebGLResult_destroy(result);
+        Null.to_js(env)
+      }
     }
   }
 
@@ -660,7 +692,10 @@ impl web_g_l_2_rendering_context {
         let mut ret = ret.into_vec();
         ret.to_js(env)
       }
-      _ => Null.to_js(env),
+      _ => {
+        canvas_c::canvas_native_webgl_WebGLResult_destroy(result);
+        Null.to_js(env)
+      }
     }
   }
 
@@ -689,18 +724,10 @@ impl web_g_l_2_rendering_context {
     &self,
     program: ClassInstance<WebGLProgram>,
     name: String,
-  ) -> Option<u32> {
+  ) -> i32 {
+    // -1 for a name that is not an output, as WebGL 2 specifies.
     let state = unsafe { &mut *self.state };
-    let ret = canvas_webgl::webgl2::canvas_native_webgl2_get_frag_data_location(
-      program.0,
-      name.as_str(),
-      state.get_inner_mut(),
-    );
-    if ret != -1 {
-      Some(ret as u32)
-    } else {
-      None
-    }
+    canvas_webgl::webgl2::canvas_native_webgl2_get_frag_data_location(program.0, name.as_str(), state.get_inner_mut())
   }
 
   #[napi]
@@ -846,8 +873,65 @@ impl web_g_l_2_rendering_context {
         web_g_l_framebuffer { buffer: ret as u32 }
           .to_js(env)
       }
-
-      _ => get_parameter_inner(self.state, env, pname),
+      // WebGL 2 pnames: the WebGL 1 table get_parameter_inner uses returns null for them.
+      gl_bindings::MAX_3D_TEXTURE_SIZE
+      | gl_bindings::MAX_ARRAY_TEXTURE_LAYERS
+      | gl_bindings::MAX_COLOR_ATTACHMENTS
+      | gl_bindings::MAX_COMBINED_UNIFORM_BLOCKS
+      | gl_bindings::MAX_DRAW_BUFFERS
+      | gl_bindings::MAX_ELEMENTS_INDICES
+      | gl_bindings::MAX_ELEMENTS_VERTICES
+      | gl_bindings::MAX_FRAGMENT_INPUT_COMPONENTS
+      | gl_bindings::MAX_FRAGMENT_UNIFORM_BLOCKS
+      | gl_bindings::MAX_FRAGMENT_UNIFORM_COMPONENTS
+      | gl_bindings::MAX_PROGRAM_TEXEL_OFFSET
+      | gl_bindings::MAX_SAMPLES
+      | gl_bindings::MAX_TRANSFORM_FEEDBACK_INTERLEAVED_COMPONENTS
+      | gl_bindings::MAX_TRANSFORM_FEEDBACK_SEPARATE_ATTRIBS
+      | gl_bindings::MAX_TRANSFORM_FEEDBACK_SEPARATE_COMPONENTS
+      | gl_bindings::MAX_UNIFORM_BUFFER_BINDINGS
+      | gl_bindings::MAX_VARYING_COMPONENTS
+      | gl_bindings::MAX_VERTEX_OUTPUT_COMPONENTS
+      | gl_bindings::MAX_VERTEX_UNIFORM_BLOCKS
+      | gl_bindings::MAX_VERTEX_UNIFORM_COMPONENTS
+      | gl_bindings::MIN_PROGRAM_TEXEL_OFFSET
+      | gl_bindings::PACK_ROW_LENGTH
+      | gl_bindings::PACK_SKIP_PIXELS
+      | gl_bindings::PACK_SKIP_ROWS
+      | gl_bindings::READ_BUFFER
+      | gl_bindings::UNIFORM_BUFFER_OFFSET_ALIGNMENT
+      | gl_bindings::UNPACK_IMAGE_HEIGHT
+      | gl_bindings::UNPACK_ROW_LENGTH
+      | gl_bindings::UNPACK_SKIP_IMAGES
+      | gl_bindings::UNPACK_SKIP_PIXELS
+      | gl_bindings::UNPACK_SKIP_ROWS => {
+        let ret = canvas_c::canvas_native_webgl_result_get_i32(result);
+        canvas_c::canvas_native_webgl_WebGLResult_destroy(result);
+        ret.to_js(env)
+      }
+      0x9247 // MAX_CLIENT_WAIT_TIMEOUT_WEBGL
+      | gl_bindings::MAX_COMBINED_FRAGMENT_UNIFORM_COMPONENTS
+      | gl_bindings::MAX_COMBINED_VERTEX_UNIFORM_COMPONENTS
+      | gl_bindings::MAX_ELEMENT_INDEX
+      | gl_bindings::MAX_SERVER_WAIT_TIMEOUT
+      | gl_bindings::MAX_TEXTURE_LOD_BIAS
+      | gl_bindings::MAX_UNIFORM_BLOCK_SIZE => {
+        let ret = canvas_c::canvas_native_webgl_result_get_f32(result);
+        canvas_c::canvas_native_webgl_WebGLResult_destroy(result);
+        (ret as f64).to_js(env)
+      }
+      gl_bindings::RASTERIZER_DISCARD
+      | gl_bindings::TRANSFORM_FEEDBACK_ACTIVE
+      | gl_bindings::TRANSFORM_FEEDBACK_PAUSED => {
+        let ret = canvas_c::canvas_native_webgl_result_get_bool(result);
+        canvas_c::canvas_native_webgl_WebGLResult_destroy(result);
+        ret.to_js(env)
+      }
+      _ => {
+        // get_parameter_inner reads the value itself.
+        canvas_c::canvas_native_webgl_WebGLResult_destroy(result);
+        get_parameter_inner(self.state, env, pname)
+      }
     }
   }
 
@@ -1010,8 +1094,8 @@ impl web_g_l_2_rendering_context {
   }
 
   #[napi]
-  pub fn is_vertex_array(&self, vertex_array: &WebGLVertexArrayObject) -> bool {
-    canvas_c::canvas_native_webgl2_is_vertex_array(vertex_array.0, self.state)
+  pub fn is_vertex_array(&self, vertex_array: crate::gl::GLObject<WebGLVertexArrayObject>) -> bool {
+    canvas_c::canvas_native_webgl2_is_vertex_array(vertex_array.name(|v| v.0), self.state)
   }
 
   #[napi]

@@ -55,3 +55,12 @@ DEST="$PACKAGE/platforms/$PLATFORM/$ARCH"
 mkdir -p "$DEST"
 cp "$OUT/$LIB" "$DEST/$NAME.node"
 echo "$DEST/$NAME.node"
+
+# WebGL on Windows runs on ANGLE, loaded from next to the module (d3dcompiler_47 ships with
+# Windows 10+).
+if [ "$PLATFORM" = "windows" ]; then
+    ANGLE="$ROOT/.angle-prebuilt/angle-$ARCH/bin"
+    [ -f "$ANGLE/libEGL.dll" ] || "$ROOT/tools/scripts/download-angle.sh" "$ARCH"
+    cp "$ANGLE/libEGL.dll" "$ANGLE/libGLESv2.dll" "$DEST/"
+    echo "$DEST/libEGL.dll, libGLESv2.dll"
+fi

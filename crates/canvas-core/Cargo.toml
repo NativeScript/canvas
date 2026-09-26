@@ -6,7 +6,7 @@ edition = "2021"
 
 [features]
 2d = ["skia-safe"]
-gl = ["gl-bindings", "egl", "glutin", "skia-safe/gl", "dep:khronos-egl", "dep:libloading", "dep:windows"]
+gl = ["gl-bindings", "egl", "glutin", "skia-safe/gl", "dep:khronos-egl", "dep:libloading", "dep:windows", "dep:windows-core"]
 vulkan = ["ash", "ash-window"]
 mtl = ["objc2-metal", "skia-safe/metal"]
 metal = ["mtl"]

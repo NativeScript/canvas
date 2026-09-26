@@ -5,8 +5,8 @@
 //! file by adding a `platform_display` for their native display type.
 //!
 //! Surfaces are pbuffers. Presenting to the screen goes through a D3D11 texture shared with
-//! ANGLE (see `create_texture_surface`); window surfaces are not used because the app's native
-//! view is a WinUI `SwapChainPanel`, not an HWND.
+//! ANGLE (see `create_texture_context`) that is copied into a composition swapchain; window
+//! surfaces are not used because the app's native view is a WinUI `SwapChainPanel`, not an HWND.
 
 use std::cell::Cell;
 use std::ffi::c_void;
@@ -318,7 +318,44 @@ pub(crate) struct GLContextInner {
     config: Option<egl::Config>,
     #[cfg(target_os = "windows")]
     texture: Option<windows::Win32::Graphics::Direct3D11::ID3D11Texture2D>,
+    /// On screen: the panel's swapchain and ANGLE's immediate context that copies into it.
+    #[cfg(target_os = "windows")]
+    presenter: Option<Presenter>,
     dimensions: Arc<RwLock<Dimensions>>,
+}
+
+#[cfg(target_os = "windows")]
+pub(crate) struct Presenter {
+    swap_chain: crate::gpu::dxgi::CompositionSwapChain,
+    context: windows::Win32::Graphics::Direct3D11::ID3D11DeviceContext,
+}
+
+/// A BGRA texture on ANGLE's device that a pbuffer can wrap and a swapchain buffer can be
+/// copied from.
+#[cfg(target_os = "windows")]
+fn create_render_texture(width: i32, height: i32) -> Option<windows::Win32::Graphics::Direct3D11::ID3D11Texture2D> {
+    use windows::Win32::Graphics::Direct3D11::*;
+    use windows::Win32::Graphics::Dxgi::Common::{DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_SAMPLE_DESC};
+    let device = angle_d3d11_device()?;
+    let desc = D3D11_TEXTURE2D_DESC {
+        Width: width.max(1) as u32,
+        Height: height.max(1) as u32,
+        MipLevels: 1,
+        ArraySize: 1,
+        Format: DXGI_FORMAT_B8G8R8A8_UNORM,
+        SampleDesc: DXGI_SAMPLE_DESC { Count: 1, Quality: 0 },
+        Usage: D3D11_USAGE_DEFAULT,
+        BindFlags: (D3D11_BIND_RENDER_TARGET.0 | D3D11_BIND_SHADER_RESOURCE.0) as u32,
+        ..Default::default()
+    };
+    let mut texture = None;
+    match unsafe { device.CreateTexture2D(&desc, None, Some(&mut texture)) } {
+        Ok(()) => texture,
+        Err(error) => {
+            log::error!("canvas: could not create the WebGL render texture: {error}");
+            None
+        }
+    }
 }
 
 #[derive(Default)]
@@ -472,6 +509,8 @@ impl GLContext {
             config: Some(config),
             #[cfg(target_os = "windows")]
             texture: None,
+            #[cfg(target_os = "windows")]
+            presenter: None,
             dimensions: Arc::new(RwLock::new(Dimensions {
                 width: width.max(1),
                 height: height.max(1),
@@ -540,6 +579,100 @@ impl GLContext {
     #[cfg(target_os = "windows")]
     pub fn texture(&self) -> Option<&windows::Win32::Graphics::Direct3D11::ID3D11Texture2D> {
         self.0.texture.as_ref()
+    }
+
+    /// A context whose default framebuffer is a D3D11 texture, so it can be presented in a
+    /// `SwapChainPanel` (`attach_swap_chain_panel`). Single-sampled: ANGLE cannot wrap a
+    /// multisampled texture, so `antialias` is reported as false.
+    #[cfg(target_os = "windows")]
+    pub fn create_texture_context(attrs: &mut ContextAttributes, width: i32, height: i32) -> Option<Self> {
+        let egl = shared()?;
+        attrs.set_antialias(false);
+        let config = choose_config(egl, attrs)?;
+        let context = create_context(egl, config, attrs)?;
+        let mut gl = GLContext(GLContextInner {
+            context: Some(context),
+            config: Some(config),
+            dimensions: Arc::new(RwLock::new(Dimensions {
+                width: width.max(1),
+                height: height.max(1),
+            })),
+            ..Default::default()
+        });
+        let texture = create_render_texture(width, height)?;
+        gl.set_texture_surface(texture, width, height).then_some(gl)
+    }
+
+    /// Resizes a texture context (its GL objects are kept) and its swapchain. The contents are
+    /// cleared, as resizing a canvas does.
+    #[cfg(target_os = "windows")]
+    pub fn resize_texture_surface(&mut self, width: i32, height: i32) -> bool {
+        if self.0.texture.is_none() {
+            return false;
+        }
+        let Some(texture) = create_render_texture(width, height) else { return false };
+        if !self.set_texture_surface(texture, width, height) {
+            return false;
+        }
+        match self.0.presenter.as_mut() {
+            Some(presenter) => presenter.swap_chain.resize(width.max(1) as u32, height.max(1) as u32).is_ok(),
+            None => true,
+        }
+    }
+
+    /// Shows a texture context in a WinUI `SwapChainPanel` (any COM pointer to it). UI thread.
+    #[cfg(target_os = "windows")]
+    pub unsafe fn attach_swap_chain_panel(&mut self, panel: *mut c_void, alpha: bool) -> bool {
+        if self.0.texture.is_none() {
+            return false;
+        }
+        let Some(device) = angle_d3d11_device() else { return false };
+        let Ok(context) = (unsafe { device.GetImmediateContext() }) else { return false };
+        let (width, height) = self.get_surface_dimensions();
+        let swap_chain = match crate::gpu::dxgi::CompositionSwapChain::new_d3d11(&device, width as u32, height as u32, alpha) {
+            Ok(swap_chain) => swap_chain,
+            Err(error) => {
+                log::error!("canvas: could not create a WebGL swapchain: {error}");
+                return false;
+            }
+        };
+        if let Err(error) = unsafe { swap_chain.bind_panel(panel) } {
+            log::error!("canvas: could not show the WebGL swapchain in its panel: {error}");
+            return false;
+        }
+        self.0.presenter = Some(Presenter { swap_chain, context });
+        true
+    }
+
+    /// Maps the swapchain into its panel: DIPs = pixels * scale + offset. The texture holds GL's
+    /// bottom-up rows, so the swapchain is flipped vertically here.
+    #[cfg(target_os = "windows")]
+    pub fn set_swap_chain_transform(&self, scale_x: f32, scale_y: f32, offset_x: f32, offset_y: f32) -> bool {
+        let Some(presenter) = self.0.presenter.as_ref() else { return false };
+        let height = self.get_surface_height() as f32;
+        presenter
+            .swap_chain
+            .set_transform(scale_x, -scale_y, offset_x, offset_y + height * scale_y)
+            .is_ok()
+    }
+
+    /// Finishes the frame and, on screen, copies it into the swapchain and presents it. A copy
+    /// leaves ANGLE's cached D3D11 pipeline state untouched, unlike a draw would.
+    #[cfg(target_os = "windows")]
+    pub fn present(&self) -> bool {
+        if !self.make_current() {
+            return false;
+        }
+        unsafe { gl_bindings::Flush() };
+        let (Some(presenter), Some(texture)) = (self.0.presenter.as_ref(), self.0.texture.as_ref()) else {
+            return true;
+        };
+        let Ok(back_buffer) = presenter.swap_chain.buffer::<windows::Win32::Graphics::Direct3D11::ID3D11Texture2D>(0) else {
+            return false;
+        };
+        unsafe { presenter.context.CopyResource(&back_buffer, texture) };
+        drop(back_buffer);
+        presenter.swap_chain.present(true).is_ok()
     }
 
     fn replace_surface(&mut self, egl: &Egl, surface: egl::Surface) {

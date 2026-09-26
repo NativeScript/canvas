@@ -2,13 +2,14 @@
 //! `SwapChainPanel` the TS view creates.
 //!
 //! Like the iOS view object of the same name, it owns the rendering context and hands its pointer
-//! to `packages/canvas` (`create2DContext` → `create2DContextWithPointer`). The drawing buffer is
-//! sized in physical pixels (300x150 until set, as on the web); the panel's DIP size, its
-//! composition scale and the `fit` mode place it in the panel (`canvas_core::fit`).
+//! to `packages/canvas` (`create2DContext` → `create2DContextWithPointer`, `initContext` +
+//! `nativeContext` → `createWebGLContext`). The drawing buffer is sized in physical pixels
+//! (300x150 until set, as on the web); the panel's DIP size, its composition scale and the `fit`
+//! mode place it in the panel (`canvas_core::fit`).
 
 use std::ffi::c_void;
 
-use canvas_c::CanvasRenderingContext2D as CCanvasRenderingContext2D;
+use canvas_c::{CanvasRenderingContext2D as CCanvasRenderingContext2D, WebGLState};
 use canvas_core::fit::{surface_transform, CanvasFit};
 use napi::bindgen_prelude::ObjectFinalize;
 use napi::{Env, Error, Result};
@@ -21,6 +22,23 @@ fn parse_pointer_key(key: &str) -> Option<usize> {
   match key.strip_prefix("0x").or_else(|| key.strip_prefix("0X")) {
     Some(hex) => usize::from_str_radix(hex, 16).ok(),
     None => key.parse().ok(),
+  }
+}
+
+/// The context the view owns; a view gets at most one, as on the web.
+enum Context {
+  None,
+  TwoD(*mut CCanvasRenderingContext2D),
+  WebGL(*mut WebGLState),
+}
+
+impl Context {
+  fn pointer(&self) -> usize {
+    match *self {
+      Context::None => 0,
+      Context::TwoD(context) => context as usize,
+      Context::WebGL(state) => state as usize,
+    }
   }
 }
 
@@ -37,7 +55,7 @@ pub struct NSCCanvas {
   view_width: f32,
   view_height: f32,
   fit: CanvasFit,
-  context_2d: *mut CCanvasRenderingContext2D,
+  context: Context,
 }
 
 impl ObjectFinalize for NSCCanvas {
@@ -45,7 +63,11 @@ impl ObjectFinalize for NSCCanvas {
     if let Some(panel) = self.panel.as_ref() {
       unsafe { canvas_core::gpu::dxgi::CompositionSwapChain::unbind_panel(panel.as_raw()) };
     }
-    canvas_c::canvas_native_context_release(self.context_2d);
+    match self.context {
+      Context::None => {}
+      Context::TwoD(context) => canvas_c::canvas_native_context_release(context),
+      Context::WebGL(state) => canvas_c::canvas_native_webgl_state_destroy(state),
+    }
     Ok(())
   }
 }
@@ -55,23 +77,26 @@ impl NSCCanvas {
     self.panel.as_ref().map_or(std::ptr::null_mut(), |p| p.as_raw())
   }
 
+  fn density(&self) -> f32 {
+    self.scale_x.max(1.)
+  }
+
   fn apply_transform(&self) {
-    if self.context_2d.is_null() {
-      return;
-    }
     let t = surface_transform(
       self.fit,
       (self.surface_width as f32, self.surface_height as f32),
       (self.scale_x, self.scale_y),
       (self.view_width, self.view_height),
     );
-    canvas_c::canvas_native_context_set_swap_chain_transform(
-      self.context_2d,
-      t.scale_x,
-      t.scale_y,
-      t.offset_x,
-      t.offset_y,
-    );
+    match self.context {
+      Context::None => {}
+      Context::TwoD(context) => {
+        canvas_c::canvas_native_context_set_swap_chain_transform(context, t.scale_x, t.scale_y, t.offset_x, t.offset_y);
+      }
+      Context::WebGL(state) => {
+        canvas_c::canvas_native_webgl_set_swap_chain_transform(state, t.scale_x, t.scale_y, t.offset_x, t.offset_y);
+      }
+    }
   }
 }
 
@@ -100,7 +125,7 @@ impl NSCCanvas {
       view_width: 0.,
       view_height: 0.,
       fit: CanvasFit::default(),
-      context_2d: std::ptr::null_mut(),
+      context: Context::None,
     })
   }
 
@@ -148,6 +173,13 @@ impl NSCCanvas {
     self.surface_height
   }
 
+  /// The context's pointer as a decimal string (0 without one), as the iOS view's
+  /// `nativeContext`: `packages/canvas` wraps it with `createWebGLContext(options, BigInt(...))`.
+  #[napi(getter)]
+  pub fn native_context(&self) -> String {
+    self.context.pointer().to_string()
+  }
+
   /// The drawing buffer size in physical pixels; resizes (and clears) an existing context.
   #[napi]
   pub fn set_surface_size(&mut self, width: f64, height: f64) {
@@ -158,11 +190,14 @@ impl NSCCanvas {
     }
     self.surface_width = width;
     self.surface_height = height;
-    if !self.context_2d.is_null() {
-      let context = unsafe { &mut *self.context_2d };
-      canvas_c::resize(context, width as f32, height as f32);
-      self.apply_transform();
+    match self.context {
+      Context::None => return,
+      Context::TwoD(context) => canvas_c::resize(unsafe { &mut *context }, width as f32, height as f32),
+      Context::WebGL(state) => {
+        canvas_c::canvas_native_webgl_resize_d3d(state, width as i32, height as i32);
+      }
     }
+    self.apply_transform();
   }
 
   /// The panel's laid-out size in DIPs (`ActualWidth/Height`).
@@ -201,49 +236,92 @@ impl NSCCanvas {
     _will_read_frequently: bool,
     color_space: Option<i32>,
   ) -> Result<String> {
-    if self.context_2d.is_null() {
-      let color_space = match color_space.unwrap_or(0) {
-        1 => canvas_c::CanvasColorSpace::P3,
-        _ => canvas_c::CanvasColorSpace::Srgb,
-      };
-      let (width, height) = (self.surface_width as f32, self.surface_height as f32);
-      let density = self.scale_x.max(1.);
-      let mut context = canvas_c::canvas_native_context_create_d3d(
-        width,
-        height,
-        density,
-        alpha,
-        font_color,
-        density * 96.,
-        0,
-        color_space,
-      );
-      if context.is_null() {
-        // No usable D3D12 device: a CPU canvas still works offscreen (readback, toDataURL).
-        context = canvas_c::canvas_native_context_create(
-          width,
-          height,
-          density,
-          alpha,
-          font_color,
-          density * 96.,
-          0,
-          color_space,
-        );
-      } else if !self.panel_ptr().is_null()
-        && !canvas_c::canvas_native_context_attach_swap_chain_panel(context, self.panel_ptr())
-      {
-        log::error!("canvas: could not attach the canvas to its SwapChainPanel");
-      }
-      self.context_2d = context;
-      self.apply_transform();
+    match self.context {
+      Context::TwoD(context) => return Ok((context as usize).to_string()),
+      Context::WebGL(_) => return Err(Error::from_reason("The canvas already has a WebGL context")),
+      Context::None => {}
     }
-    Ok((self.context_2d as usize).to_string())
+    let color_space = match color_space.unwrap_or(0) {
+      1 => canvas_c::CanvasColorSpace::P3,
+      _ => canvas_c::CanvasColorSpace::Srgb,
+    };
+    let (width, height) = (self.surface_width as f32, self.surface_height as f32);
+    let density = self.density();
+    let mut context =
+      canvas_c::canvas_native_context_create_d3d(width, height, density, alpha, font_color, density * 96., 0, color_space);
+    if context.is_null() {
+      // No usable D3D12 device: a CPU canvas still works offscreen (readback, toDataURL).
+      context = canvas_c::canvas_native_context_create(width, height, density, alpha, font_color, density * 96., 0, color_space);
+    } else if !self.panel_ptr().is_null()
+      && !canvas_c::canvas_native_context_attach_swap_chain_panel(context, self.panel_ptr())
+    {
+      log::error!("canvas: could not attach the canvas to its SwapChainPanel");
+    }
+    self.context = Context::TwoD(context);
+    self.apply_transform();
+    Ok((context as usize).to_string())
+  }
+
+  /// Creates (once) the WebGL (`type` "webgl"/"experimental-webgl") or WebGL 2 context, on
+  /// ANGLE; `nativeContext` then holds its pointer. Arguments mirror the iOS view's `initContext`.
+  #[napi]
+  pub fn init_context(
+    &mut self,
+    context_type: String,
+    alpha: bool,
+    antialias: bool,
+    depth: bool,
+    fail_if_major_performance_caveat: bool,
+    power_preference: i32,
+    premultiplied_alpha: bool,
+    preserve_drawing_buffer: bool,
+    stencil: bool,
+    desynchronized: bool,
+    xr_compatible: bool,
+    _is_canvas: Option<bool>,
+    _color_space: Option<i32>,
+  ) -> Result<()> {
+    match self.context {
+      Context::WebGL(_) => return Ok(()),
+      Context::TwoD(_) => return Err(Error::from_reason("The canvas already has a 2D context")),
+      Context::None => {}
+    }
+    let version = if context_type.contains("webgl2") { 2 } else { 1 };
+    let state = canvas_c::canvas_native_webgl_create_d3d(
+      self.surface_width as i32,
+      self.surface_height as i32,
+      version,
+      alpha,
+      antialias,
+      depth,
+      fail_if_major_performance_caveat,
+      power_preference.max(0),
+      premultiplied_alpha,
+      preserve_drawing_buffer,
+      stencil,
+      desynchronized,
+      xr_compatible,
+    );
+    if state.is_null() {
+      return Err(Error::from_reason("WebGL is unavailable: ANGLE (libEGL.dll, libGLESv2.dll) could not be initialised"));
+    }
+    if !self.panel_ptr().is_null() && !canvas_c::canvas_native_webgl_attach_swap_chain_panel(state, self.panel_ptr()) {
+      log::error!("canvas: could not attach the WebGL canvas to its SwapChainPanel");
+    }
+    self.context = Context::WebGL(state);
+    self.apply_transform();
+    Ok(())
   }
 
   /// Renders pending drawing and presents it now.
   #[napi]
   pub fn present(&self) {
-    canvas_c::canvas_native_context_render(self.context_2d);
+    match self.context {
+      Context::None => {}
+      Context::TwoD(context) => canvas_c::canvas_native_context_render(context),
+      Context::WebGL(state) => {
+        canvas_c::canvas_native_webgl_present(state);
+      }
+    }
   }
 }

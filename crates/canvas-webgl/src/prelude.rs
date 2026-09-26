@@ -501,6 +501,31 @@ impl WebGLState {
         self.context.swap_buffers()
     }
 
+    /// Windows: shows a texture-backed context (`GLContext::create_texture_context`) in a WinUI
+    /// `SwapChainPanel`. UI thread.
+    #[cfg(target_os = "windows")]
+    pub unsafe fn attach_swap_chain_panel(&mut self, panel: *mut std::ffi::c_void) -> bool {
+        let alpha = self.get_attributes().get_alpha();
+        unsafe { self.context.attach_swap_chain_panel(panel, alpha) }
+    }
+
+    #[cfg(target_os = "windows")]
+    pub fn set_swap_chain_transform(&self, scale_x: f32, scale_y: f32, offset_x: f32, offset_y: f32) -> bool {
+        self.context.set_swap_chain_transform(scale_x, scale_y, offset_x, offset_y)
+    }
+
+    /// Windows: finishes the frame and presents it when on screen.
+    #[cfg(target_os = "windows")]
+    pub fn present(&self) -> bool {
+        self.context.present()
+    }
+
+    /// Windows: resizes a texture-backed drawing buffer (and its swapchain); clears it.
+    #[cfg(target_os = "windows")]
+    pub fn resize_texture_surface(&mut self, width: i32, height: i32) -> bool {
+        self.context.resize_texture_surface(width, height)
+    }
+
     pub fn make_current_and_swap_buffers(&self) -> bool {
         let made = self.context.make_current();
         let swapped = self.context.swap_buffers();

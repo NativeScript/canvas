@@ -118,6 +118,13 @@ export abstract class NapiCanvas extends CanvasBase {
 		(global as any).__canvasLoaded = true;
 	}
 
+	/** A canvas not attached to a layout (offscreen drawing, tests), as on iOS/Android. */
+	static createCustomView() {
+		const canvas = new (this as any)();
+		canvas._isCustom = true;
+		return canvas;
+	}
+
 	/** Called by the platform once its native view exists: `host` is its `CanvasModule.NSCCanvas`. */
 	protected _attachHost(host: any) {
 		this._canvas = host;

@@ -378,7 +378,7 @@ impl WebGLState {
         ))
     }
 
-    #[cfg(not(target_os = "android"))]
+    #[cfg(any(target_os = "ios", target_os = "macos", target_os = "visionos", target_os = "tvos"))]
     pub fn new_with_view(
         view: *mut c_void,
         version: WebGLVersion,
@@ -1709,7 +1709,7 @@ pub extern "C" fn canvas_native_webgl_create(
     }
 }
 
-#[cfg(not(target_os = "android"))]
+#[cfg(any(target_os = "ios", target_os = "macos", target_os = "visionos", target_os = "tvos"))]
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_create(
     view: *mut c_void,

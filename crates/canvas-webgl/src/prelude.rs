@@ -164,7 +164,7 @@ impl WebGLState {
         self.state.borrow().version
     }
 
-    #[cfg(not(target_os = "android"))]
+    #[cfg(any(target_os = "ios", target_os = "macos", target_os = "visionos", target_os = "tvos"))]
     pub fn set_surface(&mut self, view: NonNull<std::ffi::c_void>) -> bool {
         self.context.set_surface(view)
     }

@@ -104,7 +104,7 @@ pub fn bytes_to_data_n32_url(
     #[cfg(any(target_os = "ios", target_os = "macos", target_os = "visionos", target_os = "tvos"))]
     let fmt = ColorType::BGRA8888;
 
-    #[cfg(any(target_os = "android"))]
+    #[cfg(not(any(target_os = "ios", target_os = "macos", target_os = "visionos", target_os = "tvos")))]
     let fmt = ColorType::RGBA8888;
 
     let image_info = ImageInfo::new((width, height), fmt, AlphaType::Unpremul, None);

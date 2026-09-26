@@ -500,7 +500,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize(
                 }
 
                 let (read_back, texture_data) = {
-                    #[cfg(any(target_os = "ios", target_os = "macos", target_os = "visionos", target_os = "tvos"))]
+                    #[cfg(not(target_os = "android"))]
                     let mut format = wgt::TextureFormat::Bgra8Unorm;
 
                     #[cfg(any(target_os = "android"))]
@@ -685,7 +685,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize_uiview(
                 }
 
                 let (read_back, texture_data) = {
-                    #[cfg(any(target_os = "ios", target_os = "macos", target_os = "visionos", target_os = "tvos"))]
+                    #[cfg(not(target_os = "android"))]
                     let mut format = wgt::TextureFormat::Bgra8Unorm;
 
                     #[cfg(any(target_os = "android"))]
@@ -839,7 +839,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize_nsview(
                 }
 
                 let (read_back, texture_data) = {
-                    #[cfg(any(target_os = "ios", target_os = "macos", target_os = "visionos", target_os = "tvos"))]
+                    #[cfg(not(target_os = "android"))]
                     let mut format = wgt::TextureFormat::Bgra8Unorm;
 
                     #[cfg(any(target_os = "android"))]
@@ -946,8 +946,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize_layer(
                 }
 
                 let (read_back, texture_data) = {
-                    #[cfg(any(target_os = "ios", target_os = "macos", target_os = "visionos", target_os = "tvos"))]
-                    let mut format = TextureFormat::Bgra8Unorm;
+                    #[cfg(not(target_os = "android"))]
+                    let mut format = wgt::TextureFormat::Bgra8Unorm;
 
                     #[cfg(any(target_os = "android"))]
                     let mut format = wgt::TextureFormat::Rgba8Unorm;
@@ -1162,8 +1162,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_configure(
         vec![]
     };
 
-    #[cfg(any(target_os = "ios", target_os = "macos", target_os = "visionos", target_os = "tvos"))]
-    let mut format = TextureFormat::Bgra8Unorm;
+    #[cfg(not(target_os = "android"))]
+    let mut format = wgt::TextureFormat::Bgra8Unorm;
 
     #[cfg(any(target_os = "android"))]
     let mut format = wgt::TextureFormat::Rgba8Unorm;
@@ -1208,8 +1208,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_configure(
     }
 
     let (read_back, texture_data) = {
-        #[cfg(any(target_os = "ios", target_os = "macos", target_os = "visionos", target_os = "tvos"))]
-        let mut format = TextureFormat::Bgra8Unorm;
+        #[cfg(not(target_os = "android"))]
+        let mut format = wgt::TextureFormat::Bgra8Unorm;
 
         #[cfg(any(target_os = "android"))]
         let mut format = wgt::TextureFormat::Rgba8Unorm;

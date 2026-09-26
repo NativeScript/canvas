@@ -202,6 +202,13 @@ fn shared() -> Option<&'static Egl> {
     Some(egl)
 }
 
+/// A GL/EGL entry point from the loaded EGL implementation (null if unavailable).
+pub fn get_proc_address(name: &str) -> *const c_void {
+    shared()
+        .and_then(|egl| egl.instance.get_proc_address(name))
+        .map_or(std::ptr::null(), |f| f as *const c_void)
+}
+
 impl Egl {
     fn has_extension(&self, name: &str) -> bool {
         self.extensions.split(' ').any(|e| e == name)

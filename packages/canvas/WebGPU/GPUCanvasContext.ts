@@ -7,6 +7,7 @@ import type { GPUAdapter } from './GPUAdapter';
 import type { GPUCanvasAlphaMode, GPUCanvasPresentMode, GPUExtent3D, GPUTextureFormat } from './Types';
 import type { CanvasRenderingContext } from '../common';
 import type { Canvas } from '../Canvas';
+import { POINTER_CONTEXT_HOST } from '../platform';
 const device_ = Symbol('[[device]]');
 export class GPUCanvasContext implements CanvasRenderingContext {
 	_type;
@@ -34,7 +35,7 @@ export class GPUCanvasContext implements CanvasRenderingContext {
 			nativeContext = context.getNativeContext().toString();
 		}
 
-		if (__APPLE__) {
+		if (POINTER_CONTEXT_HOST) {
 			nativeContext = context.nativeContext.toString();
 		}
 

@@ -20,6 +20,7 @@ import { Canvas } from '../../Canvas';
 import { ImageBitmap } from '../../ImageBitmap';
 
 import { Helpers } from '../../helpers';
+import { POINTER_CONTEXT_HOST } from '../../platform';
 
 export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 	static {
@@ -35,7 +36,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 			nativeContext = context.getNativeContextString();
 		}
 
-		if (__APPLE__) {
+		if (POINTER_CONTEXT_HOST) {
 			nativeContext = context.nativeContext.toString();
 		}
 

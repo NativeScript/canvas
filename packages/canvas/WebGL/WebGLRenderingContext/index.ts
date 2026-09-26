@@ -41,6 +41,7 @@ import { Canvas } from '../../Canvas';
 import { ImageBitmap } from '../../ImageBitmap';
 
 import { Helpers } from '../../helpers';
+import { POINTER_CONTEXT_HOST } from '../../platform';
 
 enum ContextType {
 	None,
@@ -68,7 +69,7 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 				nativeContext = context.getNativeContextString();
 			}
 
-			if (__APPLE__) {
+			if (POINTER_CONTEXT_HOST) {
 				nativeContext = context.nativeContext.toString();
 			}
 

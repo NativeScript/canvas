@@ -56,6 +56,10 @@ pub struct CanvasGPUCanvasContext {
     pub(crate) data: parking_lot::Mutex<Option<SurfaceData>>,
     pub(crate) view_data: parking_lot::Mutex<ViewData>,
     pub(crate) current_texture: parking_lot::Mutex<Option<Arc<CanvasGPUTexture>>>,
+    /// Windows: the SwapChainPanel stand-in wgpu binds its swapchain through (keeps the
+    /// swapchain's DPI / fit transform ours).
+    #[cfg(all(target_os = "windows", feature = "d3d"))]
+    pub(crate) panel: Option<canvas_core::gpu::dxgi::PanelSurfaceTarget>,
 }
 
 impl Drop for CanvasGPUCanvasContext {
@@ -590,6 +594,135 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create(
             handle_error_fatal(cause, "canvas_native_webgpu_context_create");
             std::ptr::null()
         }
+    }
+}
+
+/// Windows: a context presenting in a WinUI `SwapChainPanel` (any COM pointer to it). UI thread.
+#[cfg(all(target_os = "windows", feature = "d3d"))]
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_context_create_swap_chain_panel(
+    instance: *const CanvasWebGPUInstance,
+    panel: *mut c_void,
+    width: u32,
+    height: u32,
+) -> *const CanvasGPUCanvasContext {
+    if instance.is_null() || panel.is_null() {
+        return std::ptr::null();
+    }
+    Arc::increment_strong_count(instance);
+    let instance = Arc::from_raw(instance);
+
+    let target = match canvas_core::gpu::dxgi::PanelSurfaceTarget::new(panel) {
+        Ok(target) => target,
+        Err(error) => {
+            log::error!("canvas_native_webgpu_context_create_swap_chain_panel: not a SwapChainPanel: {error}");
+            return std::ptr::null();
+        }
+    };
+    match instance.instance().create_surface_from_swap_chain_panel(target.as_raw()) {
+        Ok(surface) => Arc::into_raw(Arc::new(CanvasGPUCanvasContext {
+            instance,
+            surface: Mutex::new(surface),
+            read_back_texture: Default::default(),
+            has_surface_presented: Arc::default(),
+            data: Mutex::default(),
+            view_data: Mutex::new(ViewData { width, height }),
+            current_texture: Mutex::default(),
+            panel: Some(target),
+        })),
+        Err(cause) => {
+            handle_error_fatal(cause, "canvas_native_webgpu_context_create_swap_chain_panel");
+            std::ptr::null()
+        }
+    }
+}
+
+/// Windows: maps the swapchain into its panel (DIPs = pixels * scale + offset).
+#[cfg(all(target_os = "windows", feature = "d3d"))]
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_context_set_swap_chain_transform(
+    context: *const CanvasGPUCanvasContext,
+    scale_x: f32,
+    scale_y: f32,
+    offset_x: f32,
+    offset_y: f32,
+) -> bool {
+    if context.is_null() {
+        return false;
+    }
+    let context = &*context;
+    context
+        .panel
+        .as_ref()
+        .is_some_and(|panel| panel.set_transform(scale_x, scale_y, offset_x, offset_y).is_ok())
+}
+
+/// Windows: a new drawing-buffer size. The surface is reconfigured in place (its swapchain is
+/// resized), keeping the configuration the page chose.
+#[cfg(all(target_os = "windows", feature = "d3d"))]
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_context_resize_swap_chain_panel(
+    context: *const CanvasGPUCanvasContext,
+    width: u32,
+    height: u32,
+) {
+    if context.is_null() || width == 0 || height == 0 {
+        return;
+    }
+    let context = &*context;
+    let surface = context.surface.lock();
+    discard_current_texture(context, &surface, "canvas_native_webgpu_context_resize_swap_chain_panel");
+    {
+        let mut view_data = context.view_data.lock();
+        view_data.width = width;
+        view_data.height = height;
+    }
+    let mut surface_data_lock = context.data.lock();
+    let Some(surface_data) = surface_data_lock.as_mut() else {
+        // Not configured yet: configure() picks the new size up from view_data.
+        return;
+    };
+    surface_data.texture_data.size.width = width;
+    surface_data.texture_data.size.height = height;
+    let mut new_config = surface_data.previous_configuration.clone();
+    new_config.width = width;
+    new_config.height = height;
+
+    // The toDataURL read-back texture follows the drawing buffer.
+    let desc = wgt::TextureDescriptor {
+        label: Some(Cow::Borrowed("ContextReadBack")),
+        size: wgt::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        },
+        mip_level_count: 1,
+        sample_count: 1,
+        dimension: wgt::TextureDimension::D2,
+        format: surface_data.texture_data.format,
+        usage: wgt::TextureUsages::COPY_SRC | wgt::TextureUsages::COPY_DST,
+        view_formats: vec![],
+    };
+    let texture_data = TextureData {
+        usage: desc.usage,
+        dimension: desc.dimension,
+        size: desc.size,
+        format: desc.format,
+        mip_level_count: desc.mip_level_count,
+        sample_count: desc.sample_count,
+    };
+    *context.read_back_texture.lock() = Some(ReadBackTexture {
+        texture: surface_data.device.device.create_texture(&desc),
+        data: texture_data,
+    });
+
+    if let Some(cause) = surface.configure(&surface_data.device.device, &new_config) {
+        handle_error_fatal(cause, "canvas_native_webgpu_context_resize_swap_chain_panel");
+    } else {
+        context
+            .has_surface_presented
+            .store(false, std::sync::atomic::Ordering::SeqCst);
+        surface_data.previous_configuration = new_config;
     }
 }
 

@@ -1,207 +1,286 @@
+use std::ffi::CString;
+use std::ptr;
+use std::sync::Arc;
+
+use canvas_c::webgpu::gpu_command_encoder::{
+  CanvasGPUCommandEncoder, CanvasImageCopyBuffer, CanvasImageCopyTexture,
+};
+use canvas_c::webgpu::gpu_query_set::CanvasGPUQuerySet;
+use canvas_c::webgpu::structs::{
+  CanvasLoadOp, CanvasOptionF32, CanvasOptionalLoadOp, CanvasOptionalStoreOp,
+  CanvasPassChannelColor, CanvasRenderPassColorAttachment, CanvasRenderPassDepthStencilAttachment,
+  CanvasStoreOp,
+};
+use napi::bindgen_prelude::Unknown;
+use napi::Result;
+use napi_derive::napi;
+
 use crate::gpu::buffer::g_p_u_buffer;
 use crate::gpu::command_buffer::g_p_u_command_buffer;
 use crate::gpu::compute_pass_encoder::g_p_u_compute_pass_encoder;
-use crate::gpu::objects::{
-  GPUComputePassDescriptor, GPUExtent3DDict, GPUImageCopyBuffer, GPUImageCopyTexture,
-  GPURenderPassDescriptor,
+use crate::gpu::handle::Handle;
+use crate::gpu::parse::{
+  array_field, as_string, aspect, boolean, c_str, class, color, downcast, extent3d, field, int32,
+  is_object, label, number, origin3d, string, take_string, type_error, uint32, uint32_value,
 };
 use crate::gpu::query_set::g_p_u_query_set;
 use crate::gpu::render_pass_encoder::g_p_u_render_pass_encoder;
-use canvas_c::webgpu::gpu_query_set::CanvasGPUQuerySet;
-use canvas_c::webgpu::structs::{
-  CanvasColor, CanvasOptionF32, CanvasOptionalColor, CanvasOptionalLoadOp, CanvasOptionalStoreOp,
-  CanvasPassChannelColor, CanvasRenderPassColorAttachment, CanvasRenderPassDepthStencilAttachment,
-};
-use napi::*;
-use napi_derive::napi;
-use std::ffi::CString;
-use std::sync::Arc;
+use crate::gpu::texture::g_p_u_texture;
+use crate::gpu::texture_view::g_p_u_texture_view;
 
 #[napi(js_name = "GPUCommandEncoder")]
 pub struct g_p_u_command_encoder {
-  pub(crate) encoder: Arc<canvas_c::webgpu::gpu_command_encoder::CanvasGPUCommandEncoder>,
+  pub(crate) encoder: Handle<CanvasGPUCommandEncoder>,
 }
 
-#[napi(object)]
-pub struct GPUCommandEncoderFinishDescriptor {
-  pub label: Option<String>,
+/// `loadOp`: `ParseCanvasLoadOp` (int or string, default clear).
+fn load_op(value: Option<Unknown>) -> CanvasLoadOp {
+  let Some(value) = value else {
+    return CanvasLoadOp::Clear;
+  };
+  match (uint32_value(&value), as_string(&value).as_deref()) {
+    (Some(1), _) | (_, Some("load")) => CanvasLoadOp::Load,
+    _ => CanvasLoadOp::Clear,
+  }
+}
+
+/// `storeOp`: `ParseCanvasStoreOp` (int or string, default store).
+fn store_op(value: Option<Unknown>) -> CanvasStoreOp {
+  let Some(value) = value else {
+    return CanvasStoreOp::Store;
+  };
+  match (uint32_value(&value), as_string(&value).as_deref()) {
+    (Some(1), _) | (_, Some("discard")) => CanvasStoreOp::Discard,
+    _ => CanvasStoreOp::Store,
+  }
+}
+
+fn optional_load_op(value: Option<String>) -> CanvasOptionalLoadOp {
+  match value.as_deref() {
+    Some("load") => CanvasOptionalLoadOp::Some(CanvasLoadOp::Load),
+    Some("clear") => CanvasOptionalLoadOp::Some(CanvasLoadOp::Clear),
+    _ => CanvasOptionalLoadOp::None,
+  }
+}
+
+fn optional_store_op(value: Option<String>) -> CanvasOptionalStoreOp {
+  match value.as_deref() {
+    Some("store") => CanvasOptionalStoreOp::Some(CanvasStoreOp::Store),
+    Some("discard") => CanvasOptionalStoreOp::Some(CanvasStoreOp::Discard),
+    _ => CanvasOptionalStoreOp::None,
+  }
+}
+
+/// An attachment `view`: a `GPUTextureView`, or (as packages/canvas's `parseRenderPassDescriptor`
+/// may hand over) a `GPUTexture`, which gets its default view for the pass.
+fn attachment_view(
+  value: Option<Unknown>,
+  keep: &mut Vec<g_p_u_texture_view>,
+) -> *const canvas_c::webgpu::gpu_texture_view::CanvasGPUTextureView {
+  let Some(value) = value else {
+    return ptr::null();
+  };
+  if let Some(view) = downcast::<g_p_u_texture_view>(&value) {
+    return view.texture_view.ptr();
+  }
+  if let Some(texture) = downcast::<g_p_u_texture>(&value) {
+    if let Some(view) = g_p_u_texture::create_view_raw(texture.texture.ptr(), None) {
+      let ptr = view.texture_view.ptr();
+      keep.push(view);
+      return ptr;
+    }
+  }
+  ptr::null()
+}
+
+/// `timestampWrites`: `(querySet, beginningOfPassWriteIndex, endOfPassWriteIndex)`, -1 for an
+/// index left out.
+fn timestamp_writes(descriptor: &Unknown) -> (*const CanvasGPUQuerySet, i32, i32) {
+  let Some(writes) = field(descriptor, c"timestampWrites").filter(is_object) else {
+    return (ptr::null(), -1, -1);
+  };
+  let query_set = class::<g_p_u_query_set>(&writes, c"querySet")
+    .map_or(ptr::null(), |set| Arc::as_ptr(&set.query));
+  (
+    query_set,
+    int32(&writes, c"beginningOfPassWriteIndex").unwrap_or(-1),
+    int32(&writes, c"endOfPassWriteIndex").unwrap_or(-1),
+  )
+}
+
+/// `GPUImageCopyBuffer`: `{ buffer, offset?, bytesPerRow?, rowsPerImage? }`.
+fn image_copy_buffer(value: &Unknown, what: &str) -> Result<CanvasImageCopyBuffer> {
+  if !is_object(value) {
+    return Err(type_error(format!("{what} is not an object")));
+  }
+  let buffer = class::<g_p_u_buffer>(value, c"buffer")
+    .ok_or_else(|| type_error(format!("{what}.buffer is not a GPUBuffer")))?;
+  Ok(CanvasImageCopyBuffer {
+    buffer: Arc::as_ptr(&buffer.buffer),
+    offset: number(value, c"offset").map_or(0, |n| n.max(0.) as u64),
+    // Non-positive or absent: unspecified.
+    bytes_per_row: int32(value, c"bytesPerRow")
+      .filter(|n| *n > 0)
+      .unwrap_or(-1),
+    rows_per_image: int32(value, c"rowsPerImage").unwrap_or(-1),
+  })
+}
+
+/// `GPUImageCopyTexture`: `{ texture, mipLevel?, origin?, aspect? }`.
+fn image_copy_texture(value: &Unknown, what: &str) -> Result<CanvasImageCopyTexture> {
+  if !is_object(value) {
+    return Err(type_error(format!("{what} is not an object")));
+  }
+  let texture = class::<g_p_u_texture>(value, c"texture")
+    .map(|texture| texture.texture.ptr())
+    .filter(|texture| !texture.is_null())
+    .ok_or_else(|| type_error(format!("{what}.texture is not a GPUTexture")))?;
+  Ok(CanvasImageCopyTexture {
+    texture,
+    mip_level: uint32(value, c"mipLevel").unwrap_or(0),
+    origin: origin3d(field(value, c"origin").as_ref()),
+    aspect: aspect(string(value, c"aspect")),
+  })
+}
+
+fn size_arg(value: Option<f64>) -> i64 {
+  value.map_or(-1, |n| if n < 0. { -1 } else { n as i64 })
+}
+
+impl g_p_u_command_encoder {
+  pub(crate) unsafe fn from_raw(encoder: *const CanvasGPUCommandEncoder) -> Option<Self> {
+    unsafe { Handle::from_raw(encoder) }.map(|encoder| Self { encoder })
+  }
+
+  fn ptr(&self) -> *const CanvasGPUCommandEncoder {
+    self.encoder.ptr()
+  }
 }
 
 #[napi]
 impl g_p_u_command_encoder {
   #[napi(getter)]
   pub fn get_label(&self) -> String {
-    let label = unsafe {
-      canvas_c::webgpu::gpu_command_encoder::canvas_native_webgpu_command_encoder_get_label(
-        Arc::as_ptr(&self.encoder),
+    unsafe {
+      take_string(
+        canvas_c::webgpu::gpu_command_encoder::canvas_native_webgpu_command_encoder_get_label(
+          self.ptr(),
+        ),
       )
-    };
-    if label.is_null() {
-      return String::new();
     }
-    unsafe { CString::from_raw(label).into_string().unwrap() }
+    .unwrap_or_default()
   }
 
-  #[napi]
+  #[napi(ts_args_type = "descriptor?: { label?: string, timestampWrites?: object }")]
   pub fn begin_compute_pass(
     &self,
-    descriptor: Option<GPUComputePassDescriptor>,
-  ) -> g_p_u_compute_pass_encoder {
-    let mut query_set = std::ptr::null();
-    let mut label_ptr = std::ptr::null();
-    let mut label = None;
-    let mut beginning_of_pass_write_index = -1;
-    let mut end_of_pass_write_index = -1;
-    if let Some(descriptor) = descriptor {
-      label = descriptor.label.map(|l| CString::new(l).unwrap());
-      if let Some(timestamp_writes) = descriptor.timestamp_writes {
-        query_set = Arc::as_ptr(&timestamp_writes.query_set.query);
-        beginning_of_pass_write_index = timestamp_writes.beginning_of_pass_write_index;
-        end_of_pass_write_index = timestamp_writes.end_of_pass_write_index;
-      }
-      if let Some(label) = &label {
-        label_ptr = label.as_ptr();
-      }
-    }
-    let pass = unsafe {
-      canvas_c::webgpu::gpu_command_encoder::canvas_native_webgpu_command_encoder_begin_compute_pass(
-        Arc::as_ptr(&self.encoder),
-        query_set,
-        label_ptr,
-        beginning_of_pass_write_index,
-        end_of_pass_write_index,
-      )
-    };
-    g_p_u_compute_pass_encoder {
-      encoder: unsafe { Arc::from_raw(pass) },
-    }
+    descriptor: Option<Unknown>,
+  ) -> Option<g_p_u_compute_pass_encoder> {
+    let descriptor = descriptor.filter(is_object);
+    let label = descriptor.as_ref().and_then(label);
+    let (query_set, beginning, end) = descriptor
+      .as_ref()
+      .map_or((ptr::null(), -1, -1), timestamp_writes);
+    let pass = canvas_c::webgpu::gpu_command_encoder::canvas_native_webgpu_command_encoder_begin_compute_pass(
+      self.ptr(),
+      query_set,
+      c_str(&label),
+      beginning,
+      end,
+    );
+    unsafe { Handle::from_raw(pass) }.map(|encoder| g_p_u_compute_pass_encoder { encoder })
   }
 
-  #[napi]
-  pub fn begin_render_pass(
-    &self,
-    descriptor: GPURenderPassDescriptor,
-  ) -> g_p_u_render_pass_encoder {
-    let mut label_ptr = std::ptr::null();
-    let label = descriptor.label.map(|l| CString::new(l).unwrap());
-
-    if let Some(label) = &label {
-      label_ptr = label.as_ptr();
+  /// `beginRenderPass(descriptor)`. Attachments without a usable view, and `null` color
+  /// attachments, are left out (canvas-c has no sparse attachments).
+  #[napi(ts_args_type = "descriptor: object")]
+  pub fn begin_render_pass(&self, descriptor: Unknown) -> Option<g_p_u_render_pass_encoder> {
+    if !is_object(&descriptor) {
+      return None;
     }
+    let label = label(&descriptor);
+    // Default views made for textures given as attachments, alive until the pass is begun.
+    let mut views = Vec::new();
 
-    let color_attachments = descriptor
-      .color_attachments
-      .into_iter()
-      .map(|attach| CanvasRenderPassColorAttachment {
-        view: Arc::as_ptr(&attach.view.texture_view),
-        resolve_target: attach
-          .resolve_target
-          .map(|v| Arc::as_ptr(&v.texture_view))
-          .unwrap_or(std::ptr::null()),
+    let mut color_attachments = Vec::new();
+    for attachment in array_field(&descriptor, c"colorAttachments").unwrap_or_default() {
+      if !is_object(&attachment) {
+        continue;
+      }
+      let view = attachment_view(field(&attachment, c"view"), &mut views);
+      if view.is_null() {
+        continue;
+      }
+      let resolve_target = attachment_view(field(&attachment, c"resolveTarget"), &mut views);
+      color_attachments.push(CanvasRenderPassColorAttachment {
+        view,
+        resolve_target,
         channel: CanvasPassChannelColor {
-          load_op: attach.load_op.into(),
-          store_op: attach.store_op.into(),
-          clear_value: match attach.clear_value.map(|c| match c {
-            Either::A(array) => CanvasColor {
-              r: *array.get(0).unwrap_or(&0.0),
-              g: *array.get(1).unwrap_or(&0.0),
-              b: *array.get(2).unwrap_or(&0.0),
-              a: *array.get(3).unwrap_or(&0.0),
-            },
-            Either::B(dict) => CanvasColor {
-              r: dict.r,
-              g: dict.g,
-              b: dict.b,
-              a: dict.a,
-            },
-          }) {
-            Some(color) => CanvasOptionalColor::Some(color),
-            None => CanvasOptionalColor::None,
-          },
+          load_op: load_op(field(&attachment, c"loadOp")),
+          store_op: store_op(field(&attachment, c"storeOp")),
+          clear_value: color(field(&attachment, c"clearValue").as_ref()),
           read_only: false,
         },
-      })
-      .collect::<Vec<_>>();
+      });
+    }
 
-    let mut depth_stencil_attachment_ptr: *const CanvasRenderPassDepthStencilAttachment =
-      std::ptr::null();
-
-    let depth_stencil_attachment =
-      descriptor
-        .depth_stencil_attachment
-        .map(|stencil| CanvasRenderPassDepthStencilAttachment {
-          view: Arc::as_ptr(&stencil.view.texture_view),
-          depth_clear_value: match stencil.depth_clear_value {
-            None => CanvasOptionF32::None,
+    let depth_stencil = field(&descriptor, c"depthStencilAttachment")
+      .filter(is_object)
+      .and_then(|attachment| {
+        let view = attachment_view(field(&attachment, c"view"), &mut views);
+        (!view.is_null()).then(|| CanvasRenderPassDepthStencilAttachment {
+          view,
+          depth_clear_value: match number(&attachment, c"depthClearValue") {
             Some(value) => CanvasOptionF32::Some(value as f32),
+            None => CanvasOptionF32::None,
           },
-          depth_load_op: match stencil.depth_load_op {
-            None => CanvasOptionalLoadOp::None,
-            Some(value) => CanvasOptionalLoadOp::Some(value.into()),
-          },
-          depth_store_op: match stencil.depth_store_op {
-            None => CanvasOptionalStoreOp::None,
-            Some(value) => CanvasOptionalStoreOp::Some(value.into()),
-          },
-          depth_read_only: stencil.depth_read_only.unwrap_or(false),
-          stencil_clear_value: stencil.stencil_clear_value.unwrap_or(0),
-          stencil_load_op: match stencil.stencil_load_op {
-            None => CanvasOptionalLoadOp::None,
-            Some(value) => CanvasOptionalLoadOp::Some(value.into()),
-          },
-          stencil_store_op: match stencil.stencil_store_op {
-            None => CanvasOptionalStoreOp::None,
-            Some(value) => CanvasOptionalStoreOp::Some(value.into()),
-          },
-          stencil_read_only: stencil.stencil_read_only.unwrap_or(false),
-        });
+          depth_load_op: optional_load_op(string(&attachment, c"depthLoadOp")),
+          depth_store_op: optional_store_op(string(&attachment, c"depthStoreOp")),
+          depth_read_only: boolean(&attachment, c"depthReadOnly").unwrap_or(false),
+          stencil_clear_value: uint32(&attachment, c"stencilClearValue").unwrap_or(0),
+          stencil_load_op: optional_load_op(string(&attachment, c"stencilLoadOp")),
+          stencil_store_op: optional_store_op(string(&attachment, c"stencilStoreOp")),
+          stencil_read_only: boolean(&attachment, c"stencilReadOnly").unwrap_or(false),
+        })
+      });
 
-    if let Some(depth_stencil_attachment) = &depth_stencil_attachment {
-      depth_stencil_attachment_ptr = depth_stencil_attachment;
-    }
-
-    let mut occlusion_query_set: *const CanvasGPUQuerySet = std::ptr::null();
-    let mut query_set: *const CanvasGPUQuerySet = std::ptr::null();
-    let mut beginning_of_pass_write_index: i32 = -1;
-    let mut end_of_pass_write_index: i32 = -1;
-
-    if let Some(descriptor) = descriptor.timestamp_writes {
-      query_set = Arc::as_ptr(&descriptor.query_set.query);
-      beginning_of_pass_write_index = descriptor.beginning_of_pass_write_index.unwrap_or(-1);
-      end_of_pass_write_index = descriptor.end_of_pass_write_index.unwrap_or(-1);
-    }
-
-    if let Some(descriptor) = descriptor.occlusion_query_set {
-      occlusion_query_set = Arc::as_ptr(&descriptor.query);
-    }
+    let occlusion_query_set = class::<g_p_u_query_set>(&descriptor, c"occlusionQuerySet")
+      .map_or(ptr::null(), |set| Arc::as_ptr(&set.query));
+    let (query_set, beginning, end) = timestamp_writes(&descriptor);
 
     let pass = unsafe {
       canvas_c::webgpu::gpu_command_encoder::canvas_native_webgpu_command_encoder_begin_render_pass(
-        Arc::as_ptr(&self.encoder),
-        label_ptr,
-        color_attachments.as_ptr(),
+        self.ptr(),
+        c_str(&label),
+        if color_attachments.is_empty() {
+          ptr::null()
+        } else {
+          color_attachments.as_ptr()
+        },
         color_attachments.len(),
-        depth_stencil_attachment_ptr,
+        depth_stencil
+          .as_ref()
+          .map_or(ptr::null(), |attachment| attachment as *const _),
         occlusion_query_set,
         query_set,
-        beginning_of_pass_write_index,
-        end_of_pass_write_index,
+        beginning,
+        end,
       )
     };
-
-    g_p_u_render_pass_encoder {
-      encoder: unsafe { Arc::from_raw(pass) },
-    }
+    drop(views);
+    unsafe { Handle::from_raw(pass) }.map(|encoder| g_p_u_render_pass_encoder { encoder })
   }
 
+  /// `clearBuffer(buffer, offset?, size?)`; -1 (what packages/canvas passes for "absent") or
+  /// undefined means the default.
   #[napi]
-  pub fn clear_buffer(&self, buffer: &g_p_u_buffer, offset: Option<i64>, size: Option<i64>) {
+  pub fn clear_buffer(&self, buffer: &g_p_u_buffer, offset: Option<f64>, size: Option<f64>) {
     unsafe {
       canvas_c::webgpu::gpu_command_encoder::canvas_native_webgpu_command_encoder_clear_buffer(
-        Arc::as_ptr(&self.encoder),
+        self.ptr(),
         Arc::as_ptr(&buffer.buffer),
-        offset.unwrap_or(-1),
-        size.unwrap_or(-1),
+        size_arg(offset),
+        size_arg(size),
       )
     }
   }
@@ -210,227 +289,96 @@ impl g_p_u_command_encoder {
   pub fn copy_buffer_to_buffer(
     &self,
     source: &g_p_u_buffer,
-    source_offset: i64,
+    source_offset: f64,
     destination: &g_p_u_buffer,
-    destination_offset: i64,
-    size: i64,
+    destination_offset: f64,
+    size: Option<f64>,
   ) {
     unsafe {
       canvas_c::webgpu::gpu_command_encoder::canvas_native_webgpu_command_encoder_copy_buffer_to_buffer(
-       Arc::as_ptr(&self.encoder), Arc::as_ptr(&source.buffer), source_offset, Arc::as_ptr(&destination.buffer), destination_offset, size.try_into().unwrap_or(0)
-     )
+        self.ptr(),
+        Arc::as_ptr(&source.buffer),
+        source_offset.max(0.) as i64,
+        Arc::as_ptr(&destination.buffer),
+        destination_offset.max(0.) as i64,
+        size_arg(size),
+      )
     }
   }
 
-  #[napi]
+  #[napi(ts_args_type = "source: object, destination: object, copySize: object")]
   pub fn copy_buffer_to_texture(
     &self,
-    source: GPUImageCopyBuffer,
-    destination: GPUImageCopyTexture,
-    copy_size: Either<GPUExtent3DDict, Vec<u32>>,
-  ) {
-    let offset: Option<u64> = source.offset.map(|v| v.try_into().ok()).flatten();
-    // Treat non-positive bytes_per_row as unspecified (use -1 sentinel in FFI struct).
-    let bytes_per_row = if source.bytes_per_row <= 0 {
-      -1
-    } else {
-      source.bytes_per_row
-    };
-    let rows_per_image = source.rows_per_image.unwrap_or(-1);
-    let src = canvas_c::webgpu::gpu_command_encoder::CanvasImageCopyBuffer {
-      buffer: Arc::as_ptr(&source.buffer.buffer),
-      offset: offset.unwrap_or(0),
-      bytes_per_row,
-      rows_per_image,
-    };
-
-    let dst = canvas_c::webgpu::gpu_command_encoder::CanvasImageCopyTexture {
-      texture: Arc::as_ptr(&destination.texture.texture),
-      mip_level: destination.mip_level.unwrap_or(0),
-      origin: match destination.origin {
-        None => canvas_c::webgpu::structs::CanvasOrigin3d::default(),
-        Some(value) => match value {
-          Either::A(dict) => dict.into(),
-          Either::B(array) => canvas_c::webgpu::structs::CanvasOrigin3d {
-            x: *array.get(0).unwrap_or(&0),
-            y: *array.get(1).unwrap_or(&0),
-            z: *array.get(2).unwrap_or(&0),
-          },
-        },
-      },
-      aspect: destination
-        .aspect
-        .unwrap_or(crate::gpu::enums::GPUTextureAspect::all)
-        .into(),
-    };
-
-    let size = match copy_size {
-      Either::A(dict) => canvas_c::webgpu::structs::CanvasExtent3d {
-        width: dict.width,
-        height: dict.height.unwrap_or(1),
-        depth_or_array_layers: dict.depth_or_array_layers.unwrap_or(1),
-      },
-      Either::B(array) => canvas_c::webgpu::structs::CanvasExtent3d {
-        width: *array.get(0).unwrap_or(&0u32),
-        height: *array.get(1).unwrap_or(&1u32),
-        depth_or_array_layers: *array.get(1).unwrap_or(&1u32),
-      },
-    };
+    source: Unknown,
+    destination: Unknown,
+    copy_size: Unknown,
+  ) -> Result<()> {
+    let src = image_copy_buffer(&source, "source")?;
+    let dst = image_copy_texture(&destination, "destination")?;
+    let size = extent3d(Some(&copy_size));
     unsafe {
       canvas_c::webgpu::gpu_command_encoder::canvas_native_webgpu_command_encoder_copy_buffer_to_texture(
-        Arc::as_ptr(&self.encoder),&src, &dst, &size
-      );
+        self.ptr(),
+        &src,
+        &dst,
+        &size,
+      )
     }
+    Ok(())
   }
 
-  #[napi]
+  #[napi(ts_args_type = "source: object, destination: object, copySize: object")]
   pub fn copy_texture_to_buffer(
     &self,
-    source: GPUImageCopyTexture,
-    destination: GPUImageCopyBuffer,
-    copy_size: Either<GPUExtent3DDict, Vec<u32>>,
-  ) {
-    let src = canvas_c::webgpu::gpu_command_encoder::CanvasImageCopyTexture {
-      texture: Arc::as_ptr(&source.texture.texture),
-      mip_level: source.mip_level.unwrap_or(0),
-      origin: match source.origin {
-        None => canvas_c::webgpu::structs::CanvasOrigin3d::default(),
-        Some(value) => match value {
-          Either::A(dict) => dict.into(),
-          Either::B(array) => canvas_c::webgpu::structs::CanvasOrigin3d {
-            x: *array.get(0).unwrap_or(&0),
-            y: *array.get(1).unwrap_or(&0),
-            z: *array.get(2).unwrap_or(&0),
-          },
-        },
-      },
-      aspect: source
-        .aspect
-        .unwrap_or(crate::gpu::enums::GPUTextureAspect::all)
-        .into(),
-    };
-
-    let offset: Option<u64> = destination.offset.map(|v| v.try_into().ok()).flatten();
-    let bytes_per_row = if destination.bytes_per_row <= 0 {
-      -1
-    } else {
-      destination.bytes_per_row
-    };
-    let rows_per_image = destination.rows_per_image.unwrap_or(-1);
-
-    let dst = canvas_c::webgpu::gpu_command_encoder::CanvasImageCopyBuffer {
-      buffer: Arc::as_ptr(&destination.buffer.buffer),
-      offset: offset.unwrap_or(0),
-      bytes_per_row,
-      rows_per_image,
-    };
-
-    let size = match copy_size {
-      Either::A(dict) => canvas_c::webgpu::structs::CanvasExtent3d {
-        width: dict.width,
-        height: dict.height.unwrap_or(1),
-        depth_or_array_layers: dict.depth_or_array_layers.unwrap_or(1),
-      },
-      Either::B(array) => canvas_c::webgpu::structs::CanvasExtent3d {
-        width: *array.get(0).unwrap_or(&0),
-        height: *array.get(1).unwrap_or(&1u32),
-        depth_or_array_layers: *array.get(1).unwrap_or(&1u32),
-      },
-    };
-
+    source: Unknown,
+    destination: Unknown,
+    copy_size: Unknown,
+  ) -> Result<()> {
+    let src = image_copy_texture(&source, "source")?;
+    let dst = image_copy_buffer(&destination, "destination")?;
+    let size = extent3d(Some(&copy_size));
     unsafe {
       canvas_c::webgpu::gpu_command_encoder::canvas_native_webgpu_command_encoder_copy_texture_to_buffer(
-        Arc::as_ptr(&self.encoder), &src, &dst, &size
+        self.ptr(),
+        &src,
+        &dst,
+        &size,
       )
     }
+    Ok(())
   }
 
-  #[napi]
+  #[napi(ts_args_type = "source: object, destination: object, copySize: object")]
   pub fn copy_texture_to_texture(
     &self,
-    source: GPUImageCopyTexture,
-    destination: GPUImageCopyTexture,
-    copy_size: Either<GPUExtent3DDict, Vec<u32>>,
-  ) {
-    let src = canvas_c::webgpu::gpu_command_encoder::CanvasImageCopyTexture {
-      texture: Arc::as_ptr(&source.texture.texture),
-      mip_level: source.mip_level.unwrap_or(0),
-      origin: match source.origin {
-        None => canvas_c::webgpu::structs::CanvasOrigin3d::default(),
-        Some(value) => match value {
-          Either::A(dict) => dict.into(),
-          Either::B(array) => canvas_c::webgpu::structs::CanvasOrigin3d {
-            x: *array.get(0).unwrap_or(&0),
-            y: *array.get(1).unwrap_or(&0),
-            z: *array.get(2).unwrap_or(&0),
-          },
-        },
-      },
-      aspect: source
-        .aspect
-        .unwrap_or(crate::gpu::enums::GPUTextureAspect::all)
-        .into(),
-    };
-    let dst = canvas_c::webgpu::gpu_command_encoder::CanvasImageCopyTexture {
-      texture: Arc::as_ptr(&destination.texture.texture),
-      mip_level: destination.mip_level.unwrap_or(0),
-      origin: match destination.origin {
-        None => canvas_c::webgpu::structs::CanvasOrigin3d::default(),
-        Some(value) => match value {
-          Either::A(dict) => dict.into(),
-          Either::B(array) => canvas_c::webgpu::structs::CanvasOrigin3d {
-            x: *array.get(0).unwrap_or(&0),
-            y: *array.get(1).unwrap_or(&0),
-            z: *array.get(2).unwrap_or(&0),
-          },
-        },
-      },
-      aspect: destination
-        .aspect
-        .unwrap_or(crate::gpu::enums::GPUTextureAspect::all)
-        .into(),
-    };
-
-    let size = match copy_size {
-      Either::A(dict) => canvas_c::webgpu::structs::CanvasExtent3d {
-        width: dict.width,
-        height: dict.height.unwrap_or(1),
-        depth_or_array_layers: dict.depth_or_array_layers.unwrap_or(1),
-      },
-      Either::B(array) => canvas_c::webgpu::structs::CanvasExtent3d {
-        width: *array.get(0).unwrap_or(&0u32),
-        height: *array.get(1).unwrap_or(&1u32),
-        depth_or_array_layers: *array.get(1).unwrap_or(&1u32),
-      },
-    };
-
+    source: Unknown,
+    destination: Unknown,
+    copy_size: Unknown,
+  ) -> Result<()> {
+    let src = image_copy_texture(&source, "source")?;
+    let dst = image_copy_texture(&destination, "destination")?;
+    let size = extent3d(Some(&copy_size));
     unsafe {
       canvas_c::webgpu::gpu_command_encoder::canvas_native_webgpu_command_encoder_copy_texture_to_texture(
-        Arc::as_ptr(&self.encoder),
-        &src, &dst, &size
+        self.ptr(),
+        &src,
+        &dst,
+        &size,
       )
     }
+    Ok(())
   }
 
-  #[napi]
-  pub fn finish(
-    &self,
-    descriptor: Option<GPUCommandEncoderFinishDescriptor>,
-  ) -> g_p_u_command_buffer {
-    let mut label_ptr = std::ptr::null();
-    let label = descriptor.map(|d| CString::new(d.label.unwrap()).unwrap());
-    if let Some(label) = &label {
-      label_ptr = label.as_ptr();
-    }
+  #[napi(ts_args_type = "descriptor?: { label?: string }")]
+  pub fn finish(&self, descriptor: Option<Unknown>) -> Option<g_p_u_command_buffer> {
+    let label = descriptor.as_ref().and_then(label);
     let buffer = unsafe {
       canvas_c::webgpu::gpu_command_encoder::canvas_native_webgpu_command_encoder_finish(
-        Arc::as_ptr(&self.encoder),
-        label_ptr,
+        self.ptr(),
+        c_str(&label),
       )
     };
-    g_p_u_command_buffer {
-      buffer: unsafe { Arc::from_raw(buffer) },
-    }
+    unsafe { Handle::from_raw(buffer) }.map(|buffer| g_p_u_command_buffer { buffer })
   }
 
   #[napi]
@@ -438,8 +386,9 @@ impl g_p_u_command_encoder {
     if let Ok(label) = CString::new(marker_label) {
       unsafe {
         canvas_c::webgpu::gpu_command_encoder::canvas_native_webgpu_command_encoder_insert_debug_marker(
-         Arc::as_ptr(&self.encoder), label.as_ptr()
-       )
+          self.ptr(),
+          label.as_ptr(),
+        )
       }
     }
   }
@@ -448,7 +397,7 @@ impl g_p_u_command_encoder {
   pub fn pop_debug_group(&self) {
     unsafe {
       canvas_c::webgpu::gpu_command_encoder::canvas_native_webgpu_command_encoder_pop_debug_group(
-        Arc::as_ptr(&self.encoder),
+        self.ptr(),
       )
     }
   }
@@ -458,7 +407,7 @@ impl g_p_u_command_encoder {
     if let Ok(label) = CString::new(group_label) {
       unsafe {
         canvas_c::webgpu::gpu_command_encoder::canvas_native_webgpu_command_encoder_push_debug_group(
-          Arc::as_ptr(&self.encoder),
+          self.ptr(),
           label.as_ptr(),
         )
       }
@@ -472,16 +421,16 @@ impl g_p_u_command_encoder {
     first_query: u32,
     query_count: u32,
     destination: &g_p_u_buffer,
-    destination_offset: i64,
+    destination_offset: f64,
   ) {
     unsafe {
       canvas_c::webgpu::gpu_command_encoder::canvas_native_webgpu_command_encoder_resolve_query_set(
-        Arc::as_ptr(&self.encoder),
+        self.ptr(),
         Arc::as_ptr(&query_set.query),
         first_query,
         query_count,
         Arc::as_ptr(&destination.buffer),
-        destination_offset.try_into().unwrap_or(0),
+        destination_offset.max(0.) as u64,
       )
     }
   }
@@ -490,10 +439,16 @@ impl g_p_u_command_encoder {
   pub fn write_timestamp(&self, query_set: &g_p_u_query_set, query_index: u32) {
     unsafe {
       canvas_c::webgpu::gpu_command_encoder::canvas_native_webgpu_command_encoder_write_timestamp(
-        Arc::as_ptr(&self.encoder),
+        self.ptr(),
         Arc::as_ptr(&query_set.query),
         query_index,
       )
     }
+  }
+
+  /// Releases the encoder now (packages/canvas does right after `finish`).
+  #[napi]
+  pub fn destroy(&self) {
+    self.encoder.release();
   }
 }

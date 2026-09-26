@@ -57,6 +57,11 @@ objc2-metal = { workspace = true }
 objc2-quartz-core = { workspace = true, features = ["CADisplayLink", "objc2-core-foundation"] }
 objc2-core-foundation = { workspace = true }
 
+# Windows: WebGPU on Direct3D 12 (surfaces from WinUI SwapChainPanels).
+[target.'cfg(target_os="windows")'.dependencies]
+wgpu-core = { workspace = true, features = ["wgsl", "dx12"] }
+wgpu-hal = { workspace = true, features = ["dx12"] }
+
 [target.'cfg(target_os="android")'.dependencies]
 ndk = { version = "0.7.0", features = ["bitmap"] }
 wgpu-core = { workspace = true, features = ["wgsl", "vulkan"] }

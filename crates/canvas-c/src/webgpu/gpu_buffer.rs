@@ -10,10 +10,11 @@ use crate::webgpu::prelude::label_to_ptr;
 
 use super::gpu::CanvasWebGPUInstance;
 
-// wgpu requires polling to dispatch completed mappings, including compute-only
-// workloads with no canvas/frame loop. One worker services requests off the UI
-// thread and retains each instance until its pending callbacks have run.
-fn poll_mappings(instance: Arc<CanvasWebGPUInstance>) {
+// wgpu requires polling to dispatch completed mappings (and work-done callbacks),
+// including compute-only workloads with no canvas/frame loop. One worker services
+// requests off the UI thread and retains each instance until its pending callbacks
+// have run.
+pub(crate) fn poll_mappings(instance: Arc<CanvasWebGPUInstance>) {
     static POLLER: OnceLock<mpsc::Sender<Arc<CanvasWebGPUInstance>>> = OnceLock::new();
     let sender = POLLER.get_or_init(|| {
         let (sender, receiver) = mpsc::channel::<Arc<CanvasWebGPUInstance>>();

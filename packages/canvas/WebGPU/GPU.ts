@@ -1,4 +1,5 @@
 import { native_ } from './Constants';
+import { NAPI_HOST } from '../platform';
 import { GPUAdapter } from './GPUAdapter';
 let gpu;
 export class GPU {
@@ -16,7 +17,8 @@ export class GPU {
 	}
 
 	getPreferredCanvasFormat() {
-		if (__APPLE__) {
+		// BGRA is the native swapchain format on Apple and on Windows (DXGI).
+		if (__APPLE__ || NAPI_HOST) {
 			return 'bgra8unorm';
 		}
 		return 'rgba8unorm';

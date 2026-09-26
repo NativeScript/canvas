@@ -175,7 +175,7 @@ for (const type of ['webgl', 'webgl2']) {
 
 test('NSCCanvas: one context kind per view', { skip }, () => {
 	const { host } = hostWebGL('webgl', 8, 8);
-	assert.throws(() => host.create2DContext(true, true, false, false, 0, true, false, false, false, false, 0, false, 0), /already has a WebGL context/);
+	assert.throws(() => host.create2DContext(true, true, false, false, 0, true, false, false, false, false, 0, false, 0), /already has a WebGL or WebGPU context/);
 });
 
 test('createWebGLContext: options pick the version; width/height create an offscreen context', { skip }, () => {

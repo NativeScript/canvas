@@ -36,6 +36,89 @@ pub unsafe trait ISwapChainPanelNative: windows::core::IUnknown {
 
 pub const BUFFER_COUNT: u32 = 2;
 
+/// A `SwapChainPanel` for a library that binds its own swapchain to it (wgpu takes an
+/// `ISwapChainPanelNative` and calls `SetSwapChain` itself). The library gets a stand-in that
+/// forwards to the panel and remembers the swapchain, so its matrix transform (DPI scale and the
+/// canvas fit) stays ours to set, across the library's reconfigurations.
+pub struct PanelSurfaceTarget {
+    proxy: ISwapChainPanelNative,
+    panel: ISwapChainPanelNative,
+    state: std::sync::Arc<parking_lot::Mutex<ProxyState>>,
+}
+
+// Only used on the UI thread; the wrapper travels with the context that owns it.
+unsafe impl Send for PanelSurfaceTarget {}
+unsafe impl Sync for PanelSurfaceTarget {}
+
+#[derive(Default)]
+struct ProxyState {
+    swap_chain: Option<IDXGISwapChain2>,
+    transform: Option<DXGI_MATRIX_3X2_F>,
+}
+
+#[windows_core::implement(ISwapChainPanelNative)]
+struct PanelProxy {
+    panel: ISwapChainPanelNative,
+    state: std::sync::Arc<parking_lot::Mutex<ProxyState>>,
+}
+
+impl ISwapChainPanelNative_Impl for PanelProxy_Impl {
+    unsafe fn SetSwapChain(&self, swap_chain: *mut c_void) -> HRESULT {
+        let mut state = self.state.lock();
+        state.swap_chain = unsafe { windows::core::IUnknown::from_raw_borrowed(&swap_chain) }
+            .and_then(|unknown| unknown.cast::<IDXGISwapChain2>().ok());
+        if let (Some(swap_chain), Some(transform)) = (state.swap_chain.as_ref(), state.transform.as_ref()) {
+            let _ = unsafe { swap_chain.SetMatrixTransform(transform) };
+        }
+        unsafe { self.panel.SetSwapChain(swap_chain) }
+    }
+}
+
+impl PanelSurfaceTarget {
+    /// `panel`: any COM pointer of the `SwapChainPanel`. UI thread.
+    pub unsafe fn new(panel: *mut c_void) -> Result<Self> {
+        let unknown = unsafe { windows::core::IUnknown::from_raw_borrowed(&panel) }.ok_or_else(windows::core::Error::empty)?;
+        let panel: ISwapChainPanelNative = unknown.cast()?;
+        let state = std::sync::Arc::new(parking_lot::Mutex::new(ProxyState::default()));
+        let proxy: ISwapChainPanelNative = PanelProxy {
+            panel: panel.clone(),
+            state: state.clone(),
+        }
+        .into();
+        Ok(Self { proxy, panel, state })
+    }
+
+    /// The `ISwapChainPanelNative` to hand to the library.
+    pub fn as_raw(&self) -> *mut c_void {
+        self.proxy.as_raw()
+    }
+
+    /// Scale then translate the swapchain inside the panel (DIPs = pixels * scale + offset); kept
+    /// for swapchains the library binds later.
+    pub fn set_transform(&self, scale_x: f32, scale_y: f32, offset_x: f32, offset_y: f32) -> Result<()> {
+        let transform = DXGI_MATRIX_3X2_F {
+            _11: scale_x,
+            _22: scale_y,
+            _31: offset_x,
+            _32: offset_y,
+            ..Default::default()
+        };
+        let mut state = self.state.lock();
+        state.transform = Some(transform);
+        match state.swap_chain.as_ref() {
+            Some(swap_chain) => unsafe { swap_chain.SetMatrixTransform(&transform) },
+            None => Ok(()),
+        }
+    }
+}
+
+impl Drop for PanelSurfaceTarget {
+    fn drop(&mut self) {
+        // Detach whatever the library bound, so the panel does not keep a dead swapchain.
+        let _ = unsafe { self.panel.SetSwapChain(std::ptr::null_mut()) };
+    }
+}
+
 pub struct CompositionSwapChain {
     swap_chain: IDXGISwapChain3,
     waitable: HANDLE,

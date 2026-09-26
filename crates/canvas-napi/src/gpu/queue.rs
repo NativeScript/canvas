@@ -1,450 +1,333 @@
-use crate::gpu::buffer::g_p_u_buffer;
-use crate::gpu::command_buffer::g_p_u_command_buffer;
-use crate::gpu::enums::GPUTextureAspect;
-use crate::gpu::objects::{
-  GPUExtent3DDict, GPUImageCopyExternalImage, GPUImageCopyTexture, GPUImageCopyTextureTagged,
-  GPUImageDataLayout,
-};
+use std::ffi::{c_char, c_void};
+use std::sync::Arc;
+
 use canvas_c::webgpu::gpu_command_encoder::CanvasImageCopyTexture;
 use canvas_c::webgpu::structs::{
   CanvasExtent3d, CanvasImageCopyCanvasRenderingContext2D, CanvasImageCopyExternalImage,
   CanvasImageCopyGPUContext, CanvasImageCopyImageAsset, CanvasImageCopyWebGL,
-  CanvasImageDataLayout, CanvasOrigin2d, CanvasOrigin3d,
+  CanvasImageDataLayout, CanvasOrigin2d,
 };
-use crate::js::AnyArrayBuffer;
-use napi::bindgen_prelude::{Either4, Either9};
-use napi::*;
+use napi::bindgen_prelude::{Function, Unknown};
+use napi::threadsafe_function::{ThreadsafeFunctionCallMode, UnknownReturnValue};
+use napi::{Error, Result, Status};
 use napi_derive::napi;
-use std::ffi::CString;
-use std::sync::Arc;
 
-#[napi]
+use crate::c2d::image_data::ImageData;
+use crate::c2d::CanvasRenderingContext2D;
+use crate::gl::web_g_l_rendering_context;
+use crate::gl2::web_g_l_2_rendering_context;
+use crate::gpu::buffer::g_p_u_buffer;
+use crate::gpu::callback;
+use crate::gpu::command_buffer::g_p_u_command_buffer;
+use crate::gpu::context::g_p_u_canvas_context;
+use crate::gpu::parse::{
+  array, aspect, boolean, class, downcast, extent3d, field, int32, is_object, number, origin2d,
+  origin3d, string, take_string, type_error, uint32,
+};
+use crate::gpu::texture::g_p_u_texture;
+use crate::image_asset::ImageAsset;
+use crate::image_bitmap::ImageBitmap;
+use crate::module::JsBytes;
+
+#[napi(js_name = "GPUQueue")]
 pub struct g_p_u_queue {
   pub(crate) queue: Arc<canvas_c::webgpu::gpu_queue::CanvasGPUQueue>,
 }
 
+type DoneCallback<'a> = Function<'a, (), UnknownReturnValue>;
+
+extern "C" fn on_work_done(error: *mut c_char, data: *mut c_void) {
+  drop(unsafe { take_string(error) });
+  unsafe { callback::deliver::<()>(data, ()) };
+}
+
+/// `GPUImageCopyTexture(Tagged)`: `{ texture, mipLevel?, origin?, aspect? }`. The texture is
+/// required (canvas-c dereferences it).
+fn image_copy_texture(value: &Unknown, what: &str) -> Result<CanvasImageCopyTexture> {
+  if !is_object(value) {
+    return Err(type_error(format!("{what} is not an object")));
+  }
+  let texture = class::<g_p_u_texture>(value, c"texture")
+    .map(|texture| texture.texture.ptr())
+    .filter(|texture| !texture.is_null())
+    .ok_or_else(|| type_error(format!("{what}.texture is not a GPUTexture")))?;
+  Ok(CanvasImageCopyTexture {
+    texture,
+    mip_level: uint32(value, c"mipLevel").unwrap_or(0),
+    origin: origin3d(field(value, c"origin").as_ref()),
+    aspect: aspect(string(value, c"aspect")),
+  })
+}
+
 #[napi]
 impl g_p_u_queue {
+  fn ptr(&self) -> *const canvas_c::webgpu::gpu_queue::CanvasGPUQueue {
+    Arc::as_ptr(&self.queue)
+  }
+
   #[napi(getter)]
   pub fn get_label(&self) -> String {
-    let label = unsafe {
-      canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_get_label(Arc::as_ptr(&self.queue))
-    };
-    if label.is_null() {
-      return String::new();
+    unsafe {
+      take_string(canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_get_label(self.ptr()))
     }
-    unsafe { CString::from_raw(label).into_string().unwrap() }
+    .unwrap_or_default()
   }
 
-  #[napi]
+  /// `copyExternalImageToTexture({ source, origin?, flipY? }, destination, size)`. `source` is
+  /// the native object packages/canvas resolved (`ImageBitmap`, `ImageData`, `ImageAsset`, a 2D,
+  /// WebGL or WebGPU context), or a decoded video frame as `{ nativeTexture, width, height }`.
+  #[napi(ts_args_type = "source: object, destination: object, copySize: object")]
   pub fn copy_external_image_to_texture(
     &self,
-    source: GPUImageCopyExternalImage,
-    destination: GPUImageCopyTextureTagged,
-    copy_size: Either<Vec<u32>, GPUExtent3DDict>,
-  ) {
-    let size = match copy_size {
-      Either::A(array) => CanvasExtent3d {
-        width: *array.get(0).unwrap_or(&0),
-        height: *array.get(1).unwrap_or(&1),
-        depth_or_array_layers: *array.get(2).unwrap_or(&1),
-      },
-      Either::B(dict) => CanvasExtent3d {
-        width: dict.width,
-        height: dict.height.unwrap_or(1),
-        depth_or_array_layers: dict.depth_or_array_layers.unwrap_or(1),
-      },
-    };
-    let origin = source
-      .origin
-      .map(|origin| match origin {
-        Either::A(array) => CanvasOrigin2d {
-          x: *array.get(0).unwrap_or(&0),
-          y: *array.get(1).unwrap_or(&0),
-        },
-        Either::B(dict) => CanvasOrigin2d {
-          x: dict.x.unwrap_or_default(),
-          y: dict.y.unwrap_or_default(),
-        },
-      })
-      .unwrap_or(CanvasOrigin2d { x: 0, y: 0 });
-    let dst = CanvasImageCopyTexture {
-      texture: Arc::as_ptr(&destination.texture.texture),
-      mip_level: destination.mip_level.unwrap_or(0),
-      origin: destination
-        .origin
-        .map(|origin| match origin {
-          Either::A(array) => CanvasOrigin3d {
-            x: *array.get(0).unwrap_or(&0),
-            y: *array.get(1).unwrap_or(&0),
-            z: *array.get(2).unwrap_or(&0),
-          },
-          Either::B(dict) => CanvasOrigin3d {
-            x: dict.x,
-            y: dict.y,
-            z: dict.z,
-          },
-        })
-        .unwrap_or_default(),
-      aspect: destination.aspect.unwrap_or(GPUTextureAspect::all).into(),
-    };
-    match source.source {
-      Either9::A(image_data) => {
-        let data = &image_data.data;
-        let width = data.inner().width() as u32;
-        let height = data.inner().height() as u32;
-        let data = data.inner().data();
-        let src = CanvasImageCopyExternalImage {
-          source: data.as_ptr(),
-          source_size: data.len(),
-          origin,
-          flip_y: source.flip_y.unwrap_or(false),
-          width,
-          height,
-        };
-        unsafe {
-          canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_copy_external_image_to_texture(
-            Arc::as_ptr(&self.queue),
-            &src,
-            &dst,
-            &size,
-          )
-        }
-      }
-      Either9::B(image_asset) => {
-        let src = CanvasImageCopyImageAsset {
-          source: Arc::as_ptr(&image_asset.asset),
-          origin,
-          flip_y: source.flip_y.unwrap_or(false),
-        };
-        unsafe {
-          canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_copy_image_asset_to_texture(
-            Arc::as_ptr(&self.queue),
-            &src,
-            &dst,
-            &size,
-          )
-        }
-      }
-      Either9::C(c2d) => {
-        let src = CanvasImageCopyCanvasRenderingContext2D {
-          source: c2d.context,
-          origin,
-          flip_y: source.flip_y.unwrap_or(false),
-        };
-        unsafe {
-          canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_copy_context_to_texture(
-            Arc::as_ptr(&self.queue),
-            &src,
-            &dst,
-            &size,
-          )
-        }
-      }
-      Either9::D(gl) => {
-        let src = CanvasImageCopyWebGL {
-          source: gl.state,
-          origin,
-          flip_y: source.flip_y.unwrap_or(false),
-        };
-        unsafe {
-          canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_copy_webgl_to_texture(
-            Arc::as_ptr(&self.queue),
-            &src,
-            &dst,
-            &size,
-          )
-        }
-      }
-      Either9::E(gl2) => {
-        let src = CanvasImageCopyWebGL {
-          source: gl2.state,
-          origin,
-          flip_y: source.flip_y.unwrap_or(false),
-        };
-        unsafe {
-          canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_copy_webgl_to_texture(
-            Arc::as_ptr(&self.queue),
-            &src,
-            &dst,
-            &size,
-          )
-        }
-      }
-      Either9::F(gpu) => {
-        let src = CanvasImageCopyGPUContext {
-          source: Arc::as_ptr(&gpu.context),
-          origin,
-          flip_y: source.flip_y.unwrap_or(false),
-        };
-        unsafe {
-          canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_copy_gpu_context_to_texture(
-            Arc::as_ptr(&self.queue),
-            &src,
-            &dst,
-            &size,
-          )
-        }
-      }
-      Either9::G(image_bitmap) => {
-        let src = CanvasImageCopyImageAsset {
-          source: Arc::as_ptr(&image_bitmap.asset),
-          origin,
-          flip_y: source.flip_y.unwrap_or(false),
-        };
-        unsafe {
-          canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_copy_image_asset_to_texture(
-            Arc::as_ptr(&self.queue),
-            &src,
-            &dst,
-            &size,
-          )
-        }
-      }
-      Either9::H(image_source) => {
-        let src = CanvasImageCopyImageAsset {
-          source: Arc::as_ptr(&image_source.image.asset),
-          origin,
-          flip_y: source.flip_y.unwrap_or(false),
-        };
-        unsafe {
-          canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_copy_image_asset_to_texture(
-            Arc::as_ptr(&self.queue),
-            &src,
-            &dst,
-            &size,
-          )
-        }
-      }
-      Either9::I(canvas_source) => match canvas_source.context {
-        Either4::A(c2d) => {
-          let src = CanvasImageCopyCanvasRenderingContext2D {
-            source: c2d.context,
-            origin,
-            flip_y: source.flip_y.unwrap_or(false),
-          };
-          unsafe {
-            canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_copy_context_to_texture(
-              Arc::as_ptr(&self.queue),
-              &src,
-              &dst,
-              &size,
-            )
-          }
-        }
-        Either4::B(gl) => {
-          let src = CanvasImageCopyWebGL {
-            source: gl.state,
-            origin,
-            flip_y: source.flip_y.unwrap_or(false),
-          };
-          unsafe {
-            canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_copy_webgl_to_texture(
-              Arc::as_ptr(&self.queue),
-              &src,
-              &dst,
-              &size,
-            )
-          }
-        }
-        Either4::C(gl2) => {
-          let src = CanvasImageCopyWebGL {
-            source: gl2.state,
-            origin,
-            flip_y: source.flip_y.unwrap_or(false),
-          };
-          unsafe {
-            canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_copy_webgl_to_texture(
-              Arc::as_ptr(&self.queue),
-              &src,
-              &dst,
-              &size,
-            )
-          }
-        }
-        Either4::D(gpu) => {
-          let src = CanvasImageCopyGPUContext {
-            source: Arc::as_ptr(&gpu.context),
-            origin,
-            flip_y: source.flip_y.unwrap_or(false),
-          };
-          unsafe {
-            canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_copy_gpu_context_to_texture(
-              Arc::as_ptr(&self.queue),
-              &src,
-              &dst,
-              &size,
-            )
-          }
-        }
-      },
-    }
-  }
-
-  #[napi]
-  pub fn write_buffer(
-    &self,
-    buffer: &g_p_u_buffer,
-    buffer_offset: i64,
-    #[napi(ts_arg_type = "ArrayBuffer | Uint8Array | Float32Array | Uint32Array")]
-    data: Either4<AnyArrayBuffer, &[u8], &[f32], &[u32]>,
-    data_offset: Option<i64>,
-    size: Option<i64>,
+    source: Unknown,
+    destination: Unknown,
+    copy_size: Unknown,
   ) -> Result<()> {
-    let do_ = data_offset.unwrap_or(0) as usize;
-    // Route to the correct C function: use the _size variant only when a
-    // non-negative explicit size is provided, otherwise let the C layer
-    // consume the full slice from data_offset onward.
-    macro_rules! write_buf {
-      ($ptr:expr, $len:expr) => {
-        match size.filter(|&s| s >= 0) {
-          Some(sz) => unsafe {
-            canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_write_buffer_size(
-              Arc::as_ptr(&self.queue),
-              Arc::as_ptr(&buffer.buffer),
-              buffer_offset as u64,
-              $ptr,
-              $len,
-              do_,
-              sz as usize,
-            );
-          },
-          None => unsafe {
-            canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_write_buffer(
-              Arc::as_ptr(&self.queue),
-              Arc::as_ptr(&buffer.buffer),
-              buffer_offset as u64,
-              $ptr,
-              $len,
-              do_,
-            );
-          },
-        }
-      };
+    if !is_object(&source) {
+      return Ok(());
     }
-    match data {
-      Either4::A(buffer_data) => {
-        write_buf!(buffer_data.as_ptr(), buffer_data.len());
-      }
-      Either4::B(view) => {
-        write_buf!(view.as_ptr(), view.len());
-      }
-      Either4::C(view) => {
-        write_buf!(view.as_ptr() as *const u8, view.len() * size_of::<f32>());
-      }
-      Either4::D(view) => {
-        write_buf!(view.as_ptr() as *const u8, view.len() * size_of::<u32>());
-      }
-    }
-    Ok(())
-  }
+    let dst = image_copy_texture(&destination, "destination")?;
+    let size = extent3d(Some(&copy_size));
+    let origin: CanvasOrigin2d = origin2d(field(&source, c"origin").as_ref());
+    let flip_y = boolean(&source, c"flipY").unwrap_or(false);
+    let queue = self.ptr();
 
-  #[napi]
-  pub fn write_texture(
-    &self,
-    destination: GPUImageCopyTexture,
-    #[napi(ts_arg_type = "Uint8Array | Uint16Array | Uint32Array | ArrayBuffer")]
-    data: Either4<&[u8], &[u16], &[u32], AnyArrayBuffer>,
-    data_layout: GPUImageDataLayout,
-    size: Either<Vec<u32>, GPUExtent3DDict>,
-  ) -> Result<()> {
-    let dest = CanvasImageCopyTexture {
-      texture: Arc::as_ptr(&destination.texture.texture),
-      mip_level: destination.mip_level.unwrap_or(0),
-      origin: destination
-        .origin
-        .map(|origin| match origin {
-          Either::B(array) => CanvasOrigin3d {
-            x: *array.get(0).unwrap_or(&0),
-            y: *array.get(1).unwrap_or(&0),
-            z: *array.get(2).unwrap_or(&0),
-          },
-          Either::A(dict) => CanvasOrigin3d {
-            x: dict.x,
-            y: dict.y,
-            z: dict.z,
-          },
-        })
-        .unwrap_or_default(),
-      aspect: destination.aspect.unwrap_or(GPUTextureAspect::all).into(),
-    };
-
-    let layout = CanvasImageDataLayout {
-      offset: data_layout.offset.unwrap_or_default() as u64,
-      bytes_per_row: data_layout.bytes_per_row,
-      rows_per_image: data_layout.rows_per_image.unwrap_or(-1),
-    };
-
-    let size = match size {
-      Either::A(array) => CanvasExtent3d {
-        width: *array.get(0).unwrap_or(&0),
-        height: *array.get(1).unwrap_or(&1),
-        depth_or_array_layers: *array.get(2).unwrap_or(&1),
-      },
-      Either::B(dict) => CanvasExtent3d {
-        width: dict.width,
-        height: dict.height.unwrap_or(1),
-        depth_or_array_layers: dict.depth_or_array_layers.unwrap_or(1),
-      },
-    };
-
-    unsafe {
-      match data {
-        Either4::A(slice) => canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_write_texture(
-          Arc::as_ptr(&self.queue),
-          &dest,
-          &layout,
+    if let Some(texture) = number(&source, c"nativeTexture") {
+      // A frame already on the GPU: nothing to upload, and nothing to fall back on.
+      unsafe {
+        canvas_c::webgpu::gpu_native_texture::canvas_native_webgpu_queue_copy_native_texture_to_texture(
+          queue,
+          texture as usize as *mut c_void,
+          uint32(&source, c"width").unwrap_or(0),
+          uint32(&source, c"height").unwrap_or(0),
+          origin.x,
+          origin.y,
+          flip_y,
+          &dst,
           &size,
-          slice.as_ptr(),
-          slice.len(),
-        ),
-        Either4::B(buffer) => {
-          canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_write_texture(
-            Arc::as_ptr(&self.queue),
-            &dest,
-            &layout,
-            &size,
-            buffer.as_ptr() as *const u8,
-            buffer.len() * size_of::<u16>(),
-          )
-        }
-        Either4::C(buffer) => {
-          canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_write_texture(
-            Arc::as_ptr(&self.queue),
-            &dest,
-            &layout,
-            &size,
-            buffer.as_ptr() as *const u8,
-            buffer.len() * size_of::<u32>(),
-          )
-        }
-        Either4::D(buffer) => {
-          canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_write_texture(
-            Arc::as_ptr(&self.queue),
-            &dest,
-            &layout,
-            &size,
-            buffer.as_ptr(),
-            buffer.len(),
-          )
-        }
+        );
+      }
+      return Ok(());
+    }
+
+    let Some(image) = field(&source, c"source") else {
+      return Ok(());
+    };
+    let copy_asset = |asset: *const canvas_c::ImageAsset| unsafe {
+      canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_copy_image_asset_to_texture(
+        queue,
+        &CanvasImageCopyImageAsset {
+          source: asset,
+          origin,
+          flip_y,
+        },
+        &dst,
+        &size,
+      )
+    };
+    let copy_webgl = |state: *mut canvas_c::WebGLState| unsafe {
+      canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_copy_webgl_to_texture(
+        queue,
+        &CanvasImageCopyWebGL {
+          source: state,
+          origin,
+          flip_y,
+        },
+        &dst,
+        &size,
+      )
+    };
+    if let Some(bitmap) = downcast::<ImageBitmap>(&image) {
+      copy_asset(Arc::as_ptr(&bitmap.asset));
+    } else if let Some(asset) = downcast::<ImageAsset>(&image) {
+      copy_asset(Arc::as_ptr(&asset.asset));
+    } else if let Some(data) = downcast::<ImageData>(&image) {
+      let inner = data.data.inner();
+      let (width, height) = (inner.width() as u32, inner.height() as u32);
+      let pixels = inner.data();
+      if pixels.is_empty() {
+        return Ok(());
+      }
+      unsafe {
+        canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_copy_external_image_to_texture(
+          queue,
+          &CanvasImageCopyExternalImage {
+            source: pixels.as_ptr(),
+            source_size: pixels.len(),
+            origin,
+            flip_y,
+            width,
+            height,
+          },
+          &dst,
+          &size,
+        )
+      }
+    } else if let Some(context) = downcast::<CanvasRenderingContext2D>(&image) {
+      // Pending drawing first: the copy reads the surface.
+      context.flush_pending();
+      unsafe {
+        canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_copy_context_to_texture(
+          queue,
+          &CanvasImageCopyCanvasRenderingContext2D {
+            source: context.context,
+            origin,
+            flip_y,
+          },
+          &dst,
+          &size,
+        )
+      }
+    } else if let Some(gl) = downcast::<web_g_l_rendering_context>(&image) {
+      copy_webgl(gl.state);
+    } else if let Some(gl) = downcast::<web_g_l_2_rendering_context>(&image) {
+      copy_webgl(gl.state);
+    } else if let Some(gpu) = downcast::<g_p_u_canvas_context>(&image) {
+      unsafe {
+        canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_copy_gpu_context_to_texture(
+          queue,
+          &CanvasImageCopyGPUContext {
+            source: gpu.context,
+            origin,
+            flip_y,
+          },
+          &dst,
+          &size,
+        )
       }
     }
     Ok(())
   }
 
-  #[napi]
-  pub fn submit(&self, buffers: Vec<&g_p_u_command_buffer>) {
-    let buffers = buffers
-      .into_iter()
-      .map(|buffer| Arc::as_ptr(&buffer.buffer))
-      .collect::<Vec<_>>();
+  /// `submit([commandBuffer, ...])`; entries that are not (live) command buffers are skipped.
+  #[napi(ts_args_type = "commandBuffers: GPUCommandBuffer[]")]
+  pub fn submit(&self, command_buffers: Unknown) {
+    let Some(items) = array(&command_buffers) else {
+      return;
+    };
+    let buffers: Vec<_> = items
+      .iter()
+      .filter_map(downcast::<g_p_u_command_buffer>)
+      .map(|buffer| buffer.buffer.ptr())
+      .filter(|buffer| !buffer.is_null())
+      .collect();
+    if buffers.is_empty() {
+      return;
+    }
     unsafe {
       canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_submit(
-        Arc::as_ptr(&self.queue),
+        self.ptr(),
         buffers.as_ptr(),
         buffers.len(),
       );
     }
+  }
+
+  /// `onSubmittedWorkDone(callback)`: called once the work submitted so far has finished.
+  #[napi(ts_args_type = "callback: () => void")]
+  pub fn on_submitted_work_done(&self, callback: DoneCallback) -> Result<()> {
+    let tsfn = callback
+      .build_threadsafe_function::<()>()
+      .build_callback(|_| Ok(()))?;
+    let data = callback::into_userdata::<()>(Box::new(move |()| {
+      tsfn.call((), ThreadsafeFunctionCallMode::NonBlocking);
+    }));
+    unsafe {
+      canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_on_submitted_work_done(
+        self.ptr(),
+        on_work_done,
+        data,
+      )
+    };
+    Ok(())
+  }
+
+  /// `writeBuffer(buffer, bufferOffset, data, dataOffset?, size?)`: `data` an `ArrayBuffer` or
+  /// any view (its bytes, read in place); `dataOffset` and `size` in bytes (packages/canvas
+  /// converts element counts), `size` omitted or negative meaning "to the end".
+  #[napi(
+    ts_args_type = "buffer: GPUBuffer, bufferOffset: number, data: ArrayBuffer | ArrayBufferView, dataOffset?: number, size?: number"
+  )]
+  pub fn write_buffer(
+    &self,
+    buffer: &g_p_u_buffer,
+    buffer_offset: f64,
+    data: JsBytes,
+    data_offset: Option<f64>,
+    size: Option<f64>,
+  ) -> Result<()> {
+    let bytes = data.as_slice();
+    let data_offset = data_offset.unwrap_or(0.).max(0.) as usize;
+    let size = size.filter(|size| *size >= 0.).map(|size| size as usize);
+    let end = match size {
+      Some(size) => data_offset.checked_add(size),
+      None => Some(bytes.len()),
+    };
+    if data_offset > bytes.len() || end.is_none_or(|end| end > bytes.len()) {
+      return Err(Error::new(
+        Status::GenericFailure,
+        "Failed to execute 'writeBuffer' on 'GPUQueue': the range is outside the data",
+      ));
+    }
+    if bytes.is_empty() || end == Some(data_offset) {
+      return Ok(());
+    }
+    unsafe {
+      match size {
+        Some(size) => canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_write_buffer_size(
+          self.ptr(),
+          Arc::as_ptr(&buffer.buffer),
+          buffer_offset.max(0.) as u64,
+          bytes.as_ptr(),
+          bytes.len(),
+          data_offset,
+          size,
+        ),
+        None => canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_write_buffer(
+          self.ptr(),
+          Arc::as_ptr(&buffer.buffer),
+          buffer_offset.max(0.) as u64,
+          bytes.as_ptr(),
+          bytes.len(),
+          data_offset,
+        ),
+      }
+    }
+    Ok(())
+  }
+
+  /// `writeTexture(destination, data, dataLayout, size)`.
+  #[napi(
+    ts_args_type = "destination: object, data: ArrayBuffer | ArrayBufferView, dataLayout: { offset?: number, bytesPerRow?: number, rowsPerImage?: number }, size: object"
+  )]
+  pub fn write_texture(
+    &self,
+    destination: Unknown,
+    data: JsBytes,
+    data_layout: Unknown,
+    size: Unknown,
+  ) -> Result<()> {
+    let destination = image_copy_texture(&destination, "destination")?;
+    let layout = CanvasImageDataLayout {
+      offset: number(&data_layout, c"offset").map_or(0, |n| n.max(0.) as u64),
+      bytes_per_row: int32(&data_layout, c"bytesPerRow").unwrap_or(-1),
+      rows_per_image: int32(&data_layout, c"rowsPerImage").unwrap_or(-1),
+    };
+    let size: CanvasExtent3d = extent3d(Some(&size));
+    let bytes = data.as_slice();
+    if bytes.is_empty() {
+      return Ok(());
+    }
+    unsafe {
+      canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_write_texture(
+        self.ptr(),
+        &destination,
+        &layout,
+        &size,
+        bytes.as_ptr(),
+        bytes.len(),
+      )
+    }
+    Ok(())
   }
 }

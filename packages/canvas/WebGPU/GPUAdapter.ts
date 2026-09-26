@@ -4,6 +4,7 @@ import { GPUDevice } from './GPUDevice';
 import { GPUDeviceDescriptor } from './Interfaces';
 import type { GPUAdapterImpl } from './NativeImpl';
 import { GPUFeatureName } from './Types';
+import { NAPI_HOST } from '../platform';
 
 export class GPUSupportedFeatures extends Set<GPUFeatureName> {
 	get [Symbol.toStringTag]() {
@@ -68,7 +69,7 @@ export class GPUAdapter {
 			}
 
 			if (!options.requiredLimits) {
-				if (__ANDROID__ || __APPLE__) {
+				if (__ANDROID__ || __APPLE__ || NAPI_HOST) {
 					//@ts-ignore
 					const requiredLimits = new global.CanvasModule.GPUSupportedLimits();
 					const limits = this[native_].limits;

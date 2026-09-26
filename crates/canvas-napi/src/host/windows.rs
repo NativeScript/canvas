@@ -9,6 +9,7 @@
 
 use std::ffi::c_void;
 
+use canvas_c::webgpu::gpu_canvas_context::CanvasGPUCanvasContext;
 use canvas_c::{CanvasRenderingContext2D as CCanvasRenderingContext2D, WebGLState};
 use canvas_core::fit::{surface_transform, CanvasFit};
 use napi::bindgen_prelude::ObjectFinalize;
@@ -30,6 +31,7 @@ enum Context {
   None,
   TwoD(*mut CCanvasRenderingContext2D),
   WebGL(*mut WebGLState),
+  WebGPU(*const CanvasGPUCanvasContext),
 }
 
 impl Context {
@@ -38,6 +40,7 @@ impl Context {
       Context::None => 0,
       Context::TwoD(context) => context as usize,
       Context::WebGL(state) => state as usize,
+      Context::WebGPU(context) => context as usize,
     }
   }
 }
@@ -67,6 +70,7 @@ impl ObjectFinalize for NSCCanvas {
       Context::None => {}
       Context::TwoD(context) => canvas_c::canvas_native_context_release(context),
       Context::WebGL(state) => canvas_c::canvas_native_webgl_state_destroy(state),
+      Context::WebGPU(context) => unsafe { canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_context_release(context) },
     }
     Ok(())
   }
@@ -96,6 +100,11 @@ impl NSCCanvas {
       Context::WebGL(state) => {
         canvas_c::canvas_native_webgl_set_swap_chain_transform(state, t.scale_x, t.scale_y, t.offset_x, t.offset_y);
       }
+      Context::WebGPU(context) => unsafe {
+        canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_context_set_swap_chain_transform(
+          context, t.scale_x, t.scale_y, t.offset_x, t.offset_y,
+        );
+      },
     }
   }
 }
@@ -196,6 +205,9 @@ impl NSCCanvas {
       Context::WebGL(state) => {
         canvas_c::canvas_native_webgl_resize_d3d(state, width as i32, height as i32);
       }
+      Context::WebGPU(context) => unsafe {
+        canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_context_resize_swap_chain_panel(context, width, height);
+      },
     }
     self.apply_transform();
   }
@@ -238,7 +250,9 @@ impl NSCCanvas {
   ) -> Result<String> {
     match self.context {
       Context::TwoD(context) => return Ok((context as usize).to_string()),
-      Context::WebGL(_) => return Err(Error::from_reason("The canvas already has a WebGL context")),
+      Context::WebGL(_) | Context::WebGPU(_) => {
+        return Err(Error::from_reason("The canvas already has a WebGL or WebGPU context"))
+      }
       Context::None => {}
     }
     let color_space = match color_space.unwrap_or(0) {
@@ -283,7 +297,9 @@ impl NSCCanvas {
   ) -> Result<()> {
     match self.context {
       Context::WebGL(_) => return Ok(()),
-      Context::TwoD(_) => return Err(Error::from_reason("The canvas already has a 2D context")),
+      Context::TwoD(_) | Context::WebGPU(_) => {
+        return Err(Error::from_reason("The canvas already has a 2D or WebGPU context"))
+      }
       Context::None => {}
     }
     let version = if context_type.contains("webgl2") { 2 } else { 1 };
@@ -313,6 +329,40 @@ impl NSCCanvas {
     Ok(())
   }
 
+  /// Creates (once) the WebGPU context on the `GPU` instance `instance` (its `__getPointer()`),
+  /// presenting in the panel; `nativeContext` then holds its pointer. Needs a SwapChainPanel.
+  #[napi(js_name = "initWebGPUContext")]
+  pub fn init_webgpu_context(&mut self, instance: napi::bindgen_prelude::BigInt) -> Result<()> {
+    match self.context {
+      Context::WebGPU(_) => return Ok(()),
+      Context::TwoD(_) | Context::WebGL(_) => {
+        return Err(Error::from_reason("The canvas already has a 2D or WebGL context"))
+      }
+      Context::None => {}
+    }
+    let (instance, _) = instance.get_i64();
+    if instance == 0 {
+      return Err(Error::from_reason("Invalid GPU instance"));
+    }
+    if self.panel_ptr().is_null() {
+      return Err(Error::from_reason("WebGPU needs an on-screen canvas (a SwapChainPanel)"));
+    }
+    let context = unsafe {
+      canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_context_create_swap_chain_panel(
+        instance as *const _,
+        self.panel_ptr(),
+        self.surface_width,
+        self.surface_height,
+      )
+    };
+    if context.is_null() {
+      return Err(Error::from_reason("Could not create a WebGPU surface for the panel"));
+    }
+    self.context = Context::WebGPU(context);
+    self.apply_transform();
+    Ok(())
+  }
+
   /// Renders pending drawing and presents it now.
   #[napi]
   pub fn present(&self) {
@@ -322,6 +372,8 @@ impl NSCCanvas {
       Context::WebGL(state) => {
         canvas_c::canvas_native_webgl_present(state);
       }
+      // WebGPU presents through its context (presentSurface / at frame end).
+      Context::WebGPU(_) => {}
     }
   }
 }

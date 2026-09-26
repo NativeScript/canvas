@@ -693,6 +693,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_on_submitted_work_done(
     });
 
     queue.queue.id.on_submitted_work_done(done);
+    // The closure only runs when the device is polled; without a frame loop (compute-only,
+    // headless) nothing else would.
+    super::gpu_buffer::poll_mappings(Arc::clone(&queue.queue.instance));
 }
 
 #[no_mangle]

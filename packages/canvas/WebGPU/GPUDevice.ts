@@ -72,13 +72,8 @@ export class EventTarget {
 		}
 		let emitter: Observable;
 
-		if (__ANDROID__) {
-			emitter = this._emitter?.get?.();
-		}
-
-		if (__APPLE__) {
-			emitter = this._emitter?.deref?.();
-		}
+		// WeakRef: deref() (V8/JSC), get() (the Android runtime's).
+		emitter = this._emitter?.deref?.() ?? this._emitter?.get?.();
 		if (emitter !== null && emitter !== undefined) {
 			emitter.addEventListener(event, handler, this);
 		}
@@ -87,13 +82,8 @@ export class EventTarget {
 	removeEventListener(event: string, handler?: any) {
 		let emitter: Observable;
 
-		if (__ANDROID__) {
-			emitter = this._emitter?.get?.();
-		}
-
-		if (__APPLE__) {
-			emitter = this._emitter?.deref?.();
-		}
+		// WeakRef: deref() (V8/JSC), get() (the Android runtime's).
+		emitter = this._emitter?.deref?.() ?? this._emitter?.get?.();
 
 		if (emitter !== null && emitter !== undefined) {
 			emitter.removeEventListener(event, handler);
@@ -103,13 +93,8 @@ export class EventTarget {
 	dispatchEvent(event) {
 		let emitter: Observable;
 
-		if (__ANDROID__) {
-			emitter = this._emitter?.get?.();
-		}
-
-		if (__APPLE__) {
-			emitter = this._emitter?.deref?.();
-		}
+		// WeakRef: deref() (V8/JSC), get() (the Android runtime's).
+		emitter = this._emitter?.deref?.() ?? this._emitter?.get?.();
 
 		if (emitter !== null && emitter !== undefined) {
 			emitter.notify({ ...event, eventName: event.type, object: emitter });
@@ -136,11 +121,7 @@ export class GPUDevice extends EventTarget {
 
 	private _uncapturederror(type: number, message: string) {
 		let emitter: Observable;
-		if (__ANDROID__) {
-			emitter = this._emitter?.get();
-		} else {
-			emitter = this._emitter?.deref();
-		}
+		emitter = this._emitter?.deref?.() ?? this._emitter?.get?.();
 
 		let error;
 

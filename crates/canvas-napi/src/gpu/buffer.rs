@@ -1,12 +1,13 @@
-use crate::gpu::enums::GPUMapMode;
+use crate::gpu::callback::PendingPromise;
+use crate::gpu::parse::{as_number, take_string};
+use crate::module::JsRaw;
 use canvas_c::webgpu::error::CanvasGPUErrorType;
-use napi::bindgen_prelude::{ArrayBuffer, AsyncTask, ObjectFinalize};
+use canvas_c::webgpu::gpu_buffer::GPUMapMode as CGPUMapMode;
+use napi::bindgen_prelude::{ArrayBuffer, ObjectFinalize, Unknown};
 use napi::*;
 use napi_derive::napi;
 use std::cell::RefCell;
-use std::ffi::CString;
 use std::os::raw::{c_char, c_void};
-use std::sync::mpsc::channel;
 use std::sync::{Arc, Mutex, MutexGuard};
 
 #[allow(clippy::enum_variant_names)]
@@ -40,97 +41,44 @@ impl ObjectFinalize for g_p_u_buffer {
   }
 }
 
-struct Sender {
-  tx: std::sync::mpsc::Sender<Option<String>>,
+/// What `mapAsync` needs back from canvas-c's mapping callback (the mapping poller's thread).
+struct MapRequest {
+  pending: PendingPromise,
   state: Arc<Mutex<GPUMapState>>,
   previous_state: GPUMapState,
 }
 
-extern "C" fn map_async(_: CanvasGPUErrorType, error_message: *mut c_char, data: *mut c_void) {
+extern "C" fn map_async(kind: CanvasGPUErrorType, error_message: *mut c_char, data: *mut c_void) {
+  let message = unsafe { take_string(error_message) };
   if data.is_null() {
     return;
   }
-  let data = data as *mut Sender;
-  let data = unsafe { *Box::from_raw(data) };
-
-  let ret = if !error_message.is_null() {
-    (
-      Some(unsafe { CString::from_raw(error_message).into_string().unwrap() }),
-      data.previous_state,
-    )
+  let request = unsafe { *Box::from_raw(data as *mut MapRequest) };
+  let failed = kind != CanvasGPUErrorType::None;
+  {
+    let mut state = request.state.lock().unwrap_or_else(|e| {
+      request.state.clear_poison();
+      e.into_inner()
+    });
+    *state = if failed {
+      request.previous_state
+    } else {
+      GPUMapState::mapped
+    };
+  }
+  if failed {
+    let message = message.unwrap_or_else(|| match kind {
+      CanvasGPUErrorType::Lost => {
+        "Failed to execute 'mapAsync' on 'GPUBuffer': the device is lost".to_owned()
+      }
+      CanvasGPUErrorType::OutOfMemory => {
+        "Failed to execute 'mapAsync' on 'GPUBuffer': out of memory".to_owned()
+      }
+      _ => "Failed to execute 'mapAsync' on 'GPUBuffer'".to_owned(),
+    });
+    request.pending.reject_message(message);
   } else {
-    (None, GPUMapState::mapped)
-  };
-
-  let mut state = data.state.lock().unwrap_or_else(|e| {
-    data.state.clear_poison();
-    e.into_inner()
-  });
-
-  *state = ret.1;
-
-  data.tx.send(ret.0).unwrap()
-}
-
-pub struct AsyncMapBufferTask {
-  buffer: Arc<canvas_c::webgpu::gpu_buffer::CanvasGPUBuffer>,
-  mode: GPUMapMode,
-  offset: i64,
-  size: i64,
-  previous_state: GPUMapState,
-  state: Arc<Mutex<GPUMapState>>,
-}
-
-impl AsyncMapBufferTask {
-  pub fn new(
-    buffer: Arc<canvas_c::webgpu::gpu_buffer::CanvasGPUBuffer>,
-    mode: GPUMapMode,
-    offset: i64,
-    size: i64,
-    previous_state: GPUMapState,
-    state: Arc<Mutex<GPUMapState>>,
-  ) -> Self {
-    Self {
-      buffer,
-      mode,
-      offset,
-      size,
-      previous_state,
-      state,
-    }
-  }
-}
-
-impl Task for AsyncMapBufferTask {
-  type Output = ();
-  type JsValue = ();
-
-  fn compute(&mut self) -> Result<Self::Output> {
-    let (tx, rx) = channel();
-    let data = Box::into_raw(Box::new(Sender {
-      tx,
-      state: Arc::clone(&self.state),
-      previous_state: self.previous_state,
-    }));
-    canvas_c::webgpu::gpu_buffer::canvas_native_webgpu_buffer_map_async(
-      Arc::as_ptr(&self.buffer),
-      self.mode.into(),
-      self.offset,
-      self.size,
-      map_async,
-      data as _,
-    );
-    match rx.recv() {
-      Ok(error) => match error {
-        None => Ok(()),
-        Some(error) => Err(Error::new(Status::Unknown, error)),
-      },
-      Err(error) => Err(Error::new(Status::Unknown, error.to_string())),
-    }
-  }
-
-  fn resolve(&mut self, _env: Env, _output: ()) -> Result<Self::JsValue> {
-    Ok(())
+    request.pending.resolve_undefined();
   }
 }
 
@@ -181,13 +129,14 @@ impl g_p_u_buffer {
 
   #[napi(getter)]
   pub fn get_label(&self) -> String {
-    let label = unsafe {
-      canvas_c::webgpu::gpu_buffer::canvas_native_webgpu_buffer_get_label(Arc::as_ptr(&self.buffer))
-    };
-    if label.is_null() {
-      return String::new();
+    unsafe {
+      take_string(
+        canvas_c::webgpu::gpu_buffer::canvas_native_webgpu_buffer_get_label(Arc::as_ptr(
+          &self.buffer,
+        )),
+      )
     }
-    unsafe { CString::from_raw(label).into_string().unwrap() }
+    .unwrap_or_default()
   }
 
   #[napi(getter)]
@@ -233,26 +182,41 @@ impl g_p_u_buffer {
     Ok(arraybuffer)
   }
 
+  /// `mapAsync(mode, offset?, size?)`: a promise, resolved once the range is mapped (mode 1 is
+  /// read, anything else write, as in the V8 bindings).
   #[napi(ts_return_type = "Promise<void>")]
   pub fn map_async(
     &self,
-    mode: GPUMapMode,
-    offset: Option<i64>,
-    size: Option<i64>,
-  ) -> AsyncTask<AsyncMapBufferTask> {
-    let mut state = self.lock_state();
-    let previous_state_value = *state;
-    *state = GPUMapState::pending;
-    let buffer = Arc::clone(&self.buffer);
-    drop(state);
-    AsyncTask::new(AsyncMapBufferTask::new(
-      buffer,
+    env: Env,
+    mode: Unknown,
+    offset: Option<Unknown>,
+    size: Option<Unknown>,
+  ) -> Result<JsRaw> {
+    let mode = match as_number(&mode) {
+      Some(mode) if mode as u32 == 1 => CGPUMapMode::Read,
+      _ => CGPUMapMode::Write,
+    };
+    let range = |value: Option<Unknown>| value.and_then(|v| as_number(&v)).map_or(-1, |n| n as i64);
+    let (offset, size) = (range(offset), range(size));
+    let (pending, promise) = PendingPromise::new(&env, false)?;
+    let previous_state = {
+      let mut state = self.lock_state();
+      std::mem::replace(&mut *state, GPUMapState::pending)
+    };
+    let request = Box::into_raw(Box::new(MapRequest {
+      pending,
+      state: Arc::clone(&self.state),
+      previous_state,
+    }));
+    canvas_c::webgpu::gpu_buffer::canvas_native_webgpu_buffer_map_async(
+      Arc::as_ptr(&self.buffer),
       mode,
-      offset.unwrap_or(-1),
-      size.unwrap_or(-1),
-      previous_state_value,
-      Arc::clone(&self.state),
-    ))
+      offset,
+      size,
+      map_async,
+      request as *mut c_void,
+    );
+    Ok(JsRaw(promise))
   }
 
   #[napi]

@@ -2,12 +2,14 @@
 //! `SwapChainPanel` the TS view creates.
 //!
 //! Like the iOS view object of the same name, it owns the rendering context and hands its pointer
-//! to `packages/canvas` (`create2DContext` → `create2DContextWithPointer`). Sizes are physical
-//! pixels; `setCompositionScale` maps them back to the panel's DIPs.
+//! to `packages/canvas` (`create2DContext` → `create2DContextWithPointer`). The drawing buffer is
+//! sized in physical pixels (300x150 until set, as on the web); the panel's DIP size, its
+//! composition scale and the `fit` mode place it in the panel (`canvas_core::fit`).
 
 use std::ffi::c_void;
 
 use canvas_c::CanvasRenderingContext2D as CCanvasRenderingContext2D;
+use canvas_core::fit::{surface_transform, CanvasFit};
 use napi::bindgen_prelude::ObjectFinalize;
 use napi::{Env, Error, Result};
 use napi_derive::napi;
@@ -28,8 +30,13 @@ pub struct NSCCanvas {
   panel: Option<IUnknown>,
   surface_width: u32,
   surface_height: u32,
+  /// `CompositionScaleX/Y`: physical pixels per panel DIP.
   scale_x: f32,
   scale_y: f32,
+  /// The panel's size in DIPs, 0 until laid out.
+  view_width: f32,
+  view_height: f32,
+  fit: CanvasFit,
   context_2d: *mut CCanvasRenderingContext2D,
 }
 
@@ -52,11 +59,19 @@ impl NSCCanvas {
     if self.context_2d.is_null() {
       return;
     }
-    let (sx, sy) = (
-      if self.scale_x > 0. { 1. / self.scale_x } else { 1. },
-      if self.scale_y > 0. { 1. / self.scale_y } else { 1. },
+    let t = surface_transform(
+      self.fit,
+      (self.surface_width as f32, self.surface_height as f32),
+      (self.scale_x, self.scale_y),
+      (self.view_width, self.view_height),
     );
-    canvas_c::canvas_native_context_set_swap_chain_transform(self.context_2d, sx, sy, 0., 0.);
+    canvas_c::canvas_native_context_set_swap_chain_transform(
+      self.context_2d,
+      t.scale_x,
+      t.scale_y,
+      t.offset_x,
+      t.offset_y,
+    );
   }
 }
 
@@ -78,10 +93,13 @@ impl NSCCanvas {
     };
     Ok(Self {
       panel,
-      surface_width: 1,
-      surface_height: 1,
+      surface_width: 300,
+      surface_height: 150,
       scale_x: 1.,
       scale_y: 1.,
+      view_width: 0.,
+      view_height: 0.,
+      fit: CanvasFit::default(),
       context_2d: std::ptr::null_mut(),
     })
   }
@@ -91,9 +109,33 @@ impl NSCCanvas {
     self.surface_width
   }
 
+  #[napi(setter)]
+  pub fn set_surface_width(&mut self, width: f64) {
+    self.set_surface_size(width, self.surface_height as f64);
+  }
+
   #[napi(getter)]
   pub fn surface_height(&self) -> u32 {
     self.surface_height
+  }
+
+  #[napi(setter)]
+  pub fn set_surface_height(&mut self, height: f64) {
+    self.set_surface_size(self.surface_width as f64, height);
+  }
+
+  /// `CanvasFit` as an int (0 none, 1 fill, 2 fitX, 3 fitY, 4 scaleDown), as on iOS.
+  #[napi(getter)]
+  pub fn fit(&self) -> i32 {
+    self.fit as i32
+  }
+
+  #[napi(setter)]
+  pub fn set_fit(&mut self, fit: i32) {
+    if let Some(fit) = CanvasFit::from_i32(fit) {
+      self.fit = fit;
+      self.apply_transform();
+    }
   }
 
   #[napi(getter)]
@@ -109,7 +151,8 @@ impl NSCCanvas {
   /// The drawing buffer size in physical pixels; resizes (and clears) an existing context.
   #[napi]
   pub fn set_surface_size(&mut self, width: f64, height: f64) {
-    let (width, height) = ((width.max(1.)) as u32, (height.max(1.)) as u32);
+    // `max` also maps NaN to 1.
+    let (width, height) = (width.max(1.) as u32, height.max(1.) as u32);
     if (width, height) == (self.surface_width, self.surface_height) {
       return;
     }
@@ -120,6 +163,14 @@ impl NSCCanvas {
       canvas_c::resize(context, width as f32, height as f32);
       self.apply_transform();
     }
+  }
+
+  /// The panel's laid-out size in DIPs (`ActualWidth/Height`).
+  #[napi]
+  pub fn set_view_size(&mut self, width: f64, height: f64) {
+    self.view_width = width as f32;
+    self.view_height = height as f32;
+    self.apply_transform();
   }
 
   /// The panel's `CompositionScaleX/Y` (DPI scale and any render transform).

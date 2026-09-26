@@ -27,6 +27,7 @@ mod module;
 #[napi_derive::napi(module_exports)]
 pub fn install_global(exports: napi::bindgen_prelude::Object, env: napi::Env) -> napi::Result<()> {
   use napi::bindgen_prelude::JsObjectValue;
+  frame::install_microtask_scheduler(env.raw())?;
   let mut global = env.get_global()?;
   if !global.has_named_property("CanvasModule")? {
     global.set_named_property("CanvasModule", exports)?;

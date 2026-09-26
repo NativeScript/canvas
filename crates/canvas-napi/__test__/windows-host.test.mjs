@@ -68,6 +68,41 @@ test('NSCCanvas: drawImage into a CPU canvas reads the GPU canvas back', { skip 
 	assert.deepEqual(pixel(cpu, 10, 10), [51, 102, 255, 255]);
 });
 
+test('NSCCanvas: 300x150 until sized, like the web; surfaceWidth/Height set one axis', { skip }, () => {
+	const host = new NSCCanvas();
+	assert.equal(host.surfaceWidth, 300);
+	assert.equal(host.surfaceHeight, 150);
+	host.surfaceWidth = 64;
+	assert.deepEqual([host.surfaceWidth, host.surfaceHeight], [64, 150]);
+	host.surfaceHeight = 32;
+	assert.deepEqual([host.surfaceWidth, host.surfaceHeight], [64, 32]);
+	host.setSurfaceSize(0, NaN);
+	assert.deepEqual([host.surfaceWidth, host.surfaceHeight], [1, 1]);
+});
+
+test('NSCCanvas: fit is an int CanvasFit; unknown values are ignored', { skip }, () => {
+	const { host } = hostContext(16, 16);
+	assert.equal(host.fit, 2);
+	for (const fit of [0, 1, 3, 4]) {
+		host.fit = fit;
+		assert.equal(host.fit, fit);
+	}
+	host.fit = 9;
+	assert.equal(host.fit, 4);
+	// Offscreen there is no swapchain to transform: layout calls are accepted and ignored.
+	host.setViewSize(100, 50);
+	host.setCompositionScale(1.5, 1.5);
+});
+
+test('drawing schedules its own flush (no __flushAll needed)', { skip }, async () => {
+	const { ctx } = hostContext(8, 8);
+	ctx.fillRect(0, 0, 8, 8);
+	await Promise.resolve();
+	ctx.fillRect(0, 0, 4, 4);
+	await new Promise((resolve) => setImmediate(resolve));
+	assert.deepEqual(pixel(ctx, 1, 1), [0, 0, 0, 255]);
+});
+
 test('NSCCanvas: rejects a malformed panel pointer', { skip }, () => {
 	assert.throws(() => new NSCCanvas('not a pointer'), /Invalid SwapChainPanel pointer/);
 	assert.throws(() => new NSCCanvas('0x0'), /Invalid SwapChainPanel pointer/);

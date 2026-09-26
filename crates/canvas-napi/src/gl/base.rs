@@ -157,79 +157,33 @@ macro_rules! impl_webgl_context {
   pub fn buffer_data(
     &self,
     target: u32,
-    size_or_src_data: Option<Either5<i64, Buffer, Float32Array, AnyArrayBuffer, &[u8]>>,
+    size_or_src_data: Option<Either<i64, crate::module::JsBytes>>,
     usage: Option<u32>,
   ) {
-    match size_or_src_data {
-      Some(size_or_src_data) => match size_or_src_data {
-        Either5::A(size) => match usage {
-          Some(usage) => {
-            canvas_c::canvas_native_webgl_buffer_data_none(
-              target,
-              size as isize,
-              usage,
-              self.state,
-            );
-          }
-          None => {
-            canvas_c::canvas_native_webgl_buffer_data_none(target, 0, size as u32, self.state);
-          }
-        },
-        Either5::B(src_data) => {
-          if let Some(usage) = usage {
-            canvas_c::canvas_native_webgl_buffer_data(
-              target,
-              src_data.as_ptr(),
-              src_data.len(),
-              usage,
-              self.state,
-            );
-          }
-        }
-        Either5::C(src_data) => {
-          if let Some(usage) = usage {
-            canvas_c::canvas_native_webgl_buffer_data_f32(
-              target,
-              src_data.as_ptr(),
-              src_data.len(),
-              usage,
-              self.state,
-            );
-          }
-        }
-        Either5::D(src_data) => {
-          if let (Some(usage), Ok(src_data)) = (usage, Ok::<&[u8], ()>(&src_data)) {
-            canvas_c::canvas_native_webgl_buffer_data(
-              target,
-              src_data.as_ptr(),
-              src_data.len(),
-              usage,
-              self.state,
-            );
-          }
-        }
-        Either5::E(src_data) => {
-          if let Some(usage) = usage {
-            canvas_c::canvas_native_webgl_buffer_data(
-              target,
-              src_data.as_ptr(),
-              src_data.len(),
-              usage,
-              self.state,
-            );
-          }
-        }
-      },
-      _ => {
-        if let Some(usage) = usage {
-          canvas_c::canvas_native_webgl_buffer_data_none(target, 0, usage, self.state);
-        }
+    match (size_or_src_data, usage) {
+      (Some(Either::A(size)), Some(usage)) => {
+        canvas_c::canvas_native_webgl_buffer_data_none(target, size as isize, usage, self.state);
       }
+      // bufferData(target, usage): an empty buffer.
+      (Some(Either::A(usage)), None) => {
+        canvas_c::canvas_native_webgl_buffer_data_none(target, 0, usage as u32, self.state);
+      }
+      // Any ArrayBuffer or view (Float32Array vertices, Uint16Array indices, ...), read in place.
+      (Some(Either::B(src_data)), Some(usage)) => {
+        let src_data = src_data.as_slice();
+        canvas_c::canvas_native_webgl_buffer_data(target, src_data.as_ptr(), src_data.len(), usage, self.state);
+      }
+      (None, Some(usage)) => {
+        canvas_c::canvas_native_webgl_buffer_data_none(target, 0, usage, self.state);
+      }
+      _ => {}
     }
   }
 
+
       #[napi]
-      pub fn buffer_sub_data(&self, target: u32, offset: i64, src_data: &[u8]) {
+      pub fn buffer_sub_data(&self, target: u32, offset: i64, src_data: crate::module::JsBytes) {
+        let src_data = src_data.as_slice();
         canvas_c::canvas_native_webgl_buffer_sub_data(
           target,
           offset as isize,
@@ -287,14 +241,16 @@ macro_rules! impl_webgl_context {
     }
 
     #[napi]
-    pub fn compressed_tex_image_2_d(&self, target: u32, level: i32, internalformat: u32, width: i64, height: i64, border: i32, pixels: &[u8]) {
+    pub fn compressed_tex_image_2_d(&self, target: u32, level: i32, internalformat: u32, width: i64, height: i64, border: i32, pixels: crate::module::JsBytes) {
+        let pixels = pixels.as_slice();
         canvas_c::canvas_native_webgl_compressed_tex_image2d(
             target, level, internalformat, width as i32, height as i32, border, pixels.as_ptr(), pixels.len(), self.state,
         )
     }
 
     #[napi]
-    pub fn compressed_tex_sub_image_2_d(&self, target: u32, level: i32, xoffset: i64, yoffset: i64, width: f64, height: f64, format: u32, pixels: &[u8]) {
+    pub fn compressed_tex_sub_image_2_d(&self, target: u32, level: i32, xoffset: i64, yoffset: i64, width: f64, height: f64, format: u32, pixels: crate::module::JsBytes) {
+        let pixels = pixels.as_slice();
         canvas_c::canvas_native_webgl_compressed_tex_sub_image2d(
             target, level, xoffset as i32, yoffset as i32, width as i32, height as i32, format, pixels.as_ptr(), pixels.len(), self.state,
         )
@@ -1238,13 +1194,14 @@ macro_rules! impl_webgl_context {
       HTMLCanvasSource
     >,
     type_: Option<i32>,
-    pixels: Option<Either5<&[u8], &[u16], &[f32], AnyArrayBuffer, i64>>,
+    pixels: Option<Either<crate::module::JsBytes, i64>>,
     offset: Option<i64>,
   ) -> Result<()> {
     match pixels_or_format {
         Either9::A(format) => match (type_, pixels) {
         (Some(type_), Some(pixels)) => match pixels {
-          Either5::A(buf) => {
+          Either::A(buf) => {
+            let buf = buf.as_slice();
             canvas_c::canvas_native_webgl_tex_sub_image2d(
               target,
               level,
@@ -1259,53 +1216,7 @@ macro_rules! impl_webgl_context {
               self.state,
             );
           }
-          Either5::B(short) => {
-            canvas_c::canvas_native_webgl_tex_sub_image2d(
-              target,
-              level,
-              xoffset,
-              yoffset,
-              format_or_width,
-              type_or_height,
-              format,
-              type_,
-              short.as_ptr() as *const u8,
-              short.len() * size_of::<u16>(),
-              self.state,
-            );
-          }
-          Either5::C(float) => {
-            canvas_c::canvas_native_webgl_tex_sub_image2d(
-              target,
-              level,
-              xoffset,
-              yoffset,
-              format_or_width,
-              type_or_height,
-              format,
-              type_,
-              float.as_ptr() as *const u8,
-              float.len() * size_of::<f32>(),
-              self.state,
-            );
-          }
-          Either5::D(ab) => {
-            let buf: &[u8] = &ab;
-            canvas_c::canvas_native_webgl_tex_sub_image2d(
-              target,
-              level,
-              xoffset,
-              yoffset,
-              format_or_width,
-              type_or_height,
-              format,
-              type_,
-              buf.as_ptr(),
-              buf.len(),
-              self.state,
-            );
-          }
-          Either5::E(offset) => {
+          Either::B(offset) => {
             canvas_c::canvas_native_webgl_tex_sub_image2d_offset(
               target,
               level,

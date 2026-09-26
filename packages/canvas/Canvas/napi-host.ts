@@ -247,11 +247,15 @@ export abstract class NapiCanvas extends CanvasBase {
 		return this._canvas?.drawingBufferHeight ?? 0;
 	}
 
+	// The platform view sizes the native view (on Windows that is what gives the XAML panel its
+	// Width / Height); the canvas also sizes its drawing buffer from it.
 	[widthProperty.setNative](value: any) {
+		(Object.getPrototypeOf(NapiCanvas.prototype) as any)[widthProperty.setNative]?.call(this, value);
 		this.__setSurfaceWidth(value);
 	}
 
 	[heightProperty.setNative](value: any) {
+		(Object.getPrototypeOf(NapiCanvas.prototype) as any)[heightProperty.setNative]?.call(this, value);
 		this.__setSurfaceHeight(value);
 	}
 

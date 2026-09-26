@@ -75,6 +75,26 @@ class PerfModel extends Observable {
 					const started = runWebGPUSample(sample, canvas);
 					console.log(started ? `WEBGPU|started|${sample}` : `WEBGPU|error|unknown sample ${sample}`);
 					this.set('status', started ? sample : `unknown sample: ${sample}`);
+				} else if (suite === 'alpha' || suite === 'alpha-webgl') {
+					// A cleared canvas shows what is behind it (magenta here), as on the web.
+					canvas.parent.backgroundColor = 'magenta';
+					const w = canvas.width;
+					const h = canvas.height;
+					if (suite === 'alpha') {
+						const ctx = canvas.getContext('2d');
+						ctx.clearRect(0, 0, w, h);
+						ctx.fillStyle = 'red';
+						ctx.fillRect(w / 4, h / 4, w / 2, h / 2);
+					} else {
+						const gl = canvas.getContext('webgl');
+						gl.clearColor(0, 0, 0, 0);
+						gl.clear(gl.COLOR_BUFFER_BIT);
+						gl.enable(gl.SCISSOR_TEST);
+						gl.scissor(w / 4, h / 4, w / 2, h / 2);
+						gl.clearColor(1, 0, 0, 1);
+						gl.clear(gl.COLOR_BUFFER_BIT);
+					}
+					this.set('status', `${suite}: magenta around a red square`);
 				} else if (suite === 'callbound') {
 					runCallBound(canvas);
 					this.set('status', 'done — see logcat (NVCALL|…)');

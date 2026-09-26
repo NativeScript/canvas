@@ -110,9 +110,12 @@ export class Canvas extends NapiCanvas {
 			panel[name] = delegate;
 		}
 
-		// XAML lays the panel out (NativeScript's measure/layout pass does not run for it).
-		this._sizeDelegate = NSWinRT.asDelegate('Microsoft.UI.Xaml.SizeChangedEventHandler', () => ref.deref()?._syncViewSize());
-		panel.SizeChanged = this._sizeDelegate;
+		// XAML lays the panel out (NativeScript's measure/layout pass does not run for it). An event
+		// takes one delegate: for % sizes core watches SizeChanged itself and calls _onSizeChanged.
+		if (!(this as any)._sizeWatchWired) {
+			this._sizeDelegate = NSWinRT.asDelegate('Microsoft.UI.Xaml.SizeChangedEventHandler', () => ref.deref()?._syncViewSize());
+			panel.SizeChanged = this._sizeDelegate;
+		}
 
 		this._pointerDelegates = new Map();
 		for (const name of POINTER_EVENTS) {
@@ -153,6 +156,12 @@ export class Canvas extends NapiCanvas {
 		if (this._panel) {
 			this._panel.IsHitTestVisible = value;
 		}
+	}
+
+	/** Core's size watch (it replaces the panel's SizeChanged delegate for % sizes). */
+	_onSizeChanged() {
+		(Object.getPrototypeOf(Canvas.prototype) as any)._onSizeChanged?.call(this);
+		this._syncViewSize();
 	}
 
 	_syncViewSize() {

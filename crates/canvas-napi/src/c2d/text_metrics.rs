@@ -1,21 +1,103 @@
-//! `TextMetrics`, mirroring `canvas2d/TextMetricsImpl.cpp`.
+use canvas_c::TextMetrics as CTextMetrics;
 
-use napi::sys;
+use napi::bindgen_prelude::ObjectFinalize;
+use napi::*;
+use napi_derive::napi;
 
-use crate::util::native::{Native, NativeType};
-
+#[napi(custom_finalize)]
 pub struct TextMetrics {
-    pub(crate) metrics: *mut canvas_c::TextMetrics,
+    pub(crate) metrics: *mut CTextMetrics,
 }
 
-impl Native for TextMetrics {
-    const KIND: NativeType = NativeType::TextMetrics;
-}
-
-impl Drop for TextMetrics {
-    fn drop(&mut self) {
+impl ObjectFinalize for TextMetrics {
+    fn finalize(self, _: Env) -> Result<()> {
         canvas_c::canvas_native_text_metrics_release(self.metrics);
+        Ok(())
     }
 }
 
-pub unsafe fn init(_env: sys::napi_env, _exports: sys::napi_value) {}
+
+#[napi]
+impl TextMetrics {
+    #[napi(getter)]
+    pub fn get_width(&self) -> f64 {
+        canvas_c::canvas_native_text_metrics_get_width(self.metrics) as f64
+    }
+
+    #[napi(getter)]
+    pub fn get_actual_bounding_box_left(
+        &self
+    ) -> f64 {
+        canvas_c::canvas_native_text_metrics_get_actual_bounding_box_left(self.metrics) as f64
+    }
+
+    #[napi(getter)]
+    pub fn get_actual_bounding_box_right(
+        &self
+    ) -> f64 {
+        canvas_c::canvas_native_text_metrics_get_actual_bounding_box_right(self.metrics) as f64
+    }
+
+    #[napi(getter)]
+    pub fn get_actual_bounding_box_ascent(
+        &self
+    ) -> f64 {
+        canvas_c::canvas_native_text_metrics_get_actual_bounding_box_ascent(self.metrics) as f64
+    }
+
+    #[napi(getter)]
+    pub fn get_actual_bounding_box_descent(
+        &self
+    ) -> f64 {
+        canvas_c::canvas_native_text_metrics_get_actual_bounding_box_descent(self.metrics) as f64
+    }
+
+    #[napi(getter)]
+    pub fn get_font_bounding_box_ascent(
+        &self
+    ) -> f64 {
+        canvas_c::canvas_native_text_metrics_get_font_bounding_box_ascent(self.metrics) as f64
+    }
+
+    #[napi(getter)]
+    pub fn get_font_bounding_box_descent(
+        &self
+    ) -> f64 {
+        canvas_c::canvas_native_text_metrics_get_font_bounding_box_descent(self.metrics) as f64
+    }
+
+    #[napi(getter)]
+    pub fn get_em_height_ascent(
+        &self
+    ) -> f64 {
+        canvas_c::canvas_native_text_metrics_get_em_height_ascent(self.metrics) as f64
+    }
+
+    #[napi(getter)]
+    pub fn get_em_height_descent(
+        &self
+    ) -> f64 {
+        canvas_c::canvas_native_text_metrics_get_em_height_descent(self.metrics) as f64
+    }
+
+    #[napi(getter)]
+    pub fn get_hanging_baseline(
+        &self
+    ) -> f64 {
+        canvas_c::canvas_native_text_metrics_get_hanging_baseline(self.metrics) as f64
+    }
+
+    #[napi(getter)]
+    pub fn get_alphabetic_baseline(
+        &self
+    ) -> f64 {
+        canvas_c::canvas_native_text_metrics_get_alphabetic_baseline(self.metrics) as f64
+    }
+
+    #[napi(getter)]
+    pub fn get_ideographic_baseline(
+        &self
+    ) -> f64 {
+        canvas_c::canvas_native_text_metrics_get_ideographic_baseline(self.metrics) as f64
+    }
+}

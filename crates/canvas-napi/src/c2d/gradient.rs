@@ -1,22 +1,32 @@
-//! `CanvasGradient`, mirroring `canvas2d/CanvasGradient.cpp`.
-
 use canvas_c::PaintStyle;
-use napi::sys;
+use napi::JsString;
 
-use crate::util::native::{Native, NativeType};
+use napi::*;
+use napi::bindgen_prelude::ObjectFinalize;
+use napi_derive::napi;
 
+#[napi(custom_finalize)]
 pub struct CanvasGradient {
     pub(crate) style: *mut PaintStyle,
 }
 
-impl Native for CanvasGradient {
-    const KIND: NativeType = NativeType::CanvasGradient;
-}
-
-impl Drop for CanvasGradient {
-    fn drop(&mut self) {
+impl ObjectFinalize for CanvasGradient {
+    fn finalize(self, _: Env) -> Result<()> {
         canvas_c::canvas_native_paint_style_release(self.style);
+        Ok(())
     }
 }
 
-pub unsafe fn init(_env: sys::napi_env, _exports: sys::napi_value) {}
+
+#[napi]
+impl CanvasGradient {
+    #[napi]
+    pub fn add_color_stop(&self, offset: f64, color: JsString) {
+        if let Some(color) = color.into_utf8().ok() {
+            if let Ok(color) = color.as_str() {
+                let style = unsafe { &mut *self.style };
+                style.add_color_stop(offset as f32, color);
+            }
+        }
+    }
+}

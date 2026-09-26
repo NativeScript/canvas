@@ -24,6 +24,22 @@ pub fn simulate_d3d_device_removal() -> bool {
   canvas_c::canvas_native_d3d_simulate_device_removal()
 }
 
+#[napi(object)]
+pub struct D3DAdapterInfo {
+  pub description: String,
+  pub is_warp: bool,
+}
+
+/// `CanvasModule.__d3dAdapterInfo()`: the adapter of the thread's Direct3D 12 device (2D
+/// canvases), `null` before the first canvas (tests: a restore stays on the GPU it was on).
+#[napi(js_name = "__d3dAdapterInfo")]
+pub fn d3d_adapter_info() -> Option<D3DAdapterInfo> {
+  canvas_core::gpu::d3d::D3D12Context::current_shared().map(|device| D3DAdapterInfo {
+    description: device.adapter_name(),
+    is_warp: device.is_warp(),
+  })
+}
+
 thread_local! {
   static HEADLESS_PANELS: std::cell::RefCell<Vec<IUnknown>> = const { std::cell::RefCell::new(Vec::new()) };
 }

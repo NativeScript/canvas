@@ -39,12 +39,16 @@ export function registerContextLossSpec() {
 					resolve();
 				});
 			});
+			const adapter = (global as any).CanvasModule.__d3dAdapterInfo?.();
 			removeDevice();
 			// The next flush finds the loss.
 			ctx.fillRect(0, 0, 4, 4);
 			// Restoring retries until a new device can be made.
 			await Promise.race([restored, wait(16000)]);
 			equal(events.join(','), 'contextlost,contextrestored');
+			// Back on the adapter it was on (XAML surfaces let go of the removed device late; the
+			// restore waits for them rather than settle for WARP).
+			equal(JSON.stringify((global as any).CanvasModule.__d3dAdapterInfo?.()), JSON.stringify(adapter));
 			// Restored cleared, in the default state.
 			pixelEqual(ctx, 16, 16, [0, 0, 0, 0]);
 			equal(ctx.fillStyle, '#000000');

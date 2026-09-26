@@ -4,8 +4,9 @@
 //! shares one `MTLDevice`: GPU resources (images, patterns, the glyph cache) can then move between
 //! canvases without a readback, and a page with many canvases does not create many devices.
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::rc::Rc;
+use std::time::{Duration, Instant};
 
 use windows::core::{Interface, Result};
 use windows::Win32::Graphics::Direct3D::D3D_FEATURE_LEVEL_11_0;
@@ -58,7 +59,14 @@ pub struct D3D11On12 {
 
 thread_local! {
     static SHARED: RefCell<Option<Rc<D3D12Context>>> = const { RefCell::new(None) };
+    /// When this thread's GPU (not WARP) device was found removed, until a new device is made.
+    static GPU_LOST_AT: Cell<Option<Instant>> = const { Cell::new(None) };
 }
+
+/// How long after a GPU device loss a new device has to be on a GPU again (see
+/// [`D3D12Context::shared`]); then WARP will do. Covers packages/canvas's restore retries but the
+/// last.
+const GPU_RETRY_WINDOW: Duration = Duration::from_secs(10);
 
 fn env_flag(name: &str) -> bool {
     std::env::var_os(name).is_some_and(|v| !v.is_empty() && v != "0")
@@ -68,6 +76,12 @@ impl D3D12Context {
     /// The device shared by every canvas on this thread, created on first use (and again after
     /// the device is removed). `preference` only applies to a creation -- it is a hint, like the
     /// web attribute it mirrors.
+    ///
+    /// D3D12 devices are per-adapter singletons: while anything still holds a removed device, its
+    /// adapter makes no new one. Whatever holds this device lets go of it first once
+    /// [`Self::is_shared_removed`] -- XAML surfaces only shortly after, and a driver reset takes a
+    /// few seconds -- so for [`GPU_RETRY_WINDOW`] after losing a GPU device this makes a new one
+    /// on a GPU or none (the caller retries), rather than settle for WARP for good.
     pub fn shared(preference: PowerPreference) -> Option<Rc<D3D12Context>> {
         SHARED.with(|shared| {
             let mut shared = shared.borrow_mut();
@@ -76,11 +90,21 @@ impl D3D12Context {
                     return Some(context.clone());
                 }
             }
-            match D3D12Context::new(preference) {
-                Ok(context) => {
+            if shared.take().is_some_and(|lost| !lost.is_warp) && GPU_LOST_AT.get().is_none() {
+                GPU_LOST_AT.set(Some(Instant::now()));
+            }
+            let allow_warp = GPU_LOST_AT.get().is_none_or(|lost| lost.elapsed() >= GPU_RETRY_WINDOW);
+            match D3D12Context::create(preference, allow_warp) {
+                Ok(Some(context)) => {
+                    log::info!("canvas: Direct3D 12 on {} (warp: {})", context.adapter_name(), context.is_warp);
+                    GPU_LOST_AT.set(None);
                     let context = Rc::new(context);
                     *shared = Some(context.clone());
                     Some(context)
+                }
+                Ok(None) => {
+                    log::info!("canvas: no GPU Direct3D 12 device yet after a device loss");
+                    None
                 }
                 Err(error) => {
                     log::error!("canvas: failed to create a Direct3D 12 device: {error}");
@@ -93,6 +117,11 @@ impl D3D12Context {
     /// Creates a standalone device. `CANVAS_FORCE_WARP=1` selects the WARP software rasterizer
     /// (CI machines without a GPU) and `CANVAS_D3D_DEBUG=1` enables the D3D12 debug layer.
     pub fn new(preference: PowerPreference) -> Result<D3D12Context> {
+        Self::create(preference, true)?.ok_or_else(windows::core::Error::empty)
+    }
+
+    /// `None`: no GPU device, and WARP not allowed.
+    fn create(preference: PowerPreference, allow_warp: bool) -> Result<Option<D3D12Context>> {
         let debug = env_flag("CANVAS_D3D_DEBUG");
         if debug {
             let mut layer: Option<ID3D12Debug> = None;
@@ -113,28 +142,31 @@ impl D3D12Context {
         if !env_flag("CANVAS_FORCE_WARP") {
             if let Some((adapter, device)) = Self::hardware_device(&factory, preference) {
                 let queue = Self::create_queue(&device)?;
-                return Ok(D3D12Context {
+                return Ok(Some(D3D12Context {
                     factory,
                     adapter,
                     device,
                     queue,
                     is_warp: false,
                     on12: Default::default(),
-                });
+                }));
+            }
+            if !allow_warp {
+                return Ok(None);
             }
         }
 
         let adapter: IDXGIAdapter1 = unsafe { factory.EnumWarpAdapter() }?;
         let device = Self::create_device(&adapter)?;
         let queue = Self::create_queue(&device)?;
-        Ok(D3D12Context {
+        Ok(Some(D3D12Context {
             factory,
             adapter,
             device,
             queue,
             is_warp: true,
             on12: Default::default(),
-        })
+        }))
     }
 
     fn hardware_device(
@@ -241,6 +273,24 @@ impl D3D12Context {
             }
             Err(_) => false,
         }
+    }
+
+    /// The adapter's description, e.g. "Microsoft Basic Render Driver" for WARP.
+    pub fn adapter_name(&self) -> String {
+        unsafe { self.adapter.GetDesc1() }
+            .map(|desc| String::from_utf16_lossy(&desc.Description).trim_end_matches('\0').to_string())
+            .unwrap_or_default()
+    }
+
+    /// This thread's shared device as it is (none made yet, or removed), without making one.
+    pub fn current_shared() -> Option<Rc<D3D12Context>> {
+        SHARED.with(|shared| shared.borrow().clone())
+    }
+
+    /// This thread's shared device exists and was removed: the next [`Self::shared`] makes a new
+    /// one.
+    pub fn is_shared_removed() -> bool {
+        SHARED.with(|shared| shared.borrow().as_ref().is_some_and(|context| context.is_removed()))
     }
 
     /// `simulate_removal` on this thread's shared device, if there is one.

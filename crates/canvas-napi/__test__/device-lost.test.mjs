@@ -27,6 +27,8 @@ test('a removed device loses every 2D context; restoreContext brings each back',
 	drawing.ctx.fillRect(0, 0, 16, 16);
 	CanvasModule.__flushAll();
 	assert.equal(drawing.host.isContextLost(), false);
+	const adapter = CanvasModule.__d3dAdapterInfo();
+	assert.ok(adapter?.description);
 
 	let notified = 0;
 	CanvasModule.__setContextLostListener(() => notified++);
@@ -48,9 +50,11 @@ test('a removed device loses every 2D context; restoreContext brings each back',
 	CanvasModule.__flushAll();
 	assert.equal(notified, 2);
 
-	// Restored: cleared, default state, drawing again.
+	// Restored: cleared, default state, drawing again. On the same adapter: the lost canvases let
+	// go of the removed device, which otherwise blocks a new one there (a GPU would fall to WARP).
 	assert.equal(drawing.host.restoreContext(), true);
 	assert.equal(drawing.host.isContextLost(), false);
+	assert.deepEqual(CanvasModule.__d3dAdapterInfo(), adapter);
 	assert.deepEqual(pixel(drawing.ctx, 8, 8), [0, 0, 0, 0]);
 	assert.equal(drawing.ctx.fillStyle, '#000000');
 	drawing.ctx.fillStyle = '#00ff00';
@@ -78,6 +82,25 @@ test('restoreContext on a context that is not lost is a no-op', { skip }, () => 
 	assert.equal(host.restoreContext(), true);
 	assert.deepEqual(pixel(ctx, 4, 4), [255, 0, 0, 255]);
 	assert.equal(new NSCCanvas().restoreContext(), false);
+});
+
+test('a lost canvas resized before its restore comes back at the new size', { skip }, (t) => {
+	const { host, ctx } = hostContext(16, 16);
+	ctx.fillRect(0, 0, 16, 16);
+	CanvasModule.__flushAll();
+	if (!CanvasModule.__simulateD3DDeviceRemoval()) {
+		t.skip('ID3D12Device5::RemoveDevice unavailable');
+		return;
+	}
+	ctx.fillRect(0, 0, 4, 4);
+	CanvasModule.__flushAll();
+	assert.equal(host.isContextLost(), true);
+	host.setSurfaceSize(32, 24);
+	assert.equal(host.isContextLost(), true);
+	assert.equal(host.restoreContext(), true);
+	ctx.fillStyle = '#0000ff';
+	ctx.fillRect(0, 0, 32, 24);
+	assert.deepEqual(pixel(ctx, 31, 23), [0, 0, 255, 255]);
 });
 
 test('an on-screen 2D context (headless panel) is restored into its panel', { skip }, (t) => {

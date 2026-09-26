@@ -17,6 +17,7 @@ use skia_safe::gpu::d3d::TextureResourceInfo;
 use skia_safe::gpu::{self, Budgeted, DirectContext, FlushInfo, Protected, SurfaceOrigin};
 use skia_safe::surfaces::BackendSurfaceAccess;
 use skia_safe::{AlphaType, BlendMode, Color, ColorType, ISize, ImageInfo, Paint, Surface};
+use windows::core::{IUnknown, Interface};
 use windows::Win32::Graphics::Direct3D12::D3D12_RESOURCE_STATE_PRESENT;
 use windows::Win32::Graphics::Dxgi::Common::{DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_STANDARD_MULTISAMPLE_QUALITY_PATTERN};
 
@@ -27,6 +28,47 @@ use crate::context::{Context, State, SurfaceData, SurfaceEngine, SurfaceState};
 thread_local! {
     /// The thread's Skia context and the device it was made on.
     static SKIA_D3D: RefCell<Option<(Rc<D3D12Context>, DirectContext)>> = const { RefCell::new(None) };
+    /// The thread's D3D canvases (`Context::register_d3d`), for `release_lost_canvases`.
+    static CANVASES: RefCell<Vec<*mut Context>> = const { RefCell::new(Vec::new()) };
+}
+
+/// The thread's device, a new one after a device loss. The adapter makes no new device while the
+/// removed one is held, so every canvas on it lets go of it first (`caller`, the canvas asking,
+/// has done so itself).
+fn thread_device(caller: *mut Context) -> Option<Rc<D3D12Context>> {
+    if D3D12Context::is_shared_removed() {
+        release_lost_canvases(caller);
+    }
+    D3D12Context::shared(PowerPreference::Default)
+}
+
+fn release_lost_canvases(caller: *mut Context) {
+    let canvases = CANVASES.with(|canvases| canvases.borrow().clone());
+    for canvas in canvases {
+        if canvas != caller {
+            // Registered canvases stay at their address until dropped, which unregisters them;
+            // none is borrowed while another one's methods run (one thread, no reentrancy).
+            unsafe { (*canvas).release_lost_device() };
+        }
+    }
+    let stale = SKIA_D3D.with(|shared| {
+        let mut shared = shared.borrow_mut();
+        if shared.as_ref().is_some_and(|(device, _)| device.is_removed()) {
+            shared.take()
+        } else {
+            None
+        }
+    });
+    if let Some((_, mut context)) = stale {
+        context.abandon();
+    }
+}
+
+/// A lost canvas draws into this until it is restored: the drawing is discarded, readbacks keep
+/// the canvas's size.
+fn stand_in(info: &ImageInfo) -> Option<Surface> {
+    skia_safe::surfaces::raster(info, None, None)
+        .or_else(|| skia_safe::surfaces::raster(&info.with_dimensions((1, 1)), None, None))
 }
 
 /// The thread's Skia context on the shared D3D12 device (a new one once that device changes,
@@ -55,8 +97,24 @@ pub struct D3DTarget {
     /// Skia surfaces over the swapchain buffers; dropped before the swapchain.
     back_buffers: Vec<Surface>,
     swap_chain: Option<CompositionSwapChain>,
-    device: Rc<D3D12Context>,
+    /// The `SwapChainPanel` showing `swap_chain`, which it holds.
+    panel: Option<IUnknown>,
+    /// `None` once the canvas, lost, has let go of its removed device (`release_lost_device`).
+    device: Option<Rc<D3D12Context>>,
+    /// While lost: the XAML surface it presents into once restored.
+    lost_xaml_source: Option<IUnknown>,
     alpha: bool,
+    /// The canvas's registered address (`Context::register_d3d`), or null.
+    registered: *mut Context,
+}
+
+impl Drop for D3DTarget {
+    fn drop(&mut self) {
+        if !self.registered.is_null() {
+            let registered = self.registered;
+            let _ = CANVASES.try_with(|canvases| canvases.borrow_mut().retain(|&canvas| canvas != registered));
+        }
+    }
 }
 
 /// Presenting into a XAML `SurfaceImageSource` (a canvas that blends with the page): Skia draws
@@ -224,7 +282,7 @@ impl Context {
         direction: TextDirection,
         color_space: ColorSpace,
     ) -> Option<Self> {
-        let device = D3D12Context::shared(PowerPreference::Default)?;
+        let device = thread_device(std::ptr::null_mut())?;
         let mut direct_context = shared_direct_context(&device)?;
         let surface = render_target(&mut direct_context, &target_info(width, height, alpha, color_space))?;
 
@@ -248,8 +306,11 @@ impl Context {
                 xaml: None,
                 back_buffers: Vec::new(),
                 swap_chain: None,
-                device,
+                panel: None,
+                device: Some(device),
+                lost_xaml_source: None,
                 alpha,
+                registered: std::ptr::null_mut(),
             }),
             #[cfg(feature = "vulkan")]
             vulkan_context: None,
@@ -269,15 +330,30 @@ impl Context {
         })
     }
 
+    /// Tracks this canvas so that, after a device loss, it lets go of the removed device when
+    /// another canvas is restored or created (see `thread_device`). Once the canvas is at the
+    /// address it keeps until dropped (its owner's box).
+    pub unsafe fn register_d3d(&mut self) {
+        let canvas = self as *mut Context;
+        let Some(target) = self.d3d.as_mut() else { return };
+        if target.registered.is_null() {
+            target.registered = canvas;
+            CANVASES.with(|canvases| canvases.borrow_mut().push(canvas));
+        }
+    }
+
     /// Shows this canvas in a `SwapChainPanel` (any COM pointer to it). Must run on the UI thread.
+    /// A lost canvas is shown in it by `restore_d3d`.
     pub unsafe fn attach_swap_chain_panel(&mut self, panel: *mut c_void) -> bool {
         let (width, height) = (self.surface.width() as u32, self.surface.height() as u32);
-        let Some(direct_context) = self.direct_context.as_mut() else { return false };
         let Some(target) = self.d3d.as_mut() else { return false };
+        let Some(device) = target.device.as_ref() else { return true };
+        let Some(direct_context) = self.direct_context.as_mut() else { return false };
         target.xaml = None;
         target.back_buffers.clear();
         target.swap_chain = None;
-        let Ok(swap_chain) = CompositionSwapChain::new(&target.device, width, height, target.alpha) else {
+        target.panel = None;
+        let Ok(swap_chain) = CompositionSwapChain::new(device, width, height, target.alpha) else {
             return false;
         };
         if swap_chain.bind_panel(panel).is_err() {
@@ -286,18 +362,25 @@ impl Context {
         let Some(back_buffers) = wrap_back_buffers(direct_context, &swap_chain) else { return false };
         target.back_buffers = back_buffers;
         target.swap_chain = Some(swap_chain);
+        target.panel = unsafe { IUnknown::from_raw_borrowed(&panel) }.cloned();
         true
     }
 
     /// Presents into a XAML `SurfaceImageSource` (any COM pointer to it, made at the canvas's
     /// size) instead of a swapchain, so the canvas blends with what is behind it. UI thread.
+    /// A lost canvas presents into it once restored.
     pub unsafe fn attach_xaml_surface(&mut self, source: *mut c_void) -> bool {
         let (width, height) = (self.surface.width() as u32, self.surface.height() as u32);
-        let Some(direct_context) = self.direct_context.as_mut() else { return false };
         let Some(target) = self.d3d.as_mut() else { return false };
+        let Some(device) = target.device.as_ref() else {
+            target.lost_xaml_source = unsafe { IUnknown::from_raw_borrowed(&source) }.cloned();
+            return target.lost_xaml_source.is_some();
+        };
+        let Some(direct_context) = self.direct_context.as_mut() else { return false };
         target.back_buffers.clear();
         target.swap_chain = None;
-        target.xaml = unsafe { XamlTarget::new(direct_context, &target.device, source, width, height) };
+        target.panel = None;
+        target.xaml = unsafe { XamlTarget::new(direct_context, device, source, width, height) };
         target.xaml.is_some()
     }
 
@@ -311,23 +394,58 @@ impl Context {
 
     /// The canvas's D3D12 device was removed: nothing draws until `restore_d3d`.
     pub fn d3d_lost(&self) -> bool {
-        self.d3d.as_ref().is_some_and(|target| target.device.is_removed())
+        self.d3d
+            .as_ref()
+            .is_some_and(|target| target.device.as_ref().is_none_or(|device| device.is_removed()))
+    }
+
+    /// A lost canvas lets go of everything on its removed device: its Skia context and surfaces,
+    /// its swapchain (unbound from the panel, which holds it) or XAML surface. Until restored it
+    /// draws into a raster stand-in.
+    fn release_lost_device(&mut self) {
+        let Some(target) = self.d3d.as_mut() else { return };
+        if !target.device.as_ref().is_some_and(|device| device.is_removed()) {
+            return;
+        }
+        // Abandoning frees Skia's side without calling the removed device.
+        if let Some(context) = self.direct_context.as_mut() {
+            context.abandon();
+        }
+        target.lost_xaml_source = target.xaml.take().map(|xaml| {
+            xaml.surface.release_device();
+            xaml.surface.source()
+        });
+        target.back_buffers.clear();
+        if let Some(panel) = target.panel.take() {
+            unsafe { CompositionSwapChain::unbind_panel(panel.as_raw()) };
+        }
+        target.swap_chain = None;
+        let bounds = self.surface_data.bounds;
+        let info = target_info(bounds.width(), bounds.height(), !self.surface_data.is_opaque, self.surface_data.color_space);
+        if let Some(surface) = stand_in(&info) {
+            self.surface = surface;
+        }
+        self.direct_context = None;
+        // Styles can hold images on the old device.
+        self.reset_state();
+        if let Some(target) = self.d3d.as_mut() {
+            target.device = None;
+        }
     }
 
     /// After a device loss: moves the canvas to a new device (shared again by the thread's
     /// canvases) with a cleared drawing buffer and default state, as the web restores a lost 2D
     /// context. `panel`: the SwapChainPanel it is shown in, or null offscreen.
     pub unsafe fn restore_d3d(&mut self, panel: *mut c_void) -> bool {
-        let Some(target) = self.d3d.as_mut() else { return false };
-        let xaml_source = target.xaml.take().map(|xaml| xaml.surface.source());
-        target.back_buffers.clear();
-        target.swap_chain = None;
-        // Everything on the old device is gone; abandoning frees Skia's side without calling it.
-        if let Some(context) = self.direct_context.as_mut() {
-            context.abandon();
+        if self.d3d.is_none() {
+            return false;
         }
-        let Some(device) = D3D12Context::shared(PowerPreference::Default) else {
-            log::error!("canvas: restoring a lost 2D context: no Direct3D 12 device");
+        if !self.d3d_lost() {
+            return true;
+        }
+        self.release_lost_device();
+        let Some(device) = thread_device(self) else {
+            log::warn!("canvas: restoring a lost 2D context: no Direct3D 12 device (yet)");
             return false;
         };
         let Some(mut direct_context) = shared_direct_context(&device) else {
@@ -340,7 +458,9 @@ impl Context {
             log::error!("canvas: restoring a lost 2D context: no {}x{} render target", bounds.width(), bounds.height());
             return false;
         };
-        target.device = device;
+        let Some(target) = self.d3d.as_mut() else { return false };
+        let xaml_source = target.lost_xaml_source.take();
+        target.device = Some(device);
         self.surface = surface;
         self.direct_context = Some(direct_context);
         self.surface_data.state = Default::default();
@@ -348,7 +468,7 @@ impl Context {
         self.path = Path::default();
         self.reset_state();
         let shown = match xaml_source {
-            Some(source) => self.attach_xaml_surface(windows::core::Interface::as_raw(&source)),
+            Some(source) => self.attach_xaml_surface(source.as_raw()),
             None => panel.is_null() || self.attach_swap_chain_panel(panel),
         };
         if !shown {
@@ -373,7 +493,7 @@ impl Context {
             drop(snapshot);
             direct_context.flush_surface_with_access(&mut xaml.back_buffer, BackendSurfaceAccess::Present, &FlushInfo::default());
             direct_context.submit(None);
-            if let Some(on12) = target.device.d3d11_on_12() {
+            if let Some(on12) = target.device.as_ref().and_then(|device| device.d3d11_on_12()) {
                 let resources = [Some(xaml.wrapped.clone())];
                 unsafe { on12.on12.AcquireWrappedResources(&resources) };
                 if let Err(error) = xaml.surface.present(&xaml.wrapped) {
@@ -403,12 +523,24 @@ impl Context {
         let _ = swap_chain.present(true);
     }
 
-    /// Resizing clears the canvas (as on the web) and resizes the swapchain with it.
+    /// Resizing clears the canvas (as on the web) and resizes the swapchain with it. A lost canvas
+    /// takes the size for its restore.
     pub fn resize_d3d(context: &mut Context, width: f32, height: f32) {
         let alpha = !context.surface_data.is_opaque;
         let color_space = context.surface_data.color_space;
-        let Some(direct_context) = context.direct_context.as_mut() else { return };
-        let Some(surface) = render_target(direct_context, &target_info(width, height, alpha, color_space)) else {
+        let info = target_info(width, height, alpha, color_space);
+        context.release_lost_device();
+        let Some(direct_context) = context.direct_context.as_mut() else {
+            if let Some(surface) = stand_in(&info) {
+                context.surface = surface;
+            }
+            context.surface_data.bounds = skia_safe::Rect::from_wh(width, height);
+            if let Some(target) = context.d3d.as_mut() {
+                target.lost_xaml_source = None;
+            }
+            return;
+        };
+        let Some(surface) = render_target(direct_context, &info) else {
             return;
         };
         if let Some(target) = context.d3d.as_mut() {

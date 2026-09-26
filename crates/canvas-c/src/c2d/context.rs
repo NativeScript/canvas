@@ -422,11 +422,16 @@ pub extern "C" fn canvas_native_context_create_d3d(
         TextDirection::from(direction),
         color_space.into(),
     ) {
-        Some(context) => Box::into_raw(Box::new(CanvasRenderingContext2D {
-            context,
-            alpha,
-            engine: Engine::D3D,
-        })),
+        Some(context) => {
+            let context = Box::into_raw(Box::new(CanvasRenderingContext2D {
+                context,
+                alpha,
+                engine: Engine::D3D,
+            }));
+            // Boxed: it stays at this address until released.
+            unsafe { (*context).context.register_d3d() };
+            context
+        }
         None => std::ptr::null_mut(),
     }
 }

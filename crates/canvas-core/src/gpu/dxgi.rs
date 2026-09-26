@@ -96,6 +96,46 @@ impl XamlSurface {
         self.native.clone().into()
     }
 
+    /// Makes the image let go of the device (lost), until it is attached again. XAML keeps the
+    /// device it was given until it is given another (`SetDevice(null)` does not release it), so
+    /// it gets a stand-in; it lets go of the old one shortly after, not during the call. UI thread.
+    pub fn release_device(&self) {
+        use windows::Win32::Graphics::Direct3D11::{ID3D11DeviceContext1, ID3D11RenderTargetView, ID3D11Resource};
+        let Some((device, context)) = stand_in_device() else { return };
+        let Ok(dxgi) = device.cast::<windows::Win32::Graphics::Dxgi::IDXGIDevice>() else { return };
+        if unsafe { self.native.SetDevice(dxgi.as_raw()) }.is_err() {
+            return;
+        }
+        // XAML keeps what it last drew with the old device until it draws again: draw it blank.
+        let rect = windows::Win32::Foundation::RECT {
+            left: 0,
+            top: 0,
+            right: self.width as i32,
+            bottom: self.height as i32,
+        };
+        let mut surface = std::ptr::null_mut();
+        let mut offset = windows::Win32::Foundation::POINT::default();
+        if unsafe { self.native.BeginDraw(rect, &mut surface, &mut offset) }.is_err() {
+            return;
+        }
+        if let Ok(target) = unsafe { windows::Win32::Graphics::Dxgi::IDXGISurface::from_raw(surface) }.cast::<ID3D11Resource>() {
+            let mut view: Option<ID3D11RenderTargetView> = None;
+            if unsafe { device.CreateRenderTargetView(&target, None, Some(&mut view)) }.is_ok() {
+                // Only the update rectangle: the surface can be an atlas shared with other images.
+                let area = windows::Win32::Foundation::RECT {
+                    left: offset.x,
+                    top: offset.y,
+                    right: offset.x + self.width as i32,
+                    bottom: offset.y + self.height as i32,
+                };
+                if let Some(view) = view {
+                    unsafe { context.ClearView(&view, &[0.0; 4], Some(&[area])) };
+                }
+            }
+        }
+        let _ = unsafe { self.native.EndDraw() };
+    }
+
     /// Copies `texture` (on this surface's device, this surface's size) in. UI thread.
     pub fn present(&self, texture: &windows::Win32::Graphics::Direct3D11::ID3D11Resource) -> Result<()> {
         let rect = windows::Win32::Foundation::RECT {
@@ -125,6 +165,43 @@ impl XamlSurface {
         let ended = unsafe { self.native.EndDraw() }.ok();
         copied.and(ended)
     }
+}
+
+thread_local! {
+    static STAND_IN_DEVICE: std::cell::OnceCell<
+        Option<(windows::Win32::Graphics::Direct3D11::ID3D11Device, windows::Win32::Graphics::Direct3D11::ID3D11DeviceContext1)>,
+    > = const { std::cell::OnceCell::new() };
+}
+
+/// A D3D11 WARP device (made once per thread) that lost XAML surfaces hold instead of a removed
+/// device's. D3D11 devices, unlike D3D12 ones, are not per-adapter singletons: it blocks nothing.
+fn stand_in_device() -> Option<(
+    windows::Win32::Graphics::Direct3D11::ID3D11Device,
+    windows::Win32::Graphics::Direct3D11::ID3D11DeviceContext1,
+)> {
+    use windows::Win32::Graphics::Direct3D::D3D_DRIVER_TYPE_WARP;
+    use windows::Win32::Graphics::Direct3D11::{D3D11CreateDevice, D3D11_CREATE_DEVICE_BGRA_SUPPORT, D3D11_SDK_VERSION};
+    STAND_IN_DEVICE.with(|cell| {
+        cell.get_or_init(|| {
+            let (mut device, mut context) = (None, None);
+            unsafe {
+                D3D11CreateDevice(
+                    None,
+                    D3D_DRIVER_TYPE_WARP,
+                    windows::Win32::Foundation::HMODULE::default(),
+                    D3D11_CREATE_DEVICE_BGRA_SUPPORT,
+                    None,
+                    D3D11_SDK_VERSION,
+                    Some(&mut device),
+                    None,
+                    Some(&mut context),
+                )
+            }
+            .ok()?;
+            Some((device?, context?.cast().ok()?))
+        })
+        .clone()
+    })
 }
 
 /// A `SwapChainPanel` for a library that binds its own swapchain to it (wgpu takes an

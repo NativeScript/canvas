@@ -1,22 +1,32 @@
 [package]
-edition = "2021"
 name = "canvas-napi"
-version = "0.0.0"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Node-API binding for the canvas plugins: provides the same global.CanvasModule the V8 bindings install, for Node-API hosts (NativeScript Windows, Node)."
 
 [lib]
 crate-type = ["cdylib"]
 
+[features]
+default = ["napi8"]
+napi8 = ["napi/napi8"]
+# Hosts whose Node-API lacks type tags (NativeScript Windows on JavaScriptCore).
+napi7 = ["napi/napi7"]
+
 [dependencies]
-napi = { version = "2.16.13", default-features = false, features = ["napi8"] }
-napi-derive = "2.16.13"
-canvas-core = { workspace = true, features = ["2d", "gl", "mtl"] }
-canvas-c = { workspace = true, features = ["2d", "webgl", "gl", "metal"] }
-canvas-2d = { workspace = true, features = ["gl", "metal"] }
+napi = { version = "3.13.0", default-features = false, features = ["dyn-symbols"] }
+napi-derive = "3.6.9"
+canvas-c = { workspace = true, features = ["2d", "webgl", "gl"] }
+canvas-core = { workspace = true, features = ["2d", "gl"] }
+canvas-2d = { workspace = true, features = ["gl"] }
 canvas-webgl.workspace = true
 gl-bindings.workspace = true
-[build-dependencies]
-napi-build = "2.0.1"
+parking_lot.workspace = true
 
-[profile.release]
-lto = true
-strip = "symbols"
+# Windows renders 2D with Skia on Direct3D 12 (and WebGL on ANGLE, via `gl`).
+[target.'cfg(target_os = "windows")'.dependencies]
+canvas-core = { workspace = true, features = ["2d", "gl", "d3d"] }
+
+[build-dependencies]
+napi-build = "2.5.0"

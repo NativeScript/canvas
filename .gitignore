@@ -84,3 +84,6 @@ rust-skia
 /packages/canvas/src-native/canvas-android/canvas/src/main/jniLibs/*/libNativeScript.so
 # Local benchmark results (machine-specific)
 crates/canvas-napi/bench/results/
+# Internal notes (local only)
+crates/canvas-napi/PORTING.md
+crates/vendor/napi-sys/PATCHED.md

@@ -1,7 +1,8 @@
 # CI for pushes and pull requests.
 #
 # All native artifacts (Android AARs + iOS/visionOS xcframeworks for canvas,
-# canvas-svg and audio-context) are built by the reusable build-native.yml
+# canvas-svg and audio-context; the Windows x64/arm64 Node-API modules for
+# canvas and canvas-svg) are built by the reusable build-native.yml
 # workflow. On pushes to master (and manual dispatch) the npm job then packages
 # everything with those freshly built artifacts and publishes a `pr`-tagged
 # prerelease of each package.
@@ -93,6 +94,14 @@ jobs:
           tar -xzf native-artifacts/canvas-svg-ios/canvas-svg-ios.tar.gz -C packages/canvas-svg/platforms/ios
           rm -rf packages/audio-context/platforms/ios/AudioContextNative.xcframework
           tar -xzf native-artifacts/audio-context-ios/audio-context-ios.tar.gz -C packages/audio-context/platforms/ios
+          # Node-API modules (+ ANGLE DLLs) per Windows arch
+          for arch in x64 arm64; do
+            for pkg in canvas canvas-svg; do
+              rm -rf "packages/$pkg/platforms/windows/$arch"
+              mkdir -p "packages/$pkg/platforms/windows/$arch"
+              cp native-artifacts/$pkg-windows-$arch/* "packages/$pkg/platforms/windows/$arch/"
+            done
+          done
 
       - name: Install dependencies
         run: npm install

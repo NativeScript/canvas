@@ -9,6 +9,9 @@
 #   audio-context-android  audiocontext-release.aar              packages/audio-context/platforms/android/
 #   audio-context-ios      AudioContextNative.xcframework        packages/audio-context/platforms/ios/
 #                          (tar.gz)
+#   canvas-windows-<arch>  canvasnative.node + ANGLE DLLs        packages/canvas/platforms/windows/<arch>/
+#   canvas-svg-windows-    canvassvg.node                        packages/canvas-svg/platforms/windows/<arch>/
+#     <arch>
 #
 # xcframeworks are tarred before upload because upload-artifact does not
 # preserve file permissions.
@@ -17,6 +20,12 @@
 #   iOS:     make ios && make visionos && make tvos, then tools/scripts/canvas-build.sh
 #            (what `npm run build.canvas.ios.framework.release` runs, minus nx)
 #   Android: make android, then gradle :canvas:assembleRelease and copy the aar
+#
+#   Windows: tools/scripts/build-napi.sh <triple> release-napi [canvas-svg-napi] (`make windows`,
+#            `make windows-svg`); Skia builds from source with the runner's LLVM and ninja, as
+#            locally with .tools/env.sh (.github/actions/setup-windows-native). arm64 is
+#            cross-compiled; the x64 jobs also run the Node-API test suites on the shipped modules
+#            (on WARP: runners have no GPU).
 #
 # canvas-svg and audio-context change rarely, so their jobs cache the final
 # artifact keyed on a hash of their sources and skip the whole build on a hit.
@@ -228,4 +237,89 @@ jobs:
         with:
           name: audio-context-ios
           path: audio-context-ios.tar.gz
+          if-no-files-found: error
+
+  canvas-windows:
+    name: Canvas Windows (${{ matrix.arch }})
+    runs-on: windows-2025
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            target: x86_64-pc-windows-msvc
+          - arch: arm64
+            target: aarch64-pc-windows-msvc
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.repository.default_branch || inputs.ref }}
+      - uses: ./.github/actions/setup-windows-native
+        with:
+          target: ${{ matrix.target }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build canvasnative.node (and fetch ANGLE)
+        run: ./tools/scripts/build-napi.sh ${{ matrix.target }} release-napi
+      # arm64 is cross-compiled, so only x64 runs them. The runners have no GPU: D3D12 and ANGLE
+      # fall back to WARP, and the WebGPU suites skip without an adapter.
+      - name: Node-API tests
+        if: matrix.arch == 'x64'
+        env:
+          CANVAS_NAPI_ADDON: ${{ github.workspace }}\packages\canvas\platforms\windows\x64\canvasnative.node
+        run: node --expose-gc --test "crates/canvas-napi/__test__/*.test.mjs"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: canvas-windows-${{ matrix.arch }}
+          path: packages/canvas/platforms/windows/${{ matrix.arch }}/
+          if-no-files-found: error
+
+  canvas-svg-windows:
+    name: Canvas SVG Windows (${{ matrix.arch }})
+    runs-on: windows-2025
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            target: x86_64-pc-windows-msvc
+          - arch: arm64
+            target: aarch64-pc-windows-msvc
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - name: Restore cached module
+        id: svg-node
+        uses: actions/cache@v4
+        with:
+          path: packages/canvas-svg/platforms/windows/${{ matrix.arch }}/canvassvg.node
+          key: ${{ env.NATIVE_CACHE_VERSION }}-canvas-svg-windows-${{ matrix.arch }}-${{ hashFiles('crates/canvas-svg/**', 'crates/canvas-svg-c/**', 'crates/canvas-svg-napi/**', 'crates/canvas-2d/**', 'crates/canvas-core/**', 'crates/vendor/napi-sys/**', 'Cargo.toml', 'Cargo.lock', 'tools/scripts/build-napi.sh') }}
+      - uses: ./.github/actions/setup-windows-native
+        if: steps.svg-node.outputs.cache-hit != 'true'
+        with:
+          target: ${{ matrix.target }}
+      - uses: actions/setup-node@v4
+        if: steps.svg-node.outputs.cache-hit != 'true' && matrix.arch == 'x64'
+        with:
+          node-version: '22'
+      - name: Build canvassvg.node
+        if: steps.svg-node.outputs.cache-hit != 'true'
+        run: ./tools/scripts/build-napi.sh ${{ matrix.target }} release-napi canvas-svg-napi
+      - name: Node-API tests
+        if: steps.svg-node.outputs.cache-hit != 'true' && matrix.arch == 'x64'
+        env:
+          CANVAS_SVG_NAPI_ADDON: ${{ github.workspace }}\packages\canvas-svg\platforms\windows\x64\canvassvg.node
+        run: node --expose-gc --test "crates/canvas-svg-napi/__test__/*.test.mjs"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: canvas-svg-windows-${{ matrix.arch }}
+          path: packages/canvas-svg/platforms/windows/${{ matrix.arch }}/
           if-no-files-found: error

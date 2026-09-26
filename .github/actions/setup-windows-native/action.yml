@@ -1,0 +1,54 @@
+name: Setup Windows native build environment
+description: >
+  Installs Rust stable for the given target plus a cargo cache, and points
+  skia-bindings' from-source build at the runner's LLVM (Skia on Windows has no
+  prebuilt binaries for the d3d feature, so tools/scripts/build-napi.sh builds
+  it, as .tools/env.sh sets up locally). The images already ship LLVM (clang-cl,
+  libclang), ninja, python 3 and the MSVC ARM64 build tools.
+
+inputs:
+  target:
+    description: Rust target triple (x86_64-pc-windows-msvc or aarch64-pc-windows-msvc)
+    required: true
+
+runs:
+  using: composite
+  steps:
+    # Skia's third_party tree (git-sync-deps) goes past MAX_PATH.
+    - name: Long paths
+      shell: bash
+      run: git config --system core.longpaths true
+
+    - name: Install Rust stable
+      shell: bash
+      run: |
+        rustup toolchain install stable --profile minimal --target ${{ inputs.target }}
+        rustup default stable
+        rustc --version
+
+    # MSVC's STL rejects clang older than 19. Installing LLVM over the image's one
+    # (choco) fails, so the image's is used as is.
+    - name: Skia toolchain
+      shell: bash
+      run: |
+        LLVM='C:\Program Files\LLVM'
+        {
+          echo "LLVM_HOME=$LLVM"
+          echo "LIBCLANG_PATH=$LLVM\\bin"
+          echo "CLANG_PATH=$LLVM\\bin\\clang.exe"
+          # the git CLI honours core.longpaths for the rust-skia checkout and its submodules
+          echo "CARGO_NET_GIT_FETCH_WITH_CLI=true"
+        } >> "$GITHUB_ENV"
+        "$(cygpath -u "$LLVM")/bin/clang.exe" --version
+        ninja --version
+        python --version
+
+    - name: Cache cargo
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-

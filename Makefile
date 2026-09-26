@@ -2,8 +2,8 @@ ARCHS_IOS = x86_64-apple-ios aarch64-apple-ios aarch64-apple-ios-sim
 ARCHS_VISIONOS = aarch64-apple-visionos aarch64-apple-visionos-sim
 ARCHS_TVOS = aarch64-apple-tvos aarch64-apple-tvos-sim
 ARCHS_ANDROID = i686-linux-android x86_64-linux-android aarch64-linux-android armv7-linux-androideabi
-# Node-API hosts (crates/canvas-napi). aarch64-pc-windows-msvc once its Skia build is set up.
-ARCHS_WINDOWS = x86_64-pc-windows-msvc
+# Node-API hosts (crates/canvas-napi).
+ARCHS_WINDOWS = x86_64-pc-windows-msvc aarch64-pc-windows-msvc
 
 XCFRAMEWORK = CanvasNative.xcframework
 RUST_LIB = canvasnative

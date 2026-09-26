@@ -67,7 +67,7 @@ opt-level = "z"
 
 
 # Node-API hosts that export napi_* from a DLL rather than the executable (NativeScript Windows)
-# need the patched symbol lookup; see crates/vendor/napi-sys/PATCHED.md.
+# need the patched symbol lookup (the `[canvas patch]` hunks in crates/vendor/napi-sys/src/functions.rs).
 [patch.crates-io]
 napi-sys = { path = "crates/vendor/napi-sys" }
 

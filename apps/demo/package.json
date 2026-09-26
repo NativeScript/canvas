@@ -15,7 +15,8 @@
 		"@nativescript/canvas-polyfill": "file:../../packages/canvas-polyfill",
 		"@nativescript/canvas-svg": "file:../../packages/canvas-svg",
 		"@nativescript/canvas-three": "file:../../packages/canvas-three",
-		"@nativescript/core": "9.1.1",
+		"@nativescript/core": "https://pkg.pr.new/@nativescript/core@11272",
+		"@nativescript/font-manager": "file:../../node_modules/@nativescript/font-manager",
 		"@pixi-essentials/svg": "file:../../node_modules/@pixi-essentials/svg",
 		"babylonjs": "file:../../node_modules/babylonjs",
 		"babylonjs-materials": "file:../../node_modules/babylonjs-materials",
@@ -35,6 +36,9 @@
 		"@nativescript/android": "9.1.1",
 		"@nativescript/devtools": "~0.0.1",
 		"@nativescript/ios": "9.0.4-next.2026-08-13-31742124335",
-		"@nativescript/visionos": "~9.0.1"
+		"@nativescript/visionos": "~9.0.1",
+		"@nativescript/webpack": "https://pkg.pr.new/@nativescript/webpack@11272",
+		"@nativescript/windows": "beta",
+		"typescript": "~5.6.0"
 	}
 }

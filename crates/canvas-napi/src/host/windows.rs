@@ -80,6 +80,10 @@ pub struct NSCCanvas {
   view_height: f32,
   fit: CanvasFit,
   context: Context,
+  /// A XAML `SurfaceImageSource` to present into instead of the panel's swapchain (a canvas
+  /// that blends with the page: a SwapChainPanel is external content in WinUI 3). Made by the
+  /// view at the drawing buffer's size.
+  xaml_source: Option<IUnknown>,
 }
 
 impl ObjectFinalize for NSCCanvas {
@@ -156,6 +160,7 @@ impl NSCCanvas {
       view_height: 0.,
       fit: CanvasFit::default(),
       context: Context::None,
+      xaml_source: None,
     })
   }
 
@@ -220,6 +225,8 @@ impl NSCCanvas {
     }
     self.surface_width = width;
     self.surface_height = height;
+    // A SurfaceImageSource has a fixed size: the view attaches one of the new size.
+    self.xaml_source = None;
     match self.context {
       Context::None => return,
       Context::TwoD(context) => canvas_c::resize(unsafe { &mut *context }, width as f32, height as f32),
@@ -287,6 +294,10 @@ impl NSCCanvas {
     if context.is_null() {
       // No usable D3D12 device: a CPU canvas still works offscreen (readback, toDataURL).
       context = canvas_c::canvas_native_context_create(width, height, density, alpha, font_color, density * 96., 0, color_space);
+    } else if let Some(source) = self.xaml_source.as_ref() {
+      if !canvas_c::canvas_native_context_attach_xaml_surface(context, source.as_raw()) {
+        log::error!("canvas: could not attach the canvas to its XAML surface");
+      }
     } else if !self.panel_ptr().is_null()
       && !canvas_c::canvas_native_context_attach_swap_chain_panel(context, self.panel_ptr())
     {
@@ -342,7 +353,11 @@ impl NSCCanvas {
     if state.is_null() {
       return Err(Error::from_reason("WebGL is unavailable: ANGLE (libEGL.dll, libGLESv2.dll) could not be initialised"));
     }
-    if !self.panel_ptr().is_null() && !canvas_c::canvas_native_webgl_attach_swap_chain_panel(state, self.panel_ptr()) {
+    if let Some(source) = self.xaml_source.as_ref() {
+      if !canvas_c::canvas_native_webgl_attach_xaml_surface(state, source.as_raw()) {
+        log::error!("canvas: could not attach the WebGL canvas to its XAML surface");
+      }
+    } else if !self.panel_ptr().is_null() && !canvas_c::canvas_native_webgl_attach_swap_chain_panel(state, self.panel_ptr()) {
       log::error!("canvas: could not attach the WebGL canvas to its SwapChainPanel");
     }
     self.context = Context::WebGL(state);
@@ -382,6 +397,45 @@ impl NSCCanvas {
     self.context = Context::WebGPU(context);
     self.apply_transform();
     Ok(())
+  }
+
+  /// Presents into a XAML `SurfaceImageSource` (its pointer key; made at the drawing buffer's
+  /// size, not opaque) instead of the panel's swapchain, so the canvas blends with the page. Set
+  /// before the context is made, or again after a resize. `false` for WebGPU (wgpu owns its
+  /// swapchain) or when the source cannot be used.
+  #[napi]
+  pub fn attach_surface_image_source(&mut self, key: String) -> Result<bool> {
+    let address = parse_pointer_key(&key)
+      .filter(|a| *a != 0)
+      .ok_or_else(|| Error::from_reason(format!("Invalid SurfaceImageSource pointer: {key}")))?;
+    let raw = address as *mut c_void;
+    let source = unsafe { IUnknown::from_raw_borrowed(&raw) }
+      .cloned()
+      .ok_or_else(|| Error::from_reason("Invalid SurfaceImageSource pointer"))?;
+    let attached = match self.context {
+      Context::None => true,
+      Context::TwoD(context) => canvas_c::canvas_native_context_attach_xaml_surface(context, source.as_raw()),
+      Context::WebGL(state) => canvas_c::canvas_native_webgl_attach_xaml_surface(state, source.as_raw()),
+      Context::WebGPU(_) => false,
+    };
+    if attached {
+      self.xaml_source = Some(source);
+    }
+    Ok(attached)
+  }
+
+  /// Where the drawing buffer sits in the view, in DIPs: `[scaleX, scaleY, offsetX, offsetY]`
+  /// (DIPs = pixels * scale + offset), from the fit mode, composition scale and view size. The
+  /// view places a XAML surface's image with it (a swapchain gets it natively).
+  #[napi(getter)]
+  pub fn surface_transform(&self) -> Vec<f64> {
+    let t = surface_transform(
+      self.fit,
+      (self.surface_width as f32, self.surface_height as f32),
+      (self.scale_x, self.scale_y),
+      (self.view_width, self.view_height),
+    );
+    vec![t.scale_x as f64, t.scale_y as f64, t.offset_x as f64, t.offset_y as f64]
   }
 
   /// The context's GPU device was lost (driver reset or update, GPU removed). A 2D context can

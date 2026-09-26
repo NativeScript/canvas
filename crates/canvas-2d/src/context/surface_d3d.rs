@@ -12,7 +12,7 @@ use std::rc::Rc;
 
 use canvas_core::context_attributes::ColorSpace;
 use canvas_core::gpu::d3d::{D3D12Context, PowerPreference};
-use canvas_core::gpu::dxgi::{CompositionSwapChain, BUFFER_COUNT};
+use canvas_core::gpu::dxgi::{CompositionSwapChain, XamlSurface, BUFFER_COUNT};
 use skia_safe::gpu::d3d::TextureResourceInfo;
 use skia_safe::gpu::{self, Budgeted, DirectContext, FlushInfo, Protected, SurfaceOrigin};
 use skia_safe::surfaces::BackendSurfaceAccess;
@@ -48,13 +48,117 @@ fn shared_direct_context(device: &Rc<D3D12Context>) -> Option<DirectContext> {
     })
 }
 
-/// The D3D12 side of a canvas: the device, and when the canvas is on screen, its swapchain.
+/// The D3D12 side of a canvas: the device, and when the canvas is on screen, its swapchain or
+/// XAML surface.
 pub struct D3DTarget {
+    xaml: Option<XamlTarget>,
     /// Skia surfaces over the swapchain buffers; dropped before the swapchain.
     back_buffers: Vec<Surface>,
     swap_chain: Option<CompositionSwapChain>,
     device: Rc<D3D12Context>,
     alpha: bool,
+}
+
+/// Presenting into a XAML `SurfaceImageSource` (a canvas that blends with the page): Skia draws
+/// the frame into `texture` as into a swapchain buffer, then D3D11On12 copies it into the image,
+/// on the same queue.
+struct XamlTarget {
+    /// Skia's surface over `texture`; dropped first.
+    back_buffer: Surface,
+    /// `texture` for D3D11.
+    wrapped: windows::Win32::Graphics::Direct3D11::ID3D11Resource,
+    surface: XamlSurface,
+    _texture: windows::Win32::Graphics::Direct3D12::ID3D12Resource,
+}
+
+impl XamlTarget {
+    unsafe fn new(
+        direct_context: &mut DirectContext,
+        device: &D3D12Context,
+        source: *mut c_void,
+        width: u32,
+        height: u32,
+    ) -> Option<Self> {
+        use windows::Win32::Graphics::Direct3D11::{ID3D11Resource, D3D11_BIND_RENDER_TARGET};
+        use windows::Win32::Graphics::Direct3D11on12::D3D11_RESOURCE_FLAGS;
+        use windows::Win32::Graphics::Direct3D12::*;
+        use windows::Win32::Graphics::Dxgi::Common::DXGI_SAMPLE_DESC;
+        let (width, height) = (width.max(1), height.max(1));
+        let on12 = device.d3d11_on_12()?;
+        let desc = D3D12_RESOURCE_DESC {
+            Dimension: D3D12_RESOURCE_DIMENSION_TEXTURE2D,
+            Width: width as u64,
+            Height: height,
+            DepthOrArraySize: 1,
+            MipLevels: 1,
+            Format: DXGI_FORMAT_B8G8R8A8_UNORM,
+            SampleDesc: DXGI_SAMPLE_DESC { Count: 1, Quality: 0 },
+            Flags: D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET,
+            ..Default::default()
+        };
+        let heap = D3D12_HEAP_PROPERTIES {
+            Type: D3D12_HEAP_TYPE_DEFAULT,
+            ..Default::default()
+        };
+        let mut texture: Option<ID3D12Resource> = None;
+        unsafe {
+            device.device().CreateCommittedResource(
+                &heap,
+                D3D12_HEAP_FLAG_NONE,
+                &desc,
+                D3D12_RESOURCE_STATE_COMMON,
+                None,
+                &mut texture,
+            )
+        }
+        .ok()?;
+        let texture = texture?;
+        // Like a swapchain buffer, it rests in PRESENT (== COMMON) between frames.
+        let target = gpu::backend_render_targets::make_d3d(
+            (width as i32, height as i32),
+            &TextureResourceInfo {
+                resource: texture.clone(),
+                alloc: None,
+                resource_state: D3D12_RESOURCE_STATE_PRESENT,
+                format: DXGI_FORMAT_B8G8R8A8_UNORM,
+                sample_count: 1,
+                level_count: 1,
+                sample_quality_pattern: DXGI_STANDARD_MULTISAMPLE_QUALITY_PATTERN,
+                protected: Protected::No,
+            },
+        );
+        let back_buffer = gpu::surfaces::wrap_backend_render_target(
+            direct_context,
+            &target,
+            SurfaceOrigin::TopLeft,
+            ColorType::BGRA8888,
+            None,
+            None,
+        )?;
+        let flags = D3D11_RESOURCE_FLAGS {
+            BindFlags: D3D11_BIND_RENDER_TARGET.0 as u32,
+            ..Default::default()
+        };
+        let mut wrapped: Option<ID3D11Resource> = None;
+        unsafe {
+            on12.on12.CreateWrappedResource(
+                &texture,
+                &flags,
+                D3D12_RESOURCE_STATE_COMMON,
+                D3D12_RESOURCE_STATE_COMMON,
+                &mut wrapped,
+            )
+        }
+        .ok()?;
+        let wrapped = wrapped?;
+        let surface = unsafe { XamlSurface::new(source, &on12.device, width, height) }.ok()?;
+        Some(Self {
+            back_buffer,
+            wrapped,
+            surface,
+            _texture: texture,
+        })
+    }
 }
 
 fn target_info(width: f32, height: f32, alpha: bool, color_space: ColorSpace) -> ImageInfo {
@@ -141,6 +245,7 @@ impl Context {
             surface_state: SurfaceState::None,
             direct_context: Some(direct_context),
             d3d: Some(D3DTarget {
+                xaml: None,
                 back_buffers: Vec::new(),
                 swap_chain: None,
                 device,
@@ -169,6 +274,7 @@ impl Context {
         let (width, height) = (self.surface.width() as u32, self.surface.height() as u32);
         let Some(direct_context) = self.direct_context.as_mut() else { return false };
         let Some(target) = self.d3d.as_mut() else { return false };
+        target.xaml = None;
         target.back_buffers.clear();
         target.swap_chain = None;
         let Ok(swap_chain) = CompositionSwapChain::new(&target.device, width, height, target.alpha) else {
@@ -181,6 +287,18 @@ impl Context {
         target.back_buffers = back_buffers;
         target.swap_chain = Some(swap_chain);
         true
+    }
+
+    /// Presents into a XAML `SurfaceImageSource` (any COM pointer to it, made at the canvas's
+    /// size) instead of a swapchain, so the canvas blends with what is behind it. UI thread.
+    pub unsafe fn attach_xaml_surface(&mut self, source: *mut c_void) -> bool {
+        let (width, height) = (self.surface.width() as u32, self.surface.height() as u32);
+        let Some(direct_context) = self.direct_context.as_mut() else { return false };
+        let Some(target) = self.d3d.as_mut() else { return false };
+        target.back_buffers.clear();
+        target.swap_chain = None;
+        target.xaml = unsafe { XamlTarget::new(direct_context, &target.device, source, width, height) };
+        target.xaml.is_some()
     }
 
     /// Maps the swapchain into the panel: DIPs = pixels * scale + offset.
@@ -201,6 +319,7 @@ impl Context {
     /// context. `panel`: the SwapChainPanel it is shown in, or null offscreen.
     pub unsafe fn restore_d3d(&mut self, panel: *mut c_void) -> bool {
         let Some(target) = self.d3d.as_mut() else { return false };
+        let xaml_source = target.xaml.take().map(|xaml| xaml.surface.source());
         target.back_buffers.clear();
         target.swap_chain = None;
         // Everything on the old device is gone; abandoning frees Skia's side without calling it.
@@ -228,11 +347,14 @@ impl Context {
         self.surface_state = SurfaceState::None;
         self.path = Path::default();
         self.reset_state();
-        if !panel.is_null() && !self.attach_swap_chain_panel(panel) {
-            log::error!("canvas: restoring a lost 2D context: could not show it in its panel again");
-            return false;
+        let shown = match xaml_source {
+            Some(source) => self.attach_xaml_surface(windows::core::Interface::as_raw(&source)),
+            None => panel.is_null() || self.attach_swap_chain_panel(panel),
+        };
+        if !shown {
+            log::error!("canvas: restoring a lost 2D context: could not show it again");
         }
-        true
+        shown
     }
 
     /// Flushes pending drawing and, when on screen, presents it.
@@ -242,6 +364,28 @@ impl Context {
         }
         self.flush_surface();
         let Some(target) = self.d3d.as_mut() else { return };
+        if let Some(xaml) = target.xaml.as_mut() {
+            let Some(direct_context) = self.direct_context.as_mut() else { return };
+            let snapshot = self.surface.image_snapshot();
+            let mut paint = Paint::default();
+            paint.set_blend_mode(BlendMode::Src);
+            xaml.back_buffer.canvas().draw_image(&snapshot, (0, 0), Some(&paint));
+            drop(snapshot);
+            direct_context.flush_surface_with_access(&mut xaml.back_buffer, BackendSurfaceAccess::Present, &FlushInfo::default());
+            direct_context.submit(None);
+            if let Some(on12) = target.device.d3d11_on_12() {
+                let resources = [Some(xaml.wrapped.clone())];
+                unsafe { on12.on12.AcquireWrappedResources(&resources) };
+                if let Err(error) = xaml.surface.present(&xaml.wrapped) {
+                    log::warn!("canvas: presenting into the XAML surface failed: {error}");
+                }
+                unsafe {
+                    on12.on12.ReleaseWrappedResources(&resources);
+                    on12.context.Flush();
+                }
+            }
+            return;
+        }
         let Some(swap_chain) = target.swap_chain.as_ref() else { return };
         let Some(direct_context) = self.direct_context.as_mut() else { return };
         let index = swap_chain.current_index() as usize;
@@ -268,6 +412,8 @@ impl Context {
             return;
         };
         if let Some(target) = context.d3d.as_mut() {
+            // A SurfaceImageSource has a fixed size: the host attaches one of the new size.
+            target.xaml = None;
             if let Some(swap_chain) = target.swap_chain.as_mut() {
                 target.back_buffers.clear();
                 // Skia may still reference the old buffers until its work is done.

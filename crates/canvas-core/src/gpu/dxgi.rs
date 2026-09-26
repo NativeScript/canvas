@@ -36,6 +36,97 @@ pub unsafe trait ISwapChainPanelNative: windows::core::IUnknown {
 
 pub const BUFFER_COUNT: u32 = 2;
 
+/// WinUI 3's `ISurfaceImageSourceNative` (microsoft.ui.xaml.media.dxinterop.h; not the UWP IID).
+#[windows::core::interface("e4cecd6c-f14b-4f46-83c3-8bbda27c6504")]
+pub unsafe trait ISurfaceImageSourceNative: windows::core::IUnknown {
+    fn SetDevice(&self, device: *mut c_void) -> HRESULT;
+    fn BeginDraw(
+        &self,
+        update_rect: windows::Win32::Foundation::RECT,
+        surface: *mut *mut c_void,
+        offset: *mut windows::Win32::Foundation::POINT,
+    ) -> HRESULT;
+    fn EndDraw(&self) -> HRESULT;
+}
+
+/// A XAML `SurfaceImageSource` a canvas presents into when it has to blend with the page: XAML
+/// composites it like any image. (A SwapChainPanel is external content in WinUI 3: nothing
+/// behind it shows through, whatever the swapchain's alpha mode.) Frames are copied in, BGRA
+/// premultiplied, with a D3D11 device.
+pub struct XamlSurface {
+    native: ISurfaceImageSourceNative,
+    context: windows::Win32::Graphics::Direct3D11::ID3D11DeviceContext,
+    width: u32,
+    height: u32,
+}
+
+impl XamlSurface {
+    /// `source`: any COM pointer of the `SurfaceImageSource` (made `width` x `height`, not
+    /// opaque). `device`: the D3D11 device frames are copied with. UI thread.
+    pub unsafe fn new(
+        source: *mut c_void,
+        device: &windows::Win32::Graphics::Direct3D11::ID3D11Device,
+        width: u32,
+        height: u32,
+    ) -> Result<Self> {
+        let unknown = unsafe { windows::core::IUnknown::from_raw_borrowed(&source) }
+            .ok_or_else(windows::core::Error::empty)?;
+        let native: ISurfaceImageSourceNative = unknown.cast()?;
+        let dxgi: windows::Win32::Graphics::Dxgi::IDXGIDevice = device.cast()?;
+        unsafe { native.SetDevice(dxgi.as_raw()) }.ok()?;
+        let context = unsafe { device.GetImmediateContext() }?;
+        Ok(Self {
+            native,
+            context,
+            width,
+            height,
+        })
+    }
+
+    pub fn width(&self) -> u32 {
+        self.width
+    }
+
+    pub fn height(&self) -> u32 {
+        self.height
+    }
+
+    /// The `SurfaceImageSource`, to attach again (e.g. on a new device).
+    pub fn source(&self) -> windows::core::IUnknown {
+        self.native.clone().into()
+    }
+
+    /// Copies `texture` (on this surface's device, this surface's size) in. UI thread.
+    pub fn present(&self, texture: &windows::Win32::Graphics::Direct3D11::ID3D11Resource) -> Result<()> {
+        let rect = windows::Win32::Foundation::RECT {
+            left: 0,
+            top: 0,
+            right: self.width as i32,
+            bottom: self.height as i32,
+        };
+        let mut surface = std::ptr::null_mut();
+        let mut offset = windows::Win32::Foundation::POINT::default();
+        unsafe { self.native.BeginDraw(rect, &mut surface, &mut offset) }.ok()?;
+        // The update rectangle lives in XAML's atlas at `offset`.
+        let copied = unsafe { windows::Win32::Graphics::Dxgi::IDXGISurface::from_raw(surface) }
+            .cast::<windows::Win32::Graphics::Direct3D11::ID3D11Resource>()
+            .map(|target| unsafe {
+                self.context.CopySubresourceRegion(
+                    &target,
+                    0,
+                    offset.x.max(0) as u32,
+                    offset.y.max(0) as u32,
+                    0,
+                    texture,
+                    0,
+                    None,
+                )
+            });
+        let ended = unsafe { self.native.EndDraw() }.ok();
+        copied.and(ended)
+    }
+}
+
 /// A `SwapChainPanel` for a library that binds its own swapchain to it (wgpu takes an
 /// `ISwapChainPanelNative` and calls `SetSwapChain` itself). The library gets a stand-in that
 /// forwards to the panel and remembers the swapchain, so its matrix transform (DPI scale and the

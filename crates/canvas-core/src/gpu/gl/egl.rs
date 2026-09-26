@@ -163,8 +163,75 @@ fn load() -> Option<Egl> {
     })
 }
 
+/// ANGLE on a D3D11 device of ours, made with BGRA support: XAML SurfaceImageSources (what
+/// transparent canvases present into) only take such a device, and ANGLE's own lacks it.
+#[cfg(target_os = "windows")]
+fn device_display(instance: &EglInstance) -> Option<egl::Display> {
+    use windows::Win32::Foundation::HMODULE;
+    use windows::Win32::Graphics::Direct3D::{
+        D3D_DRIVER_TYPE, D3D_DRIVER_TYPE_HARDWARE, D3D_DRIVER_TYPE_WARP, D3D_FEATURE_LEVEL_10_0, D3D_FEATURE_LEVEL_10_1,
+        D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_11_1,
+    };
+    use windows::Win32::Graphics::Direct3D11::{D3D11CreateDevice, ID3D11Device, D3D11_CREATE_DEVICE_BGRA_SUPPORT, D3D11_SDK_VERSION};
+    const EGL_PLATFORM_DEVICE_EXT: egl::Enum = 0x313F;
+
+    let client = instance
+        .query_string(None, egl::EXTENSIONS)
+        .map(|s| s.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    let has = |name: &str| client.split(' ').any(|e| e == name);
+    if !has("EGL_ANGLE_device_creation") || !has("EGL_ANGLE_device_creation_d3d11") || !has("EGL_EXT_platform_device") {
+        return None;
+    }
+    let levels = [D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_1, D3D_FEATURE_LEVEL_10_0];
+    let create = |driver: D3D_DRIVER_TYPE| {
+        let mut device: Option<ID3D11Device> = None;
+        unsafe {
+            D3D11CreateDevice(
+                None,
+                driver,
+                HMODULE::default(),
+                D3D11_CREATE_DEVICE_BGRA_SUPPORT,
+                Some(&levels),
+                D3D11_SDK_VERSION,
+                Some(&mut device),
+                None,
+                None,
+            )
+        }
+        .ok()
+        .and(device)
+    };
+    let device = if env_flag("CANVAS_FORCE_WARP") {
+        create(D3D_DRIVER_TYPE_WARP)
+    } else {
+        create(D3D_DRIVER_TYPE_HARDWARE).or_else(|| create(D3D_DRIVER_TYPE_WARP))
+    }?;
+
+    type CreateDeviceAngle = unsafe extern "system" fn(egl::Int, *mut c_void, *const egl::Attrib) -> *mut c_void;
+    let create_device: CreateDeviceAngle =
+        unsafe { std::mem::transmute(instance.get_proc_address("eglCreateDeviceANGLE")?) };
+    let egl_device = unsafe { create_device(EGL_D3D11_DEVICE_ANGLE, windows::core::Interface::as_raw(&device), std::ptr::null()) };
+    if egl_device.is_null() {
+        log::warn!("canvas: eglCreateDeviceANGLE failed; ANGLE makes its own D3D11 device");
+        return None;
+    }
+    // The display lives as long as the process; keep the device with it.
+    std::mem::forget(device);
+    match unsafe { instance.get_platform_display(EGL_PLATFORM_DEVICE_EXT, egl_device, &[egl::NONE as egl::Attrib]) } {
+        Ok(display) => Some(display),
+        Err(error) => {
+            log::warn!("canvas: eglGetPlatformDisplay(device) failed: {error}");
+            None
+        }
+    }
+}
+
 #[cfg(target_os = "windows")]
 fn platform_display(instance: &EglInstance) -> Option<egl::Display> {
+    if let Some(display) = device_display(instance) {
+        return Some(display);
+    }
     let device = if env_flag("CANVAS_FORCE_WARP") {
         EGL_PLATFORM_ANGLE_DEVICE_TYPE_D3D_WARP_ANGLE
     } else {
@@ -325,6 +392,9 @@ pub(crate) struct GLContextInner {
     /// On screen: the panel's swapchain and ANGLE's immediate context that copies into it.
     #[cfg(target_os = "windows")]
     presenter: Option<Presenter>,
+    /// On screen and blending with the page: a XAML SurfaceImageSource on ANGLE's device.
+    #[cfg(target_os = "windows")]
+    xaml: Option<crate::gpu::dxgi::XamlSurface>,
     dimensions: Arc<RwLock<Dimensions>>,
     /// Set once the context reports a reset: a lost context stays lost.
     #[cfg(target_os = "windows")]
@@ -524,6 +594,8 @@ impl GLContext {
             texture: None,
             #[cfg(target_os = "windows")]
             presenter: None,
+            #[cfg(target_os = "windows")]
+            xaml: None,
             dimensions: Arc::new(RwLock::new(Dimensions {
                 width: width.max(1),
                 height: height.max(1),
@@ -629,10 +701,33 @@ impl GLContext {
         if !self.set_texture_surface(texture, width, height) {
             return false;
         }
+        // A SurfaceImageSource has a fixed size: the host attaches one of the new size.
+        self.0.xaml = None;
         match self.0.presenter.as_mut() {
             Some(presenter) => presenter.swap_chain.resize(width.max(1) as u32, height.max(1) as u32).is_ok(),
             None => true,
         }
+    }
+
+    /// Presents a texture context into a XAML `SurfaceImageSource` (any COM pointer to it, made
+    /// at the context's size) instead of a swapchain, so it blends with the page. The rows stay
+    /// bottom-up: the host flips the image. UI thread.
+    #[cfg(target_os = "windows")]
+    pub unsafe fn attach_xaml_surface(&mut self, source: *mut c_void) -> bool {
+        if self.0.texture.is_none() {
+            return false;
+        }
+        let Some(device) = angle_d3d11_device() else { return false };
+        let (width, height) = self.get_surface_dimensions();
+        self.0.presenter = None;
+        self.0.xaml = match unsafe { crate::gpu::dxgi::XamlSurface::new(source, &device, width.max(1) as u32, height.max(1) as u32) } {
+            Ok(surface) => Some(surface),
+            Err(error) => {
+                log::error!("canvas: could not use the XAML surface for WebGL: {error}");
+                None
+            }
+        };
+        self.0.xaml.is_some()
     }
 
     /// Shows a texture context in a WinUI `SwapChainPanel` (any COM pointer to it). UI thread.
@@ -644,6 +739,7 @@ impl GLContext {
         let Some(device) = angle_d3d11_device() else { return false };
         let Ok(context) = (unsafe { device.GetImmediateContext() }) else { return false };
         let (width, height) = self.get_surface_dimensions();
+        self.0.xaml = None;
         let swap_chain = match crate::gpu::dxgi::CompositionSwapChain::new_d3d11(&device, width as u32, height as u32, alpha) {
             Ok(swap_chain) => swap_chain,
             Err(error) => {
@@ -705,6 +801,18 @@ impl GLContext {
             return false;
         }
         unsafe { gl_bindings::Flush() };
+        if let (Some(xaml), Some(texture)) = (self.0.xaml.as_ref(), self.0.texture.as_ref()) {
+            let Ok(texture) = windows::core::Interface::cast::<windows::Win32::Graphics::Direct3D11::ID3D11Resource>(texture) else {
+                return false;
+            };
+            return match xaml.present(&texture) {
+                Ok(()) => true,
+                Err(error) => {
+                    log::warn!("canvas: presenting WebGL into the XAML surface failed: {error}");
+                    false
+                }
+            };
+        }
         let (Some(presenter), Some(texture)) = (self.0.presenter.as_ref(), self.0.texture.as_ref()) else {
             return true;
         };

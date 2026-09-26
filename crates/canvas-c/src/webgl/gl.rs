@@ -1873,6 +1873,19 @@ pub extern "C" fn canvas_native_webgl_attach_swap_chain_panel(state: *mut WebGLS
     unsafe { state.get_inner_mut().attach_swap_chain_panel(panel) }
 }
 
+/// Windows: presents a `canvas_native_webgl_create_d3d` context into a XAML `SurfaceImageSource`
+/// (any COM pointer to it, made at the drawing buffer's size) instead of a swapchain, so it blends
+/// with the page. The rows are bottom-up: the host flips the image. UI thread.
+#[cfg(target_os = "windows")]
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_attach_xaml_surface(state: *mut WebGLState, source: *mut c_void) -> bool {
+    if state.is_null() || source.is_null() {
+        return false;
+    }
+    let state = unsafe { &mut *state };
+    unsafe { state.get_inner_mut().attach_xaml_surface(source) }
+}
+
 /// Windows: maps the drawing buffer into its panel (DIPs = pixels * scale + offset).
 #[cfg(target_os = "windows")]
 #[no_mangle]

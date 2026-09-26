@@ -509,6 +509,12 @@ impl WebGLState {
         unsafe { self.context.attach_swap_chain_panel(panel, alpha) }
     }
 
+    /// Presents into a XAML `SurfaceImageSource` instead (a canvas that blends with the page).
+    #[cfg(target_os = "windows")]
+    pub unsafe fn attach_xaml_surface(&mut self, source: *mut std::ffi::c_void) -> bool {
+        unsafe { self.context.attach_xaml_surface(source) }
+    }
+
     #[cfg(target_os = "windows")]
     pub fn set_swap_chain_transform(&self, scale_x: f32, scale_y: f32, offset_x: f32, offset_y: f32) -> bool {
         self.context.set_swap_chain_transform(scale_x, scale_y, offset_x, offset_y)

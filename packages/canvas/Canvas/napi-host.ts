@@ -248,14 +248,16 @@ export abstract class NapiCanvas extends CanvasBase {
 	}
 
 	// The platform view sizes the native view (on Windows that is what gives the XAML panel its
-	// Width / Height); the canvas also sizes its drawing buffer from it.
+	// Width / Height); the canvas also sizes its drawing buffer from it. A % size is passed on as
+	// `auto`: the native container stretches the view over its cell (Windows core sizes % views
+	// against the whole parent, not the cell).
 	[widthProperty.setNative](value: any) {
-		(Object.getPrototypeOf(NapiCanvas.prototype) as any)[widthProperty.setNative]?.call(this, value);
+		(Object.getPrototypeOf(NapiCanvas.prototype) as any)[widthProperty.setNative]?.call(this, isPercentLength(value) ? 'auto' : value);
 		this.__setSurfaceWidth(value);
 	}
 
 	[heightProperty.setNative](value: any) {
-		(Object.getPrototypeOf(NapiCanvas.prototype) as any)[heightProperty.setNative]?.call(this, value);
+		(Object.getPrototypeOf(NapiCanvas.prototype) as any)[heightProperty.setNative]?.call(this, isPercentLength(value) ? 'auto' : value);
 		this.__setSurfaceHeight(value);
 	}
 
@@ -410,6 +412,16 @@ export abstract class NapiCanvas extends CanvasBase {
 		}
 	}
 
+	/**
+	 * Called before a 2D or WebGL context is made: a platform whose native presentation cannot
+	 * blend with the page (a WinUI 3 SwapChainPanel) switches `transparent` canvases to one that
+	 * can. `flipped`: the drawing buffer's rows are bottom-up (GL).
+	 */
+	protected _prepareSurface(transparent: boolean, flipped: boolean) {}
+
+	/** The drawing buffer's size or its place in the view changed. */
+	protected _layoutSurface() {}
+
 	private _syncFit() {
 		if (!this._canvas) {
 			return;
@@ -417,6 +429,7 @@ export abstract class NapiCanvas extends CanvasBase {
 		const scale = Screen.mainScreen.scale || 1;
 		const surface = { width: Math.floor(this._canvas.surfaceWidth / scale), height: Math.floor(this._canvas.surfaceHeight / scale) };
 		this._canvas.fit = fitForStyle(this.style.width, this.style.height, surface, { width: this._viewWidth, height: this._viewHeight });
+		this._layoutSurface();
 	}
 
 	/** The platform reports the native view's laid-out size, in DIPs. */
@@ -446,6 +459,7 @@ export abstract class NapiCanvas extends CanvasBase {
 		this._viewScaleY = scaleY;
 		this._canvas?.setCompositionScale(scaleX, scaleY);
 		this._followPercentSize();
+		this._layoutSurface();
 	}
 
 	/**
@@ -490,6 +504,7 @@ export abstract class NapiCanvas extends CanvasBase {
 	 */
 	private __create2DContext(type: CanvasContextType, options?: any): CanvasRenderingContext2D {
 		const opts = { ...defaultOpts, ...handleContextOptions(type, options), fontColor: (this.parent?.style?.color?.argb ?? 0xff000000) | 0 };
+		this._prepareSurface(opts.alpha !== false, false);
 		const ctx = this._canvas.create2DContext(opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible, opts.fontColor, opts.willReadFrequently ?? false, opts.colorSpace ?? 0);
 		const context = new (CanvasRenderingContext2D as any)(ctx, opts);
 		context._canvas = this;
@@ -532,6 +547,8 @@ export abstract class NapiCanvas extends CanvasBase {
 			}
 			if (isWebGL2 ? !this._webgl2Context : !this._webglContext) {
 				const opts = { version: isWebGL2 ? 2 : 1, ...defaultOpts, ...handleContextOptions(type as CanvasContextType, options) };
+				// GL renders bottom-up.
+				this._prepareSurface(opts.alpha !== false, true);
 				this._canvas.initContext(type, opts.alpha, false, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible, false, opts.colorSpace ?? 0);
 				if (isWebGL2) {
 					this._webgl2Context = new (WebGL2RenderingContext as any)(this._canvas, opts);

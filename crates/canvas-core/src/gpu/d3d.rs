@@ -45,6 +45,15 @@ pub struct D3D12Context {
     device: ID3D12Device,
     queue: ID3D12CommandQueue,
     is_warp: bool,
+    on12: std::cell::OnceCell<Option<D3D11On12>>,
+}
+
+/// A D3D11 device layered on this D3D12 device and queue (D3D11On12): what XAML surfaces take.
+/// Its work goes to the same queue, after the D3D12 work submitted before it.
+pub struct D3D11On12 {
+    pub device: windows::Win32::Graphics::Direct3D11::ID3D11Device,
+    pub context: windows::Win32::Graphics::Direct3D11::ID3D11DeviceContext,
+    pub on12: windows::Win32::Graphics::Direct3D11on12::ID3D11On12Device,
 }
 
 thread_local! {
@@ -110,6 +119,7 @@ impl D3D12Context {
                     device,
                     queue,
                     is_warp: false,
+                    on12: Default::default(),
                 });
             }
         }
@@ -123,6 +133,7 @@ impl D3D12Context {
             device,
             queue,
             is_warp: true,
+            on12: Default::default(),
         })
     }
 
@@ -183,6 +194,36 @@ impl D3D12Context {
 
     pub fn is_warp(&self) -> bool {
         self.is_warp
+    }
+
+    /// The D3D11On12 device on this device and queue, made on first use.
+    pub fn d3d11_on_12(&self) -> Option<&D3D11On12> {
+        self.on12
+            .get_or_init(|| {
+                use windows::Win32::Graphics::Direct3D11::{ID3D11Device, ID3D11DeviceContext, D3D11_CREATE_DEVICE_BGRA_SUPPORT};
+                let queue: windows::core::IUnknown = self.queue.cast().ok()?;
+                let (mut device, mut context): (Option<ID3D11Device>, Option<ID3D11DeviceContext>) = (None, None);
+                let created = unsafe {
+                    windows::Win32::Graphics::Direct3D11on12::D3D11On12CreateDevice(
+                        &self.device,
+                        D3D11_CREATE_DEVICE_BGRA_SUPPORT.0 as u32,
+                        None,
+                        Some(&[Some(queue)]),
+                        0,
+                        Some(&mut device),
+                        Some(&mut context),
+                        None,
+                    )
+                };
+                if let Err(error) = created {
+                    log::error!("canvas: D3D11On12CreateDevice failed: {error}");
+                    return None;
+                }
+                let device = device?;
+                let on12 = device.cast().ok()?;
+                Some(D3D11On12 { device, context: context?, on12 })
+            })
+            .as_ref()
     }
 
     /// The device was removed (a driver update or reset, the GPU gone, `simulate_removal`):

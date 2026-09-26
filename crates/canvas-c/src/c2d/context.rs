@@ -445,6 +445,21 @@ pub extern "C" fn canvas_native_context_attach_swap_chain_panel(
     context.engine == Engine::D3D && unsafe { context.context.attach_swap_chain_panel(panel) }
 }
 
+/// Presents a D3D context into a XAML `SurfaceImageSource` (any COM pointer to it, made at the
+/// context's size) instead of a swapchain, so it blends with the page. UI thread.
+#[cfg(all(feature = "d3d", target_os = "windows"))]
+#[no_mangle]
+pub extern "C" fn canvas_native_context_attach_xaml_surface(
+    context: *mut CanvasRenderingContext2D,
+    source: *mut c_void,
+) -> bool {
+    if context.is_null() || source.is_null() {
+        return false;
+    }
+    let context = unsafe { &mut *context };
+    context.engine == Engine::D3D && unsafe { context.context.attach_xaml_surface(source) }
+}
+
 /// Maps the context's swapchain into its panel: DIPs = pixels * scale + offset.
 #[cfg(all(feature = "d3d", target_os = "windows"))]
 #[no_mangle]

@@ -66,6 +66,10 @@ export class Canvas extends NapiCanvas {
 	private _scaleDelegate: any;
 	private _sizeDelegate: any;
 	private _keyDelegates: any[] = [];
+	/** Transparent canvases: a XAML SurfaceImageSource in an Image instead of the panel's swapchain. */
+	private _image: any;
+	private _imageSize = '';
+	private _imageFlipped = false;
 
 	constructor(nativeInstance?: any) {
 		super();
@@ -141,6 +145,8 @@ export class Canvas extends NapiCanvas {
 		this._scaleDelegate = undefined;
 		this._sizeDelegate = undefined;
 		this._keyDelegates = [];
+		this._image = undefined;
+		this._imageSize = '';
 		this._pointerDelegates = null;
 		this._down.clear();
 		this._panel = undefined;
@@ -156,6 +162,60 @@ export class Canvas extends NapiCanvas {
 		if (this._panel) {
 			this._panel.IsHitTestVisible = value;
 		}
+	}
+
+	/**
+	 * A SwapChainPanel is external content in WinUI 3: nothing behind it shows through, whatever
+	 * the swapchain's alpha. A transparent canvas presents into a SurfaceImageSource instead (XAML
+	 * composites it like any image) shown by an Image inside the panel, which then has no
+	 * swapchain and stays see-through. The Image stays hit-testable: pointer events bubble to the
+	 * panel's handlers.
+	 */
+	protected _prepareSurface(transparent: boolean, flipped: boolean) {
+		const panel = this._panel;
+		if (!transparent || !panel || this._image) {
+			return;
+		}
+		const image = new Microsoft.UI.Xaml.Controls.Image();
+		image.Stretch = Microsoft.UI.Xaml.Media.Stretch.Fill;
+		image.HorizontalAlignment = Microsoft.UI.Xaml.HorizontalAlignment.Left;
+		image.VerticalAlignment = Microsoft.UI.Xaml.VerticalAlignment.Top;
+		panel.Children.Append(image);
+		this._image = image;
+		this._imageFlipped = flipped;
+		this._layoutSurface();
+	}
+
+	/** A SurfaceImageSource of the drawing buffer's size, placed like the swapchain would be. */
+	protected _layoutSurface() {
+		const image = this._image;
+		const host = this._canvas;
+		if (!image || !host) {
+			return;
+		}
+		const width = host.surfaceWidth;
+		const height = host.surfaceHeight;
+		const size = `${width}x${height}`;
+		if (size !== this._imageSize) {
+			const source = new Microsoft.UI.Xaml.Media.Imaging.SurfaceImageSource(width, height, false);
+			if (host.attachSurfaceImageSource(NSWinRT.interop.pointerKey(source))) {
+				image.Source = source;
+				this._imageSize = size;
+			}
+		}
+		const [scaleX, scaleY, offsetX, offsetY] = host.surfaceTransform;
+		const shownWidth = width * scaleX;
+		const shownHeight = height * scaleY;
+		image.Width = shownWidth;
+		image.Height = shownHeight;
+		const transform = new Microsoft.UI.Xaml.Media.CompositeTransform();
+		transform.TranslateX = offsetX;
+		transform.TranslateY = offsetY;
+		if (this._imageFlipped) {
+			transform.ScaleY = -1;
+			transform.CenterY = shownHeight / 2;
+		}
+		image.RenderTransform = transform;
 	}
 
 	/** Core's size watch (it replaces the panel's SizeChanged delegate for % sizes). */

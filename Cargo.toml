@@ -13,6 +13,7 @@ members = [
     "crates/canvas-svg",
     "crates/canvas-svg-c",
     "crates/canvas-napi",
+    "crates/canvas-svg-napi",
     "crates/canvas-svg-ios",
     "crates/canvas-svg-android",
 ]

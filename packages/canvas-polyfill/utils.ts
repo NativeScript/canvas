@@ -437,5 +437,6 @@ export function getPixelsPerInchForCurrentDevice() {
 		}
 	}
 
-	return ppi;
+	// Elsewhere (Windows): the CSS inch.
+	return ppi ?? 96;
 }

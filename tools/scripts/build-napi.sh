@@ -1,30 +1,39 @@
 #!/bin/bash
-# Builds a Node-API native module (crates/canvas-napi by default) for one target triple and
-# copies it into the package's platforms/<platform>/<arch>/ as <name>.node.
+# Builds a Node-API native module for one target triple and copies it into its package's
+# platforms/<platform>/<arch>/ as <name>.node.
 #
-# Usage: build-napi.sh TARGET [PROFILE]
+# Usage: build-napi.sh TARGET [PROFILE] [CRATE]
 #   TARGET   x86_64-pc-windows-msvc | aarch64-pc-windows-msvc
 #   PROFILE  release-napi (default; panic=unwind so the host app survives a panic) or dev
+#   CRATE    canvas-napi (default: @nativescript/canvas, canvasnative.node) or canvas-svg-napi
+#            (@nativescript/canvas-svg, canvassvg.node)
 
 set -e
 
 TARGET="$1"
 PROFILE=${2:-release-napi}
+CRATE=${3:-canvas-napi}
 
 if [ "$TARGET" = "" ]; then
     echo "missing argument TARGET"
-    echo "Usage: $0 TARGET [PROFILE]"
+    echo "Usage: $0 TARGET [PROFILE] [CRATE]"
     exit 1
 fi
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-CRATE=canvas-napi
-PACKAGE="$ROOT/packages/canvas"
-NAME=canvasnative
+case "$CRATE" in
+  canvas-napi)     PACKAGE="$ROOT/packages/canvas";     NAME=canvasnative ;;
+  canvas-svg-napi) PACKAGE="$ROOT/packages/canvas-svg"; NAME=canvassvg ;;
+  *)
+    echo "unsupported crate: $CRATE"
+    exit 1
+    ;;
+esac
+LIB="${CRATE//-/_}.dll"
 
 case "$TARGET" in
-  x86_64-pc-windows-msvc)  PLATFORM=windows; ARCH=x64;   LIB=canvas_napi.dll ;;
-  aarch64-pc-windows-msvc) PLATFORM=windows; ARCH=arm64; LIB=canvas_napi.dll ;;
+  x86_64-pc-windows-msvc)  PLATFORM=windows; ARCH=x64 ;;
+  aarch64-pc-windows-msvc) PLATFORM=windows; ARCH=arm64 ;;
   *)
     echo "unsupported target: $TARGET"
     exit 1
@@ -58,7 +67,7 @@ echo "$DEST/$NAME.node"
 
 # WebGL on Windows runs on ANGLE, loaded from next to the module (d3dcompiler_47 ships with
 # Windows 10+).
-if [ "$PLATFORM" = "windows" ]; then
+if [ "$PLATFORM" = "windows" ] && [ "$CRATE" = "canvas-napi" ]; then
     ANGLE="$ROOT/.angle-prebuilt/angle-$ARCH/bin"
     [ -f "$ANGLE/libEGL.dll" ] || "$ROOT/tools/scripts/download-angle.sh" "$ARCH"
     cp "$ANGLE/libEGL.dll" "$ANGLE/libGLESv2.dll" "$DEST/"

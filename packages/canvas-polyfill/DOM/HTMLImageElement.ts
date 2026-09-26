@@ -34,6 +34,19 @@ function getMIMEforBase64String(b64) {
 	return mime;
 }
 
+function base64Bytes(base64: string): Uint8Array {
+	const fromBase64 = (Uint8Array as any).fromBase64;
+	if (typeof fromBase64 === 'function') {
+		return fromBase64(base64);
+	}
+	const binary = atob(base64);
+	const bytes = new Uint8Array(binary.length);
+	for (let i = 0; i < binary.length; i++) {
+		bytes[i] = binary.charCodeAt(i);
+	}
+	return bytes;
+}
+
 function getUUID() {
 	if (__APPLE__) {
 		return NSUUID.UUID().UUIDString;
@@ -293,6 +306,24 @@ export class HTMLImageElement extends HTMLElement {
 				try {
 					const MIME = getMIMEforBase64String(base64result);
 					const dir = knownFolders.temp().path;
+					if (!__APPLE__ && !__ANDROID__) {
+						// No native base64-to-file helper: decode in memory.
+						this._asset
+							.loadFromEncodedBytes(base64Bytes(base64result))
+							.then((done: boolean) => {
+								this.width = this._asset.width;
+								this.height = this._asset.height;
+								this.complete = done;
+								this._loading = false;
+								this._dispatchDecode(done);
+							})
+							.catch((error) => {
+								this.dispatchEvent({ type: 'error', target: this, error });
+								this._onerror?.();
+								this._loading = false;
+								this._dispatchDecode();
+							});
+					}
 					if (__APPLE__) {
 						NSSCanvasHelpers.handleBase64Image(MIME, dir, base64result, (error, localUri) => {
 							if (error) {

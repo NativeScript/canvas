@@ -1,6 +1,6 @@
 import { DOMMatrix } from '@nativescript/canvas';
 import { Element } from './Element';
-import { Utils, ViewBase } from '@nativescript/core';
+import { Utils, ViewBase, Device } from '@nativescript/core';
 import setValue from 'set-value';
 
 const transformRegex = /(?:(translate(?:3d|X|Y|Z)?)\s*\(\s*(-?\d*\.?\d+(?:px|%|em|rem|vw|vh)?)\s*(?:,\s*(-?\d*\.?\d+(?:px|%|em|rem|vw|vh)?)\s*(?:,\s*(-?\d*\.?\d+(?:px|%|em|rem|vw|vh)?)\s*)?)?\))/g;
@@ -14,13 +14,8 @@ export class Style {
 	}
 
 	private _nativeElement() {
-		if (__ANDROID__) {
-			return this.nativeElement?.get?.();
-		}
-		if (__APPLE__) {
-			return this.nativeElement?.deref?.();
-		}
-		return undefined;
+		// WeakRef: deref() (V8/JSC), get() (the Android runtime's).
+		return this.nativeElement?.deref?.() ?? this.nativeElement?.get?.();
 	}
 
 	__item(index: number) {
@@ -162,7 +157,7 @@ export class HTMLElement extends Element {
 			return NSLocale.currentLocale.languageCode;
 		}
 
-		return 'unknown';
+		return Device.language?.split('-')[0] || 'unknown';
 	}
 
 	set lang(value: string) {

@@ -1,4 +1,5 @@
 declare var __non_webpack_require__, CanvasSVGModule;
+declare const __WINDOWS__: boolean;
 
 export class Helpers {
 	static _initialized = false;
@@ -22,8 +23,13 @@ export class Helpers {
 			this._initialized = true;
 		}
 
+		if (typeof __WINDOWS__ !== 'undefined' && __WINDOWS__) {
+			// The Node-API module (crates/canvas-svg-napi) installs global.SVGModule itself.
+			__non_webpack_require__('system_lib://canvassvg.node');
+			this._initialized = true;
+		}
+
 		if (!this._initialized) {
-			// e.g. Windows, until its native SVG module exists.
 			throw new Error('@nativescript/canvas-svg is not supported on this platform yet');
 		}
 	}

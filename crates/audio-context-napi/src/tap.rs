@@ -2,7 +2,7 @@ use std::ffi::c_void;
 
 use web_audio_api::AudioBuffer;
 
-/// Same layout as `tap::AudioTapSource` in canvas-media's module (`NSCAudioTap.address`).
+/// Same layout as `tap::AudioTapSource` in canvas-media's module.
 #[repr(C)]
 #[derive(Clone, Copy)]
 struct AudioTapSource {

@@ -10,6 +10,7 @@ mod buffer;
 mod context;
 mod node;
 mod param;
+mod tap;
 
 pub use buffer::{AudioBuffer, PeriodicWave};
 pub use context::AudioContext;

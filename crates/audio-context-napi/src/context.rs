@@ -232,6 +232,17 @@ impl AudioContext {
     Some(AudioParam::wrap(param))
   }
 
+  /// `createMediaElementSource(element)`: the element's audio from canvas-media's tap
+  /// (`NSCAudioTap.address`). Realtime contexts only, as on the web.
+  #[napi]
+  pub fn create_media_element_source_from_tap(&self, address: f64) -> Result<AudioNode> {
+    let context = self.online()?;
+    let stream = unsafe { crate::tap::TapStream::new(address as usize) }
+      .ok_or_else(|| error("InvalidStateError: the media element has no audio tap"))?;
+    let track = web_audio_api::media_streams::MediaStreamTrack::from_iter(stream);
+    guard(|| AudioNode::new(Kind::MediaElementSource(context.create_media_stream_track_source(&track))))
+  }
+
   #[napi]
   pub fn create_gain(&self) -> Result<AudioNode> {
     self.node(|base| Kind::Gain(base.create_gain()))

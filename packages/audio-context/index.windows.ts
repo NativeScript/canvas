@@ -22,15 +22,19 @@ import {
 	PeriodicWaveOptions,
 	StereoPannerOptions,
 	WaveShaperOptions,
+	assertMediaElementUsable,
 	context_,
 	distanceModelFromNumber,
 	distanceModelToNumber,
 	looksLikePath,
+	markMediaElementUsed,
 	native_,
 	nativeCtor_,
 	normalizeSourcePath,
 	panningModelFromNumber,
 	panningModelToNumber,
+	throwInvalidMediaElement,
+	unmarkMediaElementUsed,
 } from './common';
 
 declare const __non_webpack_require__: (specifier: string) => any;
@@ -659,29 +663,50 @@ export class AudioBufferSourceNode extends AudioScheduledSourceNode {
 	}
 }
 
-function notSupported(message: string): Error {
-	if (typeof DOMException !== 'undefined') {
-		return new DOMException(message, 'NotSupportedError');
-	}
-	return new Error(`NotSupportedError: ${message}`);
-}
-
-/** Media elements have no Windows backend yet (canvas-media), so nothing can be tapped. */
+/**
+ * A media element's audio in the graph. canvas-media taps the element's WinRT MediaPlayer with an
+ * audio effect: while connected the element itself is silent and its audio (at its volume) plays
+ * through the graph, as on the web.
+ */
 export class MediaElementAudioSourceNode extends AudioNode {
+	private _mediaElement: MediaElementLike;
+
 	constructor(context: AudioContext, mediaElement: MediaElementLike) {
-		super(context, null as never);
-		throw notSupported('MediaElementAudioSourceNode is not supported on Windows yet');
+		super(context, MediaElementAudioSourceNode._createNative(context, mediaElement));
+		this._mediaElement = mediaElement;
+		markMediaElementUsed(mediaElement);
+	}
+
+	/** The canvas-media element behind canvas-polyfill's <audio> / <video>, or the element itself. */
+	private static _tapProvider(mediaElement: MediaElementLike): MediaElementLike {
+		return mediaElement?._audio ?? mediaElement?._video ?? mediaElement;
+	}
+
+	private static _createNative(context: AudioContext, mediaElement: MediaElementLike): NativeNode {
+		assertMediaElementUsable(context, mediaElement);
+		const tap = MediaElementAudioSourceNode._tapProvider(mediaElement)?.attachAudioContextTap?.(undefined);
+		if (!tap?.address) {
+			throwInvalidMediaElement();
+		}
+		return nativeContext(context).createMediaElementSourceFromTap(tap.address);
 	}
 
 	get mediaElement(): MediaElementLike {
-		return null;
+		return this._mediaElement;
 	}
 
 	get playbackRate(): AudioParam | null {
 		return null;
 	}
 
-	disposeMediaElementSource() {}
+	/** Gives the element its own output back (not in the spec: an element stays connected there). */
+	disposeMediaElementSource() {
+		const element = this._mediaElement;
+		try {
+			MediaElementAudioSourceNode._tapProvider(element)?.detachAudioContextTap?.();
+		} catch (e) {}
+		unmarkMediaElementUsed(element);
+	}
 }
 
 export class OscillatorNode extends AudioScheduledSourceNode {

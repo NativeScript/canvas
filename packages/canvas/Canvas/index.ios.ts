@@ -376,10 +376,6 @@ export class Canvas extends CanvasBase {
 
 	disposeNativeView(): void {
 		this._canvas?.setListener?.(null);
-		this._gpuContext?.__detach();
-		this._2dContext?.__detach();
-		this._webglContext?.__detach();
-		this._webgl2Context?.__detach();
 		this._2dContext = undefined;
 		this._webglContext = undefined;
 		this._webgl2Context = undefined;

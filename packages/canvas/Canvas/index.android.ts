@@ -395,19 +395,15 @@ export class Canvas extends CanvasBase {
 					}
 				},
 				surfaceResize(width: number, height: number) {
-					const owner = ref.get() as any;
-					// Fires after resize() re-attached the swapchain to the new surface.
-					owner?._gpuContext?.__surfaceRestored?.();
+					const owner = ref.get();
 					owner?.notify?.({ eventName: 'surfaceResize', object: owner, width, height });
 				},
 				surfaceDestroyed() {
-					const owner = ref.get() as any;
-					owner?._gpuContext?.__surfaceLost?.();
+					const owner = ref.get();
 					owner?.notify?.({ eventName: 'surfaceDestroyed', object: owner });
 				},
 				surfaceCreated() {
-					const owner = ref.get() as any;
-					owner?._gpuContext?.__surfaceRestored?.();
+					const owner = ref.get();
 					owner?.notify?.({ eventName: 'surfaceCreated', object: owner });
 				},
 			}),
@@ -416,10 +412,6 @@ export class Canvas extends CanvasBase {
 
 	disposeNativeView(): void {
 		this._canvas.setListener(null);
-		this._gpuContext?.__detach();
-		this._2dContext?.__detach();
-		this._webglContext?.__detach();
-		this._webgl2Context?.__detach();
 		this._canvas.releaseNativeContext();
 		this._2dContext = undefined;
 		this._webglContext = undefined;

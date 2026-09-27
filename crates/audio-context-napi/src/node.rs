@@ -28,6 +28,7 @@ pub(crate) enum Kind {
   DynamicsCompressor(node::DynamicsCompressorNode),
   ChannelSplitter(node::ChannelSplitterNode),
   ChannelMerger(node::ChannelMergerNode),
+  MediaElementSource(node::MediaStreamTrackAudioSourceNode),
 }
 
 /// Evaluates `$body` with `$node` bound to whichever node `$kind` holds.
@@ -50,6 +51,7 @@ macro_rules! any_node {
       Kind::DynamicsCompressor($node) => $body,
       Kind::ChannelSplitter($node) => $body,
       Kind::ChannelMerger($node) => $body,
+      Kind::MediaElementSource($node) => $body,
     }
   };
 }
@@ -102,6 +104,7 @@ impl AudioNode {
       Kind::DynamicsCompressor(_) => "DynamicsCompressorNode",
       Kind::ChannelSplitter(_) => "ChannelSplitterNode",
       Kind::ChannelMerger(_) => "ChannelMergerNode",
+      Kind::MediaElementSource(_) => "MediaElementAudioSourceNode",
     }
   }
 

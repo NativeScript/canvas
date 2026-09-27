@@ -340,6 +340,7 @@ pub(crate) unsafe fn import_platform_texture(
     target_os = "tvos",
     target_os = "android"
 )))]
+#[allow(dead_code)] // Windows imports through gpu_shared_frame.
 pub(crate) unsafe fn import_platform_texture(
     _device: &Arc<wgpu_core::device::Device>,
     _handle: *mut c_void,
@@ -366,13 +367,49 @@ unsafe fn blit_frame_into_texture(
 ) -> bool {
     let device = &queue.device_id;
 
-    let Some(source_texture) = import_platform_texture(device, handle, frame_width, frame_height)
-    else {
+    #[cfg(target_os = "windows")]
+    let source_texture = super::gpu_shared_frame::import_and_stage(queue, handle, frame_width, frame_height);
+    #[cfg(not(target_os = "windows"))]
+    let source_texture = import_platform_texture(device, handle, frame_width, frame_height);
+    let Some(source_texture) = source_texture else {
         return false;
     };
+    let _ = device;
 
-    let destination_texture = &*destination.texture;
-    let destination_descriptor = destination_texture.texture.descriptor();
+    blit_texture(
+        queue,
+        &source_texture,
+        frame_width,
+        frame_height,
+        source_origin_x,
+        source_origin_y,
+        flip_y,
+        &(*destination.texture).texture,
+        destination.mip_level,
+        destination.origin.z,
+        (destination.origin.x, destination.origin.y),
+        size,
+    )
+}
+
+/// Only samples `source_texture`, and submits. `false` when the destination is not renderable.
+#[allow(clippy::too_many_arguments)]
+pub(crate) unsafe fn blit_texture(
+    queue: &CanvasGPUQueue,
+    source_texture: &Arc<wgpu_core::resource::Texture>,
+    frame_width: u32,
+    frame_height: u32,
+    source_origin_x: u32,
+    source_origin_y: u32,
+    flip_y: bool,
+    destination_texture: &Arc<wgpu_core::resource::Texture>,
+    destination_mip_level: u32,
+    destination_layer: u32,
+    destination_origin: (u32, u32),
+    size: wgt::Extent3d,
+) -> bool {
+    let device = &queue.device_id;
+    let destination_descriptor = destination_texture.descriptor();
     let destination_format = destination_descriptor.format;
 
     // The blit renders into the destination, so it needs RENDER_ATTACHMENT. The WebGPU
@@ -392,21 +429,18 @@ unsafe fn blit_frame_into_texture(
     });
 
     // Render into the destination's requested mip level and array layer only.
-    let destination_view =
-        destination_texture
-            .texture
-            .create_view(&wgpu_core::resource::TextureViewDescriptor {
-                label: Some(Cow::Borrowed("videoBlit:DestinationView")),
-                dimension: Some(wgt::TextureViewDimension::D2),
-                range: wgt::ImageSubresourceRange {
-                    aspect: wgt::TextureAspect::All,
-                    base_mip_level: destination.mip_level,
-                    mip_level_count: Some(1),
-                    base_array_layer: destination.origin.z,
-                    array_layer_count: Some(1),
-                },
-                ..Default::default()
-            });
+    let destination_view = destination_texture.create_view(&wgpu_core::resource::TextureViewDescriptor {
+        label: Some(Cow::Borrowed("videoBlit:DestinationView")),
+        dimension: Some(wgt::TextureViewDimension::D2),
+        range: wgt::ImageSubresourceRange {
+            aspect: wgt::TextureAspect::All,
+            base_mip_level: destination_mip_level,
+            mip_level_count: Some(1),
+            base_array_layer: destination_layer,
+            array_layer_count: Some(1),
+        },
+        ..Default::default()
+    });
 
     // UV transform selecting the source sub-rect, with flipY folded into the y scale.
     let frame_width = frame_width as f32;
@@ -487,16 +521,16 @@ unsafe fn blit_frame_into_texture(
     // The triangle deliberately overhangs the viewport, so the scissor — not the viewport
     // — is what keeps the write inside the destination rect.
     pass.set_viewport(
-        destination.origin.x as f32,
-        destination.origin.y as f32,
+        destination_origin.0 as f32,
+        destination_origin.1 as f32,
         size.width as f32,
         size.height as f32,
         0.0,
         1.0,
     );
     pass.set_scissor_rect(
-        destination.origin.x,
-        destination.origin.y,
+        destination_origin.0,
+        destination_origin.1,
         size.width,
         size.height,
     );

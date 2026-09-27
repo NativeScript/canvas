@@ -61,6 +61,8 @@ objc2-core-foundation = { workspace = true }
 [target.'cfg(target_os="windows")'.dependencies]
 wgpu-core = { workspace = true, features = ["wgsl", "dx12"] }
 wgpu-hal = { workspace = true, features = ["dx12"] }
+# gpu_shared_frame: D3D12 types for wgpu-hal's texture_from_raw (it does not re-export them).
+windows = { workspace = true, features = ["Win32_Foundation", "Win32_Graphics_Direct3D12"] }
 
 [target.'cfg(target_os="android")'.dependencies]
 ndk = { version = "0.7.0", features = ["bitmap"] }

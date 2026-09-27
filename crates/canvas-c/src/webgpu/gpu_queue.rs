@@ -31,6 +31,9 @@ pub struct CanvasGPUQueue {
     /// Lazily built pipelines for the video blit, shared across clones of this handle.
     pub(crate) blit:
         Arc<parking_lot::Mutex<Option<crate::webgpu::gpu_native_texture::BlitCache>>>,
+    #[cfg(target_os = "windows")]
+    pub(crate) shared_frames:
+        Arc<parking_lot::Mutex<crate::webgpu::gpu_shared_frame::SharedFrameCache>>,
 }
 
 unsafe impl Send for CanvasGPUQueue {}

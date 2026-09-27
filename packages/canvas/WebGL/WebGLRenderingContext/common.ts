@@ -1380,7 +1380,7 @@ export abstract class WebGLRenderingCommon implements CanvasRenderingContext {
 
 	abstract deleteRenderbuffer(renderBuffer: WebGLRenderbuffer): void;
 
-	abstract deleteShader(shader: WebGLRenderbuffer): void;
+	abstract deleteShader(shader: WebGLShader | null): void;
 
 	abstract deleteTexture(texture: WebGLTexture): void;
 

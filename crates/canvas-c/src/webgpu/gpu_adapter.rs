@@ -168,6 +168,8 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
                     }),
                     error_sink: error_sink.clone(),
                     blit: Arc::new(parking_lot::Mutex::new(None)),
+                    #[cfg(target_os = "windows")]
+                    shared_frames: Default::default(),
                 });
 
                 let ret = Arc::into_raw(Arc::new(CanvasGPUDevice {

@@ -377,10 +377,10 @@ export function registerWebGPUSpec() {
 					detail += ` helperSays=threw:${e}`;
 				}
 			} else {
-				detail = ` metalDevice=${device.__metalDevice ?? 0}`;
+				detail = ` frameDevice=${device.__frameDevice ?? 0}`;
 			}
 
-			const zeroCopy = !!inner?.supportsGPUFrames?.(device.__metalDevice ?? 0);
+			const zeroCopy = !!inner?.supportsGPUFrames?.(device.__frameDevice ?? 0);
 			console.log(`SPEC|info|webgpu.video zero-copy ${zeroCopy ? 'active' : 'unavailable'};${detail}`);
 			return zeroCopy;
 		}

@@ -1,0 +1,24 @@
+[package]
+name = "audio-context-napi"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Node-API binding for @nativescript/audio-context: a Web Audio graph rendered by the web-audio-api crate and played through WASAPI (cpal), for Node-API hosts (NativeScript Windows, Node)."
+
+[lib]
+crate-type = ["cdylib"]
+
+[features]
+default = ["napi8"]
+napi8 = ["napi/napi8"]
+# Hosts whose Node-API lacks type tags (NativeScript Windows on JavaScriptCore).
+napi7 = ["napi/napi7"]
+
+[dependencies]
+napi = { version = "3.13.0", default-features = false, features = ["dyn-symbols"] }
+napi-derive = "3.6.9"
+web-audio-api = "1.7.0"
+base64 = "0.22.1"
+
+[build-dependencies]
+napi-build = "2.5.0"

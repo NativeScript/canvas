@@ -1250,7 +1250,11 @@ CanvasJSIModule::CreateWebGPUContextWithPointer(const v8::FunctionCallbackInfo<v
 	auto ptr = args[0]->ToBigInt(context).ToLocalChecked()->Int64Value();
 	
 	auto wgpu = static_cast<CanvasGPUCanvasContext *>((void *) ptr);
-	
+
+	// The platform view keeps its own strong count and releases it on teardown;
+	// the wrapper's ArcHandle releases once more when finalized, so it needs its own.
+	canvas_native_webgpu_context_reference(wgpu);
+
 	auto ret = GPUCanvasContextImpl::NewInstance(isolate, new GPUCanvasContextImpl(
 																																								 wgpu));
 	args.GetReturnValue().Set(ret);

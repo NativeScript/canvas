@@ -1740,3 +1740,18 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_release(
 
     Arc::decrement_strong_count(context);
 }
+
+/// Takes an additional strong count for a caller that will pair it with
+/// `canvas_native_webgpu_context_release`. A wrapper that adopts the platform
+/// view's pointer must retain, because the view releases its own count on
+/// teardown and the wrapper releases again when it is finalized.
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_context_reference(
+    context: *const CanvasGPUCanvasContext,
+) {
+    if context.is_null() {
+        return;
+    }
+
+    Arc::increment_strong_count(context);
+}

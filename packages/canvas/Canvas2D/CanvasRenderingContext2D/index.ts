@@ -1,4 +1,5 @@
 import { CanvasGradient } from '../CanvasGradient';
+import { createDetachedNative } from '../../detached-native';
 import { Path2D } from '../Path2D';
 import { ImageData } from '../ImageData';
 import { TextMetrics } from '../TextMetrics';
@@ -429,6 +430,19 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 
 	get native() {
 		return this.context;
+	}
+
+	// The native object is kept referenced so its collection (and any release its finalizer
+	// performs) happens exactly when it would have without the detach.
+	private _releasedNative: any = null;
+
+	/** @internal The Canvas view calls this right before it releases the native context. */
+	__detach() {
+		if (this._releasedNative) {
+			return;
+		}
+		this._releasedNative = this.context;
+		this.context = createDetachedNative(this.context);
 	}
 
 	_canvas: any;

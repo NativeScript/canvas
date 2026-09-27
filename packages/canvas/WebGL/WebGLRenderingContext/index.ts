@@ -1,4 +1,5 @@
 import { WebGLRenderingCommon } from './common';
+import { createDetachedNative } from '../../detached-native';
 
 import { WebGLShader } from '../WebGLShader';
 import { WebGLFramebuffer } from '../WebGLFramebuffer';
@@ -96,6 +97,19 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 
 	get native() {
 		return this._context;
+	}
+
+	// The native object is kept referenced so its collection (and any release its finalizer
+	// performs) happens exactly when it would have without the detach.
+	private _releasedNative: any = null;
+
+	/** @internal The Canvas view calls this right before it releases the native context. */
+	__detach() {
+		if (this._releasedNative) {
+			return;
+		}
+		this._releasedNative = this._context;
+		this._context = createDetachedNative(this._context);
 	}
 
 	get drawingBufferHeight() {

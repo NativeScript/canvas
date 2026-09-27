@@ -24,6 +24,18 @@ export class GPUCanvasContext implements CanvasRenderingContext {
 	private _swapchainViews: GPUTextureView[] = [];
 	private _swapchainTextures: GPUTexture[] = [];
 
+	// The native context is borrowed from the Canvas view, which frees it in disposeNativeView;
+	// after that every native call here is a use-after-free. On Android a destroyed SurfaceView
+	// surface leaves the swapchain unusable until the view re-creates it, and wgpu's
+	// getCurrentTexture blocks the calling (UI) thread on such a surface instead of failing.
+	// The native wrapper also presents the current texture on every vsync from its own RAF
+	// through the same raw pointer, so that RAF has to stop before either happens.
+	private _detached = false;
+	private _surfaceLost = false;
+	private _rafPaused = false;
+	private _warnedDetached = false;
+	private _warnedSurfaceLost = false;
+
 	/** @internal */
 	_registerSwapchainView(view: GPUTextureView) {
 		this._swapchainViews.push(view);
@@ -64,6 +76,9 @@ export class GPUCanvasContext implements CanvasRenderingContext {
 	}
 
 	configure(options: { device: GPUDevice; format: GPUTextureFormat; usage?: number; viewFormats?: GPUTextureFormat[]; colorSpace?: 'display-p3' | 'srgb'; alphaMode?: GPUCanvasAlphaMode; presentMode?: GPUCanvasPresentMode; size?: GPUExtent3D }) {
+		if (!this._live('configure')) {
+			return;
+		}
 		const opts = {
 			usage: GPUTextureUsage.RENDER_ATTACHMENT,
 			colorSpace: 'srgb',
@@ -74,6 +89,13 @@ export class GPUCanvasContext implements CanvasRenderingContext {
 		if (__ANDROID__ || __APPLE__ || NAPI_HOST) {
 			const adapter = (options as any)?.device?.[adapter_];
 			const capabilities = this.getCapabilities(adapter);
+
+			// Native answers with empty lists when the surface cannot be queried (destroyed, or not
+			// created yet); configuring it anyway leaves a swapchain that hangs on acquire.
+			if (!capabilities?.format?.length) {
+				console.warn('GPUCanvasContext: configure skipped — the surface reports no capabilities (destroyed or not yet created)');
+				return;
+			}
 
 			if (!options.presentMode) {
 				opts.presentMode = capabilities.presentModes[0];
@@ -170,13 +192,31 @@ export class GPUCanvasContext implements CanvasRenderingContext {
 		if (opts.size) nativeOpts.size = opts.size;
 
 		this.native.configure(nativeOpts);
+		this._surfaceLost = false;
+		this._warnedSurfaceLost = false;
+		this._resumeNativeRaf();
 	}
 
 	unconfigure() {
+		if (!this._live('unconfigure')) {
+			return;
+		}
 		this.native.unconfigure();
 	}
 
 	getCurrentTexture() {
+		if (!this._live('getCurrentTexture')) {
+			this._releaseSwapchainWrappers();
+			return null;
+		}
+		if (this._surfaceLost) {
+			if (!this._warnedSurfaceLost) {
+				this._warnedSurfaceLost = true;
+				console.warn('GPUCanvasContext.getCurrentTexture: the surface was destroyed; returning null until it is re-created');
+			}
+			this._releaseSwapchainWrappers();
+			return null;
+		}
 		// A host that presents at frame end (no presentSurface() call) leaves the last frame's
 		// wrappers here; no current texture means that frame was presented.
 		if (this.native.hasCurrentTexture === false) {
@@ -201,7 +241,9 @@ export class GPUCanvasContext implements CanvasRenderingContext {
 	}
 
 	presentSurface(_texture?: GPUTexture) {
-		this.native.presentSurface();
+		if (this._live('presentSurface') && !this._surfaceLost) {
+			this.native.presentSurface();
+		}
 		this._releaseSwapchainWrappers();
 	}
 
@@ -237,14 +279,104 @@ export class GPUCanvasContext implements CanvasRenderingContext {
 		alphaModes: GPUCanvasAlphaMode[];
 		usages: number;
 	} {
+		if (!this._live('getCapabilities')) {
+			return { format: [], presentModes: [], alphaModes: [], usages: 0 };
+		}
 		return this.native.getCapabilities(adapter.native);
 	}
 
 	__toDataURL(type: string, quality: number) {
+		if (!this._live('__toDataURL')) {
+			return 'data:,';
+		}
 		if (this[device_]) {
 			return this.native.__toDataURL(type, quality);
 		} else {
 			return (<any>this.canvas)._canvas.toDataURL(type, quality);
 		}
+	}
+
+	/**
+	 * @internal The Canvas view calls this right before it releases the native context. The native
+	 * wrapper object is kept: its finalizer drops the context's refcount, so letting it be collected
+	 * early would double-release against the view's own release.
+	 */
+	__detach() {
+		if (this._detached) {
+			return;
+		}
+		this._detached = true;
+		this._stopNativeRaf();
+		this._releaseSwapchainWrappers();
+		this[device_] = null;
+	}
+
+	/** @internal Android: the SurfaceView surface is gone; nothing may touch the swapchain. */
+	__surfaceLost() {
+		this._surfaceLost = true;
+		this._warnedSurfaceLost = false;
+		this._stopNativeRaf();
+		this._releaseSwapchainWrappers();
+	}
+
+	/**
+	 * @internal Android: a surface exists again. The view re-attaches the swapchain natively on
+	 * resize, so rendering resumes as soon as the surface answers a capabilities query; a surface
+	 * that reports nothing stays paused until a later resize or a successful configure().
+	 */
+	__surfaceRestored() {
+		if (!this._surfaceLost || this._detached || !this[native_]) {
+			return;
+		}
+		const adapter = (this[device_] as any)?.[adapter_];
+		if (!adapter) {
+			this._surfaceLost = false;
+			return;
+		}
+		let capabilities: any;
+		try {
+			capabilities = this.native.getCapabilities(adapter.native);
+		} catch {}
+		if (capabilities?.format?.length) {
+			this._surfaceLost = false;
+			this._warnedSurfaceLost = false;
+			this._resumeNativeRaf();
+		}
+	}
+
+	private _stopNativeRaf() {
+		const native = this[native_];
+		if (!native || typeof native.__stopRaf !== 'function') {
+			return;
+		}
+		try {
+			native.__stopRaf();
+			this._rafPaused = true;
+		} catch {}
+	}
+
+	private _resumeNativeRaf() {
+		if (!this._rafPaused) {
+			return;
+		}
+		this._rafPaused = false;
+		const native = this[native_];
+		if (!native || typeof native.__startRaf !== 'function' || native.continuousRenderMode === false) {
+			return;
+		}
+		try {
+			native.__startRaf();
+		} catch {}
+	}
+
+	private _live(method: string): boolean {
+		if (this._detached || !this[native_]) {
+			if (!this._warnedDetached) {
+				this._warnedDetached = true;
+				console.warn(`GPUCanvasContext.${method}: the canvas released its native context; call ignored`);
+			}
+			return false;
+		}
+		return true;
 	}
 }

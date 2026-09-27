@@ -6,8 +6,9 @@
 #   TARGET   x86_64-pc-windows-msvc | aarch64-pc-windows-msvc
 #   PROFILE  release-napi (default; panic=unwind so the host app survives a panic) or dev
 #   CRATE    canvas-napi (default: @nativescript/canvas, canvasnative.node), canvas-svg-napi
-#            (@nativescript/canvas-svg, canvassvg.node) or audio-context-napi
-#            (@nativescript/audio-context, audiocontext.node)
+#            (@nativescript/canvas-svg, canvassvg.node), audio-context-napi
+#            (@nativescript/audio-context, audiocontext.node) or canvas-media-napi
+#            (@nativescript/canvas-media, canvasmedia.node)
 
 set -e
 
@@ -26,6 +27,7 @@ case "$CRATE" in
   canvas-napi)     PACKAGE="$ROOT/packages/canvas";     NAME=canvasnative ;;
   canvas-svg-napi) PACKAGE="$ROOT/packages/canvas-svg"; NAME=canvassvg ;;
   audio-context-napi) PACKAGE="$ROOT/packages/audio-context"; NAME=audiocontext ;;
+  canvas-media-napi) PACKAGE="$ROOT/packages/canvas-media"; NAME=canvasmedia ;;
   *)
     echo "unsupported crate: $CRATE"
     exit 1

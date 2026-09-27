@@ -1,0 +1,45 @@
+[package]
+name = "canvas-media-napi"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Node-API binding for @nativescript/canvas-media on Windows: MediaPlayer events and frame-server frames for the Video and Audio views."
+
+[lib]
+crate-type = ["cdylib"]
+
+[features]
+default = ["napi8"]
+napi8 = ["napi/napi8"]
+# Hosts whose Node-API lacks type tags (NativeScript Windows on JavaScriptCore).
+napi7 = ["napi/napi7"]
+
+[dependencies]
+napi = { version = "3.13.0", default-features = false, features = ["dyn-symbols"] }
+napi-derive = "3.6.9"
+
+[target.'cfg(target_os = "windows")'.dependencies]
+# `#[windows::core::interface]` (ISurfaceImageSourceNative) expands to `windows_core` paths.
+windows-core = "0.62"
+# IVectorView<AudioEncodingProperties> for the audio tap's supported formats.
+windows-collections = "0.3"
+windows = { workspace = true, features = [
+  "Foundation",
+  "Foundation_Collections",
+  "Graphics_DirectX_Direct3D11",
+  "Media_Core",
+  "Media_Effects",
+  "Media_MediaProperties",
+  "Media_Playback",
+  "Win32_Foundation",
+  "Win32_Graphics_Direct3D",
+  "Win32_Graphics_Direct3D11",
+  "Win32_Graphics_Dxgi",
+  "Win32_Graphics_Dxgi_Common",
+  "Win32_System_WinRT",
+  "Win32_Security",
+  "Win32_System_WinRT_Direct3D11",
+] }
+
+[build-dependencies]
+napi-build = "2.5.0"

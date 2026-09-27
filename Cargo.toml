@@ -15,6 +15,7 @@ members = [
     "crates/canvas-napi",
     "crates/canvas-svg-napi",
     "crates/audio-context-napi",
+    "crates/canvas-media-napi",
     "crates/canvas-svg-ios",
     "crates/canvas-svg-android",
 ]

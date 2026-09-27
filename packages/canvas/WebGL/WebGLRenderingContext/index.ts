@@ -320,7 +320,10 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 	}
 
 	@profile
-	deleteShader(shader: WebGLRenderbuffer): void {
+	deleteShader(shader: WebGLShader | null): void {
+		if (!shader) {
+			return;
+		}
 		this.native.deleteShader(shader.native);
 	}
 

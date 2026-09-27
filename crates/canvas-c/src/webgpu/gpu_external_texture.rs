@@ -56,12 +56,11 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_import_external_texture(
         return std::ptr::null();
     }
 
-    let Some(plane) = super::gpu_native_texture::import_platform_texture(
-        &device.device,
-        native_texture,
-        width,
-        height,
-    ) else {
+    #[cfg(target_os = "windows")]
+    let plane = super::gpu_shared_frame::import_external_plane(device, native_texture, width, height);
+    #[cfg(not(target_os = "windows"))]
+    let plane = super::gpu_native_texture::import_platform_texture(&device.device, native_texture, width, height);
+    let Some(plane) = plane else {
         return std::ptr::null();
     };
 

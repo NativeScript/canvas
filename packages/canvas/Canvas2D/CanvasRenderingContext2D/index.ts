@@ -1176,7 +1176,7 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 		this.context.fillRect(x, y, width, height);
 	}
 
-	fillText(text: string, x: number, y: number, maxWidth: number): void {
+	fillText(text: string, x: number, y: number, maxWidth?: number): void {
 		if (typeof maxWidth === 'number') {
 			this.context.fillText(text + '', x, y, maxWidth);
 		} else {

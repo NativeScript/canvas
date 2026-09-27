@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <PropertyGroup>
+    <_NSCanvasMediaArch Condition="'$(NSLibPlatform)' != ''">$(NSLibPlatform)</_NSCanvasMediaArch>
+    <_NSCanvasMediaArch Condition="'$(_NSCanvasMediaArch)' == '' and ('$(Platform)' == 'ARM64' or '$(Platform)' == 'arm64')">arm64</_NSCanvasMediaArch>
+    <!-- x64 when $(Platform) is unset/AnyCPU during evaluation. -->
+    <_NSCanvasMediaArch Condition="'$(_NSCanvasMediaArch)' == '' or '$(_NSCanvasMediaArch)' == 'x86_64'">x64</_NSCanvasMediaArch>
+    <_NSCanvasMediaDir>$(MSBuildThisFileDirectory)$(_NSCanvasMediaArch)\</_NSCanvasMediaDir>
+  </PropertyGroup>
+
+  <!-- An explicit Copy: with EnableMsixTooling, Content items do not reliably reach $(OutDir). -->
+  <Target Name="CopyNativeScriptCanvasMedia" AfterTargets="Build">
+    <ItemGroup>
+      <_NSCanvasMediaFiles Include="$(_NSCanvasMediaDir)*.node" />
+    </ItemGroup>
+    <Warning Text="[@nativescript/canvas-media] No native module for $(_NSCanvasMediaArch) in $(_NSCanvasMediaDir); build it with `make windows-media`." Condition="!Exists('$(_NSCanvasMediaDir)canvasmedia.node')" />
+    <Copy SourceFiles="@(_NSCanvasMediaFiles)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+  </Target>
+
+  <!-- canvasmedia.node also serves the audio-tap effect class, which Media Foundation activates by name. -->
+  <ItemGroup>
+    <!-- Keep in sync with tap::TAP_CLASS in crates/canvas-media-napi. -->
+    <NSCanvasMediaActivatableClass Include="NativeScript.CanvasMedia.AudioTap" />
+  </ItemGroup>
+
+  <Target Name="NSRegisterCanvasMediaActivatableClasses"
+          AfterTargets="ApplyManifestOverrides;MergeAppResourcesManifest"
+          BeforeTargets="Build"
+          Condition="Exists('$(MSBuildProjectDirectory)\Package.appxmanifest')">
+    <Message Text="[@nativescript/canvas-media] Registering NativeScript.CanvasMedia activatable classes in Package.appxmanifest" Importance="normal" />
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -Command &quot;$ErrorActionPreference='Stop'; $p='$(MSBuildProjectDirectory)\Package.appxmanifest'; if(-not (Test-Path $p)){exit 0}; $dll='canvasmedia.node'; $ids='@(NSCanvasMediaActivatableClass)'.Split(';'); [xml]$d=Get-Content -LiteralPath $p; $ns='http://schemas.microsoft.com/appx/manifest/foundation/windows10'; $m=New-Object System.Xml.XmlNamespaceManager($d.NameTable); $m.AddNamespace('a',$ns); $pkg=$d.DocumentElement; $ext=$pkg.SelectSingleNode('a:Extensions',$m); if(-not $ext){$ext=$d.CreateElement('Extensions',$ns);[void]$pkg.AppendChild($ext)}; $srv=$ext.SelectSingleNode('a:Extension[@Category=''windows.activatableClass.inProcessServer'']/a:InProcessServer[a:Path=''' + $dll + ''']',$m); if(-not $srv){$e=$d.CreateElement('Extension',$ns);$e.SetAttribute('Category','windows.activatableClass.inProcessServer');$srv=$d.CreateElement('InProcessServer',$ns);$pa=$d.CreateElement('Path',$ns);$pa.InnerText=$dll;[void]$srv.AppendChild($pa);[void]$e.AppendChild($srv);[void]$ext.AppendChild($e)}; $have=@($srv.SelectNodes('a:ActivatableClass',$m)|ForEach-Object{$_.GetAttribute('ActivatableClassId')}); $chg=$false; foreach($id in $ids){if($id -and ($have -notcontains $id)){$c=$d.CreateElement('ActivatableClass',$ns);$c.SetAttribute('ActivatableClassId',$id);$c.SetAttribute('ThreadingModel','both');[void]$srv.AppendChild($c);$chg=$true}}; if($chg){$d.Save($p)}&quot;" />
+  </Target>
+</Project>

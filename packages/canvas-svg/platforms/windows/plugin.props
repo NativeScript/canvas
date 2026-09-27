@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- @nativescript/canvas-svg on Windows: the Node-API addon (canvassvg.node) under x64\ and
+     arm64\. plugin.targets copies it next to the app's executable, where the runtime resolves
+     require('system_lib://canvassvg.node'). -->
+<Project />

@@ -74,6 +74,7 @@ export { runSpecTests, specResults, setSpecPageCanvas } from './spec';
 export { runCanvasPerf } from './canvas2d/perf';
 export { runImageBitmapPerf } from './canvas2d/imagebitmap-perf';
 export { runWebGLPerf } from './webgl/perf';
+export { WEBGPU_SAMPLES, runWebGPUSample } from './webgpu/samples';
 export { runBoundsProbe } from './bounds-probe';
 export { runCallBound } from './callbound-native';
 export { profileDemo } from './canvas2d/profile';

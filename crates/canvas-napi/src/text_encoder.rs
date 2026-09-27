@@ -1,6 +1,6 @@
-use napi::bindgen_prelude::{Buffer, ObjectFinalize};
+use napi::bindgen_prelude::{ObjectFinalize, Uint8Array};
 use napi::*;
-use std::ffi::{CStr, CString, NulError};
+use std::ffi::CString;
 
 #[napi(custom_finalize)]
 pub struct TextEncoder {
@@ -50,15 +50,23 @@ impl TextEncoder {
         }
     }
 
+    /// Lower case, as the V8 bindings (and the web) report it: `"utf-8"`.
     #[napi(getter)]
-    pub fn encoding(&self) -> &str {
+    pub fn encoding(&self) -> String {
         let encoder = unsafe { &*self.encoder };
-        encoder.encoding()
+        encoder.encoding().to_lowercase()
     }
 
+    /// A `Uint8Array` over the encoded bytes. UTF-8 (every encoder, per the spec) costs one copy,
+    /// out of the JS string; the array takes the bytes as they are.
     #[napi]
-    pub fn encode(&self, text: String) -> Buffer {
-        let encoder = unsafe { &mut *self.encoder };
-        Buffer::from(encoder.encode(&text))
+    pub fn encode(&self, text: Option<String>) -> Uint8Array {
+        let text = text.unwrap_or_default();
+        let encoder = unsafe { &*self.encoder };
+        if encoder.encoding() == "UTF-8" {
+            Uint8Array::new(text.into_bytes())
+        } else {
+            Uint8Array::new(encoder.encode(&text))
+        }
     }
 }

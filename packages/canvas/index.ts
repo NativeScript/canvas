@@ -24,6 +24,8 @@ export * from './WebGL2';
 export * from './WebGPU';
 
 import { FontFace, FontFaceSet } from '@nativescript/font-manager';
+import { NAPI_HOST } from './platform';
+import { onFontLoaded } from './platform/index';
 
 const url_ex = /url\(([^)]+?)\.(woff2?|ttf|otf|eot)\)/;
 declare const org, kotlin;
@@ -50,6 +52,16 @@ if (__ANDROID__) {
 			}),
 		);
 	} catch {}
+}
+
+if (NAPI_HOST) {
+	onFontLoaded((path, family) => {
+		try {
+			// As on the other platforms: a TrueType font registers under its own name.
+			const useAlias = !/\.ttf$/i.test(path);
+			global.CanvasModule.__addFontFamily(useAlias ? family : null, [path]);
+		} catch {}
+	});
 }
 
 if (__APPLE__) {

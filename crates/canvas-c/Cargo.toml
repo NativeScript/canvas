@@ -10,6 +10,8 @@ webgl = ["dep:canvas-webgl"]
 gl = ["canvas-2d/gl"]
 vulkan = ["canvas-2d/vulkan"]
 metal = ["canvas-2d/metal"]
+# Windows: 2D on Direct3D 12 (see canvas_native_context_create_d3d).
+d3d = ["canvas-2d/d3d"]
 
 [dependencies]
 base64 = "0.22.1"
@@ -54,6 +56,11 @@ objc2-foundation = { workspace = true }
 objc2-metal = { workspace = true }
 objc2-quartz-core = { workspace = true, features = ["CADisplayLink", "objc2-core-foundation"] }
 objc2-core-foundation = { workspace = true }
+
+# Windows: WebGPU on Direct3D 12 (surfaces from WinUI SwapChainPanels).
+[target.'cfg(target_os="windows")'.dependencies]
+wgpu-core = { workspace = true, features = ["wgsl", "dx12"] }
+wgpu-hal = { workspace = true, features = ["dx12"] }
 
 [target.'cfg(target_os="android")'.dependencies]
 ndk = { version = "0.7.0", features = ["bitmap"] }

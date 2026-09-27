@@ -6,6 +6,10 @@ module.exports = (env) => {
 	webpack.useConfig('typescript');
 
 	webpack.chainWebpack((config) => {
+		// The demo pins typescript (for ts-loader), which would switch on the type checker; it has
+		// never type-checked (packages/ include every platform's sources), so keep it off.
+		config.plugins.delete('ForkTsCheckerWebpackPlugin');
+
 		// shared demo code
 		config.resolve.alias.set('@demo/shared', resolve(__dirname, '..', '..', 'tools', 'demo'));
 		//config.resolve.alias.set('three', 'three/webgpu');
@@ -37,6 +41,8 @@ module.exports = (env) => {
 		from: '../../../tools/demo/canvas/assets',
 		to: 'assets/file-assets',
 		context: webpack.Utils.project.getProjectFilePath('node_modules'),
+		// Windows' MSIX packaging cannot take file names with parentheses or commas.
+		filter: (file) => webpack.Utils.platform.getPlatformName() !== 'windows' || !/[(),]/.test(require('path').basename(file)),
 	});
 
 	webpack.Utils.addCopyRule({

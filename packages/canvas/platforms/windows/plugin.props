@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- @nativescript/canvas on Windows: the Node-API addon (canvasnative.node) and, with WebGL, the
+     ANGLE DLLs it loads, under x64\ and arm64\. plugin.targets copies them next to the app's
+     executable, where the runtime resolves require('system_lib://canvasnative.node'). -->
+<Project />

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <PropertyGroup>
+    <_NSAudioContextArch Condition="'$(NSLibPlatform)' != ''">$(NSLibPlatform)</_NSAudioContextArch>
+    <_NSAudioContextArch Condition="'$(_NSAudioContextArch)' == '' and ('$(Platform)' == 'ARM64' or '$(Platform)' == 'arm64')">arm64</_NSAudioContextArch>
+    <!-- x64 when $(Platform) is unset/AnyCPU during evaluation. -->
+    <_NSAudioContextArch Condition="'$(_NSAudioContextArch)' == '' or '$(_NSAudioContextArch)' == 'x86_64'">x64</_NSAudioContextArch>
+    <_NSAudioContextDir>$(MSBuildThisFileDirectory)$(_NSAudioContextArch)\</_NSAudioContextDir>
+  </PropertyGroup>
+
+  <!-- An explicit Copy: with EnableMsixTooling, Content items do not reliably reach $(OutDir). -->
+  <Target Name="CopyNativeScriptAudioContext" AfterTargets="Build">
+    <ItemGroup>
+      <_NSAudioContextFiles Include="$(_NSAudioContextDir)*.node" />
+    </ItemGroup>
+    <Warning Text="[@nativescript/audio-context] No native module for $(_NSAudioContextArch) in $(_NSAudioContextDir); build it with `make windows-audio`." Condition="!Exists('$(_NSAudioContextDir)audiocontext.node')" />
+    <Copy SourceFiles="@(_NSAudioContextFiles)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+  </Target>
+</Project>

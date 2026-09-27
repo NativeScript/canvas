@@ -60,6 +60,8 @@ pub mod surface_vulkan;
 
 #[cfg(feature = "metal")]
 pub mod surface_metal;
+#[cfg(all(feature = "d3d", target_os = "windows"))]
+pub mod surface_d3d;
 
 #[derive(Clone)]
 pub struct State {
@@ -145,6 +147,7 @@ pub enum SurfaceEngine {
     GL,
     Vulkan,
     Metal,
+    D3D,
 }
 
 bitflags! {
@@ -211,8 +214,11 @@ pub struct Context {
     // an already-destroyed device.
     pub(crate) surface: Surface,
     pub(crate) surface_state: SurfaceState,
-    #[cfg(any(feature = "gl", feature = "vulkan", feature = "metal"))]
+    #[cfg(any(feature = "gl", feature = "vulkan", feature = "metal", feature = "d3d"))]
     pub(crate) direct_context: Option<skia_safe::gpu::DirectContext>,
+    /// Windows: the D3D12 device and swapchain. After `direct_context`, which must drop first.
+    #[cfg(all(feature = "d3d", target_os = "windows"))]
+    pub d3d: Option<surface_d3d::D3DTarget>,
     #[cfg(feature = "vulkan")]
     pub vulkan_context: Option<canvas_core::gpu::vulkan::VulkanContext>,
     #[cfg(feature = "vulkan")]
@@ -271,7 +277,7 @@ impl Context {
     }
 
     pub fn submit(&mut self) {
-        #[cfg(any(feature = "gl", feature = "vulkan", feature = "metal"))]
+        #[cfg(any(feature = "gl", feature = "vulkan", feature = "metal", feature = "d3d"))]
         match self.direct_context.as_mut() {
             Some(ctx) => {
                 ctx.submit(None);
@@ -285,7 +291,7 @@ impl Context {
     }
 
     pub fn flush_surface(&mut self) {
-        #[cfg(any(feature = "gl", feature = "vulkan", feature = "metal"))]
+        #[cfg(any(feature = "gl", feature = "vulkan", feature = "metal", feature = "d3d"))]
         match self.direct_context.as_mut() {
             Some(ctx) => {
                 ctx.flush_and_submit();
@@ -299,7 +305,7 @@ impl Context {
     }
 
     pub fn flush_submit_and_sync_cpu(&mut self) {
-        #[cfg(any(feature = "gl", feature = "vulkan", feature = "metal"))]
+        #[cfg(any(feature = "gl", feature = "vulkan", feature = "metal", feature = "d3d"))]
         match self.direct_context.as_mut() {
             Some(ctx) => {
                 ctx.flush_submit_and_sync_cpu();
@@ -455,10 +461,8 @@ impl Context {
 
         let snapshot = self.surface.image_snapshot();
 
-        let ret = if self.surface_data.engine == SurfaceEngine::GL
-            || self.surface_data.engine == SurfaceEngine::Vulkan
-            || self.surface_data.engine == SurfaceEngine::Metal
-        {
+        // A GPU snapshot is only readable through its context: copy it to the CPU.
+        let ret = if self.surface_data.engine != SurfaceEngine::CPU {
             snapshot.make_raster_image(self.direct_context.as_mut(), CachingHint::Allow)
         } else {
             Some(snapshot)
@@ -476,10 +480,8 @@ impl Context {
         }
 
         let snapshot = self.surface.image_snapshot();
-        if self.surface_data.engine == SurfaceEngine::GL
-            || self.surface_data.engine == SurfaceEngine::Vulkan
-            || self.surface_data.engine == SurfaceEngine::Metal
-        {
+        // A GPU snapshot is only readable through its context: copy it to the CPU.
+        if self.surface_data.engine != SurfaceEngine::CPU {
             snapshot.make_raster_image(self.direct_context.as_mut(), Some(CachingHint::Allow))
         } else {
             Some(snapshot)

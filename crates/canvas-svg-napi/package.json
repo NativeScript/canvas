@@ -1,0 +1,19 @@
+{
+	"name": "@nativescript/canvas-svg-napi",
+	"private": true,
+	"version": "0.1.0",
+	"description": "Node-API build of the canvas-svg native module (global.SVGModule).",
+	"napi": {
+		"binaryName": "canvassvg",
+		"targets": [
+			"x86_64-pc-windows-msvc",
+			"aarch64-pc-windows-msvc"
+		]
+	},
+	"scripts": {
+		"test": "node --expose-gc --test \"__test__/*.test.mjs\""
+	},
+	"engines": {
+		"node": ">=20"
+	}
+}

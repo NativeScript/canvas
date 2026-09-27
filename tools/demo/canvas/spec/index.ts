@@ -6,7 +6,8 @@
  *   adb logcat -d | grep 'SPEC|'
  *
  * `--es suite <prefix>` narrows the run: a group (`2d`, `webgl`, `webgpu`,
- * `imagebitmap`, `bitmaprenderer`) or a single suite (`2d.path2d`).
+ * `imagebitmap`, `bitmaprenderer`, `audio` on Windows) or a single suite (`2d.path2d`).
+ * `contextlost` (Windows) runs on its own: it removes the GPU device.
  */
 
 import { runAll, results, setPageCanvas } from './harness';
@@ -16,6 +17,10 @@ import { registerWebGLSpec } from './webgl';
 import { registerWebGPUSpec } from './webgpu';
 import { registerCanvasSourceSpec } from './canvassource';
 import { registerScalingSpec } from './scaling';
+import { registerContextLossSpec } from './contextloss';
+import { registerAudioSpec } from './audio';
+
+declare const __WINDOWS__: boolean;
 
 export type SpecGroup = string;
 
@@ -30,6 +35,13 @@ export async function runSpecTests(group: SpecGroup = 'all') {
 	registerWebGPUSpec();
 	registerCanvasSourceSpec();
 	registerScalingSpec();
+	if (typeof __WINDOWS__ !== 'undefined' && __WINDOWS__) {
+		registerAudioSpec();
+	}
+	// Only when asked for: removing the GPU device takes every other GPU suite in the process with it.
+	if (group === 'contextlost') {
+		registerContextLossSpec();
+	}
 
 	const summary = await runAll(group);
 	console.log(`SPEC|done|${group}|${Date.now() - started}ms`);

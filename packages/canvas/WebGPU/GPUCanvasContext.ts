@@ -7,6 +7,7 @@ import type { GPUAdapter } from './GPUAdapter';
 import type { GPUCanvasAlphaMode, GPUCanvasPresentMode, GPUExtent3D, GPUTextureFormat } from './Types';
 import type { CanvasRenderingContext } from '../common';
 import type { Canvas } from '../Canvas';
+import { NAPI_HOST, POINTER_CONTEXT_HOST } from '../platform';
 const device_ = Symbol('[[device]]');
 export class GPUCanvasContext implements CanvasRenderingContext {
 	_type;
@@ -34,7 +35,7 @@ export class GPUCanvasContext implements CanvasRenderingContext {
 			nativeContext = context.getNativeContext().toString();
 		}
 
-		if (__APPLE__) {
+		if (POINTER_CONTEXT_HOST) {
 			nativeContext = context.nativeContext.toString();
 		}
 
@@ -70,7 +71,7 @@ export class GPUCanvasContext implements CanvasRenderingContext {
 			presentMode: 'fifo',
 			...options,
 		};
-		if (__ANDROID__ || __APPLE__) {
+		if (__ANDROID__ || __APPLE__ || NAPI_HOST) {
 			const adapter = (options as any)?.device?.[adapter_];
 			const capabilities = this.getCapabilities(adapter);
 
@@ -176,6 +177,11 @@ export class GPUCanvasContext implements CanvasRenderingContext {
 	}
 
 	getCurrentTexture() {
+		// A host that presents at frame end (no presentSurface() call) leaves the last frame's
+		// wrappers here; no current texture means that frame was presented.
+		if (this.native.hasCurrentTexture === false) {
+			this._releaseSwapchainWrappers();
+		}
 		const current = this.native.getCurrentTexture();
 		if (!current) {
 			console.error('GPUCanvasContext.getCurrentTexture: native returned empty — context may not be configured');
@@ -196,7 +202,11 @@ export class GPUCanvasContext implements CanvasRenderingContext {
 
 	presentSurface(_texture?: GPUTexture) {
 		this.native.presentSurface();
-		// release this frame's swapchain views and textures (their point of death)
+		this._releaseSwapchainWrappers();
+	}
+
+	// release this frame's swapchain views and textures (their point of death)
+	private _releaseSwapchainWrappers() {
 		const views = this._swapchainViews;
 		if (views.length > 0) {
 			this._swapchainViews = [];

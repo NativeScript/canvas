@@ -20,6 +20,8 @@ import { Canvas } from '../../Canvas';
 import { ImageBitmap } from '../../ImageBitmap';
 
 import { Helpers } from '../../helpers';
+import { NAPI_HOST, POINTER_CONTEXT_HOST } from '../../platform';
+import { imageAssetFor } from '../../platform/index';
 
 export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 	static {
@@ -35,7 +37,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 			nativeContext = context.getNativeContextString();
 		}
 
-		if (__APPLE__) {
+		if (POINTER_CONTEXT_HOST) {
 			nativeContext = context.nativeContext.toString();
 		}
 
@@ -409,7 +411,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		} else if (__ANDROID__ && source instanceof android.graphics.Bitmap) {
 			this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, source);
 		} else if (source instanceof ImageSource) {
-			this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, source.android);
+			this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, NAPI_HOST ? imageAssetFor(source)?.native : source.android);
 		} else if (source instanceof ImageAsset) {
 			this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, source.native);
 		} else if (source instanceof Canvas) {
@@ -418,14 +420,14 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 			this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, source.native);
 		} else if (source && typeof source.tagName === 'string' && (source.tagName === 'IMG' || source.tagName === 'IMAGE')) {
 			if (source._imageSource instanceof ImageSource) {
-				this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, source._imageSource.android);
+				this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, NAPI_HOST ? imageAssetFor(source._imageSource)?.native : source._imageSource.android);
 			} else if (__ANDROID__ && source._image instanceof android.graphics.Bitmap) {
 				this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, source._image);
 			} else if (source._asset instanceof ImageAsset) {
 				this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, source._asset.native);
 			} else if (typeof source.src === 'string') {
 				const result = ImageSource.fromFileSync(source.src);
-				this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, result ? result.android : null);
+				this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, result ? (NAPI_HOST ? imageAssetFor(result)?.native : result.android) : null);
 			}
 		} else if (source && typeof source.tagName === 'string' && source.tagName === 'CANVAS' && source._canvas instanceof Canvas) {
 			this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, source._canvas.native);
@@ -462,7 +464,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		} else if (__ANDROID__ && srcData instanceof android.graphics.Bitmap) {
 			this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData);
 		} else if (srcData instanceof ImageSource) {
-			this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData.android);
+			this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, NAPI_HOST ? imageAssetFor(srcData)?.native : srcData.android);
 		} else if (srcData instanceof ImageAsset) {
 			this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData.native);
 		} else if (srcData instanceof Canvas) {
@@ -471,14 +473,14 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 			this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData.native);
 		} else if (srcData && typeof srcData.tagName === 'string' && (srcData.tagName === 'IMG' || srcData.tagName === 'IMAGE')) {
 			if (srcData._imageSource instanceof ImageSource) {
-				this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData._imageSource.android);
+				this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, NAPI_HOST ? imageAssetFor(srcData._imageSource)?.native : srcData._imageSource.android);
 			} else if (__ANDROID__ && srcData._image instanceof android.graphics.Bitmap) {
 				this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData._image);
 			} else if (srcData._asset instanceof ImageAsset) {
 				this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData._asset.native);
 			} else if (typeof srcData.src === 'string') {
 				const result = ImageSource.fromFileSync(srcData.src);
-				this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, result ? result.android : null);
+				this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, result ? (NAPI_HOST ? imageAssetFor(result)?.native : result.android) : null);
 			}
 		} else if (srcData && typeof srcData.tagName === 'string' && srcData.tagName === 'CANVAS' && srcData._canvas instanceof Canvas) {
 			this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData._canvas.native);

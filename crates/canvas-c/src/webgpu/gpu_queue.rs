@@ -279,29 +279,10 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_webgl_to_texture(
     if source.source.is_null() {
         return;
     }
-    let webgl = &*source.source;
-
-    webgl.0.make_current();
-    let width = webgl.0.get_drawing_buffer_width();
-    let height = webgl.0.get_drawing_buffer_height();
-
-    // glReadPixels wants a component *type* here; GL_RGBA fails with GL_INVALID_ENUM.
-    let row_size =
-        bytes_per_pixel(gl_bindings::UNSIGNED_BYTE as u32, gl_bindings::RGBA as u32) as i32;
-
-    let mut bytes = vec![0u8; (width * height * row_size) as usize];
-    unsafe {
-        gl_bindings::Flush();
-        gl_bindings::ReadPixels(
-            0,
-            0,
-            width,
-            height,
-            gl_bindings::RGBA as u32,
-            gl_bindings::UNSIGNED_BYTE as u32,
-            bytes.as_mut_ptr() as *mut c_void,
-        );
-    }
+    // An image: RGBA8, top row first (flip_y then flips it, as for the other sources).
+    let (width, height, mut bytes) = canvas_webgl::webgl::canvas_native_webgl_read_drawing_buffer(
+        &mut (*(source.source as *mut crate::webgl::WebGLState)).0,
+    );
 
     {
         let destination = &*destination;
@@ -342,102 +323,43 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_context_to_texture(
         return;
     }
 
-    let source = &*source;
-    let destination = &*destination;
-
-    if source.source.is_null() || destination.texture.is_null() {
+    let copy = &*source;
+    let destination_texture = &*(*destination).texture;
+    if copy.source.is_null() || (*destination).texture.is_null() {
         return;
     }
-    let context = &mut *(source.source as *mut crate::c2d::CanvasRenderingContext2D);
+    let context = &mut *(copy.source as *mut crate::c2d::CanvasRenderingContext2D);
 
+    // The whole canvas, in the destination's byte order; the origin / size window and flipY are
+    // applied like for any other image.
     let (width, height) = context.context.dimensions();
-
-    let queue = &*queue;
-
-    let destination_texture = &*destination.texture;
-
-    let size = *size;
-
-    let size: wgt::Extent3d = size.into();
-
-    let destination_texture_id = Arc::clone(&destination_texture.texture);
-
-    let source_width = width as u32;
-
-    let source_height = height as u32;
-
-    let bytes_per_row = 4;
-
-    let data_layout = wgt::TexelCopyBufferLayout {
-        offset: 0,
-        bytes_per_row: Some(size.width * bytes_per_row as u32),
-        rows_per_image: Some(size.height),
-    };
-
-    let destination = wgt::TexelCopyTextureInfo {
-        texture: destination_texture_id,
-        mip_level: destination.mip_level,
-        origin: destination.origin.into(),
-        aspect: destination.aspect.into(),
-    };
-
-    if source.origin.x > 0
-        || source.origin.y > 0
-        || (size.width > source_width || size.height > source_height)
-    {
-        let mut data = vec![0u8; (size.width * size.height * 4) as usize];
-
-        match destination_texture.format {
-            CanvasGPUTextureFormat::Bgra8Unorm | CanvasGPUTextureFormat::Bgra8UnormSrgb => {
-                context.context.get_pixels_format(
-                    data.as_mut_slice(),
-                    (source.origin.x as i32, source.origin.y as i32),
-                    (size.width as i32, size.height as i32),
-                    canvas_2d::context::ColorType::BGRA8888,
-                );
-            }
-            _ => {
-                context.context.get_pixels(
-                    data.as_mut_slice(),
-                    (source.origin.x as i32, source.origin.y as i32),
-                    (size.width as i32, size.height as i32),
-                );
-            }
+    let (width, height) = (width as u32, height as u32);
+    let mut data = vec![0u8; (width * height * 4) as usize];
+    match destination_texture.format {
+        CanvasGPUTextureFormat::Bgra8Unorm | CanvasGPUTextureFormat::Bgra8UnormSrgb => {
+            context.context.get_pixels_format(
+                data.as_mut_slice(),
+                (0, 0),
+                (width as i32, height as i32),
+                canvas_2d::context::ColorType::BGRA8888,
+            );
         }
-
-        // todo use current vec
-        // let data = get_offset_image(
-        //     data.as_slice(),
-        //     source_width as usize,
-        //     source_height as usize,
-        //     source.origin.x as usize,
-        //     source.origin.y as usize,
-        //     size.width as usize,
-        //     size.height as usize,
-        // );
-        queue.queue.id.write_texture(destination, data.as_slice(), &data_layout, &size);
-    } else {
-        let mut data = vec![0u8; (width * height * 4.) as usize];
-
-        match destination_texture.format {
-            CanvasGPUTextureFormat::Bgra8Unorm | CanvasGPUTextureFormat::Bgra8UnormSrgb => {
-                context.context.get_pixels_format(
-                    data.as_mut_slice(),
-                    (0, 0),
-                    (width as i32, height as i32),
-                    canvas_2d::context::ColorType::BGRA8888,
-                );
-            }
-            _ => {
-                context.context.get_pixels(
-                    data.as_mut_slice(),
-                    (0, 0),
-                    (width as i32, height as i32),
-                );
-            }
+        _ => {
+            context
+                .context
+                .get_pixels(data.as_mut_slice(), (0, 0), (width as i32, height as i32));
         }
-        queue.queue.id.write_texture(destination, data.as_slice(), &data_layout, &size);
     }
+
+    let image = CanvasImageCopyExternalImage {
+        source: data.as_ptr(),
+        source_size: data.len(),
+        origin: copy.origin,
+        flip_y: copy.flip_y,
+        width,
+        height,
+    };
+    canvas_native_webgpu_queue_copy_external_image_to_texture(queue, &image, destination, size);
 }
 
 #[no_mangle]
@@ -530,45 +452,10 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_external_image_to_textu
 
     let data = std::slice::from_raw_parts(source.source, source.source_size);
 
-    fn round_up_to_256_u32(v: u32) -> u32 { (v + 255) & !255 }
-
     let mut bpp = 0usize;
     if source.width != 0 && source.height != 0 {
         bpp = data.len() / (source.width as usize * source.height as usize);
     }
-
-    let use_direct = bpp == 4
-        && source.origin.x == 0
-        && source.origin.y == 0
-        && (size.width == source.width && size.height == source.height)
-        && round_up_to_256_u32(source.width * 4) as usize == (source.width as usize * 4);
-
-    if use_direct {
-        let bytes_per_row = source.width * 4;
-        let data_layout = wgt::TexelCopyBufferLayout {
-            offset: 0,
-            bytes_per_row: Some(bytes_per_row),
-            rows_per_image: Some(source.height),
-        };
-
-        let destination = wgt::TexelCopyTextureInfo {
-            texture: destination_texture_id,
-            mip_level: destination.mip_level,
-            origin: destination.origin.into(),
-            aspect: destination.aspect.into(),
-        };
-
-        queue.queue.id.write_texture(destination, data, &data_layout, &size);
-return;
-    }
-
-    let (mut upload_data, bytes_per_row) = prepare_external_image_upload_reuse(data, source.width, source.height);
-
-    let data_layout = wgt::TexelCopyBufferLayout {
-        offset: 0,
-        bytes_per_row: Some(source.width * bytes_per_row),
-        rows_per_image: Some(source.height),
-    };
 
     let destination = wgt::TexelCopyTextureInfo {
         texture: destination_texture_id,
@@ -577,27 +464,56 @@ return;
         aspect: destination.aspect.into(),
     };
 
-    if source.origin.x > 0
-        || source.origin.y > 0
-        || (size.width > source.width || size.height > source.height)
+    // RGBA8, the whole image, not flipped: straight from the caller's buffer. (write_texture has
+    // no row alignment requirement, unlike buffer-to-texture copies.)
+    if bpp == 4
+        && !source.flip_y
+        && source.origin.x == 0
+        && source.origin.y == 0
+        && size.width == source.width
+        && size.height == source.height
     {
-        let bytes_per_pixel = 4usize;
-        let src_bpr = bytes_per_row as usize;
-        let mut sub = vec![0u8; (size.width as usize) * (size.height as usize) * bytes_per_pixel];
-        for row in 0..size.height as usize {
-            let src_row = (source.origin.y as usize + row) as usize;
-            let src_start = src_row * src_bpr + (source.origin.x as usize) * bytes_per_pixel;
-            let dst_start = row * (size.width as usize) * bytes_per_pixel;
-            let len = (size.width as usize) * bytes_per_pixel;
-            sub[dst_start..dst_start + len].copy_from_slice(&upload_data[src_start..src_start + len]);
-        }
-        queue.queue.id.write_texture(destination, sub.as_slice(), &data_layout, &size);
-    } else {
-        queue.queue.id.write_texture(destination, upload_data.as_slice(), &data_layout, &size);
+        let data_layout = wgt::TexelCopyBufferLayout {
+            offset: 0,
+            bytes_per_row: Some(source.width * 4),
+            rows_per_image: Some(source.height),
+        };
+        queue.queue.id.write_texture(destination, data, &data_layout, &size);
+        return;
     }
 
-    // Return upload buffer to pool
+    // Otherwise as RGBA8 rows (`bytes_per_row` apart), then the `origin` / `size` window of the
+    // image, flipped first when `flip_y`, packed tightly. Texels outside the image stay zero.
+    let (upload_data, bytes_per_row) = prepare_external_image_upload_reuse(data, source.width, source.height);
+    let src_bpr = bytes_per_row as usize;
+    let (out_w, out_h) = (size.width as usize, size.height as usize);
+    let mut packed = vec![0u8; out_w * out_h * 4];
+    let copy_w = (source.width.saturating_sub(source.origin.x) as usize).min(out_w);
+    for row in 0..out_h {
+        let image_row = source.origin.y as usize + row;
+        if image_row >= source.height as usize || copy_w == 0 {
+            break;
+        }
+        let src_row = if source.flip_y {
+            source.height as usize - 1 - image_row
+        } else {
+            image_row
+        };
+        let src_start = src_row * src_bpr + source.origin.x as usize * 4;
+        let dst_start = row * out_w * 4;
+        if src_start + copy_w * 4 > upload_data.len() {
+            break;
+        }
+        packed[dst_start..dst_start + copy_w * 4].copy_from_slice(&upload_data[src_start..src_start + copy_w * 4]);
+    }
     give_back_upload_buf(upload_data);
+
+    let data_layout = wgt::TexelCopyBufferLayout {
+        offset: 0,
+        bytes_per_row: Some(size.width * 4),
+        rows_per_image: Some(size.height),
+    };
+    queue.queue.id.write_texture(destination, packed.as_slice(), &data_layout, &size);
 }
 
 #[no_mangle]
@@ -693,6 +609,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_on_submitted_work_done(
     });
 
     queue.queue.id.on_submitted_work_done(done);
+    // The closure only runs when the device is polled; without a frame loop (compute-only,
+    // headless) nothing else would.
+    super::gpu_buffer::poll_mappings(Arc::clone(&queue.queue.instance));
 }
 
 #[no_mangle]

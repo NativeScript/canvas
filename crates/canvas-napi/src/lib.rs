@@ -17,4 +17,24 @@ mod text_decoder;
 
 pub mod gl;
 pub mod gl2;
+mod js;
+mod host;
+mod frame;
+mod logger;
+mod fast;
 mod image_bitmap;
+mod module;
+/// Like the V8 bindings' `install()`: `globalThis.CanvasModule = exports` unless one is already
+/// installed.
+#[napi_derive::napi(module_exports)]
+pub fn install_global(exports: napi::bindgen_prelude::Object, env: napi::Env) -> napi::Result<()> {
+  use napi::bindgen_prelude::JsObjectValue;
+  logger::install(env.raw())?;
+  frame::install_microtask_scheduler(env.raw())?;
+  fast::install(env.raw(), napi::JsValue::raw(&exports))?;
+  let mut global = env.get_global()?;
+  if !global.has_named_property("CanvasModule")? {
+    global.set_named_property("CanvasModule", exports)?;
+  }
+  Ok(())
+}

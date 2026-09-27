@@ -13,6 +13,8 @@ members = [
     "crates/canvas-svg",
     "crates/canvas-svg-c",
     "crates/canvas-napi",
+    "crates/canvas-svg-napi",
+    "crates/audio-context-napi",
     "crates/canvas-svg-ios",
     "crates/canvas-svg-android",
 ]
@@ -42,6 +44,15 @@ opt-level = 3
 [profile.release.package.skia-bindings]
 opt-level = 3
 
+# Node-API addons (canvas-napi). The host app must survive a Rust panic: `unwind` lets the
+# binding turn it into a JS exception. Line tables + PDBs are kept for crash symbolication.
+[profile.release-napi]
+inherits = "release"
+panic = "unwind"
+opt-level = 3
+debug = "line-tables-only"
+strip = "none"
+
 # Aggressively size-optimize heavy utility crates
 [profile.release.package.regex]
 opt-level = "z"
@@ -56,6 +67,11 @@ opt-level = "z"
 opt-level = "z"
 
 
+# Node-API hosts that export napi_* from a DLL rather than the executable (NativeScript Windows)
+# need the patched symbol lookup (the `[canvas patch]` hunks in crates/vendor/napi-sys/src/functions.rs).
+[patch.crates-io]
+napi-sys = { path = "crates/vendor/napi-sys" }
+
 [workspace.dependencies.wgt]
 package = "wgpu-types"
 git = "https://github.com/triniwiz/wgpu"
@@ -69,6 +85,7 @@ env_logger = "0.11.5"
 log = "0.4.29"
 parking_lot = { version = "0.12.3" }
 raw-window-handle = "0.6.2"
+windows = "0.62.2"
 canvas-2d = { path = "./crates/canvas-2d" }
 canvas-core = { path = "./crates/canvas-core" }
 canvas-webgl = { path = "./crates/canvas-webgl" }

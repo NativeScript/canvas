@@ -6,7 +6,7 @@ import { HTMLVideoElement } from './DOM/HTMLVideoElement';
 import { HTMLAudioElement } from './DOM/HTMLAudioElement';
 import { XMLDocument } from './DOM/XMLDocument';
 import { DOMPointReadOnly, DOMPoint } from './DOM/DOMPointReadOnly';
-import { Device, fromObject, Screen, View } from '@nativescript/core';
+import { Device, fromObject, View } from '@nativescript/core';
 import { AbortController, AbortSignal } from '@nativescript/core/abortcontroller';
 import { CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext, ImageData, ImageBitmap } from '@nativescript/canvas';
 import { HTMLCollection } from './DOM/HTMLCollection';
@@ -220,13 +220,7 @@ const matchMediaStub = (query?: string) => ({
 });
 if (typeof (global as any).window.matchMedia !== 'function') (global as any).window.matchMedia = matchMediaStub;
 if (typeof (global as any).matchMedia !== 'function') (global as any).matchMedia = matchMediaStub;
-try {
-	const dpr = Screen.mainScreen.scale || 1;
-	(global as any).window.devicePixelRatio = dpr;
-	if (typeof (global as any).devicePixelRatio === 'undefined') (global as any).devicePixelRatio = dpr;
-} catch {
-	(global as any).window.devicePixelRatio = (global as any).window.devicePixelRatio || 1;
-}
+// devicePixelRatio: resize.ts (read live).
 if ((global as any).window.parent == null) (global as any).window.parent = (global as any).window;
 if ((global as any).document) {
 	const docEl = (global as any).document.documentElement;

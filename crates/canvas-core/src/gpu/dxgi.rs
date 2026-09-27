@@ -1,0 +1,473 @@
+//! Composition swapchains presented through a WinUI `SwapChainPanel`, on a D3D12 queue (2D) or
+//! a D3D11 device (WebGL on ANGLE).
+//!
+//! The panel only accepts swapchains created with `CreateSwapChainForComposition`, and the panel
+//! lays them out in DIPs: the swapchain is sized in physical pixels and `SetMatrixTransform`
+//! maps it back (1 / composition scale), which is also how the canvas "fit" modes are applied
+//! without resizing buffers.
+
+use std::ffi::c_void;
+
+use windows::core::{Interface, Result, HRESULT};
+use windows::Win32::Foundation::{CloseHandle, HANDLE, WAIT_OBJECT_0};
+#[cfg(feature = "gl")]
+use windows::Win32::Graphics::Direct3D11::ID3D11Device;
+use windows::Win32::Graphics::Dxgi::Common::{
+    DXGI_ALPHA_MODE_IGNORE, DXGI_ALPHA_MODE_PREMULTIPLIED, DXGI_FORMAT_B8G8R8A8_UNORM,
+    DXGI_SAMPLE_DESC,
+};
+use windows::Win32::Graphics::Dxgi::{
+    IDXGIAdapter, IDXGIDevice, IDXGIFactory2, IDXGISwapChain1, IDXGISwapChain2, IDXGISwapChain3, DXGI_MATRIX_3X2_F,
+    DXGI_PRESENT, DXGI_PRESENT_DO_NOT_WAIT, DXGI_SCALING_STRETCH, DXGI_SWAP_CHAIN_DESC1,
+    DXGI_SWAP_CHAIN_FLAG, DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT,
+    DXGI_SWAP_EFFECT_FLIP_DISCARD, DXGI_USAGE_RENDER_TARGET_OUTPUT,
+};
+use windows::Win32::System::Threading::WaitForSingleObjectEx;
+
+#[cfg(feature = "d3d")]
+use crate::gpu::d3d::D3D12Context;
+
+/// WinUI 3's `ISwapChainPanelNative` (microsoft.ui.xaml.media.dxinterop.h). Not the UWP interface
+/// of the same name, which has a different IID.
+#[windows::core::interface("63aad0b8-7c24-40ff-85a8-640d944cc325")]
+pub unsafe trait ISwapChainPanelNative: windows::core::IUnknown {
+    fn SetSwapChain(&self, swap_chain: *mut c_void) -> HRESULT;
+}
+
+pub const BUFFER_COUNT: u32 = 2;
+
+/// WinUI 3's `ISurfaceImageSourceNative` (microsoft.ui.xaml.media.dxinterop.h; not the UWP IID).
+#[windows::core::interface("e4cecd6c-f14b-4f46-83c3-8bbda27c6504")]
+pub unsafe trait ISurfaceImageSourceNative: windows::core::IUnknown {
+    fn SetDevice(&self, device: *mut c_void) -> HRESULT;
+    fn BeginDraw(
+        &self,
+        update_rect: windows::Win32::Foundation::RECT,
+        surface: *mut *mut c_void,
+        offset: *mut windows::Win32::Foundation::POINT,
+    ) -> HRESULT;
+    fn EndDraw(&self) -> HRESULT;
+}
+
+/// A XAML `SurfaceImageSource` a canvas presents into when it has to blend with the page: XAML
+/// composites it like any image. (A SwapChainPanel is external content in WinUI 3: nothing
+/// behind it shows through, whatever the swapchain's alpha mode.) Frames are copied in, BGRA
+/// premultiplied, with a D3D11 device.
+pub struct XamlSurface {
+    native: ISurfaceImageSourceNative,
+    context: windows::Win32::Graphics::Direct3D11::ID3D11DeviceContext,
+    width: u32,
+    height: u32,
+}
+
+impl XamlSurface {
+    /// `source`: any COM pointer of the `SurfaceImageSource` (made `width` x `height`, not
+    /// opaque). `device`: the D3D11 device frames are copied with. UI thread.
+    pub unsafe fn new(
+        source: *mut c_void,
+        device: &windows::Win32::Graphics::Direct3D11::ID3D11Device,
+        width: u32,
+        height: u32,
+    ) -> Result<Self> {
+        let unknown = unsafe { windows::core::IUnknown::from_raw_borrowed(&source) }
+            .ok_or_else(windows::core::Error::empty)?;
+        let native: ISurfaceImageSourceNative = unknown.cast()?;
+        let dxgi: windows::Win32::Graphics::Dxgi::IDXGIDevice = device.cast()?;
+        unsafe { native.SetDevice(dxgi.as_raw()) }.ok()?;
+        let context = unsafe { device.GetImmediateContext() }?;
+        Ok(Self {
+            native,
+            context,
+            width,
+            height,
+        })
+    }
+
+    pub fn width(&self) -> u32 {
+        self.width
+    }
+
+    pub fn height(&self) -> u32 {
+        self.height
+    }
+
+    /// The `SurfaceImageSource`, to attach again (e.g. on a new device).
+    pub fn source(&self) -> windows::core::IUnknown {
+        self.native.clone().into()
+    }
+
+    /// Makes the image let go of the device (lost), until it is attached again. XAML keeps the
+    /// device it was given until it is given another (`SetDevice(null)` does not release it), so
+    /// it gets a stand-in; it lets go of the old one shortly after, not during the call. UI thread.
+    pub fn release_device(&self) {
+        use windows::Win32::Graphics::Direct3D11::{ID3D11DeviceContext1, ID3D11RenderTargetView, ID3D11Resource};
+        let Some((device, context)) = stand_in_device() else { return };
+        let Ok(dxgi) = device.cast::<windows::Win32::Graphics::Dxgi::IDXGIDevice>() else { return };
+        if unsafe { self.native.SetDevice(dxgi.as_raw()) }.is_err() {
+            return;
+        }
+        // XAML keeps what it last drew with the old device until it draws again: draw it blank.
+        let rect = windows::Win32::Foundation::RECT {
+            left: 0,
+            top: 0,
+            right: self.width as i32,
+            bottom: self.height as i32,
+        };
+        let mut surface = std::ptr::null_mut();
+        let mut offset = windows::Win32::Foundation::POINT::default();
+        if unsafe { self.native.BeginDraw(rect, &mut surface, &mut offset) }.is_err() {
+            return;
+        }
+        if let Ok(target) = unsafe { windows::Win32::Graphics::Dxgi::IDXGISurface::from_raw(surface) }.cast::<ID3D11Resource>() {
+            let mut view: Option<ID3D11RenderTargetView> = None;
+            if unsafe { device.CreateRenderTargetView(&target, None, Some(&mut view)) }.is_ok() {
+                // Only the update rectangle: the surface can be an atlas shared with other images.
+                let area = windows::Win32::Foundation::RECT {
+                    left: offset.x,
+                    top: offset.y,
+                    right: offset.x + self.width as i32,
+                    bottom: offset.y + self.height as i32,
+                };
+                if let Some(view) = view {
+                    unsafe { context.ClearView(&view, &[0.0; 4], Some(&[area])) };
+                }
+            }
+        }
+        let _ = unsafe { self.native.EndDraw() };
+    }
+
+    /// Copies `texture` (on this surface's device, this surface's size) in. UI thread.
+    pub fn present(&self, texture: &windows::Win32::Graphics::Direct3D11::ID3D11Resource) -> Result<()> {
+        let rect = windows::Win32::Foundation::RECT {
+            left: 0,
+            top: 0,
+            right: self.width as i32,
+            bottom: self.height as i32,
+        };
+        let mut surface = std::ptr::null_mut();
+        let mut offset = windows::Win32::Foundation::POINT::default();
+        unsafe { self.native.BeginDraw(rect, &mut surface, &mut offset) }.ok()?;
+        // The update rectangle lives in XAML's atlas at `offset`.
+        let copied = unsafe { windows::Win32::Graphics::Dxgi::IDXGISurface::from_raw(surface) }
+            .cast::<windows::Win32::Graphics::Direct3D11::ID3D11Resource>()
+            .map(|target| unsafe {
+                self.context.CopySubresourceRegion(
+                    &target,
+                    0,
+                    offset.x.max(0) as u32,
+                    offset.y.max(0) as u32,
+                    0,
+                    texture,
+                    0,
+                    None,
+                )
+            });
+        let ended = unsafe { self.native.EndDraw() }.ok();
+        copied.and(ended)
+    }
+}
+
+thread_local! {
+    static STAND_IN_DEVICE: std::cell::OnceCell<
+        Option<(windows::Win32::Graphics::Direct3D11::ID3D11Device, windows::Win32::Graphics::Direct3D11::ID3D11DeviceContext1)>,
+    > = const { std::cell::OnceCell::new() };
+}
+
+/// A D3D11 WARP device (made once per thread) that lost XAML surfaces hold instead of a removed
+/// device's. D3D11 devices, unlike D3D12 ones, are not per-adapter singletons: it blocks nothing.
+fn stand_in_device() -> Option<(
+    windows::Win32::Graphics::Direct3D11::ID3D11Device,
+    windows::Win32::Graphics::Direct3D11::ID3D11DeviceContext1,
+)> {
+    use windows::Win32::Graphics::Direct3D::D3D_DRIVER_TYPE_WARP;
+    use windows::Win32::Graphics::Direct3D11::{D3D11CreateDevice, D3D11_CREATE_DEVICE_BGRA_SUPPORT, D3D11_SDK_VERSION};
+    STAND_IN_DEVICE.with(|cell| {
+        cell.get_or_init(|| {
+            let (mut device, mut context) = (None, None);
+            unsafe {
+                D3D11CreateDevice(
+                    None,
+                    D3D_DRIVER_TYPE_WARP,
+                    windows::Win32::Foundation::HMODULE::default(),
+                    D3D11_CREATE_DEVICE_BGRA_SUPPORT,
+                    None,
+                    D3D11_SDK_VERSION,
+                    Some(&mut device),
+                    None,
+                    Some(&mut context),
+                )
+            }
+            .ok()?;
+            Some((device?, context?.cast().ok()?))
+        })
+        .clone()
+    })
+}
+
+/// A `SwapChainPanel` for a library that binds its own swapchain to it (wgpu takes an
+/// `ISwapChainPanelNative` and calls `SetSwapChain` itself). The library gets a stand-in that
+/// forwards to the panel and remembers the swapchain, so its matrix transform (DPI scale and the
+/// canvas fit) stays ours to set, across the library's reconfigurations.
+pub struct PanelSurfaceTarget {
+    proxy: ISwapChainPanelNative,
+    panel: ISwapChainPanelNative,
+    state: std::sync::Arc<parking_lot::Mutex<ProxyState>>,
+}
+
+// Only used on the UI thread; the wrapper travels with the context that owns it.
+unsafe impl Send for PanelSurfaceTarget {}
+unsafe impl Sync for PanelSurfaceTarget {}
+
+#[derive(Default)]
+struct ProxyState {
+    swap_chain: Option<IDXGISwapChain2>,
+    transform: Option<DXGI_MATRIX_3X2_F>,
+}
+
+#[windows_core::implement(ISwapChainPanelNative)]
+struct PanelProxy {
+    panel: ISwapChainPanelNative,
+    state: std::sync::Arc<parking_lot::Mutex<ProxyState>>,
+}
+
+impl ISwapChainPanelNative_Impl for PanelProxy_Impl {
+    unsafe fn SetSwapChain(&self, swap_chain: *mut c_void) -> HRESULT {
+        let mut state = self.state.lock();
+        state.swap_chain = unsafe { windows::core::IUnknown::from_raw_borrowed(&swap_chain) }
+            .and_then(|unknown| unknown.cast::<IDXGISwapChain2>().ok());
+        if let (Some(swap_chain), Some(transform)) = (state.swap_chain.as_ref(), state.transform.as_ref()) {
+            let _ = unsafe { swap_chain.SetMatrixTransform(transform) };
+        }
+        unsafe { self.panel.SetSwapChain(swap_chain) }
+    }
+}
+
+impl PanelSurfaceTarget {
+    /// `panel`: any COM pointer of the `SwapChainPanel`. UI thread.
+    pub unsafe fn new(panel: *mut c_void) -> Result<Self> {
+        let unknown = unsafe { windows::core::IUnknown::from_raw_borrowed(&panel) }.ok_or_else(windows::core::Error::empty)?;
+        let panel: ISwapChainPanelNative = unknown.cast()?;
+        let state = std::sync::Arc::new(parking_lot::Mutex::new(ProxyState::default()));
+        let proxy: ISwapChainPanelNative = PanelProxy {
+            panel: panel.clone(),
+            state: state.clone(),
+        }
+        .into();
+        Ok(Self { proxy, panel, state })
+    }
+
+    /// The `ISwapChainPanelNative` to hand to the library.
+    pub fn as_raw(&self) -> *mut c_void {
+        self.proxy.as_raw()
+    }
+
+    /// Scale then translate the swapchain inside the panel (DIPs = pixels * scale + offset); kept
+    /// for swapchains the library binds later.
+    pub fn set_transform(&self, scale_x: f32, scale_y: f32, offset_x: f32, offset_y: f32) -> Result<()> {
+        let transform = DXGI_MATRIX_3X2_F {
+            _11: scale_x,
+            _22: scale_y,
+            _31: offset_x,
+            _32: offset_y,
+            ..Default::default()
+        };
+        let mut state = self.state.lock();
+        state.transform = Some(transform);
+        match state.swap_chain.as_ref() {
+            Some(swap_chain) => unsafe { swap_chain.SetMatrixTransform(&transform) },
+            None => Ok(()),
+        }
+    }
+}
+
+impl Drop for PanelSurfaceTarget {
+    fn drop(&mut self) {
+        // Detach whatever the library bound, so the panel does not keep a dead swapchain.
+        let _ = unsafe { self.panel.SetSwapChain(std::ptr::null_mut()) };
+    }
+}
+
+/// A stand-in `SwapChainPanel` for tests without a XAML window: it accepts (and holds) the
+/// swapchain it is given, so the on-screen paths (binding, presenting, resizing, restoring) run
+/// headless. Nothing is shown.
+#[windows_core::implement(ISwapChainPanelNative)]
+struct HeadlessPanel {
+    swap_chain: parking_lot::Mutex<Option<windows::core::IUnknown>>,
+}
+
+impl ISwapChainPanelNative_Impl for HeadlessPanel_Impl {
+    unsafe fn SetSwapChain(&self, swap_chain: *mut c_void) -> HRESULT {
+        *self.swap_chain.lock() = unsafe { windows::core::IUnknown::from_raw_borrowed(&swap_chain) }.cloned();
+        HRESULT(0)
+    }
+}
+
+/// A new `HeadlessPanel`, as a COM pointer the caller owns one reference to.
+pub fn headless_panel() -> windows::core::IUnknown {
+    let panel: ISwapChainPanelNative = HeadlessPanel {
+        swap_chain: parking_lot::Mutex::new(None),
+    }
+    .into();
+    panel.into()
+}
+
+pub struct CompositionSwapChain {
+    swap_chain: IDXGISwapChain3,
+    waitable: HANDLE,
+    width: u32,
+    height: u32,
+    flags: DXGI_SWAP_CHAIN_FLAG,
+}
+
+impl CompositionSwapChain {
+    /// A flip-model BGRA swapchain on `device`'s direct queue, `width` x `height` physical pixels.
+    #[cfg(feature = "d3d")]
+    pub fn new(device: &D3D12Context, width: u32, height: u32, alpha: bool) -> Result<Self> {
+        let factory: IDXGIFactory2 = device.factory().cast()?;
+        Self::create(&factory, &device.queue().cast()?, width, height, alpha)
+    }
+
+    /// The same on a D3D11 device (ANGLE's, for WebGL).
+    #[cfg(feature = "gl")]
+    pub fn new_d3d11(device: &ID3D11Device, width: u32, height: u32, alpha: bool) -> Result<Self> {
+        let adapter: IDXGIAdapter = unsafe { device.cast::<IDXGIDevice>()?.GetAdapter() }?;
+        let factory: IDXGIFactory2 = unsafe { adapter.GetParent() }?;
+        Self::create(&factory, &device.cast()?, width, height, alpha)
+    }
+
+    /// `device`: the D3D12 command queue or the D3D11 device that renders into the buffers.
+    fn create(
+        factory: &IDXGIFactory2,
+        device: &windows::core::IUnknown,
+        width: u32,
+        height: u32,
+        alpha: bool,
+    ) -> Result<Self> {
+        let flags = DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
+        let desc = DXGI_SWAP_CHAIN_DESC1 {
+            Width: width.max(1),
+            Height: height.max(1),
+            Format: DXGI_FORMAT_B8G8R8A8_UNORM,
+            SampleDesc: DXGI_SAMPLE_DESC { Count: 1, Quality: 0 },
+            BufferUsage: DXGI_USAGE_RENDER_TARGET_OUTPUT,
+            BufferCount: BUFFER_COUNT,
+            Scaling: DXGI_SCALING_STRETCH,
+            SwapEffect: DXGI_SWAP_EFFECT_FLIP_DISCARD,
+            AlphaMode: if alpha {
+                DXGI_ALPHA_MODE_PREMULTIPLIED
+            } else {
+                DXGI_ALPHA_MODE_IGNORE
+            },
+            Flags: flags.0 as u32,
+            ..Default::default()
+        };
+        let swap_chain: IDXGISwapChain1 =
+            unsafe { factory.CreateSwapChainForComposition(device, &desc, None) }?;
+        let swap_chain: IDXGISwapChain3 = swap_chain.cast()?;
+        let waitable = {
+            let swap_chain2: IDXGISwapChain2 = swap_chain.cast()?;
+            unsafe { swap_chain2.SetMaximumFrameLatency(2) }?;
+            unsafe { swap_chain2.GetFrameLatencyWaitableObject() }
+        };
+        Ok(Self {
+            swap_chain,
+            waitable,
+            width: width.max(1),
+            height: height.max(1),
+            flags,
+        })
+    }
+
+    /// Shows this swapchain in the panel. `panel` is any COM pointer of the `SwapChainPanel` (the
+    /// runtime's `NSWinRT.interop.pointerKey(panel.handle)`). Must run on the UI thread.
+    pub unsafe fn bind_panel(&self, panel: *mut c_void) -> Result<()> {
+        let unknown = windows::core::IUnknown::from_raw_borrowed(&panel)
+            .ok_or_else(windows::core::Error::empty)?;
+        let native: ISwapChainPanelNative = unknown.cast()?;
+        native.SetSwapChain(self.swap_chain.as_raw()).ok()
+    }
+
+    /// Detaches whatever swapchain the panel shows.
+    pub unsafe fn unbind_panel(panel: *mut c_void) {
+        if let Some(unknown) = windows::core::IUnknown::from_raw_borrowed(&panel) {
+            if let Ok(native) = unknown.cast::<ISwapChainPanelNative>() {
+                let _ = native.SetSwapChain(std::ptr::null_mut());
+            }
+        }
+    }
+
+    pub fn width(&self) -> u32 {
+        self.width
+    }
+
+    pub fn height(&self) -> u32 {
+        self.height
+    }
+
+    pub fn current_index(&self) -> u32 {
+        unsafe { self.swap_chain.GetCurrentBackBufferIndex() }
+    }
+
+    /// Back buffer `index` as a D3D12 resource, or (D3D11, where only buffer 0 -- the current
+    /// back buffer -- is accessible) an `ID3D11Texture2D`.
+    pub fn buffer<T: Interface>(&self, index: u32) -> Result<T> {
+        unsafe { self.swap_chain.GetBuffer(index) }
+    }
+
+    /// Resizes the buffers. Every reference to the old buffers must have been released first.
+    pub fn resize(&mut self, width: u32, height: u32) -> Result<()> {
+        let (width, height) = (width.max(1), height.max(1));
+        unsafe {
+            self.swap_chain.ResizeBuffers(
+                BUFFER_COUNT,
+                width,
+                height,
+                DXGI_FORMAT_B8G8R8A8_UNORM,
+                self.flags,
+            )
+        }?;
+        self.width = width;
+        self.height = height;
+        Ok(())
+    }
+
+    /// `true` when a new frame can be presented without blocking (frame-latency waitable).
+    pub fn frame_ready(&self) -> bool {
+        if self.waitable.is_invalid() {
+            return true;
+        }
+        unsafe { WaitForSingleObjectEx(self.waitable, 0, false) == WAIT_OBJECT_0 }
+    }
+
+    pub fn present(&self, vsync: bool) -> Result<()> {
+        let (interval, flags) = if vsync {
+            (1, DXGI_PRESENT::default())
+        } else {
+            (0, DXGI_PRESENT_DO_NOT_WAIT)
+        };
+        unsafe { self.swap_chain.Present(interval, flags) }.ok()
+    }
+
+    /// Scale then translate the swapchain inside the panel (DIPs = pixels * scale + offset).
+    pub fn set_transform(&self, scale_x: f32, scale_y: f32, offset_x: f32, offset_y: f32) -> Result<()> {
+        let swap_chain2: IDXGISwapChain2 = self.swap_chain.cast()?;
+        let matrix = DXGI_MATRIX_3X2_F {
+            _11: scale_x,
+            _22: scale_y,
+            _31: offset_x,
+            _32: offset_y,
+            ..Default::default()
+        };
+        unsafe { swap_chain2.SetMatrixTransform(&matrix) }
+    }
+}
+
+impl Drop for CompositionSwapChain {
+    fn drop(&mut self) {
+        if !self.waitable.is_invalid() {
+            unsafe {
+                let _ = CloseHandle(self.waitable);
+            }
+        }
+    }
+}

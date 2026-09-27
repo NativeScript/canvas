@@ -8,7 +8,6 @@ use canvas_c::webgpu::enums::{
 use canvas_c::webgpu::structs::{
   CanvasBlendFactor, CanvasBlendOperation, CanvasLoadOp, CanvasStoreOp,
 };
-use napi::*;
 use napi_derive::napi;
 
 use canvas_c::webgpu::gpu_buffer::GPUMapMode as CGPUMapMode;
@@ -17,6 +16,7 @@ use canvas_c::webgpu::wgt::TextureAspect;
 
 #[allow(clippy::enum_variant_names)]
 #[napi(js_name = "GPUShaderStage")]
+#[derive(Clone, Copy)]
 pub enum GPUShaderStage {
   VERTEX = 0x1,
   FRAGMENT = 0x2,
@@ -25,6 +25,7 @@ pub enum GPUShaderStage {
 
 #[allow(clippy::enum_variant_names)]
 #[napi(js_name = "GPUQueryType", string_enum)]
+#[derive(Clone, Copy)]
 pub enum GPUQueryType {
   occlusion,
   timestamp,
@@ -41,6 +42,7 @@ impl Into<CanvasQueryType> for GPUQueryType {
 
 #[allow(clippy::enum_variant_names)]
 #[napi(js_name = "GPUMipmapFilterMode", string_enum)]
+#[derive(Clone, Copy)]
 pub enum GPUMipmapFilterMode {
   nearest,
   linear,
@@ -57,6 +59,7 @@ impl Into<CanvasFilterMode> for GPUMipmapFilterMode {
 
 #[allow(clippy::enum_variant_names)]
 #[napi(js_name = "GPUFilterMode", string_enum)]
+#[derive(Clone, Copy)]
 pub enum GPUFilterMode {
   nearest,
   linear,
@@ -73,6 +76,7 @@ impl Into<CanvasFilterMode> for GPUFilterMode {
 
 #[allow(clippy::enum_variant_names)]
 #[napi(js_name = "GPUAddressMode", string_enum = "kebab-case")]
+#[derive(Clone, Copy)]
 pub enum GPUAddressMode {
   clampToEdge,
   repeat,
@@ -91,6 +95,7 @@ impl Into<CanvasAddressMode> for GPUAddressMode {
 
 #[allow(clippy::enum_variant_names)]
 #[napi(js_name = "GPUBufferUsage")]
+#[derive(Clone, Copy)]
 pub enum GPUBufferUsage {
   MAP_READ = 0x0001,
   MAP_WRITE = 0x0002,
@@ -106,6 +111,7 @@ pub enum GPUBufferUsage {
 
 #[allow(clippy::enum_variant_names)]
 #[napi(js_name = "GPUTextureUsage")]
+#[derive(Clone, Copy)]
 pub enum GPUTextureUsage {
   COPY_SRC = 0x01,
   COPY_DST = 0x02,
@@ -116,6 +122,7 @@ pub enum GPUTextureUsage {
 
 #[allow(clippy::enum_variant_names)]
 #[napi(js_name = "GPUErrorFilter", string_enum = "kebab-case")]
+#[derive(Clone, Copy)]
 pub enum GPUErrorFilter {
   validation,
   outOfMemory,
@@ -134,7 +141,7 @@ impl Into<CanvasGPUErrorFilter> for GPUErrorFilter {
 
 #[allow(clippy::enum_variant_names)]
 #[napi(js_name = "GPUTextureSampleType", string_enum = "kebab-case")]
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum GPUTextureSampleType {
   float,
   unfilterableFloat,
@@ -157,7 +164,7 @@ impl Into<CanvasTextureSampleType> for GPUTextureSampleType {
 
 #[allow(clippy::enum_variant_names)]
 #[napi(js_name = "GPUTextureViewDimension", string_enum = "kebab-case")]
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum GPUTextureViewDimension {
   #[napi(value = "1d")]
   d1,
@@ -186,7 +193,7 @@ impl Into<CanvasTextureViewDimension> for GPUTextureViewDimension {
 
 #[allow(clippy::enum_variant_names)]
 #[napi(js_name = "GPUStorageTextureAccess", string_enum = "kebab-case")]
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum GPUStorageTextureAccess {
   writeOnly,
   readOnly,
@@ -205,7 +212,7 @@ impl Into<CanvasStorageTextureAccess> for GPUStorageTextureAccess {
 
 #[allow(clippy::enum_variant_names)]
 #[napi(js_name = "GPUSamplerBindingType", string_enum = "kebab-case")]
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum GPUSamplerBindingType {
   filtering,
   nonFiltering,
@@ -224,7 +231,7 @@ impl Into<CanvasSamplerBindingType> for GPUSamplerBindingType {
 
 #[allow(clippy::enum_variant_names)]
 #[napi(js_name = "GPUBufferBindingType", string_enum = "kebab-case")]
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum GPUBufferBindingType {
   uniform,
   storage,
@@ -243,7 +250,7 @@ impl Into<CanvasBufferBindingType> for GPUBufferBindingType {
 
 #[allow(clippy::enum_variant_names)]
 #[napi(js_name = "GPUTextureDimension", string_enum)]
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum GPUTextureDimension {
   #[napi(value = "1d")]
   d1,
@@ -275,6 +282,7 @@ impl From<CanvasTextureDimension> for GPUTextureDimension {
 
 #[allow(clippy::enum_variant_names)]
 #[napi(js_name = "GPUTextureAspect", string_enum = "kebab-case")]
+#[derive(Clone, Copy)]
 pub enum GPUTextureAspect {
   all,
   stencilOnly,
@@ -303,6 +311,7 @@ impl Into<CanvasTextureAspect> for GPUTextureAspect {
 
 #[allow(clippy::enum_variant_names)]
 #[napi(js_name = "GPUMapMode")]
+#[derive(Clone, Copy)]
 pub enum GPUMapMode {
   READ = 0x0001,
   WRITE = 0x0002,
@@ -319,6 +328,7 @@ impl From<GPUMapMode> for CGPUMapMode {
 
 #[allow(clippy::enum_variant_names)]
 #[napi(js_name = "GPULoadOp", string_enum)]
+#[derive(Clone, Copy)]
 pub enum GPULoadOp {
   load,
   clear,
@@ -335,6 +345,7 @@ impl From<GPULoadOp> for CanvasLoadOp {
 
 #[allow(clippy::enum_variant_names)]
 #[napi(js_name = "GPUStoreOp", string_enum)]
+#[derive(Clone, Copy)]
 pub enum GPUStoreOp {
   #[napi(value = "store")]
   Store,
@@ -353,23 +364,33 @@ impl From<GPUStoreOp> for CanvasStoreOp {
 
 #[allow(clippy::enum_variant_names)]
 #[napi(js_name = "GPUVertexFormat", string_enum = "lowercase")]
+#[derive(Clone, Copy)]
 pub enum GPUVertexFormat {
+  uint8,
   uint8x2,
   uint8x4,
+  sint8,
   sint8x2,
   sint8x4,
+  unorm8,
   unorm8x2,
   unorm8x4,
+  snorm8,
   snorm8x2,
   snorm8x4,
+  uint16,
   uint16x2,
   uint16x4,
+  sint16,
   sint16x2,
   sint16x4,
+  unorm16,
   unorm16x2,
   unorm16x4,
+  snorm16,
   snorm16x2,
   snorm16x4,
+  float16,
   float16x2,
   float16x4,
   float32,
@@ -390,6 +411,8 @@ pub enum GPUVertexFormat {
   float64x4,
   #[napi(value = "unorm10-10-10-2")]
   unorm1010102,
+  #[napi(value = "unorm8x4-bgra")]
+  unorm8x4Bgra,
 }
 
 impl From<CanvasVertexFormat> for GPUVertexFormat {
@@ -430,6 +453,16 @@ impl From<CanvasVertexFormat> for GPUVertexFormat {
       CanvasVertexFormat::Float64x3 => GPUVertexFormat::float64x3,
       CanvasVertexFormat::Float64x4 => GPUVertexFormat::float64x4,
       CanvasVertexFormat::Unorm10_10_10_2 => GPUVertexFormat::unorm1010102,
+      CanvasVertexFormat::Uint8 => GPUVertexFormat::uint8,
+      CanvasVertexFormat::Sint8 => GPUVertexFormat::sint8,
+      CanvasVertexFormat::Unorm8 => GPUVertexFormat::unorm8,
+      CanvasVertexFormat::Snorm8 => GPUVertexFormat::snorm8,
+      CanvasVertexFormat::Uint16 => GPUVertexFormat::uint16,
+      CanvasVertexFormat::Sint16 => GPUVertexFormat::sint16,
+      CanvasVertexFormat::Unorm16 => GPUVertexFormat::unorm16,
+      CanvasVertexFormat::Snorm16 => GPUVertexFormat::snorm16,
+      CanvasVertexFormat::Float16 => GPUVertexFormat::float16,
+      CanvasVertexFormat::Unorm8x4Bgra => GPUVertexFormat::unorm8x4Bgra,
     }
   }
 }
@@ -472,12 +505,23 @@ impl Into<CanvasVertexFormat> for GPUVertexFormat {
       GPUVertexFormat::float64x3 => CanvasVertexFormat::Float64x3,
       GPUVertexFormat::float64x4 => CanvasVertexFormat::Float64x4,
       GPUVertexFormat::unorm1010102 => CanvasVertexFormat::Unorm10_10_10_2,
+      GPUVertexFormat::uint8 => CanvasVertexFormat::Uint8,
+      GPUVertexFormat::sint8 => CanvasVertexFormat::Sint8,
+      GPUVertexFormat::unorm8 => CanvasVertexFormat::Unorm8,
+      GPUVertexFormat::snorm8 => CanvasVertexFormat::Snorm8,
+      GPUVertexFormat::uint16 => CanvasVertexFormat::Uint16,
+      GPUVertexFormat::sint16 => CanvasVertexFormat::Sint16,
+      GPUVertexFormat::unorm16 => CanvasVertexFormat::Unorm16,
+      GPUVertexFormat::snorm16 => CanvasVertexFormat::Snorm16,
+      GPUVertexFormat::float16 => CanvasVertexFormat::Float16,
+      GPUVertexFormat::unorm8x4Bgra => CanvasVertexFormat::Unorm8x4Bgra,
     }
   }
 }
 
 #[allow(clippy::enum_variant_names)]
 #[napi(js_name = "GPUVertexStepMode", string_enum)]
+#[derive(Clone, Copy)]
 pub enum GPUVertexStepMode {
   vertex,
   instance,
@@ -503,6 +547,7 @@ impl Into<CanvasVertexStepMode> for GPUVertexStepMode {
 
 #[allow(clippy::enum_variant_names)]
 #[napi(js_name = "GPUPrimitiveTopology", string_enum = "kebab-case")]
+#[derive(Clone, Copy)]
 pub enum GPUPrimitiveTopology {
   pointList,
   lineList,
@@ -537,6 +582,7 @@ impl Into<CanvasPrimitiveTopology> for GPUPrimitiveTopology {
 
 #[allow(clippy::enum_variant_names)]
 #[napi(js_name = "GPUIndexFormat", string_enum)]
+#[derive(Clone, Copy)]
 pub enum GPUIndexFormat {
   uint16,
   uint32,
@@ -562,6 +608,7 @@ impl Into<CanvasIndexFormat> for GPUIndexFormat {
 
 #[allow(clippy::enum_variant_names)]
 #[napi(js_name = "GPUFrontFace", string_enum)]
+#[derive(Clone, Copy)]
 pub enum GPUFrontFace {
   ccw,
   cw,
@@ -578,6 +625,7 @@ impl From<CanvasFrontFace> for GPUFrontFace {
 
 #[allow(clippy::enum_variant_names)]
 #[napi(js_name = "GPUCullMode", string_enum)]
+#[derive(Clone, Copy)]
 pub enum GPUCullMode {
   none,
   front,
@@ -596,6 +644,7 @@ impl From<CanvasCullMode> for GPUCullMode {
 
 #[allow(clippy::enum_variant_names)]
 #[napi(js_name = "GPUBlendOperation", string_enum = "kebab-case")]
+#[derive(Clone, Copy)]
 pub enum GPUBlendOperation {
   add,
   subtract,
@@ -630,6 +679,7 @@ impl Into<CanvasBlendOperation> for GPUBlendOperation {
 
 #[allow(clippy::enum_variant_names)]
 #[napi(js_name = "GPUBlendFactor", string_enum = "kebab-case")]
+#[derive(Clone, Copy)]
 pub enum GPUBlendFactor {
   zero,
   one,
@@ -704,12 +754,14 @@ impl Into<CanvasBlendFactor> for GPUBlendFactor {
 
 #[allow(clippy::enum_variant_names)]
 #[napi(js_name = "GPUPipelineLayoutAuto", string_enum)]
+#[derive(Clone, Copy)]
 pub enum GPUPipelineLayoutAuto {
   auto,
 }
 
 #[allow(clippy::enum_variant_names)]
 #[napi(js_name = "GPUStencilOperation", string_enum = "kebab-case")]
+#[derive(Clone, Copy)]
 pub enum GPUStencilOperation {
   keep,
   zero,
@@ -738,6 +790,7 @@ impl Into<CanvasStencilOperation> for GPUStencilOperation {
 
 #[allow(clippy::enum_variant_names)]
 #[napi(js_name = "GPUCompareFunction", string_enum = "kebab-case")]
+#[derive(Clone, Copy)]
 pub enum GPUCompareFunction {
   never,
   less,
@@ -766,6 +819,7 @@ impl Into<CanvasCompareFunction> for GPUCompareFunction {
 
 #[allow(clippy::enum_variant_names)]
 #[napi(js_name = "PredefinedColorSpaceEnum", string_enum = "kebab-case")]
+#[derive(Clone, Copy)]
 pub enum PredefinedColorSpaceEnum {
   #[napi(value = "display-p3")]
   displayP3,
@@ -774,6 +828,7 @@ pub enum PredefinedColorSpaceEnum {
 
 #[allow(clippy::enum_variant_names)]
 #[napi(js_name = "GPUCanvasAlphaMode", string_enum)]
+#[derive(Clone, Copy)]
 pub enum GPUCanvasAlphaMode {
   opaque,
   premultiplied,
@@ -783,6 +838,7 @@ pub enum GPUCanvasAlphaMode {
 
 #[allow(clippy::enum_variant_names)]
 #[napi(js_name = "GPUCanvasPresentMode", string_enum = "camelCase")]
+#[derive(Clone, Copy)]
 pub enum GPUCanvasPresentMode {
   autoVsync,
   autoNoVsync,
@@ -794,7 +850,7 @@ pub enum GPUCanvasPresentMode {
 
 #[allow(clippy::enum_variant_names)]
 #[napi(js_name = "GPUTextureFormat", string_enum = "lowercase")]
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum GPUTextureFormat {
   r8unorm,
   r8snorm,
@@ -830,6 +886,7 @@ pub enum GPUTextureFormat {
   rgb10a2uint,
   rgb10a2unorm,
   rg11b10ufloat,
+  r64uint,
   rg32uint,
   rg32sint,
   rg32float,
@@ -843,9 +900,10 @@ pub enum GPUTextureFormat {
   rgba32float,
   stencil8,
   nv12,
+  p010,
   depth16unorm,
   depth24plus,
-  #[napi(value = "depth24plus_stencil8")]
+  #[napi(value = "depth24plus-stencil8")]
   depth24plus_stencil8,
   depth32float,
   #[napi(value = "depth32float-stencil8")]
@@ -1016,6 +1074,7 @@ impl Into<CanvasGPUTextureFormat> for GPUTextureFormat {
       GPUTextureFormat::rgb10a2uint => CanvasGPUTextureFormat::Rgb10a2Uint,
       GPUTextureFormat::rgb10a2unorm => CanvasGPUTextureFormat::Rgb10a2Unorm,
       GPUTextureFormat::rg11b10ufloat => CanvasGPUTextureFormat::Rg11b10UFloat,
+      GPUTextureFormat::r64uint => CanvasGPUTextureFormat::R64Uint,
       GPUTextureFormat::rg32uint => CanvasGPUTextureFormat::Rg32Uint,
       GPUTextureFormat::rg32sint => CanvasGPUTextureFormat::Rg32Sint,
       GPUTextureFormat::rg32float => CanvasGPUTextureFormat::Rg32Float,
@@ -1031,6 +1090,7 @@ impl Into<CanvasGPUTextureFormat> for GPUTextureFormat {
       GPUTextureFormat::rgba16unorm => CanvasGPUTextureFormat::Rgba16Unorm,
       GPUTextureFormat::rgba16snorm => CanvasGPUTextureFormat::Rgba16Snorm,
       GPUTextureFormat::nv12 => CanvasGPUTextureFormat::NV12,
+      GPUTextureFormat::p010 => CanvasGPUTextureFormat::P010,
       GPUTextureFormat::stencil8 => CanvasGPUTextureFormat::Stencil8,
       GPUTextureFormat::depth16unorm => CanvasGPUTextureFormat::Depth16Unorm,
       GPUTextureFormat::depth24plus => CanvasGPUTextureFormat::Depth24Plus,
@@ -1264,6 +1324,7 @@ impl From<CanvasGPUTextureFormat> for GPUTextureFormat {
       CanvasGPUTextureFormat::Rgb10a2Uint => GPUTextureFormat::rgb10a2uint,
       CanvasGPUTextureFormat::Rgb10a2Unorm => GPUTextureFormat::rgb10a2unorm,
       CanvasGPUTextureFormat::Rg11b10UFloat => GPUTextureFormat::rg11b10ufloat,
+      CanvasGPUTextureFormat::R64Uint => GPUTextureFormat::r64uint,
       CanvasGPUTextureFormat::Rg32Uint => GPUTextureFormat::rg32uint,
       CanvasGPUTextureFormat::Rg32Sint => GPUTextureFormat::rg32sint,
       CanvasGPUTextureFormat::Rg32Float => GPUTextureFormat::rg32float,
@@ -1280,6 +1341,7 @@ impl From<CanvasGPUTextureFormat> for GPUTextureFormat {
       CanvasGPUTextureFormat::Rgba16Unorm => GPUTextureFormat::rgba16unorm,
       CanvasGPUTextureFormat::Rgba16Snorm => GPUTextureFormat::rgba16snorm,
       CanvasGPUTextureFormat::NV12 => GPUTextureFormat::nv12,
+      CanvasGPUTextureFormat::P010 => GPUTextureFormat::p010,
       CanvasGPUTextureFormat::Stencil8 => GPUTextureFormat::stencil8,
       CanvasGPUTextureFormat::Depth16Unorm => GPUTextureFormat::depth16unorm,
       CanvasGPUTextureFormat::Depth24Plus => GPUTextureFormat::depth24plus,

@@ -69,6 +69,7 @@ rust-skia
 # .gitignore keeps git ignoring them for commits while staying invisible to
 # the asset copier.
 /.v8-prebuilt/
+/.angle-prebuilt/
 /packages/canvas/src-native/canvas-android/canvas/src/main/cpp/include/*
 !/packages/canvas/src-native/canvas-android/canvas/src/main/cpp/include/canvas_native.h
 !/packages/canvas/src-native/canvas-android/canvas/src/main/cpp/include/canvas_android.h
@@ -81,3 +82,8 @@ rust-skia
 # tools/scripts/build-android-v8-stub.sh (see /V8_RELEASE) -- not committed,
 # regenerated on demand. Real apps supply their own copy at runtime.
 /packages/canvas/src-native/canvas-android/canvas/src/main/jniLibs/*/libNativeScript.so
+# Local benchmark results (machine-specific)
+crates/canvas-napi/bench/results/
+# Internal notes (local only)
+crates/canvas-napi/PORTING.md
+crates/vendor/napi-sys/PATCHED.md

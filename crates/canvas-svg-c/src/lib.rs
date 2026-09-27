@@ -53,8 +53,14 @@ fn render_into(
     row_bytes: usize,
     scale: f32,
     shared: bool,
+    color_type: skia_safe::ColorType,
 ) {
-    let info = skia_safe::ImageInfo::new_n32_premul(skia_safe::ISize::new(width, height), None);
+    let info = skia_safe::ImageInfo::new(
+        skia_safe::ISize::new(width, height),
+        color_type,
+        skia_safe::AlphaType::Premul,
+        None,
+    );
     let row_bytes = if row_bytes == 0 {
         info.min_row_bytes()
     } else {
@@ -129,7 +135,33 @@ pub extern "C" fn canvas_native_svg_document_render_to_buffer(
     }
     let doc = unsafe { &mut *doc };
     let slice = unsafe { std::slice::from_raw_parts_mut(pixels, pixels_len) };
-    render_into(doc, slice, width, height, 0, scale, false);
+    render_into(doc, slice, width, height, 0, scale, false, skia_safe::ColorType::n32());
+}
+
+/// As `canvas_native_svg_document_render_to_buffer`, premultiplied RGBA (`bgra` false: what
+/// image assets load) or BGRA (`bgra` true: what Windows' XAML bitmaps show), whatever the
+/// platform's native order.
+#[unsafe(no_mangle)]
+pub extern "C" fn canvas_native_svg_document_render_to_buffer_ordered(
+    doc: *mut SvgDocument,
+    pixels: *mut u8,
+    pixels_len: usize,
+    width: i32,
+    height: i32,
+    scale: f32,
+    bgra: bool,
+) {
+    if doc.is_null() || pixels.is_null() || pixels_len == 0 || width <= 0 || height <= 0 {
+        return;
+    }
+    let doc = unsafe { &mut *doc };
+    let slice = unsafe { std::slice::from_raw_parts_mut(pixels, pixels_len) };
+    let color_type = if bgra {
+        skia_safe::ColorType::BGRA8888
+    } else {
+        skia_safe::ColorType::RGBA8888
+    };
+    render_into(doc, slice, width, height, 0, scale, false, color_type);
 }
 
 /// As above, into caller-owned pixels (e.g. a locked Android `Bitmap`) that may be row-padded.
@@ -148,7 +180,7 @@ pub extern "C" fn canvas_native_svg_document_render_to_pixels(
     }
     let doc = unsafe { &mut *doc };
     let slice = unsafe { std::slice::from_raw_parts_mut(pixels, pixels_len) };
-    render_into(doc, slice, width, height, row_bytes, scale, true);
+    render_into(doc, slice, width, height, row_bytes, scale, true, skia_safe::ColorType::n32());
 }
 
 #[unsafe(no_mangle)]

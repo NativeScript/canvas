@@ -1247,9 +1247,10 @@ export abstract class CanvasBase extends ContainerView implements ICanvasBase {
 		}
 	}
 
+	/** `event`: the native view's event JSON, or (Node-API hosts) the same shape as an object. */
 	_handleEvents(event) {
 		try {
-			const data = JSON.parse(event);
+			const data = typeof event === 'string' ? JSON.parse(event) : event;
 			switch (data.event) {
 				case 'down':
 					this._downCallback(data.ptrId, data.x, data.y, data.isPrimary);

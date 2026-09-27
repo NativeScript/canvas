@@ -1,5 +1,5 @@
 import { EventData, Observable, Page } from '@nativescript/core';
-import { runCanvasPerf, runWebGLPerf, runImageBitmapPerf, profileDemo, swarm, touchParticles, runBoundsProbe, runCallBound } from '@demo/shared';
+import { runCanvasPerf, runWebGLPerf, runImageBitmapPerf, profileDemo, swarm, touchParticles, runBoundsProbe, runCallBound, runWebGPUSample } from '@demo/shared';
 import { launchArgs } from '../launch-args';
 
 export function navigatingTo(args: EventData) {
@@ -26,6 +26,9 @@ export function navigatingTo(args: EventData) {
  *
  * `--es suite bounds` checks that getBoundingClientRect is really wired to the
  * native view on Android (BOUNDS| lines).
+ *
+ * `--es suite webgpu:<sample>` runs one of the WebGPU samples (`WEBGPU_SAMPLES`,
+ * e.g. `webgpu:rotatingCube`) on this page's canvas.
  */
 const PROFILABLE: Record<string, (canvas: any) => void> = {
 	swarm: (canvas) => swarm(canvas),
@@ -67,6 +70,36 @@ class PerfModel extends Observable {
 					profileDemo(canvas, start, profile, launchArgs.frames ?? 180, () => {
 						this.set('status', `${profile} profiled — see logcat (PROF|…)`);
 					});
+				} else if (suite?.startsWith('webgpu:')) {
+					const sample = suite.substring('webgpu:'.length);
+					const started = runWebGPUSample(sample, canvas);
+					console.log(started ? `WEBGPU|started|${sample}` : `WEBGPU|error|unknown sample ${sample}`);
+					this.set('status', started ? sample : `unknown sample: ${sample}`);
+				} else if (suite === 'alpha-empty') {
+					// No context, so no swapchain: does the bare panel let the page show through?
+					canvas.parent.backgroundColor = 'magenta';
+					this.set('status', 'alpha-empty: magenta everywhere');
+				} else if (suite === 'alpha' || suite === 'alpha-webgl') {
+					// A cleared canvas shows what is behind it (magenta here), as on the web.
+					canvas.parent.backgroundColor = 'magenta';
+					const w = canvas.width;
+					const h = canvas.height;
+					if (suite === 'alpha') {
+						const ctx = canvas.getContext('2d');
+						ctx.clearRect(0, 0, w, h);
+						ctx.fillStyle = 'red';
+						ctx.fillRect(w / 4, h / 4, w / 2, h / 2);
+					} else {
+						const gl = canvas.getContext('webgl');
+						gl.clearColor(0, 0, 0, 0);
+						gl.clear(gl.COLOR_BUFFER_BIT);
+						gl.enable(gl.SCISSOR_TEST);
+						// GL's y runs up: this is the canvas's top-left quarter.
+						gl.scissor(0, h / 2, w / 2, h / 2);
+						gl.clearColor(1, 0, 0, 1);
+						gl.clear(gl.COLOR_BUFFER_BIT);
+					}
+					this.set('status', suite === 'alpha' ? 'alpha: magenta around a red square' : 'alpha-webgl: a red top-left quarter on magenta');
 				} else if (suite === 'callbound') {
 					runCallBound(canvas);
 					this.set('status', 'done — see logcat (NVCALL|…)');

@@ -1,42 +1,50 @@
-use crate::gpu::bind_group::g_p_u_bind_group;
-use crate::gpu::buffer::g_p_u_buffer;
-use crate::gpu::enums::GPUIndexFormat;
-use crate::gpu::objects::GPUColorDict;
-use crate::gpu::render_bundle::g_p_u_render_bundle;
-use crate::gpu::render_pipeline::g_p_u_render_pipeline;
-use canvas_c::webgpu::structs::CanvasColor;
-use napi::bindgen_prelude::Uint32Array;
-use napi::Either;
-use napi_derive::napi;
 use std::ffi::CString;
 use std::sync::Arc;
 
+use canvas_c::webgpu::gpu_render_pass_encoder::CanvasGPURenderPassEncoder;
+use napi::bindgen_prelude::Unknown;
+use napi::Result;
+use napi_derive::napi;
+
+use crate::gpu::bind_group::g_p_u_bind_group;
+use crate::gpu::buffer::g_p_u_buffer;
+use crate::gpu::handle::Handle;
+use crate::gpu::parse::{
+  array, color_value, downcast, dynamic_offsets, index_format, range_arg, take_string,
+};
+use crate::gpu::render_bundle::g_p_u_render_bundle;
+use crate::gpu::render_pipeline::g_p_u_render_pipeline;
+
 #[napi(js_name = "GPURenderPassEncoder")]
 pub struct g_p_u_render_pass_encoder {
-  pub(crate) encoder: Arc<canvas_c::webgpu::gpu_render_pass_encoder::CanvasGPURenderPassEncoder>,
+  pub(crate) encoder: Handle<CanvasGPURenderPassEncoder>,
 }
 
 #[napi]
 impl g_p_u_render_pass_encoder {
+  fn ptr(&self) -> *const CanvasGPURenderPassEncoder {
+    self.encoder.ptr()
+  }
+
   #[napi(getter)]
   pub fn get_label(&self) -> String {
-    let label = unsafe {
-      canvas_c::webgpu::gpu_render_pass_encoder::canvas_native_webgpu_render_pass_encoder_get_label(
-        Arc::as_ptr(&self.encoder),
+    unsafe {
+      take_string(
+        canvas_c::webgpu::gpu_render_pass_encoder::canvas_native_webgpu_render_pass_encoder_get_label(
+          self.ptr(),
+        ),
       )
-    };
-    if label.is_null() {
-      return String::new();
     }
-    unsafe { CString::from_raw(label).into_string().unwrap() }
+    .unwrap_or_default()
   }
 
   #[napi]
   pub fn begin_occlusion_query(&self, query_index: u32) {
     unsafe {
       canvas_c::webgpu::gpu_render_pass_encoder::canvas_native_webgpu_render_pass_encoder_begin_occlusion_query(
-                Arc::as_ptr(&self.encoder), query_index,
-            )
+        self.ptr(),
+        query_index,
+      )
     }
   }
 
@@ -50,11 +58,11 @@ impl g_p_u_render_pass_encoder {
   ) {
     unsafe {
       canvas_c::webgpu::gpu_render_pass_encoder::canvas_native_webgpu_render_pass_encoder_draw(
-        Arc::as_ptr(&self.encoder),
+        self.ptr(),
         vertex_count,
         instance_count.unwrap_or(1),
-        first_vertex.unwrap_or_default(),
-        first_instance.unwrap_or_default(),
+        first_vertex.unwrap_or(0),
+        first_instance.unwrap_or(0),
       )
     }
   }
@@ -64,61 +72,58 @@ impl g_p_u_render_pass_encoder {
     &self,
     index_count: u32,
     instance_count: Option<u32>,
-    first_vertex: Option<u32>,
+    first_index: Option<u32>,
     base_vertex: Option<i32>,
     first_instance: Option<u32>,
   ) {
     unsafe {
       canvas_c::webgpu::gpu_render_pass_encoder::canvas_native_webgpu_render_pass_encoder_draw_indexed(
-                Arc::as_ptr(&self.encoder),
-                index_count,
-                instance_count.unwrap_or(1),
-                first_vertex.unwrap_or_default(),
-                base_vertex.unwrap_or_default(),
-                first_instance.unwrap_or_default(),
-            )
+        self.ptr(),
+        index_count,
+        instance_count.unwrap_or(1),
+        first_index.unwrap_or(0),
+        base_vertex.unwrap_or(0),
+        first_instance.unwrap_or(0),
+      )
     }
   }
 
   #[napi]
-  pub fn draw_indexed_indirect(&self, indirect_buffer: &g_p_u_buffer, indirect_offset: i64) {
+  pub fn draw_indexed_indirect(&self, indirect_buffer: &g_p_u_buffer, indirect_offset: f64) {
     unsafe {
       canvas_c::webgpu::gpu_render_pass_encoder::canvas_native_webgpu_render_pass_encoder_draw_indexed_indirect(
-                Arc::as_ptr(&self.encoder), Arc::as_ptr(&indirect_buffer.buffer), indirect_offset as u64,
-            )
+        self.ptr(),
+        Arc::as_ptr(&indirect_buffer.buffer),
+        indirect_offset.max(0.) as u64,
+      )
     }
   }
 
   #[napi]
-  pub fn draw_indirect(&self, indirect_buffer: &g_p_u_buffer, indirect_offset: i64) {
+  pub fn draw_indirect(&self, indirect_buffer: &g_p_u_buffer, indirect_offset: f64) {
     unsafe {
       canvas_c::webgpu::gpu_render_pass_encoder::canvas_native_webgpu_render_pass_encoder_draw_indirect(
-                Arc::as_ptr(&self.encoder), Arc::as_ptr(&indirect_buffer.buffer), indirect_offset as u64,
-            )
+        self.ptr(),
+        Arc::as_ptr(&indirect_buffer.buffer),
+        indirect_offset.max(0.) as u64,
+      )
     }
   }
-
-  // #[napi]
-  // pub fn multi_draw_indexed(&self, indexCount: u32, instanceCount: Option<u32> = 1, firstVertex: Option<u32> = 0, firstInstance: Option<u32> = 0, Option<u32> = 0) {
-  //     this[native_].multiDrawIndexed(indexCount, instanceCount?? 1, firstVertex?? 0, firstInstance?? 0, count?? 0);
-  //     unsafe {
-  //         canvas_c::webgpu::gpu_render_pass_encoder::canvas_native_webgpu_render_pass_encoder_multi_draw_indexed(
-  //             Arc::as_ptr(&self.encoder), indexCount,  instanceCount.unwrap_or(1), firstVertex.unwrap_or_default(), firstInstance.unwrap_or_default()
-  //         )
-  //     }
-  // }
 
   #[napi]
   pub fn multi_draw_indexed_indirect(
     &self,
     indirect_buffer: &g_p_u_buffer,
-    indirect_offset: i64,
+    indirect_offset: f64,
     count: Option<u32>,
   ) {
     unsafe {
       canvas_c::webgpu::gpu_render_pass_encoder::canvas_native_webgpu_render_pass_encoder_multi_draw_indexed_indirect(
-                Arc::as_ptr(&self.encoder), Arc::as_ptr(&indirect_buffer.buffer), indirect_offset as u64, count.unwrap_or(0),
-            )
+        self.ptr(),
+        Arc::as_ptr(&indirect_buffer.buffer),
+        indirect_offset.max(0.) as u64,
+        count.unwrap_or(0),
+      )
     }
   }
 
@@ -126,13 +131,16 @@ impl g_p_u_render_pass_encoder {
   pub fn multi_draw_indirect(
     &self,
     indirect_buffer: &g_p_u_buffer,
-    indirect_offset: i64,
+    indirect_offset: f64,
     count: Option<u32>,
   ) {
     unsafe {
       canvas_c::webgpu::gpu_render_pass_encoder::canvas_native_webgpu_render_pass_encoder_multi_draw_indirect(
-                Arc::as_ptr(&self.encoder), Arc::as_ptr(&indirect_buffer.buffer), indirect_offset as u64, count.unwrap_or(0),
-            )
+        self.ptr(),
+        Arc::as_ptr(&indirect_buffer.buffer),
+        indirect_offset.max(0.) as u64,
+        count.unwrap_or(0),
+      )
     }
   }
 
@@ -140,30 +148,40 @@ impl g_p_u_render_pass_encoder {
   pub fn end(&self) {
     unsafe {
       canvas_c::webgpu::gpu_render_pass_encoder::canvas_native_webgpu_render_pass_encoder_end(
-        Arc::as_ptr(&self.encoder),
+        self.ptr(),
       )
     }
+  }
+
+  /// Releases the pass now (packages/canvas does right after `end`).
+  #[napi]
+  pub fn destroy(&self) {
+    self.encoder.release();
   }
 
   #[napi]
   pub fn end_occlusion_query(&self) {
     unsafe {
       canvas_c::webgpu::gpu_render_pass_encoder::canvas_native_webgpu_render_pass_encoder_end_occlusion_query(
-                Arc::as_ptr(&self.encoder),
-            )
+        self.ptr(),
+      )
     }
   }
 
-  #[napi]
-  pub fn execute_bundles(&self, bundles: Vec<&g_p_u_render_bundle>) {
-    let bundles = bundles
-      .into_iter()
+  #[napi(ts_args_type = "bundles: GPURenderBundle[]")]
+  pub fn execute_bundles(&self, bundles: Unknown) {
+    let bundles: Vec<_> = array(&bundles)
+      .unwrap_or_default()
+      .iter()
+      .filter_map(downcast::<g_p_u_render_bundle>)
       .map(|bundle| Arc::as_ptr(&bundle.render_bundle))
-      .collect::<Vec<_>>();
+      .collect();
     unsafe {
       canvas_c::webgpu::gpu_render_pass_encoder::canvas_native_webgpu_render_pass_encoder_execute_bundles(
-                Arc::as_ptr(&self.encoder), bundles.as_ptr(), bundles.len(),
-            )
+        self.ptr(),
+        if bundles.is_empty() { std::ptr::null() } else { bundles.as_ptr() },
+        bundles.len(),
+      )
     }
   }
 
@@ -172,8 +190,9 @@ impl g_p_u_render_pass_encoder {
     if let Ok(label) = CString::new(marker_label) {
       unsafe {
         canvas_c::webgpu::gpu_render_pass_encoder::canvas_native_webgpu_render_pass_encoder_insert_debug_marker(
-                    Arc::as_ptr(&self.encoder), label.as_ptr(),
-                )
+          self.ptr(),
+          label.as_ptr(),
+        )
       }
     }
   }
@@ -182,8 +201,8 @@ impl g_p_u_render_pass_encoder {
   pub fn pop_debug_group(&self) {
     unsafe {
       canvas_c::webgpu::gpu_render_pass_encoder::canvas_native_webgpu_render_pass_encoder_pop_debug_group(
-                Arc::as_ptr(&self.encoder)
-            )
+        self.ptr(),
+      )
     }
   }
 
@@ -192,104 +211,90 @@ impl g_p_u_render_pass_encoder {
     if let Ok(label) = CString::new(group_label) {
       unsafe {
         canvas_c::webgpu::gpu_render_pass_encoder::canvas_native_webgpu_render_pass_encoder_push_debug_group(
-                    Arc::as_ptr(&self.encoder), label.as_ptr(),
-                )
+          self.ptr(),
+          label.as_ptr(),
+        )
       }
     }
   }
 
-  #[napi]
+  /// `setBindGroup(index, bindGroup, dynamicOffsets?, start?, length?)`.
+  #[napi(
+    ts_args_type = "index: number, bindGroup: GPUBindGroup | null, dynamicOffsetsData?: Uint32Array | number[], dynamicOffsetsDataStart?: number, dynamicOffsetsDataLength?: number"
+  )]
   pub fn set_bind_group(
     &self,
     index: u32,
-    bind_group: &g_p_u_bind_group,
-    dynamic_offsets_data: Option<Either<Vec<u32>, Uint32Array>>,
-    dynamic_offsets_data_start: Option<i64>,
-    dynamic_offsets_data_length: Option<i64>,
-  ) {
-    let mut dynamic_offsets = std::ptr::null();
-    let mut dynamic_offsets_size: usize = 0;
-    let mut dynamic_offsets_start: usize = 0;
-    let mut dynamic_offsets_length: usize = 0;
-
-    if let Some(dynamicOffsetsData) = dynamic_offsets_data {
-      match dynamicOffsetsData {
-        Either::A(array) => {
-          dynamic_offsets = array.as_ptr();
-          dynamic_offsets_size = array.len();
-        }
-        Either::B(buffer) => {
-          dynamic_offsets = buffer.as_ptr();
-          dynamic_offsets_size = buffer.len();
-
-          dynamic_offsets_start = dynamic_offsets_data_start.unwrap_or(0) as usize;
-          dynamic_offsets_length = dynamic_offsets_data_length.unwrap_or(0) as usize;
-        }
-      }
-    }
-
+    bind_group: Option<Unknown>,
+    dynamic_offsets_data: Option<Unknown>,
+    dynamic_offsets_data_start: Option<f64>,
+    dynamic_offsets_data_length: Option<f64>,
+  ) -> Result<()> {
+    let group = bind_group
+      .as_ref()
+      .and_then(downcast::<g_p_u_bind_group>)
+      .map_or(std::ptr::null(), |group| Arc::as_ptr(&group.group));
+    let offsets = dynamic_offsets(
+      dynamic_offsets_data.as_ref(),
+      dynamic_offsets_data_start,
+      dynamic_offsets_data_length,
+    )?;
     unsafe {
       canvas_c::webgpu::gpu_render_pass_encoder::canvas_native_webgpu_render_pass_encoder_set_bind_group(
-                Arc::as_ptr(&self.encoder), index, Arc::as_ptr(&bind_group.group), dynamic_offsets, dynamic_offsets_size, dynamic_offsets_start, dynamic_offsets_length,
-            )
+        self.ptr(),
+        index,
+        group,
+        offsets.as_ptr(),
+        offsets.len(),
+        0,
+        offsets.len(),
+      )
+    }
+    Ok(())
+  }
+
+  /// `setBlendConstant({ r, g, b, a } | [r, g, b, a])`.
+  #[napi(ts_args_type = "color: { r: number, g: number, b: number, a: number } | number[]")]
+  pub fn set_blend_constant(&self, color: Unknown) {
+    let color = color_value(&color);
+    unsafe {
+      canvas_c::webgpu::gpu_render_pass_encoder::canvas_native_webgpu_render_pass_encoder_set_blend_constant(
+        self.ptr(),
+        &color,
+      )
     }
   }
 
-  #[napi]
-  pub fn set_blend_constant(&self, color: Either<GPUColorDict, Vec<f64>>) {
-    match color {
-      Either::A(dict) => {
-        let color = CanvasColor {
-          r: dict.r,
-          g: dict.g,
-          b: dict.b,
-          a: dict.a,
-        };
-        unsafe {
-          canvas_c::webgpu::gpu_render_pass_encoder::canvas_native_webgpu_render_pass_encoder_set_blend_constant(
-                        Arc::as_ptr(&self.encoder), &color
-                    )
-        }
-      }
-      Either::B(array) => {
-        let color = CanvasColor {
-          r: array[0],
-          g: array[1],
-          b: array[2],
-          a: array[3],
-        };
-        unsafe {
-          canvas_c::webgpu::gpu_render_pass_encoder::canvas_native_webgpu_render_pass_encoder_set_blend_constant(
-                       Arc::as_ptr(&self.encoder),  &color
-                   )
-        }
-      }
-    }
-  }
-
-  #[napi]
+  /// `setIndexBuffer(buffer, format, offset?, size?)`: format 0 / 1 (packages/canvas's fast
+  /// path) or `"uint16"` / `"uint32"`.
+  #[napi(
+    ts_args_type = "buffer: GPUBuffer, indexFormat: number | 'uint16' | 'uint32', offset?: number, size?: number"
+  )]
   pub fn set_index_buffer(
     &self,
     buffer: &g_p_u_buffer,
-    index_format: GPUIndexFormat,
-    offset: Option<i64>,
-    size: Option<i64>,
+    index_format_value: Unknown,
+    offset: Option<f64>,
+    size: Option<f64>,
   ) {
     unsafe {
       canvas_c::webgpu::gpu_render_pass_encoder::canvas_native_webgpu_render_pass_encoder_set_index_buffer(
-                Arc::as_ptr(&self.encoder), Arc::as_ptr(&buffer.buffer), index_format.into(), offset.unwrap_or(0), size.unwrap_or(
-                    buffer.size() - offset.unwrap_or(0)
-                )
-            )
+        self.ptr(),
+        Arc::as_ptr(&buffer.buffer),
+        index_format(&index_format_value),
+        range_arg(offset),
+        range_arg(size),
+      )
     }
   }
 
   #[napi]
-  pub fn set_pipeline(&self, render_pipeline: &g_p_u_render_pipeline) {
+  pub fn set_pipeline(&self, pipeline: &g_p_u_render_pipeline) {
     unsafe {
       canvas_c::webgpu::gpu_render_pass_encoder::canvas_native_webgpu_render_pass_encoder_set_pipeline(
-                Arc::as_ptr(&self.encoder), Arc::as_ptr(&render_pipeline.pipeline),
-            )
+        self.ptr(),
+        Arc::as_ptr(&pipeline.pipeline),
+      )
     }
   }
 
@@ -297,8 +302,12 @@ impl g_p_u_render_pass_encoder {
   pub fn set_scissor_rect(&self, x: u32, y: u32, width: u32, height: u32) {
     unsafe {
       canvas_c::webgpu::gpu_render_pass_encoder::canvas_native_webgpu_render_pass_encoder_set_scissor_rect(
-                Arc::as_ptr(&self.encoder), x,y,width, height
-            )
+        self.ptr(),
+        x,
+        y,
+        width,
+        height,
+      )
     }
   }
 
@@ -306,25 +315,32 @@ impl g_p_u_render_pass_encoder {
   pub fn set_stencil_reference(&self, reference: u32) {
     unsafe {
       canvas_c::webgpu::gpu_render_pass_encoder::canvas_native_webgpu_render_pass_encoder_set_stencil_reference(
-                Arc::as_ptr(&self.encoder), reference
-            )
+        self.ptr(),
+        reference,
+      )
     }
   }
 
-  #[napi]
+  /// `setVertexBuffer(slot, buffer, offset?, size?)`; a null buffer is ignored.
+  #[napi(ts_args_type = "slot: number, buffer: GPUBuffer | null, offset?: number, size?: number")]
   pub fn set_vertex_buffer(
     &self,
     slot: u32,
-    buffer: &g_p_u_buffer,
-    offset: Option<i64>,
-    size: Option<i64>,
+    buffer: Option<Unknown>,
+    offset: Option<f64>,
+    size: Option<f64>,
   ) {
+    let Some(buffer) = buffer.as_ref().and_then(downcast::<g_p_u_buffer>) else {
+      return;
+    };
     unsafe {
       canvas_c::webgpu::gpu_render_pass_encoder::canvas_native_webgpu_render_pass_encoder_set_vertex_buffer(
-                Arc::as_ptr(&self.encoder), slot, Arc::as_ptr(&buffer.buffer),  offset.unwrap_or(0), size.unwrap_or(
-                    buffer.size() - offset.unwrap_or(0)
-                )
-            )
+        self.ptr(),
+        slot,
+        Arc::as_ptr(&buffer.buffer),
+        range_arg(offset),
+        range_arg(size),
+      )
     }
   }
 
@@ -340,8 +356,14 @@ impl g_p_u_render_pass_encoder {
   ) {
     unsafe {
       canvas_c::webgpu::gpu_render_pass_encoder::canvas_native_webgpu_render_pass_encoder_set_viewport(
-                Arc::as_ptr(&self.encoder), x as f32, y as f32, width as f32, height as f32, min_depth as f32, max_depth as f32
-            )
+        self.ptr(),
+        x as f32,
+        y as f32,
+        width as f32,
+        height as f32,
+        min_depth as f32,
+        max_depth as f32,
+      )
     }
   }
 }

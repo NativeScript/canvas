@@ -326,7 +326,12 @@ export class SvgDocumentWrapper {
 		return this.__nativePointer;
 	}
 
-	renderToBuffer(buffer: Uint8Array, width: number, height: number, scale: number = 1) {
-		this.__native.renderToBuffer(buffer, width, height, scale);
+	/** Premultiplied RGBA pixels; `bgra` for BGRA (Node-API module only: Windows' XAML bitmaps). */
+	renderToBuffer(buffer: Uint8Array, width: number, height: number, scale: number = 1, bgra?: boolean) {
+		if (bgra) {
+			this.__native.renderToBuffer(buffer, width, height, scale, true);
+		} else {
+			this.__native.renderToBuffer(buffer, width, height, scale);
+		}
 	}
 }

@@ -445,6 +445,35 @@ impl ImageAsset {
         lock.raster_image_cache.clone()
     }
 
+    /// Encodes the image and writes it to `path`. `format` is packages/canvas's
+    /// `ImageAssetSaveFormat`: 0 JPG, 1 PNG (Skia has no ICO, BMP or TIFF encoder, so those fail).
+    #[cfg(feature = "2d")]
+    pub fn save_to_path(&self, path: &str, format: u32) -> bool {
+        let format = match format {
+            0 => skia_safe::EncodedImageFormat::JPEG,
+            1 => skia_safe::EncodedImageFormat::PNG,
+            _ => {
+                self.set_error("Unsupported save format");
+                return false;
+            }
+        };
+        let Some(image) = self.raster_image() else {
+            self.set_error("No image to save");
+            return false;
+        };
+        let Some(data) = image.encode(None, format, 100) else {
+            self.set_error("Failed to encode the image");
+            return false;
+        };
+        match std::fs::write(path, data.as_bytes()) {
+            Ok(()) => true,
+            Err(error) => {
+                self.set_error(&error.to_string());
+                false
+            }
+        }
+    }
+
     pub fn strong_count(&self) -> usize {
         Arc::strong_count(&self.0)
     }

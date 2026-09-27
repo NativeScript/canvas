@@ -15,8 +15,8 @@ export class GPURenderBundleEncoder {
 		this[native_].draw(vertexCount, instanceCount ?? 1, firstVertex ?? 0, firstInstance ?? 0);
 	}
 
-	drawIndexed(indexCount: number, instanceCount: number = 1, firstVertex: number = 0, firstInstance: number = 0) {
-		this[native_].drawIndexed(indexCount, instanceCount ?? 1, firstVertex ?? 0, firstInstance ?? 0);
+	drawIndexed(indexCount: number, instanceCount: number = 1, firstIndex: number = 0, baseVertex: number = 0, firstInstance: number = 0) {
+		this[native_].drawIndexed(indexCount, instanceCount ?? 1, firstIndex ?? 0, baseVertex ?? 0, firstInstance ?? 0);
 	}
 
 	drawIndexedIndirect(indirectBuffer: GPUBuffer, indirectOffset: number) {

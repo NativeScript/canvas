@@ -344,6 +344,15 @@ export class Element extends Node {
 				nativeElement.nativeView.getBoundingClientRect(this._boundingClientRect);
 			}
 
+			if (!__APPLE__ && !globalThis.isAndroid) {
+				// Other hosts: the view's place in the window, in DIPs.
+				const origin = nativeElement.getLocationInWindow?.();
+				const size = nativeElement.getActualSize?.();
+				if (origin && size) {
+					return new DOMRect(origin.x, origin.y, size.width, size.height, origin.y, origin.x + size.width, origin.y + size.height, origin.x);
+				}
+			}
+
 			const rectBuffer = this._boundingClientRect;
 			return new DOMRect(rectBuffer[6], rectBuffer[7], rectBuffer[4], rectBuffer[5], rectBuffer[0], rectBuffer[1], rectBuffer[2], rectBuffer[3]);
 		}

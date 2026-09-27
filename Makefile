@@ -2,6 +2,8 @@ ARCHS_IOS = x86_64-apple-ios aarch64-apple-ios aarch64-apple-ios-sim
 ARCHS_VISIONOS = aarch64-apple-visionos aarch64-apple-visionos-sim
 ARCHS_TVOS = aarch64-apple-tvos aarch64-apple-tvos-sim
 ARCHS_ANDROID = i686-linux-android x86_64-linux-android aarch64-linux-android armv7-linux-androideabi
+# Node-API hosts (crates/canvas-napi).
+ARCHS_WINDOWS = x86_64-pc-windows-msvc aarch64-pc-windows-msvc
 
 XCFRAMEWORK = CanvasNative.xcframework
 RUST_LIB = canvasnative
@@ -15,6 +17,12 @@ visionos: $(ARCHS_VISIONOS)
 tvos: $(ARCHS_TVOS)
 
 android: GENERATE_ANDROID
+
+windows: $(ARCHS_WINDOWS)
+
+windows-svg: $(addsuffix _svg_napi,$(ARCHS_WINDOWS))
+
+windows-audio: $(addsuffix _audio_napi,$(ARCHS_WINDOWS))
 
 ios-svg: GENERATE_IOS_SVG
 
@@ -77,6 +85,18 @@ $(ARCHS_TVOS): %:
 .PHONY: $(ARCHS_ANDROID)
 $(ARCHS_ANDROID): %:
 	./tools/scripts/build-android.sh $@
+
+.PHONY: windows $(ARCHS_WINDOWS)
+$(ARCHS_WINDOWS): %:
+	./tools/scripts/build-napi.sh $@
+
+.PHONY: windows-svg $(addsuffix _svg_napi,$(ARCHS_WINDOWS))
+$(addsuffix _svg_napi,$(ARCHS_WINDOWS)): %_svg_napi:
+	./tools/scripts/build-napi.sh $* release-napi canvas-svg-napi
+
+.PHONY: windows-audio $(addsuffix _audio_napi,$(ARCHS_WINDOWS))
+$(addsuffix _audio_napi,$(ARCHS_WINDOWS)): %_audio_napi:
+	./tools/scripts/build-napi.sh $* release-napi audio-context-napi
 
 .PHONY: GENERATE_ANDROID
 GENERATE_ANDROID: $(ARCHS_ANDROID)

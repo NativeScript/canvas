@@ -15,6 +15,12 @@ mod android;
 #[cfg(target_os = "android")]
 pub use android::*;
 
+#[cfg(target_os = "windows")]
+mod egl;
+
+#[cfg(target_os = "windows")]
+pub use egl::*;
+
 pub fn get_shader_info_log(shader: u32) -> String {
     let mut length = 0i32;
     unsafe { gl_bindings::GetShaderiv(shader, gl_bindings::INFO_LOG_LENGTH, &mut length) }

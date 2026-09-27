@@ -164,7 +164,7 @@ impl WebGLState {
         self.state.borrow().version
     }
 
-    #[cfg(not(target_os = "android"))]
+    #[cfg(any(target_os = "ios", target_os = "macos", target_os = "visionos", target_os = "tvos"))]
     pub fn set_surface(&mut self, view: NonNull<std::ffi::c_void>) -> bool {
         self.context.set_surface(view)
     }
@@ -499,6 +499,37 @@ impl WebGLState {
 
     pub fn swap_buffers(&self) -> bool {
         self.context.swap_buffers()
+    }
+
+    /// Windows: shows a texture-backed context (`GLContext::create_texture_context`) in a WinUI
+    /// `SwapChainPanel`. UI thread.
+    #[cfg(target_os = "windows")]
+    pub unsafe fn attach_swap_chain_panel(&mut self, panel: *mut std::ffi::c_void) -> bool {
+        let alpha = self.get_attributes().get_alpha();
+        unsafe { self.context.attach_swap_chain_panel(panel, alpha) }
+    }
+
+    /// Presents into a XAML `SurfaceImageSource` instead (a canvas that blends with the page).
+    #[cfg(target_os = "windows")]
+    pub unsafe fn attach_xaml_surface(&mut self, source: *mut std::ffi::c_void) -> bool {
+        unsafe { self.context.attach_xaml_surface(source) }
+    }
+
+    #[cfg(target_os = "windows")]
+    pub fn set_swap_chain_transform(&self, scale_x: f32, scale_y: f32, offset_x: f32, offset_y: f32) -> bool {
+        self.context.set_swap_chain_transform(scale_x, scale_y, offset_x, offset_y)
+    }
+
+    /// Windows: finishes the frame and presents it when on screen.
+    #[cfg(target_os = "windows")]
+    pub fn present(&self) -> bool {
+        self.context.present()
+    }
+
+    /// Windows: resizes a texture-backed drawing buffer (and its swapchain); clears it.
+    #[cfg(target_os = "windows")]
+    pub fn resize_texture_surface(&mut self, width: i32, height: i32) -> bool {
+        self.context.resize_texture_surface(width, height)
     }
 
     pub fn make_current_and_swap_buffers(&self) -> bool {
@@ -1111,6 +1142,27 @@ impl WebGLExtension for OES_texture_half_float_linear {
     }
 }
 
+/// The entry points behind OES_vertex_array_object, ANGLE_instanced_arrays and
+/// WEBGL_draw_buffers. On Windows those extensions are WebGL 1 only and a WebGL 1 context is
+/// OpenGL ES 2 (ANGLE), where only the suffixed extension functions exist.
+#[cfg(target_os = "windows")]
+mod ext_gl {
+    pub use gl_bindings::{
+        BindVertexArrayOES as BindVertexArray, DeleteVertexArraysOES as DeleteVertexArrays,
+        DrawArraysInstancedANGLE as DrawArraysInstanced, DrawBuffersEXT as DrawBuffers,
+        DrawElementsInstancedANGLE as DrawElementsInstanced, GenVertexArraysOES as GenVertexArrays,
+        IsVertexArrayOES as IsVertexArray, VertexAttribDivisorANGLE as VertexAttribDivisor,
+    };
+}
+
+#[cfg(not(target_os = "windows"))]
+mod ext_gl {
+    pub use gl_bindings::{
+        BindVertexArray, DeleteVertexArrays, DrawArraysInstanced, DrawBuffers, DrawElementsInstanced,
+        GenVertexArrays, IsVertexArray, VertexAttribDivisor,
+    };
+}
+
 #[derive(Clone)]
 pub struct OES_vertex_array_object {
     context: canvas_core::gpu::gl::GLContextRaw,
@@ -1128,24 +1180,24 @@ impl OES_vertex_array_object {
     pub fn create_vertex_array_oes(&self) -> u32 {
         self.context.make_current();
         let mut array = [0u32; 1];
-        unsafe { gl_bindings::GenVertexArrays(1, array.as_mut_ptr()) };
+        unsafe { ext_gl::GenVertexArrays(1, array.as_mut_ptr()) };
         array[0]
     }
 
     pub fn delete_vertex_array_oes(&self, array_object: u32) {
         self.context.make_current();
         let array = [array_object];
-        unsafe { gl_bindings::DeleteVertexArrays(1, array.as_ptr()) };
+        unsafe { ext_gl::DeleteVertexArrays(1, array.as_ptr()) };
     }
 
     pub fn is_vertex_array_oes(&self, array_object: u32) -> bool {
         self.context.make_current();
-        unsafe { gl_bindings::IsVertexArray(array_object) != 0 }
+        unsafe { ext_gl::IsVertexArray(array_object) != 0 }
     }
 
     pub fn bind_vertex_array_oes(&self, array_object: u32) {
         self.context.make_current();
-        unsafe { gl_bindings::BindVertexArray(array_object) }
+        unsafe { ext_gl::BindVertexArray(array_object) }
     }
 }
 
@@ -1387,7 +1439,7 @@ impl ANGLE_instanced_arrays {
     }
     pub fn draw_arrays_instanced_angle(&self, mode: u32, first: i32, count: i32, primcount: i32) {
         self.context.make_current();
-        unsafe { gl_bindings::DrawArraysInstanced(mode, first, count, primcount) }
+        unsafe { ext_gl::DrawArraysInstanced(mode, first, count, primcount) }
     }
 
     pub fn draw_elements_instanced_angle(
@@ -1400,7 +1452,7 @@ impl ANGLE_instanced_arrays {
     ) {
         self.context.make_current();
         unsafe {
-            gl_bindings::DrawElementsInstanced(
+            ext_gl::DrawElementsInstanced(
                 mode,
                 count,
                 type_,
@@ -1412,7 +1464,7 @@ impl ANGLE_instanced_arrays {
 
     pub fn vertex_attrib_divisor_angle(&self, index: u32, divisor: u32) {
         self.context.make_current();
-        unsafe { gl_bindings::VertexAttribDivisor(index, divisor) }
+        unsafe { ext_gl::VertexAttribDivisor(index, divisor) }
     }
 }
 
@@ -1522,7 +1574,7 @@ impl WEBGL_draw_buffers {
 
     pub fn draw_buffers_webgl(&self, buffers: &[u32]) {
         self.context.make_current();
-        unsafe { gl_bindings::DrawBuffers(buffers.len().try_into().unwrap(), buffers.as_ptr()) }
+        unsafe { ext_gl::DrawBuffers(buffers.len().try_into().unwrap(), buffers.as_ptr()) }
     }
 }
 

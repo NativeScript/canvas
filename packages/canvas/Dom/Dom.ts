@@ -2,6 +2,8 @@ import { LayoutBase, ViewBase, Utils, View, Screen } from '@nativescript/core';
 import { Canvas } from '../Canvas';
 import { Image } from './Image';
 import { Paint } from './Paint';
+import { NAPI_HOST } from '../platform';
+import { addNativeChild, createContainerView } from '../platform/index';
 
 enum State {
 	None,
@@ -34,7 +36,7 @@ export class Dom extends LayoutBase {
 		if (__ANDROID__) {
 			return new android.widget.LinearLayout(this._context);
 		}
-		return super.createNativeView();
+		return createContainerView() ?? super.createNativeView();
 	}
 
 	initNativeView(): void {
@@ -138,6 +140,9 @@ export class Dom extends LayoutBase {
 
 			if (__ANDROID__) {
 				this.nativeView.addView(this._canvas.nativeView);
+			}
+			if (NAPI_HOST) {
+				addNativeChild(this.nativeView, this._canvas.nativeView);
 			}
 			return true;
 		} else if (view instanceof Paint || view instanceof Image) {

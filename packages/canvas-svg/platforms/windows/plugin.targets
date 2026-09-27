@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <PropertyGroup>
+    <_NSCanvasSvgArch Condition="'$(NSLibPlatform)' != ''">$(NSLibPlatform)</_NSCanvasSvgArch>
+    <_NSCanvasSvgArch Condition="'$(_NSCanvasSvgArch)' == '' and ('$(Platform)' == 'ARM64' or '$(Platform)' == 'arm64')">arm64</_NSCanvasSvgArch>
+    <!-- x64 when $(Platform) is unset/AnyCPU during evaluation. -->
+    <_NSCanvasSvgArch Condition="'$(_NSCanvasSvgArch)' == '' or '$(_NSCanvasSvgArch)' == 'x86_64'">x64</_NSCanvasSvgArch>
+    <_NSCanvasSvgDir>$(MSBuildThisFileDirectory)$(_NSCanvasSvgArch)\</_NSCanvasSvgDir>
+  </PropertyGroup>
+
+  <!-- An explicit Copy: with EnableMsixTooling, Content items do not reliably reach $(OutDir). -->
+  <Target Name="CopyNativeScriptCanvasSvg" AfterTargets="Build">
+    <ItemGroup>
+      <_NSCanvasSvgFiles Include="$(_NSCanvasSvgDir)*.node" />
+    </ItemGroup>
+    <Warning Text="[@nativescript/canvas-svg] No native module for $(_NSCanvasSvgArch) in $(_NSCanvasSvgDir); build it with `make windows-svg`." Condition="!Exists('$(_NSCanvasSvgDir)canvassvg.node')" />
+    <Copy SourceFiles="@(_NSCanvasSvgFiles)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+  </Target>
+</Project>

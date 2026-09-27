@@ -1,3 +1,5 @@
+import { NAPI_HOST } from './platform';
+
 declare var __non_webpack_require__, CanvasModule;
 export class Helpers {
 	static _initialized = false;
@@ -18,6 +20,12 @@ export class Helpers {
 		if (__APPLE__) {
 			const cm = new CanvasModule();
 			cm.install();
+			this._initialized = true;
+		}
+
+		if (NAPI_HOST) {
+			// The addon installs globalThis.CanvasModule when it loads.
+			__non_webpack_require__('system_lib://canvasnative.node');
 			this._initialized = true;
 		}
 	}

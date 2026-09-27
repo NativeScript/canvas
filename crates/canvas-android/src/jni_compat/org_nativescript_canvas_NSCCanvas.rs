@@ -133,6 +133,57 @@ pub extern "system" fn nativeReleaseWebGPU(_: JNIEnv, _: JClass, context: jlong)
     }
 }
 
+#[no_mangle]
+pub extern "system" fn nativeDetachWebGPUSurface(_: JNIEnv, _: JClass, context: jlong) {
+    if context == 0 {
+        return;
+    }
+
+    unsafe {
+        canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_context_detach_surface(
+            context as _,
+        );
+    }
+}
+
+#[no_mangle]
+pub extern "system" fn nativeDetach2DSurface(_: JNIEnv, _: JClass, context: jlong) {
+    if context == 0 {
+        return;
+    }
+    let context = unsafe { &mut *(context as *mut canvas_c::CanvasRenderingContext2D) };
+    let context = context.get_context_mut();
+
+    if context.vulkan_context.is_some() {
+        context.detach_vulkan_view();
+        return;
+    }
+
+    let color_space = context.surface_data().color_space();
+    let alpha = !context.surface_data().is_opaque();
+    let width = context.surface_data().width() as i32;
+    let height = context.surface_data().height() as i32;
+    context.flush_and_render_to_surface();
+    if let Some(gl_context) = context.gl_context.as_mut() {
+        let mut attr = canvas_core::context_attributes::ContextAttributes::new(
+            alpha,
+            false,
+            false,
+            false,
+            PowerPreference::Default,
+            true,
+            false,
+            false,
+            false,
+            true,
+            false,
+            color_space,
+        );
+        gl_context.resize_pbuffer(&mut attr, width, height);
+        gl_context.make_current();
+    }
+}
+
 // #[cfg(feature = "vulkan")]
 #[no_mangle]
 pub extern "system" fn nativeCreate2dContextVulkan(
@@ -404,7 +455,6 @@ pub extern "system" fn nativeUpdate2DSurface(
                     context.make_current();
                 }
 
-                #[cfg(feature = "vulkan")]
                 if let Some(vulkan_context) = context.vulkan_context.as_mut() {
                     vulkan_context.set_view(
                         window.ptr().as_ptr() as *mut std::os::raw::c_void,

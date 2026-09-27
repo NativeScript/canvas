@@ -193,14 +193,37 @@ class NSCCanvas : FrameLayout {
 
 	internal fun surfaceDestroyed() {
 		listener?.surfaceDestroyed()
-		if (engine == Engine.GL && nativeContext != 0L) {
-			if (is2D) {
-				nativeUpdate2DSurfaceNoSurface(surfaceWidth, surfaceHeight, nativeContext)
-			} else {
-				nativeUpdateWebGLNoSurface(surfaceWidth, surfaceHeight, nativeContext)
-			}
+		// CPU contexts draw into their own view.
+		if (engine != Engine.CPU) {
+			detachSurface(nativeContext, engine, is2D)
 		}
 		isSurfaceDestroyed = true
+	}
+
+	private fun detachSurface(ctx: Long, engine: Engine, is2D: Boolean) {
+		if (ctx == 0L) {
+			return
+		}
+		when (engine) {
+			Engine.GL -> {
+				if (is2D) {
+					nativeDetach2DSurface(ctx)
+				} else {
+					nativeUpdateWebGLNoSurface(surfaceWidth, surfaceHeight, ctx)
+				}
+			}
+
+			Engine.GPU -> {
+				if (is2D) {
+					nativeDetach2DSurface(ctx)
+				} else {
+					nativeDetachWebGPUSurface(ctx)
+				}
+			}
+
+			Engine.CPU -> nativeContext2DClearRenderFunc(ctx)
+			Engine.None -> {}
+		}
 	}
 
 	// GL/EGL and Skia-GPU teardown is thread-affine: the native context is
@@ -233,10 +256,10 @@ class NSCCanvas : FrameLayout {
 		val engine = this.engine
 		val is2D = this.is2D
 		mainHandler.post {
+			detachSurface(ctx, engine, is2D)
 			when (engine) {
 				Engine.None -> {}
 				Engine.CPU -> {
-					nativeContext2DClearRenderFunc(ctx)
 					nativeRelease2DContext(ctx)
 				}
 				Engine.GL -> {
@@ -1203,6 +1226,14 @@ class NSCCanvas : FrameLayout {
 		@JvmStatic
 		@FastNative
 		external fun nativeReleaseWebGPU(context: Long)
+
+		@JvmStatic
+		@FastNative
+		external fun nativeDetachWebGPUSurface(context: Long)
+
+		@JvmStatic
+		@FastNative
+		external fun nativeDetach2DSurface(context: Long)
 
 		@JvmStatic
 		@FastNative

@@ -830,9 +830,10 @@ void CanvasJSIModule::Create2DContextWithPointer(const v8::FunctionCallbackInfo<
 	auto ptr = args[0]->ToBigInt(context).ToLocalChecked()->Int64Value();
 	
 	auto context_2d = canvas_native_context_create_with_pointer(ptr);
+	canvas_native_context_reference(context_2d);
 	
 	auto ret = CanvasRenderingContext2DImpl::NewInstance(isolate, new CanvasRenderingContext2DImpl(
-																				 context_2d, false));
+																				 context_2d, true));
 	args.GetReturnValue().Set(ret);
 }
 
@@ -1093,6 +1094,7 @@ void CanvasJSIModule::CreateWebGLContext(const v8::FunctionCallbackInfo<v8::Valu
 	if (count == 6) {
 		auto ctx = args[1].As<v8::BigInt>()->Int64Value();
 		auto webgl = (WebGLState *) ctx;
+		canvas_native_webgl_state_reference(webgl);
 		
 		auto renderingContext = WebGLRenderingContext::NewInstance(isolate,
 																															 new WebGLRenderingContext(
@@ -1177,6 +1179,7 @@ void CanvasJSIModule::CreateWebGL2Context(const v8::FunctionCallbackInfo<v8::Val
 	if (count == 6) {
 		auto ctx = args[1].As<v8::BigInt>()->Int64Value();
 		auto webgl = (WebGLState *) ctx;
+		canvas_native_webgl_state_reference(webgl);
 		auto renderingContext = WebGL2RenderingContext::NewInstance(isolate,
 																																new WebGL2RenderingContext(
 																																													 webgl,
@@ -1251,8 +1254,6 @@ CanvasJSIModule::CreateWebGPUContextWithPointer(const v8::FunctionCallbackInfo<v
 	
 	auto wgpu = static_cast<CanvasGPUCanvasContext *>((void *) ptr);
 
-	// The platform view keeps its own strong count and releases it on teardown;
-	// the wrapper's ArcHandle releases once more when finalized, so it needs its own.
 	canvas_native_webgpu_context_reference(wgpu);
 
 	auto ret = GPUCanvasContextImpl::NewInstance(isolate, new GPUCanvasContextImpl(

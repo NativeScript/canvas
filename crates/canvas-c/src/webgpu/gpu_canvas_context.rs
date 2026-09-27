@@ -56,6 +56,9 @@ pub struct CanvasGPUCanvasContext {
     pub(crate) data: parking_lot::Mutex<Option<SurfaceData>>,
     pub(crate) view_data: parking_lot::Mutex<ViewData>,
     pub(crate) current_texture: parking_lot::Mutex<Option<Arc<CanvasGPUTexture>>>,
+    pub(crate) surface_lost: std::sync::atomic::AtomicBool,
+    pub(crate) offscreen_texture: parking_lot::Mutex<Option<ReadBackTexture>>,
+    pub(crate) last_capabilities: parking_lot::Mutex<Option<SurfaceCapabilities>>,
     /// Windows: the SwapChainPanel stand-in wgpu binds its swapchain through (keeps the
     /// swapchain's DPI / fit transform ours).
     #[cfg(all(target_os = "windows", feature = "d3d"))]
@@ -76,19 +79,146 @@ fn discard_current_texture(
     surface: &Arc<wgpu_core::instance::Surface>,
     operation: &'static str,
 ) {
-    let had_current = context.current_texture.lock().take().is_some();
-    if had_current
-        && !context
+    let current = context.current_texture.lock().take();
+    if let Some(current) = current {
+        if !context
             .has_surface_presented
             .load(std::sync::atomic::Ordering::SeqCst)
-    {
-        if let Err(cause) = surface.discard() {
-            log::warn!("{operation}: surface discard failed: {cause:?}");
+        {
+            if current.surface_id.is_some() {
+                if let Err(cause) = surface.discard() {
+                    log::warn!("{operation}: surface discard failed: {cause:?}");
+                }
+            }
+            context
+                .has_surface_presented
+                .store(true, std::sync::atomic::Ordering::SeqCst);
         }
-        context
-            .has_surface_presented
-            .store(true, std::sync::atomic::Ordering::SeqCst);
     }
+}
+
+fn copy_capabilities(capabilities: &SurfaceCapabilities) -> SurfaceCapabilities {
+    SurfaceCapabilities {
+        formats: capabilities.formats.clone(),
+        format_capabilities: capabilities.format_capabilities.clone(),
+        present_modes: capabilities.present_modes.clone(),
+        alpha_modes: capabilities.alpha_modes.clone(),
+        usages: capabilities.usages,
+    }
+}
+
+fn surface_capabilities(
+    context: &CanvasGPUCanvasContext,
+    surface: &wgpu_core::instance::Surface,
+    adapter: &Arc<wgpu_core::instance::Adapter>,
+) -> Result<SurfaceCapabilities, wgpu_core::instance::GetSurfaceSupportError> {
+    if context
+        .surface_lost
+        .load(std::sync::atomic::Ordering::SeqCst)
+    {
+        if let Some(capabilities) = context.last_capabilities.lock().as_ref() {
+            return Ok(copy_capabilities(capabilities));
+        }
+        #[cfg(not(target_os = "android"))]
+        let format = wgt::TextureFormat::Bgra8Unorm;
+        #[cfg(any(target_os = "android"))]
+        let format = wgt::TextureFormat::Rgba8Unorm;
+        return Ok(SurfaceCapabilities {
+            formats: vec![format],
+            present_modes: vec![wgt::PresentMode::Fifo],
+            usages: wgt::TextureUsages::RENDER_ATTACHMENT
+                | wgt::TextureUsages::COPY_SRC
+                | wgt::TextureUsages::COPY_DST
+                | wgt::TextureUsages::TEXTURE_BINDING,
+            ..Default::default()
+        });
+    }
+    let capabilities = surface.get_capabilities(adapter)?;
+    *context.last_capabilities.lock() = Some(copy_capabilities(&capabilities));
+    Ok(capabilities)
+}
+
+fn offscreen_current_texture(context: &CanvasGPUCanvasContext) -> *const CanvasGPUTexture {
+    let data_guard = context.data.lock();
+    let Some(surface_data) = data_guard.as_ref() else {
+        return std::ptr::null();
+    };
+    let data = surface_data.texture_data;
+    // present_surface copies it into the read-back texture.
+    let usage = data.usage | wgt::TextureUsages::COPY_SRC;
+
+    let texture = {
+        let mut offscreen = context.offscreen_texture.lock();
+        match offscreen.as_ref() {
+            Some(offscreen)
+                if offscreen.data.size == data.size
+                    && offscreen.data.format == data.format
+                    && offscreen.data.usage == usage =>
+            {
+                Arc::clone(&offscreen.texture)
+            }
+            _ => {
+                let desc = wgt::TextureDescriptor {
+                    label: Some(Cow::Borrowed("OffscreenCanvasTexture")),
+                    size: data.size,
+                    mip_level_count: 1,
+                    sample_count: 1,
+                    dimension: wgt::TextureDimension::D2,
+                    format: data.format,
+                    usage,
+                    view_formats: surface_data.previous_configuration.view_formats.clone(),
+                };
+                let texture = surface_data.device.device.create_texture(&desc);
+                *offscreen = Some(ReadBackTexture {
+                    texture: Arc::clone(&texture),
+                    data: TextureData { usage, ..data },
+                });
+                texture
+            }
+        }
+    };
+
+    context
+        .has_surface_presented
+        .store(false, std::sync::atomic::Ordering::SeqCst);
+
+    let texture = Arc::new(CanvasGPUTexture {
+        label: None,
+        instance: context.instance.clone(),
+        texture,
+        surface_id: None,
+        owned: false,
+        depth_or_array_layers: 1,
+        dimension: super::enums::CanvasTextureDimension::D2,
+        format: data.format.into(),
+        mipLevelCount: 1,
+        sampleCount: 1,
+        width: data.size.width,
+        height: data.size.height,
+        usage: usage.bits(),
+        error_sink: surface_data.error_sink.clone(),
+        suboptimal: false,
+        status: SurfaceGetCurrentTextureStatus::Success,
+        has_surface_presented: context.has_surface_presented.clone(),
+    });
+    let ret = Arc::into_raw(Arc::clone(&texture));
+    *context.current_texture.lock() = Some(texture);
+    ret
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_context_detach_surface(
+    context: *const CanvasGPUCanvasContext,
+) {
+    if context.is_null() {
+        return;
+    }
+    let context = &*context;
+    let surface = context.surface.lock();
+    discard_current_texture(context, &surface, "canvas_native_webgpu_context_detach_surface");
+    context
+        .surface_lost
+        .store(true, std::sync::atomic::Ordering::SeqCst);
 }
 
 #[no_mangle]
@@ -440,6 +570,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create(
                 view_data: Mutex::new(ViewData { width, height }),
                 read_back_texture: Mutex::default(),
                 current_texture: Mutex::default(),
+                surface_lost: Default::default(),
+                offscreen_texture: Mutex::default(),
+                last_capabilities: Mutex::default(),
             };
 
             Arc::into_raw(Arc::new(ctx))
@@ -483,6 +616,10 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize(
     match context.instance.instance().create_surface(Some(display_handle), window_handle) {
         Ok(surface_id) => {
             *surface = surface_id;
+            context
+                .surface_lost
+                .store(false, std::sync::atomic::Ordering::SeqCst);
+            *context.offscreen_texture.lock() = None;
             // Guard stays held -- `surface.configure(..)` below still needs it.
             context
                 .has_surface_presented
@@ -587,6 +724,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create(
                 view_data: Mutex::new(ViewData { width, height }),
                 read_back_texture: Mutex::default(),
                 current_texture: Mutex::default(),
+                surface_lost: Default::default(),
+                offscreen_texture: Mutex::default(),
+                last_capabilities: Mutex::default(),
             };
             Arc::into_raw(Arc::new(ctx))
         }
@@ -628,6 +768,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create_swap_chain_panel(
             data: Mutex::default(),
             view_data: Mutex::new(ViewData { width, height }),
             current_texture: Mutex::default(),
+            surface_lost: Default::default(),
+            offscreen_texture: Mutex::default(),
+            last_capabilities: Mutex::default(),
             panel: Some(target),
         })),
         Err(cause) => {
@@ -755,6 +898,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create_uiview(
                 data: Mutex::default(),
                 view_data: Mutex::new(ViewData { width, height }),
                 current_texture: Mutex::default(),
+                surface_lost: Default::default(),
+                offscreen_texture: Mutex::default(),
+                last_capabilities: Mutex::default(),
             };
 
             Arc::into_raw(Arc::new(ctx))
@@ -909,6 +1055,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create_nsview(
                 view_data: Mutex::new(ViewData { width, height }),
                 read_back_texture: Mutex::default(),
                 current_texture: Mutex::default(),
+                surface_lost: Default::default(),
+                offscreen_texture: Mutex::default(),
+                last_capabilities: Mutex::default(),
             };
 
             Arc::into_raw(Arc::new(ctx))
@@ -1325,7 +1474,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_configure(
         width,
         height,
         present_mode: config.presentMode.into(),
-        alpha_mode: match surface_id.get_capabilities(&device_ref.adapter) {
+        alpha_mode: match surface_capabilities(&context, &surface_id, &device_ref.adapter) {
             Ok(caps) => negotiate_alpha_mode(config.alphaMode.into(), &caps.alpha_modes),
             // No capabilities to check against: let configure validate it.
             Err(_) => config.alphaMode.into(),
@@ -1386,7 +1535,15 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_configure(
         });
     }
 
-    if let Some(cause) = surface_id.configure(&device_id, &config) {
+    let error = if context
+        .surface_lost
+        .load(std::sync::atomic::Ordering::SeqCst)
+    {
+        None
+    } else {
+        surface_id.configure(&device_id, &config)
+    };
+    if let Some(cause) = error {
         handle_error_fatal(cause, "canvas_native_webgpu_context_configure");
         let mut lock = context.data.lock();
         *lock = None;
@@ -1481,6 +1638,13 @@ pub extern "C" fn canvas_native_webgpu_context_get_current_texture(
         if let Some(current_texture) = current_texture.as_ref() {
             return Arc::into_raw(Arc::clone(current_texture));
         }
+    }
+
+    if context
+        .surface_lost
+        .load(std::sync::atomic::Ordering::SeqCst)
+    {
+        return offscreen_current_texture(context);
     }
 
     let surface_id = context.surface.lock();
@@ -1628,7 +1792,13 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_present_surface(
         };
     }
 
-    if let Err(cause) = surface_id.present() {
+    let presented = if texture.surface_id.is_some() {
+        surface_id.present().map(|_| ())
+    } else {
+        Ok(())
+    };
+
+    if let Err(cause) = presented {
         context
             .has_surface_presented
             .store(true, std::sync::atomic::Ordering::SeqCst);
@@ -1682,9 +1852,9 @@ pub extern "C" fn canvas_native_webgpu_context_get_capabilities(
     let adapter_id = Arc::clone(&adapter.adapter);
     let context = unsafe { &*context };
 
-    let surface_id = context.surface.lock();
+    let surface = context.surface.lock();
 
-    match surface_id.get_capabilities(&adapter_id) {
+    match surface_capabilities(context, &surface, &adapter_id) {
         Ok(capabilities) => {
             let cap: CanvasSurfaceCapabilities = capabilities.into();
             Box::into_raw(Box::new(cap))
@@ -1706,9 +1876,9 @@ pub fn canvas_native_webgpu_context_get_capabilities_rust(
     let adapter_id = Arc::clone(&adapter.adapter);
     let context = unsafe { &*context };
 
-    let surface_id = context.surface.lock();
+    let surface = context.surface.lock();
 
-    match surface_id.get_capabilities(&adapter_id) {
+    match surface_capabilities(context, &surface, &adapter_id) {
         Ok(capabilities) => Some(capabilities),
         Err(cause) => {
             handle_error_fatal(cause,
@@ -1739,19 +1909,4 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_release(
     }
 
     Arc::decrement_strong_count(context);
-}
-
-/// Takes an additional strong count for a caller that will pair it with
-/// `canvas_native_webgpu_context_release`. A wrapper that adopts the platform
-/// view's pointer must retain, because the view releases its own count on
-/// teardown and the wrapper releases again when it is finalized.
-#[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_context_reference(
-    context: *const CanvasGPUCanvasContext,
-) {
-    if context.is_null() {
-        return;
-    }
-
-    Arc::increment_strong_count(context);
 }

@@ -185,6 +185,53 @@ impl Context {
         }
     }
 
+    fn offscreen_vulkan_surface(&mut self, width: i32, height: i32, alpha: bool) -> Option<skia_safe::Surface> {
+        let info = skia_safe::ImageInfo::new(
+            skia_safe::ISize::new(width.max(1), height.max(1)),
+            ColorType::N32,
+            if alpha { skia_safe::AlphaType::Premul } else { skia_safe::AlphaType::Opaque },
+            <ColorSpace as Into<Option<skia_safe::ColorSpace>>>::into(self.surface_data.color_space),
+        );
+        gpu::surfaces::render_target(
+            self.direct_context.as_mut()?,
+            gpu::Budgeted::Yes,
+            &info,
+            None,
+            gpu::SurfaceOrigin::TopLeft,
+            None,
+            false,
+            None,
+        )
+    }
+
+    pub fn detach_vulkan_view(&mut self) {
+        if self.vulkan_context.is_none() {
+            return;
+        }
+        let bounds = self.surface_data.bounds;
+        let alpha = !self.surface_data.is_opaque;
+        let snapshot = self.surface.image_snapshot();
+        let Some(mut surface) =
+            self.offscreen_vulkan_surface(bounds.width() as i32, bounds.height() as i32, alpha)
+        else {
+            return;
+        };
+        let matrix = self.surface.canvas().local_to_device();
+        let canvas = surface.canvas();
+        canvas.draw_image(&snapshot, (0., 0.), None);
+        for _ in 0..self.state_stack.len() {
+            canvas.save();
+        }
+        canvas.set_matrix(&matrix);
+        self.surface = surface;
+        self.vulkan_texture = None;
+        // The snapshot draw still reads the swapchain image.
+        self.flush_submit_and_sync_cpu();
+        if let Some(vulkan_context) = self.vulkan_context.as_mut() {
+            vulkan_context.clear_view();
+        }
+    }
+
     pub fn resize_vulkan(context: &mut Context, width: f32, height: f32, alpha: bool) {
         // flush any pending draws before resizing
         context.flush_and_render_to_surface();
@@ -199,11 +246,27 @@ impl Context {
 
         let color_space = context.surface_data.color_space;
 
+        let Some(image) = image else {
+            let Some(surface) = context.offscreen_vulkan_surface(width as i32, height as i32, alpha)
+            else {
+                return;
+            };
+            context.surface_data.state = Default::default();
+            context.surface_data.is_opaque = !alpha;
+            context.surface_data.bounds = skia_safe::Rect::from_wh(width, height);
+            context.surface_state = SurfaceState::None;
+            context.surface = surface;
+            context.vulkan_texture = None;
+            context.path = Path::default();
+            context.reset_state();
+            return;
+        };
+
         if let Some(direct_context) = context.direct_context.as_mut() {
             let alloc = gpu::vk::Alloc::default();
             let image_info = unsafe {
                 gpu::vk::ImageInfo::new(
-                    image.unwrap() as gpu::vk::Image,
+                    image as gpu::vk::Image,
                     alloc,
                     gpu::vk::ImageTiling::OPTIMAL,
                     gpu::vk::ImageLayout::UNDEFINED,

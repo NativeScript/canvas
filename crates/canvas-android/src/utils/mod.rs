@@ -166,8 +166,7 @@ pub extern "system" fn nativeDestroyContext(context: jlong) {
             return;
         }
 
-        let context = context as *mut canvas_c::CanvasRenderingContext2D;
-        let _ = Box::from_raw(context);
+        canvas_c::canvas_native_context_release(context as *mut canvas_c::CanvasRenderingContext2D);
     }
 }
 

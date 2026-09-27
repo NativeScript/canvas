@@ -1,6 +1,7 @@
 use std::cmp::PartialEq;
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_void};
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use canvas_2d::context::compositing::composite_operation_type::CompositeOperationType;
 use canvas_2d::context::fill_and_stroke_styles::paint::paint_style_set_color_with_string;
@@ -42,6 +43,7 @@ pub struct CanvasRenderingContext2D {
     pub(crate) context: Context,
     alpha: bool,
     engine: Engine,
+    refs: AtomicUsize,
 }
 
 impl CanvasRenderingContext2D {
@@ -79,11 +81,21 @@ pub extern "C" fn canvas_native_context_clear_render_func(value: i64) {
 }
 
 #[no_mangle]
+pub extern "C" fn canvas_native_context_reference(value: *const CanvasRenderingContext2D) {
+    if value.is_null() {
+        return;
+    }
+    unsafe { &*value }.refs.fetch_add(1, Ordering::Relaxed);
+}
+
+#[no_mangle]
 pub extern "C" fn canvas_native_context_release(value: *mut CanvasRenderingContext2D) {
     if value.is_null() {
         return;
     }
-    unsafe { drop(Box::from_raw(value)) };
+    if unsafe { &*value }.refs.fetch_sub(1, Ordering::AcqRel) == 1 {
+        unsafe { drop(Box::from_raw(value)) };
+    }
 }
 
 fn to_data_url(context: &mut CanvasRenderingContext2D, format: &str, quality: u32) -> String {
@@ -180,6 +192,7 @@ impl CanvasRenderingContext2D {
             context,
             alpha,
             engine: Engine::CPU,
+            refs: AtomicUsize::new(1),
         }
     }
 
@@ -189,6 +202,7 @@ impl CanvasRenderingContext2D {
             context,
             alpha,
             engine: Engine::GL,
+            refs: AtomicUsize::new(1),
         }
     }
 
@@ -198,6 +212,7 @@ impl CanvasRenderingContext2D {
             context,
             alpha,
             engine: Engine::Vulkan,
+            refs: AtomicUsize::new(1),
         }
     }
 
@@ -207,6 +222,7 @@ impl CanvasRenderingContext2D {
             context,
             alpha,
             engine: Engine::Metal,
+            refs: AtomicUsize::new(1),
         }
     }
 
@@ -427,6 +443,7 @@ pub extern "C" fn canvas_native_context_create_d3d(
                 context,
                 alpha,
                 engine: Engine::D3D,
+                refs: AtomicUsize::new(1),
             }));
             // Boxed: it stays at this address until released.
             unsafe { (*context).context.register_d3d() };
@@ -541,6 +558,7 @@ pub extern "C" fn canvas_native_context_create(
         ),
         alpha,
         engine: Engine::CPU,
+        refs: AtomicUsize::new(1),
     }))
 }
 
@@ -574,6 +592,7 @@ pub extern "C" fn canvas_native_context_create_gl(
         context,
         alpha,
         engine: Engine::GL,
+        refs: AtomicUsize::new(1),
     }))
 }
 
@@ -618,6 +637,7 @@ pub extern "C" fn canvas_native_context_create_gl_no_window(
         context,
         alpha,
         engine: Engine::GL,
+        refs: AtomicUsize::new(1),
     }))
 }
 

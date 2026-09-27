@@ -95,12 +95,14 @@ test('NSCCanvas: fit is an int CanvasFit; unknown values are ignored', { skip },
 });
 
 test('drawing schedules its own flush (no __flushAll needed)', { skip }, async () => {
-	const { ctx } = hostContext(8, 8);
+	const { host, ctx } = hostContext(8, 8);
 	ctx.fillRect(0, 0, 8, 8);
 	await Promise.resolve();
 	ctx.fillRect(0, 0, 4, 4);
 	await new Promise((resolve) => setImmediate(resolve));
 	assert.deepEqual(pixel(ctx, 1, 1), [0, 0, 0, 255]);
+	// The host owns the context: a host collected during the awaits frees it under `ctx`.
+	assert.equal(host.surfaceWidth, 8);
 });
 
 test('NSCCanvas: rejects a malformed panel pointer', { skip }, () => {

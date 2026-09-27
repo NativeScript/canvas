@@ -12,6 +12,8 @@
 #   canvas-windows-<arch>  canvasnative.node + ANGLE DLLs        packages/canvas/platforms/windows/<arch>/
 #   canvas-svg-windows-    canvassvg.node                        packages/canvas-svg/platforms/windows/<arch>/
 #     <arch>
+#   audio-context-windows- audiocontext.node                     packages/audio-context/platforms/windows/<arch>/
+#     <arch>
 #
 # xcframeworks are tarred before upload because upload-artifact does not
 # preserve file permissions.
@@ -21,11 +23,12 @@
 #            (what `npm run build.canvas.ios.framework.release` runs, minus nx)
 #   Android: make android, then gradle :canvas:assembleRelease and copy the aar
 #
-#   Windows: tools/scripts/build-napi.sh <triple> release-napi [canvas-svg-napi] (`make windows`,
-#            `make windows-svg`); Skia builds from source with the runner's LLVM and ninja, as
-#            locally with .tools/env.sh (.github/actions/setup-windows-native). arm64 is
-#            cross-compiled; the x64 jobs also run the Node-API test suites on the shipped modules
-#            (on WARP: runners have no GPU).
+#   Windows: tools/scripts/build-napi.sh <triple> release-napi [canvas-svg-napi|audio-context-napi]
+#            (`make windows`, `make windows-svg`, `make windows-audio`); Skia builds from source
+#            with the runner's LLVM and ninja, as locally with .tools/env.sh
+#            (.github/actions/setup-windows-native). arm64 is cross-compiled; the x64 jobs also
+#            run the Node-API test suites on the shipped modules (on WARP: runners have no GPU;
+#            audio renders offline and on the 'none' sink: they have no audio device either).
 #
 # canvas-svg and audio-context change rarely, so their jobs cache the final
 # artifact keyed on a hash of their sources and skip the whole build on a hit.
@@ -322,4 +325,52 @@ jobs:
         with:
           name: canvas-svg-windows-${{ matrix.arch }}
           path: packages/canvas-svg/platforms/windows/${{ matrix.arch }}/
+          if-no-files-found: error
+
+  audio-context-windows:
+    name: Audio Context Windows (${{ matrix.arch }})
+    runs-on: windows-2025
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            target: x86_64-pc-windows-msvc
+          - arch: arm64
+            target: aarch64-pc-windows-msvc
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - name: Restore cached module
+        id: audio-node
+        uses: actions/cache@v4
+        with:
+          path: packages/audio-context/platforms/windows/${{ matrix.arch }}/audiocontext.node
+          key: ${{ env.NATIVE_CACHE_VERSION }}-audio-context-windows-${{ matrix.arch }}-${{ hashFiles('crates/audio-context-napi/**', 'crates/vendor/napi-sys/**', 'Cargo.toml', 'Cargo.lock', 'tools/scripts/build-napi.sh') }}
+      # No Skia here; the action's Rust toolchain and cargo cache are what this job needs.
+      - uses: ./.github/actions/setup-windows-native
+        if: steps.audio-node.outputs.cache-hit != 'true'
+        with:
+          target: ${{ matrix.target }}
+      - uses: actions/setup-node@v4
+        if: steps.audio-node.outputs.cache-hit != 'true' && matrix.arch == 'x64'
+        with:
+          node-version: '22'
+      - name: Build audiocontext.node
+        if: steps.audio-node.outputs.cache-hit != 'true'
+        run: ./tools/scripts/build-napi.sh ${{ matrix.target }} release-napi audio-context-napi
+      # Runners have no audio device: the suite renders offline and on the 'none' sink.
+      - name: Node-API tests
+        if: steps.audio-node.outputs.cache-hit != 'true' && matrix.arch == 'x64'
+        env:
+          AUDIO_CONTEXT_NAPI_ADDON: ${{ github.workspace }}\packages\audio-context\platforms\windows\x64\audiocontext.node
+        run: node --expose-gc --test "crates/audio-context-napi/__test__/*.test.mjs"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: audio-context-windows-${{ matrix.arch }}
+          path: packages/audio-context/platforms/windows/${{ matrix.arch }}/
           if-no-files-found: error

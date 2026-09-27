@@ -22,6 +22,8 @@ windows: $(ARCHS_WINDOWS)
 
 windows-svg: $(addsuffix _svg_napi,$(ARCHS_WINDOWS))
 
+windows-audio: $(addsuffix _audio_napi,$(ARCHS_WINDOWS))
+
 ios-svg: GENERATE_IOS_SVG
 
 visionos-svg: GENERATE_VISIONOS_SVG
@@ -91,6 +93,10 @@ $(ARCHS_WINDOWS): %:
 .PHONY: windows-svg $(addsuffix _svg_napi,$(ARCHS_WINDOWS))
 $(addsuffix _svg_napi,$(ARCHS_WINDOWS)): %_svg_napi:
 	./tools/scripts/build-napi.sh $* release-napi canvas-svg-napi
+
+.PHONY: windows-audio $(addsuffix _audio_napi,$(ARCHS_WINDOWS))
+$(addsuffix _audio_napi,$(ARCHS_WINDOWS)): %_audio_napi:
+	./tools/scripts/build-napi.sh $* release-napi audio-context-napi
 
 .PHONY: GENERATE_ANDROID
 GENERATE_ANDROID: $(ARCHS_ANDROID)

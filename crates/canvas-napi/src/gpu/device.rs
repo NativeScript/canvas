@@ -374,7 +374,7 @@ impl g_p_u_device {
     }
     let (pending, promise) = PendingPromise::new(&env, true)?;
     if self.destroyed.get() {
-      pending.settle(|env| lost_info(env, 1, String::new()));
+      pending.settle_now(&env, |env| lost_info(env, 1, String::new()));
     } else {
       let slot = Slot::leak();
       slot.set(Some(Box::new(pending)));
@@ -462,11 +462,13 @@ impl g_p_u_device {
 
   /// Destroys the device; `lost` resolves with reason 1 ("destroyed").
   #[napi]
-  pub fn destroy(&self) {
+  pub fn destroy(&self, env: Env) {
+    // Taken first, so canvas-c's own lost callback (another thread) finds the slot empty.
+    let pending = self.lost_slot.get().and_then(|slot| slot.take());
     canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_destroy(self.ptr());
     self.destroyed.set(true);
-    if let Some(pending) = self.lost_slot.get().and_then(|slot| slot.take()) {
-      pending.settle(|env| lost_info(env, 1, String::new()));
+    if let Some(pending) = pending {
+      pending.settle_now(&env, |env| lost_info(env, 1, String::new()));
     }
   }
 

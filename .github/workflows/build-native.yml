@@ -34,6 +34,9 @@
 # artifact keyed on a hash of their sources and skip the whole build on a hit.
 name: Build Native
 
+permissions:
+  contents: read
+
 on:
   workflow_call:
     inputs:
@@ -298,7 +301,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.ref }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.repository.default_branch || inputs.ref }}
       - name: Restore cached module
         if: github.event_name != 'workflow_dispatch'
         id: svg-node

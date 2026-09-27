@@ -161,7 +161,11 @@ impl Drop for Tsfn {
 /// A promise settled from any thread. Dropping it unsettled leaves the promise pending.
 pub(crate) struct PendingPromise {
   tsfn: Tsfn,
+  deferred: sys::napi_deferred,
 }
+
+// `deferred` is only used on the JS thread (`settle_now`, `settle_on_js_thread`).
+unsafe impl Send for PendingPromise {}
 
 unsafe extern "C" fn settle_on_js_thread(
   env: sys::napi_env,
@@ -177,7 +181,14 @@ unsafe extern "C" fn settle_on_js_thread(
   if env.is_null() {
     return;
   }
-  let deferred = context as sys::napi_deferred;
+  unsafe { settle_deferred(env, context as sys::napi_deferred, settler) };
+}
+
+unsafe fn settle_deferred(
+  env: sys::napi_env,
+  deferred: sys::napi_deferred,
+  settler: impl FnOnce(&Env) -> Result<Settled>,
+) {
   let js_env = Env::from_raw(env);
   unsafe {
     match settler(&js_env) {
@@ -209,7 +220,13 @@ impl PendingPromise {
       ptr::null_mut(),
       weak,
     )?;
-    Ok((Self { tsfn }, promise))
+    Ok((Self { tsfn, deferred }, promise))
+  }
+
+  /// Settles the promise now, on the JS thread. A queued `settle` would not keep the event loop
+  /// alive for a weak promise, so an `await` on it right after could see the loop end first.
+  pub(crate) fn settle_now(self, env: &Env, settler: impl FnOnce(&Env) -> Result<Settled>) {
+    unsafe { settle_deferred(env.raw(), self.deferred, settler) };
   }
 
   /// Settles the promise with what `settler` makes of it, on the JS thread.

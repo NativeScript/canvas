@@ -47,7 +47,6 @@ function isMagenta(pixel: ArrayLike<number>) {
 	return pixel[0] === MAGENTA[0] && pixel[1] === MAGENTA[1] && pixel[2] === MAGENTA[2];
 }
 
-/** The texture's top-left pixel after `encode` renders or copies into it. */
 async function firstPixel(device: any, texture: any, size: number) {
 	const bytesPerRow = 256;
 	const readback = device.createBuffer({ size: bytesPerRow * size, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
@@ -78,7 +77,6 @@ fn fs(@builtin(position) position: vec4<f32>) -> @location(0) vec4<f32> {
 
 let playing: Promise<any> | null = null;
 
-/** One muted, looping clip for the suite, playing with a frame decoded. */
 function playingVideo(): Promise<any> {
 	playing ??= (async () => {
 		const video = document.createElement('video');

@@ -17,11 +17,7 @@
     <Copy SourceFiles="@(_NSCanvasMediaFiles)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
   </Target>
 
-  <!--
-    canvasmedia.node is also the in-process server of the audio effect MediaElementAudioSourceNode
-    taps a player with (Media Foundation activates it by name), so it is registered in the app's
-    Package.appxmanifest. Idempotent, as in @nativescript/core and font-manager.
-  -->
+  <!-- canvasmedia.node also serves the audio-tap effect class, which Media Foundation activates by name. -->
   <ItemGroup>
     <!-- Keep in sync with tap::TAP_CLASS in crates/canvas-media-napi. -->
     <NSCanvasMediaActivatableClass Include="NativeScript.CanvasMedia.AudioTap" />

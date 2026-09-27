@@ -232,8 +232,6 @@ impl AudioContext {
     Some(AudioParam::wrap(param))
   }
 
-  /// `createMediaElementSource(element)`: the element's audio from canvas-media's tap
-  /// (`NSCAudioTap.address`). Realtime contexts only, as on the web.
   #[napi]
   pub fn create_media_element_source_from_tap(&self, address: f64) -> Result<AudioNode> {
     let context = self.online()?;

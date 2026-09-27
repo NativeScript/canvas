@@ -2,8 +2,7 @@ use std::ffi::c_void;
 
 use web_audio_api::AudioBuffer;
 
-/// `tap::AudioTapSource` in canvas-media's module (crates/canvas-media-napi/src/tap.rs): same
-/// layout. Its `NSCAudioTap.address` points at one.
+/// Same layout as `tap::AudioTapSource` in canvas-media's module (`NSCAudioTap.address`).
 #[repr(C)]
 #[derive(Clone, Copy)]
 struct AudioTapSource {
@@ -15,12 +14,10 @@ struct AudioTapSource {
   release: unsafe extern "C" fn(tap: *const c_void),
 }
 
-/// Frames per buffer handed to the graph; silence of this length while the element is paused.
 const FRAMES: usize = 256;
 const MAX_CHANNELS: usize = 8;
 
-/// A media element's decoded audio as a `MediaStreamTrack` source: pulled on the render thread,
-/// so a read never waits (an empty tap is silence).
+/// Pulled on the render thread: a read never waits, and an empty tap is silence.
 pub struct TapStream {
   source: AudioTapSource,
   scratch: Vec<f32>,
@@ -28,7 +25,7 @@ pub struct TapStream {
   sample_rate: f32,
 }
 
-// The tap is Send + Sync on the producer's side; the stream only reaches it through `read`.
+// The tap is Send + Sync on the producer's side and only reached through `read`.
 unsafe impl Send for TapStream {}
 unsafe impl Sync for TapStream {}
 

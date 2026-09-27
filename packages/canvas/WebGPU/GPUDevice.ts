@@ -442,16 +442,12 @@ export class GPUDevice extends EventTarget {
 	}
 
 	private _metalDevice: number | undefined;
-	/**
-	 * What a video needs to hand this device its frames on the GPU: the `MTLDevice` on Apple, the
-	 * adapter's LUID on Windows (frames are shared only on the same adapter); 0 where there is none.
-	 */
+	/** For videos' GPU frames: the `MTLDevice` on Apple, the adapter LUID on Windows (frames are shared per adapter); else 0. */
 	get __frameDevice(): number {
 		return this.__metalDevice || this.__adapterLuid;
 	}
 
 	private _adapterLuid: number | undefined;
-	/** The adapter's LUID as a number (Windows), or 0. */
 	get __adapterLuid(): number {
 		if (this._adapterLuid === undefined) {
 			try {

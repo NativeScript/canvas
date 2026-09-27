@@ -663,11 +663,6 @@ export class AudioBufferSourceNode extends AudioScheduledSourceNode {
 	}
 }
 
-/**
- * A media element's audio in the graph. canvas-media taps the element's WinRT MediaPlayer with an
- * audio effect: while connected the element itself is silent and its audio (at its volume) plays
- * through the graph, as on the web.
- */
 export class MediaElementAudioSourceNode extends AudioNode {
 	private _mediaElement: MediaElementLike;
 
@@ -677,7 +672,7 @@ export class MediaElementAudioSourceNode extends AudioNode {
 		markMediaElementUsed(mediaElement);
 	}
 
-	/** The canvas-media element behind canvas-polyfill's <audio> / <video>, or the element itself. */
+	/** canvas-polyfill's <audio> / <video> wrap the canvas-media element. */
 	private static _tapProvider(mediaElement: MediaElementLike): MediaElementLike {
 		return mediaElement?._audio ?? mediaElement?._video ?? mediaElement;
 	}
@@ -699,7 +694,7 @@ export class MediaElementAudioSourceNode extends AudioNode {
 		return null;
 	}
 
-	/** Gives the element its own output back (not in the spec: an element stays connected there). */
+	/** Not in the spec, where an element stays connected: gives the element its output back. */
 	disposeMediaElementSource() {
 		const element = this._mediaElement;
 		try {

@@ -28,7 +28,6 @@ pub(crate) enum Kind {
   DynamicsCompressor(node::DynamicsCompressorNode),
   ChannelSplitter(node::ChannelSplitterNode),
   ChannelMerger(node::ChannelMergerNode),
-  /// A media element's audio, from canvas-media's tap.
   MediaElementSource(node::MediaStreamTrackAudioSourceNode),
 }
 

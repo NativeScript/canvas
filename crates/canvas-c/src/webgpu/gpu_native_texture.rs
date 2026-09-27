@@ -332,8 +332,7 @@ pub(crate) unsafe fn import_platform_texture(
     Some(texture)
 }
 
-/// Platforms with no zero-copy path: callers stay on the CPU upload path. (Windows shares frames
-/// through `gpu_shared_frame` instead.)
+/// Platforms with no zero-copy path: callers stay on the CPU upload path.
 #[cfg(not(any(
     target_os = "ios",
     target_os = "macos",
@@ -341,7 +340,7 @@ pub(crate) unsafe fn import_platform_texture(
     target_os = "tvos",
     target_os = "android"
 )))]
-#[allow(dead_code)]
+#[allow(dead_code)] // Windows imports through gpu_shared_frame.
 pub(crate) unsafe fn import_platform_texture(
     _device: &Arc<wgpu_core::device::Device>,
     _handle: *mut c_void,
@@ -393,8 +392,7 @@ unsafe fn blit_frame_into_texture(
     )
 }
 
-/// Draws `source_texture` (sampled only) into one mip level / layer of `destination_texture`
-/// and submits. `false` when the destination cannot be rendered to.
+/// Only samples `source_texture`, and submits. `false` when the destination is not renderable.
 #[allow(clippy::too_many_arguments)]
 pub(crate) unsafe fn blit_texture(
     queue: &CanvasGPUQueue,

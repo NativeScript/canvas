@@ -56,7 +56,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_import_external_texture(
         return std::ptr::null();
     }
 
-    // Windows: a frame shared from canvas-media's device, drawn into a plane of our own.
     #[cfg(target_os = "windows")]
     let plane = super::gpu_shared_frame::import_external_plane(device, native_texture, width, height);
     #[cfg(not(target_os = "windows"))]

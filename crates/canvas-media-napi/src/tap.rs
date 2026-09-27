@@ -13,23 +13,18 @@ use windows::Win32::Foundation::{CLASS_E_CLASSNOTAVAILABLE, E_POINTER, S_FALSE, 
 use windows::Win32::System::WinRT::{IActivationFactory, IActivationFactory_Impl, IMemoryBufferByteAccess};
 use windows_collections::IVectorView;
 
-/// Registered in the app's Package.appxmanifest by platforms/windows/plugin.targets, with this
-/// module as its in-process server: Media Foundation activates it by name.
+/// Registered in the app manifest by platforms/windows/plugin.targets, this module its server.
 pub const TAP_CLASS: &str = "NativeScript.CanvasMedia.AudioTap";
-/// The `AddAudioEffect` configuration key holding the tap's id.
 pub const TAP_KEY: &str = "tap";
-/// At most this much audio waits for the graph; older samples go when it falls behind.
+/// Beyond this the oldest samples go: the graph has fallen behind.
 const MAX_BUFFERED_SECONDS: usize = 1;
 
-/// A MediaPlayer's decoded audio on its way to a Web Audio graph (MediaElementAudioSourceNode).
 pub struct Tap {
   pub id: u64,
   ring: Mutex<Ring>,
-  /// While set, the player's own output is silent and its audio goes to the graph instead.
   routed: AtomicBool,
-  /// The element's volume, 0 when muted (f32 bits): the graph gets what the element would play.
+  /// f32 bits: the element's volume, 0 when muted.
   gain: AtomicU32,
-  /// Frames handed over so far (tests: the effect runs).
   pub frames: AtomicU64,
 }
 
@@ -77,7 +72,7 @@ impl Tap {
     self.ring.lock().unwrap().samples.clear();
   }
 
-  /// Media Foundation's thread: interleaved f32 frames as the player decodes them.
+  /// Media Foundation's thread.
   fn push(&self, samples: &[f32], channels: u32, sample_rate: u32) {
     let gain = f32::from_bits(self.gain.load(Ordering::Relaxed));
     let mut ring = self.ring.lock().unwrap();
@@ -93,7 +88,7 @@ impl Tap {
     ring.samples.drain(..excess - excess % channels.max(1) as usize);
   }
 
-  /// The graph's render thread: up to `capacity` interleaved samples of whole frames.
+  /// The graph's render thread; whole frames only.
   fn read(&self, out: &mut [f32], channels: &mut u32, sample_rate: &mut u32) -> usize {
     let mut ring = self.ring.lock().unwrap();
     *channels = ring.channels;
@@ -110,15 +105,14 @@ impl Tap {
   }
 }
 
-/// How another module (audiocontext.node) reads a tap: `NSCAudioTap.address` points at one.
-/// `tap` stays valid while the reader holds a reference taken with `retain`.
+/// Read by audiocontext.node through `NSCAudioTap.address`; `tap` lives while it holds a `retain`ed
+/// reference.
 #[repr(C)]
 pub struct AudioTapSource {
   pub size: u32,
   pub reserved: u32,
   pub tap: *const c_void,
-  /// Copies up to `capacity` interleaved samples (whole frames) into `out`; returns the frame count
-  /// and reports the format (0 channels: nothing decoded yet).
+  /// Reports the format too (0 channels: nothing decoded yet).
   pub read: unsafe extern "C" fn(tap: *const c_void, out: *mut f32, capacity: usize, channels: *mut u32, sample_rate: *mut u32) -> usize,
   pub retain: unsafe extern "C" fn(tap: *const c_void),
   pub release: unsafe extern "C" fn(tap: *const c_void),
@@ -157,8 +151,6 @@ fn bytes(reference: &IMemoryBufferReference) -> windows::core::Result<(*mut u8, 
   Ok((data, capacity as usize))
 }
 
-/// The effect Media Foundation runs on the player's audio: frames go to the tap (and the player
-/// plays silence) while it is routed, and pass through otherwise.
 #[implement(IBasicAudioEffect, IMediaExtension)]
 struct AudioTapEffect {
   tap: Mutex<Option<Arc<Tap>>>,
@@ -250,7 +242,6 @@ impl IActivationFactory_Impl for AudioTapFactory_Impl {
   }
 }
 
-/// The in-process server entry point Media Foundation activates `TAP_CLASS` through.
 #[no_mangle]
 pub unsafe extern "system" fn DllGetActivationFactory(class_id: *mut c_void, factory: *mut *mut c_void) -> HRESULT {
   if factory.is_null() {

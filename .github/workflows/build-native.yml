@@ -289,7 +289,6 @@ jobs:
           if-no-files-found: error
 
   # The Node-API modules other than canvasnative.node (no Skia, no ANGLE): one entry per module.
-  # Each is cached on its sources, and the whole build is skipped on a hit.
   napi-windows:
     name: ${{ matrix.module.name }} Windows (${{ matrix.arch }})
     runs-on: windows-2025

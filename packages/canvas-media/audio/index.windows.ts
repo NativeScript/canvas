@@ -8,12 +8,10 @@ declare const Microsoft: any;
 export class Audio extends AudioBase {
 	_media: WindowsMediaPlayer;
 	_sourceView: Source[] = [];
-	/** `<Source>`s not tried yet, in order. */
 	private _sources: string[] = [];
 	_isCustom = false;
 	private _controls = false;
 	private _grid: any;
-	/** The transport controls, while `controls` is set. */
 	private _element: any;
 
 	constructor() {
@@ -183,7 +181,6 @@ export class Audio extends AudioBase {
 		this._media.loop = booleanConverter(value as any);
 	}
 
-	/** For audio-context's MediaElementAudioSourceNode: the element's audio, routed into the graph. */
 	attachAudioContextTap(): any {
 		return this._media.attachAudioTap();
 	}

@@ -16,9 +16,8 @@ function rgbaInternalFormat(internalformat: number) {
 }
 
 /**
- * The stock MediaPlayerElement template (Windows App SDK 1.6 generic.xaml) with the presenter kept
- * for layout (the element measures itself from it) but invisible: in frame-server mode it renders
- * nothing yet still paints black, and the frames show from the view's Image under the element.
+ * The stock MediaPlayerElement template (Windows App SDK 1.6) with its presenter kept for layout (the
+ * element measures itself from it) but invisible: in frame-server mode it only paints black.
  */
 const CONTROLS_TEMPLATE = `<ControlTemplate xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" TargetType="MediaPlayerElement">
 	<Grid x:Name="LayoutRoot">
@@ -41,19 +40,17 @@ interface Frame {
 export class Video extends VideoBase {
 	_media: WindowsMediaPlayer;
 	_sourceView: Source[] = [];
-	/** `<Source>`s not tried yet, in order. */
 	private _sources: string[] = [];
 	_isCustom = false;
 	private _controls = false;
 	private _grid: any;
 	private _image: any;
-	/** A MediaPlayerElement over the frames for its transport controls, while `controls` is set. */
+	/** Only for its transport controls: the frames are the Image's. */
 	private _element: any;
 	private _surface: any;
 	private _surfaceWidth = 0;
 	private _surfaceHeight = 0;
 	private _frame: Frame | null = null;
-	/** The current frame as an ImageAsset, for 2D drawImage and WebGPU. */
 	private _asset: any;
 	private _assetFrameId = 0;
 
@@ -129,7 +126,6 @@ export class Video extends VideoBase {
 		}
 	}
 
-	/** Each decoded frame: shown in the view (when it has one), then requestVideoFrameCallback. */
 	_onFrame() {
 		this._present();
 		this._notifyVideoFrameCallbacks();
@@ -159,7 +155,6 @@ export class Video extends VideoBase {
 		bridge.present();
 	}
 
-	/** The current frame's RGBA pixels, read back once per decoded frame. */
 	_currentFrame(): Frame | null {
 		const bridge = this._bridge;
 		const id = bridge.frameId;
@@ -236,7 +231,6 @@ export class Video extends VideoBase {
 		}
 	}
 
-	/** For audio-context's MediaElementAudioSourceNode: the element's audio, routed into the graph. */
 	attachAudioContextTap(): any {
 		return this._media.attachAudioTap();
 	}
@@ -245,23 +239,19 @@ export class Video extends VideoBase {
 		this._media.detachAudioTap();
 	}
 
-	/** The current frame for WebGPU's `copyExternalImageToTexture` (an ImageAsset), or null. */
 	getVideoFrameData(): any {
 		return this._currentAsset();
 	}
 
 	private _gpuFrameId = 0;
 
-	/** Whether frames reach a WebGPU device on the GPU: `device` is its adapter LUID (`__frameDevice`). */
+	/** `device`: the WebGPU device's adapter LUID (`__frameDevice`). */
 	supportsGPUFrames(device: number): boolean {
 		const bridge = this._bridge;
 		return !!device && bridge.sharesFrames && bridge.adapterLuid === device;
 	}
 
-	/**
-	 * The current frame, shared with WebGPU (`texturePointer` for `nativeTexture`), or null when no
-	 * frame was decoded since the last one handed out. `close()` it once the upload is issued.
-	 */
+	/** null when no frame was decoded since the last one handed out; `close()` it once the upload is issued. */
 	getGPUFrameTexture(device: number): any {
 		const bridge = this._bridge;
 		const id = bridge.frameId;

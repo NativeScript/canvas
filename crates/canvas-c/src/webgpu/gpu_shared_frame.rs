@@ -9,26 +9,18 @@ use windows::Win32::Graphics::Direct3D12::{ID3D12Device, ID3D12Fence, ID3D12Reso
 use super::gpu_device::CanvasGPUDevice;
 use super::gpu_queue::CanvasGPUQueue;
 
-/// A decoded video frame shared from another Direct3D device (canvas-media's frame server on
-/// Windows). `nativeTexture` / `texturePointer` in `copyExternalImageToTexture` and
-/// `importExternalTexture` is the address of one, valid for the duration of the call.
-///
-/// The producer signals `ready_fence` to `ready_value` once the frame is written. The consumer
-/// waits for it on the GPU before reading, and signals `release_fence` to `release_value` after,
-/// which is how the producer knows the texture may be written again.
+/// Same layout as `SharedFrameDesc` in canvas-media's module, which shares it as `nativeTexture`.
+/// Reads wait for `ready_value`; signalling `release_value` after them lets the producer reuse the
+/// texture.
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct CanvasD3DSharedFrame {
-    /// `size_of::<CanvasD3DSharedFrame>()`, checked before anything else is read.
     pub size: u32,
-    /// Set to 1 by the consumer once it has staged the release signal. A frame released
-    /// unconsumed (the import failed) frees its texture at once instead of waiting on the fence.
+    /// Set once the release signal is staged; the producer frees an unconsumed frame at once.
     pub consumed: u32,
-    /// The producer's adapter (`LowPart | HighPart << 32`); shared handles only open on the same one.
     pub adapter_luid: u64,
-    /// Identify objects for caching: unique for the process's lifetime, unlike handle values.
+    /// The cache keys: handle values can be reused.
     pub texture_id: u64,
-    /// NT handle of a shareable `DXGI_FORMAT_B8G8R8A8_UNORM` 2D texture.
     pub texture: *mut c_void,
     pub ready_fence_id: u64,
     pub ready_fence: *mut c_void,
@@ -38,8 +30,6 @@ pub struct CanvasD3DSharedFrame {
     pub release_value: u64,
 }
 
-/// Opened textures and fences per queue. Entries hold references on the shared objects, so the
-/// cache is bounded; a producer recreates its textures when the video size changes.
 #[derive(Default)]
 pub struct SharedFrameCache {
     textures: HashMap<u64, Arc<wgpu_core::resource::Texture>>,
@@ -49,9 +39,10 @@ pub struct SharedFrameCache {
 // The fences are only used from the queue's thread; wgpu-core's objects are Send + Sync.
 unsafe impl Send for SharedFrameCache {}
 
+// Entries keep the producer's objects alive (it recreates them when the video size changes).
 const MAX_CACHED: usize = 16;
 
-/// A copy of the descriptor at `handle`, if it is one (the producer's memory stays its own).
+/// By value: `consumed` is written through `handle` afterwards.
 unsafe fn frame(handle: *mut c_void) -> Option<CanvasD3DSharedFrame> {
     let frame = (handle as *const CanvasD3DSharedFrame).as_ref()?;
     (frame.size as usize == std::mem::size_of::<CanvasD3DSharedFrame>()).then_some(*frame)
@@ -76,9 +67,9 @@ unsafe fn open_fence(raw: &ID3D12Device, cache: &mut SharedFrameCache, id: u64, 
     Some(fence)
 }
 
-/// Opens the frame's texture on the queue's device and stages the fence wait / signal around the
-/// queue's next submit. The texture must only be sampled (it stays in the COMMON state, which
-/// promotes implicitly to shader reads), and the next submit must be the one that reads it.
+/// The fences are staged for the queue's next submit, which must be the one reading the texture.
+/// It may only be sampled: it stays in COMMON between submits, which promotes implicitly to shader
+/// reads (a copy would need a barrier from a state wgpu does not know it is in).
 pub(crate) unsafe fn import_and_stage(
     queue: &CanvasGPUQueue,
     handle: *mut c_void,
@@ -128,7 +119,6 @@ pub(crate) unsafe fn import_and_stage(
                 usage: wgt::TextureUsages::TEXTURE_BINDING,
                 view_formats: vec![],
             };
-            // Shader reads only, from the COMMON state the resource is in between submits.
             let (texture, error) =
                 device.create_texture_from_hal(Box::new(hal_texture), &descriptor, wgt::TextureUses::RESOURCE, true);
             if let Some(error) = error {
@@ -151,8 +141,8 @@ pub(crate) unsafe fn import_and_stage(
     Some(texture)
 }
 
-/// `importExternalTexture` on a shared frame: the frame is drawn into a texture of our own at once,
-/// so the external texture's later uses never touch the producer's texture.
+/// Drawn into a plane of our own at once: the external texture is sampled after this call, when the
+/// producer may be writing the frame again.
 pub(crate) unsafe fn import_external_plane(
     device: &CanvasGPUDevice,
     handle: *mut c_void,
@@ -180,8 +170,7 @@ pub(crate) unsafe fn import_external_plane(
         .then_some(plane)
 }
 
-/// The LUID of the adapter the device runs on (`LowPart | HighPart << 32`), 0 if unknown: a video
-/// shares its frames with a device only on the same adapter.
+/// Videos share frames only with devices on their adapter. 0 if unknown.
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_device_get_adapter_luid(device: *const CanvasGPUDevice) -> u64 {
     let Some(device) = device.as_ref() else { return 0 };

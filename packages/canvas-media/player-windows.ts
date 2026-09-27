@@ -11,7 +11,6 @@ export interface SharedFrame {
 	close(): void;
 }
 
-/** The player's audio routed into a Web Audio graph (MediaElementAudioSourceNode). */
 export interface AudioTap {
 	/** An `AudioTapSource` for audiocontext.node's `createMediaElementSourceFromTap`. */
 	readonly address: number;
@@ -23,7 +22,6 @@ export interface AudioTap {
 export interface MediaPlayerBridge {
 	readonly videoWidth: number;
 	readonly videoHeight: number;
-	/** Changes with every decoded frame; 0 before the first. */
 	readonly frameId: number;
 	readonly adapterLuid: number;
 	readonly sharesFrames: boolean;
@@ -85,16 +83,10 @@ function mediaSource(src: string) {
 type MediaOwner = MediaBase & {
 	_notifyListener(type: string): void;
 	_onFrame?(): void;
-	/** A load failed: `true` when the owner loads another source instead (its next `<Source>`). */
+	/** `true` when the owner loads another source instead (its next `<Source>`). */
 	_onLoadError?(): boolean;
 };
 
-/**
- * A `Windows.Media.Playback.MediaPlayer` with HTMLMediaElement state and events, shared by the
- * Windows `Audio` and `Video`. Its events arrive through the native bridge (they are raised off the
- * JS thread); with `frames` the player runs in frame-server mode and decoded frames reach the owner's
- * `_onFrame`.
- */
 export class WindowsMediaPlayer {
 	readonly player: any;
 	readonly bridge: MediaPlayerBridge;
@@ -116,8 +108,8 @@ export class WindowsMediaPlayer {
 		this.player = player;
 		const ref = new WeakRef(this);
 		this.bridge = new Native.NSCMediaPlayerBridge(NSWinRT.interop.pointerKey(player), (type, detail) => ref.deref()?._onEvent(type, detail), frames);
-		// Before any source: an effect only applies to the sources set after it. Passes the audio
-		// through until an AudioContext takes it (createMediaElementSource).
+		// Before any source: an effect only applies to the sources set after it. It passes the audio
+		// through until an AudioContext takes it.
 		try {
 			this._tap = this.bridge.createAudioTap();
 		} catch (e) {}
@@ -293,11 +285,7 @@ export class WindowsMediaPlayer {
 		return !this._playing && !this._play;
 	}
 
-	/**
-	 * Routes the audio into a Web Audio graph instead of the speakers (createMediaElementSource):
-	 * an audio effect in the player's pipeline hands the decoded samples over. null where the
-	 * effect is unavailable.
-	 */
+	/** null where the audio effect is unavailable. */
 	attachAudioTap(): AudioTap | null {
 		if (!this._tap) {
 			return null;
@@ -307,12 +295,11 @@ export class WindowsMediaPlayer {
 		return this._tap;
 	}
 
-	/** The player plays through the speakers again. */
 	detachAudioTap() {
 		this._tap?.setRouted(false);
 	}
 
-	/** The graph gets what the element would play: its volume, or silence when muted. */
+	/** As on the web, the graph gets the element's volume (silence when muted). */
 	private _syncTapGain() {
 		this._tap?.setGain(this.muted ? 0 : this.volume);
 	}

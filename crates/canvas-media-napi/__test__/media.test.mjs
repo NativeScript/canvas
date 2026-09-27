@@ -1,4 +1,3 @@
-// A muted MediaPlayer on the WebGPU demo's clip; frames are copied on WARP where there is no GPU.
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -14,7 +13,6 @@ process.dlopen(module, addon);
 const Media = module.exports;
 const clip = url.pathToFileURL(path.join(root, 'tools', 'demo', 'canvas', 'assets', 'webgpu', 'pano.mp4')).href;
 
-/** Resolves with the events seen once `done(events)` is true; rejects on `error` or timeout. */
 function watch(frames, done, timeoutMs = 20000) {
 	const events = [];
 	let bridge;
@@ -47,7 +45,6 @@ test('delivers the player events on the JS thread', async () => {
 	const { promise, bridge } = watch(false, (events) => events.some(([type, state]) => type === 'state' && state === '3'));
 	const events = await promise;
 	assert.ok(events.some(([type]) => type === 'opened'), 'opened');
-	// Without frames nothing is copied.
 	assert.equal(bridge().frameId, 0);
 	assert.equal(bridge().readPixels(), null);
 	bridge().close();
@@ -68,7 +65,6 @@ test('copies frames and reads them back as RGBA', async () => {
 		if (pixels[i] + pixels[i + 1] + pixels[i + 2] > 0) lit++;
 	}
 	assert.ok(lit > (width * height) / 10, 'the frame has content');
-	// Shared for WebGPU: a descriptor naming the latest frame, on this device's adapter.
 	assert.equal(b.sharesFrames, true);
 	assert.ok(b.adapterLuid > 0, `adapter ${b.adapterLuid}`);
 	const shared = b.gpuFrame();

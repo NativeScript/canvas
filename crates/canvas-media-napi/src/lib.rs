@@ -42,7 +42,6 @@ unsafe trait ISurfaceImageSourceNative: windows::core::IUnknown {
   fn EndDraw(&self) -> HRESULT;
 }
 
-/// Parses `NSWinRT.interop.pointerKey(...)` output (`"0x…"`) or a decimal address.
 fn parse_pointer_key(key: &str) -> Option<*mut c_void> {
   let key = key.trim();
   let address = match key.strip_prefix("0x").or_else(|| key.strip_prefix("0X")) {
@@ -59,9 +58,9 @@ fn to_napi(error: windows::core::Error) -> Error {
 struct Device {
   device: ID3D11Device,
   context: ID3D11DeviceContext,
-  /// `LowPart | HighPart << 32`: WebGPU opens shared frames only on the same adapter.
+  /// WebGPU shares frames only on the same adapter.
   luid: u64,
-  /// Fences (Windows 10 1703+): without them frames are not shared with other devices.
+  /// Windows 10 1703+; without fences frames are not shared.
   fences: Option<(ID3D11Device5, ID3D11DeviceContext4)>,
 }
 
@@ -126,7 +125,6 @@ fn texture_desc(width: u32, height: u32, shared: bool) -> D3D11_TEXTURE2D_DESC {
 
 static NEXT_SHARED_ID: AtomicU64 = AtomicU64::new(1);
 
-/// An NT handle to share a texture or fence, closed with it.
 struct SharedHandle {
   handle: HANDLE,
   /// Unique for the process's lifetime, unlike handle values: consumers cache by it.
@@ -145,8 +143,6 @@ impl Drop for SharedHandle {
   }
 }
 
-/// The fences frames are shared with: `ready` is signalled here after each copy, `release` by the
-/// consumer once it has read a frame.
 struct Fences {
   ready: ID3D11Fence,
   ready_handle: SharedHandle,
@@ -185,14 +181,11 @@ struct SharedFrameDesc {
   release_value: u64,
 }
 
-/// A decoded frame, BGRA at the video's natural size.
 struct Frame {
   texture: ID3D11Texture2D,
-  /// `texture` as the WinRT surface `CopyFrameToVideoSurface` takes.
   surface: IDirect3DSurface,
-  /// Set when the device has fences: the texture is shareable.
   shared: Option<SharedHandle>,
-  /// The release-fence value consumers must reach before the texture is written again.
+  /// The release value to wait for before writing the texture again.
   busy_until: u64,
 }
 
@@ -226,7 +219,6 @@ struct Pool {
   width: u32,
   height: u32,
   fences: Option<Fences>,
-  /// The ready-fence value signalled after the latest copy.
   latest_ready: u64,
   next_ready: u64,
   next_release: u64,
@@ -243,7 +235,6 @@ impl Pool {
 #[derive(Default)]
 struct Frames {
   pool: Mutex<Pool>,
-  /// Bumped per copied frame.
   generation: AtomicU64,
   /// Set under `pool`'s lock: a `VideoFrameAvailable` still running when its handler is removed
   /// copies nothing after the bridge closes.
@@ -312,7 +303,6 @@ impl Frames {
   }
 }
 
-/// A XAML `SurfaceImageSource` frames are copied into, made by the view at the video's size.
 struct XamlSurface {
   native: ISurfaceImageSourceNative,
   width: u32,
@@ -335,8 +325,7 @@ impl XamlSurface {
   }
 }
 
-/// The player's audio routed to a Web Audio graph (`NSCMediaPlayerBridge.createAudioTap()`).
-/// `address` is a `tap::AudioTapSource` audiocontext.node reads through.
+/// `address`: a `tap::AudioTapSource` for audiocontext.node.
 #[napi(js_name = "NSCAudioTap")]
 pub struct NSCAudioTap {
   tap: Arc<tap::Tap>,
@@ -350,27 +339,24 @@ impl NSCAudioTap {
     &*self.source as *const tap::AudioTapSource as usize as f64
   }
 
-  /// The element's volume (0 when muted): the graph gets what the element would have played.
   #[napi]
   pub fn set_gain(&self, gain: f64) {
     self.tap.set_gain(gain as f32);
   }
 
-  /// Routed: the player is silent and its audio goes to the graph. Not routed (initially): it plays
-  /// as before.
+  /// Routed: the player is silent and its audio goes to the graph.
   #[napi]
   pub fn set_routed(&self, routed: bool) {
     self.tap.set_routed(routed);
   }
 
-  /// Frames handed to the graph so far.
   #[napi(getter)]
   pub fn frames_tapped(&self) -> f64 {
     self.tap.frames.load(std::sync::atomic::Ordering::Relaxed) as f64
   }
 }
 
-/// A frame handed to WebGPU (`NSCMediaPlayerBridge.gpuFrame()`); holds the handles it names.
+/// Holds the pool, so the handles it names stay open.
 #[napi(js_name = "NSCSharedFrame", custom_finalize)]
 pub struct NSCSharedFrame {
   desc: Box<SharedFrameDesc>,
@@ -389,7 +375,6 @@ impl ObjectFinalize for NSCSharedFrame {
 
 #[napi]
 impl NSCSharedFrame {
-  /// The descriptor's address, for `nativeTexture`.
   #[napi(getter)]
   pub fn address(&self) -> f64 {
     &*self.desc as *const SharedFrameDesc as usize as f64
@@ -405,8 +390,8 @@ impl NSCSharedFrame {
     self.height
   }
 
-  /// Done with the frame. One never consumed (its import failed) frees its texture at once; a
-  /// consumed one is freed when the consumer's release signal completes.
+  /// An unconsumed frame (its import failed) frees its texture at once; a consumed one when the
+  /// consumer's release signal completes.
   #[napi]
   pub fn close(&mut self) {
     if std::mem::replace(&mut self.released, true) {
@@ -456,7 +441,6 @@ thread_local! {
   static CLEANUP_HOOKED: Cell<bool> = const { Cell::new(false) };
 }
 
-/// Closes every live player (bridges and test players) before the env goes away.
 fn close_everything() {
   for live in LIVE.with(|live| std::mem::take(&mut *live.borrow_mut())) {
     if let Some(live) = live.upgrade() {
@@ -488,13 +472,8 @@ fn notify<S: RuntimeType + 'static, A: RuntimeType + 'static>(emit: &Emit, kind:
   })
 }
 
-/// `NSCMediaPlayerBridge`: the native side of canvas-media's Windows `Video` and `Audio`, over a
-/// `Windows.Media.Playback.MediaPlayer` the TS creates and drives.
-///
 /// MediaPlayer raises its events on Media Foundation threads, where the runtime cannot run JS
-/// delegates, so they are subscribed here and delivered on the JS thread (`onEvent`). With
-/// `frames`, the player is expected in frame-server mode: each decoded frame is copied into a
-/// texture as it arrives, for the view's `SurfaceImageSource` and for canvases (`readPixels`).
+/// delegates: they are subscribed here and delivered on the JS thread.
 #[napi(js_name = "NSCMediaPlayerBridge", custom_finalize)]
 pub struct NSCMediaPlayerBridge {
   live: Rc<LiveCell>,
@@ -512,10 +491,9 @@ impl ObjectFinalize for NSCMediaPlayerBridge {
 
 #[napi]
 impl NSCMediaPlayerBridge {
-  /// `playerKey`: the MediaPlayer's pointer key. `onEvent(type, detail)`: `opened`, `ended`,
-  /// `error` (detail: the message), `state` (detail: the `MediaPlaybackState`), `seeked`,
-  /// `durationchange`, `resize`, `waiting`, `buffered` and, with `frames`, `frame` (at most one
-  /// queued at a time).
+  /// `onEvent(type, detail)`: `opened`, `ended`, `error` (detail: the message), `state` (detail: the
+  /// `MediaPlaybackState`), `seeked`, `durationchange`, `resize`, `waiting`, `buffered` and, with
+  /// `frames`, `frame` (at most one queued).
   #[napi(
     constructor,
     ts_args_type = "playerKey: string, onEvent: (type: string, detail?: string) => void, frames?: boolean"
@@ -625,7 +603,7 @@ impl NSCMediaPlayerBridge {
     Ok(Self { live, frames, staging: RefCell::new(None), xaml: RefCell::new(None) })
   }
 
-  /// Unsubscribes from the player; the last frame stays readable.
+  /// The last frame stays readable.
   #[napi]
   pub fn close(&mut self) {
     if let Some(mut live) = self.live.borrow_mut().take() {
@@ -634,7 +612,6 @@ impl NSCMediaPlayerBridge {
     self.xaml.borrow_mut().take();
   }
 
-  /// The size of the frames copied so far, 0 before the first.
   #[napi(getter)]
   pub fn video_width(&self) -> u32 {
     self.frames.as_ref().map_or(0, |frames| frames.size().0)
@@ -645,21 +622,18 @@ impl NSCMediaPlayerBridge {
     self.frames.as_ref().map_or(0, |frames| frames.size().1)
   }
 
-  /// The adapter frames are decoded on (`LowPart | HighPart << 32`, 0 if unknown).
   #[napi(getter)]
   pub fn adapter_luid(&self) -> f64 {
     device().map_or(0., |device| device.luid as f64)
   }
 
-  /// Whether frames can be shared with a WebGPU device (on the same adapter).
   #[napi(getter)]
   pub fn shares_frames(&self) -> bool {
     self.frames.is_some() && device().is_some_and(|device| device.fences.is_some())
   }
 
-  /// The latest frame, shared for WebGPU: `address` is a `CanvasD3DSharedFrame` for
-  /// `nativeTexture`. The texture is not written again until the consumer has signalled its
-  /// release (or `close()` finds it never staged one). `null` before the first frame.
+  /// `address` is a `CanvasD3DSharedFrame` for `nativeTexture`; the texture is not written again
+  /// until released.
   #[napi]
   pub fn gpu_frame(&self) -> Option<NSCSharedFrame> {
     let frames = self.frames.as_ref()?;
@@ -697,10 +671,8 @@ impl NSCMediaPlayerBridge {
     })
   }
 
-  /// A tap on the player's decoded audio (an audio effect Media Foundation runs on it), passing it
-  /// through until routed, for a MediaElementAudioSourceNode. Effects apply to the next source
-  /// set, so this is called before any. Optional for the player: where the effect cannot be
-  /// activated the element just keeps playing.
+  /// Passes the audio through until routed. Effects only apply to the sources set after them, so
+  /// this runs before any; optional, so a player whose effect cannot be activated just plays.
   #[napi]
   pub fn create_audio_tap(&self) -> Result<NSCAudioTap> {
     let live = self.live.borrow();
@@ -717,14 +689,12 @@ impl NSCMediaPlayerBridge {
     Ok(NSCAudioTap { tap, source })
   }
 
-  /// Changes with every frame copied; 0 before the first.
   #[napi(getter)]
   pub fn frame_id(&self) -> f64 {
     self.frames.as_ref().map_or(0., |frames| frames.generation.load(Ordering::Acquire) as f64)
   }
 
-  /// Presents frames into a XAML `SurfaceImageSource` of `width` x `height` (the video's size) from
-  /// now on, replacing any previous one. UI thread.
+  /// UI thread; replaces any previous one.
   #[napi]
   pub fn attach_surface_image_source(&self, key: String, width: u32, height: u32) -> bool {
     let (Some(device), Some(raw)) = (device(), parse_pointer_key(&key)) else { return false };
@@ -746,8 +716,7 @@ impl NSCMediaPlayerBridge {
     self.xaml.borrow_mut().take();
   }
 
-  /// Copies the current frame into the attached `SurfaceImageSource`; `false` without one of the
-  /// frame's size. UI thread.
+  /// UI thread. `false` without a surface of the frame's size.
   #[napi]
   pub fn present(&self) -> bool {
     let (Some(frames), Some(device)) = (self.frames.as_ref(), device()) else { return false };
@@ -761,8 +730,7 @@ impl NSCMediaPlayerBridge {
     surface.present(device, &frame.texture).is_ok()
   }
 
-  /// The current frame's pixels, RGBA and top row first (`videoWidth` x `videoHeight`), read back
-  /// from the GPU; `null` before the first frame.
+  /// RGBA, top row first; `null` before the first frame.
   #[napi]
   pub fn read_pixels(&self) -> Option<Uint8Array> {
     let (frames, device) = (self.frames.as_ref()?, device()?);
@@ -800,9 +768,7 @@ impl NSCMediaPlayerBridge {
   }
 }
 
-/// `__createTestPlayer(uri)`: the pointer key of a muted, autoplaying frame-server MediaPlayer on
-/// `uri` (tests: Node has no WinRT projection to make one). Kept until `__closeTestPlayers()` or the
-/// env's cleanup.
+/// A muted, autoplaying frame-server player for tests: Node has no WinRT projection to make one.
 #[napi(js_name = "__createTestPlayer")]
 pub fn create_test_player(env: Env, uri: String) -> Result<String> {
   ensure_cleanup_hook(&env)?;

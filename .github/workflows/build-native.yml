@@ -300,24 +300,25 @@ jobs:
         with:
           ref: ${{ inputs.ref }}
       - name: Restore cached module
+        if: github.event_name != 'workflow_dispatch'
         id: svg-node
         uses: actions/cache@v4
         with:
           path: packages/canvas-svg/platforms/windows/${{ matrix.arch }}/canvassvg.node
           key: ${{ env.NATIVE_CACHE_VERSION }}-canvas-svg-windows-${{ matrix.arch }}-${{ hashFiles('crates/canvas-svg/**', 'crates/canvas-svg-c/**', 'crates/canvas-svg-napi/**', 'crates/canvas-2d/**', 'crates/canvas-core/**', 'crates/vendor/napi-sys/**', 'Cargo.toml', 'Cargo.lock', 'tools/scripts/build-napi.sh') }}
       - uses: ./.github/actions/setup-windows-native
-        if: steps.svg-node.outputs.cache-hit != 'true'
+        if: steps.svg-node.outputs.cache-hit != 'true' || github.event_name == 'workflow_dispatch'
         with:
           target: ${{ matrix.target }}
       - uses: actions/setup-node@v4
-        if: steps.svg-node.outputs.cache-hit != 'true' && matrix.arch == 'x64'
+        if: (steps.svg-node.outputs.cache-hit != 'true' || github.event_name == 'workflow_dispatch') && matrix.arch == 'x64'
         with:
           node-version: '22'
       - name: Build canvassvg.node
-        if: steps.svg-node.outputs.cache-hit != 'true'
+        if: steps.svg-node.outputs.cache-hit != 'true' || github.event_name == 'workflow_dispatch'
         run: ./tools/scripts/build-napi.sh ${{ matrix.target }} release-napi canvas-svg-napi
       - name: Node-API tests
-        if: steps.svg-node.outputs.cache-hit != 'true' && matrix.arch == 'x64'
+        if: (steps.svg-node.outputs.cache-hit != 'true' || github.event_name == 'workflow_dispatch') && matrix.arch == 'x64'
         env:
           CANVAS_SVG_NAPI_ADDON: ${{ github.workspace }}\packages\canvas-svg\platforms\windows\x64\canvassvg.node
         run: node --expose-gc --test "crates/canvas-svg-napi/__test__/*.test.mjs"

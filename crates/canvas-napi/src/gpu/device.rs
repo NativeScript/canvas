@@ -840,6 +840,14 @@ impl g_p_u_device {
     Ok(unsafe { g_p_u_texture::from_raw(texture) })
   }
 
+  /// The adapter's LUID as a number (0 if unknown): videos hand frames to this device on the GPU
+  /// only when they decode on the same adapter.
+  #[cfg(target_os = "windows")]
+  #[napi(js_name = "__getAdapterLuid")]
+  pub fn get_adapter_luid(&self) -> f64 {
+    unsafe { canvas_c::webgpu::gpu_shared_frame::canvas_native_webgpu_device_get_adapter_luid(self.ptr()) as f64 }
+  }
+
   /// `importExternalTexture({ nativeTexture, width, height, label? })`: packages/canvas resolves
   /// the video to a platform texture; undefined where the backend cannot import it.
   #[napi(

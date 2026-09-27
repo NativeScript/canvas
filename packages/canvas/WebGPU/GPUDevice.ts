@@ -402,7 +402,7 @@ export class GPUDevice extends EventTarget {
 			throw new TypeError(`Failed to execute 'importExternalTexture' on 'GPUDevice': source must be a video element.`);
 		}
 
-		const device = this.__metalDevice;
+		const device = this.__frameDevice;
 		if (!device || !video.supportsGPUFrames?.(device)) {
 			const error: any = new Error(`Failed to execute 'importExternalTexture' on 'GPUDevice': external textures are not supported on this platform yet.`);
 			error.name = 'NotSupportedError';
@@ -442,6 +442,27 @@ export class GPUDevice extends EventTarget {
 	}
 
 	private _metalDevice: number | undefined;
+	/**
+	 * What a video needs to hand this device its frames on the GPU: the `MTLDevice` on Apple, the
+	 * adapter's LUID on Windows (frames are shared only on the same adapter); 0 where there is none.
+	 */
+	get __frameDevice(): number {
+		return this.__metalDevice || this.__adapterLuid;
+	}
+
+	private _adapterLuid: number | undefined;
+	/** The adapter's LUID as a number (Windows), or 0. */
+	get __adapterLuid(): number {
+		if (this._adapterLuid === undefined) {
+			try {
+				this._adapterLuid = this[native_].__getAdapterLuid?.() ?? 0;
+			} catch (e) {
+				this._adapterLuid = 0;
+			}
+		}
+		return this._adapterLuid;
+	}
+
 	/**
 	 * The `MTLDevice` wgpu renders with, as a number, or 0 where there is none (non-Apple
 	 * platforms, or an older native build without the binding).

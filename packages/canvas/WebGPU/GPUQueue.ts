@@ -32,8 +32,9 @@ export class GPUQueue {
 	 */
 	private _takeVideoFrame(video: any, into: GPUImageCopyExternalImage, destination: GPUImageCopyTextureTagged): unknown {
 		if (typeof video.getGPUFrameTexture === 'function') {
-			// Apple needs the MTLDevice its texture cache was built on; Android ignores it.
-			const device = this._device?.__metalDevice ?? 0;
+			// Apple needs the MTLDevice its texture cache was built on, Windows the adapter the
+			// frames are shared on; Android ignores it.
+			const device = this._device?.__frameDevice ?? 0;
 			// The blit renders into the destination, so without RENDER_ATTACHMENT it has
 			// to fall through to the upload path rather than fail validation.
 			const renderable = ((destination?.texture as any)?.usage ?? 0) & GPUTextureUsage.RENDER_ATTACHMENT;

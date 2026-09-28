@@ -7,7 +7,7 @@
 //! frame.
 
 use std::cell::{Cell, RefCell};
-use std::ffi::c_void;
+use std::ffi::{c_void, CStr};
 use std::rc::{Rc, Weak};
 
 use napi::sys;
@@ -18,6 +18,7 @@ use napi::JsValue;
 pub struct FrameSlot {
   dirty: Cell<bool>,
   paused: Cell<bool>,
+  retrying: Cell<bool>,
   target: *mut c_void,
   flush: unsafe fn(*mut c_void),
 }
@@ -28,6 +29,7 @@ impl FrameSlot {
     Rc::new(FrameSlot {
       dirty: Cell::new(false),
       paused: Cell::new(false),
+      retrying: Cell::new(false),
       target,
       flush,
     })
@@ -46,15 +48,36 @@ impl FrameSlot {
   }
 
   /// Renders now if dirty (e.g. before a readback).
-  pub fn flush_now(&self) {
-    if self.dirty.replace(false) {
-      unsafe { (self.flush)(self.target) };
+  pub fn flush_now(self: &Rc<Self>) {
+    if !self.dirty.replace(false) {
+      return;
     }
+    take_present_deferred();
+    unsafe { (self.flush)(self.target) };
+    if take_present_deferred() {
+      self.dirty.set(true);
+      if !self.retrying.replace(true) {
+        RETRY.with(|r| r.borrow_mut().push(Rc::downgrade(self)));
+      }
+      request_retry();
+    }
+  }
+}
+
+fn take_present_deferred() -> bool {
+  #[cfg(target_os = "windows")]
+  {
+    canvas_core::gpu::dxgi::take_present_deferred()
+  }
+  #[cfg(not(target_os = "windows"))]
+  {
+    false
   }
 }
 
 thread_local! {
   static PENDING: RefCell<Vec<Weak<FrameSlot>>> = const { RefCell::new(Vec::new()) };
+  static RETRY: RefCell<Vec<Weak<FrameSlot>>> = const { RefCell::new(Vec::new()) };
   static SCHEDULER: RefCell<Option<Box<dyn Fn()>>> = const { RefCell::new(None) };
   /// A flush found a context's GPU device lost.
   static LOST: Cell<bool> = const { Cell::new(false) };
@@ -81,11 +104,22 @@ pub fn mark_dirty(slot: &Rc<FrameSlot>) {
 /// Flushes every queued, still-alive, dirty and unpaused context. Called by the host at the end
 /// of a frame (and by `CanvasModule.__flushAll()`).
 pub fn flush_all() {
-  let pending = PENDING.with(|p| std::mem::take(&mut *p.borrow_mut()));
-  for slot in pending.iter().filter_map(Weak::upgrade) {
+  let mut pending = PENDING.with(|p| std::mem::take(&mut *p.borrow_mut()));
+  pending.extend(RETRY.with(|r| std::mem::take(&mut *r.borrow_mut())));
+  let pending: Vec<_> = pending.iter().filter_map(Weak::upgrade).collect();
+  for slot in &pending {
+    slot.retrying.set(false);
+  }
+  for slot in &pending {
     if !slot.paused.get() {
       slot.flush_now();
     }
+  }
+}
+
+fn request_retry() {
+  if let Some(scheduler) = MICROTASK.with(|m| m.borrow().clone()) {
+    scheduler.request_retry();
   }
 }
 
@@ -159,6 +193,8 @@ struct MicrotaskScheduler {
   queue_microtask: sys::napi_ref,
   flush: sys::napi_ref,
   queued: Cell<bool>,
+  retry: sys::napi_ref,
+  retry_queued: Cell<bool>,
 }
 
 thread_local! {
@@ -176,7 +212,45 @@ unsafe extern "C" fn microtask_flush(env: sys::napi_env, _: sys::napi_callback_i
   undefined
 }
 
+unsafe extern "C" fn retry_flush(env: sys::napi_env, _: sys::napi_callback_info) -> sys::napi_value {
+  if let Some(scheduler) = MICROTASK.with(|m| m.borrow().clone()) {
+    scheduler.retry_queued.set(false);
+    if RETRY.with(|r| !r.borrow().is_empty()) {
+      scheduler.request();
+    }
+  }
+  let mut undefined = std::ptr::null_mut();
+  unsafe { sys::napi_get_undefined(env, &mut undefined) };
+  undefined
+}
+
+unsafe fn call_global(env: sys::napi_env, global: sys::napi_value, name: &CStr, arg: sys::napi_value) -> bool {
+  let (mut function, mut kind, mut result) = (std::ptr::null_mut(), 0, std::ptr::null_mut());
+  unsafe {
+    sys::napi_get_named_property(env, global, name.as_ptr(), &mut function) == sys::Status::napi_ok
+      && sys::napi_typeof(env, function, &mut kind) == sys::Status::napi_ok
+      && kind == sys::ValueType::napi_function
+      && sys::napi_call_function(env, global, function, 1, &arg, &mut result) == sys::Status::napi_ok
+  }
+}
+
 impl MicrotaskScheduler {
+  fn request_retry(&self) {
+    if self.retry_queued.replace(true) {
+      return;
+    }
+    unsafe {
+      let (mut retry, mut global) = (std::ptr::null_mut(), std::ptr::null_mut());
+      let ok = sys::napi_get_reference_value(self.env, self.retry, &mut retry) == sys::Status::napi_ok
+        && sys::napi_get_global(self.env, &mut global) == sys::Status::napi_ok
+        && (call_global(self.env, global, c"requestAnimationFrame", retry)
+          || call_global(self.env, global, c"setTimeout", retry));
+      if !ok {
+        self.retry_queued.set(false);
+      }
+    }
+  }
+
   fn request(&self) {
     if self.queued.replace(true) {
       return;
@@ -222,9 +296,19 @@ pub fn install_microtask_scheduler(env: sys::napi_env) -> napi::Result<()> {
       std::ptr::null_mut(),
       &mut flush,
     ))?;
-    let (mut queue_ref, mut flush_ref) = (std::ptr::null_mut(), std::ptr::null_mut());
+    let mut retry = std::ptr::null_mut();
+    napi::check_status!(sys::napi_create_function(
+      env,
+      c"__canvasRetry".as_ptr(),
+      -1,
+      Some(retry_flush),
+      std::ptr::null_mut(),
+      &mut retry,
+    ))?;
+    let (mut queue_ref, mut flush_ref, mut retry_ref) = (std::ptr::null_mut(), std::ptr::null_mut(), std::ptr::null_mut());
     napi::check_status!(sys::napi_create_reference(env, queue_microtask, 1, &mut queue_ref))?;
     napi::check_status!(sys::napi_create_reference(env, flush, 1, &mut flush_ref))?;
+    napi::check_status!(sys::napi_create_reference(env, retry, 1, &mut retry_ref))?;
     napi::check_status!(sys::napi_add_env_cleanup_hook(env, Some(microtask_teardown), std::ptr::null_mut()))?;
 
     let scheduler = Rc::new(MicrotaskScheduler {
@@ -232,6 +316,8 @@ pub fn install_microtask_scheduler(env: sys::napi_env) -> napi::Result<()> {
       queue_microtask: queue_ref,
       flush: flush_ref,
       queued: Cell::new(false),
+      retry: retry_ref,
+      retry_queued: Cell::new(false),
     });
     MICROTASK.with(|m| *m.borrow_mut() = Some(scheduler.clone()));
     set_scheduler(Some(Box::new(move || scheduler.request())));

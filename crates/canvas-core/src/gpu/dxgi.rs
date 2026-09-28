@@ -6,7 +6,9 @@
 //! maps it back (1 / composition scale), which is also how the canvas "fit" modes are applied
 //! without resizing buffers.
 
+use std::cell::Cell;
 use std::ffi::c_void;
+use std::time::{Duration, Instant};
 
 use windows::core::{Interface, Result, HRESULT};
 use windows::Win32::Foundation::{CloseHandle, HANDLE, WAIT_OBJECT_0};
@@ -35,6 +37,16 @@ pub unsafe trait ISwapChainPanelNative: windows::core::IUnknown {
 }
 
 pub const BUFFER_COUNT: u32 = 2;
+
+const MAX_FRAME_DEFERRAL: Duration = Duration::from_millis(250);
+
+thread_local! {
+    static PRESENT_DEFERRED: Cell<bool> = const { Cell::new(false) };
+}
+
+pub fn take_present_deferred() -> bool {
+    PRESENT_DEFERRED.with(|deferred| deferred.replace(false))
+}
 
 /// WinUI 3's `ISurfaceImageSourceNative` (microsoft.ui.xaml.media.dxinterop.h; not the UWP IID).
 #[windows::core::interface("e4cecd6c-f14b-4f46-83c3-8bbda27c6504")]
@@ -317,6 +329,7 @@ pub struct CompositionSwapChain {
     width: u32,
     height: u32,
     flags: DXGI_SWAP_CHAIN_FLAG,
+    deferred_since: parking_lot::Mutex<Option<Instant>>,
 }
 
 impl CompositionSwapChain {
@@ -375,6 +388,7 @@ impl CompositionSwapChain {
             width: width.max(1),
             height: height.max(1),
             flags,
+            deferred_since: parking_lot::Mutex::new(None),
         })
     }
 
@@ -437,6 +451,22 @@ impl CompositionSwapChain {
             return true;
         }
         unsafe { WaitForSingleObjectEx(self.waitable, 0, false) == WAIT_OBJECT_0 }
+    }
+
+    /// `false`: the display hasn't taken the queued frames yet; skip this present.
+    pub fn acquire_frame(&self) -> bool {
+        let mut deferred_since = self.deferred_since.lock();
+        if self.frame_ready() {
+            *deferred_since = None;
+            return true;
+        }
+        let now = Instant::now();
+        if now.duration_since(*deferred_since.get_or_insert(now)) >= MAX_FRAME_DEFERRAL {
+            *deferred_since = None;
+            return true;
+        }
+        PRESENT_DEFERRED.with(|deferred| deferred.set(true));
+        false
     }
 
     pub fn present(&self, vsync: bool) -> Result<()> {

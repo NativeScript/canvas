@@ -31,6 +31,7 @@ const STANDARD_BUTTONS: f32 = 16.0;
 // Float32 holds integers exactly up to 2^24.
 const SEQUENCE_WRAP: f32 = 16_777_216.0;
 const TRIGGER_PRESSED: f32 = 0.1;
+const MICROSOFT_VENDOR: u16 = 0x045e;
 
 const DIGITAL: [(usize, GamepadButtons); 14] = [
   (0, GamepadButtons::A),
@@ -194,9 +195,15 @@ fn describe(pad: &Gamepad) -> String {
   match RawGameController::FromGameController(pad) {
     Ok(raw) => {
       let name = raw.DisplayName().map(|n| n.to_string()).unwrap_or_default();
-      let name = if name.is_empty() { "Xbox Controller".to_string() } else { name };
       let vendor = raw.HardwareVendorId().unwrap_or(0);
       let product = raw.HardwareProductId().unwrap_or(0);
+      // Over Bluetooth Windows names Xbox pads by their HID class; Chrome reports the product name.
+      let generic = name.is_empty() || name.starts_with("HID-compliant");
+      let name = match (generic, vendor) {
+        (true, MICROSOFT_VENDOR) => "Xbox Wireless Controller".to_string(),
+        (true, _) if name.is_empty() => "Xbox Controller".to_string(),
+        _ => name,
+      };
       format!("{name} (STANDARD GAMEPAD Vendor: {vendor:04x} Product: {product:04x})")
     }
     Err(_) => "Xbox Controller (STANDARD GAMEPAD)".to_string(),

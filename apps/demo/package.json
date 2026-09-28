@@ -8,6 +8,7 @@
 		"@nativescript/canvas": "file:../../packages/canvas",
 		"@nativescript/canvas-babylon": "file:../../packages/canvas-babylon",
 		"@nativescript/canvas-chartjs": "file:../../packages/canvas-chartjs",
+		"@nativescript/canvas-gamepad": "file:../../packages/canvas-gamepad",
 		"@nativescript/canvas-media": "file:../../packages/canvas-media",
 		"@nativescript/canvas-phaser": "file:../../packages/canvas-phaser",
 		"@nativescript/canvas-phaser-ce": "file:../../packages/canvas-phaser-ce",

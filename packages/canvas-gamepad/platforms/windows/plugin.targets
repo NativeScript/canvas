@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <PropertyGroup>
+    <_NSCanvasGamepadArch Condition="'$(NSLibPlatform)' != ''">$(NSLibPlatform)</_NSCanvasGamepadArch>
+    <_NSCanvasGamepadArch Condition="'$(_NSCanvasGamepadArch)' == '' and ('$(Platform)' == 'ARM64' or '$(Platform)' == 'arm64')">arm64</_NSCanvasGamepadArch>
+    <!-- x64 when $(Platform) is unset/AnyCPU during evaluation. -->
+    <_NSCanvasGamepadArch Condition="'$(_NSCanvasGamepadArch)' == '' or '$(_NSCanvasGamepadArch)' == 'x86_64'">x64</_NSCanvasGamepadArch>
+    <_NSCanvasGamepadDir>$(MSBuildThisFileDirectory)$(_NSCanvasGamepadArch)\</_NSCanvasGamepadDir>
+  </PropertyGroup>
+
+  <!-- An explicit Copy: with EnableMsixTooling, Content items do not reliably reach $(OutDir). -->
+  <Target Name="CopyNativeScriptCanvasGamepad" AfterTargets="Build">
+    <ItemGroup>
+      <_NSCanvasGamepadFiles Include="$(_NSCanvasGamepadDir)*.node" />
+    </ItemGroup>
+    <Warning Text="[@nativescript/canvas-gamepad] No native module for $(_NSCanvasGamepadArch) in $(_NSCanvasGamepadDir); build it with `make windows-gamepad`." Condition="!Exists('$(_NSCanvasGamepadDir)canvasgamepad.node')" />
+    <Copy SourceFiles="@(_NSCanvasGamepadFiles)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+  </Target>
+</Project>

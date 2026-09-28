@@ -1,0 +1,29 @@
+[package]
+name = "canvas-gamepad-napi"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Node-API binding for @nativescript/canvas-gamepad on Windows: Windows.Gaming.Input readings for navigator.getGamepads()."
+
+[lib]
+crate-type = ["cdylib"]
+
+[features]
+default = ["napi8"]
+napi8 = ["napi/napi8"]
+# Hosts whose Node-API lacks type tags (NativeScript Windows on JavaScriptCore).
+napi7 = ["napi/napi7"]
+
+[dependencies]
+napi = { version = "3.13.0", default-features = false, features = ["dyn-symbols"] }
+napi-derive = "3.6.9"
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows = { workspace = true, features = [
+  "Foundation",
+  "Foundation_Collections",
+  "Gaming_Input",
+] }
+
+[build-dependencies]
+napi-build = "2.5.0"

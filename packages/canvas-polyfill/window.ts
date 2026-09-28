@@ -12,6 +12,7 @@ import { CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext
 import { HTMLCollection } from './DOM/HTMLCollection';
 import { HTMLUnknownElement } from './DOM/HTMLUnknownElement';
 import { Navigator } from './navigator';
+import { hookGamepadListeners } from './gamepad';
 (global as any).CANVAS_RENDERER = 'true';
 (global as any).WEBGL_RENDERER = 'true';
 (global as any).window = (global as any).window || {
@@ -145,6 +146,7 @@ for (const method of ['addEventListener', 'removeEventListener']) {
 	if (typeof host.window[method] !== 'function') host.window[method] = host[method].bind(host);
 	if (typeof host[method] !== 'function') host[method] = host.window[method].bind(host.window);
 }
+hookGamepadListeners();
 
 import { DOMParser as Parser } from '@xmldom/xmldom';
 

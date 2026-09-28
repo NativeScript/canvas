@@ -1,0 +1,16 @@
+{
+	"name": "@nativescript/canvas-gamepad-napi",
+	"private": true,
+	"version": "0.1.0",
+	"description": "Node-API build of the canvas-gamepad native module (Windows.Gaming.Input poller for Windows).",
+	"napi": {
+		"binaryName": "canvasgamepad",
+		"targets": [
+			"x86_64-pc-windows-msvc",
+			"aarch64-pc-windows-msvc"
+		]
+	},
+	"engines": {
+		"node": ">=20"
+	}
+}

@@ -997,6 +997,8 @@ public class NSCCanvas: UIView {
 				CanvasHelpers.release2DContext(nativeContext)
 			}else if(engine == .GL){
 				CanvasHelpers.releaseWebGL(nativeContext)
+			}else if(engine == .GPU){
+				CanvasHelpers.releaseWebGPU(nativeContext)
 			}
 			nativeContext = 0
 		}

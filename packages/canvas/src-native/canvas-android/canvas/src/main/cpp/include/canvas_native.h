@@ -2090,6 +2090,8 @@ void canvas_native_context_set_render_func(int64_t value, void *data, void (*ren
 
 void canvas_native_context_clear_render_func(int64_t value);
 
+void canvas_native_context_reference(const struct CanvasRenderingContext2D *value);
+
 void canvas_native_context_release(struct CanvasRenderingContext2D *value);
 
 #if (defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS) || defined(TARGET_OS_VISION))
@@ -4177,6 +4179,8 @@ void canvas_native_webgl_resized(struct WebGLState *_state);
 const char *canvas_native_webgl_to_data_url(struct WebGLState *state,
                                             const char *format,
                                             uint32_t quality);
+
+void canvas_native_webgl_state_reference(const struct WebGLState *state);
 
 void canvas_native_webgl_state_destroy(struct WebGLState *state);
 

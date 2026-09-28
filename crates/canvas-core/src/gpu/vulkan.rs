@@ -546,6 +546,24 @@ impl VulkanContext {
         }
     }
 
+    pub fn clear_view(&mut self) {
+        unsafe {
+            let _ = self.ash.device.device_wait_idle();
+            for view in self.ash.swap_chain_image_view.take().unwrap_or_default() {
+                self.ash.device.destroy_image_view(view, None);
+            }
+            self.ash.swap_chain_images = None;
+            self.ash.current_index = None;
+            if let Some(swap_chain) = self.ash.swap_chain.take() {
+                self.ash.swap_chain_loader.destroy_swapchain(swap_chain, None);
+            }
+            if let Some(surface) = self.ash.surface.take() {
+                self.ash.surface_loader.destroy_surface(surface, None);
+            }
+        }
+        self.view = std::ptr::null_mut();
+    }
+
     /// Rebuilds the swapchain; also how an out-of-date one is recovered. False means the whole
     /// context has to be rebuilt.
     pub fn resize(&mut self, width: u32, height: u32) -> bool {

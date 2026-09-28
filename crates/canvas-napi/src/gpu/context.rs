@@ -29,12 +29,10 @@ use crate::gpu::parse::{
 use crate::gpu::texture::g_p_u_texture;
 use crate::module::JsRaw;
 
-/// `GPUCanvasContext` over a canvas-c context. `createWebGPUContextWithPointer` wraps one a host
-/// view owns (and releases); the wrapper then must not release it.
+/// `GPUCanvasContext` over a canvas-c context.
 #[napi(js_name = "GPUCanvasContext", custom_finalize)]
 pub struct g_p_u_canvas_context {
   pub(crate) context: *const CanvasGPUCanvasContext,
-  owns_context: bool,
   /// A frame whose texture `getCurrentTexture()` handed out is presented at frame end, as on
   /// the web, unless `presentSurface()` already did.
   pub(crate) frame: Rc<FrameSlot>,
@@ -43,11 +41,9 @@ pub struct g_p_u_canvas_context {
 
 impl ObjectFinalize for g_p_u_canvas_context {
   fn finalize(self, _: Env) -> Result<()> {
-    if self.owns_context {
-      unsafe {
-        canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_context_release(self.context)
-      };
-    }
+    unsafe {
+      canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_context_release(self.context)
+    };
     Ok(())
   }
 }
@@ -162,10 +158,9 @@ fn present_to_present_mode(mode: &PresentMode) -> CanvasGPUPresentMode {
 }
 
 impl g_p_u_canvas_context {
-  pub(crate) fn from_raw(context: *const CanvasGPUCanvasContext, owns_context: bool) -> Self {
+  pub(crate) fn from_raw(context: *const CanvasGPUCanvasContext) -> Self {
     Self {
       context,
-      owns_context,
       frame: FrameSlot::new(context as *mut c_void, present_webgpu),
       continuous_render: Cell::new(false),
     }
@@ -377,11 +372,14 @@ impl g_p_u_canvas_context {
   }
 }
 
-/// `CanvasModule.createWebGPUContextWithPointer(pointer)`: wraps a `CanvasGPUCanvasContext` the
-/// host view owns (it stays the host's to release).
+/// `CanvasModule.createWebGPUContextWithPointer(pointer)`: wraps the host view's context.
 #[napi(js_name = "createWebGPUContextWithPointer")]
 pub fn create_webgpu_context_with_pointer(pointer: BigInt) -> Option<g_p_u_canvas_context> {
   let (pointer, _) = pointer.get_i64();
-  (pointer != 0)
-    .then(|| g_p_u_canvas_context::from_raw(pointer as *const CanvasGPUCanvasContext, false))
+  if pointer == 0 {
+    return None;
+  }
+  let context = pointer as *const CanvasGPUCanvasContext;
+  unsafe { canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_context_reference(context) };
+  Some(g_p_u_canvas_context::from_raw(context))
 }

@@ -6,7 +6,7 @@
  *   adb logcat -d | grep 'SPEC|'
  *
  * `--es suite <prefix>` narrows the run: a group (`2d`, `webgl`, `webgpu`,
- * `imagebitmap`, `bitmaprenderer`, `audio` and `media` on Windows) or a single suite (`2d.path2d`).
+ * `imagebitmap`, `bitmaprenderer`, `lifecycle`, `audio` and `media` on Windows) or a single suite (`2d.path2d`).
  * `contextlost` (Windows) runs on its own: it removes the GPU device.
  */
 
@@ -20,6 +20,7 @@ import { registerScalingSpec } from './scaling';
 import { registerContextLossSpec } from './contextloss';
 import { registerAudioSpec } from './audio';
 import { registerMediaSpec } from './media';
+import { registerLifecycleSpec } from './lifecycle';
 
 declare const __WINDOWS__: boolean;
 
@@ -36,6 +37,7 @@ export async function runSpecTests(group: SpecGroup = 'all') {
 	registerWebGPUSpec();
 	registerCanvasSourceSpec();
 	registerScalingSpec();
+	registerLifecycleSpec();
 	if (typeof __WINDOWS__ !== 'undefined' && __WINDOWS__) {
 		registerAudioSpec();
 		registerMediaSpec();

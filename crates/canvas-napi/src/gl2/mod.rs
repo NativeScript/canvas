@@ -23,18 +23,15 @@ use crate::{impl_webgl2_context_constants, impl_webgl_context, impl_webgl_contex
 pub struct web_g_l_2_rendering_context {
   pub(crate) state: *mut WebGLState,
   pub(crate) invalidate_state: u32,
-  /// `createWebGL2Context(options, pointer)` wraps a state the host view owns.
-  pub(crate) owns_state: bool,
   pub(crate) frame: std::rc::Rc<crate::frame::FrameSlot>,
   pub(crate) continuous_render: std::cell::Cell<bool>,
 }
 
 impl web_g_l_2_rendering_context {
-  pub(crate) fn from_raw(state: *mut WebGLState, owns_state: bool) -> Self {
+  pub(crate) fn from_raw(state: *mut WebGLState) -> Self {
     Self {
       state,
       invalidate_state: 0,
-      owns_state,
       frame: crate::frame::FrameSlot::new(state as *mut std::ffi::c_void, crate::gl::present_webgl),
       continuous_render: std::cell::Cell::new(false),
     }
@@ -48,17 +45,15 @@ pub fn create_web_g_l_2_context(
   target: napi::bindgen_prelude::Unknown,
   height: Option<f64>,
 ) -> Option<web_g_l_2_rendering_context> {
-  let (state, owns) = crate::gl::resolve_webgl_state(2, &options, &target, height)?;
-  Some(web_g_l_2_rendering_context::from_raw(state, owns))
+  let state = crate::gl::resolve_webgl_state(2, &options, &target, height)?;
+  Some(web_g_l_2_rendering_context::from_raw(state))
 }
 
 impl_webgl_context!(web_g_l_2_rendering_context);
 
 impl ObjectFinalize for web_g_l_2_rendering_context {
   fn finalize(self, _: Env) -> napi::Result<()> {
-    if self.owns_state {
-      canvas_c::canvas_native_webgl_state_destroy(self.state);
-    }
+    canvas_c::canvas_native_webgl_state_destroy(self.state);
     Ok(())
   }
 }
@@ -102,7 +97,7 @@ impl web_g_l_2_rendering_context {
       return Err(napi::Error::from_reason("Invalid parameter"));
     }
 
-    Ok(web_g_l_2_rendering_context::from_raw(ret, true))
+    Ok(web_g_l_2_rendering_context::from_raw(ret))
   }
 
   /* Transform feedback */

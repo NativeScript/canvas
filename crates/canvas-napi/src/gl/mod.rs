@@ -48,8 +48,6 @@ pub struct HTMLCanvasSource<'env> {
 pub struct web_g_l_rendering_context {
   pub(crate) state: *mut WebGLState,
   pub(crate) invalidate_state: u32,
-  /// `createWebGLContext(options, pointer)` wraps a state the host view owns.
-  pub(crate) owns_state: bool,
   /// Dirty tracking: drawing marks the context, the host presents it at frame end.
   pub(crate) frame: Rc<FrameSlot>,
   pub(crate) continuous_render: Cell<bool>,
@@ -57,9 +55,7 @@ pub struct web_g_l_rendering_context {
 
 impl ObjectFinalize for web_g_l_rendering_context {
   fn finalize(self, _: Env) -> Result<()> {
-    if self.owns_state {
-      canvas_c::canvas_native_webgl_state_destroy(self.state);
-    }
+    canvas_c::canvas_native_webgl_state_destroy(self.state);
     Ok(())
   }
 }
@@ -126,11 +122,10 @@ pub(crate) unsafe fn present_webgl(state: *mut std::ffi::c_void) {
 }
 
 impl web_g_l_rendering_context {
-  pub(crate) fn from_raw(state: *mut WebGLState, owns_state: bool) -> Self {
+  pub(crate) fn from_raw(state: *mut WebGLState) -> Self {
     Self {
       state,
       invalidate_state: 0,
-      owns_state,
       frame: FrameSlot::new(state as *mut std::ffi::c_void, present_webgl),
       continuous_render: Cell::new(false),
     }
@@ -204,18 +199,22 @@ pub(crate) fn resolve_webgl_state(
   options: &Unknown,
   target: &Unknown,
   height: Option<f64>,
-) -> Option<(*mut WebGLState, bool)> {
+) -> Option<*mut WebGLState> {
   let options = GLOptions::parse(options);
   if options.version != version {
     return None;
   }
   if type_of(target) == ValueType::BigInt {
     let (pointer, _) = unsafe { target.cast::<BigInt>() }.ok()?.get_i64();
-    return (pointer != 0).then_some((pointer as *mut WebGLState, false));
+    if pointer == 0 {
+      return None;
+    }
+    canvas_c::canvas_native_webgl_state_reference(pointer as *const WebGLState);
+    return Some(pointer as *mut WebGLState);
   }
   let width = as_number(target).unwrap_or(300.) as i32;
   let state = options.create_offscreen(width, height.unwrap_or(150.) as i32);
-  (!state.is_null()).then_some((state, true))
+  (!state.is_null()).then_some(state)
 }
 
 /// `CanvasModule.createWebGLContext(options, pointer, scale, color, ppi, direction)` wraps the
@@ -226,8 +225,8 @@ pub fn create_web_g_l_context(
   target: Unknown,
   height: Option<f64>,
 ) -> Option<web_g_l_rendering_context> {
-  let (state, owns) = resolve_webgl_state(1, &options, &target, height)?;
-  Some(web_g_l_rendering_context::from_raw(state, owns))
+  let state = resolve_webgl_state(1, &options, &target, height)?;
+  Some(web_g_l_rendering_context::from_raw(state))
 }
 
 impl_webgl_context!(web_g_l_rendering_context);
@@ -450,7 +449,7 @@ impl web_g_l_rendering_context {
       return Err(napi::Error::from_reason("Invalid parameter"));
     }
 
-    Ok(web_g_l_rendering_context::from_raw(ret, true))
+    Ok(web_g_l_rendering_context::from_raw(ret))
   }
 
   #[napi]

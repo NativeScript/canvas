@@ -1,6 +1,6 @@
 import { Canvas } from '@nativescript/canvas';
 import { GridLayout, Utils } from '@nativescript/core';
-import { suite, test, ok, equal, getPageCanvas, pixelEqual } from './harness';
+import { suite, test, skip, ok, equal, getPageCanvas, pixelEqual } from './harness';
 
 function wait(ms: number) {
 	return new Promise<void>((resolve) => setTimeout(resolve, ms));
@@ -39,6 +39,11 @@ function unmount(canvas: Canvas) {
 async function collect() {
 	Utils.GC();
 	await frames(3);
+}
+
+function shownGreen(canvas: Canvas): number {
+	const bitmap = (canvas as any)._canvas.snapshot(false);
+	return android.graphics.Color.green(bitmap.getPixel(bitmap.getWidth() / 2, bitmap.getHeight() / 2));
 }
 
 function glPixel(gl: any): number[] {
@@ -102,6 +107,34 @@ export function registerLifecycleSpec() {
 				equal(glPixel(gl).join(','), '0,255,0,255');
 				unmount(canvas);
 			});
+		}
+
+		if (__ANDROID__) {
+			for (const type of ['webgl', 'webgl2'] as const) {
+				test(`a ${type} frame drawn before the surface exists is shown once it does`, async () => {
+					const canvas = add();
+					const gl = canvas.getContext(type) as any;
+					gl.clearColor(0, 1, 0, 1);
+					gl.clear(gl.COLOR_BUFFER_BIT);
+					await frames(5);
+					equal(shownGreen(canvas), 255);
+					unmount(canvas);
+				});
+			}
+
+			test('a webgpu frame drawn before the surface exists is shown once it does', async () => {
+				const adapter = await navigator.gpu.requestAdapter();
+				const device = await adapter.requestDevice();
+				const canvas = add();
+				const ctx = canvas.getContext('webgpu') as any;
+				ctx.configure({ device, format: navigator.gpu.getPreferredCanvasFormat(), alphaMode: 'premultiplied' });
+				renderFrame(device, ctx);
+				await frames(5);
+				equal(shownGreen(canvas), 255);
+				unmount(canvas);
+			});
+		} else {
+			skip('frames drawn before the surface exists', 'Android only: other views have their surface from the start');
 		}
 
 		test('a webgpu context renders as soon as its canvas is added', async () => {

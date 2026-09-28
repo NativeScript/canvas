@@ -129,6 +129,39 @@ fn surface_capabilities(
     Ok(capabilities)
 }
 
+#[cfg_attr(not(target_os = "android"), allow(dead_code))]
+fn present_held_frame(
+    context: &CanvasGPUCanvasContext,
+    surface: &Arc<wgpu_core::instance::Surface>,
+    data: &SurfaceData,
+    frame: &ReadBackTexture,
+) {
+    let Ok(output) = surface.get_current_texture() else {
+        return;
+    };
+    let Some(target) = output.texture else {
+        return;
+    };
+    let copy = |texture| wgt::TexelCopyTextureInfo {
+        texture,
+        mip_level: 0,
+        origin: wgt::Origin3d::ZERO,
+        aspect: wgt::TextureAspect::All,
+    };
+    let device = &data.device.device;
+    let encoder = device.create_command_encoder(&wgt::CommandEncoderDescriptor {
+        label: wgpu_core::Label::from(Cow::Borrowed("HeldFrame:Encoder")),
+    });
+    encoder.copy_texture_to_texture(&copy(Arc::clone(&frame.texture)), &copy(target), &frame.data.size);
+    let id = encoder.finish(&wgt::CommandBufferDescriptor { label: None });
+    data.device.queue.queue.id.submit(&[id]);
+    if surface.present().is_ok() {
+        context
+            .has_surface_presented
+            .store(true, std::sync::atomic::Ordering::SeqCst);
+    }
+}
+
 fn offscreen_current_texture(context: &CanvasGPUCanvasContext) -> *const CanvasGPUTexture {
     let data_guard = context.data.lock();
     let Some(surface_data) = data_guard.as_ref() else {
@@ -608,7 +641,11 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize(
     match context.instance.instance().create_surface(Some(display_handle), window_handle) {
         Ok(surface_id) => {
             *surface = Some(Arc::clone(&surface_id));
-            *context.offscreen_texture.lock() = None;
+            let held_frame = context
+                .offscreen_texture
+                .lock()
+                .take()
+                .filter(|frame| frame.data.size.width == width && frame.data.size.height == height);
             // Guard stays held -- `surface_id.configure(..)` below still needs it.
             context
                 .has_surface_presented
@@ -674,12 +711,24 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize(
                     });
                 }
 
+                let held_frame = held_frame.filter(|_| {
+                    surface_id
+                        .get_capabilities(&surface_data.device.adapter)
+                        .is_ok_and(|caps| caps.usages.contains(wgt::TextureUsages::COPY_DST))
+                });
+                if held_frame.is_some() {
+                    new_config.usage |= wgt::TextureUsages::COPY_DST;
+                }
+
                 if let Some(cause) =
                     surface_id.configure(&surface_data.device.device, &new_config)
                 {
                     handle_error_fatal(cause, "canvas_native_webgpu_context_resize");
                 } else {
                     surface_data.previous_configuration = new_config;
+                    if let Some(frame) = held_frame {
+                        present_held_frame(context, &surface_id, surface_data, &frame);
+                    }
                 }
             }
         }

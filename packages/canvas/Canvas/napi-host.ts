@@ -58,6 +58,11 @@ function isPercentLength(value: any) {
 	return (typeof value === 'object' && value?.unit === '%') || (typeof value === 'string' && value.trim().endsWith('%'));
 }
 
+/** A % length as a 0-1 fraction. */
+function percentFraction(value: any): number {
+	return typeof value === 'string' ? parseFloat(value) / 100 : value.value;
+}
+
 function isFixedLength(value: any) {
 	return value?.unit === 'px' || value?.unit === 'dip';
 }
@@ -250,14 +255,17 @@ export abstract class NapiCanvas extends CanvasBase {
 	// The platform view sizes the native view (on Windows that is what gives the XAML panel its
 	// Width / Height); the canvas also sizes its drawing buffer from it. A % size is passed on as
 	// `auto`: the native container stretches the view over its cell (Windows core sizes % views
-	// against the whole parent, not the cell).
+	// against the whole parent, not the cell). A parent that lays out its children itself is also
+	// handed the % size (`_setChildPercentSize`), to resolve against its containing block.
 	[widthProperty.setNative](value: any) {
 		(Object.getPrototypeOf(NapiCanvas.prototype) as any)[widthProperty.setNative]?.call(this, isPercentLength(value) ? 'auto' : value);
+		if (isPercentLength(value)) (this.parent as any)?._setChildPercentSize?.(this, true, percentFraction(value));
 		this.__setSurfaceWidth(value);
 	}
 
 	[heightProperty.setNative](value: any) {
 		(Object.getPrototypeOf(NapiCanvas.prototype) as any)[heightProperty.setNative]?.call(this, isPercentLength(value) ? 'auto' : value);
+		if (isPercentLength(value)) (this.parent as any)?._setChildPercentSize?.(this, false, percentFraction(value));
 		this.__setSurfaceHeight(value);
 	}
 

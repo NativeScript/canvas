@@ -339,7 +339,7 @@ macro_rules! impl_webgl_context {
     }
 
     #[napi]
-    pub fn delete_shader(&self, shader: &WebGLRenderbuffer) {
+    pub fn delete_shader(&self, shader: &WebGLShader) {
         canvas_c::canvas_native_webgl_delete_shader(shader.0, self.state)
     }
 

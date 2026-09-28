@@ -173,6 +173,7 @@ pub extern "system" fn nativeDetach2DSurface(_: JNIEnv, _: JClass, context: jlon
             false,
             false,
             false,
+            false,
             true,
             false,
             color_space,

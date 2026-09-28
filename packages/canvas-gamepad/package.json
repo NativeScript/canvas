@@ -1,6 +1,6 @@
 {
 	"name": "@nativescript/canvas-gamepad",
-	"version": "3.0.0-alpha.15",
+	"version": "3.0.0-alpha.16",
 	"description": "Gamepad API (navigator.getGamepads) for NativeScript",
 	"main": "index",
 	"typings": "index.d.ts",

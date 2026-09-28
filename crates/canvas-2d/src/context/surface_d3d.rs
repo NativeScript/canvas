@@ -507,6 +507,9 @@ impl Context {
             return;
         }
         let Some(swap_chain) = target.swap_chain.as_ref() else { return };
+        if !swap_chain.acquire_frame() {
+            return;
+        }
         let Some(direct_context) = self.direct_context.as_mut() else { return };
         let index = swap_chain.current_index() as usize;
         let Some(back_buffer) = target.back_buffers.get_mut(index) else { return };

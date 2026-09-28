@@ -816,6 +816,9 @@ impl GLContext {
         let (Some(presenter), Some(texture)) = (self.0.presenter.as_ref(), self.0.texture.as_ref()) else {
             return true;
         };
+        if !presenter.swap_chain.acquire_frame() {
+            return true;
+        }
         let Ok(back_buffer) = presenter.swap_chain.buffer::<windows::Win32::Graphics::Direct3D11::ID3D11Texture2D>(0) else {
             return false;
         };

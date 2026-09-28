@@ -23,7 +23,9 @@ export class Helpers {
 			this._initialized = true;
 		}
 
-		if (NAPI_HOST) {
+		// Webpack cannot fold NAPI_HOST, and a live __non_webpack_require__ imports
+		// `node:module`, which the iOS runtime lacks; the defined flags drop the branch.
+		if (!__ANDROID__ && !__APPLE__ && NAPI_HOST) {
 			// The addon installs globalThis.CanvasModule when it loads.
 			__non_webpack_require__('system_lib://canvasnative.node');
 			this._initialized = true;

@@ -236,6 +236,17 @@ pub struct Context {
     pub(crate) font_color: Color,
 }
 
+impl Drop for Context {
+    fn drop(&mut self) {
+        // GrDirectContext frees its GL objects on whichever context is current, which
+        // may be another canvas's; its names would then delete that canvas's objects.
+        #[cfg(feature = "gl")]
+        if let Some(ref context) = self.gl_context {
+            context.make_current();
+        }
+    }
+}
+
 impl Context {
     pub fn get_recording_context(&mut self) -> Option<RecordingContext> {
         self.surface.recording_context()

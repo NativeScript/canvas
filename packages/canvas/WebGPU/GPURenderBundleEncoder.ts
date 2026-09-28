@@ -43,6 +43,7 @@ export class GPURenderBundleEncoder {
 		this[native_].pushDebugGroup(groupLabel);
 	}
 
+	// Index arguments are converted to numbers, as WebIDL does: `for...in` keys arrive as strings.
 	setBindGroup(index: number, bindGroup: GPUBindGroup, dynamicOffsetsData?: number[] | Uint32Array, dynamicOffsetsDataStart?: number, dynamicOffsetsDataLength?: number) {
 		const group = bindGroup?.[native_];
 		if (!group) {
@@ -50,11 +51,11 @@ export class GPURenderBundleEncoder {
 		}
 		if (Array.isArray(dynamicOffsetsData)) {
 			const data = new Uint32Array(dynamicOffsetsData);
-			this[native_].setBindGroup(index, group, data, 0, data.length);
+			this[native_].setBindGroup(Number(index), group, data, 0, data.length);
 		} else if (dynamicOffsetsData instanceof Uint32Array) {
-			this[native_].setBindGroup(index, group, dynamicOffsetsData, dynamicOffsetsDataStart, dynamicOffsetsDataLength);
+			this[native_].setBindGroup(Number(index), group, dynamicOffsetsData, dynamicOffsetsDataStart, dynamicOffsetsDataLength);
 		} else {
-			this[native_].setBindGroup(index, group);
+			this[native_].setBindGroup(Number(index), group);
 		}
 	}
 
@@ -68,7 +69,7 @@ export class GPURenderBundleEncoder {
 	}
 
 	setVertexBuffer(slot: number, buffer: GPUBuffer, offset?: number, size?: number) {
-		this[native_].setVertexBuffer(slot, buffer[native_], offset ?? 0, size ?? buffer.size - (offset ?? 0));
+		this[native_].setVertexBuffer(Number(slot), buffer[native_], offset ?? 0, size ?? buffer.size - (offset ?? 0));
 	}
 
 	static fromNative(encoder) {

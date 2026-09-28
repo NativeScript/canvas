@@ -117,6 +117,13 @@ module.exports = {
 					description: '@nativescript/canvas-media: Build',
 				},
 			},
+			// @nativescript/canvas-gamepad
+			'canvas-gamepad': {
+				build: {
+					script: 'nx run canvas-gamepad:build.all',
+					description: '@nativescript/canvas-gamepad: Build',
+				},
+			},
 			// @nativescript/canvas-chartjs
 			'canvas-chartjs': {
 				build: {
@@ -189,6 +196,10 @@ module.exports = {
 			'canvas-media': {
 				script: 'nx run canvas-media:focus',
 				description: 'Focus on @nativescript/canvas-media',
+			},
+			'canvas-gamepad': {
+				script: 'nx run canvas-gamepad:focus',
+				description: 'Focus on @nativescript/canvas-gamepad',
 			},
 			'canvas-chartjs': {
 				script: 'nx run canvas-chartjs:focus',

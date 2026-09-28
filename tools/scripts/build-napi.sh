@@ -7,8 +7,9 @@
 #   PROFILE  release-napi (default; panic=unwind so the host app survives a panic) or dev
 #   CRATE    canvas-napi (default: @nativescript/canvas, canvasnative.node), canvas-svg-napi
 #            (@nativescript/canvas-svg, canvassvg.node), audio-context-napi
-#            (@nativescript/audio-context, audiocontext.node) or canvas-media-napi
-#            (@nativescript/canvas-media, canvasmedia.node)
+#            (@nativescript/audio-context, audiocontext.node), canvas-media-napi
+#            (@nativescript/canvas-media, canvasmedia.node) or canvas-gamepad-napi
+#            (@nativescript/canvas-gamepad, canvasgamepad.node)
 
 set -e
 
@@ -28,6 +29,7 @@ case "$CRATE" in
   canvas-svg-napi) PACKAGE="$ROOT/packages/canvas-svg"; NAME=canvassvg ;;
   audio-context-napi) PACKAGE="$ROOT/packages/audio-context"; NAME=audiocontext ;;
   canvas-media-napi) PACKAGE="$ROOT/packages/canvas-media"; NAME=canvasmedia ;;
+  canvas-gamepad-napi) PACKAGE="$ROOT/packages/canvas-gamepad"; NAME=canvasgamepad ;;
   *)
     echo "unsupported crate: $CRATE"
     exit 1

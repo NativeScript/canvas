@@ -1,5 +1,6 @@
 import { Device } from '@nativescript/core';
 import { GPU } from '@nativescript/canvas';
+import { gamepads } from './gamepad';
 
 const gpu = new GPU();
 
@@ -29,7 +30,6 @@ export class Navigator {
 		return Device.os;
 	}
 	getGamepads() {
-		// todo
-		return [];
+		return gamepads()?.getGamepads() ?? [];
 	}
 }

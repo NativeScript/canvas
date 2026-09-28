@@ -1,0 +1,70 @@
+{
+	"name": "canvas-gamepad",
+	"$schema": "../../node_modules/nx/schemas/project-schema.json",
+	"sourceRoot": "packages/canvas-gamepad",
+	"projectType": "library",
+	"generators": {},
+	"targets": {
+		"build": {
+			"options": {
+				"outputPath": "dist/packages/canvas-gamepad",
+				"tsConfig": "packages/canvas-gamepad/tsconfig.json",
+				"packageJson": "packages/canvas-gamepad/package.json",
+				"main": "packages/canvas-gamepad/index.ts",
+				"assets": [
+					"packages/canvas-gamepad/*.md",
+					{
+						"glob": "backend.d.ts",
+						"input": "packages/canvas-gamepad/",
+						"output": "./"
+					},
+					"LICENSE",
+					{
+						"glob": "**/*",
+						"input": "packages/canvas-gamepad/platforms/",
+						"output": "./platforms/"
+					},
+					{
+						"glob": "**/*.d.ts",
+						"input": "packages/canvas-gamepad/typings/",
+						"output": "./typings"
+					}
+				]
+			},
+			"executor": "@nx/js:tsc",
+			"dependsOn": [
+				{
+					"target": "build.all",
+					"dependencies": true
+				}
+			]
+		},
+		"build.all": {
+			"outputs": ["{workspaceRoot}/dist/packages/canvas-gamepad"],
+			"options": {
+				"commands": ["node tools/scripts/build-finish.ts canvas-gamepad"],
+				"parallel": false
+			},
+			"executor": "nx:run-commands",
+			"dependsOn": [
+				{
+					"target": "build.all",
+					"dependencies": true
+				},
+				{
+					"target": "build"
+				}
+			]
+		},
+		"focus": {
+			"options": {
+				"commands": ["nx workspace-schematic focus-packages canvas-gamepad"],
+				"parallel": false
+			},
+			"executor": "nx:run-commands"
+		},
+		"lint": {
+			"executor": "@nx/eslint:lint"
+		}
+	}
+}

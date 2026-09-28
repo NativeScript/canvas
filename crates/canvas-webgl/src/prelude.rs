@@ -306,6 +306,10 @@ impl WebGLState {
 
     #[cfg(target_os = "android")]
     pub fn resize_pbuffer(&mut self, width: i32, height: i32) {
+        // A new pbuffer starts blank; layout calls this without a size change.
+        if self.context.is_pbuffer() && self.context.get_surface_dimensions() == (width, height) {
+            return;
+        }
         let attr = &mut *self.attributes.borrow_mut();
         self.context.resize_pbuffer(attr, width, height);
     }

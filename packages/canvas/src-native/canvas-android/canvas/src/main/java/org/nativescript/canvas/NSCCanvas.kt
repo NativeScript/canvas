@@ -290,9 +290,7 @@ class NSCCanvas : FrameLayout {
 		if (engine != Engine.None) {
 			return
 		}
-		surface?.let {
-			nativeContext = nativeInitWebGPU(instance, it, surfaceWidth, surfaceHeight)
-		}
+		nativeContext = nativeInitWebGPU(instance, surface, surfaceWidth, surfaceHeight)
 		if (nativeContext != 0L) {
 			engine = Engine.GPU
 		}
@@ -1214,7 +1212,7 @@ class NSCCanvas : FrameLayout {
 		@JvmStatic
 		@FastNative
 		external fun nativeInitWebGPU(
-			instance: Long, surface: Surface, width: Int, height: Int
+			instance: Long, surface: Surface?, width: Int, height: Int
 		): Long
 
 		@JvmStatic

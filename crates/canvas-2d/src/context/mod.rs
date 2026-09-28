@@ -471,6 +471,16 @@ impl Context {
         ret
     }
 
+    pub fn draw_pixels(&mut self, image: &Image) {
+        let canvas = self.surface.canvas();
+        canvas.save();
+        canvas.reset_matrix();
+        let mut paint = skia_safe::Paint::default();
+        paint.set_blend_mode(BlendMode::Src);
+        canvas.draw_image(image, (0., 0.), Some(&paint));
+        canvas.restore();
+    }
+
     pub fn get_image_no_flush(&mut self) -> Option<Image> {
         #[cfg(feature = "gl")]
         {

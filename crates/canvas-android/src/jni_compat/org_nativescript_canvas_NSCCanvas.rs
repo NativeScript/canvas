@@ -69,23 +69,21 @@ pub extern "system" fn nativeInitWebGPU(
     }
 
     unsafe {
-        let interface = env.get_native_interface();
-        if let Some(window) = NativeWindow::from_surface(interface, surface) {
-            let Some(ptr) = NonNull::new(window.ptr().as_ptr() as *mut c_void) else {
-                return 0;
-            };
-            let instance: *mut CanvasWebGPUInstance = instance as _;
-            let ret = canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_context_create(
-                instance,
-                ptr.as_ptr(),
-                width as u32,
-                height as u32,
-            );
-
-            return ret as jlong;
-        }
+        let window = if surface.is_null() {
+            None
+        } else {
+            NativeWindow::from_surface(env.get_native_interface(), surface)
+        };
+        let ptr = window
+            .as_ref()
+            .map_or(ptr::null_mut(), |window| window.ptr().as_ptr() as *mut c_void);
+        canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_context_create(
+            instance as *mut CanvasWebGPUInstance,
+            ptr,
+            width as u32,
+            height as u32,
+        ) as jlong
     }
-    0
 }
 
 #[no_mangle]
@@ -431,6 +429,15 @@ pub extern "system" fn nativeUpdate2DSurface(
                 let context = context.get_context_mut();
                 let color_space = context.surface_data().color_space();
                 let alpha = !context.surface_data().is_opaque();
+                // A new EGL surface starts blank; resize() only clears on a size change.
+                let pixels = if context.gl_context.is_some()
+                    && context.surface_data().width() as i32 == width
+                    && context.surface_data().height() as i32 == height
+                {
+                    context.get_image()
+                } else {
+                    None
+                };
                 if let Some(context) = context.gl_context.as_mut() {
                     let mut attr = canvas_core::context_attributes::ContextAttributes::new(
                         alpha,
@@ -453,6 +460,9 @@ pub extern "system" fn nativeUpdate2DSurface(
                     let handle = RawWindowHandle::AndroidNdk(handle);
                     context.set_window_surface(&mut attr, width, height, handle);
                     context.make_current();
+                }
+                if let Some(pixels) = pixels {
+                    context.draw_pixels(&pixels);
                 }
 
                 if let Some(vulkan_context) = context.vulkan_context.as_mut() {

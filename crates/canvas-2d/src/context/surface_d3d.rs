@@ -6,9 +6,10 @@
 //! thread share one D3D12 device and one Skia `DirectContext`, so drawing one canvas into another
 //! stays on the GPU.
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::ffi::c_void;
 use std::rc::Rc;
+use std::time::{Duration, Instant};
 
 use canvas_core::context_attributes::ColorSpace;
 use canvas_core::gpu::d3d::{D3D12Context, PowerPreference};
@@ -30,6 +31,18 @@ thread_local! {
     static SKIA_D3D: RefCell<Option<(Rc<D3D12Context>, DirectContext)>> = const { RefCell::new(None) };
     /// The thread's D3D canvases (`Context::register_d3d`), for `release_lost_canvases`.
     static CANVASES: RefCell<Vec<*mut Context>> = const { RefCell::new(Vec::new()) };
+    static LAST_PURGE: Cell<Option<Instant>> = const { Cell::new(None) };
+}
+
+const RESOURCE_CACHE_LIMIT: usize = 64 << 20;
+
+fn purge_idle_resources(context: &mut DirectContext) {
+    let now = Instant::now();
+    if LAST_PURGE.with(|last| last.get().is_some_and(|at| now - at < Duration::from_secs(1))) {
+        return;
+    }
+    LAST_PURGE.with(|last| last.set(Some(now)));
+    context.perform_deferred_cleanup(Duration::from_secs(5), None);
 }
 
 /// The thread's device, a new one after a device loss. The adapter makes no new device while the
@@ -84,7 +97,8 @@ fn shared_direct_context(device: &Rc<D3D12Context>) -> Option<DirectContext> {
         if let Some((_, mut stale)) = shared.take() {
             stale.abandon();
         }
-        let context = device.make_direct_context()?;
+        let mut context = device.make_direct_context()?;
+        context.set_resource_cache_limit(RESOURCE_CACHE_LIMIT);
         *shared = Some((device.clone(), context.clone()));
         Some(context)
     })
@@ -483,6 +497,9 @@ impl Context {
             return;
         }
         self.flush_surface();
+        if let Some(direct_context) = self.direct_context.as_mut() {
+            purge_idle_resources(direct_context);
+        }
         let Some(target) = self.d3d.as_mut() else { return };
         if let Some(xaml) = target.xaml.as_mut() {
             let Some(direct_context) = self.direct_context.as_mut() else { return };

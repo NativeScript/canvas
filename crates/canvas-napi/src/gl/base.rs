@@ -13,7 +13,9 @@ macro_rules! impl_webgl_context {
 
     pub fn update_invalidate_state(&mut self) {
         let state = self.invalidate_state();
-        self.invalidate_state = state | InvalidateState::Pending as u32
+        self.invalidate_state = state | InvalidateState::Pending as u32;
+        // The host presents dirty contexts at the end of the frame (crate::frame).
+        crate::frame::mark_dirty(&self.frame);
     }
 
     pub fn invalidate_state(&self) -> u32 {
@@ -87,23 +89,23 @@ macro_rules! impl_webgl_context {
       }
 
       #[napi]
-      pub fn bind_buffer(&self, target: u32, buffer: &WebGLBuffer) {
-        canvas_c::canvas_native_webgl_bind_buffer(target, buffer.0, self.state);
+      pub fn bind_buffer(&self, target: u32, buffer: crate::gl::GLObject<WebGLBuffer>) {
+        canvas_c::canvas_native_webgl_bind_buffer(target, buffer.name(|b| b.0), self.state);
       }
 
       #[napi]
-      pub fn bind_framebuffer(&self, target: u32, framebuffer: Option<&web_g_l_framebuffer>) {
-       canvas_c::canvas_native_webgl_bind_frame_buffer(target, framebuffer.map(|framebuffer| framebuffer.buffer).unwrap_or(0) , self.state);
+      pub fn bind_framebuffer(&self, target: u32, framebuffer: crate::gl::GLObject<web_g_l_framebuffer>) {
+       canvas_c::canvas_native_webgl_bind_frame_buffer(target, framebuffer.name(|f| f.buffer), self.state);
       }
 
       #[napi]
-      pub fn bind_renderbuffer(&self, target: u32, renderbuffer: Option<&WebGLRenderbuffer>) {
-        canvas_c::canvas_native_webgl_bind_render_buffer(target, renderbuffer.map(|renderbuffer|renderbuffer.0).unwrap_or(0), self.state);
+      pub fn bind_renderbuffer(&self, target: u32, renderbuffer: crate::gl::GLObject<WebGLRenderbuffer>) {
+        canvas_c::canvas_native_webgl_bind_render_buffer(target, renderbuffer.name(|r| r.0), self.state);
       }
 
       #[napi]
-      pub fn bind_texture(&self, target: u32, texture: Option<&WebGLTexture>) {
-        canvas_c::canvas_native_webgl_bind_texture(target, texture.map(|texture| texture.0).unwrap_or(0), self.state);
+      pub fn bind_texture(&self, target: u32, texture: crate::gl::GLObject<WebGLTexture>) {
+        canvas_c::canvas_native_webgl_bind_texture(target, texture.name(|t| t.0), self.state);
       }
 
       #[napi]
@@ -155,79 +157,33 @@ macro_rules! impl_webgl_context {
   pub fn buffer_data(
     &self,
     target: u32,
-    size_or_src_data: Option<Either5<i64, Buffer, Float32Array, JsArrayBuffer, &[u8]>>,
+    size_or_src_data: Option<Either<i64, crate::module::JsBytes>>,
     usage: Option<u32>,
   ) {
-    match size_or_src_data {
-      Some(size_or_src_data) => match size_or_src_data {
-        Either5::A(size) => match usage {
-          Some(usage) => {
-            canvas_c::canvas_native_webgl_buffer_data_none(
-              target,
-              size as isize,
-              usage,
-              self.state,
-            );
-          }
-          None => {
-            canvas_c::canvas_native_webgl_buffer_data_none(target, 0, size as u32, self.state);
-          }
-        },
-        Either5::B(src_data) => {
-          if let Some(usage) = usage {
-            canvas_c::canvas_native_webgl_buffer_data(
-              target,
-              src_data.as_ptr(),
-              src_data.len(),
-              usage,
-              self.state,
-            );
-          }
-        }
-        Either5::C(src_data) => {
-          if let Some(usage) = usage {
-            canvas_c::canvas_native_webgl_buffer_data_f32(
-              target,
-              src_data.as_ptr(),
-              src_data.len(),
-              usage,
-              self.state,
-            );
-          }
-        }
-        Either5::D(src_data) => {
-          if let (Some(usage), Ok(src_data)) = (usage, src_data.into_value()) {
-            canvas_c::canvas_native_webgl_buffer_data(
-              target,
-              src_data.as_ptr(),
-              src_data.len(),
-              usage,
-              self.state,
-            );
-          }
-        }
-        Either5::E(src_data) => {
-          if let Some(usage) = usage {
-            canvas_c::canvas_native_webgl_buffer_data(
-              target,
-              src_data.as_ptr(),
-              src_data.len(),
-              usage,
-              self.state,
-            );
-          }
-        }
-      },
-      _ => {
-        if let Some(usage) = usage {
-          canvas_c::canvas_native_webgl_buffer_data_none(target, 0, usage, self.state);
-        }
+    match (size_or_src_data, usage) {
+      (Some(Either::A(size)), Some(usage)) => {
+        canvas_c::canvas_native_webgl_buffer_data_none(target, size as isize, usage, self.state);
       }
+      // bufferData(target, usage): an empty buffer.
+      (Some(Either::A(usage)), None) => {
+        canvas_c::canvas_native_webgl_buffer_data_none(target, 0, usage as u32, self.state);
+      }
+      // Any ArrayBuffer or view (Float32Array vertices, Uint16Array indices, ...), read in place.
+      (Some(Either::B(src_data)), Some(usage)) => {
+        let src_data = src_data.as_slice();
+        canvas_c::canvas_native_webgl_buffer_data(target, src_data.as_ptr(), src_data.len(), usage, self.state);
+      }
+      (None, Some(usage)) => {
+        canvas_c::canvas_native_webgl_buffer_data_none(target, 0, usage, self.state);
+      }
+      _ => {}
     }
   }
 
+
       #[napi]
-      pub fn buffer_sub_data(&self, target: u32, offset: i64, src_data: &[u8]) {
+      pub fn buffer_sub_data(&self, target: u32, offset: i64, src_data: crate::module::JsBytes) {
+        let src_data = src_data.as_slice();
         canvas_c::canvas_native_webgl_buffer_sub_data(
           target,
           offset as isize,
@@ -285,14 +241,16 @@ macro_rules! impl_webgl_context {
     }
 
     #[napi]
-    pub fn compressed_tex_image_2_d(&self, target: u32, level: i32, internalformat: u32, width: i64, height: i64, border: i32, pixels: &[u8]) {
+    pub fn compressed_tex_image_2_d(&self, target: u32, level: i32, internalformat: u32, width: i64, height: i64, border: i32, pixels: crate::module::JsBytes) {
+        let pixels = pixels.as_slice();
         canvas_c::canvas_native_webgl_compressed_tex_image2d(
             target, level, internalformat, width as i32, height as i32, border, pixels.as_ptr(), pixels.len(), self.state,
         )
     }
 
     #[napi]
-    pub fn compressed_tex_sub_image_2_d(&self, target: u32, level: i32, xoffset: i64, yoffset: i64, width: f64, height: f64, format: u32, pixels: &[u8]) {
+    pub fn compressed_tex_sub_image_2_d(&self, target: u32, level: i32, xoffset: i64, yoffset: i64, width: f64, height: f64, format: u32, pixels: crate::module::JsBytes) {
+        let pixels = pixels.as_slice();
         canvas_c::canvas_native_webgl_compressed_tex_sub_image2d(
             target, level, xoffset as i32, yoffset as i32, width as i32, height as i32, format, pixels.as_ptr(), pixels.len(), self.state,
         )
@@ -348,7 +306,7 @@ macro_rules! impl_webgl_context {
     }
 
     #[napi]
-    pub fn create_texture(&self, env: Env) -> WebGLTexture {
+    pub fn create_texture(&self) -> WebGLTexture {
         WebGLTexture(
             canvas_c::canvas_native_webgl_create_texture(self.state)
         )
@@ -381,7 +339,7 @@ macro_rules! impl_webgl_context {
     }
 
     #[napi]
-    pub fn delete_shader(&self, shader: &WebGLRenderbuffer) {
+    pub fn delete_shader(&self, shader: &WebGLShader) {
         canvas_c::canvas_native_webgl_delete_shader(shader.0, self.state)
     }
 
@@ -476,30 +434,30 @@ macro_rules! impl_webgl_context {
 
 
     #[napi]
-    pub fn get_active_attrib(&self, env: Env, program: ClassInstance<WebGLProgram>, index: u32) -> Result<ClassInstance<web_g_l_active_info>> {
+    pub fn get_active_attrib(&self, program: ClassInstance<WebGLProgram>, index: u32) -> web_g_l_active_info {
         web_g_l_active_info(
             canvas_c::canvas_native_webgl_get_active_attrib(
                 program.0, index, self.state,
             )
-        ).into_instance(env)
+        )
     }
 
     #[napi]
-    pub fn get_active_uniform(&self, env: Env, program: ClassInstance<WebGLProgram>, index: u32) -> Result<ClassInstance<web_g_l_active_info>> {
+    pub fn get_active_uniform(&self, program: ClassInstance<WebGLProgram>, index: u32) -> web_g_l_active_info {
         web_g_l_active_info(
             canvas_c::canvas_native_webgl_get_active_uniform(
                 program.0, index, self.state,
             )
-        ).into_instance(env)
+        )
     }
 
     #[napi]
-    pub fn get_attached_shaders(&self, env: Env, program: ClassInstance<WebGLProgram>) -> Vec<ClassInstance<WebGLShader>> {
+    pub fn get_attached_shaders(&self, program: ClassInstance<WebGLProgram>) -> Vec<WebGLShader> {
         let state = unsafe { &mut *self.state };
         let shaders = canvas_webgl::webgl::canvas_native_webgl_get_attached_shaders(program.0, state.get_inner_mut());
         shaders.into_iter()
             .map(|shader| {
-                WebGLShader(shader).into_instance(env).unwrap()
+                WebGLShader(shader)
             }).collect::<Vec<_>>()
     }
 
@@ -530,12 +488,12 @@ macro_rules! impl_webgl_context {
     }
 
     #[napi]
-    pub fn get_extension(&self, env: Env, name: JsString) -> Result<JsUnknown> {
+    pub fn get_extension<'env>(&self, env: &'env Env, name: JsString) -> Result<Unknown<'env>> {
         let name = name.into_utf8()?;
         let name = name.as_str()?;
 
         if name == "EXT_disjoint_timer_query_webgl2" {
-            return env.get_null().map(|null| null.into_unknown());
+            return Null.to_js(env);
         }
         let state = unsafe { &mut *self.state };
 
@@ -547,7 +505,7 @@ macro_rules! impl_webgl_context {
 
         match ext {
             None => {
-                env.get_null().map(|null| null.into_unknown())
+                Null.to_js(env)
             }
             Some(ext) => {
                 let ext = Box::into_raw(Box::new(WebGLExtension::new(Some(ext))));
@@ -556,133 +514,139 @@ macro_rules! impl_webgl_context {
                     "ANGLE_instanced_arrays" => {
                         let ret = canvas_c::canvas_native_webgl_context_extension_to_angle_instanced_arrays(ext);
                         ANGLE_instanced_arrays(ret)
-                            .into_instance(env).map(|ext| ext.as_object(env).into_unknown())
+                            .to_js(env)
                     }
                     "EXT_blend_minmax" => {
                         if ext.is_null() {
-                            return env.get_null().map(|null| null.into_unknown());
+                            return Null.to_js(env);
                         }
                         canvas_c::canvas_native_webgl_extension_destroy(ext);
                         EXT_blend_minmax
-                            .into_instance(env).map(|ext| ext.as_object(env).into_unknown())
+                            .to_js(env)
                     }
                     "EXT_color_buffer_half_float" => {
                         canvas_c::canvas_native_webgl_extension_destroy(ext);
                         EXT_color_buffer_half_float
-                            .into_instance(env).map(|ext| ext.as_object(env).into_unknown())
+                            .to_js(env)
                     }
                     "EXT_disjoint_timer_query" => {
                         let ext = canvas_c::canvas_native_webgl_context_extension_to_ext_disjoint_timer_query(ext);
                         EXT_disjoint_timer_query(ext)
-                            .into_instance(env).map(|ext| ext.as_object(env).into_unknown())
+                            .to_js(env)
                     }
                     "EXT_sRGB" => {
                         canvas_c::canvas_native_webgl_extension_destroy(ext);
                         EXT_sRGB
-                            .into_instance(env).map(|ext| ext.as_object(env).into_unknown())
+                            .to_js(env)
                     }
                     "EXT_shader_texture_lod" => {
                         canvas_c::canvas_native_webgl_extension_destroy(ext);
                         EXT_shader_texture_lod
-                            .into_instance(env).map(|ext| ext.as_object(env).into_unknown())
+                            .to_js(env)
                     }
                     "EXT_texture_filter_anisotropic" => {
+                        canvas_c::canvas_native_webgl_extension_destroy(ext);
                         EXT_texture_filter_anisotropic
-                            .into_instance(env).map(|ext| ext.as_object(env).into_unknown())
+                            .to_js(env)
                     }
                     "OES_element_index_uint" => {
                         canvas_c::canvas_native_webgl_extension_destroy(ext);
                         OES_element_index_uint
-                            .into_instance(env).map(|ext| ext.as_object(env).into_unknown())
+                            .to_js(env)
                     }
                     "OES_standard_derivatives" => {
                         canvas_c::canvas_native_webgl_extension_destroy(ext);
                         OES_standard_derivatives
-                            .into_instance(env).map(|ext| ext.as_object(env).into_unknown())
+                            .to_js(env)
                     }
                     "OES_texture_float" => {
                         canvas_c::canvas_native_webgl_extension_destroy(ext);
                         OES_texture_float
-                            .into_instance(env).map(|ext| ext.as_object(env).into_unknown())
+                            .to_js(env)
                     }
                     "OES_texture_float_linear" => {
                         canvas_c::canvas_native_webgl_extension_destroy(ext);
                         OES_texture_float_linear
-                            .into_instance(env).map(|ext| ext.as_object(env).into_unknown())
+                            .to_js(env)
                     }
-                    "OES_texture_half_floatr" => {
+                    "OES_texture_half_float" => {
                         canvas_c::canvas_native_webgl_extension_destroy(ext);
                         OES_texture_half_float
-                            .into_instance(env).map(|ext| ext.as_object(env).into_unknown())
+                            .to_js(env)
                     }
                     "OES_texture_half_float_linear" => {
                         canvas_c::canvas_native_webgl_extension_destroy(ext);
                         OES_texture_half_float_linear
-                            .into_instance(env).map(|ext| ext.as_object(env).into_unknown())
+                            .to_js(env)
                     }
                     "OES_vertex_array_object" => {
                         let ext = canvas_c::canvas_native_webgl_context_extension_to_oes_vertex_array_object(ext);
                         OES_vertex_array_object(ext)
-                            .into_instance(env).map(|ext| ext.as_object(env).into_unknown())
+                            .to_js(env)
                     }
                     "WEBGL_color_buffer_float" => {
                         canvas_c::canvas_native_webgl_extension_destroy(ext);
                         WEBGL_color_buffer_float
-                            .into_instance(env).map(|ext| ext.as_object(env).into_unknown())
+                            .to_js(env)
+                    }
+                    "EXT_color_buffer_float" => {
+                        canvas_c::canvas_native_webgl_extension_destroy(ext);
+                        EXT_color_buffer_float
+                            .to_js(env)
                     }
                     "WEBGL_compressed_texture_atc" => {
                         canvas_c::canvas_native_webgl_extension_destroy(ext);
                         WEBGL_compressed_texture_atc
-                            .into_instance(env).map(|ext| ext.as_object(env).into_unknown())
+                            .to_js(env)
                     }
                     "WEBGL_compressed_texture_etc" => {
                         canvas_c::canvas_native_webgl_extension_destroy(ext);
                         WEBGL_compressed_texture_etc
-                            .into_instance(env).map(|ext| ext.as_object(env).into_unknown())
+                            .to_js(env)
                     }
                     "WEBGL_compressed_texture_etc1" => {
                         canvas_c::canvas_native_webgl_extension_destroy(ext);
                         WEBGL_compressed_texture_etc1
-                            .into_instance(env).map(|ext| ext.as_object(env).into_unknown())
+                            .to_js(env)
                     }
                     "WEBGL_compressed_texture_pvrtc" => {
                         canvas_c::canvas_native_webgl_extension_destroy(ext);
                         WEBGL_compressed_texture_pvrtc
-                            .into_instance(env).map(|ext| ext.as_object(env).into_unknown())
+                            .to_js(env)
                     }
                     "WEBGL_compressed_texture_s3tc" => {
                         canvas_c::canvas_native_webgl_extension_destroy(ext);
                         WEBGL_compressed_texture_s3tc
-                            .into_instance(env).map(|ext| ext.as_object(env).into_unknown())
+                            .to_js(env)
                     }
                     "WEBGL_lose_context" => {
                         let ext = canvas_c::canvas_native_webgl_context_extension_to_lose_context(ext);
                         w_e_b_g_l_lose_context(ext)
-                            .into_instance(env).map(|ext| ext.as_object(env).into_unknown())
+                            .to_js(env)
                     }
                     "WEBGL_depth_texture" => {
                         canvas_c::canvas_native_webgl_extension_destroy(ext);
                         WEBGL_depth_texture
-                            .into_instance(env).map(|ext| ext.as_object(env).into_unknown())
+                            .to_js(env)
                     }
                     "WEBGL_draw_buffers" => {
                         let ext = canvas_c::canvas_native_webgl_context_extension_to_draw_buffers(ext);
                         WEBGL_draw_buffers(ext)
-                            .into_instance(env).map(|ext| ext.as_object(env).into_unknown())
+                            .to_js(env)
                     }
                     "OES_fbo_render_mipmap" => {
                         canvas_c::canvas_native_webgl_extension_destroy(ext);
 
-                        OES_fbo_render_mipmap.into_instance(env).map(|ext| ext.as_object(env).into_unknown())
+                        OES_fbo_render_mipmap.to_js(env)
                     }
-                    _ => env.get_null().map(|null| null.into_unknown()),
+                    _ => Null.to_js(env),
                 }
             }
         }
     }
 
     #[napi]
-    pub fn get_framebuffer_attachment_parameter(&self, env: Env, target: u32, attachment: u32, pname: u32) -> Result<Unknown> {
+    pub fn get_framebuffer_attachment_parameter<'env>(&self, env: &'env Env, target: u32, attachment: u32, pname: u32) -> Result<Unknown<'env>> {
         let mut state = unsafe { &mut *self.state };
         let ret = canvas_webgl::webgl::canvas_native_webgl_get_framebuffer_attachment_parameter(
             target,
@@ -694,13 +658,13 @@ macro_rules! impl_webgl_context {
 
         if ret.get_is_renderbuffer() {
             return WebGLRenderbuffer(ret.get_value() as _)
-                .into_instance(env).map(|v| v.as_object(env).into_unknown());
+                .to_js(env);
         } else if ret.get_is_texture() {
             return WebGLTexture(ret.get_value() as _)
-                .into_instance(env).map(|v| v.as_object(env).into_unknown())
+                .to_js(env)
         }
 
-        env.create_int32(ret.get_value() as _).map(|v| v.into_unknown())
+        (ret.get_value() as i32).to_js(env)
     }
 
 
@@ -711,12 +675,12 @@ macro_rules! impl_webgl_context {
     }
 
     #[napi]
-    pub fn get_program_parameter(&self, env: Env, program: ClassInstance<WebGLProgram>, pname: u32) -> Result<Unknown> {
+    pub fn get_program_parameter<'env>(&self, env: &'env Env, program: ClassInstance<WebGLProgram>, pname: u32) -> Result<Unknown<'env>> {
         let result = canvas_c::canvas_native_webgl_get_program_parameter(program.0, pname, self.state);
         if canvas_c::canvas_native_webgl_result_get_is_none(result) {
             // todo
             canvas_c::canvas_native_webgl_WebGLResult_destroy(result);
-            return env.get_null().map(|v| v.into_unknown());
+            return Null.to_js(env);
         }
 
 
@@ -726,12 +690,12 @@ macro_rules! impl_webgl_context {
             gl_bindings::VALIDATE_STATUS => {
                 let ret = canvas_c::canvas_native_webgl_result_get_bool(result);
                 canvas_c::canvas_native_webgl_WebGLResult_destroy(result);
-                env.get_boolean(ret).map(|v| v.into_unknown())
+                (ret).to_js(env)
             }
             _ => {
                 let ret = canvas_c::canvas_native_webgl_result_get_i32(result);
                 canvas_c::canvas_native_webgl_WebGLResult_destroy(result);
-                env.create_int32(ret).map(|v| v.into_unknown())
+                (ret).to_js(env)
             }
         }
     }
@@ -749,27 +713,26 @@ macro_rules! impl_webgl_context {
     }
 
     #[napi]
-    pub fn get_shader_parameter(&self, env: Env, shader: ClassInstance<WebGLShader>, pname: u32) -> Result<Unknown> {
+    pub fn get_shader_parameter<'env>(&self, env: &'env Env, shader: ClassInstance<WebGLShader>, pname: u32) -> Result<Unknown<'env>> {
         let result = canvas_c::canvas_native_webgl_get_shader_parameter(shader.0, pname, self.state);
         match pname {
             gl_bindings::DELETE_STATUS | gl_bindings::COMPILE_STATUS => {
                 let ret = canvas_c::canvas_native_webgl_result_get_bool(result);
                 canvas_c::canvas_native_webgl_WebGLResult_destroy(result);
-                env.get_boolean(ret).map(|v| v.into_unknown())
+                (ret).to_js(env)
             }
             _ => {
                 let ret = canvas_c::canvas_native_webgl_result_get_i32(result);
                 canvas_c::canvas_native_webgl_WebGLResult_destroy(result);
-                env.create_int32(ret).map(|v| v.into_unknown())
+                (ret).to_js(env)
             }
         }
     }
 
     #[napi]
-    pub fn get_shader_precision_format(&self, env: Env, shader_type: u32, precision_type: u32) -> Result<ClassInstance<web_g_l_shader_precision_format>> {
+    pub fn get_shader_precision_format(&self, shader_type: u32, precision_type: u32) -> web_g_l_shader_precision_format {
         let precision = canvas_c::canvas_native_webgl_get_shader_precision_format(shader_type, precision_type, self.state);
         web_g_l_shader_precision_format(precision)
-            .into_instance(env)
     }
 
     #[napi]
@@ -790,114 +753,86 @@ macro_rules! impl_webgl_context {
     }
 
     #[napi]
-    pub fn get_uniform_location(&self, env: Env, program: ClassInstance<WebGLProgram>, name: String) -> Result<Unknown> {
+    pub fn get_uniform_location<'env>(&self, env: &'env Env, program: ClassInstance<WebGLProgram>, name: String) -> Result<Unknown<'env>> {
         let state = unsafe { &mut *self.state };
         let location = canvas_webgl::webgl::canvas_native_webgl_get_uniform_location(program.0, name.as_str(), state.get_inner_mut());
 
         if location == -1 {
-            return env.get_null().map(|v| v.into_unknown());
+            return Null.to_js(env);
         }
 
         webgl_uniform_location::WebGLUniformLocation(location)
-            .into_instance(env)
-            .map(|v| v.as_object(env).into_unknown())
+            .to_js(env)
     }
 
     #[napi]
-    pub fn get_uniform(&self, env: Env, program: ClassInstance<WebGLProgram>, location: ClassInstance<WebGLUniformLocation>) -> Result<Unknown> {
+    pub fn get_uniform<'env>(&self, env: &'env Env, program: ClassInstance<WebGLProgram>, location: ClassInstance<WebGLUniformLocation>) -> Result<Unknown<'env>> {
         let result = canvas_c::canvas_native_webgl_get_uniform(program.0, location.0, self.state);
         let type_ = canvas_c::canvas_native_webgl_result_get_type(result);
+        // The into_* accessors take the result over (and free it).
+        let consumed = matches!(type_, WebGLResultType::I32Array | WebGLResultType::U32Array | WebGLResultType::F32Array);
         let uniform = match type_ {
             WebGLResultType::Boolean => {
                 let ret = canvas_c::canvas_native_webgl_result_get_bool(result);
-                env.get_boolean(ret).map(|v| v.into_unknown())
+                (ret).to_js(env)
             }
             WebGLResultType::I32Array => unsafe {
                 let ret = canvas_c::canvas_native_webgl_result_into_i32_array(result);
 
 
                 if ret.is_null() {
-                    return env.get_null().map(|v| v.into_unknown());
+                    return Null.to_js(env);
                 }
 
                 let ret = *Box::from_raw(ret);
                 let mut ret = ret.into_vec();
 
-                let ptr = ret.as_mut_ptr();
-                let len = ret.len();
-
-                let buffer = env.create_arraybuffer_with_borrowed_data(ptr as _, len * size_of::<i32>(), ret, |_, _| {})?;
-                buffer.value.into_typedarray(
-                    TypedArrayType::Int32,
-                    len,
-                    0,
-                ).map(|v| v.into_unknown())
+                Int32Array::new(ret).to_js(env)
             }
             WebGLResultType::U32Array => unsafe {
                 let ret = canvas_c::canvas_native_webgl_result_into_u32_array(result);
 
 
                 if ret.is_null() {
-                    return env.get_null().map(|v| v.into_unknown());
+                    return Null.to_js(env);
                 }
 
                 let ret = *Box::from_raw(ret);
                 let mut ret = ret.into_vec();
 
-                let ptr = ret.as_mut_ptr();
-                let len = ret.len();
-
-                let buffer = env.create_arraybuffer_with_borrowed_data(ptr as _, len * size_of::<u32>(), ret, |_, _| {})?;
-                buffer.value.into_typedarray(
-                    TypedArrayType::Uint32,
-                    len,
-                    0,
-                ).map(|v| v.into_unknown())
+                Uint32Array::new(ret).to_js(env)
             }
             WebGLResultType::F32Array => unsafe {
                 let ret = canvas_c::canvas_native_webgl_result_into_f32_array(result);
 
 
                 if ret.is_null() {
-                    return env.get_null().map(|v| v.into_unknown());
+                    return Null.to_js(env);
                 }
 
                 let ret = *Box::from_raw(ret);
                 let mut ret = ret.into_vec();
 
-                let ptr = ret.as_mut_ptr();
-                let len = ret.len();
-
-                let buffer = env.create_arraybuffer_with_borrowed_data(ptr as _, len * size_of::<f32>(), ret, |_, _| {})?;
-                buffer.value.into_typedarray(
-                    TypedArrayType::Float32,
-                    len,
-                    0,
-                ).map(|v| v.into_unknown())
+                Float32Array::new(ret).to_js(env)
             }
             WebGLResultType::BooleanArray => {
                 let ret = canvas_c::canvas_native_webgl_result_get_bool_array(result);
                 let len = canvas_c::canvas_native_u8_buffer_get_length(ret);
                 let buf = canvas_c::canvas_native_u8_buffer_get_bytes(ret);
                 let buf = unsafe { std::slice::from_raw_parts(buf, len) };
-                let mut array = env.create_array(len as u32)?;
-
-                for i in 0..len {
-                    array.set(i as u32, buf[i] == 1)?;
-                }
-                array.coerce_to_object().map(|v| v.into_unknown())
+                buf.iter().map(|v| *v == 1).collect::<Vec<bool>>().to_js(env)
             }
             WebGLResultType::U32 => {
                 let ret = canvas_c::canvas_native_webgl_result_get_u32(result);
-                env.create_uint32(ret).map(|v| v.into_unknown())
+                (ret).to_js(env)
             }
             WebGLResultType::I32 => {
                 let ret = canvas_c::canvas_native_webgl_result_get_i32(result);
-                env.create_int32(ret).map(|v| v.into_unknown())
+                (ret).to_js(env)
             }
             WebGLResultType::F32 => {
                 let ret = canvas_c::canvas_native_webgl_result_get_f32(result);
-                env.create_double(ret as f64).map(|v| v.into_unknown())
+                (ret as f64).to_js(env)
             }
             WebGLResultType::String => unsafe {
                 let ret = canvas_c::canvas_native_webgl_result_get_string(result);
@@ -906,16 +841,18 @@ macro_rules! impl_webgl_context {
                 }
                 let ret = CString::from_raw(ret as _);
                 match ret.into_string() {
-                    Ok(s) => env.create_string_from_std(s),
+                    Ok(s) => s.to_js(env),
                     Err(_) => Err(Error::from_status(Status::GenericFailure)),
-                }.map(|v| v.into_unknown())
+                }
             }
             WebGLResultType::None => {
-                env.get_null().map(|v| v.into_unknown())
+                Null.to_js(env)
             }
         };
 
-        canvas_c::canvas_native_webgl_WebGLResult_destroy(result);
+        if !consumed {
+            canvas_c::canvas_native_webgl_WebGLResult_destroy(result);
+        }
 
         uniform
     }
@@ -926,36 +863,28 @@ macro_rules! impl_webgl_context {
     }
 
     #[napi]
-    pub fn get_vertex_attrib(&self, env: Env, index: u32, pname: u32) -> Result<Unknown> {
+    pub fn get_vertex_attrib<'env>(&self, env: &'env Env, index: u32, pname: u32) -> Result<Unknown<'env>> {
         let result = canvas_c::canvas_native_webgl_get_vertex_attrib(index, pname, self.state);
 
         match pname {
             gl_bindings::CURRENT_VERTEX_ATTRIB => unsafe {
                 let ret = canvas_c::canvas_native_webgl_result_get_f32_array(result);
                 if ret.is_null() {
-                    return env.get_null().map(|v| v.into_unknown());
+                    return Null.to_js(env);
                 }
 
                 let ret = *Box::from_raw(ret);
                 let mut ret = ret.into_vec();
 
-                let ptr = ret.as_mut_ptr();
-                let len = ret.len();
-
-                let buffer = env.create_arraybuffer_with_borrowed_data(ptr as _, len * size_of::<f32>(), ret, |_, _| {})?;
-                buffer.value.into_typedarray(
-                    TypedArrayType::Float32,
-                    len,
-                    0,
-                ).map(|v| v.into_unknown())
+                Float32Array::new(ret).to_js(env)
             }
             gl_bindings::VERTEX_ATTRIB_ARRAY_ENABLED | gl_bindings::VERTEX_ATTRIB_ARRAY_NORMALIZED => {
                 let ret = canvas_c::canvas_native_webgl_result_get_bool(result);
-                env.get_boolean(ret).map(|v| v.into_unknown())
+                (ret).to_js(env)
             }
             _ => {
                 let ret = canvas_c::canvas_native_webgl_result_get_i32(result);
-                env.create_int32(ret).map(|v| v.into_unknown())
+                (ret).to_js(env)
             }
         }
     }
@@ -982,12 +911,8 @@ macro_rules! impl_webgl_context {
     }
 
     #[napi]
-    pub fn is_framebuffer(&self, framebuffer: Option<&web_g_l_framebuffer>) -> bool {
-        let framebuffer = match framebuffer {
-            None => 0,
-            Some(framebuffer) => framebuffer.buffer
-        };
-        canvas_c::canvas_native_webgl_is_framebuffer(framebuffer, self.state)
+    pub fn is_framebuffer(&self, framebuffer: crate::gl::GLObject<web_g_l_framebuffer>) -> bool {
+        canvas_c::canvas_native_webgl_is_framebuffer(framebuffer.name(|f| f.buffer), self.state)
     }
 
     #[napi]
@@ -1086,6 +1011,9 @@ macro_rules! impl_webgl_context {
     pub fn shader_source(&self, shader: ClassInstance<WebGLShader>, source: String) {
         let state = unsafe { &mut *self.state };
         let mut source = source;
+        // macOS runs WebGL on desktop OpenGL, which needs a desktop GLSL version; EGL/GLES
+        // backends (ANGLE on Windows) take the WebGL source as is.
+        #[cfg(target_os = "macos")]
         if(source.contains("#version 300 es")){
               source =  source.replace("#version 300 es", "#version 330 core");
         }else if(!source.contains("#version")){
@@ -1133,83 +1061,106 @@ macro_rules! impl_webgl_context {
         canvas_c::canvas_native_webgl_stencil_op(fail, zfail, zpass, self.state);
     }
 
-          #[napi]
-    pub fn tex_image_2_d(&self, target: i32, level: i32, internalformat: i32, width_or_format: i32, height_or_type: i32, border_or_pixels: Either7<i32, ClassInstance<crate::c2d::CanvasRenderingContext2D>, ClassInstance<web_g_l_rendering_context>, ClassInstance<web_g_l_2_rendering_context>, ClassInstance<crate::image_asset::ImageAsset>, HTMLImageSource, HTMLCanvasSource>, format: Option<i32>, type_: Option<i32>, pixels: Option<Either<Buffer, i64>>, offset: Option<i64>) -> Result<()> {
-    match border_or_pixels {
-        Either7::A(border) => {
-            match (format, type_, pixels) {
-                (Some(format), Some(type_), Some(pixels)) => {
-                    match pixels {
-                        Either::A(buffer) => {
-                            canvas_c::canvas_native_webgl_tex_image2d(
-                                target, level, internalformat, width_or_format, height_or_type, border, format, type_, buffer.as_ptr(), buffer.len(), self.state,
-                            )
-                        }
-                        Either::B(offset) => {
-                            canvas_c::canvas_native_webgl2_tex_image2d_offset(
-                                target, level, internalformat, width_or_format as u32, height_or_type as u32, border, format, type_, offset as u64, self.state,
-                            )
-                        }
-                    }
-                }
-                (Some(format), Some(type_), None) => {
-                    canvas_c::canvas_native_webgl_tex_image2d_none(
-                        target, level, internalformat, width_or_format, height_or_type, border, format, type_, self.state,
+    /// `texImage2D(target, level, internalformat, width, height, border, format, type, pixels | offset)`
+    /// or `texImage2D(target, level, internalformat, format, type, source)`. Pixels may be any
+    /// ArrayBuffer or view (read in place); sources are the native image/canvas objects.
+    #[napi]
+    pub fn tex_image_2_d(
+        &self,
+        target: i32,
+        level: i32,
+        internalformat: i32,
+        width_or_format: i32,
+        height_or_type: i32,
+        border_or_pixels: Either9<
+            i32,
+            &crate::image_bitmap::ImageBitmap,
+            &crate::image_asset::ImageAsset,
+            &crate::c2d::CanvasRenderingContext2D,
+            &crate::gl::web_g_l_rendering_context,
+            &crate::gl2::web_g_l_2_rendering_context,
+            &crate::c2d::image_data::ImageData,
+            HTMLImageSource,
+            HTMLCanvasSource,
+        >,
+        format: Option<i32>,
+        type_: Option<i32>,
+        pixels: Option<Either<crate::module::JsBytes, i64>>,
+        offset: Option<i64>,
+    ) -> Result<()> {
+        let _ = offset;
+        let (format_or_width, type_or_height) = (width_or_format, height_or_type);
+        match border_or_pixels {
+            Either9::A(border) => match (format, type_, pixels) {
+                (Some(format), Some(type_), Some(Either::A(bytes))) => {
+                    let bytes = bytes.as_slice();
+                    canvas_c::canvas_native_webgl_tex_image2d(
+                        target, level, internalformat, width_or_format, height_or_type, border, format, type_,
+                        bytes.as_ptr(), bytes.len(), self.state,
                     )
                 }
+                (Some(format), Some(type_), Some(Either::B(offset))) => {
+                    canvas_c::canvas_native_webgl2_tex_image2d_offset(
+                        target, level, internalformat, width_or_format as u32, height_or_type as u32, border, format,
+                        type_, offset as u64, self.state,
+                    )
+                }
+                (Some(format), Some(type_), None) => canvas_c::canvas_native_webgl_tex_image2d_none(
+                    target, level, internalformat, width_or_format, height_or_type, border, format, type_, self.state,
+                ),
                 _ => {}
+            },
+            Either9::B(bitmap) => canvas_c::canvas_native_webgl_tex_image2d_image_asset(
+                target, level, internalformat, format_or_width, type_or_height, Arc::as_ptr(&bitmap.asset), self.state,
+            ),
+            Either9::C(asset) => canvas_c::canvas_native_webgl_tex_image2d_image_asset(
+                target, level, internalformat, format_or_width, type_or_height, Arc::as_ptr(&asset.asset), self.state,
+            ),
+            Either9::D(c2d) => {
+                c2d.flush_pending();
+                canvas_c::canvas_native_webgl_tex_image2d_canvas2d(
+                    target, level, internalformat, format_or_width, type_or_height, c2d.context, self.state,
+                )
             }
-        }
-        Either7::B(c2d) => {
-            canvas_c::canvas_native_webgl_tex_image2d_canvas2d(
-                target, level, internalformat, width_or_format, height_or_type, c2d.context, self.state,
-            )
-        }
-        Either7::C(gl) => {
-            canvas_c::canvas_native_webgl_tex_image2d_webgl(
-                target, level, internalformat, width_or_format, height_or_type, gl.state, self.state,
-            )
-        }
-        Either7::D(gl2) => {
-            canvas_c::canvas_native_webgl_tex_image2d_webgl(
-                target, level, internalformat, width_or_format, height_or_type, gl2.state, self.state,
-            )
-        }
-        Either7::E(image) => {
-            canvas_c::canvas_native_webgl_tex_image2d_image_asset(
-                target, level, internalformat, width_or_format, height_or_type, Arc::as_ptr(&image.asset), self.state,
-            )
-        }
-        Either7::F(source) => {
-            canvas_c::canvas_native_webgl_tex_image2d_image_asset(
-                target, level, internalformat, width_or_format, height_or_type, Arc::as_ptr(&source.image.asset), self.state,
-            )
-        }
-        Either7::G(source) => {
-            match source.context {
+            Either9::E(gl) => canvas_c::canvas_native_webgl_tex_image2d_webgl(
+                target, level, internalformat, format_or_width, type_or_height, gl.state, self.state,
+            ),
+            Either9::F(gl2) => canvas_c::canvas_native_webgl_tex_image2d_webgl(
+                target, level, internalformat, format_or_width, type_or_height, gl2.state, self.state,
+            ),
+            Either9::G(image_data) => {
+                let inner = image_data.data.inner();
+                let (width, height) = inner.dimensions();
+                let data = inner.data();
+                canvas_c::canvas_native_webgl_tex_image2d(
+                    target, level, internalformat, width, height, 0, format_or_width, type_or_height, data.as_ptr(),
+                    data.len(), self.state,
+                )
+            }
+            Either9::H(source) => canvas_c::canvas_native_webgl_tex_image2d_image_asset(
+                target, level, internalformat, format_or_width, type_or_height, Arc::as_ptr(&source.image.asset),
+                self.state,
+            ),
+            Either9::I(source) => match source.context {
                 Either4::A(c2d) => {
+                    c2d.flush_pending();
                     canvas_c::canvas_native_webgl_tex_image2d_canvas2d(
-                        target, level, internalformat, width_or_format, height_or_type, c2d.context, self.state,
+                        target, level, internalformat, format_or_width, type_or_height, c2d.context, self.state,
                     )
                 }
-                Either4::B(gl) => {
-                    canvas_c::canvas_native_webgl_tex_image2d_webgl(
-                        target, level, internalformat, width_or_format, height_or_type, gl.state, self.state,
-                    )
+                Either4::B(gl) => canvas_c::canvas_native_webgl_tex_image2d_webgl(
+                    target, level, internalformat, format_or_width, type_or_height, gl.state, self.state,
+                ),
+                Either4::C(gl2) => canvas_c::canvas_native_webgl_tex_image2d_webgl(
+                    target, level, internalformat, format_or_width, type_or_height, gl2.state, self.state,
+                ),
+                Either4::D(_) => {
+                    return Err(Error::from_reason("texImage2D from a WebGPU canvas is not supported"));
                 }
-                Either4::C(gl2) => {
-                    canvas_c::canvas_native_webgl_tex_image2d_webgl(
-                        target, level, internalformat, width_or_format, height_or_type, gl2.state, self.state,
-                    )
-                }
-                Either4::D(gpu) => {
-                    todo!("Implement drawImage for GPUContext")
-                }
-            }
+            },
         }
+        Ok(())
     }
-    Ok(())
-}
 
 
     #[napi]
@@ -1243,13 +1194,14 @@ macro_rules! impl_webgl_context {
       HTMLCanvasSource
     >,
     type_: Option<i32>,
-    pixels: Option<Either5<&[u8], &[u16], &[f32], JsArrayBuffer, i64>>,
+    pixels: Option<Either<crate::module::JsBytes, i64>>,
     offset: Option<i64>,
   ) -> Result<()> {
     match pixels_or_format {
         Either9::A(format) => match (type_, pixels) {
         (Some(type_), Some(pixels)) => match pixels {
-          Either5::A(buf) => {
+          Either::A(buf) => {
+            let buf = buf.as_slice();
             canvas_c::canvas_native_webgl_tex_sub_image2d(
               target,
               level,
@@ -1264,53 +1216,7 @@ macro_rules! impl_webgl_context {
               self.state,
             );
           }
-          Either5::B(short) => {
-            canvas_c::canvas_native_webgl_tex_sub_image2d(
-              target,
-              level,
-              xoffset,
-              yoffset,
-              format_or_width,
-              type_or_height,
-              format,
-              type_,
-              short.as_ptr() as *const u8,
-              short.len() * size_of::<u16>(),
-              self.state,
-            );
-          }
-          Either5::C(float) => {
-            canvas_c::canvas_native_webgl_tex_sub_image2d(
-              target,
-              level,
-              xoffset,
-              yoffset,
-              format_or_width,
-              type_or_height,
-              format,
-              type_,
-              float.as_ptr() as *const u8,
-              float.len() * size_of::<f32>(),
-              self.state,
-            );
-          }
-          Either5::D(ab) => {
-            let buf = ab.into_value()?;
-            canvas_c::canvas_native_webgl_tex_sub_image2d(
-              target,
-              level,
-              xoffset,
-              yoffset,
-              format_or_width,
-              type_or_height,
-              format,
-              type_,
-              buf.as_ptr(),
-              buf.len(),
-              self.state,
-            );
-          }
-          Either5::E(offset) => {
+          Either::B(offset) => {
             canvas_c::canvas_native_webgl_tex_sub_image2d_offset(
               target,
               level,
@@ -1392,7 +1298,7 @@ macro_rules! impl_webgl_context {
           width,
           height,
           format_or_width as u32,
-          gl_bindings::RGBA as i32,
+          type_or_height,
           data.as_ptr(),
           data.len(),
           self.state,
@@ -1643,8 +1549,8 @@ macro_rules! impl_webgl_context {
     }
 
     #[napi]
-    pub fn use_program(&self, program: Option<ClassInstance<WebGLProgram>>) {
-        let program = program.map(|p| p.0).unwrap_or(0);
+    pub fn use_program(&self, program: crate::gl::GLObject<WebGLProgram>) {
+        let program = program.name(|p| p.0);
         canvas_c::canvas_native_webgl_use_program(program, self.state)
     }
 
@@ -1740,6 +1646,53 @@ macro_rules! impl_webgl_context {
         canvas_c::canvas_native_webgl_viewport(x, y, width, height, self.state);
     }
 
+
+    #[napi(js_name = "__toDataURL")]
+    pub fn __to_data_url(&self, format: Option<String>, encoderOptions: Option<f64>) -> String {
+        self.to_data_url(format, encoderOptions)
+    }
+
+    /// Whether the drawing buffer is read back bottom-up (UNPACK_FLIP_Y_WEBGL state).
+    #[napi(getter, js_name = "__flipY")]
+    pub fn __flip_y(&self) -> bool {
+        canvas_c::canvas_native_webgl_state_get_flip_y(self.state)
+    }
+
+    /// The supported extension names, comma-separated.
+    #[napi(js_name = "__getSupportedExtensions")]
+    pub fn __get_supported_extensions(&self) -> String {
+        let ret = canvas_c::canvas_native_webgl_get_supported_extensions_to_string(self.state);
+        if ret.is_null() {
+            return String::new();
+        }
+        unsafe { CString::from_raw(ret as _) }.to_string_lossy().into_owned()
+    }
+
+    #[napi(js_name = "__resized")]
+    pub fn __resized(&self) {
+        canvas_c::canvas_native_webgl_resized(self.state);
+    }
+
+    /// `__startRaf` / `__stopRaf`: a paused context keeps its pending frame but is not presented.
+    #[napi(js_name = "__startRaf")]
+    pub fn __start_raf(&self) {
+        self.frame.set_paused(false);
+    }
+
+    #[napi(js_name = "__stopRaf")]
+    pub fn __stop_raf(&self) {
+        self.frame.set_paused(true);
+    }
+
+    #[napi(getter)]
+    pub fn continuous_render_mode(&self) -> bool {
+        self.continuous_render.get()
+    }
+
+    #[napi(setter)]
+    pub fn set_continuous_render_mode(&self, value: bool) {
+        self.continuous_render.set(value);
+    }
 
     #[napi(js_name = "toDataURL")]
     pub fn to_data_url(&self, format: Option<String>, encoderOptions: Option<f64>) -> String {

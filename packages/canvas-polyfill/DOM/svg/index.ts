@@ -22,6 +22,7 @@ export * from './SVGMatrix';
 export * from './SVGTransform';
 export * from './SVGAnimatedRect';
 export * from './SVGTextElement';
+export * from './SVGTSpanElement';
 export * from './SVGStopElement';
 export * from './SVGUseElement';
 export * from './SVGAnimatedTransformList';

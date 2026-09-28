@@ -27,6 +27,7 @@ import {
 	OES_texture_half_float_linear,
 	OES_vertex_array_object,
 	WEBGL_color_buffer_float,
+	EXT_color_buffer_float,
 	WEBGL_compressed_texture_atc,
 	WEBGL_compressed_texture_etc,
 	WEBGL_compressed_texture_etc1,
@@ -36,11 +37,13 @@ import {
 	WEBGL_draw_buffers,
 	WEBGL_lose_context,
 } from '../WebGLExtensions';
-import { ImageAsset } from '../../ImageAsset';
+import { ImageAsset, fromSvgSource } from '../../ImageAsset';
 import { Canvas } from '../../Canvas';
 import { ImageBitmap } from '../../ImageBitmap';
 
 import { Helpers } from '../../helpers';
+import { NAPI_HOST, POINTER_CONTEXT_HOST } from '../../platform';
+import { imageAssetFor } from '../../platform/index';
 
 enum ContextType {
 	None,
@@ -68,7 +71,7 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 				nativeContext = context.getNativeContextString();
 			}
 
-			if (__APPLE__) {
+			if (POINTER_CONTEXT_HOST) {
 				nativeContext = context.nativeContext.toString();
 			}
 
@@ -317,7 +320,10 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 	}
 
 	@profile
-	deleteShader(shader: WebGLRenderbuffer): void {
+	deleteShader(shader: WebGLShader | null): void {
+		if (!shader) {
+			return;
+		}
 		this.native.deleteShader(shader.native);
 	}
 
@@ -491,6 +497,8 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 					return new OES_vertex_array_object(ext);
 				case 'WEBGL_color_buffer_float':
 					return new WEBGL_color_buffer_float(ext);
+				case 'EXT_color_buffer_float':
+					return new EXT_color_buffer_float(ext);
 				case 'WEBGL_compressed_texture_atc':
 					return new WEBGL_compressed_texture_atc(ext);
 				case 'WEBGL_compressed_texture_etc':
@@ -641,7 +649,7 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 	getUniformLocation(program: WebGLProgram, name: string): WebGLUniformLocation {
 		const value = program.native;
 		const id = this.native.getUniformLocation(value, name);
-		if (id === -1) {
+		if (id === null || id === undefined || id === -1) {
 			return null;
 		}
 		return new WebGLUniformLocation(id);
@@ -828,6 +836,7 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 	texImage2D(target: any, level: any, internalformat: any, width: any, height: any, border: any, format?: any, type?: any, pixels?: any) {
 		const length = arguments.length;
 		if (length === 9) {
+			pixels = fromSvgSource(pixels);
 			if (pixels && typeof pixels.tagName === 'string' && (pixels.tagName === 'VID' || pixels.tagName === 'VIDEO') && pixels._video && typeof pixels._video.getCurrentFrame === 'function') {
 				pixels._video.getCurrentFrame(this.native, this, target, level, internalformat, width, height);
 			} else if (pixels && typeof pixels.getCurrentFrame === 'function') {
@@ -845,14 +854,23 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 				//this.native.texImage2D(target, level, internalformat, width, height, pixels);
 			} else if (__APPLE__ && pixels instanceof UIImage) {
 				this.native.texImage2D(target, level, internalformat, width, height, pixels);
+			} else if (pixels instanceof ImageSource && NAPI_HOST) {
+				const asset = imageAssetFor(pixels);
+				if (asset) {
+					this.native.texImage2D(target, level, internalformat, width, height, border, format, type ?? internalformat, asset.native);
+				}
 			} else if (pixels instanceof ImageSource) {
 				if (__ANDROID__) {
 					(<any>org).nativescript.canvas.NSCWebGLRenderingContext.texImage2D(java.lang.Long.valueOf(this._contextPtr), target, level, internalformat, width, height, pixels.android, this.native.__flipY);
 				}
 			} else if (pixels && typeof pixels.tagName === 'string' && (pixels.tagName === 'IMG' || pixels.tagName === 'IMAGE')) {
-				const isSVG = !!pixels?._svg;
-				if (!isSVG && pixels._asset instanceof ImageAsset) {
+				if (pixels._asset instanceof ImageAsset) {
 					this.native.texImage2D(target, level, internalformat, width, height, border, format, type, pixels._asset.native);
+				} else if (pixels._imageSource instanceof ImageSource && NAPI_HOST) {
+					const asset = imageAssetFor(pixels._imageSource);
+					if (asset) {
+						this.native.texImage2D(target, level, internalformat, width, height, border, format, type, asset.native);
+					}
 				} else if (pixels._imageSource instanceof ImageSource) {
 					if (__ANDROID__) {
 						(<any>org).nativescript.canvas.NSCWebGLRenderingContext.texImage2D(java.lang.Long.valueOf(this._contextPtr), target, level, internalformat, width, height, pixels._imageSource.android, this.native.__flipY);
@@ -861,22 +879,6 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 					(<any>org).nativescript.canvas.NSCWebGLRenderingContext.texImage2D(java.lang.Long.valueOf(this._contextPtr), target, level, internalformat, width, height, pixels._image, this.native.__flipY);
 				} else if (__APPLE__ && pixels._image instanceof UIImage) {
 					this.native.texImage2D(target, level, internalformat, width, height, pixels._image);
-				} else if (pixels._svg) {
-					if (__ANDROID__) {
-						const svg = pixels._svg?._svg.getBitmap?.();
-						if (svg) {
-							(<any>org).nativescript.canvas.NSCWebGLRenderingContext.texImage2D(long(this.canvas._canvas.getNativeGL() as never), target, level, internalformat, width, height, svg, this.native.__flipY);
-						}
-					}
-
-					if (__APPLE__) {
-						const data = pixels._svg?._svg?.data;
-						const size = pixels._svg?._svg?.buf_size;
-						const dimensions = pixels._svg?._svg.data_size;
-						if (size) {
-							NSCWebGLRenderingContext.texImage2D(this.canvas._canvas.nativeGL as never, target, level, internalformat, width, height, data, size, dimensions, this.native.__flipY);
-						}
-					}
 				} else if (typeof pixels.src === 'string') {
 					if (__ANDROID__) {
 						(<any>org).nativescript.canvas.NSCWebGLRenderingContext.texImage2D(java.lang.Long.valueOf(this._contextPtr), target, level, internalformat, width, height, ImageSource.fromFileSync(pixels.src).android, this.native.__flipY);
@@ -890,6 +892,7 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 				this.native.texImage2D(target, level, internalformat, width, height, border, format, type, pixels);
 			}
 		} else if (length === 6) {
+			border = fromSvgSource(border);
 			if (border && typeof border.tagName === 'string' && (border.tagName === 'VID' || border.tagName === 'VIDEO') && border._video && typeof border._video.getCurrentFrame === 'function') {
 				border._video.getCurrentFrame(this.native, this, target, level, internalformat, width, height);
 			} else if (border && typeof border.getCurrentFrame === 'function') {
@@ -912,8 +915,7 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 					(<any>org).nativescript.canvas.NSCWebGLRenderingContext.texImage2D(java.lang.Long.valueOf(this._contextPtr), target, level, internalformat, width, height, border.android, this.native.__flipY);
 				}
 			} else if (border && typeof border.tagName === 'string' && (border.tagName === 'IMG' || border.tagName === 'IMAGE')) {
-				const isSVG = !!border?._svg;
-				if (!isSVG && border._asset instanceof ImageAsset) {
+				if (border._asset instanceof ImageAsset) {
 					this.native.texImage2D(target, level, internalformat, width, height, border._asset.native);
 				} else if (border._imageSource instanceof ImageSource) {
 					if (__ANDROID__) {
@@ -923,22 +925,6 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 					(<any>org).nativescript.canvas.NSCWebGLRenderingContext.texImage2D(java.lang.Long.valueOf(this._contextPtr), target, level, internalformat, width, height, border._image, this.native.__flipY);
 				} else if (__APPLE__ && border._image instanceof UIImage) {
 					this.native.texImage2D(target, level, internalformat, width, height, border._image);
-				} else if (border._svg) {
-					if (__ANDROID__) {
-						const svg = border._svg?._svg.getBitmap?.();
-						if (svg) {
-							(<any>org).nativescript.canvas.NSCWebGLRenderingContext.texImage2D(long(this.canvas._canvas.getNativeGL() as never), target, level, internalformat, width, height, svg, this.native.__flipY);
-						}
-					}
-
-					if (__APPLE__) {
-						const data = border._svg?._svg?.data;
-						const size = border._svg?._svg?.buf_size;
-						const dimensions = border._svg?._svg.data_size;
-						if (size) {
-							NSCWebGLRenderingContext.texImage2D(this.canvas._canvas.nativeGL as never, target, level, internalformat, width, height, data, size, dimensions, this.native.__flipY);
-						}
-					}
 				} else if (typeof border.src === 'string') {
 					if (__ANDROID__) {
 						(<any>org).nativescript.canvas.NSCWebGLRenderingContext.texImage2D(java.lang.Long.valueOf(this._contextPtr), target, level, internalformat, width, height, ImageSource.fromFileSync(border.src).android, this.native.__flipY);
@@ -978,6 +964,7 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 				this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, format, type, pixels);
 			}
 		} else if (length === 7) {
+			format = fromSvgSource(format);
 			if (format?._type === '2d' || format?._type?.indexOf('webgl') > -1 || format?._type === 'webgpu') {
 				this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, (format as any).native);
 			} else if (format && typeof format.tagName === 'string' && (format.tagName === 'VID' || format.tagName === 'VIDEO') && format._video && typeof format._video.getCurrentFrame === 'function') {
@@ -1021,23 +1008,6 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 					}
 					if (__APPLE__ && result.ios) {
 						this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, result.ios);
-					}
-				} else if (format._svg) {
-					if (__ANDROID__) {
-						const svg = format._svg?._svg.getBitmap?.();
-						if (svg) {
-							(<any>org).nativescript.canvas.NSCWebGLRenderingContext.texSubImage2D(long(this.canvas._canvas.getNativeGL() as never), target, level, xoffset, yoffset, width, height, svg, this.native.__flipY);
-						}
-					}
-
-					if (__APPLE__) {
-						const data = format._svg?._svg?.data;
-						const size = format._svg?._svg?.buf_size;
-						const dimensions = format._svg?._svg.data_size;
-
-						if (size) {
-							NSCWebGLRenderingContext.texSubImage2D(this.canvas._canvas.nativeGL as never, target, level, xoffset, yoffset, width, height, data, size, dimensions, this.native.__flipY);
-						}
 					}
 				}
 			} else if (format && typeof format.tagName === 'string' && format.tagName === 'CANVAS' && format._canvas instanceof Canvas) {

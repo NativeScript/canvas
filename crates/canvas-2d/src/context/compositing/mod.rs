@@ -9,9 +9,7 @@ impl Context {
     pub fn set_global_alpha(&mut self, alpha: c_float) {
         if alpha <= 1.0 && alpha >= 0.0 {
             self.state.global_alpha = alpha;
-            self.state.paint.fill_paint_mut().set_alpha_f(alpha);
-            self.state.paint.stroke_paint_mut().set_alpha_f(alpha);
-            self.state.paint.image_paint_mut().set_alpha_f(alpha);
+            self.state.paint.set_global_alpha(alpha);
         }
     }
 

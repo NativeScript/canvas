@@ -241,3 +241,177 @@ pub extern "C" fn canvas_native_image_bitmap_create_from_encoded_bytes_src_rect_
 
     output.is_valid()
 }
+
+// Entry points for createImageBitmap(imageData) and createImageBitmap(canvas).
+
+#[no_mangle]
+pub extern "C" fn canvas_native_image_bitmap_create_from_asset_with_output(
+    asset: *const ImageAsset,
+    flip_y: bool,
+    premultiply_alpha: ImageBitmapPremultiplyAlpha,
+    color_space_conversion: ImageBitmapColorSpaceConversion,
+    resize_quality: ImageBitmapResizeQuality,
+    resize_width: f32,
+    resize_height: f32,
+    output: *const ImageAsset,
+) -> bool {
+    if asset.is_null() || output.is_null() {
+        return false;
+    }
+    let asset = unsafe { &*asset };
+    let output = unsafe { &*output };
+    canvas_2d::image_bitmap::create_from_image_asset_src_rect_with_output(
+        &asset.0,
+        None,
+        flip_y,
+        premultiply_alpha.into(),
+        color_space_conversion.into(),
+        resize_quality.into(),
+        resize_width,
+        resize_height,
+        &output.0,
+    );
+    output.is_valid()
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_image_bitmap_create_from_asset_src_rect_with_output(
+    asset: *const ImageAsset,
+    sx: f32,
+    sy: f32,
+    s_width: f32,
+    s_height: f32,
+    flip_y: bool,
+    premultiply_alpha: ImageBitmapPremultiplyAlpha,
+    color_space_conversion: ImageBitmapColorSpaceConversion,
+    resize_quality: ImageBitmapResizeQuality,
+    resize_width: f32,
+    resize_height: f32,
+    output: *const ImageAsset,
+) -> bool {
+    if asset.is_null() || output.is_null() {
+        return false;
+    }
+    let asset = unsafe { &*asset };
+    let output = unsafe { &*output };
+    canvas_2d::image_bitmap::create_from_image_asset_src_rect_with_output(
+        &asset.0,
+        Some((sx, sy, s_width, s_height).into()),
+        flip_y,
+        premultiply_alpha.into(),
+        color_space_conversion.into(),
+        resize_quality.into(),
+        resize_width,
+        resize_height,
+        &output.0,
+    );
+    output.is_valid()
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_image_bitmap_create_from_image_data_with_output(
+    image_data: *const crate::c2d::ImageData,
+    flip_y: bool,
+    premultiply_alpha: ImageBitmapPremultiplyAlpha,
+    color_space_conversion: ImageBitmapColorSpaceConversion,
+    resize_quality: ImageBitmapResizeQuality,
+    resize_width: f32,
+    resize_height: f32,
+    output: *const ImageAsset,
+) -> bool {
+    if image_data.is_null() || output.is_null() {
+        return false;
+    }
+    let image_data = unsafe { &*image_data };
+    let output = unsafe { &*output };
+    canvas_2d::image_bitmap::create_from_image_data_with_output(
+        &image_data.0,
+        None,
+        flip_y,
+        premultiply_alpha.into(),
+        color_space_conversion.into(),
+        resize_quality.into(),
+        resize_width,
+        resize_height,
+        &output.0,
+    );
+    output.is_valid()
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_image_bitmap_create_from_image_data_src_rect_with_output(
+    image_data: *const crate::c2d::ImageData,
+    sx: f32,
+    sy: f32,
+    s_width: f32,
+    s_height: f32,
+    flip_y: bool,
+    premultiply_alpha: ImageBitmapPremultiplyAlpha,
+    color_space_conversion: ImageBitmapColorSpaceConversion,
+    resize_quality: ImageBitmapResizeQuality,
+    resize_width: f32,
+    resize_height: f32,
+    output: *const ImageAsset,
+) -> bool {
+    if image_data.is_null() || output.is_null() {
+        return false;
+    }
+    let image_data = unsafe { &*image_data };
+    let output = unsafe { &*output };
+    canvas_2d::image_bitmap::create_from_image_data_with_output(
+        &image_data.0,
+        Some((sx, sy, s_width, s_height).into()),
+        flip_y,
+        premultiply_alpha.into(),
+        color_space_conversion.into(),
+        resize_quality.into(),
+        resize_width,
+        resize_height,
+        &output.0,
+    );
+    output.is_valid()
+}
+
+/// Must run on the thread owning the GL context, so it cannot move to a worker.
+#[no_mangle]
+pub extern "C" fn canvas_native_image_bitmap_create_from_context_with_output(
+    context: *mut crate::c2d::CanvasRenderingContext2D,
+    sx: f32,
+    sy: f32,
+    s_width: f32,
+    s_height: f32,
+    use_rect: bool,
+    flip_y: bool,
+    premultiply_alpha: ImageBitmapPremultiplyAlpha,
+    color_space_conversion: ImageBitmapColorSpaceConversion,
+    resize_quality: ImageBitmapResizeQuality,
+    resize_width: f32,
+    resize_height: f32,
+    output: *const ImageAsset,
+) -> bool {
+    if context.is_null() || output.is_null() {
+        return false;
+    }
+    let context = unsafe { &mut *context };
+    let output = unsafe { &*output };
+    let image = match context.get_context_mut().get_image() {
+        Some(image) => image,
+        None => return false,
+    };
+    canvas_2d::image_bitmap::create_from_image_with_output(
+        image,
+        if use_rect {
+            Some((sx, sy, s_width, s_height).into())
+        } else {
+            None
+        },
+        flip_y,
+        premultiply_alpha.into(),
+        color_space_conversion.into(),
+        resize_quality.into(),
+        resize_width,
+        resize_height,
+        &output.0,
+    );
+    output.is_valid()
+}

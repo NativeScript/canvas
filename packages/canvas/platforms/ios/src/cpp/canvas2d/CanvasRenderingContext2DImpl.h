@@ -14,6 +14,7 @@
 #include "OnRafCallback.h"
 
 #include "Helpers.h"
+#include "V8FastApiCalls.h"
 
 #include "CanvasGradient.h"
 #include "CanvasPattern.h"
@@ -109,6 +110,8 @@ public:
 
     static v8::CFunction fast_fill_oval_;
 
+    static v8::CFunction fast_fill_text_;
+
     static v8::CFunction fast_stroke_;
 
     static v8::CFunction fast_stroke_path_;
@@ -173,7 +176,7 @@ public:
         auto object = CanvasRenderingContext2DImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType(renderingContext, NativeType::CanvasRenderingContext2D);
-        canvas::SetAlignedPointer(object, 0, renderingContext);
+        object->SetAlignedPointerInInternalField(0, renderingContext, ObjectWrapperImpl::kInternalFieldTag);
         renderingContext->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
@@ -604,7 +607,7 @@ public:
         std::vector<float> buf;
         buf.reserve(len);
 
-        auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<float>::Build().GetId(), float>(
+        auto copied = v8_helpers::TryToCopyAndConvertArrayToCppBufferFloat(
                 array, buf.data(), len);
 
         if (copied) {
@@ -992,6 +995,13 @@ public:
 
     static void FillText(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    // Fast-call path for the common (one-byte-string, no explicit width) case.
+    // V8 only invokes this when `text` is stored one-byte/Latin1-internally;
+    // any other JS argument shape (two-byte string, extra `width` arg, etc.)
+    // falls back to the slow FillText above automatically.
+    static void FastFillText(v8::Local<v8::Object> receiver_obj,
+                             const v8::FastOneByteString &text, float x, float y);
+
 
     static void FillOval(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -1236,9 +1246,9 @@ public:
 
         auto len = array->Length();
         std::vector<float> buf;
-        buf.reserve(len);
+        buf.resize(len);
 
-        auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<float>::Build().GetId(), float>(
+        auto copied = v8_helpers::TryToCopyAndConvertArrayToCppBufferFloat(
                 array, buf.data(), len);
 
         if (copied) {
@@ -1364,9 +1374,9 @@ public:
 
         auto len = array->Length();
         std::vector<float> buf;
-        buf.reserve(len);
+        buf.resize(len);
 
-        auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<float>::Build().GetId(), float>(
+        auto copied = v8_helpers::TryToCopyAndConvertArrayToCppBufferFloat(
                 array, buf.data(), len);
 
         if (copied) {

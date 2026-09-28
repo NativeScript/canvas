@@ -116,6 +116,8 @@ impl Context {
             #[cfg(feature = "vulkan")]
             vulkan_texture: None,
             cpu_context: None,
+            #[cfg(all(feature = "d3d", target_os = "windows"))]
+            d3d: None,
             metal_context: Some(mtl_context),
             metal_texture_info: Some(info),
             #[cfg(feature = "gl")]
@@ -189,6 +191,8 @@ impl Context {
             #[cfg(feature = "vulkan")]
             vulkan_texture: None,
             cpu_context: None,
+            #[cfg(all(feature = "d3d", target_os = "windows"))]
+            d3d: None,
             metal_context: Some(mtl_context),
             metal_texture_info: Some(info),
             #[cfg(feature = "gl")]
@@ -266,6 +270,8 @@ impl Context {
             #[cfg(feature = "vulkan")]
             vulkan_texture: None,
             cpu_context: None,
+            #[cfg(all(feature = "d3d", target_os = "windows"))]
+            d3d: None,
             metal_context: Some(mtl_context),
             metal_texture_info: Some(info),
             #[cfg(feature = "gl")]

@@ -1,13 +1,16 @@
 import { BasePlatform, Chart, ChartEvent } from 'chart.js';
 import { Screen } from '@nativescript/core';
 
-import '@formatjs/intl-getcanonicallocales/polyfill';
-import '@formatjs/intl-locale/polyfill';
-import '@formatjs/intl-pluralrules/polyfill';
-import '@formatjs/intl-numberformat/polyfill';
-
-import '@formatjs/intl-pluralrules/locale-data/en';
-import '@formatjs/intl-numberformat/locale-data/en';
+// Intl polyfills for engines without (full) Intl. Their feature probes can throw where Intl has
+// no locale data (e.g. V8 without ICU data rejects 'und-x-private'); a failed probe must not keep
+// the plugin from loading.
+for (const load of [() => require('@formatjs/intl-getcanonicallocales/polyfill'), () => require('@formatjs/intl-locale/polyfill'), () => require('@formatjs/intl-pluralrules/polyfill'), () => require('@formatjs/intl-numberformat/polyfill'), () => require('@formatjs/intl-pluralrules/locale-data/en'), () => require('@formatjs/intl-numberformat/locale-data/en')]) {
+	try {
+		load();
+	} catch (e) {
+		console.warn('@nativescript/canvas-chartjs: an Intl polyfill failed to load:', e?.message ?? e);
+	}
+}
 
 import { registerables } from 'chart.js';
 Chart.register(...registerables);
@@ -17,13 +20,8 @@ export class NativeScriptPlatform extends BasePlatform {
 	private _layoutChangeListener?: () => void;
 	acquireContext(canvas: HTMLCanvasElement, options?: CanvasRenderingContext2DSettings): CanvasRenderingContext2D | null {
 		this._layoutChangeListener = () => {
-			if (__APPLE__) {
-				this.chart?.resize?.(canvas.clientWidth * Screen.mainScreen.scale, canvas.clientHeight * Screen.mainScreen.scale);
-			}
-
-			//	if (__ANDROID__) {
-			//	this.chart?.resize?.(canvas.clientWidth, canvas.clientHeight);
-			//	}
+			// CSS pixels: `_resize` multiplies by getDevicePixelRatio() itself.
+			this.chart?.resize?.(canvas.clientWidth, canvas.clientHeight);
 		};
 
 		canvas.addEventListener('layoutChanged', this._layoutChangeListener as never);
@@ -64,18 +62,11 @@ export class NativeScriptPlatform extends BasePlatform {
 	}
 
 	getMaximumSize(canvas: HTMLCanvasElement, width?: number, height?: number, aspectRatio?: number): { width: number; height: number } {
-		const parent = (canvas as any).parent;
-
-		// if (__APPLE__) {
-		// 	return {
-		// 		width: parent?.getMeasuredWidth(),
-		// 		height: parent?.getMeasuredHeight(),
-		// 	};
-		// }
-
+		// CSS pixels, not device pixels: Chart.js applies the ratio itself in
+		// `retinaScale`, so device pixels here get it applied twice.
 		return {
-			width: canvas.clientWidth * Screen.mainScreen.scale,
-			height: canvas.clientHeight * Screen.mainScreen.scale,
+			width: canvas.clientWidth,
+			height: canvas.clientHeight,
 		};
 	}
 }

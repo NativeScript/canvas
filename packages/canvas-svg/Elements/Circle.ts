@@ -1,6 +1,6 @@
 import { Property } from '@nativescript/core';
 import { SVGItem } from './SVGItem';
-import { DOMParser } from '@xmldom/xmldom';
+import { createSvgElement } from '../NativeNode';
 export const cxProperty = new Property<Circle, any>({
 	name: 'cx',
 });
@@ -19,7 +19,7 @@ export class Circle extends SVGItem {
 	r: any;
 	constructor() {
 		super();
-		this.__domElement = new DOMParser().parseFromString('<circle></circle>', 'image/svg+xml').documentElement;
+		this.__domElement = createSvgElement('circle');
 	}
 }
 

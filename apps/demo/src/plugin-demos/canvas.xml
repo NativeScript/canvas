@@ -169,7 +169,7 @@ loaded="{{ rectLoaded }}"
 
   <!-- <WebView rowSpan="2" colSpan="2" height="100%" width="100%" loaded="loaded"/>" -->
 
- <canvas:Canvas isUserInteractionEnabled="true" ready="{{ canvasLoaded }}" style="width: 100%;height:100%;"/>
+ <canvas:Canvas isUserInteractionEnabled="true" loaded="{{ canvasLoaded }}" style="width: 100%;height:100%;"/>
 		
     <!-- <Button height="40" text="Draw" tap="{{ draw }}"/> -->
 
@@ -188,10 +188,10 @@ loaded="{{ rectLoaded }}"
 
     <!-- Multi Canvas -->
 
-    <!-- <canvas:Canvas row="0" col="0" id="canvas1" width="100%" height="100%" ready="{{ canvasLoaded }}"/>
-    <canvas:Canvas row="0" col="1"  id="canvas2" width="100%" height="100%" ready="{{ canvasLoaded }}"/>
-    <canvas:Canvas row="1" col="0"  id="canvas3" width="100%" height="100%" ready="{{ canvasLoaded }}"/>
-    <canvas:Canvas row="1" col="1"  id="canvas4" width="100%" height="100%" ready="{{ canvasLoaded }}"/> -->
+    <!-- <canvas:Canvas row="0" col="0" id="canvas1" width="100%" height="100%" loaded="{{ canvasLoaded }}"/>
+    <canvas:Canvas row="0" col="1"  id="canvas2" width="100%" height="100%" loaded="{{ canvasLoaded }}"/>
+    <canvas:Canvas row="1" col="0"  id="canvas3" width="100%" height="100%" loaded="{{ canvasLoaded }}"/>
+    <canvas:Canvas row="1" col="1"  id="canvas4" width="100%" height="100%" loaded="{{ canvasLoaded }}"/> -->
 
     <!-- Multi Canvas -->
   </GridLayout>

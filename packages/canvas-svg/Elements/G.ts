@@ -1,5 +1,5 @@
 import { SVGItem } from './SVGItem';
-import { DOMParser } from '@xmldom/xmldom';
+import { createSvgElement } from '../NativeNode';
 
 export class G extends SVGItem {
 	transform: string;
@@ -8,7 +8,7 @@ export class G extends SVGItem {
 	__children = [];
 	constructor() {
 		super();
-		this.__domElement = new DOMParser().parseFromString('<g></g>', 'image/svg+xml').documentElement;
+		this.__domElement = createSvgElement('g');
 	}
 
 	__redraw() {

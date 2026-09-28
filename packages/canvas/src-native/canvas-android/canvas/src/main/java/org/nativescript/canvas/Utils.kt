@@ -13,6 +13,25 @@ object Utils {
     private const val TAG = "Utils"
 
     @JvmStatic
+    private external fun nativeHardwareBufferPointer(buffer: android.hardware.HardwareBuffer?): Long
+
+    /**
+     * The native `AHardwareBuffer *` behind a [android.hardware.HardwareBuffer], or 0.
+     * Only valid while [buffer] is alive and un-closed.
+     */
+    @JvmStatic
+    fun hardwareBufferPointer(buffer: android.hardware.HardwareBuffer?): Long {
+        if (buffer == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            return 0
+        }
+        return try {
+            nativeHardwareBufferPointer(buffer)
+        } catch (e: Throwable) {
+            0
+        }
+    }
+
+    @JvmStatic
     private external fun nativeGetBytesFromBitmap(bitmap: Bitmap?): ByteArray
 
     @JvmStatic

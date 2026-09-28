@@ -54,6 +54,8 @@ pub mod gpu_command_encoder;
 pub mod gpu_compute_pass_encoder;
 pub mod gpu_compute_pipeline;
 pub mod gpu_device;
+pub mod gpu_external_texture;
+pub mod gpu_native_texture;
 pub mod gpu_pipeline_layout;
 pub mod gpu_query_set;
 pub mod gpu_queue;
@@ -63,6 +65,8 @@ pub mod gpu_render_pass_encoder;
 pub mod gpu_render_pipeline;
 pub mod gpu_sampler;
 pub mod gpu_shader_module;
+#[cfg(target_os = "windows")]
+pub mod gpu_shared_frame;
 pub mod gpu_supported_limits;
 pub mod gpu_texture;
 pub mod gpu_texture_view;

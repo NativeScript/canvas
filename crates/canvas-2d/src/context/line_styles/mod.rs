@@ -11,6 +11,11 @@ pub mod line_join;
 
 impl Context {
     pub fn set_line_width(&mut self, width: c_float) {
+        // Spec: zero, negative, infinite and NaN are ignored. NaN fails the
+        // comparison, so it needs no separate check.
+        if !(width > 0.0) || !width.is_finite() {
+            return;
+        }
         self.state.line_width = width;
         self.state.paint.stroke_paint_mut().set_stroke_width(width);
     }
@@ -48,11 +53,20 @@ impl Context {
     }
 
     pub fn set_miter_limit(&mut self, limit: c_float) {
+        // Spec: zero, negative, infinite and NaN are ignored.
+        if !(limit > 0.0) || !limit.is_finite() {
+            return;
+        }
         self.state.miter_limit = limit;
         self.state.paint.stroke_paint_mut().set_stroke_miter(limit);
     }
 
     pub fn set_line_dash(&mut self, dash: &[c_float]) {
+        // Spec: if any entry is negative, infinite or NaN the call is ignored
+        // in full -- no exception, and the existing dash list is left alone.
+        if dash.iter().any(|v| !v.is_finite() || *v < 0.0) {
+            return;
+        }
         let is_odd = (dash.len() % 2) != 0;
         let line_dash = if is_odd {
             [dash, dash].concat()
@@ -73,7 +87,10 @@ impl Context {
     }
 
     pub fn set_line_dash_offset(&mut self, offset: c_float) {
-        // TODO ?
+        // Spec: infinite and NaN are ignored.
+        if !offset.is_finite() {
+            return;
+        }
         self.state.line_dash_offset = offset;
         let list = self.state.line_dash_list.clone();
         self.set_line_dash(list.as_slice());

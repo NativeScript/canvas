@@ -2,11 +2,13 @@ ARCHS_IOS = x86_64-apple-ios aarch64-apple-ios aarch64-apple-ios-sim
 ARCHS_VISIONOS = aarch64-apple-visionos aarch64-apple-visionos-sim
 ARCHS_TVOS = aarch64-apple-tvos aarch64-apple-tvos-sim
 ARCHS_ANDROID = i686-linux-android x86_64-linux-android aarch64-linux-android armv7-linux-androideabi
+# Node-API hosts (crates/canvas-napi).
+ARCHS_WINDOWS = x86_64-pc-windows-msvc aarch64-pc-windows-msvc
 
 XCFRAMEWORK = CanvasNative.xcframework
 RUST_LIB = canvasnative
 
-all: GENERATE_HEADERS ios android
+all: GENERATE_HEADERS GENERATE_V8_HEADERS ios android
 
 ios: $(XCFRAMEWORK)
 
@@ -16,21 +18,57 @@ tvos: $(ARCHS_TVOS)
 
 android: GENERATE_ANDROID
 
+windows: $(ARCHS_WINDOWS)
+
+windows-svg: $(addsuffix _svg_napi,$(ARCHS_WINDOWS))
+
+windows-audio: $(addsuffix _audio_napi,$(ARCHS_WINDOWS))
+
+windows-media: $(addsuffix _media_napi,$(ARCHS_WINDOWS))
+
+windows-gamepad: $(addsuffix _gamepad_napi,$(ARCHS_WINDOWS))
+
 ios-svg: GENERATE_IOS_SVG
 
 visionos-svg: GENERATE_VISIONOS_SVG
 
-svg: GENERATE_IOS_SVG GENERATE_VISIONOS_SVG
+tvos-svg: GENERATE_TVOS_SVG
+
+svg: GENERATE_IOS_SVG GENERATE_VISIONOS_SVG GENERATE_TVOS_SVG
 
 android-svg: GENERATE_ANDROID_SVG
+
+apple: ios visionos tvos
+
+# Host-side tests. The workspace pins `-C panic=abort` for the Apple host
+# targets in .cargo/config.toml (needed by the macOS dylib build) and libtest
+# cannot link against that, so the rustflags are replaced for this run.
+.PHONY: test
+test:
+	python3 ./tools/tests/check-v8-bridge-invariants.py
+	RUSTFLAGS="-C link-arg=-undefined -C link-arg=dynamic_lookup" \
+	    cargo test -p canvas-c --features 2d,webgl,gl
 
 .PHONY: GENERATE_HEADERS
 GENERATE_HEADERS:
 	./tools/scripts/build-headers.sh
 
+.PHONY: GENERATE_V8_HEADERS
+GENERATE_V8_HEADERS:
+	./tools/scripts/download-v8.sh
+
+.PHONY: GENERATE_ANDROID_V8_STUB
+GENERATE_ANDROID_V8_STUB:
+	./tools/scripts/build-android-v8-stub.sh
+
+# Match Xcode's pre-build env: cargo tracks SDKROOT and the deployment targets, so a mismatch
+# rebuilds the whole tree (std too) on every switch. tvOS also needs it because cc has no default.
+apple_sdk = $(if $(findstring visionos-sim,$1),xrsimulator,$(if $(findstring visionos,$1),xros,$(if $(findstring tvos-sim,$1),appletvsimulator,$(if $(findstring tvos,$1),appletvos,$(if $(or $(findstring ios-sim,$1),$(findstring x86_64-apple-ios,$1)),iphonesimulator,iphoneos)))))
+apple_env = SDKROOT="$$(xcrun --sdk $(call apple_sdk,$1) --show-sdk-path)" IPHONEOS_DEPLOYMENT_TARGET=12.0 TVOS_DEPLOYMENT_TARGET=12.0 XROS_DEPLOYMENT_TARGET=1.0
+
 .PHONY: $(ARCHS_IOS)
 $(ARCHS_IOS): %:
-	RUSTFLAGS="-Zlocation-detail=none -Zunstable-options -Cpanic=immediate-abort" \
+	$(call apple_env,$@) RUSTFLAGS="-Zlocation-detail=none -Zunstable-options -Cpanic=immediate-abort" \
 	cargo +nightly build -Z build-std='std,panic_abort' \
 	    --target $@ --release -p canvas-ios
 
@@ -38,13 +76,13 @@ $(XCFRAMEWORK): $(ARCHS_IOS)
 
 .PHONY: $(ARCHS_VISIONOS)
 $(ARCHS_VISIONOS): %:
-	RUSTFLAGS="-Zlocation-detail=none -Zunstable-options -Cpanic=immediate-abort" \
+	$(call apple_env,$@) RUSTFLAGS="-Zlocation-detail=none -Zunstable-options -Cpanic=immediate-abort" \
 	cargo +nightly build -Z build-std='std,panic_abort' \
 	    --target $@ --release -p canvas-ios
 
 .PHONY: $(ARCHS_TVOS)
 $(ARCHS_TVOS): %:
-	RUSTFLAGS="-Zlocation-detail=none -Zunstable-options -Cpanic=immediate-abort" \
+	$(call apple_env,$@) RUSTFLAGS="-Zlocation-detail=none -Zunstable-options -Cpanic=immediate-abort" \
 	cargo +nightly build -Z build-std='std,panic_abort' \
 	    --target $@ --release -p canvas-ios
 
@@ -52,12 +90,32 @@ $(ARCHS_TVOS): %:
 $(ARCHS_ANDROID): %:
 	./tools/scripts/build-android.sh $@
 
+.PHONY: windows $(ARCHS_WINDOWS)
+$(ARCHS_WINDOWS): %:
+	./tools/scripts/build-napi.sh $@
+
+.PHONY: windows-svg $(addsuffix _svg_napi,$(ARCHS_WINDOWS))
+$(addsuffix _svg_napi,$(ARCHS_WINDOWS)): %_svg_napi:
+	./tools/scripts/build-napi.sh $* release-napi canvas-svg-napi
+
+.PHONY: windows-audio $(addsuffix _audio_napi,$(ARCHS_WINDOWS))
+$(addsuffix _audio_napi,$(ARCHS_WINDOWS)): %_audio_napi:
+	./tools/scripts/build-napi.sh $* release-napi audio-context-napi
+
+.PHONY: windows-media $(addsuffix _media_napi,$(ARCHS_WINDOWS))
+$(addsuffix _media_napi,$(ARCHS_WINDOWS)): %_media_napi:
+	./tools/scripts/build-napi.sh $* release-napi canvas-media-napi
+
+.PHONY: windows-gamepad $(addsuffix _gamepad_napi,$(ARCHS_WINDOWS))
+$(addsuffix _gamepad_napi,$(ARCHS_WINDOWS)): %_gamepad_napi:
+	./tools/scripts/build-napi.sh $* release-napi canvas-gamepad-napi
+
 .PHONY: GENERATE_ANDROID
 GENERATE_ANDROID: $(ARCHS_ANDROID)
 
 .PHONY: $(addsuffix _svg,$(ARCHS_IOS))
 $(addsuffix _svg,$(ARCHS_IOS)): %_svg:
-	RUSTFLAGS="-Zlocation-detail=none -Zunstable-options -Cpanic=immediate-abort" \
+	$(call apple_env,$*) RUSTFLAGS="-Zlocation-detail=none -Zunstable-options -Cpanic=immediate-abort" \
 	cargo +nightly build -Z build-std='std,panic_abort' \
 	    --target $* --release -p canvas-svg-ios
 
@@ -66,18 +124,27 @@ GENERATE_IOS_SVG: $(addsuffix _svg,$(ARCHS_IOS))
 
 .PHONY: $(addsuffix _svg,$(ARCHS_VISIONOS))
 $(addsuffix _svg,$(ARCHS_VISIONOS)): %_svg:
-	RUSTFLAGS="-Zlocation-detail=none -Zunstable-options -Cpanic=immediate-abort" \
+	$(call apple_env,$*) RUSTFLAGS="-Zlocation-detail=none -Zunstable-options -Cpanic=immediate-abort" \
 	cargo +nightly build -Z build-std='std,panic_abort' \
 	    --target $* --release -p canvas-svg-ios
 
 .PHONY: GENERATE_VISIONOS_SVG
 GENERATE_VISIONOS_SVG: $(addsuffix _svg,$(ARCHS_VISIONOS))
 
-.PHONY: ios-svg visionos-svg svg
+.PHONY: $(addsuffix _svg,$(ARCHS_TVOS))
+$(addsuffix _svg,$(ARCHS_TVOS)): %_svg:
+	$(call apple_env,$*) RUSTFLAGS="-Zlocation-detail=none -Zunstable-options -Cpanic=immediate-abort" \
+	cargo +nightly build -Z build-std='std,panic_abort' \
+	    --target $* --release -p canvas-svg-ios
+
+.PHONY: GENERATE_TVOS_SVG
+GENERATE_TVOS_SVG: $(addsuffix _svg,$(ARCHS_TVOS))
+
+.PHONY: ios-svg visionos-svg tvos-svg svg
 
 .PHONY: $(addsuffix _svg,$(ARCHS_ANDROID))
 $(addsuffix _svg,$(ARCHS_ANDROID)): %_svg:
-	./tools/scripts/build-svg-android.sh $* svg
+	./tools/scripts/build-svg-android.sh $*
 
 .PHONY: GENERATE_ANDROID_SVG
 GENERATE_ANDROID_SVG: $(addsuffix _svg,$(ARCHS_ANDROID))

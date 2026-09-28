@@ -1,6 +1,7 @@
 use std::cmp::PartialEq;
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_void};
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use canvas_2d::context::compositing::composite_operation_type::CompositeOperationType;
 use canvas_2d::context::fill_and_stroke_styles::paint::paint_style_set_color_with_string;
@@ -34,6 +35,7 @@ pub enum Engine {
     GL,
     Vulkan,
     Metal,
+    D3D,
 }
 
 #[allow(dead_code)]
@@ -41,6 +43,7 @@ pub struct CanvasRenderingContext2D {
     pub(crate) context: Context,
     alpha: bool,
     engine: Engine,
+    refs: AtomicUsize,
 }
 
 impl CanvasRenderingContext2D {
@@ -78,11 +81,21 @@ pub extern "C" fn canvas_native_context_clear_render_func(value: i64) {
 }
 
 #[no_mangle]
+pub extern "C" fn canvas_native_context_reference(value: *const CanvasRenderingContext2D) {
+    if value.is_null() {
+        return;
+    }
+    unsafe { &*value }.refs.fetch_add(1, Ordering::Relaxed);
+}
+
+#[no_mangle]
 pub extern "C" fn canvas_native_context_release(value: *mut CanvasRenderingContext2D) {
     if value.is_null() {
         return;
     }
-    unsafe { drop(Box::from_raw(value)) };
+    if unsafe { &*value }.refs.fetch_sub(1, Ordering::AcqRel) == 1 {
+        unsafe { drop(Box::from_raw(value)) };
+    }
 }
 
 fn to_data_url(context: &mut CanvasRenderingContext2D, format: &str, quality: u32) -> String {
@@ -158,6 +171,14 @@ pub fn resize(context: &mut CanvasRenderingContext2D, width: f32, height: f32) {
         }
     }
 
+    #[cfg(all(feature = "d3d", target_os = "windows"))]
+    {
+        if context.engine == Engine::D3D {
+            Context::resize_d3d(&mut context.context, width, height);
+            return;
+        }
+    }
+
     let alpha = context.alpha;
     let context = &mut context.context;
     let density = context.surface_data().scale();
@@ -171,6 +192,7 @@ impl CanvasRenderingContext2D {
             context,
             alpha,
             engine: Engine::CPU,
+            refs: AtomicUsize::new(1),
         }
     }
 
@@ -180,6 +202,7 @@ impl CanvasRenderingContext2D {
             context,
             alpha,
             engine: Engine::GL,
+            refs: AtomicUsize::new(1),
         }
     }
 
@@ -189,6 +212,7 @@ impl CanvasRenderingContext2D {
             context,
             alpha,
             engine: Engine::Vulkan,
+            refs: AtomicUsize::new(1),
         }
     }
 
@@ -198,6 +222,7 @@ impl CanvasRenderingContext2D {
             context,
             alpha,
             engine: Engine::Metal,
+            refs: AtomicUsize::new(1),
         }
     }
 
@@ -224,6 +249,13 @@ impl CanvasRenderingContext2D {
         #[cfg(feature = "vulkan")]
         if self.engine == Engine::Vulkan {
             flush = false;
+        }
+
+        // D3D flushes as part of presenting.
+        #[cfg(all(feature = "d3d", target_os = "windows"))]
+        if self.engine == Engine::D3D {
+            self.context.present_d3d();
+            return;
         }
 
         {
@@ -382,6 +414,126 @@ pub extern "C" fn canvas_native_context_resize(
     context.resize(width, height);
 }
 
+/// A 2D context on the shared Direct3D 12 device (Windows). Offscreen until
+/// `canvas_native_context_attach_swap_chain_panel`. Null when there is no usable device.
+#[cfg(all(feature = "d3d", target_os = "windows"))]
+#[no_mangle]
+pub extern "C" fn canvas_native_context_create_d3d(
+    width: f32,
+    height: f32,
+    density: f32,
+    alpha: bool,
+    font_color: i32,
+    ppi: f32,
+    direction: u32,
+    color_space: CanvasColorSpace,
+) -> *mut CanvasRenderingContext2D {
+    match Context::new_d3d(
+        width,
+        height,
+        density,
+        alpha,
+        font_color,
+        ppi,
+        TextDirection::from(direction),
+        color_space.into(),
+    ) {
+        Some(context) => {
+            let context = Box::into_raw(Box::new(CanvasRenderingContext2D {
+                context,
+                alpha,
+                engine: Engine::D3D,
+                refs: AtomicUsize::new(1),
+            }));
+            // Boxed: it stays at this address until released.
+            unsafe { (*context).context.register_d3d() };
+            context
+        }
+        None => std::ptr::null_mut(),
+    }
+}
+
+/// Presents a D3D context in a WinUI `SwapChainPanel` (`panel`: any COM pointer to it). UI thread.
+#[cfg(all(feature = "d3d", target_os = "windows"))]
+#[no_mangle]
+pub extern "C" fn canvas_native_context_attach_swap_chain_panel(
+    context: *mut CanvasRenderingContext2D,
+    panel: *mut c_void,
+) -> bool {
+    if context.is_null() || panel.is_null() {
+        return false;
+    }
+    let context = unsafe { &mut *context };
+    context.engine == Engine::D3D && unsafe { context.context.attach_swap_chain_panel(panel) }
+}
+
+/// Presents a D3D context into a XAML `SurfaceImageSource` (any COM pointer to it, made at the
+/// context's size) instead of a swapchain, so it blends with the page. UI thread.
+#[cfg(all(feature = "d3d", target_os = "windows"))]
+#[no_mangle]
+pub extern "C" fn canvas_native_context_attach_xaml_surface(
+    context: *mut CanvasRenderingContext2D,
+    source: *mut c_void,
+) -> bool {
+    if context.is_null() || source.is_null() {
+        return false;
+    }
+    let context = unsafe { &mut *context };
+    context.engine == Engine::D3D && unsafe { context.context.attach_xaml_surface(source) }
+}
+
+/// Maps the context's swapchain into its panel: DIPs = pixels * scale + offset.
+#[cfg(all(feature = "d3d", target_os = "windows"))]
+#[no_mangle]
+pub extern "C" fn canvas_native_context_set_swap_chain_transform(
+    context: *mut CanvasRenderingContext2D,
+    scale_x: f32,
+    scale_y: f32,
+    offset_x: f32,
+    offset_y: f32,
+) -> bool {
+    if context.is_null() {
+        return false;
+    }
+    let context = unsafe { &*context };
+    context
+        .context
+        .set_swap_chain_transform(scale_x, scale_y, offset_x, offset_y)
+}
+
+/// The context's Direct3D 12 device was removed; it draws nothing until restored.
+#[cfg(all(feature = "d3d", target_os = "windows"))]
+#[no_mangle]
+pub extern "C" fn canvas_native_context_is_lost(context: *const CanvasRenderingContext2D) -> bool {
+    if context.is_null() {
+        return false;
+    }
+    let context = unsafe { &*context };
+    context.context.d3d_lost()
+}
+
+/// Moves a lost context to a new device, cleared and in its default state, shown in `panel`
+/// again (null offscreen). UI thread.
+#[cfg(all(feature = "d3d", target_os = "windows"))]
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_context_restore_d3d(
+    context: *mut CanvasRenderingContext2D,
+    panel: *mut c_void,
+) -> bool {
+    if context.is_null() {
+        return false;
+    }
+    let context = unsafe { &mut *context };
+    unsafe { context.context.restore_d3d(panel) }
+}
+
+/// Removes this thread's shared Direct3D 12 device, as a driver reset would (tests).
+#[cfg(all(feature = "d3d", target_os = "windows"))]
+#[no_mangle]
+pub extern "C" fn canvas_native_d3d_simulate_device_removal() -> bool {
+    canvas_core::gpu::d3d::D3D12Context::simulate_shared_removal()
+}
+
 #[no_mangle]
 pub extern "C" fn canvas_native_context_create(
     width: f32,
@@ -406,6 +558,7 @@ pub extern "C" fn canvas_native_context_create(
         ),
         alpha,
         engine: Engine::CPU,
+        refs: AtomicUsize::new(1),
     }))
 }
 
@@ -439,6 +592,7 @@ pub extern "C" fn canvas_native_context_create_gl(
         context,
         alpha,
         engine: Engine::GL,
+        refs: AtomicUsize::new(1),
     }))
 }
 
@@ -483,6 +637,7 @@ pub extern "C" fn canvas_native_context_create_gl_no_window(
         context,
         alpha,
         engine: Engine::GL,
+        refs: AtomicUsize::new(1),
     }))
 }
 
@@ -1709,13 +1864,15 @@ pub extern "C" fn canvas_native_context_create_pattern_canvas2d(
     assert!(!source.is_null());
     assert!(!context.is_null());
     let source = unsafe { &mut *source };
-    let context = unsafe { &*context };
+    let context = unsafe { &mut *context };
     let repetition: Repetition = repetition.into();
+    let image = source.context.get_image();
+    // Snapshotting left the source's GL context current; restore the destination.
     #[cfg(feature = "gl")]
     {
-        source.make_current();
+        context.make_current();
     }
-    match source.context.get_image() {
+    match image {
         None => std::ptr::null_mut(),
         Some(image) => Box::into_raw(Box::new(PaintStyle(
             canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
@@ -2028,16 +2185,20 @@ pub extern "C" fn canvas_native_context_draw_image_context(
     }
 }
 
+/// Read a WebGL canvas's drawing buffer back so it can be used as an image source.
+///
+/// `format` is the pixel format (`GL_RGBA`), `pixel_type` the component type
+/// (`GL_UNSIGNED_BYTE`) -- swapping them fails with `GL_INVALID_ENUM` and writes nothing.
 fn canvas_native_context_read_webgl_pixels(
     source: &mut canvas_webgl::prelude::WebGLState,
-    internalformat: i32,
     format: i32,
+    pixel_type: i32,
 ) -> (i32, i32, Vec<u8>) {
     source.make_current();
     let width = source.get_drawing_buffer_width();
     let height = source.get_drawing_buffer_height();
 
-    let row_size = bytes_per_pixel(internalformat as u32, format as u32) as i32;
+    let row_size = bytes_per_pixel(pixel_type as u32, format as u32) as i32;
 
     let mut buf = vec![255u8; (width * height * row_size) as usize];
     unsafe {
@@ -2047,8 +2208,8 @@ fn canvas_native_context_read_webgl_pixels(
             0,
             width,
             height,
-            internalformat as u32,
             format as u32,
+            pixel_type as u32,
             buf.as_mut_ptr() as *mut c_void,
         );
     }
@@ -2077,7 +2238,7 @@ pub extern "C" fn canvas_native_context_draw_image_dx_dy_webgl(
     let pixels = canvas_native_context_read_webgl_pixels(
         &mut source.0,
         gl_bindings::RGBA as i32,
-        gl_bindings::RGBA as i32,
+        gl_bindings::UNSIGNED_BYTE as i32,
     );
 
     let ptr = pixels.2.as_ptr();
@@ -2109,7 +2270,7 @@ pub extern "C" fn canvas_native_context_draw_image_dx_dy_dw_dh_webgl(
     let pixels = canvas_native_context_read_webgl_pixels(
         &mut source.0,
         gl_bindings::RGBA as i32,
-        gl_bindings::RGBA as i32,
+        gl_bindings::UNSIGNED_BYTE as i32,
     );
 
     let ptr = pixels.2.as_ptr();
@@ -2148,7 +2309,7 @@ pub extern "C" fn canvas_native_context_draw_image_webgl(
     let pixels = canvas_native_context_read_webgl_pixels(
         &mut source.0,
         gl_bindings::RGBA as i32,
-        gl_bindings::RGBA as i32,
+        gl_bindings::UNSIGNED_BYTE as i32,
     );
 
     let ptr = pixels.2.as_ptr();
@@ -2460,7 +2621,7 @@ pub extern "C" fn canvas_native_context_is_point_in_path_str(
     y: f32,
     rule: CanvasFillRule,
 ) -> bool {
-    let context = unsafe { &*context };
+    let context = unsafe { &mut *context };
     context.context.point_in_path(None, x, y, rule.into())
 }
 
@@ -2472,7 +2633,7 @@ pub extern "C" fn canvas_native_context_is_point_in_path_with_path_str(
     y: f32,
     rule: CanvasFillRule,
 ) -> bool {
-    let context = unsafe { &*context };
+    let context = unsafe { &mut *context };
     let path = unsafe { &*path };
     context
         .context
@@ -2486,7 +2647,7 @@ pub extern "C" fn canvas_native_context_is_point_in_path(
     y: f32,
     rule: CanvasFillRule,
 ) -> bool {
-    let context = unsafe { &*context };
+    let context = unsafe { &mut *context };
     context.context.point_in_path(None, x, y, rule.into())
 }
 
@@ -2498,7 +2659,7 @@ pub extern "C" fn canvas_native_context_is_point_in_path_with_path(
     y: f32,
     rule: CanvasFillRule,
 ) -> bool {
-    let context = unsafe { &*context };
+    let context = unsafe { &mut *context };
     let path = unsafe { &*path };
     context
         .context
@@ -2511,7 +2672,7 @@ pub extern "C" fn canvas_native_context_is_point_in_stroke(
     x: f32,
     y: f32,
 ) -> bool {
-    let context = unsafe { &*context };
+    let context = unsafe { &mut *context };
     context.context.point_in_stroke(None, x, y)
 }
 
@@ -2522,7 +2683,7 @@ pub extern "C" fn canvas_native_context_is_point_in_stroke_with_path(
     x: f32,
     y: f32,
 ) -> bool {
-    let context = unsafe { &*context };
+    let context = unsafe { &mut *context };
     let path = unsafe { &*path };
     context.context.point_in_stroke(Some(&path.0), x, y)
 }

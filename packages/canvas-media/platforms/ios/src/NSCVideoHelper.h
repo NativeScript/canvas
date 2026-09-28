@@ -30,6 +30,8 @@
 @property (nonatomic, readonly) BOOL isInForeground;
 @property (nonatomic, readonly) NSCPlayerState state;
 @property (nonatomic, readonly) NSCPlayerReadyState readyState;
+/// A decoded frame exists for the current source.
+@property (nonatomic, readonly) BOOL firstFrameReady;
 @property (nonatomic, readonly) CGSize videoSize;
 @property (nonatomic, strong, readonly) AVPlayerItemVideoOutput *assetOutput;
 @property (nonatomic, weak) id<NSCVideoHelperListener> listener;

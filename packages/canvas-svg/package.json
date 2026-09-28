@@ -1,13 +1,14 @@
 {
 	"name": "@nativescript/canvas-svg",
-	"version": "2.1.18",
+	"version": "3.0.0-alpha.16",
 	"description": "Add a plugin description",
 	"main": "index",
 	"typings": "index.d.ts",
 	"nativescript": {
 		"platforms": {
 			"ios": "6.0.0",
-			"android": "6.0.0"
+			"android": "6.0.0",
+			"windows": "9.1.0"
 		}
 	},
 	"repository": {
@@ -33,7 +34,6 @@
 	"readmeFilename": "README.md",
 	"bootstrapper": "@nativescript/plugin-seed",
 	"dependencies": {
-		"@xmldom/xmldom": ">=0.8.12",
 		"query-selector": "2.0.0",
 		"set-value": "4.1.0"
 	}

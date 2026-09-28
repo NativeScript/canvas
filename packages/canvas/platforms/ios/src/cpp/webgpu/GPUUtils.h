@@ -10,6 +10,7 @@
 #include "ObjectWrapperImpl.h"
 #include "GPUSamplerImpl.h"
 #include "GPUTextureViewImpl.h"
+#include "GPUExternalTextureImpl.h"
 #include "GPUBufferImpl.h"
 
 inline static CanvasStoreOp
@@ -90,6 +91,19 @@ ParseBindGroupEntries(v8::Isolate *isolate, const v8::Local<v8::Value> &obj) {
                                     CanvasBindGroupEntryResourceTextureView,
                             };
                             resource.texture_view = textureView->GetTextureView();
+                            CanvasBindGroupEntry entry{binding, resource};
+                            entries.push_back(entry);
+                        }
+                    }
+                        break;
+                    case NativeType::GPUExternalTexture: {
+                        auto externalTexture = GPUExternalTextureImpl::GetPointer(
+                                resourceVal.As<v8::Object>());
+                        if (externalTexture != nullptr) {
+                            auto resource = CanvasBindGroupEntryResource{
+                                    CanvasBindGroupEntryResourceExternalTexture,
+                            };
+                            resource.external_texture = externalTexture->GetExternalTexture();
                             CanvasBindGroupEntry entry{binding, resource};
                             entries.push_back(entry);
                         }
@@ -253,21 +267,17 @@ ParseBindGroupLayoutEntries(v8::Isolate *isolate, const v8::Local<v8::Value> &ob
                         &externalTextureVal);
 
                 if (!externalTextureVal.IsEmpty() && externalTextureVal->IsObject()) {
-                    // todo
-//                        CanvasBindingType buffer{
-//                                CanvasBindingTypeTexture
-//                        };
-//
-//                        buffer.buffer = CanvasBufferBindingLayout{
-//                                type, has_dynamic_offset, min_binding_size
-//                        };
-//
-//
-//                        CanvasBindGroupLayoutEntry entry{
-//                                binding,
-//                                visibility,
-//                                buffer
-//                        };
+                    CanvasBindingType externalTexture{
+                            CanvasBindingTypeExternalTexture
+                    };
+
+                    CanvasBindGroupLayoutEntry entry{
+                            binding,
+                            visibility,
+                            externalTexture
+                    };
+
+                    entries.push_back(entry);
 
                     continue;
                 }

@@ -101,6 +101,15 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      # The V8 + NativeScript runtime headers under nativescript-v8/Headers are
+      # fetched, not committed (see .gitignore + tools/scripts/download-v8.sh),
+      # and the build copies that tree into each package's NativeScriptV8
+      # SwiftPM shim. Without this step a fresh checkout ships a shim whose
+      # Headers/include holds only the tracked libffi files, and every
+      # consumer's iOS build dies on Common.h's `#include "include/v8.h"`.
+      - name: Vendor V8 + NativeScript runtime headers
+        run: ./tools/scripts/download-v8.sh
+
       - name: Build packages
         run: npx nx run-many --target=build.all --projects="$(echo "$PACKAGES" | tr ' ' ',')"
 
@@ -114,12 +123,21 @@ jobs:
           set -euo pipefail
           for pkg in canvas audio-context; do
             dir="dist/packages/$pkg/platforms/ios/NativeScriptV8"
-            for required in "$dir/Package.swift" "$dir/Headers" "$dir/Sources"; do
-              if [ ! -e "$required" ]; then
-                echo "error: $required missing — the NativeScriptV8 SPM shim was not packaged" >&2
+            # Check real files, not just the directories: Headers/ also holds
+            # the committed inspector/ + libffi trees, so an `-e Headers` test
+            # passes even when download-v8.sh never ran and the actual V8
+            # headers are absent (that shipped in 3.0.0-alpha.0).
+            for required in "$dir/Package.swift" "$dir/Sources/NativeScriptV8.c" \
+                            "$dir/Headers/include/v8.h" "$dir/Headers/include/v8config.h"; do
+              if [ ! -f "$required" ]; then
+                echo "error: $required missing — the NativeScriptV8 SPM shim was not packaged (did tools/scripts/download-v8.sh run?)" >&2
                 exit 1
               fi
             done
+            if [ -z "$(ls -A "$dir/Headers/runtime" 2>/dev/null)" ]; then
+              echo "error: $dir/Headers/runtime is empty — the NativeScript runtime headers were not vendored" >&2
+              exit 1
+            fi
             # match only a real `repositoryURL:` key — the config's comments
             # legitimately mention the word while explaining why it's banned
             if grep -v -E '^[[:space:]]*(//|\*)' "dist/packages/$pkg/nativescript.config.ts" | grep -q -E 'repositoryURL[[:space:]]*:'; then

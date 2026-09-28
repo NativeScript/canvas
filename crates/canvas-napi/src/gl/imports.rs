@@ -19,7 +19,7 @@ macro_rules! webgl_context_imports {
     use canvas_c::InvalidateState;
 
     use crate::gl::extensions::{
-      w_e_b_g_l_lose_context, ANGLE_instanced_arrays, EXT_blend_minmax,
+      w_e_b_g_l_lose_context, ANGLE_instanced_arrays, EXT_blend_minmax, EXT_color_buffer_float,
       EXT_color_buffer_half_float, EXT_disjoint_timer_query, EXT_sRGB, EXT_shader_texture_lod,
       EXT_texture_filter_anisotropic, OES_element_index_uint, OES_fbo_render_mipmap,
       OES_standard_derivatives, OES_texture_float, OES_texture_float_linear,
@@ -32,6 +32,9 @@ macro_rules! webgl_context_imports {
       Array, Buffer, ClassInstance, Either3, Either4, Either5, Either6, Either7, Either9,
       Float32Array, Int32Array, ObjectFinalize, Uint32Array, Unknown,
     };
+    use napi::bindgen_prelude::Null;
+    use crate::js::AnyArrayBuffer;
+    use crate::js::ToJs;
     use std::sync::Arc;
   };
 }

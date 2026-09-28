@@ -1,0 +1,39 @@
+<!doctype html>
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
+	</head>
+	<body style="margin: 0; background: #000; overflow: hidden">
+		<!--
+  Call-bound control: the same canvas 2D micro-ops the NativeScript side runs,
+  from the same callbound.js (webpack copies one file to both places), against
+  the system WebView's canvas. Results are painted into the page so a screencap
+  reads them, and echoed to console for logcat.
+-->
+		<canvas id="c" width="512" height="512" style="width: 256px; height: 256px; display: block"></canvas>
+		<div id="out" style="position: fixed; left: 0; right: 0; top: 0; color: #0f0; font: 14px monospace; background: rgba(0, 0, 0, 0.85); padding: 8px; white-space: pre"></div>
+		<script src="./callbound.js"></script>
+		<script>
+			(function () {
+				var out = document.getElementById('out');
+				function say(line) {
+					out.textContent += line + '\n';
+					console.log('WVCALL|' + line);
+				}
+				window.onerror = function (m) {
+					say('error: ' + m);
+				};
+
+				var ctx = document.getElementById('c').getContext('2d');
+				say('op|ns/op|ms per 20k');
+				// rAF once so the first frame's setup is not inside the samples.
+				requestAnimationFrame(function () {
+					requestAnimationFrame(function () {
+						__callBound(ctx, say);
+						say('done');
+					});
+				});
+			})();
+		</script>
+	</body>
+</html>

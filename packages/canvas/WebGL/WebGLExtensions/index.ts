@@ -301,26 +301,26 @@ export class EXT_disjoint_timer_query {
 	}
 
 	public createQueryEXT(): WebGLQuery {
-		return new WebGLQuery(this.nativeInstance.createQueryEXT());
+		return new WebGLQuery(this.nativeInstance.createQueryExt());
 	}
 
 	public deleteQueryEXT(query: WebGLQuery) {
 		const value = query ? query.native : 0;
-		this.nativeInstance.deleteQueryEXT(value);
+		this.nativeInstance.deleteQueryExt(value);
 	}
 
 	public isQueryEXT(query: WebGLQuery): boolean {
 		const value = query ? query.native : 0;
-		return this.nativeInstance.isQueryEXT(value);
+		return this.nativeInstance.isQueryExt(value);
 	}
 
 	public beginQueryEXT(target: number, query: WebGLQuery) {
-		const value = query ? query.native : null;
-		this.nativeInstance.beginQueryEXT(target, value);
+		const value = query ? query.native : 0;
+		this.nativeInstance.beginQueryExt(target, value);
 	}
 
 	public endQueryEXT(target: number) {
-		this.nativeInstance.endQueryEXT(target);
+		this.nativeInstance.endQueryExt(target);
 	}
 
 	public queryCounterEXT(query: WebGLQuery, target: number) {
@@ -330,13 +330,11 @@ export class EXT_disjoint_timer_query {
 	}
 
 	public getQueryEXT(target: number, pname: number) {
-		const value = this.nativeInstance.getQueryEXT(target, pname);
-		if (!!value) {
-			return null;
-		}
+		// The native bindings name it getQueryExt.
+		const value = this.nativeInstance.getQueryExt(target, pname);
 		switch (pname) {
 			case this.CURRENT_QUERY_EXT:
-				return new WebGLQuery(value);
+				return value ? new WebGLQuery(value) : null;
 			default:
 				return value;
 		}
@@ -344,7 +342,7 @@ export class EXT_disjoint_timer_query {
 
 	public getQueryObjectEXT(query: WebGLQuery, pname: number) {
 		const id = query ? query.native : 0;
-		const value = this.nativeInstance.getQueryObjectEXT(id, pname);
+		const value = this.nativeInstance.getQueryObjectExt(id, pname);
 		return value;
 	}
 }

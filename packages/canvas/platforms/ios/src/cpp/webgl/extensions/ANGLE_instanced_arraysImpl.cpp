@@ -10,19 +10,19 @@ ANGLE_instanced_arraysImpl::ANGLE_instanced_arraysImpl(ANGLE_instanced_arrays *a
 
 
 v8::CFunction ANGLE_instanced_arraysImpl::fast_draw_arrays_instanced_angle_(
-        CANVAS_FAST_FUNCTION(ANGLE_instanced_arraysImpl::FastDrawArraysInstancedANGLE));
+        v8::CFunction::Make(ANGLE_instanced_arraysImpl::FastDrawArraysInstancedANGLE));
 
 
 v8::CFunction ANGLE_instanced_arraysImpl::fast_draw_elements_instanced_angle_(
-        CANVAS_FAST_FUNCTION(ANGLE_instanced_arraysImpl::FastDrawElementsInstancedANGLE));
+        v8::CFunction::Make(ANGLE_instanced_arraysImpl::FastDrawElementsInstancedANGLE));
 
 v8::CFunction ANGLE_instanced_arraysImpl::fast_vertex_attrib_divisor_angle_(
-        CANVAS_FAST_FUNCTION(ANGLE_instanced_arraysImpl::FastVertexAttribDivisorANGLE));
+        v8::CFunction::Make(ANGLE_instanced_arraysImpl::FastVertexAttribDivisorANGLE));
 
 
 ANGLE_instanced_arraysImpl *
 ANGLE_instanced_arraysImpl::GetPointer(const v8::Local<v8::Object> &object) {
-    auto ptr = canvas::GetAlignedPointer(object, 0);
+    auto ptr = object->GetAlignedPointerFromInternalField(0, ObjectWrapperImpl::kInternalFieldTag);
     if (ptr == nullptr) {
         return nullptr;
     }

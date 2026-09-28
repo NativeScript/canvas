@@ -22,17 +22,14 @@ export class SVGElement extends Element {
 
 	set className(value: unknown) {}
 
-	_appendChild(view, redraw = true) {
+	_appendChild(view) {
 		if (view?.nativeElement?.__domElement) {
 			this.nativeValue?.__domElement?.appendChild?.(view.nativeElement.__domElement);
-			if (redraw) {
-				(<any>this.nativeValue).__redraw();
-			}
 			(<any>this.nativeValue)?.addChild?.(view.nativeElement);
 			return view;
 		} else if (view instanceof Text) {
-			const dom = this.__domElement ?? this.nativeElement.__domElement;
-			const text = dom.ownerDocument?.createTextNode?.(view.data);
+			const dom = <any>(this.__domElement ?? this.nativeElement.__domElement);
+			const text = dom?.createTextNode?.(view.data);
 			view.__domNode = text;
 			dom?.appendChild?.(text);
 			return view;
@@ -45,19 +42,29 @@ export class SVGElement extends Element {
 	}
 
 	appendChild(view) {
-		return this._appendChild(view, true);
+		return this._appendChild(view);
 	}
 
 	append(views: Array<any>) {
 		for (const view of arguments) {
-			this._appendChild(view, false);
+			this._appendChild(view);
 		}
-		(<any>this.nativeValue).__redraw();
 	}
 
 	insertBefore(view) {}
 
-	removeChild(view) {}
+	removeChild(view) {
+		const child = view?.nativeElement?.__domElement ?? view?.__domNode;
+		if (!child) {
+			return null;
+		}
+		const parent = <any>(this.__domElement ?? this.nativeElement?.__domElement);
+		if (!parent?.removeChild?.(child)) {
+			return null;
+		}
+		(<any>this.nativeValue)?.removeChild?.(view.nativeElement);
+		return view;
+	}
 
 	setAttribute(key, value) {
 		const dom = this.__domElement ?? this.nativeElement.__domElement;
@@ -74,6 +81,18 @@ export class SVGElement extends Element {
 			return (dom.getAttribute?.(key) as never) ?? null;
 		}
 		return (super.getAttribute(key) as never) ?? null;
+	}
+
+	get textContent(): string {
+		const dom: any = this.__domElement ?? this.nativeElement?.__domElement;
+		return dom?.textContent ?? '';
+	}
+
+	set textContent(value: string) {
+		const dom: any = this.__domElement ?? this.nativeElement?.__domElement;
+		if (dom) {
+			dom.textContent = value;
+		}
 	}
 
 	removeAttribute(key) {

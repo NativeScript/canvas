@@ -417,6 +417,7 @@ SWIFT_CLASS_NAMED("CanvasHelpers")
 + (BOOL)flushWebGL:(int64_t)context SWIFT_WARN_UNUSED_RESULT;
 + (void)releaseWebGL:(int64_t)context;
 + (void)release2DContext:(int64_t)context;
++ (void)releaseWebGPU:(int64_t)context;
 + (int64_t)create2DContext:(NSCCanvas * _Nonnull)view :(int32_t)width :(int32_t)height :(BOOL)alpha :(float)density :(int32_t)fontColor :(float)ppi :(int32_t)direction :(int32_t)colorSpace SWIFT_WARN_UNUSED_RESULT;
 + (int64_t)create2DContextMetal:(NSCCanvas * _Nonnull)view :(BOOL)alpha :(float)density :(int32_t)fontColor :(float)ppi :(int32_t)direction :(int32_t)colorSpace SWIFT_WARN_UNUSED_RESULT;
 + (void)updateWebGLSurfaceWithView:(int64_t)view :(int32_t)width :(int32_t)height :(int64_t)context;
@@ -544,6 +545,32 @@ typedef SWIFT_ENUM_NAMED(NSInteger, NSCVideoFrameFormat, "NSCVideoFrameFormat", 
   NSCVideoFrameFormatBGRA = 7,
   NSCVideoFrameFormatBGRX = 8,
 };
+
+@class NSCVideoFrameTexture;
+/// Bridges <code>AVPlayerItemVideoOutput</code> frames to Metal textures for the WebGPU upload path.
+SWIFT_CLASS_NAMED("NSCVideoFrameBridge")
+@interface NSCVideoFrameBridge : NSObject
+/// Whether frames can be imported on this device at all. Resolve once: a nil frame
+/// from <code>currentFrame</code> means “no new frame”, not “unsupported”.
++ (BOOL)isSupportedForDevice:(NSInteger)deviceHandle SWIFT_WARN_UNUSED_RESULT;
+/// The current frame as a Metal texture, or nil if the decoder has not produced a new
+/// one since the last call — in which case there is nothing to upload.
++ (NSCVideoFrameTexture * _Nullable)currentFrameForPlayer:(AVPlayer * _Nonnull)player output:(AVPlayerItemVideoOutput * _Nonnull)output device:(NSInteger)deviceHandle SWIFT_WARN_UNUSED_RESULT;
+- (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
+@end
+
+/// A decoded video frame held as a Metal texture. The <code>MTLTexture</code> is only valid while
+/// this object is alive, so hold it until the GPU work has been submitted.
+SWIFT_CLASS_NAMED("NSCVideoFrameTexture")
+@interface NSCVideoFrameTexture : NSObject
+@property (nonatomic, readonly) NSInteger width;
+@property (nonatomic, readonly) NSInteger height;
+/// Borrowed <code>id<MTLTexture></code> as an integer, for handing to the Rust side. Valid only
+/// while this object is alive.
+@property (nonatomic, readonly) NSInteger texturePointer;
+- (nonnull instancetype)init SWIFT_UNAVAILABLE;
++ (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
+@end
 
 SWIFT_CLASS_NAMED("NSCWebGLRenderingContext")
 @interface NSCWebGLRenderingContext : NSObject

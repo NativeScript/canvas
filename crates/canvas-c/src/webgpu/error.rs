@@ -5,7 +5,7 @@ use std::os::raw::c_char;
 use std::sync::Arc;
 use std::fmt::Write;
 
-fn format_error(_context: &Arc<wgpu_core::global::Global>, err: &(impl Error + 'static)) -> String {
+fn format_error(err: &(impl Error + 'static)) -> String {
     let mut output = String::new();
     let mut level = 1;
 
@@ -35,7 +35,6 @@ fn format_error(_context: &Arc<wgpu_core::global::Global>, err: &(impl Error + '
 }
 
 pub(crate) fn handle_error(
-    _context: &Arc<wgpu_core::global::Global>,
     sink_mutex: &parking_lot::Mutex<crate::webgpu::gpu_device::ErrorSinkRaw>,
     cause: impl Error + Send + Sync + 'static,
     _label_key: &'static str,
@@ -69,12 +68,11 @@ pub(crate) fn handle_error(
 }
 
 pub(crate) fn handle_error_fatal(
-    _global: &Arc<wgpu_core::global::Global>,
     cause: impl Error + Send + Sync + 'static,
     operation: &'static str,
 ) {
     // Print a detailed validation error tree to help debugging.
-    let formatted = format_error(_global, &cause);
+    let formatted = format_error(&cause);
     let error = cause;
 
     #[cfg(target_os = "android")]

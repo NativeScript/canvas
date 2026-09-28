@@ -81,6 +81,7 @@ static NSArray<AVAssetTrack *> *NSCTracksWithMediaType(AVAsset *asset, AVMediaTy
     _currentSrc = src;
     _readyState = NSCPlayerReadyStateHaveNothing;
     self.loadedDataFired = NO;
+    self.firstFrameReady = NO;
     
     if (!src) return;
 
@@ -191,6 +192,8 @@ static NSArray<AVAssetTrack *> *NSCTracksWithMediaType(AVAsset *asset, AVMediaTy
             self->_videoSize = [NSCTracksWithMediaType(self.asset, AVMediaTypeVideo) firstObject].naturalSize;
             [self.player.currentItem addOutput:self.assetOutput];
             self.readyState = NSCPlayerReadyStateHaveCurrentData;
+            // The output is only attached now, so check again.
+            [self _scheduleFirstFrameCheck];
         }
     }
 }
@@ -202,25 +205,60 @@ static NSArray<AVAssetTrack *> *NSCTracksWithMediaType(AVAsset *asset, AVMediaTy
 - (void)_checkForFirstFrameWithAttempts:(int)attemptsRemaining delayMs:(int)delayMs {
     if (self.loadedDataFired || attemptsRemaining <= 0) return;
 
-    CMTime current = [self.player currentTime];
-    CVPixelBufferRef buffer = NULL;
-    if (self.assetOutput) {
-        buffer = [self.assetOutput copyPixelBufferForItemTime:current itemTimeForDisplay:NULL];
-    }
-
-    if (buffer != NULL) {
-        CFRelease(buffer);
-        self.loadedDataFired = YES;
-        dispatch_async(dispatch_get_main_queue(), ^{
-            if ([self.listener respondsToSelector:@selector(onLoadedData)]) {
-                [self.listener onLoadedData];
-            }
-        });
+    if ([self _hasDecodedFrame]) {
+        [self _fireLoadedData];
         return;
     }
 
+    __weak typeof(self) weakSelf = self;
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayMs * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
-        [self _checkForFirstFrameWithAttempts:attemptsRemaining - 1 delayMs:delayMs];
+        [weakSelf _checkForFirstFrameWithAttempts:attemptsRemaining - 1 delayMs:delayMs];
+    });
+}
+
+/// Non-consuming: `copyPixelBufferForItemTime:` would steal the first frame from whoever draws it.
+- (BOOL)_hasDecodedFrame {
+    if (self.firstFrameReady) return YES;
+    if (!self.assetOutput) return NO;
+    if ([self.assetOutput hasNewPixelBufferForItemTime:self.player.currentTime]) {
+        self.firstFrameReady = YES;
+    }
+    return self.firstFrameReady;
+}
+
+- (void)_fireLoadedData {
+    if (self.loadedDataFired) return;
+    self.loadedDataFired = YES;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if ([self.listener respondsToSelector:@selector(onLoadedData)]) {
+            [self.listener onLoadedData];
+        }
+    });
+}
+
+/// Reports `playing` (resolving `play()`) once a frame is decoded, as on the web. Audio-only
+/// reports at once; after ~10 s it reports anyway so `play()` cannot hang.
+- (void)_notifyPlayingWhenFrameReady:(int)attemptsRemaining generation:(NSUInteger)generation {
+    if (generation != self.frameWaitGeneration) return;
+    if (self.state != NSCPlayerStatePlaying) {
+        self.waitingForFirstFrame = NO;
+        return;
+    }
+    self.waitingForFirstFrame = YES;
+
+    BOOL audioOnly = self.currentItem != nil && CGSizeEqualToSize(self.videoSize, CGSizeZero);
+    if ([self _hasDecodedFrame] || audioOnly || attemptsRemaining <= 0) {
+        self.waitingForFirstFrame = NO;
+        if (self.firstFrameReady) {
+            [self _fireLoadedData];
+        }
+        [self.listener onStateChange:self.state];
+        return;
+    }
+
+    __weak typeof(self) weakSelf = self;
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(16 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
+        [weakSelf _notifyPlayingWhenFrameReady:attemptsRemaining - 1 generation:generation];
     });
 }
 
@@ -295,11 +333,27 @@ static NSArray<AVAssetTrack *> *NSCTracksWithMediaType(AVAsset *asset, AVMediaTy
 }
 
 - (void)play {
-    if (self.state == NSCPlayerStatePlaying) return;
+    if (self.state == NSCPlayerStatePlaying) {
+        // Autoplay started but has not reported playing yet.
+        if (!self.firstFrameReady && !self.waitingForFirstFrame) {
+            [self _startWaitingForFrame];
+        }
+        return;
+    }
     [self addTimeObserver];
     [self.player play];
     self.state = NSCPlayerStatePlaying;
-    [self.listener onStateChange:self.state];
+    [self _startWaitingForFrame];
+}
+
+/// Deferred a turn, like the web's queued `play()` resolution, so an immediate `pause()` wins.
+- (void)_startWaitingForFrame {
+    NSUInteger generation = ++self.frameWaitGeneration;
+    self.waitingForFirstFrame = YES;
+    __weak typeof(self) weakSelf = self;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [weakSelf _notifyPlayingWhenFrameReady:600 generation:generation];
+    });
 }
 
 - (void)addTimeObserver {

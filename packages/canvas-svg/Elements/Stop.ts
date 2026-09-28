@@ -1,11 +1,11 @@
 import { SVGItem } from './SVGItem';
-import { DOMParser } from '@xmldom/xmldom';
+import { createSvgElement } from '../NativeNode';
 
 export class Stop extends SVGItem {
 	offset: any;
 
 	constructor() {
 		super();
-		this.__domElement = new DOMParser().parseFromString('<stop></stop>', 'image/svg+xml').documentElement;
+		this.__domElement = createSvgElement('stop');
 	}
 }

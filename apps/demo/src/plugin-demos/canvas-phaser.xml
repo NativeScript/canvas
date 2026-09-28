@@ -4,6 +4,6 @@
         </ActionBar>
     </Page.actionBar>
     <StackLayout>
-      <canvas:Canvas id="canvas" width="100%" height="100%" ready="{{ canvasLoaded }}"/>
+      <canvas:Canvas id="canvas" width="100%" height="100%" loaded="{{ canvasLoaded }}"/>
     </StackLayout>
 </Page>

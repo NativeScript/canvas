@@ -1,0 +1,19 @@
+{
+	"name": "@nativescript/audio-context-napi",
+	"private": true,
+	"version": "0.1.0",
+	"description": "Node-API build of the audio-context native module (Web Audio on the web-audio-api crate).",
+	"napi": {
+		"binaryName": "audiocontext",
+		"targets": [
+			"x86_64-pc-windows-msvc",
+			"aarch64-pc-windows-msvc"
+		]
+	},
+	"scripts": {
+		"test": "node --expose-gc --test \"__test__/*.test.mjs\""
+	},
+	"engines": {
+		"node": ">=20"
+	}
+}

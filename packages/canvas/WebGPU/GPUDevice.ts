@@ -72,13 +72,8 @@ export class EventTarget {
 		}
 		let emitter: Observable;
 
-		if (__ANDROID__) {
-			emitter = this._emitter?.get?.();
-		}
-
-		if (__APPLE__) {
-			emitter = this._emitter?.deref?.();
-		}
+		// WeakRef: deref() (V8/JSC), get() (the Android runtime's).
+		emitter = this._emitter?.deref?.() ?? this._emitter?.get?.();
 		if (emitter !== null && emitter !== undefined) {
 			emitter.addEventListener(event, handler, this);
 		}
@@ -87,13 +82,8 @@ export class EventTarget {
 	removeEventListener(event: string, handler?: any) {
 		let emitter: Observable;
 
-		if (__ANDROID__) {
-			emitter = this._emitter?.get?.();
-		}
-
-		if (__APPLE__) {
-			emitter = this._emitter?.deref?.();
-		}
+		// WeakRef: deref() (V8/JSC), get() (the Android runtime's).
+		emitter = this._emitter?.deref?.() ?? this._emitter?.get?.();
 
 		if (emitter !== null && emitter !== undefined) {
 			emitter.removeEventListener(event, handler);
@@ -103,13 +93,8 @@ export class EventTarget {
 	dispatchEvent(event) {
 		let emitter: Observable;
 
-		if (__ANDROID__) {
-			emitter = this._emitter?.get?.();
-		}
-
-		if (__APPLE__) {
-			emitter = this._emitter?.deref?.();
-		}
+		// WeakRef: deref() (V8/JSC), get() (the Android runtime's).
+		emitter = this._emitter?.deref?.() ?? this._emitter?.get?.();
 
 		if (emitter !== null && emitter !== undefined) {
 			emitter.notify({ ...event, eventName: event.type, object: emitter });
@@ -136,11 +121,7 @@ export class GPUDevice extends EventTarget {
 
 	private _uncapturederror(type: number, message: string) {
 		let emitter: Observable;
-		if (__ANDROID__) {
-			emitter = this._emitter?.get();
-		} else {
-			emitter = this._emitter?.deref();
-		}
+		emitter = this._emitter?.deref?.() ?? this._emitter?.get?.();
 
 		let error;
 
@@ -403,7 +384,93 @@ export class GPUDevice extends EventTarget {
 	get queue() {
 		if (!this._queue) {
 			this._queue = GPUQueue.fromNative(this[native_].queue);
+			// The queue needs to reach back here for the zero-copy video upload path,
+			// which has to build its texture cache on this device specifically.
+			(this._queue as any)._device = this;
 		}
 		return this._queue;
+	}
+
+	// Last import per video, reused until a new frame is decoded.
+	private _externalTextures = new WeakMap<object, GPUExternalTexture>();
+
+	importExternalTexture(descriptor: { source: any; label?: string; colorSpace?: 'srgb' | 'display-p3' }): GPUExternalTexture {
+		const source = descriptor?.source;
+		// The polyfill's <video> element wraps a canvas-media Video; accept either.
+		const video = source?._video ?? source;
+		if (!video || typeof video.getGPUFrameTexture !== 'function') {
+			throw new TypeError(`Failed to execute 'importExternalTexture' on 'GPUDevice': source must be a video element.`);
+		}
+
+		const device = this.__frameDevice;
+		if (!device || !video.supportsGPUFrames?.(device)) {
+			const error: any = new Error(`Failed to execute 'importExternalTexture' on 'GPUDevice': external textures are not supported on this platform yet.`);
+			error.name = 'NotSupportedError';
+			throw error;
+		}
+
+		const frame = video.getGPUFrameTexture(device);
+		if (!frame) {
+			// No new frame: the previous import is still current.
+			const current = this._externalTextures.get(video);
+			if (current) {
+				return current;
+			}
+			const error: any = new Error(`Failed to execute 'importExternalTexture' on 'GPUDevice': the video has no frame available yet.`);
+			error.name = 'InvalidStateError';
+			throw error;
+		}
+
+		const texture = GPUExternalTexture.fromNative(
+			this.native.importExternalTexture({
+				label: descriptor.label,
+				nativeTexture: frame.texturePointer,
+				width: frame.width,
+				height: frame.height,
+			}),
+			frame,
+		);
+
+		if (!texture) {
+			const error: any = new Error(`Failed to execute 'importExternalTexture' on 'GPUDevice': the frame could not be imported.`);
+			error.name = 'OperationError';
+			throw error;
+		}
+
+		this._externalTextures.set(video, texture);
+		return texture;
+	}
+
+	private _metalDevice: number | undefined;
+	/** For videos' GPU frames: the `MTLDevice` on Apple, the adapter LUID on Windows (frames are shared per adapter); else 0. */
+	get __frameDevice(): number {
+		return this.__metalDevice || this.__adapterLuid;
+	}
+
+	private _adapterLuid: number | undefined;
+	get __adapterLuid(): number {
+		if (this._adapterLuid === undefined) {
+			try {
+				this._adapterLuid = this[native_].__getAdapterLuid?.() ?? 0;
+			} catch (e) {
+				this._adapterLuid = 0;
+			}
+		}
+		return this._adapterLuid;
+	}
+
+	/**
+	 * The `MTLDevice` wgpu renders with, as a number, or 0 where there is none (non-Apple
+	 * platforms, or an older native build without the binding).
+	 */
+	get __metalDevice(): number {
+		if (this._metalDevice === undefined) {
+			try {
+				this._metalDevice = this[native_].__getMetalDevicePointer?.() ?? 0;
+			} catch (e) {
+				this._metalDevice = 0;
+			}
+		}
+		return this._metalDevice;
 	}
 }

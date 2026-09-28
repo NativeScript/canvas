@@ -37,6 +37,7 @@ use canvas_core::context_attributes::ContextAttributes;
 use canvas_core::image_asset::ImageAsset;
 use canvas_webgl::prelude::{WebGLResult, WebGLState};
 
+mod webgpu_smoke;
 mod webgpu_three_cube;
 use canvas_webgl::webgl::{
     canvas_native_webgl_attach_shader
@@ -2031,16 +2032,21 @@ fn main() {
                         );
                         */
 
-                        // window.request_redraw();
-                        //
-                        // ctx_2d.get_context_mut().flush();
-                        //
-                        // gl_state.swap_buffers();
+                        // Kick off a continuous redraw loop so the webgpu demo
+                        // renders frames instead of drawing once per resize.
+                        window.request_redraw();
                     }
                     WindowEvent::CloseRequested => {
                         //control_flow.set_exit();
                     }
                     WindowEvent::RedrawRequested => {
+                        match window.raw_window_handle().unwrap() {
+                            RawWindowHandle::AppKit(handle) => unsafe {
+                                webgpu_three_cube::render_webgpu_three_cube(data, handle)
+                            },
+                            _ => {}
+                        }
+                        window.request_redraw();
                         // if !done {
                         /*  window.request_redraw();
 

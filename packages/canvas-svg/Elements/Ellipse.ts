@@ -13,7 +13,7 @@ export const rxProperty = new Property<Ellipse, any>({
 export const ryProperty = new Property<Ellipse, any>({
 	name: 'ry',
 });
-import { DOMParser } from '@xmldom/xmldom';
+import { createSvgElement } from '../NativeNode';
 
 export class Ellipse extends SVGItem {
 	cx: any;
@@ -23,7 +23,7 @@ export class Ellipse extends SVGItem {
 
 	constructor() {
 		super();
-		this.__domElement = new DOMParser().parseFromString('<ellipse></ellipse>', 'image/svg+xml').documentElement;
+		this.__domElement = createSvgElement('ellipse');
 	}
 }
 

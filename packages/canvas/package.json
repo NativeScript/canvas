@@ -1,13 +1,14 @@
 {
 	"name": "@nativescript/canvas",
-	"version": "2.1.18",
+	"version": "3.0.0-alpha.16",
 	"description": "DOM Canvas API for NativeScript",
 	"main": "index",
 	"typings": "index.d.ts",
 	"nativescript": {
 		"platforms": {
 			"ios": "7.0.0",
-			"android": "7.0.0"
+			"android": "7.0.0",
+			"windows": "9.1.0"
 		}
 	},
 	"repository": {
@@ -19,7 +20,8 @@
 		"JavaScript",
 		"TypeScript",
 		"iOS",
-		"Android"
+		"Android",
+		"Windows"
 	],
 	"author": {
 		"name": "NativeScript",

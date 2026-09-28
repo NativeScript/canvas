@@ -5,6 +5,7 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 #include "Common.h"
 #include "OneByteStringResource.h"
 #include "v8-fast-api-calls.h"
@@ -112,6 +113,22 @@ ConvertFromV8String(v8::Isolate *isolate, const v8::Local<v8::Value> &value) {
     return {*result};
 }
 
+// Copies a V8 fast-API one-byte string into a NUL-terminated scratch buffer.
+// `v8::FastOneByteString` (v8-fast-api-calls.h) is only ever handed to a fast
+// method when the JS argument is actually stored one-byte/Latin1-internally
+// (V8's optimizing compiler checks this before calling in); anything else
+// (two-byte strings, non-strings) falls back to the registered slow
+// v8::FunctionCallback automatically, so callers don't need to re-validate
+// the type here. `str.data` is not itself NUL-terminated, and downstream FFI
+// calls generally expect a C string, hence the copy.
+inline static const char *
+CopyFastOneByteStringToScratch(const v8::FastOneByteString &str, std::vector<char> &scratch) {
+    scratch.resize(static_cast<size_t>(str.length) + 1);
+    std::memcpy(scratch.data(), str.data, str.length);
+    scratch[str.length] = '\0';
+    return scratch.data();
+}
+
 inline static std::string_view
 ConvertFromV8StringView(v8::Isolate *isolate, const v8::Local<v8::Value> &value) {
     if (value.IsEmpty()) {
@@ -171,11 +188,7 @@ static void SetFastMethod(v8::Isolate *isolate,
                                       0,
                                       v8::ConstructorBehavior::kThrow,
                                       v8::SideEffectType::kHasSideEffect,
-#if V8_MAJOR_VERSION >= 14
-                                      nullptr);
-#else
                                       c_function);
-#endif
     // kInternalized strings are created in the old space.
     const v8::NewStringType type = v8::NewStringType::kInternalized;
     v8::Local<v8::String> name_string =
@@ -184,20 +197,41 @@ static void SetFastMethod(v8::Isolate *isolate,
 }
 
 
-#define NUM(a) (sizeof(a) / sizeof(*a))
-
+// Takes the overload set by reference so its extent is deduced. The previous
+// signature took `const v8::CFunction *`, and NUM(&method_overloads) measured
+// a pointer-to-pointer rather than the array -- it evaluated to 1 for every
+// call site, so only the first overload of each set was ever registered with
+// V8. That silently dropped 23 of the 41 declared overloads.
+//
+// Registering the full sets then exposed a second bug the first one had been
+// masking: many sets held two overloads of the same arity (bindTexture(target,
+// tex) vs bindTexture(target, null), fill(path) vs fill(rule), ...). V8 has no
+// way to choose between those, so those sets are now slow-callback only and
+// the loop below flags any that come back.
+template <size_t N>
 static void SetFastMethodWithOverLoads(v8::Isolate *isolate,
                                        v8::Local<v8::Template> that,
                                        const char *name,
                                        v8::FunctionCallback slow_callback,
-                                       const v8::CFunction *method_overloads,
+                                       const v8::CFunction (&method_overloads)[N],
                                        v8::Local<v8::Value> data) {
+    // V8 dispatches an overload set on argument count alone, so two entries of
+    // the same arity are unresolvable -- it traps inside
+    // NewWithCFunctionOverloads with no unwindable stack, which makes the
+    // offender very hard to find. Name it first. (Type-based overloads belong
+    // on the slow callback, which can inspect the argument.)
+    for (size_t i = 0; i < N; i++) {
+        for (size_t j = i + 1; j < N; j++) {
+            if (method_overloads[i].ArgumentCount() ==
+                method_overloads[j].ArgumentCount()) {
+                LogToConsole(std::string("fast-API overload set for '") + name +
+                             "' has two entries of arity " +
+                             std::to_string(method_overloads[i].ArgumentCount()) +
+                             "; V8 resolves overloads by arity alone");
+            }
+        }
+    }
 
-#if V8_MAJOR_VERSION >= 14
-    auto t = v8::FunctionTemplate::New(isolate, slow_callback, data,
-        v8::Local<v8::Signature>(), 0, v8::ConstructorBehavior::kThrow);
-#else
-    auto len = NUM(&method_overloads);
     v8::Local<v8::FunctionTemplate> t =
             v8::FunctionTemplate::NewWithCFunctionOverloads(isolate,
                                                             slow_callback,
@@ -206,8 +240,7 @@ static void SetFastMethodWithOverLoads(v8::Isolate *isolate,
                                                             0,
                                                             v8::ConstructorBehavior::kThrow,
                                                             v8::SideEffectType::kHasSideEffect,
-                                                            {method_overloads, len});
-#endif
+                                                            {method_overloads, N});
     // kInternalized strings are created in the old space.
     const v8::NewStringType type = v8::NewStringType::kInternalized;
     v8::Local<v8::String> name_string =
@@ -278,14 +311,51 @@ static void SetFastMethodNoSideEffect(v8::Isolate *isolate,
                                       0,
                                       v8::ConstructorBehavior::kThrow,
                                       v8::SideEffectType::kHasNoSideEffect,
-#if V8_MAJOR_VERSION >= 14
-                                      nullptr);
-#else
                                       c_function);
-#endif
     // kInternalized strings are created in the old space.
     const v8::NewStringType type = v8::NewStringType::kInternalized;
     v8::Local<v8::String> name_string =
             v8::String::NewFromUtf8(isolate, name, type).ToLocalChecked();
     that->Set(name_string, t);
+}
+
+/// Bytes of an ArrayBuffer or of any view over one (Uint8Array, Uint8ClampedArray, ...).
+/// Views carry a byte offset, so honour it.
+struct BufferBytes {
+    uint8_t *data = nullptr;
+    size_t size = 0;
+    /// Keeps the memory alive for callers that hand `data` to another thread.
+    std::shared_ptr<v8::BackingStore> store;
+
+    explicit operator bool() const { return data != nullptr; }
+};
+
+inline static BufferBytes GetBufferBytes(const v8::Local<v8::Value> &value) {
+    if (value.IsEmpty()) {
+        return {};
+    }
+
+    v8::Local<v8::ArrayBuffer> buffer;
+    size_t offset = 0;
+    size_t length = 0;
+
+    if (value->IsArrayBuffer()) {
+        buffer = value.As<v8::ArrayBuffer>();
+        length = buffer->ByteLength();
+    } else if (value->IsArrayBufferView()) {
+        auto view = value.As<v8::ArrayBufferView>();
+        buffer = view->Buffer();
+        offset = view->ByteOffset();
+        length = view->ByteLength();
+    } else {
+        return {};
+    }
+
+    auto store = buffer->GetBackingStore();
+    auto base = (uint8_t *) store->Data();
+    if (base == nullptr) {
+        return {};
+    }
+
+    return {base + offset, length, std::move(store)};
 }

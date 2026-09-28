@@ -13,7 +13,7 @@ export const x2Property = new Property<Line, any>({
 export const y2Property = new Property<Line, any>({
 	name: 'y2',
 });
-import { DOMParser } from '@xmldom/xmldom';
+import { createSvgElement } from '../NativeNode';
 
 export class Line extends SVGItem {
 	x1: any;
@@ -23,7 +23,7 @@ export class Line extends SVGItem {
 
 	constructor() {
 		super();
-		this.__domElement = new DOMParser().parseFromString('<line></line>', 'image/svg+xml').documentElement;
+		this.__domElement = createSvgElement('line');
 	}
 }
 

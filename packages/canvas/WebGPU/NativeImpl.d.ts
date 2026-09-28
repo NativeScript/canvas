@@ -280,7 +280,8 @@ export interface GPURenderPassEncoderImpl {
 	setPipeline(pipeline: GPURenderPipelineImpl): void;
 	setBindGroup(index: number, bindGroup: GPUBindGroupImpl | null, dynamicOffsets?: number[]): void;
 	setVertexBuffer(slot: number, buffer: GPUBufferImpl | null, offset?: number, size?: number): void;
-	setIndexBuffer(buffer: GPUBufferImpl, indexFormat: 'uint16' | 'uint32', offset?: number, size?: number): void;
+	// 0 = uint16, 1 = uint32; the string form is still accepted by the slow path.
+	setIndexBuffer(buffer: GPUBufferImpl, indexFormat: number | 'uint16' | 'uint32', offset?: number, size?: number): void;
 	setViewport(x: number, y: number, width: number, height: number, minDepth: number, maxDepth: number): void;
 	setScissorRect(x: number, y: number, width: number, height: number): void;
 	setBlendConstant(color: GPUColorImpl): void;
@@ -338,7 +339,8 @@ export interface GPURenderBundleEncoderImpl {
 	setPipeline(pipeline: GPURenderPipelineImpl): void;
 	setBindGroup(index: number, bindGroup: GPUBindGroupImpl | null, dynamicOffsets?: number[]): void;
 	setVertexBuffer(slot: number, buffer: GPUBufferImpl | null, offset?: number, size?: number): void;
-	setIndexBuffer(buffer: GPUBufferImpl, indexFormat: 'uint16' | 'uint32', offset?: number, size?: number): void;
+	// 0 = uint16, 1 = uint32; the string form is still accepted by the slow path.
+	setIndexBuffer(buffer: GPUBufferImpl, indexFormat: number | 'uint16' | 'uint32', offset?: number, size?: number): void;
 	draw(vertexCount: number, instanceCount?: number, firstVertex?: number, firstInstance?: number): void;
 	drawIndexed(indexCount: number, instanceCount?: number, firstIndex?: number, baseVertex?: number, firstInstance?: number): void;
 	drawIndirect(indirectBuffer: GPUBufferImpl, indirectOffset: number): void;

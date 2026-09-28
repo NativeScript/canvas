@@ -1,6 +1,50 @@
 #!/bin/bash
-cd ../../packages/canvas/src-native/canvas-ios
 set -e
+cd "$(dirname "$0")/../.."
+REPO_ROOT="$(pwd)"
+
+# xcodebuild only links the Rust static libs; it does not build them. The
+# in-project pre-build.sh phase builds a single target per run, so a Release
+# simulator build (arm64 + x86_64) links a slice that phase never produced and
+# fails with a bare "ld: library 'canvasnative' not found". Check up front and
+# name the make target instead.
+# build.sh only adds the tvOS slices when a *usable* tvOS destination exists
+# (the platform is listed even when not installed, with an "error:" note), so
+# requiring those two triples unconditionally would block a build that never
+# links them. Apply the same condition here.
+TVOS_ENTRIES="aarch64-apple-tvos:tvos aarch64-apple-tvos-sim:tvos"
+if ! xcodebuild -showdestinations \
+       -project packages/canvas/src-native/canvas-ios/CanvasNative.xcodeproj \
+       -scheme CanvasNative 2>/dev/null \
+     | grep "platform:tvOS" | grep -qv "error:"; then
+  TVOS_ENTRIES=""
+fi
+
+missing=""
+for entry in \
+  $TVOS_ENTRIES \
+  "x86_64-apple-ios:ios" \
+  "aarch64-apple-ios:ios" \
+  "aarch64-apple-ios-sim:ios" \
+  "aarch64-apple-visionos:visionos" \
+  "aarch64-apple-visionos-sim:visionos"; do
+  triple="${entry%%:*}"
+  target="${entry##*:}"
+  if [ ! -f "$REPO_ROOT/target/$triple/release/libcanvasnative.a" ]; then
+    missing="$missing\n  $triple   (run: make $target)"
+  fi
+done
+
+if [ -n "$missing" ]; then
+  echo "error: the Rust static libraries this xcframework links are missing:" >&2
+  printf "%b\n" "$missing" >&2
+  echo "" >&2
+  echo "Build them first, as .github/workflows/build-native.yml does:" >&2
+  echo "  make ios && make visionos && make tvos" >&2
+  exit 1
+fi
+
+cd packages/canvas/src-native/canvas-ios
 
 
 # Replace (don't merge into) the existing framework so stale slices can't linger.

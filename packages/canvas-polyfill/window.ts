@@ -6,12 +6,13 @@ import { HTMLVideoElement } from './DOM/HTMLVideoElement';
 import { HTMLAudioElement } from './DOM/HTMLAudioElement';
 import { XMLDocument } from './DOM/XMLDocument';
 import { DOMPointReadOnly, DOMPoint } from './DOM/DOMPointReadOnly';
-import { Device, fromObject, Screen, View } from '@nativescript/core';
+import { Device, fromObject, View } from '@nativescript/core';
 import { AbortController, AbortSignal } from '@nativescript/core/abortcontroller';
 import { CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext, ImageData, ImageBitmap } from '@nativescript/canvas';
 import { HTMLCollection } from './DOM/HTMLCollection';
 import { HTMLUnknownElement } from './DOM/HTMLUnknownElement';
 import { Navigator } from './navigator';
+import { hookGamepadListeners } from './gamepad';
 (global as any).CANVAS_RENDERER = 'true';
 (global as any).WEBGL_RENDERER = 'true';
 (global as any).window = (global as any).window || {
@@ -39,7 +40,7 @@ import { Navigator } from './navigator';
 (global as any).window.HTMLUnknownElement = (global as any).HTMLUnknownElement = (global as any).HTMLUnknownElement || HTMLUnknownElement;
 
 // svg
-import { SVGMarkerElement, SVGAnimatedTransformList, SVGUseElement, SVGStopElement, SVGRadialGradientElement, SVGLinearGradientElement, SVGGradientElement, SVGTextElement, SVGPolygonElement, SVGEllipseElement, SVGImageElement, SVGAnimatedRect, SVGPointList, SVGTransformList, SVGTransform, SVGRect, SVGNumber, SVGMatrix, SVGPoint, SVGAngle, SVGCircleElement, SVGElement, SVGSVGElement, SVGGraphicsElement, SVGMaskElement, SVGLineElement, SVGLength, SVGAnimatedLength, SVGPolylineElement, SVGGElement, SVGPathElement, SVGRectElement, SVGAnimatedString } from './DOM/svg';
+import { SVGMarkerElement, SVGAnimatedTransformList, SVGUseElement, SVGStopElement, SVGRadialGradientElement, SVGLinearGradientElement, SVGGradientElement, SVGTextElement, SVGTSpanElement, SVGPolygonElement, SVGEllipseElement, SVGImageElement, SVGAnimatedRect, SVGPointList, SVGTransformList, SVGTransform, SVGRect, SVGNumber, SVGMatrix, SVGPoint, SVGAngle, SVGCircleElement, SVGElement, SVGSVGElement, SVGGraphicsElement, SVGMaskElement, SVGLineElement, SVGLength, SVGAnimatedLength, SVGPolylineElement, SVGGElement, SVGPathElement, SVGRectElement, SVGAnimatedString } from './DOM/svg';
 
 (global as any).window.SVGCircleElement = (global as any).SVGCircleElement = (global as any).SVGCircleElement || SVGCircleElement;
 (global as any).window.SVGSVGElement = (global as any).SVGSVGElement = (global as any).SVGSVGElement || SVGSVGElement;
@@ -69,6 +70,7 @@ import { SVGMarkerElement, SVGAnimatedTransformList, SVGUseElement, SVGStopEleme
 (global as any).window.SVGImageElement = (global as any).SVGImageElement = (global as any).SVGImageElement || SVGImageElement;
 (global as any).window.SVGEllipseElement = (global as any).SVGEllipseElement = (global as any).SVGEllipseElement || SVGEllipseElement;
 (global as any).window.SVGTextElement = (global as any).SVGTextElement = (global as any).SVGTextElement || SVGTextElement;
+(global as any).window.SVGTSpanElement = (global as any).SVGTSpanElement = (global as any).SVGTSpanElement || SVGTSpanElement;
 
 (global as any).window.SVGGradientElement = (global as any).SVGGradientElement = (global as any).SVGGradientElement || SVGGradientElement;
 (global as any).window.SVGRadialGradientElement = (global as any).SVGRadialGradientElement = (global as any).SVGRadialGradientElement || SVGRadialGradientElement;
@@ -144,6 +146,7 @@ for (const method of ['addEventListener', 'removeEventListener']) {
 	if (typeof host.window[method] !== 'function') host.window[method] = host[method].bind(host);
 	if (typeof host[method] !== 'function') host[method] = host.window[method].bind(host.window);
 }
+hookGamepadListeners();
 
 import { DOMParser as Parser } from '@xmldom/xmldom';
 
@@ -219,13 +222,7 @@ const matchMediaStub = (query?: string) => ({
 });
 if (typeof (global as any).window.matchMedia !== 'function') (global as any).window.matchMedia = matchMediaStub;
 if (typeof (global as any).matchMedia !== 'function') (global as any).matchMedia = matchMediaStub;
-try {
-	const dpr = Screen.mainScreen.scale || 1;
-	(global as any).window.devicePixelRatio = dpr;
-	if (typeof (global as any).devicePixelRatio === 'undefined') (global as any).devicePixelRatio = dpr;
-} catch {
-	(global as any).window.devicePixelRatio = (global as any).window.devicePixelRatio || 1;
-}
+// devicePixelRatio: resize.ts (read live).
 if ((global as any).window.parent == null) (global as any).window.parent = (global as any).window;
 if ((global as any).document) {
 	const docEl = (global as any).document.documentElement;

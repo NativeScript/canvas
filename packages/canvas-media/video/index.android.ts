@@ -216,6 +216,52 @@ export class Video extends VideoBase {
 		}
 	}
 
+	private _supportsGPUFrames: boolean | undefined;
+
+	/**
+	 * Whether frames can be handed to WebGPU as imported textures. A false is permanent;
+	 * a null from `getGPUFrameTexture` only means no new frame. The device handle is
+	 * unused here, and present only to match the Apple signature.
+	 */
+	supportsGPUFrames(device: number): boolean {
+		if (this._supportsGPUFrames === undefined) {
+			try {
+				this._supportsGPUFrames = !!this._instance?.supportsGPUFrames();
+			} catch (e) {
+				this._supportsGPUFrames = false;
+			}
+		}
+		return this._supportsGPUFrames;
+	}
+
+	/**
+	 * The current frame as a HardwareBuffer-backed texture, or null when the decoder has
+	 * no new one. The caller must `close()` it once the upload is issued, or playback
+	 * stalls when the reader runs out of images.
+	 */
+	getGPUFrameTexture(device: number): any {
+		if (!this._instance) {
+			return null;
+		}
+		try {
+			const frame = this._instance.getCurrentGPUFrame();
+			if (!frame) {
+				return null;
+			}
+			// Explicit getters: the JavaBean shorthand is not dependable across the
+			// bridge, and a silent undefined reads downstream as "no GPU frame".
+			return {
+				texturePointer: frame.getTexturePointer(),
+				width: frame.getWidth(),
+				height: frame.getHeight(),
+				close: () => frame.close(),
+			};
+		} catch (e) {
+			console.error('getGPUFrameTexture error:', e);
+			return null;
+		}
+	}
+
 	getVideoFrameData(): any {
 		if (!this._instance) {
 			return null;

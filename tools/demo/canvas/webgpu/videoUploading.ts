@@ -1,6 +1,5 @@
 import { Canvas, GPUDevice } from '@nativescript/canvas';
 import { knownFolders, File } from '@nativescript/core';
-//import { GUI } from 'dat.gui';
 
 export async function run(canvas: Canvas) {
 	const appPath = knownFolders.currentApp().path;
@@ -57,18 +56,13 @@ export async function run(canvas: Canvas) {
 		minFilter: 'linear',
 	});
 
-	const params = new URLSearchParams(window.location.search);
+	// importExternalTexture takes the video element; VideoFrame sources are not supported.
 	const settings = {
 		requestFrame: 'requestAnimationFrame',
-		videoSource: params.get('videoSource') || 'videoElement',
 	};
 
-	// const gui = new GUI();
-	// gui.add(settings, 'videoSource', ['videoElement', 'videoFrame']);
-	// gui.add(settings, 'requestFrame', ['requestAnimationFrame', 'requestVideoFrameCallback']);
-
 	function frame() {
-		const externalTextureSource = settings.videoSource === 'videoFrame' ? new VideoFrame(video) : video;
+		const externalTexture = device.importExternalTexture({ source: video });
 
 		const uniformBindGroup = device.createBindGroup({
 			layout: pipeline.getBindGroupLayout(0),
@@ -79,9 +73,7 @@ export async function run(canvas: Canvas) {
 				},
 				{
 					binding: 2,
-					resource: device.importExternalTexture({
-						source: externalTextureSource,
-					}),
+					resource: externalTexture,
 				},
 			],
 		});
@@ -106,10 +98,6 @@ export async function run(canvas: Canvas) {
 		passEncoder.draw(6);
 		passEncoder.end();
 		device.queue.submit([commandEncoder.finish()]);
-
-		if (externalTextureSource instanceof VideoFrame) {
-			externalTextureSource.close();
-		}
 
 		if (settings.requestFrame == 'requestVideoFrameCallback') {
 			video.requestVideoFrameCallback(frame);

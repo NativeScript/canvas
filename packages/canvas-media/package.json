@@ -1,13 +1,14 @@
 {
 	"name": "@nativescript/canvas-media",
-	"version": "2.1.18",
+	"version": "3.0.0-alpha.16",
 	"description": "Canvas media",
 	"main": "index",
 	"typings": "index.d.ts",
 	"nativescript": {
 		"platforms": {
 			"ios": "6.0.0",
-			"android": "6.0.0"
+			"android": "6.0.0",
+			"windows": "9.1.0"
 		}
 	},
 	"repository": {
@@ -19,7 +20,8 @@
 		"JavaScript",
 		"TypeScript",
 		"iOS",
-		"Android"
+		"Android",
+		"Windows"
 	],
 	"author": {
 		"name": "NativeScript",

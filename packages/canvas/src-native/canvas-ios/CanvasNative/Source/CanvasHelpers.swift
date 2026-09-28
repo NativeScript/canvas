@@ -196,6 +196,10 @@ public class CanvasHelpers: NSObject {
     public static func release2DContext(_ context: Int64) {
         canvas_native_ios_release_2d_context(context)
     }
+
+    public static func releaseWebGPU(_ context: Int64) {
+        canvas_native_webgpu_context_release(OpaquePointer(bitPattern: Int(context)))
+    }
     
     public static func create2DContext(
                         _ view: NSCCanvas,

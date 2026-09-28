@@ -1,6 +1,8 @@
 use std::ffi::CStr;
 use std::os::raw::c_char;
 
+pub use canvas_svg_c::*;
+
 #[unsafe(no_mangle)]
 pub extern "C" fn canvas_native_svg_draw_from_bytes(
     data: *mut u8,

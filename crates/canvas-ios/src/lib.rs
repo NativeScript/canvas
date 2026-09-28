@@ -204,8 +204,7 @@ pub extern "C" fn canvas_native_ios_release_2d_context(context: i64) {
     if context == 0 {
         return;
     }
-    let context = context as *mut CanvasRenderingContext2D;
-    let _ = unsafe { Box::from_raw(context) };
+    canvas_c::canvas_native_context_release(context as *mut CanvasRenderingContext2D);
 }
 
 #[no_mangle]

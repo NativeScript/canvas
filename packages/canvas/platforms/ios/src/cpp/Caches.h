@@ -237,6 +237,9 @@ public:
     std::unique_ptr<v8::Persistent<v8::FunctionTemplate>> GPUTextureViewTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
             nullptr);
 
+    std::unique_ptr<v8::Persistent<v8::FunctionTemplate>> GPUExternalTextureTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
     std::unique_ptr<v8::Persistent<v8::FunctionTemplate>> GPURenderPassEncoderTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
             nullptr);
 

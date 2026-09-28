@@ -580,18 +580,15 @@ fn clear_if_composited(mask: u32, state: &mut WebGLState) -> HowToClear {
 // #[cfg(target_os = "ios")]
 pub fn canvas_native_webgl_clear(mask: u32, state: &mut WebGLState) {
     state.make_current();
+    // clear_if_composited wipes the whole buffer with the scissor test off.
+    if state.get_scissor_enabled() {
+        unsafe { gl_bindings::Clear(mask) }
+        return;
+    }
     if clear_if_composited(mask, state) != HowToClear::CombinedClear {
         unsafe { gl_bindings::Clear(mask) }
     }
-    // Flush context
 }
-
-// #[cfg(not(target_os = "ios"))]
-// pub fn canvas_native_webgl_clear(mask: u32, state: &mut WebGLState) {
-//     state.make_current();
-//     unsafe { gl_bindings::Clear(mask) }
-//     // Flush context
-// }
 
 pub fn canvas_native_webgl_clear_color(
     red: f32,
@@ -855,6 +852,9 @@ pub fn canvas_native_webgl_detach_shader(program: u32, shader: u32, state: &mut 
 
 pub fn canvas_native_webgl_disable(cap: u32, state: &mut WebGLState) {
     state.make_current();
+    if cap == gl_bindings::SCISSOR_TEST {
+        state.set_scissor_enabled(false);
+    }
     unsafe { gl_bindings::Disable(cap) }
 }
 
@@ -863,37 +863,11 @@ pub fn canvas_native_webgl_disable_vertex_attrib_array(index: u32, state: &mut W
     unsafe { gl_bindings::DisableVertexAttribArray(index) }
 }
 
-// #[cfg(target_os = "ios")]
-// pub fn canvas_native_webgl_draw_arrays(mode: u32, first: i32, count: i32, state: &mut WebGLState) {
-//     state.make_current();
-//     clear_if_composited(0, state);
-//     unsafe { gl_bindings::DrawArrays(mode, first, count) }
-//     // Flush Context
-// }
-
-// #[cfg(not(target_os = "ios"))]
 pub fn canvas_native_webgl_draw_arrays(mode: u32, first: i32, count: i32, state: &mut WebGLState) {
     state.make_current();
     unsafe { gl_bindings::DrawArrays(mode, first, count) }
-
-    // Flush Context
 }
 
-// #[cfg(target_os = "ios")]
-// pub fn canvas_native_webgl_draw_elements(
-//     mode: u32,
-//     count: i32,
-//     element_type: u32,
-//     offset: isize,
-//     state: &mut WebGLState,
-// ) {
-//     state.make_current();
-//     clear_if_composited(0, state);
-//     unsafe { gl_bindings::DrawElements(mode, count, element_type, offset as *const c_void) }
-//     // Flush Context
-// }
-
-// #[cfg(not(target_os = "ios"))]
 pub fn canvas_native_webgl_draw_elements(
     mode: u32,
     count: i32,
@@ -903,11 +877,14 @@ pub fn canvas_native_webgl_draw_elements(
 ) {
     state.make_current();
     unsafe { gl_bindings::DrawElements(mode, count, element_type, offset as *const c_void) }
-    // Flush Context
 }
 
 pub fn canvas_native_webgl_enable(cap: u32, state: &mut WebGLState) {
     state.make_current();
+    // clear_if_composited reads this back.
+    if cap == gl_bindings::SCISSOR_TEST {
+        state.set_scissor_enabled(true);
+    }
     unsafe { gl_bindings::Enable(cap) }
 }
 
@@ -1079,7 +1056,15 @@ pub fn canvas_native_webgl_get_error(state: &mut WebGLState) -> u32 {
     ret
 }
 
-#[cfg(not(any(target_os = "ios", target_os = "macos", target_os = "visionos", target_os = "tvos")))]
+#[cfg(target_os = "windows")]
+pub fn canvas_native_webgl_get_extension(
+    name: &str,
+    state: &mut WebGLState,
+) -> Option<Box<dyn WebGLExtension>> {
+    crate::angle::get_extension(name, state)
+}
+
+#[cfg(not(any(target_os = "ios", target_os = "macos", target_os = "visionos", target_os = "tvos", target_os = "windows")))]
 pub fn canvas_native_webgl_get_extension(
     name: &str,
     state: &mut WebGLState,
@@ -1671,6 +1656,12 @@ pub fn canvas_native_webgl_get_shader_source(shader: u32, state: &mut WebGLState
     c_str.to_string_lossy().to_string()
 }
 
+#[cfg(target_os = "windows")]
+pub fn canvas_native_webgl_get_supported_extensions(state: &mut WebGLState) -> Vec<String> {
+    crate::angle::get_supported_extensions(state)
+}
+
+#[cfg(not(target_os = "windows"))]
 pub fn canvas_native_webgl_get_supported_extensions(state: &mut WebGLState) -> Vec<String> {
     state.make_current();
 
@@ -1886,6 +1877,13 @@ pub fn canvas_native_webgl_get_vertex_attrib(
     }
 }
 
+/// Windows (ANGLE) contexts are created with reset notification.
+#[cfg(target_os = "windows")]
+pub fn canvas_native_webgl_get_is_context_lost(state: &mut WebGLState) -> bool {
+    state.context.is_lost()
+}
+
+#[cfg(not(target_os = "windows"))]
 pub fn canvas_native_webgl_get_is_context_lost(_state: &mut WebGLState) -> bool {
     // TODO improve
     false
@@ -2286,36 +2284,61 @@ pub fn canvas_native_webgl_tex_image2d_asset(
     }
 }
 
-pub fn canvas_native_webgl_read_webgl_pixels(
-    source: &mut WebGLState,
-    context: &mut WebGLState,
-    internalformat: i32,
-    format: i32,
-) -> (i32, i32, Vec<u8>) {
-    context.remove_if_current();
+/// The context's drawing buffer as an image (a WebGL canvas used as an image source): RGBA8, top
+/// row first, from its default framebuffer whatever it has bound. Leaves `source` current.
+pub fn canvas_native_webgl_read_drawing_buffer(source: &mut WebGLState) -> (i32, i32, Vec<u8>) {
     source.make_current();
     let width = source.get_drawing_buffer_width();
     let height = source.get_drawing_buffer_height();
-
-    let row_size = bytes_per_pixel(internalformat as u32, format as u32) as i32;
-
-    let mut buf = vec![255u8; (width * height * row_size) as usize];
+    let row = (width * 4) as usize;
+    let mut buf = vec![0u8; row * height as usize];
+    let is_webgl2 = source.get_webgl_version() == WebGLVersion::V2;
     unsafe {
-        gl_bindings::Flush();
+        let mut framebuffer = 0;
+        gl_bindings::GetIntegerv(gl_bindings::FRAMEBUFFER_BINDING, &mut framebuffer);
+        let mut pack_buffer = 0;
+        let mut pack_alignment = 4;
+        gl_bindings::GetIntegerv(gl_bindings::PACK_ALIGNMENT, &mut pack_alignment);
+        if is_webgl2 {
+            gl_bindings::GetIntegerv(gl_bindings::PIXEL_PACK_BUFFER_BINDING, &mut pack_buffer);
+            gl_bindings::BindBuffer(gl_bindings::PIXEL_PACK_BUFFER, 0);
+        }
+        gl_bindings::BindFramebuffer(gl_bindings::FRAMEBUFFER, 0);
+        gl_bindings::PixelStorei(gl_bindings::PACK_ALIGNMENT, 4);
         gl_bindings::ReadPixels(
             0,
             0,
             width,
             height,
-            internalformat as u32,
-            format as u32,
+            gl_bindings::RGBA,
+            gl_bindings::UNSIGNED_BYTE,
             buf.as_mut_ptr() as *mut c_void,
         );
+        gl_bindings::PixelStorei(gl_bindings::PACK_ALIGNMENT, pack_alignment);
+        gl_bindings::BindFramebuffer(gl_bindings::FRAMEBUFFER, framebuffer as u32);
+        if is_webgl2 {
+            gl_bindings::BindBuffer(gl_bindings::PIXEL_PACK_BUFFER, pack_buffer as u32);
+        }
     }
-
-    context.make_current();
-
+    // GL reads bottom-up; an image is top-down.
+    let rows = height as usize;
+    for y in 0..rows / 2 {
+        let (upper, lower) = buf.split_at_mut((rows - 1 - y) * row);
+        upper[y * row..(y + 1) * row].swap_with_slice(&mut lower[..row]);
+    }
     (width, height, buf)
+}
+
+/// `source`'s drawing buffer (`canvas_native_webgl_read_drawing_buffer`) for upload into
+/// `context`, which is current again afterwards.
+pub fn canvas_native_webgl_read_webgl_pixels(
+    source: &mut WebGLState,
+    context: &mut WebGLState,
+) -> (i32, i32, Vec<u8>) {
+    context.remove_if_current();
+    let pixels = canvas_native_webgl_read_drawing_buffer(source);
+    context.make_current();
+    pixels
 }
 
 //    texImage2D(target, level, internalformat, width, height, border, format, type)
@@ -3018,8 +3041,6 @@ pub const STENCIL_BACK_VALUE_MASK: u32 = 0x8CA4;
 
 pub const STENCIL_BACK_WRITEMASK: u32 = 0x8CA5;
 
-// getCanvas(): Canvas;
-
 pub const VIEWPORT: u32 = 0x0BA2;
 
 pub const SCISSOR_BOX: u32 = 0x0C10;
@@ -3518,8 +3539,6 @@ pub const NONE: u32 = 0;
 /* Pixel formats */
 
 /* Pixel types */
-
-// pub const UNSIGNED_BYTE(): number { return this.native.UNSIGNED_BYTE
 
 pub const FRAMEBUFFER_COMPLETE: u32 = 0x8CD5;
 

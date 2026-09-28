@@ -23,4 +23,8 @@
 @property (nonatomic, assign) BOOL inForeground;
 @property (nonatomic, assign) BOOL isLoop;
 @property (nonatomic, assign) BOOL loadedDataFired;
+@property (nonatomic, assign) BOOL firstFrameReady;
+@property (nonatomic, assign) BOOL waitingForFirstFrame;
+/// Bumped per first-frame wait so a stale wait stops.
+@property (nonatomic, assign) NSUInteger frameWaitGeneration;
 @end

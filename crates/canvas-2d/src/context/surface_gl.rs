@@ -7,6 +7,19 @@ use skia_safe::{gpu, surfaces, AlphaType, Color, ColorType, ISize, ImageInfo, Pi
 use std::ffi::c_void;
 use std::ptr::NonNull;
 
+/// Skia's GL entry points. On Windows GL is ANGLE, so they come from its `eglGetProcAddress`;
+/// `new_native` would bind WGL (desktop GL), which is not the context that is current.
+fn gl_interface() -> Option<Interface> {
+    #[cfg(target_os = "windows")]
+    {
+        Interface::new_load_with(|name| canvas_core::gpu::gl::get_proc_address(name))
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        Interface::new_native()
+    }
+}
+
 const GR_GL_RGB565: u32 = 0x8D62;
 const GR_GL_RGBA8: u32 = 0x8058;
 
@@ -62,8 +75,13 @@ impl Context {
                 let handle = raw_window_handle::RawWindowHandle::AndroidNdk(handle);
                 canvas_core::gpu::gl::GLContext::create_window_context(&mut attr, width as i32, height as i32, handle)
             }
-            #[cfg(not(target_os = "android"))]{
+            #[cfg(any(target_os = "ios", target_os = "macos", target_os = "visionos", target_os = "tvos"))]{
                 canvas_core::gpu::gl::GLContext::create_window_context(&mut attr, view)
+            }
+            // No native window surfaces: the host presents the GL output itself.
+            #[cfg(not(any(target_os = "android", target_os = "ios", target_os = "macos", target_os = "visionos", target_os = "tvos")))]{
+                let _ = view;
+                canvas_core::gpu::gl::GLContext::create_offscreen_context(&mut attr, width as i32, height as i32)
             }
         } else {
             canvas_core::gpu::gl::GLContext::create_offscreen_context(&mut attr, width as i32, height as i32)
@@ -77,7 +95,7 @@ impl Context {
 
         unsafe { gl_bindings::GetIntegerv(gl_bindings::FRAMEBUFFER_BINDING, buffer_id.as_mut_ptr()) }
 
-        let interface = Interface::new_native()?;
+        let interface = gl_interface()?;
 
         let mut ctx = gpu::direct_contexts::make_gl(interface, None)?;
 
@@ -131,6 +149,8 @@ impl Context {
             #[cfg(feature = "vulkan")]
             vulkan_texture: None,
             cpu_context: None,
+            #[cfg(all(feature = "d3d", target_os = "windows"))]
+            d3d: None,
             surface_data: SurfaceData {
                 bounds,
                 scale: density,
@@ -192,13 +212,18 @@ impl Context {
 
             surfaces::raster(&info, None, None)
         } else {
-            let interface = Interface::new_native();
-            let ctx = gpu::direct_contexts::make_gl(interface.unwrap(), None);
-            if ctx.is_none() {
-                return;
-            }
-            let mut ctx = ctx.unwrap();
-            // ctx.reset(None);
+            // Reuse the Skia context: the EGL context is unchanged, and a second Skia context on it
+            // would free GL names the first may still hold images for.
+            let mut ctx = match context.direct_context.take() {
+                Some(mut ctx) => {
+                    ctx.reset(None);
+                    ctx
+                }
+                None => match gl_interface().and_then(|i| gpu::direct_contexts::make_gl(i, None)) {
+                    Some(ctx) => ctx,
+                    None => return,
+                },
+            };
 
             let mut frame_buffer = gpu::gl::FramebufferInfo::from_fboid(buffer_id as u32);
 
@@ -249,6 +274,8 @@ impl Context {
             context.path = Path::default();
             context.reset_state();
             context.surface = surface;
+        } else if context.direct_context.is_none() {
+            context.direct_context = direct_context;
         }
     }
 }

@@ -4,14 +4,14 @@ import { SVGItem } from './SVGItem';
 export const pointsProperty = new Property<Polygon, any>({
 	name: 'points',
 });
-import { DOMParser } from '@xmldom/xmldom';
+import { createSvgElement } from '../NativeNode';
 
 export class Polygon extends SVGItem {
 	points: any;
 
 	constructor() {
 		super();
-		this.__domElement = new DOMParser().parseFromString('<polygon></polygon>', 'image/svg+xml').documentElement;
+		this.__domElement = createSvgElement('polygon');
 	}
 }
 

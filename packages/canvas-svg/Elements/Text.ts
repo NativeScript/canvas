@@ -16,7 +16,7 @@ export const dxProperty = new Property<Text, any>({
 export const dyProperty = new Property<Text, any>({
 	name: 'dy',
 });
-import { DOMParser } from '@xmldom/xmldom';
+import { createSvgElement } from '../NativeNode';
 
 export class Text extends SVGItem {
 	x: any;
@@ -27,7 +27,7 @@ export class Text extends SVGItem {
 
 	constructor() {
 		super();
-		this.__domElement = new DOMParser().parseFromString('<text></text>', 'image/svg+xml').documentElement;
+		this.__domElement = createSvgElement('text');
 	}
 }
 

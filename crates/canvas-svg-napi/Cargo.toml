@@ -1,0 +1,23 @@
+[package]
+name = "canvas-svg-napi"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Node-API binding for @nativescript/canvas-svg: the global.SVGModule the V8 bindings install, for Node-API hosts (NativeScript Windows, Node)."
+
+[lib]
+crate-type = ["cdylib"]
+
+[features]
+default = ["napi8"]
+napi8 = ["napi/napi8"]
+# Hosts whose Node-API lacks type tags (NativeScript Windows on JavaScriptCore).
+napi7 = ["napi/napi7"]
+
+[dependencies]
+napi = { version = "3.13.0", default-features = false, features = ["dyn-symbols"] }
+napi-derive = "3.6.9"
+canvas-svg-c = { workspace = true }
+
+[build-dependencies]
+napi-build = "2.5.0"

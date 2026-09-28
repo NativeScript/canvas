@@ -192,6 +192,19 @@ impl ImageFilter {
     }
 }
 
+/// A CSS `<number-percentage>`: `0.5` and `50%` are the same amount.
+fn parse_amount(value: &str) -> Option<f32> {
+    let value = value.trim();
+    match value.strip_suffix('%') {
+        Some(percent) => percent.trim().parse::<f32>().ok().map(|v| v / 100.0),
+        None => value.parse::<f32>().ok(),
+    }
+}
+
+fn is_amount(value: &str) -> bool {
+    parse_amount(value).is_some()
+}
+
 impl Context {
     pub fn set_image_filter(&mut self, value: &ImageFilter) {
         let filter;
@@ -232,6 +245,10 @@ impl Context {
 
     pub fn set_filter(&mut self, value: &str) {
         if value.eq("none") {
+            self.state.filter = std::sync::Arc::from(value);
+            self.state.paint.fill_paint_mut().set_image_filter(None);
+            self.state.paint.stroke_paint_mut().set_image_filter(None);
+            self.state.paint.image_paint_mut().set_image_filter(None);
             return;
         }
         let filters: Vec<&str> = value.split(")").collect();
@@ -274,9 +291,12 @@ impl Context {
                     let value = blur.replace("blur(", "").replace(")", "");
                     return if value.contains("px") {
                         if let Ok(value) = value.replace("px", "").parse::<f32>() {
+                            // CSS blur(radius) is a sigma of radius / 2.
+                            let value = value / 2.0;
                             image_filters::blur(
                                 (value, value),
-                                skia_safe::TileMode::Clamp,
+                                // Decal, not Clamp: a filter fades out at the edge.
+                                skia_safe::TileMode::Decal,
                                 chain,
                                 None,
                             )
@@ -289,8 +309,8 @@ impl Context {
                 }
                 FilterType::Brightness(brightness) => {
                     let value = brightness.replace("brightness(", "").replace(")", "");
-                    if value.contains("%") {
-                        if let Ok(value) = value.replace("%", "").parse::<f32>() {
+                    if is_amount(&value) {
+                        if let Some(value) = parse_amount(&value) {
                             let amt = value.max(0.0);
                             let color_matrix = color_filters::matrix_row_major(&[
                                 amt, 0.0, 0.0, 0.0, 0.0, 0.0, amt, 0.0, 0.0, 0.0, 0.0, 0.0, amt,
@@ -306,8 +326,8 @@ impl Context {
                 }
                 FilterType::Contrast(contrast) => {
                     let value = contrast.replace("contrast(", "").replace(")", "");
-                    if value.contains("%") {
-                        if let Ok(value) = value.replace("%", "").parse::<f32>() {
+                    if is_amount(&value) {
+                        if let Some(value) = parse_amount(&value) {
                             let amt = value.max(0.0);
                             let mut ramp = [0u8; 256];
                             for (i, val) in ramp.iter_mut().take(256).enumerate() {
@@ -327,8 +347,8 @@ impl Context {
                 }
                 FilterType::Grayscale(grayscale) => {
                     let value = grayscale.replace("grayscale(", "").replace(")", "");
-                    if value.contains("%") {
-                        if let Ok(value) = value.replace("%", "").parse::<f32>() {
+                    if is_amount(&value) {
+                        if let Some(value) = parse_amount(&value) {
                             let amt = 1.0 - value.max(0.0).min(1.0);
                             let color_matrix = color_filters::matrix_row_major(&[
                                 (0.2126 + 0.7874 * amt),
@@ -362,8 +382,8 @@ impl Context {
                 }
                 FilterType::Invert(invert) => {
                     let value = invert.replace("invert(", "").replace(")", "");
-                    if value.contains("%") {
-                        if let Ok(value) = value.replace("%", "").parse::<f32>() {
+                    if is_amount(&value) {
+                        if let Some(value) = parse_amount(&value) {
                             let amt = value.max(0.0).min(1.0);
                             let mut ramp = [0u8; 256];
                             for (i, val) in ramp
@@ -388,8 +408,8 @@ impl Context {
                 }
                 FilterType::Opacity(opacity) => {
                     let value = opacity.replace("opacity(", "").replace(")", "");
-                    if value.contains("%") {
-                        if let Ok(value) = value.replace("%", "").parse::<f32>() {
+                    if is_amount(&value) {
+                        if let Some(value) = parse_amount(&value) {
                             let amt = value.max(0.0).min(1.0);
                             let color_matrix = color_filters::matrix_row_major(&[
                                 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0,
@@ -405,8 +425,8 @@ impl Context {
                 }
                 FilterType::Saturate(saturate) => {
                     let value = saturate.replace("saturate(", "").replace(")", "");
-                    if value.contains("%") {
-                        if let Ok(value) = value.replace("%", "").parse::<f32>() {
+                    if is_amount(&value) {
+                        if let Some(value) = parse_amount(&value) {
                             let amt = value.max(0.0);
                             let color_matrix = color_filters::matrix_row_major(&[
                                 (0.2126 + 0.7874 * amt),
@@ -440,8 +460,8 @@ impl Context {
                 }
                 FilterType::Sepia(sepia) => {
                     let value = sepia.replace("sepia(", "").replace(")", "");
-                    if value.contains("%") {
-                        if let Ok(value) = value.replace("%", "").parse::<f32>() {
+                    if is_amount(&value) {
+                        if let Some(value) = parse_amount(&value) {
                             let amt = 1.0 - value.max(0.0).min(1.0);
                             let color_matrix = color_filters::matrix_row_major(&[
                                 (0.393 + 0.607 * amt),
@@ -570,7 +590,7 @@ impl Context {
                 _ => chain,
             });
 
-        self.state.filter = value.to_string();
+        self.state.filter = std::sync::Arc::from(value);
         self.state
             .paint
             .fill_paint_mut()

@@ -668,7 +668,7 @@ export class TNSXMLHttpRequest {
 					if (this.responseType === XMLHttpRequestResponseType.json) {
 						try {
 							if (fastRead) {
-								this._responseText = this._toJSString(data);
+								this._responseText = this._toJSString(data.buffer);
 								this._response = JSON.parse(this._responseText);
 							} else {
 								if ((global as any).isAndroid) {
@@ -688,7 +688,7 @@ export class TNSXMLHttpRequest {
 						}
 					} else if (this.responseType === XMLHttpRequestResponseType.text) {
 						if (fastRead) {
-							const response = this._toJSString(data);
+							const response = this._toJSString(data.buffer);
 							this._responseText = this._response = response ? response : '';
 						} else {
 							if ((global as any).isIOS) {
@@ -708,7 +708,7 @@ export class TNSXMLHttpRequest {
 						}
 					} else if (this.responseType === XMLHttpRequestResponseType.document) {
 						if (fastRead) {
-							let response = this._toJSString(data);
+							let response = this._toJSString(data.buffer);
 							this._responseText = this._response = response ? response : '';
 						} else {
 							if ((global as any).isIOS) {
@@ -728,7 +728,7 @@ export class TNSXMLHttpRequest {
 							}
 						}
 					} else if (this.responseType === XMLHttpRequestResponseType.arraybuffer) {
-						this._response = data;
+						this._response = data.buffer;
 					} else if (this.responseType === XMLHttpRequestResponseType.blob) {
 						const header = this.getResponseHeader('Content-Type') || this.getResponseHeader('content-type');
 						this._response = new Blob([data.buffer], { type: header ?? 'application/octet-stream' });
@@ -871,6 +871,11 @@ export class TNSXMLHttpRequest {
 						} catch (err) {
 							// this should probably be caught before the promise resolves
 						}
+					} else if (res.content instanceof ArrayBuffer) {
+						this._responseText = this._toJSString(res.content) ?? '';
+						try {
+							this._response = JSON.parse(this._responseText);
+						} catch (err) {}
 					} else if (typeof res.content === 'object') {
 						this._response = res.content;
 						this._responseText = res.responseText;
@@ -900,6 +905,8 @@ export class TNSXMLHttpRequest {
 				} else if (this.responseType === XMLHttpRequestResponseType.text) {
 					if (typeof res.content === 'string') {
 						this._responseText = res.content;
+					} else if (res.content instanceof ArrayBuffer) {
+						this._responseText = this._toJSString(res.content) ?? '';
 					} else if (typeof res.content === 'object') {
 						this._responseText = JSON.stringify(res.content); // Stringify or build manually 🧐
 					} else {
@@ -927,6 +934,8 @@ export class TNSXMLHttpRequest {
 				} else if (this.responseType === XMLHttpRequestResponseType.document) {
 					if (typeof res.content === 'string') {
 						this._responseText = res.content;
+					} else if (res.content instanceof ArrayBuffer) {
+						this._responseText = this._response = this._toJSString(res.content) ?? '';
 					} else {
 						if ((global as any).isIOS) {
 							if (res.content instanceof NSData) {
@@ -949,7 +958,9 @@ export class TNSXMLHttpRequest {
 						}
 					}
 				} else if (this.responseType === XMLHttpRequestResponseType.arraybuffer) {
-					if (__APPLE__) {
+					if (res.content instanceof ArrayBuffer) {
+						this._response = res.content;
+					} else if (__APPLE__) {
 						this._response = interop.bufferFromData(res.content);
 					} else {
 						this._response = (ArrayBuffer as any).from(res.content);
@@ -957,7 +968,9 @@ export class TNSXMLHttpRequest {
 				} else if (this.responseType === XMLHttpRequestResponseType.blob) {
 					const header = this.getResponseHeader('Content-Type') || this.getResponseHeader('content-type');
 					const type = { type: header ?? 'application/octet-stream' };
-					if (__APPLE__) {
+					if (res.content instanceof ArrayBuffer) {
+						this._response = new Blob([res.content], type);
+					} else if (__APPLE__) {
 						if (typeof res.content === 'string') {
 							const encoder = new TextEncoder();
 							const buffer = encoder.encode(res.content);

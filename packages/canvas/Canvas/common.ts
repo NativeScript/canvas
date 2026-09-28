@@ -3,6 +3,7 @@ import type { CanvasRenderingContext } from '../common';
 import { removeItemFromArray } from './utils';
 
 export interface ICanvasBase {
+	/** @deprecated The canvas is usable as soon as it exists; call getContext() directly. */
 	on(eventName: 'ready', callback: (data: any) => void, thisArg?: any): void;
 }
 
@@ -472,8 +473,11 @@ export function lengthToDevicePixels(value: any, parent: any, isWidth: boolean):
 	return NaN;
 }
 
+let warnedReady = false;
+
 @CSSType('Canvas')
 export abstract class CanvasBase extends ContainerView implements ICanvasBase {
+	/** @deprecated The canvas is usable as soon as it exists; call getContext() directly. */
 	public static readyEvent = 'ready';
 	ignoreTouchEvents: boolean;
 	_isCustom: boolean = false;
@@ -555,6 +559,10 @@ export abstract class CanvasBase extends ContainerView implements ICanvasBase {
 	__target = null;
 
 	public addEventListener(arg: string, callback: any, thisArg?: any) {
+		if (arg === CanvasBase.readyEvent && !warnedReady) {
+			warnedReady = true;
+			console.warn("Canvas: the 'ready' event is deprecated. The canvas is usable as soon as it exists; call getContext() directly.");
+		}
 		if (typeof thisArg === 'boolean') {
 			thisArg = {
 				capture: thisArg,
@@ -1247,9 +1255,10 @@ export abstract class CanvasBase extends ContainerView implements ICanvasBase {
 		}
 	}
 
+	/** `event`: the native view's event JSON, or (Node-API hosts) the same shape as an object. */
 	_handleEvents(event) {
 		try {
-			const data = JSON.parse(event);
+			const data = typeof event === 'string' ? JSON.parse(event) : event;
 			switch (data.event) {
 				case 'down':
 					this._downCallback(data.ptrId, data.x, data.y, data.isPrimary);

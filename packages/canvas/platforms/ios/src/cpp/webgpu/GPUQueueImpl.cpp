@@ -34,7 +34,7 @@ void GPUQueueImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate
 }
 
 GPUQueueImpl *GPUQueueImpl::GetPointer(const v8::Local<v8::Object> &object) {
-    auto ptr = canvas::GetAlignedPointer(object, 0);
+    auto ptr = object->GetAlignedPointerFromInternalField(0, ObjectWrapperImpl::kInternalFieldTag);
     if (ptr == nullptr) {
         return nullptr;
     }
@@ -92,7 +92,7 @@ v8::Local<v8::FunctionTemplate> GPUQueueImpl::GetCtor(v8::Isolate *isolate) {
 void
 GPUQueueImpl::GetLabel(v8::Local<v8::Name> name,
                        const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(canvas::Receiver(info));
+    auto ptr = GetPointer(info.Holder());
     if (ptr != nullptr) {
         auto label = canvas_native_webgpu_queue_get_label(ptr->queue_.get());
         if (label == nullptr) {
@@ -158,7 +158,30 @@ void GPUQueueImpl::CopyExternalImageToTexture(const v8::FunctionCallbackInfo<v8:
             gl = webgl->GetState();
         }
 
-        if (buffer == nullptr && imageAsset == nullptr && gl == nullptr && c2d == nullptr) {
+        // A decoded video frame that is already on the GPU: the source object carries a
+        // texture handle instead of pixels, so there is nothing to upload.
+        void *nativeTexture = nullptr;
+        v8::Local<v8::Value> nativeTextureVal;
+        if (sourceObj->Get(context, ConvertToV8String(isolate, "nativeTexture")).ToLocal(
+                &nativeTextureVal) && nativeTextureVal->IsNumber()) {
+            nativeTexture = reinterpret_cast<void *>(
+                    (uintptr_t) nativeTextureVal->NumberValue(context).FromJust());
+
+            v8::Local<v8::Value> widthVal;
+            if (sourceObj->Get(context, ConvertToV8String(isolate, "width")).ToLocal(&widthVal) &&
+                widthVal->IsUint32()) {
+                width = widthVal->Uint32Value(context).FromJust();
+            }
+
+            v8::Local<v8::Value> heightVal;
+            if (sourceObj->Get(context, ConvertToV8String(isolate, "height")).ToLocal(&heightVal) &&
+                heightVal->IsUint32()) {
+                height = heightVal->Uint32Value(context).FromJust();
+            }
+        }
+
+        if (buffer == nullptr && imageAsset == nullptr && gl == nullptr && c2d == nullptr &&
+            nativeTexture == nullptr) {
             // todo error ??
             return;
         }
@@ -264,6 +287,15 @@ void GPUQueueImpl::CopyExternalImageToTexture(const v8::FunctionCallbackInfo<v8:
 
 
         CanvasExtent3d extent3D = ParseExtent3d(isolate, sizeVal);
+
+        if (nativeTexture != nullptr) {
+            // Nothing else to fall back on — the caller gave us a handle, not pixels — so
+            // a failed import drops this frame rather than uploading a stale one.
+            canvas_native_webgpu_queue_copy_native_texture_to_texture(
+                    ptr->GetGPUQueue(), nativeTexture, width, height,
+                    sourceOrigin.x, sourceOrigin.y, flipY, &destination, &extent3D);
+            return;
+        }
 
         if (imageAsset != nullptr) {
             CanvasImageCopyImageAsset source{

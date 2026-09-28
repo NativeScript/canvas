@@ -1,5 +1,5 @@
 import { SVGItem } from './SVGItem';
-import { DOMParser } from '@xmldom/xmldom';
+import { createSvgElement } from '../NativeNode';
 
 export class LinearGradient extends SVGItem {
 	_views: any[];
@@ -12,6 +12,6 @@ export class LinearGradient extends SVGItem {
 
 	constructor() {
 		super();
-		this.__domElement = new DOMParser().parseFromString('<linearGradient></linearGradient>', 'image/svg+xml').documentElement;
+		this.__domElement = createSvgElement('linearGradient');
 	}
 }

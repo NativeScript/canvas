@@ -1,4 +1,4 @@
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub enum TextDirection {
     LTR = 0,
     RTL = 1,

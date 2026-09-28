@@ -73,27 +73,13 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_dispatch_work
     }
 
     let compute_pass = &*compute_pass;
-    let global = compute_pass.instance.global();
     let error_sink = compute_pass.error_sink.as_ref();
 
     let mut lock = compute_pass.pass.lock();
     if let Some(compute_pass) = lock.as_mut() {
-        if let Err(cause) = global.compute_pass_dispatch_workgroups(
-            compute_pass,
-            workgroup_count_x,
+        compute_pass.dispatch_workgroups(workgroup_count_x,
             workgroup_count_y,
-            workgroup_count_z,
-        ) {
-            handle_error(
-                global,
-                error_sink,
-                cause,
-                "encoder",
-                None,
-                "canvas_native_webgpu_compute_pass_encoder_dispatch_workgroups",
-            );
-        }
-    }
+            workgroup_count_z);}
 }
 
 #[no_mangle]
@@ -107,29 +93,15 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_dispatch_work
     }
 
     let compute_pass = &*compute_pass;
-    let global = compute_pass.instance.global();
     let error_sink = compute_pass.error_sink.as_ref();
     let mut lock = compute_pass.pass.lock();
     if let Some(compute_pass) = lock.as_mut() {
         let indirect_buffer = &*indirect_buffer;
-        let indirect_buffer = indirect_buffer.buffer;
+        let indirect_buffer = Arc::clone(&indirect_buffer.buffer);
 
 
-        if let Err(cause) = global.compute_pass_dispatch_workgroups_indirect(
-            compute_pass,
-            indirect_buffer,
-            indirect_offset as u64,
-        ) {
-            handle_error(
-                global,
-                error_sink,
-                cause,
-                "encoder",
-                None,
-                "canvas_native_webgpu_compute_pass_encoder_dispatch_workgroups_indirect",
-            );
-        }
-    }
+        compute_pass.dispatch_workgroups_indirect(indirect_buffer,
+            indirect_offset as u64);}
 }
 
 #[no_mangle]
@@ -144,22 +116,10 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_end(
     let label = compute_pass.label.clone();
     let error_sink = compute_pass.error_sink.as_ref();
 
-    let global = compute_pass.instance.global();
-
     let mut lock = compute_pass.pass.lock();
 
     if let Some(compute_pass) = lock.as_mut() {
-        if let Err(cause) = global.compute_pass_end(compute_pass) {
-            handle_error(
-                global,
-                error_sink,
-                cause,
-                "encoder",
-                label,
-                "canvas_native_webgpu_compute_pass_end",
-            );
-        }
-        if let Some(pass) = lock.take() {
+        compute_pass.end();if let Some(pass) = lock.take() {
             drop(pass);
         }
     }
@@ -175,7 +135,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_insert_debug_
     }
 
     let compute_pass = &*compute_pass;
-    let global = compute_pass.instance.global();
     let error_sink = compute_pass.error_sink.as_ref();
 
     let label = CStr::from_ptr(label);
@@ -183,17 +142,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_insert_debug_
 
     let mut lock = compute_pass.pass.lock();
     if let Some(compute_pass) = lock.as_mut() {
-        if let Err(cause) = global.compute_pass_insert_debug_marker(compute_pass, label, 0) {
-            handle_error(
-                global,
-                error_sink,
-                cause,
-                "encoder",
-                None,
-                "canvas_native_webgpu_compute_pass_encoder_insert_debug_marker",
-            );
-        }
-    }
+        compute_pass.insert_debug_marker(label, 0);}
 }
 
 #[no_mangle]
@@ -205,22 +154,11 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_pop_debug_gro
     }
 
     let compute_pass = &*compute_pass;
-    let global = compute_pass.instance.global();
     let error_sink = compute_pass.error_sink.as_ref();
 
     let mut lock = compute_pass.pass.lock();
     if let Some(compute_pass) = lock.as_mut() {
-        if let Err(cause) = global.compute_pass_pop_debug_group(compute_pass) {
-            handle_error(
-                global,
-                error_sink,
-                cause,
-                "encoder",
-                None,
-                "canvas_native_webgpu_compute_pass_encoder_pop_debug_group",
-            );
-        }
-    }
+        compute_pass.pop_debug_group();}
 }
 
 #[no_mangle]
@@ -233,7 +171,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_push_debug_gr
     }
 
     let compute_pass = &*compute_pass;
-    let global = compute_pass.instance.global();
     let error_sink = compute_pass.error_sink.as_ref();
 
     let mut lock = compute_pass.pass.lock();
@@ -241,17 +178,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_push_debug_gr
         let label = CStr::from_ptr(label);
         let label = label.to_str().unwrap();
 
-        if let Err(cause) = global.compute_pass_push_debug_group(compute_pass, label, 0) {
-            handle_error(
-                global,
-                error_sink,
-                cause,
-                "encoder",
-                None,
-                "canvas_native_webgpu_compute_pass_encoder_push_debug_group",
-            );
-        }
-    }
+        compute_pass.push_debug_group(label, 0);}
 }
 
 #[no_mangle]
@@ -270,7 +197,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_set_bind_grou
     
 
     let compute_pass = &*compute_pass;
-    let global = compute_pass.instance.global();
     let error_sink = compute_pass.error_sink.as_ref();
 
     let mut lock = compute_pass.pass.lock();
@@ -279,7 +205,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_set_bind_grou
             None
         }else {
             let bind_group = &*bind_group;
-            let bind_group_id = bind_group.group;
+            let bind_group_id = Arc::clone(&bind_group.group);
             Some(bind_group_id)
         };
 
@@ -296,30 +222,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_set_bind_grou
 
             let dynamic_offsets: &[u32] = &dynamic_offsets[start..start + len];
 
-            if let Err(cause) =
-                global.compute_pass_set_bind_group(compute_pass, index, bind_group_id, dynamic_offsets)
-            {
-                handle_error(
-                    global,
-                    error_sink,
-                    cause,
-                    "encoder",
-                    None,
-                    "canvas_native_webgpu_compute_pass_encoder_set_bind_group",
-                );
-            }
-        } else {
-            if let Err(cause) = global.compute_pass_set_bind_group(compute_pass, index, bind_group_id, &[]) {
-                handle_error(
-                    global,
-                    error_sink,
-                    cause,
-                    "encoder",
-                    None,
-                    "canvas_native_webgpu_compute_pass_encoder_set_bind_group",
-                );
-            }
-        }
+            compute_pass.set_bind_group(index, bind_group_id, dynamic_offsets);} else {
+            compute_pass.set_bind_group(index, bind_group_id, &[]);}
     }
 }
 
@@ -333,23 +237,12 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_set_pipeline(
     }
 
     let compute_pass = &*compute_pass;
-    let global = compute_pass.instance.global();
     let error_sink = compute_pass.error_sink.as_ref();
 
     let mut lock = compute_pass.pass.lock();
     if let Some(compute_pass) = lock.as_mut() {
         let pipeline = &*pipeline;
-        let pipeline_id = pipeline.pipeline;
+        let pipeline_id = Arc::clone(&pipeline.pipeline);
 
-        if let Err(cause) = global.compute_pass_set_pipeline(compute_pass, pipeline_id) {
-            handle_error(
-                global,
-                error_sink,
-                cause,
-                "encoder",
-                None,
-                "canvas_native_webgpu_compute_pass_encoder_set_pipeline",
-            );
-        }
-    }
+        compute_pass.set_pipeline(pipeline_id);}
 }

@@ -31,13 +31,13 @@ public:
         auto object = ImageBitmapImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
 
-        auto ptr = canvas::ExternalValue(asset);
+        auto ptr = asset->Value(v8::kExternalPointerTypeTagDefault);
         auto impl = static_cast<ObjectWrapperImpl *>(ptr);
 
         SetNativeType(impl, NativeType::ImageBitmap);
 
 
-        canvas::SetAlignedPointer(object, 0, ptr);
+        object->SetAlignedPointerInInternalField(0, ptr, ObjectWrapperImpl::kInternalFieldTag);
 
         impl->BindFinalizer(isolate, object);
 

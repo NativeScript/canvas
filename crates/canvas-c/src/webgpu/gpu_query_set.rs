@@ -11,18 +11,9 @@ use super::gpu::CanvasWebGPUInstance;
 pub struct CanvasGPUQuerySet {
     pub(super) label: Option<Cow<'static, str>>,
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
-    pub(crate) query: wgpu_core::id::QuerySetId,
+    pub(crate) query: Arc<wgpu_core::resource::QuerySet>,
     pub(crate) type_: CanvasQueryType,
     pub(super) count: u32,
-}
-
-impl Drop for CanvasGPUQuerySet {
-    fn drop(&mut self) {
-        if !std::thread::panicking() {
-            let global = self.instance.global();
-            global.query_set_drop(self.query);
-        }
-    }
 }
 
 #[no_mangle]

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <PropertyGroup>
+    <_NSCanvasArch Condition="'$(NSLibPlatform)' != ''">$(NSLibPlatform)</_NSCanvasArch>
+    <_NSCanvasArch Condition="'$(_NSCanvasArch)' == '' and ('$(Platform)' == 'ARM64' or '$(Platform)' == 'arm64')">arm64</_NSCanvasArch>
+    <!-- x64 when $(Platform) is unset/AnyCPU during evaluation. -->
+    <_NSCanvasArch Condition="'$(_NSCanvasArch)' == '' or '$(_NSCanvasArch)' == 'x86_64'">x64</_NSCanvasArch>
+    <_NSCanvasDir>$(MSBuildThisFileDirectory)$(_NSCanvasArch)\</_NSCanvasDir>
+  </PropertyGroup>
+
+  <!-- An explicit Copy: with EnableMsixTooling, Content items do not reliably reach $(OutDir). -->
+  <Target Name="CopyNativeScriptCanvas" AfterTargets="Build">
+    <ItemGroup>
+      <_NSCanvasFiles Include="$(_NSCanvasDir)*.node;$(_NSCanvasDir)*.dll" />
+    </ItemGroup>
+    <Warning Text="[@nativescript/canvas] No native module for $(_NSCanvasArch) in $(_NSCanvasDir); build it with `make windows`." Condition="!Exists('$(_NSCanvasDir)canvasnative.node')" />
+    <Copy SourceFiles="@(_NSCanvasFiles)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+  </Target>
+</Project>

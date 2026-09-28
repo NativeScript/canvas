@@ -38,6 +38,31 @@ export function canvasReady(args) {
 }
 ```
 
+#### Reading pixels back: `willReadFrequently`
+
+[`willReadFrequently`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/getContext)
+is a standard 2D context attribute, and it means here what it means on the web:
+it tells the canvas you intend to read pixels back often, so it should be backed
+by CPU memory rather than the GPU.
+
+```typescript
+ctx = canvas.getContext('2d', { willReadFrequently: true });
+```
+
+It is worth knowing what the trade actually costs on a phone. Measured on a
+Galaxy A53, for a 64x64 region:
+
+| | default | `willReadFrequently: true` |
+| --- | --- | --- |
+| `getImageData` | 412 µs | 3.8 µs |
+| `putImageData` | 156 µs | 0.5 µs |
+| `fillText` | 1.1 µs | 6.3 µs |
+| `strokeRect` | 0.65 µs | 2.7 µs |
+
+Pixel access gets two orders of magnitude faster, and ordinary drawing gets
+several times slower. Reach for it when you are doing image processing,
+hit-testing against pixel data, or anything else that calls `getImageData` in a
+loop — and leave it off for normal drawing.
 
 ### WEBGL
 

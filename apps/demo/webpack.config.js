@@ -6,6 +6,10 @@ module.exports = (env) => {
 	webpack.useConfig('typescript');
 
 	webpack.chainWebpack((config) => {
+		// The demo pins typescript (for ts-loader), which would switch on the type checker; it has
+		// never type-checked (packages/ include every platform's sources), so keep it off.
+		config.plugins.delete('ForkTsCheckerWebpackPlugin');
+
 		// shared demo code
 		config.resolve.alias.set('@demo/shared', resolve(__dirname, '..', '..', 'tools', 'demo'));
 		//config.resolve.alias.set('three', 'three/webgpu');
@@ -37,6 +41,8 @@ module.exports = (env) => {
 		from: '../../../tools/demo/canvas/assets',
 		to: 'assets/file-assets',
 		context: webpack.Utils.project.getProjectFilePath('node_modules'),
+		// Windows' MSIX packaging cannot take file names with parentheses or commas.
+		filter: (file) => webpack.Utils.platform.getPlatformName() !== 'windows' || !/[(),]/.test(require('path').basename(file)),
 	});
 
 	webpack.Utils.addCopyRule({
@@ -60,6 +66,20 @@ module.exports = (env) => {
 	webpack.Utils.addCopyRule({
 		from: '../../../tools/demo/canvas-pixi/assets',
 		to: 'assets/pixi',
+		context: webpack.Utils.project.getProjectFilePath('node_modules'),
+	});
+
+	// The WebView baseline runs the same PixiJS build the NativeScript side bundles.
+	webpack.Utils.addCopyRule({
+		from: 'pixi.js/dist/pixi.min.js',
+		to: 'assets/pixi/webview/pixi.min.js',
+		context: webpack.Utils.project.getProjectFilePath('node_modules'),
+	});
+
+	// One benchmark source, loaded verbatim by both halves of the call-bound A/B.
+	webpack.Utils.addCopyRule({
+		from: '../../../tools/demo/canvas/callbound.js',
+		to: 'assets/pixi/webview/callbound.js',
 		context: webpack.Utils.project.getProjectFilePath('node_modules'),
 	});
 

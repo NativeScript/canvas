@@ -64,9 +64,8 @@ class GLViewSV : SurfaceView, SurfaceHolder.Callback {
 					postOnAnimation {
 						it.listener?.contextReady()
 					}
-				} else {
-					resize()
 				}
+				it.resize()
 			}
 		}
 	}

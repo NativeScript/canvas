@@ -3,7 +3,7 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 
 project(canvasnativev8)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 #option(ENABLE_LTO "Enable cross language linking time optimization" ON)
 #if (ENABLE_LTO)
@@ -39,7 +39,7 @@ set(CARGO_TARGET_DIR ${PROJECT_NATIVE_ROOT_DIR}/target)
 set(CURRENT_TARGET_DIR ${CARGO_TARGET_DIR}/${RUST_BUILD_TARGET})
 
 
-set(COMMON_CMAKE_ARGUMENTS "-std=c++17 -pthread -Werror -Wno-unused-result -mstackrealign -fexceptions -fno-builtin-stpcpy -DV8_31BIT_SMIS_ON_64BIT_ARCH -Wno-vla-extension -Wno-deprecated")
+set(COMMON_CMAKE_ARGUMENTS "-std=c++20 -pthread -Werror -Wno-unused-result -mstackrealign -fexceptions -fno-builtin-stpcpy -DV8_31BIT_SMIS_ON_64BIT_ARCH -Wno-vla-extension -Wno-deprecated")
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(RUST_BUILD_TYPE)
@@ -133,6 +133,7 @@ add_library(
         ${CPP_DIR}/TextEncoderImpl.cpp
         ${CPP_DIR}/WorkerPool.cpp
         ${CPP_DIR}/V8BufferHelper.cpp
+        ${CPP_DIR}/V8FastApiCalls.cpp
 
 
         ${CPP_DIR}/webgl/WebGLActiveInfoImpl.cpp
@@ -163,6 +164,7 @@ add_library(
 
         ${CPP_DIR}/webgpu/GPUCanvasContextImpl.cpp
         ${CPP_DIR}/webgpu/GPUTextureImpl.cpp
+        ${CPP_DIR}/webgpu/GPUExternalTextureImpl.cpp
         ${CPP_DIR}/webgpu/GPUComputePassEncoderImpl.cpp
         ${CPP_DIR}/webgpu/GPUQuerySetImpl.cpp
         ${CPP_DIR}/webgpu/GPUCommandEncoderImpl.cpp
@@ -192,7 +194,7 @@ add_library(
 
 set_target_properties(
         canvasnativev8 PROPERTIES
-        CXX_STANDARD 17
+        CXX_STANDARD 20
         CXX_EXTENSIONS OFF
         POSITION_INDEPENDENT_CODE ON
         LINK_FLAGS -Wl,--allow-multiple-definition

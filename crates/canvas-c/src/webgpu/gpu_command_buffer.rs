@@ -10,22 +10,8 @@ use super::gpu::CanvasWebGPUInstance;
 pub struct CanvasGPUCommandBuffer {
     pub(crate) label: Option<Cow<'static, str>>,
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
-    pub(crate) command_buffer: wgpu_core::id::CommandBufferId,
+    pub(crate) command_buffer: Arc<wgpu_core::command::CommandBuffer>,
     pub(crate) open: std::sync::atomic::AtomicBool,
-}
-
-impl Drop for CanvasGPUCommandBuffer {
-    fn drop(&mut self) {
-        if self.open.load(std::sync::atomic::Ordering::SeqCst) && !std::thread::panicking() {
-            let context = self.instance.global();
-            let command_buffer = self.command_buffer;
-            context.command_buffer_drop(command_buffer);
-            // let mut lock = self.command_buffer.lock();
-            // if let Some(command_buffer) = lock.take() {
-            //     gfx_select!(self.id => context.command_buffer_drop(command_buffer));
-            // }
-        }
-    }
 }
 
 #[no_mangle]

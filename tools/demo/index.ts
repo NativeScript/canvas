@@ -3,6 +3,7 @@ export * from './audio-context';
 export * from './canvas';
 export * from './canvas-babylon';
 export * from './canvas-chartjs';
+export * from './canvas-gamepad';
 export * from './canvas-media';
 export * from './canvas-phaser';
 export * from './canvas-phaser-ce';

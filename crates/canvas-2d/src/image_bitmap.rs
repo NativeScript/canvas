@@ -458,6 +458,25 @@ pub fn create_from_image_asset_src_rect_raw(
     ))
 }
 
+/// True when the options ask for the source pixels unchanged -- which is what an
+/// ImageAsset and an ImageData already are.
+fn is_passthrough(
+    rect: Option<(f32, f32, f32, f32)>,
+    flip_y: bool,
+    premultiply_alpha: i32,
+    resize_width: f32,
+    resize_height: f32,
+) -> bool {
+    rect.is_none()
+        && !flip_y
+        && resize_width <= 0.
+        && resize_height <= 0.
+        && !matches!(
+            ImageBitmapPremultiplyAlpha::from(premultiply_alpha),
+            ImageBitmapPremultiplyAlpha::Premultiply
+        )
+}
+
 pub fn create_from_image_asset_src_rect(
     image_asset: &ImageAsset,
     rect: Option<(f32, f32, f32, f32)>,
@@ -468,24 +487,125 @@ pub fn create_from_image_asset_src_rect(
     resize_width: f32,
     resize_height: f32,
 ) -> ImageAsset {
-    let mut ret = ImageAsset::new();
+    let ret = ImageAsset::new();
+    create_from_image_asset_src_rect_with_output(
+        image_asset,
+        rect,
+        flip_y,
+        premultiply_alpha,
+        color_space_conversion,
+        resize_quality,
+        resize_width,
+        resize_height,
+        &ret,
+    );
+    ret
+}
+
+pub fn create_from_image_asset_src_rect_with_output(
+    image_asset: &ImageAsset,
+    rect: Option<(f32, f32, f32, f32)>,
+    flip_y: bool,
+    premultiply_alpha: i32,
+    color_space_conversion: i32,
+    resize_quality: i32,
+    resize_width: f32,
+    resize_height: f32,
+    output: &ImageAsset,
+) {
+    // The path below costs three copies to reproduce its input.
+    if is_passthrough(rect, flip_y, premultiply_alpha, resize_width, resize_height) {
+        let mut copied = false;
+        image_asset.with_bytes_dimension(|bytes, (width, height)| {
+            if width != 0 && height != 0 && !bytes.is_empty() {
+                copied = output.load_from_raw_bytes_rgba(width, height, bytes.to_vec());
+            }
+        });
+        if copied {
+            return;
+        }
+    }
+
     image_asset.with_bytes_dimension(|bytes, (width, height)| {
         if width != 0 && height != 0 {
-            ret = create_image_asset(
-                bytes,
-                width as f32,
-                height as f32,
-                rect,
-                flip_y,
-                premultiply_alpha,
-                color_space_conversion,
-                resize_quality,
-                resize_width,
-                resize_height,
-            );
+            if let Some(image) = from_image_slice(bytes, width as i32, height as i32) {
+                create_image_bitmap_internal(
+                    image,
+                    rect,
+                    flip_y,
+                    premultiply_alpha,
+                    color_space_conversion,
+                    resize_quality,
+                    resize_width,
+                    resize_height,
+                    output,
+                );
+            }
         }
     });
-    ret
+}
+
+pub fn create_from_image_data_with_output(
+    image_data: &ImageData,
+    rect: Option<(f32, f32, f32, f32)>,
+    flip_y: bool,
+    premultiply_alpha: i32,
+    color_space_conversion: i32,
+    resize_quality: i32,
+    resize_width: f32,
+    resize_height: f32,
+    output: &ImageAsset,
+) {
+    let width = image_data.width() as u32;
+    let height = image_data.height() as u32;
+    if width == 0 || height == 0 {
+        return;
+    }
+
+    if is_passthrough(rect, flip_y, premultiply_alpha, resize_width, resize_height) {
+        if output.load_from_raw_bytes_rgba(width, height, image_data.data().to_vec()) {
+            return;
+        }
+    }
+
+    if let Some(image) = from_image_slice(image_data.data(), width as i32, height as i32) {
+        create_image_bitmap_internal(
+            image,
+            rect,
+            flip_y,
+            premultiply_alpha,
+            color_space_conversion,
+            resize_quality,
+            resize_width,
+            resize_height,
+            output,
+        );
+    }
+}
+
+/// `createImageBitmap(canvas)`, from a rasterised snapshot of a 2D context.
+pub fn create_from_image_with_output(
+    image: skia_safe::Image,
+    rect: Option<(f32, f32, f32, f32)>,
+    flip_y: bool,
+    premultiply_alpha: i32,
+    color_space_conversion: i32,
+    resize_quality: i32,
+    resize_width: f32,
+    resize_height: f32,
+    output: &ImageAsset,
+) {
+    create_image_bitmap_internal(
+        image,
+        rect,
+        flip_y,
+        premultiply_alpha,
+        color_space_conversion,
+        resize_quality,
+        resize_width,
+        resize_height,
+        output,
+    );
 }
 
 pub fn create_image_asset_encoded(

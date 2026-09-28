@@ -12,6 +12,16 @@ declare var CanvasSVGVersionNumber: number;
 
 declare var CanvasSVGVersionString: interop.Reference<number>;
 
+declare const enum NSCSVGBackend {
+	Auto = 0,
+
+	Gl = 1,
+
+	Vulkan = 2,
+
+	Metal = 3,
+}
+
 declare class NSCSVG extends UIView {
 	static alloc(): NSCSVG; // inherited from NSObject
 
@@ -62,9 +72,27 @@ declare class NSCSVG extends UIView {
 
 	autoScale: boolean;
 
+	gpu: boolean;
+
+	threaded: boolean;
+
+	backend: NSCSVGBackend;
+
+	readonly activeBackend: NSCSVGBackend;
+
+	readonly isGpuActive: boolean;
+
+	onContextLost: () => void;
+
+	onContextRestored: () => void;
+
 	src: string;
 
 	srcPath: string;
+
+	renderDocument(document: number, width: number, height: number, scale: number): void;
+
+	debugLoseContext(): void;
 
 	loadData(data: NSCSVGData): void;
 

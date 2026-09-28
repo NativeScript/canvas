@@ -5,7 +5,7 @@
     </Page.actionBar>
     <StackLayout class="p-20">
       <GridLayout loaded="loaded">
-        <canvas:Canvas id="canvas" loaded="{{loaded}}" unloaded="{{unloaded}}" ready="{{ canvasLoaded }}"/>
+        <canvas:Canvas id="canvas" loaded="{{ canvasLoaded }}" unloaded="{{unloaded}}"/>
       </GridLayout>
     </StackLayout>
 </Page>

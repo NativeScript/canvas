@@ -10,11 +10,10 @@ use canvas_2d::utils::image::from_image_slice;
 use canvas_core::context_attributes::{ColorSpace, PowerPreference};
 use canvas_core::gpu::gl::GLContext;
 use canvas_webgl::prelude::WebGLVersion;
-use std::collections::HashSet;
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_void};
 use std::ptr::NonNull;
-use std::sync::{Mutex, OnceLock};
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 /* GL */
 
@@ -261,7 +260,7 @@ pub extern "C" fn canvas_native_webgl_to_data_url(
 }
 
 #[derive(Debug)]
-pub struct WebGLState(pub(crate) canvas_webgl::prelude::WebGLState);
+pub struct WebGLState(pub(crate) canvas_webgl::prelude::WebGLState, AtomicUsize);
 
 impl WebGLState {
     pub fn get_dimensions(&self) -> (i32, i32) {
@@ -277,41 +276,28 @@ impl WebGLState {
     }
 }
 
-// keeps track of all live WebGLState handles so we can avoid double-freeing them
-// todo : this is a bit of a hack, but it works for now. We should probably use a more robust solution in the future.
-fn webgl_state_live() -> &'static Mutex<HashSet<usize>> {
-    static LIVE: OnceLock<Mutex<HashSet<usize>>> = OnceLock::new();
-    LIVE.get_or_init(|| Mutex::new(HashSet::new()))
-}
-
-#[inline]
-fn webgl_state_register(ptr: *mut WebGLState) -> *mut WebGLState {
-    if !ptr.is_null() {
-        webgl_state_live()
-            .lock()
-            .unwrap_or_else(|e| e.into_inner())
-            .insert(ptr as usize);
-    }
-    ptr
-}
-
-
-fn webgl_state_free(ptr: *mut WebGLState) {
-    if ptr.is_null() {
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_state_reference(state: *const WebGLState) {
+    if state.is_null() {
         return;
     }
-    let present = webgl_state_live()
-        .lock()
-        .unwrap_or_else(|e| e.into_inner())
-        .remove(&(ptr as usize));
-    if present {
-        let _ = unsafe { Box::from_raw(ptr) };
-    }
+    unsafe { &*state }.1.fetch_add(1, Ordering::Relaxed);
 }
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_state_destroy(state: *mut WebGLState) {
-    webgl_state_free(state);
+    if state.is_null() {
+        return;
+    }
+    if unsafe { &*state }.1.fetch_sub(1, Ordering::AcqRel) == 1 {
+        let _ = unsafe { Box::from_raw(state) };
+    }
+}
+
+impl WebGLState {
+    fn wrap(state: canvas_webgl::prelude::WebGLState) -> Self {
+        Self(state, AtomicUsize::new(1))
+    }
 }
 
 impl WebGLState {
@@ -358,7 +344,7 @@ impl WebGLState {
             GLContext::create_offscreen_context(&mut attr, width, height)
         }?;
 
-        Some(Self(
+        Some(Self::wrap(
             canvas_webgl::prelude::WebGLState::new_with_context_attributes(
                 context,
                 version,
@@ -378,7 +364,7 @@ impl WebGLState {
         ))
     }
 
-    #[cfg(not(target_os = "android"))]
+    #[cfg(any(target_os = "ios", target_os = "macos", target_os = "visionos", target_os = "tvos"))]
     pub fn new_with_view(
         view: *mut c_void,
         version: WebGLVersion,
@@ -410,7 +396,7 @@ impl WebGLState {
             ColorSpace::Srgb,
         );
         let context = GLContext::create_window_context(&mut attr, NonNull::new(view)?);
-        Some(Self(
+        Some(Self::wrap(
             canvas_webgl::prelude::WebGLState::new_with_context_attributes(
                 context?,
                 version,
@@ -444,7 +430,7 @@ impl WebGLState {
         xr_compatible: bool,
         is_canvas: bool,
     ) -> Self {
-        Self(
+        Self::wrap(
             canvas_webgl::prelude::WebGLState::new_with_context_attributes(
                 context,
                 version,
@@ -1702,14 +1688,14 @@ pub extern "C" fn canvas_native_webgl_create(
                 false,
             ) {
                 None => std::ptr::null_mut(),
-                Some(state) => webgl_state_register(Box::into_raw(Box::new(state))),
+                Some(state) => Box::into_raw(Box::new(state)),
             }
         }
         _ => std::ptr::null_mut(),
     }
 }
 
-#[cfg(not(target_os = "android"))]
+#[cfg(any(target_os = "ios", target_os = "macos", target_os = "visionos", target_os = "tvos"))]
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_create(
     view: *mut c_void,
@@ -1746,7 +1732,7 @@ pub extern "C" fn canvas_native_webgl_create(
                 false,
             ) {
                 None => std::ptr::null_mut(),
-                Some(state) => webgl_state_register(Box::into_raw(Box::new(state))),
+                Some(state) => Box::into_raw(Box::new(state)),
             }
         }
         _ => std::ptr::null_mut(),
@@ -1792,10 +1778,142 @@ pub extern "C" fn canvas_native_webgl_create_no_window(
                 is_canvas,
             ) {
                 None => std::ptr::null_mut(),
-                Some(state) => webgl_state_register(Box::into_raw(Box::new(state))),
+                Some(state) => Box::into_raw(Box::new(state)),
             }
         }
         _ => std::ptr::null_mut(),
+    }
+}
+
+/// Windows: a WebGL context whose drawing buffer can be shown in a `SwapChainPanel`
+/// (`canvas_native_webgl_attach_swap_chain_panel`). Null when ANGLE is unavailable.
+#[cfg(target_os = "windows")]
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_create_d3d(
+    width: i32,
+    height: i32,
+    version: i32,
+    alpha: bool,
+    antialias: bool,
+    depth: bool,
+    fail_if_major_performance_caveat: bool,
+    power_preference: i32,
+    premultiplied_alpha: bool,
+    preserve_drawing_buffer: bool,
+    stencil: bool,
+    desynchronized: bool,
+    xr_compatible: bool,
+) -> *mut WebGLState {
+    let (Ok(version), Ok(power_preference)) = (
+        WebGLVersion::try_from(version),
+        PowerPreference::try_from(power_preference),
+    ) else {
+        return std::ptr::null_mut();
+    };
+    let mut attrs = canvas_core::context_attributes::ContextAttributes::new(
+        alpha,
+        antialias,
+        depth,
+        fail_if_major_performance_caveat,
+        power_preference.into(),
+        premultiplied_alpha,
+        preserve_drawing_buffer,
+        stencil,
+        desynchronized,
+        xr_compatible,
+        false,
+        version == WebGLVersion::V1,
+        ColorSpace::Srgb,
+    );
+    let Some(ctx) = GLContext::create_texture_context(&mut attrs, width, height) else {
+        return std::ptr::null_mut();
+    };
+    let state = WebGLState::wrap(canvas_webgl::prelude::WebGLState::new_with_context_attributes(
+        ctx,
+        version,
+        attrs.get_alpha(),
+        attrs.get_antialias(),
+        attrs.get_depth(),
+        attrs.get_fail_if_major_performance_caveat(),
+        PowerPreference::from(attrs.get_power_preference()),
+        attrs.get_premultiplied_alpha(),
+        attrs.get_preserve_drawing_buffer(),
+        attrs.get_stencil(),
+        attrs.get_desynchronized(),
+        attrs.get_xr_compatible(),
+        false,
+        version == WebGLVersion::V1,
+    ));
+    Box::into_raw(Box::new(state))
+}
+
+/// Windows: shows a `canvas_native_webgl_create_d3d` context in a `SwapChainPanel` (any COM
+/// pointer to it). UI thread.
+#[cfg(target_os = "windows")]
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_attach_swap_chain_panel(state: *mut WebGLState, panel: *mut c_void) -> bool {
+    if state.is_null() || panel.is_null() {
+        return false;
+    }
+    let state = unsafe { &mut *state };
+    unsafe { state.get_inner_mut().attach_swap_chain_panel(panel) }
+}
+
+/// Windows: presents a `canvas_native_webgl_create_d3d` context into a XAML `SurfaceImageSource`
+/// (any COM pointer to it, made at the drawing buffer's size) instead of a swapchain, so it blends
+/// with the page. The rows are bottom-up: the host flips the image. UI thread.
+#[cfg(target_os = "windows")]
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_attach_xaml_surface(state: *mut WebGLState, source: *mut c_void) -> bool {
+    if state.is_null() || source.is_null() {
+        return false;
+    }
+    let state = unsafe { &mut *state };
+    unsafe { state.get_inner_mut().attach_xaml_surface(source) }
+}
+
+/// Windows: maps the drawing buffer into its panel (DIPs = pixels * scale + offset).
+#[cfg(target_os = "windows")]
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_set_swap_chain_transform(
+    state: *mut WebGLState,
+    scale_x: f32,
+    scale_y: f32,
+    offset_x: f32,
+    offset_y: f32,
+) -> bool {
+    if state.is_null() {
+        return false;
+    }
+    let state = unsafe { &*state };
+    state.get_inner().set_swap_chain_transform(scale_x, scale_y, offset_x, offset_y)
+}
+
+/// Windows: resizes (and clears) a `canvas_native_webgl_create_d3d` drawing buffer.
+#[cfg(target_os = "windows")]
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_resize_d3d(state: *mut WebGLState, width: i32, height: i32) -> bool {
+    if state.is_null() {
+        return false;
+    }
+    let state = unsafe { &mut *state };
+    state.get_inner_mut().resize_texture_surface(width, height)
+}
+
+/// Ends a frame: presents it where the context is on screen (Windows panels), else flushes.
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_present(state: *mut WebGLState) -> bool {
+    if state.is_null() {
+        return false;
+    }
+    let state = unsafe { &*state };
+    #[cfg(target_os = "windows")]
+    {
+        state.get_inner().present()
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        state.get_inner().make_current_and_swap_buffers()
     }
 }
 
@@ -3156,9 +3274,12 @@ pub extern "C" fn canvas_native_webgl_get_vertex_attrib(
 }
 
 #[no_mangle]
-pub extern "C" fn canvas_native_webgl_get_is_context_lost(_: *mut WebGLState) -> bool {
-    // TODO improve
-    false
+pub extern "C" fn canvas_native_webgl_get_is_context_lost(state: *mut WebGLState) -> bool {
+    if state.is_null() {
+        return false;
+    }
+    let state = unsafe { &mut *state };
+    canvas_webgl::webgl::canvas_native_webgl_get_is_context_lost(state.get_inner_mut())
 }
 
 #[no_mangle]
@@ -3546,12 +3667,7 @@ pub extern "C" fn canvas_native_webgl_tex_image2d_webgl(
     assert!(!webgl.is_null());
     let state = unsafe { &mut *state };
     let webgl = unsafe { &mut *webgl };
-    let mut pixels = canvas_webgl::webgl::canvas_native_webgl_read_webgl_pixels(
-        &mut webgl.0,
-        &mut state.0,
-        internalformat,
-        format,
-    );
+    let mut pixels = canvas_webgl::webgl::canvas_native_webgl_read_webgl_pixels(&mut webgl.0, &mut state.0);
     canvas_webgl::webgl::canvas_native_webgl_tex_image2d(
         target,
         level,
@@ -3764,12 +3880,7 @@ pub extern "C" fn canvas_native_webgl_tex_sub_image2d_webgl(
     let width = source.drawing_buffer_width();
     let height = source.drawing_buffer_height();
 
-    let mut pixels = canvas_webgl::webgl::canvas_native_webgl_read_webgl_pixels(
-        &mut webgl.0,
-        &mut state.0,
-        image_type,
-        format as i32,
-    );
+    let mut pixels = canvas_webgl::webgl::canvas_native_webgl_read_webgl_pixels(&mut webgl.0, &mut state.0);
 
     canvas_webgl::webgl::canvas_native_webgl_tex_sub_image2d(
         target,

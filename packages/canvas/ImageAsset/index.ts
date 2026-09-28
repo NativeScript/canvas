@@ -1,9 +1,95 @@
 import { File, knownFolders, path as filePath, Utils, Observable, EventData } from '@nativescript/core';
 import { Helpers } from '../helpers';
+import { NAPI_HOST } from '../platform';
+import { loadNativeImage } from '../platform/index';
 
 let ctor;
 // store ref if loading
 const loaders = new Map<ImageAsset, number>();
+
+export interface SvgLoadOptions {
+	/** CSS pixels; one alone keeps the aspect ratio. Defaults to the SVG's size. */
+	width?: number;
+	height?: number;
+	/** Pixels per CSS pixel, default 1. */
+	scale?: number;
+	/** Animation time in seconds, default 0. */
+	time?: number;
+}
+
+/** Registered by `@nativescript/canvas-svg` on import; canvas cannot import it. */
+export interface SvgImageProvider {
+	/** The Svg view behind `value`, else null. */
+	resolve(value: unknown): object | null;
+	/** In CSS pixels. */
+	naturalSize(svg: object): { width: number; height: number };
+	/** The current frame into `asset`; a no-op if unchanged. */
+	rasterize(svg: object, scale: number, asset: ImageAsset): boolean;
+	loadSync(source: string | object, asset: ImageAsset, options?: SvgLoadOptions): boolean;
+	load(source: string | object, asset: ImageAsset, options?: SvgLoadOptions): Promise<boolean>;
+}
+
+const SVG_PROVIDER_KEY = '__canvasSvgImageProvider';
+
+function svgProvider(): SvgImageProvider | undefined {
+	return global[SVG_PROVIDER_KEY];
+}
+
+function requireSvgProvider(): SvgImageProvider {
+	const provider = svgProvider();
+	if (!provider) {
+		throw new Error('Loading an SVG needs @nativescript/canvas-svg: install it and import it once before use.');
+	}
+	return provider;
+}
+
+/** Null for non-SVG sources, or when canvas-svg is absent. */
+export function resolveSvgSource(value: unknown): object | null {
+	if (!value || typeof value !== 'object') {
+		return null;
+	}
+	return svgProvider()?.resolve(value) ?? null;
+}
+
+export function getSvgNaturalSize(svg: object): { width: number; height: number } | null {
+	return svgProvider()?.naturalSize(svg) ?? null;
+}
+
+// Several sizes per view, for a view drawn at two sizes a frame.
+const SVG_SIZES_PER_VIEW = 4;
+const svgAssets = new WeakMap<object, Map<number, ImageAsset>>();
+
+/** A view's current frame at `scale` pixels per CSS pixel. */
+export function svgToImageAsset(svg: object, scale = 1): ImageAsset | null {
+	const provider = svgProvider();
+	if (!provider) {
+		return null;
+	}
+	let sizes = svgAssets.get(svg);
+	if (!sizes) {
+		sizes = new Map();
+		svgAssets.set(svg, sizes);
+	}
+	const key = Math.max(1, Math.round(scale * 100));
+	let asset = sizes.get(key);
+	if (asset) {
+		// Re-inserted as newest; the first entry is evicted.
+		sizes.delete(key);
+	} else {
+		asset = new ImageAsset();
+		if (sizes.size >= SVG_SIZES_PER_VIEW) {
+			sizes.delete(sizes.keys().next().value);
+		}
+	}
+	sizes.set(key, asset);
+	return provider.rasterize(svg, key / 100, asset) ? asset : null;
+}
+
+/** SVG sources become an ImageAsset at natural size; others pass through. */
+export function fromSvgSource<T>(value: T): T | ImageAsset {
+	const svg = resolveSvgSource(value);
+	return svg ? (svgToImageAsset(svg) ?? value) : value;
+}
 
 export class ImageAsset extends Observable {
 	static {
@@ -51,10 +137,14 @@ export class ImageAsset extends Observable {
 	}
 
 	private _decrementStrongRefAndRemove() {
-		const count = loaders.get(this) ?? 0 - 1;
+		// Parenthesised: `??` binds looser than `-`, so the old form returned the
+		// count undecremented and never released the strong ref.
+		const count = (loaders.get(this) ?? 0) - 1;
 
 		if (count <= 0) {
 			loaders.delete(this);
+		} else {
+			loaders.set(this, count);
 		}
 	}
 
@@ -193,6 +283,9 @@ export class ImageAsset extends Observable {
 
 	loadFromNativeSync(image: any): boolean {
 		try {
+			if (NAPI_HOST) {
+				return loadNativeImage(this.native, image);
+			}
 			if (__ANDROID__) {
 				const asset = long(this.native.__getRef());
 				return (<any>org).nativescript.canvas.NSCImageAsset.loadImageFromBitmap(asset, image);
@@ -211,6 +304,16 @@ export class ImageAsset extends Observable {
 
 	loadFromNative(image: any): Promise<boolean> {
 		return new Promise((resolve, reject) => {
+			if (NAPI_HOST) {
+				const loaded = loadNativeImage(this.native, image);
+				this.emitComplete(loaded, loaded ? undefined : 'Failed to load image from native source');
+				if (loaded) {
+					resolve(true);
+				} else {
+					reject('Failed to load image from native source');
+				}
+				return;
+			}
 			if (__ANDROID__) {
 				const ref = new WeakRef(this);
 				const asset = long(this.native.__getRef());
@@ -341,8 +444,38 @@ export class ImageAsset extends Observable {
 		});
 	}
 
-	loadFromBytesSync(width: number, height: number, bytes: Uint8Array | Uint8ClampedArray) {
-		return this.native.fromBytesSync(width, height, bytes);
+	/** Pass `premultiplied` for premultiplied bytes, or they are premultiplied twice. */
+	loadFromBytesSync(width: number, height: number, bytes: Uint8Array | Uint8ClampedArray, premultiplied = false) {
+		return this.native.fromBytesSync(width, height, bytes, premultiplied);
+	}
+
+	/** Markup, a `~/` or absolute path, or an Svg view. Needs `@nativescript/canvas-svg`. */
+	loadSvgSync(source: string | object, options?: SvgLoadOptions): boolean {
+		return requireSvgProvider().loadSync(source, this, options);
+	}
+
+	/** As `loadSvgSync`, and also takes a URL. */
+	loadSvg(source: string | object, options?: SvgLoadOptions): Promise<boolean> {
+		let provider: SvgImageProvider;
+		try {
+			provider = requireSvgProvider();
+		} catch (error) {
+			return Promise.reject(error);
+		}
+		this._incrementStrongRef();
+		return provider
+			.load(source, this, options)
+			.then(
+				(success) => {
+					this.emitComplete(success, success ? undefined : this.error);
+					return success;
+				},
+				(error) => {
+					this.emitComplete(false, error);
+					throw error;
+				},
+			)
+			.finally(() => this._decrementStrongRefAndRemove());
 	}
 
 	loadFromBytes(width: number, height: number, bytes: Uint8Array | Uint8ClampedArray) {

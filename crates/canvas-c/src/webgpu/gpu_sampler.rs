@@ -9,17 +9,8 @@ use crate::webgpu::prelude::label_to_ptr;
 #[derive(Debug)]
 pub struct CanvasGPUSampler {
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
-    pub(crate) sampler: wgpu_core::id::SamplerId,
+    pub(crate) sampler: Arc<wgpu_core::resource::Sampler>,
     pub(crate) label: Option<Cow<'static, str>>,
-}
-
-impl Drop for CanvasGPUSampler {
-    fn drop(&mut self) {
-        if !std::thread::panicking() {
-            let global = self.instance.global();
-            global.sampler_drop(self.sampler);
-        }
-    }
 }
 
 #[no_mangle]

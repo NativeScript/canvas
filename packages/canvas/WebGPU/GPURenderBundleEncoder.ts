@@ -15,8 +15,8 @@ export class GPURenderBundleEncoder {
 		this[native_].draw(vertexCount, instanceCount ?? 1, firstVertex ?? 0, firstInstance ?? 0);
 	}
 
-	drawIndexed(indexCount: number, instanceCount: number = 1, firstVertex: number = 0, firstInstance: number = 0) {
-		this[native_].drawIndexed(indexCount, instanceCount ?? 1, firstVertex ?? 0, firstInstance ?? 0);
+	drawIndexed(indexCount: number, instanceCount: number = 1, firstIndex: number = 0, baseVertex: number = 0, firstInstance: number = 0) {
+		this[native_].drawIndexed(indexCount, instanceCount ?? 1, firstIndex ?? 0, baseVertex ?? 0, firstInstance ?? 0);
 	}
 
 	drawIndexedIndirect(indirectBuffer: GPUBuffer, indirectOffset: number) {
@@ -59,7 +59,8 @@ export class GPURenderBundleEncoder {
 	}
 
 	setIndexBuffer(buffer: GPUBuffer, indexFormat: 'uint16' | 'uint32', offset?: number, size?: number) {
-		this[native_].setIndexBuffer(buffer[native_], indexFormat, offset ?? 0, size ?? buffer.size - (offset ?? 0));
+		// 0 = uint16, 1 = uint32: an int keeps the call on the fast path.
+		this[native_].setIndexBuffer(buffer[native_], indexFormat === 'uint16' ? 0 : 1, offset ?? 0, size ?? buffer.size - (offset ?? 0));
 	}
 
 	setPipeline(renderPipeline: GPURenderPipeline) {

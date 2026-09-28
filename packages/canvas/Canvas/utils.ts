@@ -25,6 +25,8 @@ const default2DOptions = {
 	willReadFrequently: false,
 };
 
+export type CanvasContextType = '2d' | 'bitmaprenderer' | 'webgl' | 'webgl2' | 'experimental-webgl' | 'experimental-webgl2';
+
 export function parsePowerPreference(powerPreference: string) {
 	switch (powerPreference) {
 		case 'default':
@@ -38,7 +40,12 @@ export function parsePowerPreference(powerPreference: string) {
 	}
 }
 
-export function handleContextOptions(type: '2d' | 'webgl' | 'webgl2' | 'experimental-webgl' | 'experimental-webgl2', contextAttributes) {
+export function handleContextOptions(type: CanvasContextType, contextAttributes) {
+	// A bitmaprenderer is backed by the same 2D surface and takes the same
+	// options; the only one the spec gives it is `alpha`.
+	if (type === 'bitmaprenderer') {
+		type = '2d';
+	}
 	if (!contextAttributes) {
 		if (type === '2d') {
 			return { ...default2DOptions, powerPreference: 0 };

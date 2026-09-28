@@ -1,0 +1,33 @@
+[package]
+authors = ["LongYinan <lynweklm@gmail.com>"]
+description = "NodeJS N-API raw binding"
+edition = "2021"
+include = ["src/**/*", "Cargo.toml"]
+keywords = ["NodeJS", "FFI", "NAPI", "n-api"]
+license = "MIT"
+name = "napi-sys"
+readme = "README.md"
+repository = "https://github.com/napi-rs/napi-rs"
+rust-version.workspace = true
+version = "3.3.2"
+
+[features]
+default = ["dyn-symbols"]
+dyn-symbols = []
+experimental = []
+napi1 = []
+napi2 = ["napi1"]
+napi3 = ["napi2"]
+napi4 = ["napi3"]
+napi5 = ["napi4"]
+napi6 = ["napi5"]
+napi7 = ["napi6"]
+napi8 = ["napi7"]
+napi9 = ["napi8"]
+napi10 = ["napi9"]
+
+[package.metadata.workspaces]
+independent = true
+
+[dependencies]
+libloading = { version = "0.9" }

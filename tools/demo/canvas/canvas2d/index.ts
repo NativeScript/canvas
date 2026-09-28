@@ -14,3 +14,6 @@ export * from './particles/particlesLarge';
 export * from './particles/swarm';
 export * from './mdn';
 export * from './circles';
+export * from './perf';
+export * from './imagebitmap-perf';
+export * from './profile';

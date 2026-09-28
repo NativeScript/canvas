@@ -9,7 +9,10 @@
 struct ImageDataBuffer {
 public:
     explicit ImageDataBuffer(ImageData *imageData) {
-        // The buffer owns a clone of the pixel storage; ImageDataImpl owns imageData.
+        // get_data borrows the ImageData and returns a U8Buffer holding a second
+        // refcounted handle to the *same* pixels -- not a copy -- which is what
+        // makes the JS `data` view live. Releasing the buffer drops only that
+        // handle; the ImageData stays owned by ImageDataImpl, which releases it.
         this->slice_ = canvas_native_image_data_get_data(imageData);
         this->buf_ = canvas_native_u8_buffer_get_bytes_mut(slice_);
         this->size_ = canvas_native_u8_buffer_get_length(slice_);
@@ -50,7 +53,7 @@ void ImageDataImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolat
 
 
 ImageDataImpl *ImageDataImpl::GetPointer(const v8::Local<v8::Object> &object) {
-    auto ptr = canvas::GetAlignedPointer(object, 0);
+    auto ptr = object->GetAlignedPointerFromInternalField(0, ObjectWrapperImpl::kInternalFieldTag);
     if (ptr == nullptr) {
         return nullptr;
     }
@@ -109,7 +112,7 @@ void ImageDataImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
         auto object = new ImageDataImpl(image_data);
 
-        canvas::SetAlignedPointer(ret, 0, object);
+        ret->SetAlignedPointerInInternalField(0, object, ObjectWrapperImpl::kInternalFieldTag);
 
         object->BindFinalizer(isolate, ret);
 
@@ -132,7 +135,7 @@ void ImageDataImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
         auto object = new ImageDataImpl(image_data);
 
-        canvas::SetAlignedPointer(ret, 0, object);
+        ret->SetAlignedPointerInInternalField(0, object, ObjectWrapperImpl::kInternalFieldTag);
 
         SetNativeType(object, NativeType::ImageData);
 
@@ -150,7 +153,7 @@ void ImageDataImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
 void
 ImageDataImpl::GetWidth(v8::Local<v8::Name> name,
                         const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(canvas::Receiver(info));
+    auto ptr = GetPointer(info.Holder());
     if (ptr != nullptr) {
         auto ret = canvas_native_image_data_get_width(ptr->GetImageData());
         info.GetReturnValue().Set(ret);
@@ -162,7 +165,7 @@ ImageDataImpl::GetWidth(v8::Local<v8::Name> name,
 void
 ImageDataImpl::GetHeight(v8::Local<v8::Name> name,
                          const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(canvas::Receiver(info));
+    auto ptr = GetPointer(info.Holder());
     if (ptr != nullptr) {
         auto ret = canvas_native_image_data_get_height(ptr->GetImageData());
         info.GetReturnValue().Set(ret);
@@ -175,7 +178,7 @@ ImageDataImpl::GetHeight(v8::Local<v8::Name> name,
 void
 ImageDataImpl::GetData(v8::Local<v8::Name> name,
                        const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(canvas::Receiver(info));
+    auto ptr = GetPointer(info.Holder());
     if (ptr != nullptr) {
         auto isolate = info.GetIsolate();
 

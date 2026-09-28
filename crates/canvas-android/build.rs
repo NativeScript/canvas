@@ -9,6 +9,8 @@ fn main() {
     let target_os = env::var("CARGO_CFG_TARGET_OS").expect("CARGO_CFG_TARGET_OS not set");
     if target_os == "android" {
         println!("cargo:rustc-link-arg=-Wl,-z,max-page-size=16384");
+        // libandroid provides AHardwareBuffer_fromHardwareBuffer.
+        println!("cargo:rustc-link-lib=android");
     }
     setup_aarch64_android_workaround();
 

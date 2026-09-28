@@ -9,10 +9,10 @@
 #include "GPUQueueImpl.h"
 
 v8::CFunction GPUCanvasContextImpl::fast_start_raf_(
-																										CANVAS_FAST_FUNCTION(GPUCanvasContextImpl::__FastStartRaf));
+																										v8::CFunction::Make(GPUCanvasContextImpl::__FastStartRaf));
 
 v8::CFunction GPUCanvasContextImpl::fast_stop_raf_(
-																									 CANVAS_FAST_FUNCTION(GPUCanvasContextImpl::__FastStopRaf));
+																									 v8::CFunction::Make(GPUCanvasContextImpl::__FastStopRaf));
 
 
 GPUCanvasContextImpl::GPUCanvasContextImpl(const CanvasGPUCanvasContext *context) : context_(
@@ -49,7 +49,7 @@ void GPUCanvasContextImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate 
 }
 
 GPUCanvasContextImpl *GPUCanvasContextImpl::GetPointer(const v8::Local<v8::Object> &object) {
-	auto ptr = canvas::GetAlignedPointer(object, 0);
+	auto ptr = object->GetAlignedPointerFromInternalField(0, ObjectWrapperImpl::kInternalFieldTag);
 	if (ptr == nullptr) {
 		return nullptr;
 	}
@@ -107,7 +107,7 @@ void GPUCanvasContextImpl::__StopRaf(const v8::FunctionCallbackInfo<v8::Value> &
 
 void GPUCanvasContextImpl::GetContinuousRenderMode(v8::Local<v8::Name> property,
 																									 const v8::PropertyCallbackInfo<v8::Value> &info) {
-	GPUCanvasContextImpl *ptr = GetPointer(canvas::Receiver(info));
+	GPUCanvasContextImpl *ptr = GetPointer(info.Holder());
 	if (ptr == nullptr) {
 		info.GetReturnValue().Set(false);
 		return;
@@ -118,7 +118,7 @@ void GPUCanvasContextImpl::GetContinuousRenderMode(v8::Local<v8::Name> property,
 void GPUCanvasContextImpl::SetContinuousRenderMode(v8::Local<v8::Name> property,
 																									 v8::Local<v8::Value> value,
 																									 const v8::PropertyCallbackInfo<void> &info) {
-	GPUCanvasContextImpl *ptr = GetPointer(canvas::Receiver(info));
+	GPUCanvasContextImpl *ptr = GetPointer(info.Holder());
 	if (ptr == nullptr) {
 		return;
 	}
@@ -182,7 +182,7 @@ v8::Local<v8::FunctionTemplate> GPUCanvasContextImpl::GetCtor(v8::Isolate *isola
 						ConvertToV8String(isolate, "__toDataURL"),
 						v8::FunctionTemplate::New(isolate, &__ToDataURL));
 	
-	canvas::SetAccessor(tmpl, ConvertToV8String(isolate, "continuousRenderMode"), GetContinuousRenderMode,
+	tmpl->SetNativeDataProperty(ConvertToV8String(isolate, "continuousRenderMode"), GetContinuousRenderMode,
 										SetContinuousRenderMode);
 	
 	cache->GPUCanvasContextTmpl =
@@ -408,8 +408,13 @@ void GPUCanvasContextImpl::GetCapabilities(const v8::FunctionCallbackInfo<v8::Va
 		auto adapter = GPUAdapterImpl::GetPointer(adapterVal.As<v8::Object>());
 		auto ctx = ptr->GetContext();
 		
-		if (adapter != nullptr) {
-			auto cap = canvas_native_webgpu_context_get_capabilities(ctx, adapter->GetGPUAdapter());
+		// Null is the failure return for an unconfigurable surface (a canvas that
+		// was never attached); the empty result below is the right answer.
+		auto cap = adapter != nullptr
+					   ? canvas_native_webgpu_context_get_capabilities(ctx, adapter->GetGPUAdapter())
+					   : nullptr;
+
+		if (cap != nullptr) {
 			auto formats_len = canvas_native_string_buffer_get_length(cap->formats);
 			auto formats = v8::Array::New(isolate, (int) formats_len);
 			for (int i = 0; i < formats_len; i++) {

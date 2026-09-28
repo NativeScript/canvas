@@ -5,3 +5,8 @@ edition = "2021"
 
 [dependencies]
 skia-safe = { workspace = true, features = ["svg", "textlayout"] }
+canvas-2d = { workspace = true, default-features = false }
+quick-xml = { workspace = true }
+
+[dev-dependencies]
+skia-safe = { workspace = true, features = ["svg", "textlayout"] }

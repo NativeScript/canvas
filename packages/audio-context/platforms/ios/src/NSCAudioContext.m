@@ -1028,9 +1028,15 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
     }
 
     if ([normalized isEqualToString:@"speaker"]) {
+#if TARGET_OS_TV
+        // tvOS has no built-in speaker to override to; output follows the HDMI/AirPlay route.
+        NSCLogError(@"NSCAudioContext: setSinkId(speaker) is unavailable on tvOS");
+        return NO;
+#else
         BOOL ok = [session overrideOutputAudioPort:AVAudioSessionPortOverrideSpeaker error:&err];
         if (!ok) NSCLogError(@"NSCAudioContext: setSinkId(speaker) failed: %@", err);
         return ok;
+#endif
     }
 
     for (AVAudioSessionPortDescription *p in session.currentRoute.outputs) {

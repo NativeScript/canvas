@@ -146,7 +146,8 @@ export class GPUCanvasContext implements CanvasRenderingContext {
 				console.warn(`GPUCanvasContext: configure usage unsupported falling back to ${capabilities.usages}`);
 			}
 
-			if (__APPLE__) {
+			// Keep to the usages the surface supports.
+			if (__APPLE__ || NAPI_HOST) {
 				const supported = (capabilities && (capabilities as any).usages) || 0;
 				const unsupported = opts.usage & ~supported;
 				if (unsupported !== 0) {

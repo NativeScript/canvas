@@ -40,8 +40,6 @@ use std::rc::Rc;
 #[napi(custom_finalize)]
 pub struct CanvasRenderingContext2D {
   pub(crate) context: *mut CCanvasRenderingContext2D,
-  /// `create2DContextWithPointer` wraps a context the host owns; everything else owns its own.
-  owns_context: bool,
   /// Dirty tracking: drawing marks the context, the host renders it at frame end.
   pub(crate) frame: Rc<FrameSlot>,
   continuous_render: Cell<bool>,
@@ -49,9 +47,7 @@ pub struct CanvasRenderingContext2D {
 
 impl ObjectFinalize for CanvasRenderingContext2D {
   fn finalize(self, _: Env) -> Result<()> {
-    if self.owns_context {
-      canvas_c::canvas_native_context_release(self.context);
-    }
+    canvas_c::canvas_native_context_release(self.context);
     Ok(())
   }
 }
@@ -65,10 +61,9 @@ unsafe fn render_2d(context: *mut c_void) {
 }
 
 impl CanvasRenderingContext2D {
-  pub(crate) fn from_raw(context: *mut CCanvasRenderingContext2D, owns_context: bool) -> Self {
+  pub(crate) fn from_raw(context: *mut CCanvasRenderingContext2D) -> Self {
     Self {
       context,
-      owns_context,
       frame: FrameSlot::new(context as *mut c_void, render_2d),
       continuous_render: Cell::new(false),
     }
@@ -150,7 +145,6 @@ impl CanvasRenderingContext2D {
         direction,
         canvas_c::CanvasColorSpace::Srgb,
       ),
-      true,
     )
   }
 
@@ -1448,15 +1442,19 @@ impl CanvasRenderingContext2D {
 #[napi(js_name = "create2DContext")]
 pub fn create_2d_context(pointer: napi::bindgen_prelude::BigInt) -> Option<CanvasRenderingContext2D> {
   let (pointer, _) = pointer.get_i64();
-  (pointer != 0).then(|| CanvasRenderingContext2D::from_raw(pointer as _, true))
+  (pointer != 0).then(|| CanvasRenderingContext2D::from_raw(pointer as _))
 }
 
-/// `CanvasModule.create2DContextWithPointer(pointer)`: wraps a context the host view owns.
+/// `CanvasModule.create2DContextWithPointer(pointer)`: wraps the host view's context.
 #[napi(js_name = "create2DContextWithPointer")]
 pub fn create_2d_context_with_pointer(
   pointer: napi::bindgen_prelude::BigInt,
 ) -> Option<CanvasRenderingContext2D> {
   let (pointer, _) = pointer.get_i64();
   let context = canvas_c::canvas_native_context_create_with_pointer(pointer);
-  (!context.is_null()).then(|| CanvasRenderingContext2D::from_raw(context, false))
+  if context.is_null() {
+    return None;
+  }
+  canvas_c::canvas_native_context_reference(context);
+  Some(CanvasRenderingContext2D::from_raw(context))
 }

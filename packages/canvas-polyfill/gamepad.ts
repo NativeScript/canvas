@@ -32,10 +32,12 @@ export function hookGamepadListeners() {
 			continue;
 		}
 		const hooked = function (this: unknown, type: string, ...rest: unknown[]) {
+			const result = add.call(this, type, ...rest);
+			// Register first: starting the backend reports already-connected pads synchronously.
 			if (type === 'gamepadconnected' || type === 'gamepaddisconnected') {
 				gamepads();
 			}
-			return add.call(this, type, ...rest);
+			return result;
 		};
 		hooked.__gamepadHook = true;
 		host.addEventListener = hooked;

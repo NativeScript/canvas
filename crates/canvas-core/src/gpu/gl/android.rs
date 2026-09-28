@@ -1224,6 +1224,10 @@ impl GLContext {
         }
     }
 
+    pub fn is_pbuffer(&self) -> bool {
+        matches!(self.0.surface, Some(SurfaceHelper::Pbuffer(_)))
+    }
+
     pub fn get_surface_width(&self) -> i32 {
         self.0.dimensions.read().width
     }

@@ -40,50 +40,35 @@ class GLView : TextureView, SurfaceTextureListener {
 
 
 	override fun onSurfaceTextureAvailable(surface: SurfaceTexture, width: Int, height: Int) {
-		if (isReady) {
+		isCreated = true
+		if (width == 0 || height == 0) {
+			isCreatedWithZeroSized = true
 			return
 		}
-		if (!isCreated) {
-			if (width == 0 || height == 0) {
-				isCreatedWithZeroSized = true
-			}
-			if (!isCreatedWithZeroSized) {
-				this.surface = Surface(surface)
-				canvas?.let {
-					if (!isReady) {
-						isReady = true
-						postOnAnimation {
-							it.listener?.contextReady()
-						}
-					} else {
-						resize()
-					}
-				}
-			}
-			isCreated = true
-		}
+		this.surface = Surface(surface)
+		attach()
 	}
 
 
 	override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture, width: Int, height: Int) {
-		if (isReady || !isCreatedWithZeroSized) {
-			resize()
-			return
-		}
-
-		if (width != 0 || height != 0) {
+		if (isCreatedWithZeroSized && (width != 0 || height != 0)) {
 			this.surface = Surface(surface)
 			isCreatedWithZeroSized = false
-			canvas?.let {
-				if (!isReady) {
-					isReady = true
-					postOnAnimation {
-						it.listener?.contextReady()
-					}
-				} else {
-					resize()
+			attach()
+			return
+		}
+		resize()
+	}
+
+	private fun attach() {
+		canvas?.let {
+			if (!isReady) {
+				isReady = true
+				postOnAnimation {
+					it.listener?.contextReady()
 				}
 			}
+			it.resize()
 		}
 	}
 
@@ -100,6 +85,7 @@ class GLView : TextureView, SurfaceTextureListener {
 		// the SurfaceView path already has.
 		canvas?.surfaceDestroyed()
 		this.surface?.release()
+		this.surface = null
 		return false
 	}
 

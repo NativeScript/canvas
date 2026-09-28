@@ -2127,6 +2127,57 @@ void canvas_native_context_resize(struct CanvasRenderingContext2D *context,
                                   float width,
                                   float height);
 
+/**
+ * A 2D context on the shared Direct3D 12 device (Windows). Offscreen until
+ * `canvas_native_context_attach_swap_chain_panel`. Null when there is no usable device.
+ */
+struct CanvasRenderingContext2D *canvas_native_context_create_d3d(float width,
+                                                                  float height,
+                                                                  float density,
+                                                                  bool alpha,
+                                                                  int32_t font_color,
+                                                                  float ppi,
+                                                                  uint32_t direction,
+                                                                  enum CanvasColorSpace color_space);
+
+/**
+ * Presents a D3D context in a WinUI `SwapChainPanel` (`panel`: any COM pointer to it). UI thread.
+ */
+bool canvas_native_context_attach_swap_chain_panel(struct CanvasRenderingContext2D *context,
+                                                   void *panel);
+
+/**
+ * Presents a D3D context into a XAML `SurfaceImageSource` (any COM pointer to it, made at the
+ * context's size) instead of a swapchain, so it blends with the page. UI thread.
+ */
+bool canvas_native_context_attach_xaml_surface(struct CanvasRenderingContext2D *context,
+                                               void *source);
+
+/**
+ * Maps the context's swapchain into its panel: DIPs = pixels * scale + offset.
+ */
+bool canvas_native_context_set_swap_chain_transform(struct CanvasRenderingContext2D *context,
+                                                    float scale_x,
+                                                    float scale_y,
+                                                    float offset_x,
+                                                    float offset_y);
+
+/**
+ * The context's Direct3D 12 device was removed; it draws nothing until restored.
+ */
+bool canvas_native_context_is_lost(const struct CanvasRenderingContext2D *context);
+
+/**
+ * Moves a lost context to a new device, cleared and in its default state, shown in `panel`
+ * again (null offscreen). UI thread.
+ */
+bool canvas_native_context_restore_d3d(struct CanvasRenderingContext2D *context, void *panel);
+
+/**
+ * Removes this thread's shared Direct3D 12 device, as a driver reset would (tests).
+ */
+bool canvas_native_d3d_simulate_device_removal(void);
+
 struct CanvasRenderingContext2D *canvas_native_context_create(float width,
                                                               float height,
                                                               float density,
@@ -3311,6 +3362,8 @@ void canvas_native_webgpu_buffer_map_async(const struct CanvasGPUBuffer *buffer,
                                            void (*callback)(enum CanvasGPUErrorType, char*, void*),
                                            void *callback_data);
 
+void canvas_native_webgpu_context_detach_surface(const struct CanvasGPUCanvasContext *context);
+
 char *canvas_native_webgpu_to_data_url_with_fallback(const struct CanvasGPUCanvasContext *context,
                                                      const char *format,
                                                      float quality);
@@ -3344,6 +3397,31 @@ const struct CanvasGPUCanvasContext *canvas_native_webgpu_context_create(const s
                                                                          uint32_t width,
                                                                          uint32_t height);
 #endif
+
+/**
+ * Windows: a context presenting in a WinUI `SwapChainPanel` (any COM pointer to it). UI thread.
+ */
+const struct CanvasGPUCanvasContext *canvas_native_webgpu_context_create_swap_chain_panel(const struct CanvasWebGPUInstance *instance,
+                                                                                          void *panel,
+                                                                                          uint32_t width,
+                                                                                          uint32_t height);
+
+/**
+ * Windows: maps the swapchain into its panel (DIPs = pixels * scale + offset).
+ */
+bool canvas_native_webgpu_context_set_swap_chain_transform(const struct CanvasGPUCanvasContext *context,
+                                                           float scale_x,
+                                                           float scale_y,
+                                                           float offset_x,
+                                                           float offset_y);
+
+/**
+ * Windows: a new drawing-buffer size. The surface is reconfigured in place (its swapchain is
+ * resized), keeping the configuration the page chose.
+ */
+void canvas_native_webgpu_context_resize_swap_chain_panel(const struct CanvasGPUCanvasContext *context,
+                                                          uint32_t width,
+                                                          uint32_t height);
 
 #if (defined(TARGET_OS_IOS) || defined(TARGET_OS_VISION))
 const struct CanvasGPUCanvasContext *canvas_native_webgpu_context_create_uiview(const struct CanvasWebGPUInstance *instance,
@@ -3973,6 +4051,11 @@ uint64_t canvas_native_webgpu_compilation_message_get_offset(struct CanvasGPUCom
 
 uint64_t canvas_native_webgpu_compilation_message_get_length(struct CanvasGPUCompilationMessage *message);
 
+/**
+ * Videos share frames only with devices on their adapter. 0 if unknown.
+ */
+uint64_t canvas_native_webgpu_device_get_adapter_luid(const struct CanvasGPUDevice *device);
+
 struct CanvasGPUSupportedLimits *canvas_native_webgpu_create_limits(void);
 
 void canvas_native_webgpu_limits_release(struct CanvasGPUSupportedLimits *limits);
@@ -4105,6 +4188,13 @@ void canvas_native_image_asset_release(const struct ImageAsset *asset);
 bool canvas_native_image_asset_load_from_fd(const struct ImageAsset *asset, int fd);
 
 bool canvas_native_image_asset_load_from_path(const struct ImageAsset *asset, const char *path);
+
+/**
+ * Encodes the image to `path`; `format` 0 JPG, 1 PNG (`ImageAssetSaveFormat`).
+ */
+bool canvas_native_image_asset_save_path(const struct ImageAsset *asset,
+                                         const char *path,
+                                         uint32_t format);
 
 bool canvas_native_image_asset_load_from_raw(const struct ImageAsset *asset,
                                              uint32_t width,
@@ -4412,7 +4502,7 @@ struct WebGLState *canvas_native_webgl_create(void *view,
                                               bool xr_compatible);
 #endif
 
-#if !defined(TARGET_OS_ANDROID)
+#if (defined(TARGET_OS_IOS) || defined(TARGET_OS_MACOS) || defined(TARGET_OS_VISION))
 struct WebGLState *canvas_native_webgl_create(void *view,
                                               int32_t version,
                                               bool alpha,
@@ -4441,6 +4531,56 @@ struct WebGLState *canvas_native_webgl_create_no_window(int32_t width,
                                                         bool desynchronized,
                                                         bool xr_compatible,
                                                         bool is_canvas);
+
+/**
+ * Windows: a WebGL context whose drawing buffer can be shown in a `SwapChainPanel`
+ * (`canvas_native_webgl_attach_swap_chain_panel`). Null when ANGLE is unavailable.
+ */
+struct WebGLState *canvas_native_webgl_create_d3d(int32_t width,
+                                                  int32_t height,
+                                                  int32_t version,
+                                                  bool alpha,
+                                                  bool antialias,
+                                                  bool depth,
+                                                  bool fail_if_major_performance_caveat,
+                                                  int32_t power_preference,
+                                                  bool premultiplied_alpha,
+                                                  bool preserve_drawing_buffer,
+                                                  bool stencil,
+                                                  bool desynchronized,
+                                                  bool xr_compatible);
+
+/**
+ * Windows: shows a `canvas_native_webgl_create_d3d` context in a `SwapChainPanel` (any COM
+ * pointer to it). UI thread.
+ */
+bool canvas_native_webgl_attach_swap_chain_panel(struct WebGLState *state, void *panel);
+
+/**
+ * Windows: presents a `canvas_native_webgl_create_d3d` context into a XAML `SurfaceImageSource`
+ * (any COM pointer to it, made at the drawing buffer's size) instead of a swapchain, so it blends
+ * with the page. The rows are bottom-up: the host flips the image. UI thread.
+ */
+bool canvas_native_webgl_attach_xaml_surface(struct WebGLState *state, void *source);
+
+/**
+ * Windows: maps the drawing buffer into its panel (DIPs = pixels * scale + offset).
+ */
+bool canvas_native_webgl_set_swap_chain_transform(struct WebGLState *state,
+                                                  float scale_x,
+                                                  float scale_y,
+                                                  float offset_x,
+                                                  float offset_y);
+
+/**
+ * Windows: resizes (and clears) a `canvas_native_webgl_create_d3d` drawing buffer.
+ */
+bool canvas_native_webgl_resize_d3d(struct WebGLState *state, int32_t width, int32_t height);
+
+/**
+ * Ends a frame: presents it where the context is on screen (Windows panels), else flushes.
+ */
+bool canvas_native_webgl_present(struct WebGLState *state);
 
 void canvas_native_webgl_active_texture(uint32_t texture, struct WebGLState *state);
 
@@ -4820,7 +4960,7 @@ struct WebGLResult *canvas_native_webgl_get_vertex_attrib(uint32_t index,
                                                           uint32_t pname,
                                                           struct WebGLState *state);
 
-bool canvas_native_webgl_get_is_context_lost(struct WebGLState*);
+bool canvas_native_webgl_get_is_context_lost(struct WebGLState *state);
 
 void canvas_native_webgl_hint(uint32_t target, uint32_t mode, struct WebGLState *state);
 

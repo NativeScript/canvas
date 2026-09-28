@@ -1,4 +1,4 @@
-import { GridLayout, Screen } from '@nativescript/core';
+import { GridLayout, Screen, View } from '@nativescript/core';
 import { DemoSharedBase } from '../utils';
 import { Svg } from '@nativescript/canvas-svg';
 import { Canvas, ImageAsset } from '@nativescript/canvas';
@@ -32,7 +32,7 @@ function mountCanvas(view, row: number, col: number, onReady: (canvas: Canvas) =
 	// Layout size goes through style: on Canvas, `width`/`height` are the backing store.
 	canvas.style.width = '100%' as any;
 	canvas.style.height = '100%' as any;
-	canvas.on('ready', () => {
+	canvas.once(View.layoutChangedEvent, () => {
 		// Like a web canvas, the backing store starts at 300x150 whatever the layout size.
 		canvas.width = Math.round(canvas.clientWidth * Screen.mainScreen.scale) as any;
 		canvas.height = Math.round(canvas.clientHeight * Screen.mainScreen.scale) as any;

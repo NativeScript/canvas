@@ -6,7 +6,7 @@
 		<Label row="0" col="0" text="{{ status }}" textWrap="true" class="p-10" />
 		<!-- A real on-screen surface for the tests that cannot use an offscreen
 		     canvas (WebGPU needs a window to configure against). -->
-		<canvas:Canvas row="1" col="0" id="surface" ready="{{ canvasReady }}" style="width:64;height:64;" />
+		<canvas:Canvas row="1" col="0" id="surface" loaded="{{ canvasReady }}" style="width:64;height:64;" />
 		<ScrollView row="2" col="0">
 			<Label text="{{ report }}" textWrap="true" class="p-10" style="font-family:monospace;font-size:11;" />
 		</ScrollView>

@@ -1,6 +1,6 @@
 import { Canvas } from '@nativescript/canvas';
 import { GridLayout, Utils } from '@nativescript/core';
-import { suite, test, ok, equal, getPageCanvas, pixelEqual } from './harness';
+import { suite, test, skip, ok, equal, getPageCanvas, pixelEqual } from './harness';
 
 function wait(ms: number) {
 	return new Promise<void>((resolve) => setTimeout(resolve, ms));
@@ -13,7 +13,7 @@ function frames(count: number) {
 	});
 }
 
-async function mount(): Promise<Canvas> {
+function add(): Canvas {
 	const parent = getPageCanvas()?.parent as GridLayout;
 	if (!parent) {
 		throw new Error('no page layout to mount a canvas in');
@@ -22,10 +22,13 @@ async function mount(): Promise<Canvas> {
 	canvas.style.width = 32;
 	canvas.style.height = 32;
 	GridLayout.setRow(canvas, 1);
-	const ready = new Promise<void>((resolve) => canvas.once('ready', () => resolve()));
 	parent.addChild(canvas);
-	await Promise.race([ready, wait(3000)]);
-	await frames(2);
+	return canvas;
+}
+
+async function mount(): Promise<Canvas> {
+	const canvas = add();
+	await frames(3);
 	return canvas;
 }
 
@@ -36,6 +39,11 @@ function unmount(canvas: Canvas) {
 async function collect() {
 	Utils.GC();
 	await frames(3);
+}
+
+function shownGreen(canvas: Canvas): number {
+	const bitmap = (canvas as any)._canvas.snapshot(false);
+	return android.graphics.Color.green(bitmap.getPixel(bitmap.getWidth() / 2, bitmap.getHeight() / 2));
 }
 
 function glPixel(gl: any): number[] {
@@ -74,6 +82,76 @@ function renderFrame(device: any, ctx: any) {
 
 export function registerLifecycleSpec() {
 	suite('lifecycle', () => {
+		test('a 2d context draws as soon as its canvas is added, and keeps it once shown', async () => {
+			const canvas = add();
+			const ctx = canvas.getContext('2d') as any;
+			ok(ctx, 'no 2d context');
+			ctx.fillStyle = '#00ff00';
+			ctx.fillRect(0, 0, 16, 16);
+			pixelEqual(ctx, 4, 4, [0, 255, 0, 255]);
+			await frames(5);
+			pixelEqual(ctx, 4, 4, [0, 255, 0, 255], 2, 'lost when the surface attached');
+			unmount(canvas);
+		});
+
+		for (const type of ['webgl', 'webgl2'] as const) {
+			test(`a ${type} context draws as soon as its canvas is added`, async () => {
+				const canvas = add();
+				const gl = canvas.getContext(type) as any;
+				ok(gl, `no ${type} context`);
+				gl.clearColor(0, 1, 0, 1);
+				gl.clear(gl.COLOR_BUFFER_BIT);
+				equal(glPixel(gl).join(','), '0,255,0,255');
+				await frames(5);
+				gl.clear(gl.COLOR_BUFFER_BIT);
+				equal(glPixel(gl).join(','), '0,255,0,255');
+				unmount(canvas);
+			});
+		}
+
+		if (__ANDROID__) {
+			for (const type of ['webgl', 'webgl2'] as const) {
+				test(`a ${type} frame drawn before the surface exists is shown once it does`, async () => {
+					const canvas = add();
+					const gl = canvas.getContext(type) as any;
+					gl.clearColor(0, 1, 0, 1);
+					gl.clear(gl.COLOR_BUFFER_BIT);
+					await frames(5);
+					equal(shownGreen(canvas), 255);
+					unmount(canvas);
+				});
+			}
+
+			test('a webgpu frame drawn before the surface exists is shown once it does', async () => {
+				const adapter = await navigator.gpu.requestAdapter();
+				const device = await adapter.requestDevice();
+				const canvas = add();
+				const ctx = canvas.getContext('webgpu') as any;
+				ctx.configure({ device, format: navigator.gpu.getPreferredCanvasFormat(), alphaMode: 'premultiplied' });
+				renderFrame(device, ctx);
+				await frames(5);
+				equal(shownGreen(canvas), 255);
+				unmount(canvas);
+			});
+		} else {
+			skip('frames drawn before the surface exists', 'Android only: other views have their surface from the start');
+		}
+
+		test('a webgpu context renders as soon as its canvas is added', async () => {
+			const adapter = await navigator.gpu.requestAdapter();
+			const device = await adapter.requestDevice();
+			const canvas = add();
+			const ctx = canvas.getContext('webgpu') as any;
+			ok(ctx, 'no webgpu context');
+			ok(ctx.getCapabilities(adapter)?.format?.length, 'no formats before the surface');
+			ctx.configure({ device, format: navigator.gpu.getPreferredCanvasFormat(), alphaMode: 'premultiplied' });
+			renderFrame(device, ctx);
+			await frames(5);
+			renderFrame(device, ctx);
+			await frames(1);
+			unmount(canvas);
+		});
+
 		test('a 2d context keeps drawing after its canvas leaves the page', async () => {
 			const canvas = await mount();
 			const ctx = canvas.getContext('2d') as any;

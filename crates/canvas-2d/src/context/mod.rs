@@ -236,6 +236,17 @@ pub struct Context {
     pub(crate) font_color: Color,
 }
 
+impl Drop for Context {
+    fn drop(&mut self) {
+        // GrDirectContext frees its GL objects on whichever context is current, which
+        // may be another canvas's; its names would then delete that canvas's objects.
+        #[cfg(feature = "gl")]
+        if let Some(ref context) = self.gl_context {
+            context.make_current();
+        }
+    }
+}
+
 impl Context {
     pub fn get_recording_context(&mut self) -> Option<RecordingContext> {
         self.surface.recording_context()
@@ -469,6 +480,16 @@ impl Context {
         };
 
         ret
+    }
+
+    pub fn draw_pixels(&mut self, image: &Image) {
+        let canvas = self.surface.canvas();
+        canvas.save();
+        canvas.reset_matrix();
+        let mut paint = skia_safe::Paint::default();
+        paint.set_blend_mode(BlendMode::Src);
+        canvas.draw_image(image, (0., 0.), Some(&paint));
+        canvas.restore();
     }
 
     pub fn get_image_no_flush(&mut self) -> Option<Image> {

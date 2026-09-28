@@ -7,7 +7,7 @@
     </ActionBar>
 
     <GridLayout iosOverflowSafeArea="false" touch="{{ onTouch }}" pan="{{ onTouch }}">
-        <canvas:TNSCanvas iosOverflowSafeArea="true" id="canvas" width="100%" height="100%" ready="canvasLoaded"/>
+        <canvas:TNSCanvas iosOverflowSafeArea="true" id="canvas" width="100%" height="100%" loaded="canvasLoaded"/>
         <ActivityIndicator loaded="indicatorLoaded" busy="{{ isLoading }}" visibility="{{ isLoading ? 'visible': 'collapsed' }}" />
 
         <StackLayout isPassThroughParentEnabled="true">

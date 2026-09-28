@@ -911,6 +911,31 @@
 					},
 					{
 						"kind": "Function",
+						"name": "releaseWebGPU",
+						"printedName": "releaseWebGPU(_:)",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Void",
+								"printedName": "()"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "Int64",
+								"printedName": "Swift.Int64",
+								"usr": "s:s5Int64V"
+							}
+						],
+						"declKind": "Func",
+						"usr": "c:@M@CanvasNative@objc(cs)NSSCanvasHelpers(cm)releaseWebGPU:",
+						"mangledName": "$s12CanvasNative0A7HelpersC13releaseWebGPUyys5Int64VFZ",
+						"moduleName": "CanvasNative",
+						"static": true,
+						"declAttributes": ["Final", "AccessControl", "ObjC"],
+						"funcSelfKind": "NonMutating"
+					},
+					{
+						"kind": "Function",
 						"name": "create2DContext",
 						"printedName": "create2DContext(_:_:_:_:_:_:_:_:_:)",
 						"children": [

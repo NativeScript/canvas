@@ -17,13 +17,11 @@ export class Dom extends LayoutBase {
 
 	_raf: any;
 	_state: State = State.None;
-	_isReady: boolean = false;
 	_onFrameCallback: ((frame: number) => void) | undefined = undefined;
 
 	constructor() {
 		super();
 		this._canvas = new Canvas();
-		this._canvas.on('ready', this._ready.bind(this));
 		this._canvas.style.width = { unit: '%', value: 1 };
 		this._canvas.style.height = 'auto';
 	}
@@ -46,9 +44,8 @@ export class Dom extends LayoutBase {
 
 	onLoaded(): void {
 		super.onLoaded();
-		if (this._isReady) {
-			this._bindRaf();
-		}
+		this._dirty();
+		this._draw(null);
 	}
 
 	onUnloaded(): void {
@@ -68,6 +65,7 @@ export class Dom extends LayoutBase {
 		// Trigger a redraw now that dimensions are known. The scale transform is
 		// applied at the top of every _draw() call so it is always up to date.
 		this._dirty();
+		this._bindRaf();
 	}
 
 	public onMeasure(widthMeasureSpec: number, heightMeasureSpec: number) {
@@ -82,12 +80,6 @@ export class Dom extends LayoutBase {
 
 	set onFrameCallback(value: ((frame: number) => void) | undefined) {
 		this._onFrameCallback = value;
-	}
-
-	_ready() {
-		this._isReady = true;
-		this._dirty();
-		this._draw(null);
 	}
 
 	_draw(ts: number | null) {
@@ -117,10 +109,7 @@ export class Dom extends LayoutBase {
 	}
 
 	_bindRaf() {
-		if (!this._isReady) {
-			return;
-		}
-		if (this._raf) {
+		if (!this.isLoaded || this._raf) {
 			return;
 		}
 		if ((this._state & State.Pending) === State.Pending || typeof this._onFrameCallback === 'function') {

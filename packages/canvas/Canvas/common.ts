@@ -376,6 +376,11 @@ export const doc = {
 	},
 };
 
+/** Core hands a CSS length to setNative as a bare number in dip; `canvas.width`/`height` take pixels. */
+export function fromCssLength(value: any) {
+	return typeof value === 'number' ? { value, unit: 'dip' } : value;
+}
+
 export function lengthToDevicePixels(value: any, parent: any, isWidth: boolean): number {
 	if (value === undefined || value === null) {
 		return NaN;

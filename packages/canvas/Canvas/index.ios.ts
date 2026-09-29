@@ -1,4 +1,4 @@
-import { CanvasBase, doc, ignoreTouchEventsProperty, DOMRect, lengthToDevicePixels } from './common';
+import { CanvasBase, doc, ignoreTouchEventsProperty, DOMRect, lengthToDevicePixels, fromCssLength } from './common';
 import { DOMMatrix } from '../Canvas2D';
 import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
 import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
@@ -192,7 +192,7 @@ export class Canvas extends CanvasBase {
 	}
 
 	[widthProperty.setNative](value: any) {
-		this.__setSurfaceWidth(value);
+		this.__setSurfaceWidth(fromCssLength(value));
 	}
 
 	// @ts-ignore
@@ -260,7 +260,7 @@ export class Canvas extends CanvasBase {
 	}
 
 	[heightProperty.setNative](value: any) {
-		this.__setSurfaceHeight(value);
+		this.__setSurfaceHeight(fromCssLength(value));
 	}
 
 	// @ts-ignore

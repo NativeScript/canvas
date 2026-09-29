@@ -7,7 +7,7 @@
  * creates the native view, constructs the host for it and forwards the view's layout, scale and
  * pointer events here.
  */
-import { CanvasBase, DOMRect, doc, lengthToDevicePixels } from './common';
+import { CanvasBase, DOMRect, doc, lengthToDevicePixels, fromCssLength } from './common';
 import { DOMMatrix } from '../Canvas2D';
 import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
 import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
@@ -262,13 +262,13 @@ export abstract class NapiCanvas extends CanvasBase {
 	[widthProperty.setNative](value: any) {
 		(Object.getPrototypeOf(NapiCanvas.prototype) as any)[widthProperty.setNative]?.call(this, isPercentLength(value) ? 'auto' : value);
 		if (isPercentLength(value)) (this.parent as any)?._setChildPercentSize?.(this, true, percentFraction(value));
-		this.__setSurfaceWidth(value);
+		this.__setSurfaceWidth(fromCssLength(value));
 	}
 
 	[heightProperty.setNative](value: any) {
 		(Object.getPrototypeOf(NapiCanvas.prototype) as any)[heightProperty.setNative]?.call(this, isPercentLength(value) ? 'auto' : value);
 		if (isPercentLength(value)) (this.parent as any)?._setChildPercentSize?.(this, false, percentFraction(value));
-		this.__setSurfaceHeight(value);
+		this.__setSurfaceHeight(fromCssLength(value));
 	}
 
 	// @ts-ignore

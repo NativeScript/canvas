@@ -1,4 +1,5 @@
 mod attr;
+mod css_color;
 mod dom;
 mod frame;
 mod node;
@@ -40,8 +41,10 @@ pub fn draw_svg_from_path(surface: &mut skia_safe::Surface, path: &str) {
             match result {
                 Ok(_) => {
                     let _ = reader.seek(SeekFrom::Start(0));
+                    let mut source = Vec::new();
+                    let _ = reader.read_to_end(&mut source);
                     let mgr = font_mgr();
-                    match Dom::read(reader, mgr) {
+                    match Dom::from_bytes(&css_color::normalize_source(&source), mgr) {
                         Ok(mut svg) => {
                             let size = skia_safe::Size::new(
                                 surface.width() as f32,
@@ -70,7 +73,7 @@ pub fn draw_svg_from_path(surface: &mut skia_safe::Surface, path: &str) {
 
 pub fn draw_svg(surface: &mut skia_safe::Surface, svg: &str) {
     let mgr = font_mgr();
-    match Dom::from_bytes(svg.as_bytes(), mgr) {
+    match Dom::from_bytes(&css_color::normalize_source(svg.as_bytes()), mgr) {
         Ok(mut svg) => {
             let size = skia_safe::Size::new(surface.width() as f32, surface.height() as f32);
             let canvas = surface.canvas();
@@ -85,7 +88,7 @@ pub fn draw_svg(surface: &mut skia_safe::Surface, svg: &str) {
 
 pub fn draw_svg_from_bytes(surface: &mut skia_safe::Surface, bytes: &[u8]) {
     let mgr = font_mgr();
-    match Dom::from_bytes(bytes, mgr) {
+    match Dom::from_bytes(&css_color::normalize_source(bytes), mgr) {
         Ok(mut svg) => {
             let size = skia_safe::Size::new(surface.width() as f32, surface.height() as f32);
             let canvas = surface.canvas();

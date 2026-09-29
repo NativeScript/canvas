@@ -182,7 +182,7 @@ impl SvgElementHandle {
         if is_text_container(&self.node) {
             // No removal exists for text children; a hidden fragment renders as if gone.
             let mut child = self.children.remove(index);
-            crate::attr::set_attribute(&mut child, "display", "none");
+            crate::attr::set_normalized_attribute(&mut child, "display", "none");
             return Ok(child);
         }
         match as_container_mut(&mut self.node) {

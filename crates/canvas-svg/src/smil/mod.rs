@@ -279,7 +279,7 @@ impl Timeline {
                     // baseline the last value stays.
                     if let (Some(node), Some(previous)) = (&node, baseline) {
                         let previous = previous.to_owned();
-                        crate::set_attribute(&mut node.clone().typed(), &group.attribute, &previous);
+                        crate::attr::set_normalized_attribute(&mut node.clone().typed(), &group.attribute, &previous);
                     }
                 }
                 continue;
@@ -296,7 +296,7 @@ impl Timeline {
                 compose_value(group.base.as_ref(), &group.buffer)
             };
             if written != group.last_written {
-                crate::set_attribute(&mut typed, &group.attribute, &written);
+                crate::attr::set_normalized_attribute(&mut typed, &group.attribute, &written);
                 group.last_written = written;
                 changed = true;
                 if group.outside_layer(layer) {

@@ -182,7 +182,7 @@ export class Svg extends SVGBase {
 			this.__document.setContainerSize(width, height);
 			// Renders into the view's bitmap directly, with no intermediate buffer, and nothing
 			// allocated per frame.
-			this._svg.renderDocument(this.__document.nativePointer, pixelWidth, pixelHeight, scale);
+			this._svg.renderDocument(long(this.__document.nativePointer as any), pixelWidth, pixelHeight, scale);
 		}
 	}
 

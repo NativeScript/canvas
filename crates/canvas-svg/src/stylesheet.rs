@@ -18,16 +18,47 @@ pub(crate) fn apply(bytes: &[u8]) -> Option<Vec<u8>> {
     }
     let (elements, css) = scan(bytes).ok()?;
     let rules = parse_rules(&css);
-    if rules.is_empty() {
-        return None;
-    }
     let styles: Vec<Option<String>> = (0..elements.len())
         .map(|index| cascade(index, &elements, &rules))
         .collect();
-    if styles.iter().all(Option::is_none) {
+    let ids = animation_ids(&elements, &styles);
+    if styles.iter().all(Option::is_none) && ids.iter().all(Option::is_none) {
         return None;
     }
-    rewrite(bytes, &styles).ok()
+    rewrite(bytes, &styles, &ids).ok()
+}
+
+const GENERATED_ID_PREFIX: &str = "__nsc_css_";
+
+/// CSS animations address their element by id, so an element that animates without one, through
+/// a rule or its own `style`, is given one.
+fn animation_ids(elements: &[Element], styles: &[Option<String>]) -> Vec<Option<String>> {
+    let taken: std::collections::HashSet<&str> =
+        elements.iter().filter_map(|element| element.id.as_deref()).collect();
+    let mut next = 0usize;
+    elements
+        .iter()
+        .zip(styles)
+        .map(|(element, style)| {
+            if element.id.is_some() {
+                return None;
+            }
+            let style = style.as_deref().or(element.style.as_deref())?;
+            let animates = crate::smil::style_declarations(style)
+                .iter()
+                .any(|(property, _)| property == "animation" || property == "animation-name");
+            if !animates {
+                return None;
+            }
+            loop {
+                let id = format!("{GENERATED_ID_PREFIX}{next}");
+                next += 1;
+                if !taken.contains(id.as_str()) {
+                    return Some(id);
+                }
+            }
+        })
+        .collect()
 }
 
 struct Element {
@@ -232,7 +263,11 @@ fn cascade(index: usize, elements: &[Element], rules: &[Rule]) -> Option<String>
 
 /// Writes each styled element with its new `style` last: Skia applies attributes in order, so a
 /// presentation attribute after it would otherwise win.
-fn rewrite(bytes: &[u8], styles: &[Option<String>]) -> Result<Vec<u8>, quick_xml::Error> {
+fn rewrite(
+    bytes: &[u8],
+    styles: &[Option<String>],
+    ids: &[Option<String>],
+) -> Result<Vec<u8>, quick_xml::Error> {
     let mut reader = Reader::from_reader(bytes);
     reader.config_mut().trim_text(false);
     let mut writer = Writer::new(Vec::with_capacity(bytes.len()));
@@ -245,23 +280,30 @@ fn rewrite(bytes: &[u8], styles: &[Option<String>]) -> Result<Vec<u8>, quick_xml
             Event::Eof => break,
             Event::Start(start) | Event::Empty(start) => {
                 let is_empty = matches!(event, Event::Empty(_));
-                match styles.get(index).and_then(Option::as_deref) {
-                    Some(style) => {
+                let style = styles.get(index).and_then(Option::as_deref);
+                let id = ids.get(index).and_then(Option::as_deref);
+                match (style, id) {
+                    (None, None) => writer.write_event(event.clone())?,
+                    (style, id) => {
                         let name = String::from_utf8_lossy(start.name().as_ref()).into_owned();
                         let mut owned = BytesStart::new(name);
+                        if let Some(id) = id {
+                            owned.push_attribute(("id", id));
+                        }
                         for attribute in start.attributes().flatten() {
-                            if attribute.key.local_name().as_ref() != b"style" {
+                            if style.is_none() || attribute.key.local_name().as_ref() != b"style" {
                                 owned.push_attribute(attribute);
                             }
                         }
-                        owned.push_attribute(("style", style));
+                        if let Some(style) = style {
+                            owned.push_attribute(("style", style));
+                        }
                         writer.write_event(if is_empty {
                             Event::Empty(owned)
                         } else {
                             Event::Start(owned)
                         })?;
                     }
-                    None => writer.write_event(event.clone())?,
                 }
                 index += 1;
             }

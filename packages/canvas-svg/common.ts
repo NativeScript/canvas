@@ -1,4 +1,4 @@
-import { booleanConverter, CssProperty, CSSType, File, Http, knownFolders, path, Property, Style, Utils, View } from '@nativescript/core';
+import { booleanConverter, colorProperty, CssProperty, CSSType, File, Http, knownFolders, path, Property, Style, Utils, View } from '@nativescript/core';
 import { ANIMATION_CHANGED, ANIMATION_RUNNING, SvgDocumentWrapper, SvgNodeWrapper } from './NativeNode';
 
 declare const requestAnimationFrame: ((cb: () => void) => void) | undefined;
@@ -127,6 +127,75 @@ export const surfaceTypeProperty = new Property<SVGBase, SvgSurfaceType>({
 	defaultValue: 'texture',
 });
 
+/**
+ * CSS for the document, as text or a `~/`, absolute or http path to a `.css` file: rules and
+ * `@keyframes`, as if it were a `<style>` in the svg. CSS in app.css styles the view, not the
+ * document, so a CodePen's CSS panel goes here.
+ */
+export const stylesheetProperty = new Property<SVGBase, string>({
+	name: 'stylesheet',
+	valueChanged(target) {
+		target.__loadStylesheet();
+	},
+});
+
+/** Style properties of the view that are inherited into the document, as on an inline `<svg>`. */
+const inheritedStyles: Array<[{ isSet(style: Style): boolean; name: string }, string]> = [
+	[colorProperty, 'color'],
+	[fillProperty, 'fill'],
+	[fillRuleProperty, 'fill-rule'],
+	[fillOpacityProperty, 'fill-opacity'],
+	[strokeProperty, 'stroke'],
+	[strokeWidthProperty, 'stroke-width'],
+	[strokeLinecapProperty, 'stroke-linecap'],
+	[strokeLinejoinProperty, 'stroke-linejoin'],
+	[strokeMiterlimitProperty, 'stroke-miterlimit'],
+];
+
+function cssValue(value: any): string {
+	if (value && typeof value === 'object') {
+		// Color, or a { value, unit } length.
+		if (typeof value.hex === 'string') return value.a !== undefined && value.a < 255 ? `rgba(${value.r},${value.g},${value.b},${value.a / 255})` : value.hex;
+		if ('value' in value) return `${value.value}${value.unit && value.unit !== 'dip' ? value.unit : ''}`;
+	}
+	return String(value);
+}
+
+function isStylesheetPath(value: string) {
+	const text = value.trim();
+	return !text.includes('{') && (text.startsWith('~') || text.startsWith('/') || text.startsWith('http')) && /\.css(\?.*)?$/i.test(text);
+}
+
+/** `markup` with `css` as its first `<style>`: earlier than the document's own, like a page's stylesheet. */
+export function withStylesheet(markup: string, css: string) {
+	if (!css) {
+		return markup;
+	}
+	const start = markup.search(/<svg[\s>]/);
+	if (start < 0) {
+		return markup;
+	}
+	// The end of the opening tag, skipping any `>` inside a quoted attribute.
+	let quote = '';
+	let end = -1;
+	for (let i = start; i < markup.length; i++) {
+		const c = markup[i];
+		if (quote) {
+			if (c === quote) quote = '';
+		} else if (c === '"' || c === "'") {
+			quote = c;
+		} else if (c === '>') {
+			end = i;
+			break;
+		}
+	}
+	if (end < 0 || markup[end - 1] === '/') {
+		return markup;
+	}
+	const style = `<style><![CDATA[${css.replace(/]]>/g, ']]]]><![CDATA[>')}]]></style>`;
+	return markup.slice(0, end + 1) + style + markup.slice(end + 1);
+}
+
 /** Resolves inline markup, a path or a URL to markup. Inline markup answers synchronously. */
 export function readSrc(value: string, done: (source: string) => void, failed: (error: unknown) => void) {
 	if (value.indexOf('<svg') > -1) {
@@ -153,8 +222,12 @@ class SharedSource {
 
 	private constructor(readonly key: string) {}
 
-	/** `existing` lets a view that was set up again reuse its document instead of reparsing. */
-	static acquire(key: string, view: SVGBase, existing?: SvgDocumentWrapper | null): SharedSource {
+	/**
+	 * Views share a document only when their CSS matches too. `existing` lets a view that was set
+	 * up again reuse its document instead of reparsing.
+	 */
+	static acquire(src: string, css: string, view: SVGBase, existing?: SvgDocumentWrapper | null): SharedSource {
+		const key = css ? `${src}\u0000${css}` : src;
 		let source = sharedSources.get(key);
 		if (!source) {
 			source = new SharedSource(key);
@@ -163,8 +236,8 @@ class SharedSource {
 				source.ready(existing);
 			} else {
 				readSrc(
-					key,
-					(markup) => source.ready(new SvgDocumentWrapper(markup)),
+					src,
+					(markup) => source.ready(new SvgDocumentWrapper(withStylesheet(markup, css))),
 					(error) => {
 						console.error('Svg: could not load src', error);
 						if (sharedSources.get(key) === source) {
@@ -284,6 +357,11 @@ export class SVGBase extends View {
 	__animationStart = 0;
 	__shared: SharedSource | null = null;
 	__srcKey: string | null = null;
+	/** The `stylesheet` property's CSS, once read. */
+	__stylesheetCss = '';
+	/** What the document was last parsed with: the view's inherited styles, then `stylesheet`. */
+	__css = '';
+	__cssScheduled = false;
 	__rootWidth = 0;
 	__rootHeight = 0;
 	/** Shrinks a document whose intrinsic size is bigger than the view it has to fit into. */
@@ -291,6 +369,7 @@ export class SVGBase extends View {
 	__rootSizeValid = false;
 	_attachedToDom = false;
 	src: string;
+	stylesheet: string;
 	sync: boolean;
 	gpu: boolean;
 	threaded: boolean;
@@ -391,24 +470,26 @@ export class SVGBase extends View {
 			return;
 		}
 		this.__srcKey = value;
+		this.__css = this.__buildCss();
 		if (this.shareSrc !== false) {
 			this.__joinShared(value);
 			return;
 		}
+		const css = this.__css;
 		readSrc(
 			value,
 			(source) => {
-				// A later `src` may have landed while this one was still reading.
-				if (this.__srcKey === value && !this.__shared) {
-					this.__loadSource(source);
+				// A later `src` or stylesheet may have landed while this one was still reading.
+				if (this.__srcKey === value && this.__css === css && !this.__shared) {
+					this.__loadSource(withStylesheet(source, css));
 				}
 			},
 			(error) => console.error('Svg: could not load src', error),
 		);
 	}
 
-	private __joinShared(key: string, existing?: SvgDocumentWrapper) {
-		const source = SharedSource.acquire(key, this, existing);
+	private __joinShared(src: string, existing?: SvgDocumentWrapper) {
+		const source = SharedSource.acquire(src, this.__css, this, existing);
 		this.__shared = source;
 		source.whenReady((document) => {
 			if (this.__shared === source) {
@@ -493,9 +574,105 @@ export class SVGBase extends View {
 		this.__animationScheduled = false;
 	}
 
+	/** The view's inherited styles as a rule on the root, then the `stylesheet`. */
+	__buildCss() {
+		const declarations: string[] = [];
+		for (const [property, name] of inheritedStyles) {
+			if (property.isSet(this.style)) {
+				const value = this.style[property.name];
+				if (value !== undefined && value !== null && value !== '') {
+					declarations.push(`${name}:${cssValue(value)}`);
+				}
+			}
+		}
+		const root = declarations.length ? `:root{${declarations.join(';')}}\n` : '';
+		return root + this.__stylesheetCss;
+	}
+
+	/** Re-parses the document when its CSS changed, once per turn however many styles did. */
+	__cssChanged() {
+		if (this.__cssScheduled) {
+			return;
+		}
+		this.__cssScheduled = true;
+		Promise.resolve().then(() => {
+			this.__cssScheduled = false;
+			const css = this.__buildCss();
+			if (css === this.__css) {
+				return;
+			}
+			if (this.__srcKey) {
+				this.__loadSrc(this.__srcKey);
+			} else {
+				// A document built in code cannot be re-parsed: its keyframes still apply.
+				this.__css = css;
+				if (this.__stylesheetCss) {
+					this.addStylesheet(this.__stylesheetCss);
+				}
+			}
+		});
+	}
+
+	__loadStylesheet() {
+		const value = this.stylesheet;
+		if (typeof value !== 'string' || value.trim() === '') {
+			this.__stylesheetCss = '';
+			this.__cssChanged();
+			return;
+		}
+		if (!isStylesheetPath(value)) {
+			this.__stylesheetCss = value;
+			this.__cssChanged();
+			return;
+		}
+		const loaded = (css: string) => {
+			if (this.stylesheet === value) {
+				this.__stylesheetCss = css;
+				this.__cssChanged();
+			}
+		};
+		const failed = (error: unknown) => console.error('Svg: could not load stylesheet', error);
+		const text = value.trim();
+		if (text.startsWith('http')) {
+			Http.getString(text).then(loaded).catch(failed);
+		} else {
+			const file = text.startsWith('~') ? path.join(knownFolders.currentApp().path, text.replace('~', '')) : text;
+			File.fromPath(file).readText().then(loaded).catch(failed);
+		}
+	}
+
+	[colorProperty.setNative]() {
+		this.__cssChanged();
+	}
+	[fillProperty.setNative]() {
+		this.__cssChanged();
+	}
+	[fillRuleProperty.setNative]() {
+		this.__cssChanged();
+	}
+	[fillOpacityProperty.setNative]() {
+		this.__cssChanged();
+	}
+	[strokeProperty.setNative]() {
+		this.__cssChanged();
+	}
+	[strokeWidthProperty.setNative]() {
+		this.__cssChanged();
+	}
+	[strokeLinecapProperty.setNative]() {
+		this.__cssChanged();
+	}
+	[strokeLinejoinProperty.setNative]() {
+		this.__cssChanged();
+	}
+	[strokeMiterlimitProperty.setNative]() {
+		this.__cssChanged();
+	}
+
 	/**
 	 * Adds CSS `@keyframes` from a stylesheet outside the document; only `#id` selectors that
-	 * exist apply. Restarts the animation clock if nothing was running.
+	 * exist apply. Restarts the animation clock if nothing was running. `stylesheet` takes rules
+	 * and any selector, and survives a reload.
 	 */
 	addStylesheet(css: string) {
 		if (this.__document.addStylesheet(css)) {
@@ -520,6 +697,7 @@ export class SVGBase extends View {
 
 syncProperty.register(SVGBase);
 srcProperty.register(SVGBase);
+stylesheetProperty.register(SVGBase);
 gpuProperty.register(SVGBase);
 threadedProperty.register(SVGBase);
 shareSrcProperty.register(SVGBase);

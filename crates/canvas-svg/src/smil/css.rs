@@ -96,6 +96,16 @@ fn style_blocks(text: &str) -> Vec<String> {
     blocks
 }
 
+/// Ordinary rules as (selector, declarations), one per comma-separated selector.
+pub(crate) fn style_rules(css: &str) -> Vec<(String, Vec<(String, String)>)> {
+    parse(css).1
+}
+
+/// A `style` attribute's declarations.
+pub(crate) fn style_declarations(style: &str) -> Vec<(String, String)> {
+    parse_declarations(style)
+}
+
 /// Splits a stylesheet into `@keyframes` blocks and ordinary rules; other at-rules are skipped.
 fn parse(css: &str) -> (HashMap<String, Keyframes>, Vec<(String, Vec<(String, String)>)>) {
     let css = strip_comments(css);

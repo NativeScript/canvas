@@ -9,7 +9,7 @@ mod timing;
 mod value;
 
 pub use parse::extract;
-pub(crate) use css::extract_from_css;
+pub(crate) use css::{extract_from_css, style_declarations, style_rules};
 
 use skia_safe::svg::{Dom, Node};
 

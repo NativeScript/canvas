@@ -51,7 +51,7 @@ impl SvgDocument {
     /// SMIL elements are extracted first, since Skia's parser silently drops them.
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, LoadError> {
         // Before extraction, so SMIL and CSS animation values are rewritten too.
-        let bytes = crate::css_color::normalize_source(bytes);
+        let bytes = crate::prepare(bytes);
         let extracted = crate::smil::extract(&bytes);
         let mgr = crate::font_mgr();
         let dom = Dom::from_bytes(&extracted.source, mgr)?;

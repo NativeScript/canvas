@@ -4,6 +4,7 @@ mod dom;
 mod frame;
 mod node;
 mod smil;
+mod stylesheet;
 
 pub use attr::{get_attribute, set_attribute};
 pub use dom::SvgDocument;
@@ -25,6 +26,15 @@ thread_local! {
     static FONT_MGR: FontMgr = FontMgr::new();
 }
 
+/// What Skia's parser gets wrong or ignores, fixed up before it sees the source.
+pub(crate) fn prepare(source: &[u8]) -> std::borrow::Cow<'_, [u8]> {
+    let source = css_color::normalize_source(source);
+    match stylesheet::apply(&source) {
+        Some(styled) => std::borrow::Cow::Owned(styled),
+        None => source,
+    }
+}
+
 /// The calling thread's font manager, scanned once.
 pub(crate) fn font_mgr() -> FontMgr {
     FONT_MGR.with(|mgr| mgr.clone())
@@ -44,7 +54,7 @@ pub fn draw_svg_from_path(surface: &mut skia_safe::Surface, path: &str) {
                     let mut source = Vec::new();
                     let _ = reader.read_to_end(&mut source);
                     let mgr = font_mgr();
-                    match Dom::from_bytes(&css_color::normalize_source(&source), mgr) {
+                    match Dom::from_bytes(&prepare(&source), mgr) {
                         Ok(mut svg) => {
                             let size = skia_safe::Size::new(
                                 surface.width() as f32,
@@ -73,7 +83,7 @@ pub fn draw_svg_from_path(surface: &mut skia_safe::Surface, path: &str) {
 
 pub fn draw_svg(surface: &mut skia_safe::Surface, svg: &str) {
     let mgr = font_mgr();
-    match Dom::from_bytes(&css_color::normalize_source(svg.as_bytes()), mgr) {
+    match Dom::from_bytes(&prepare(svg.as_bytes()), mgr) {
         Ok(mut svg) => {
             let size = skia_safe::Size::new(surface.width() as f32, surface.height() as f32);
             let canvas = surface.canvas();
@@ -88,7 +98,7 @@ pub fn draw_svg(surface: &mut skia_safe::Surface, svg: &str) {
 
 pub fn draw_svg_from_bytes(surface: &mut skia_safe::Surface, bytes: &[u8]) {
     let mgr = font_mgr();
-    match Dom::from_bytes(&css_color::normalize_source(bytes), mgr) {
+    match Dom::from_bytes(&prepare(bytes), mgr) {
         Ok(mut svg) => {
             let size = skia_safe::Size::new(surface.width() as f32, surface.height() as f32);
             let canvas = surface.canvas();

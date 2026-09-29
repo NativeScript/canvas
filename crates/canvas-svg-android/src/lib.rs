@@ -414,19 +414,18 @@ pub extern "system" fn Java_org_nativescript_canvas_svg_NSCSVG_nativeRenderThrea
         return 0;
     };
     let ptr = window.ptr().as_ptr() as *mut std::ffi::c_void;
-    // Held until `nativeRenderThreadDestroy` has joined the thread.
+    // Released by the render thread once `nativeRenderThreadDestroy` has detached the view.
     std::mem::forget(window);
     let thread = canvas_svg_c::gpu::canvas_native_svg_render_thread_create(ptr, width, height, backend);
     if thread.is_null() {
         release_window(ptr);
         return 0;
     }
-    Box::into_raw(Box::new(ThreadHandle { thread, window: ptr })) as jlong
+    Box::into_raw(Box::new(ThreadHandle { thread })) as jlong
 }
 
 struct ThreadHandle {
     thread: *mut canvas_svg_c::gpu::thread::RenderThread,
-    window: *mut std::ffi::c_void,
 }
 
 /// Records on the calling thread; rasterizing happens on the render thread without blocking.
@@ -492,7 +491,11 @@ pub extern "system" fn Java_org_nativescript_canvas_svg_NSCSVG_nativeRenderThrea
         return;
     }
     let handle = unsafe { Box::from_raw(handle as *mut ThreadHandle) };
-    // Blocks until joined and the surface is gone; only then may the window be released.
-    canvas_svg_c::gpu::canvas_native_svg_render_thread_destroy(handle.thread);
-    release_window(handle.window);
+    // Doesn't wait: the render thread releases the window itself once the surface is gone, so a
+    // detaching view doesn't hold the UI thread behind contexts being built for other views.
+    canvas_svg_c::gpu::canvas_native_svg_render_thread_release(handle.thread, release_window_raw);
+}
+
+unsafe extern "C" fn release_window_raw(ptr: *mut std::ffi::c_void) {
+    release_window(ptr);
 }

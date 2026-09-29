@@ -17,6 +17,18 @@ use std::io::{Read, Seek, SeekFrom};
 use skia_safe::svg::Dom;
 use skia_safe::FontMgr;
 
+thread_local! {
+    /// `FontMgr::new()` scans the system fonts (on Android it parses fonts.xml and maps every
+    /// font file), tens of milliseconds each time. Made per document, a page of svgs froze the
+    /// UI thread for hundreds of milliseconds on open.
+    static FONT_MGR: FontMgr = FontMgr::new();
+}
+
+/// The calling thread's font manager, scanned once.
+pub(crate) fn font_mgr() -> FontMgr {
+    FONT_MGR.with(|mgr| mgr.clone())
+}
+
 /// One-shot rasterization for `Svg.fromSrcSync`/`fromSrc`; the live view uses `SvgDocument`.
 pub fn draw_svg_from_path(surface: &mut skia_safe::Surface, path: &str) {
     let file = std::fs::File::open(path);
@@ -28,7 +40,7 @@ pub fn draw_svg_from_path(surface: &mut skia_safe::Surface, path: &str) {
             match result {
                 Ok(_) => {
                     let _ = reader.seek(SeekFrom::Start(0));
-                    let mgr = FontMgr::new();
+                    let mgr = font_mgr();
                     match Dom::read(reader, mgr) {
                         Ok(mut svg) => {
                             let size = skia_safe::Size::new(
@@ -57,7 +69,7 @@ pub fn draw_svg_from_path(surface: &mut skia_safe::Surface, path: &str) {
 }
 
 pub fn draw_svg(surface: &mut skia_safe::Surface, svg: &str) {
-    let mgr = FontMgr::new();
+    let mgr = font_mgr();
     match Dom::from_bytes(svg.as_bytes(), mgr) {
         Ok(mut svg) => {
             let size = skia_safe::Size::new(surface.width() as f32, surface.height() as f32);
@@ -72,7 +84,7 @@ pub fn draw_svg(surface: &mut skia_safe::Surface, svg: &str) {
 }
 
 pub fn draw_svg_from_bytes(surface: &mut skia_safe::Surface, bytes: &[u8]) {
-    let mgr = FontMgr::new();
+    let mgr = font_mgr();
     match Dom::from_bytes(bytes, mgr) {
         Ok(mut svg) => {
             let size = skia_safe::Size::new(surface.width() as f32, surface.height() as f32);

@@ -1,6 +1,6 @@
 use crate::smil::Timeline;
 use skia_safe::svg::{Dom, LoadError, Node};
-use skia_safe::{Canvas, FontMgr, Image, Matrix, Size};
+use skia_safe::{Canvas, Image, Matrix, Size};
 use std::collections::HashMap;
 
 /// `Dom` has no constructor that skips parsing.
@@ -51,7 +51,7 @@ impl SvgDocument {
     /// SMIL elements are extracted first, since Skia's parser silently drops them.
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, LoadError> {
         let extracted = crate::smil::extract(bytes);
-        let mgr = FontMgr::new();
+        let mgr = crate::font_mgr();
         let dom = Dom::from_bytes(&extracted.source, mgr)?;
         Ok(Self {
             dom,

@@ -209,17 +209,28 @@ impl SvgGpuSurface {
 
     pub fn render(&mut self, doc: &mut SvgDocument, scale: f32) -> FrameStatus {
         let doc = std::cell::RefCell::new(doc);
-        self.paint(&|canvas, width, height| {
-            doc.borrow_mut().0.draw(canvas, width, height, scale)
-        })
+        self.paint(
+            &|canvas, width, height| doc.borrow_mut().0.draw(canvas, width, height, scale),
+            &|| true,
+        )
     }
 
     /// Render-thread path: replays an immutable display list, never touching the document.
-    pub fn present(&mut self, frame: &canvas_svg::RecordedFrame) -> FrameStatus {
-        self.paint(&|canvas, _, _| frame.replay(canvas))
+    /// A failed frame is only rebuilt from while `alive` holds: the owner may have detached
+    /// mid-frame, and a context built against its abandoned window is a wasted one.
+    pub fn present(
+        &mut self,
+        frame: &canvas_svg::RecordedFrame,
+        alive: &dyn Fn() -> bool,
+    ) -> FrameStatus {
+        self.paint(&|canvas, _, _| frame.replay(canvas), alive)
     }
 
-    fn paint(&mut self, paint: &dyn Fn(&skia_safe::Canvas, i32, i32)) -> FrameStatus {
+    fn paint(
+        &mut self,
+        paint: &dyn Fn(&skia_safe::Canvas, i32, i32),
+        alive: &dyn Fn() -> bool,
+    ) -> FrameStatus {
         match self.render_once(paint) {
             Frame::Presented => {
                 self.recoveries = 0;
@@ -227,6 +238,9 @@ impl SvgGpuSurface {
             }
             Frame::Skipped => FrameStatus::Skipped,
             Frame::Lost => {
+                if !alive() {
+                    return FrameStatus::Lost;
+                }
                 log::warn!("svg gpu: context lost, rebuilding");
                 if !self.rebuild() {
                     return FrameStatus::Lost;
@@ -411,6 +425,18 @@ pub extern "C" fn canvas_native_svg_render_thread_status(render: *mut RenderThre
     match unsafe { &*render }.take_status() {
         Some(status) => status as i32,
         None => -1,
+    }
+}
+
+/// Detaches without blocking: the thread tears the surface down, then passes the window to
+/// `release` on its own thread, so the caller must not release the window itself.
+#[unsafe(no_mangle)]
+pub extern "C" fn canvas_native_svg_render_thread_release(
+    render: *mut RenderThread,
+    release: thread::ReleaseWindow,
+) {
+    if !render.is_null() {
+        unsafe { Box::from_raw(render) }.release(release);
     }
 }
 

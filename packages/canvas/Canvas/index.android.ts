@@ -1,4 +1,4 @@
-import { CanvasBase, doc, ignoreTouchEventsProperty, DOMRect, lengthToDevicePixels } from './common';
+import { CanvasBase, doc, ignoreTouchEventsProperty, DOMRect, lengthToDevicePixels, fromCssLength } from './common';
 import { DOMMatrix } from '../Canvas2D';
 import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
 import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
@@ -324,11 +324,24 @@ export class Canvas extends CanvasBase {
 	}
 
 	[widthProperty.setNative](value) {
-		this.__setSurfaceWidth(value);
+		this.__setLayoutLength(widthProperty.setNative, value);
+		this.__setSurfaceWidth(fromCssLength(value));
 	}
 
 	[heightProperty.setNative](value) {
-		this.__setSurfaceHeight(value);
+		this.__setLayoutLength(heightProperty.setNative, value);
+		this.__setSurfaceHeight(fromCssLength(value));
+	}
+
+	/**
+	 * A fixed CSS size also goes to the view's layout params, as for any view: a parent that
+	 * measures the canvas natively (MasonKit) would otherwise size it to its surface. % and auto
+	 * keep the layout params the canvas was given.
+	 */
+	private __setLayoutLength(setNative: symbol, value: any) {
+		if (typeof value === 'number' || value?.unit === 'dip' || value?.unit === 'px') {
+			View.prototype[setNative as any].call(this, value);
+		}
 	}
 
 	static createCustomView() {

@@ -237,6 +237,18 @@ impl Context {
         self.window_surface.is_some()
     }
 
+    /// The window's framebuffer, when 2D presents through one. The GL binding is no guide to it:
+    /// Skia leaves its offscreen framebuffer bound.
+    pub fn window_framebuffer(&mut self) -> Option<i32> {
+        let window = self.window_surface.as_mut()?;
+        gpu::surfaces::get_backend_render_target(
+            window,
+            skia_safe::surface::BackendHandleAccess::FlushRead,
+        )?
+        .gl_framebuffer_info()
+        .map(|info| info.fboid as i32)
+    }
+
     /// For a canvas made before its view had a surface. Starts blank; the caller restores it.
     pub fn use_offscreen_for_window(&mut self) {
         if self.window_surface.is_some() {

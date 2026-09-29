@@ -1,6 +1,8 @@
 //! One render thread per process replays every threaded view's display lists. Each view's GPU
 //! surface lives only on this thread, since EGL contexts and `VkQueue`s are single-thread.
 
+use std::collections::VecDeque;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Condvar, Mutex, OnceLock};
 
 use canvas_svg::{FrameSlot, RecordedFrame};
@@ -15,6 +17,9 @@ unsafe impl Send for Window {}
 struct Target {
     slot: FrameSlot,
     state: Mutex<TargetState>,
+    /// Set by the owner as it detaches, so the thread neither builds nor presents to a surface
+    /// whose window is going away.
+    removed: AtomicBool,
 }
 
 #[derive(Default)]
@@ -36,11 +41,22 @@ struct Add {
 /// Set by the render thread once the view's surface is gone.
 type Removed = Arc<(Mutex<bool>, Condvar)>;
 
+/// Hands a view's window back once its surface is gone. Called on the render thread.
+pub type ReleaseWindow = unsafe extern "C" fn(*mut std::ffi::c_void);
+
+/// How the render thread tells a view's owner that its surface is gone.
+enum Removal {
+    /// The owner is blocked in `drop` until this is set.
+    Wait(Removed),
+    /// The owner has moved on, so the thread releases the window itself.
+    Release(Window, ReleaseWindow),
+}
+
 #[derive(Default)]
 struct Queue {
     next_id: u64,
     adds: Vec<Add>,
-    removes: Vec<(u64, Removed)>,
+    removes: Vec<(u64, Removal)>,
     /// Anything to do since the thread last looked: a frame, a resize, an add or a remove.
     dirty: bool,
 }
@@ -81,8 +97,11 @@ fn worker() -> Option<Arc<Worker>> {
 /// A view's registration on the shared render thread.
 pub struct RenderThread {
     id: u64,
+    window: *mut std::ffi::c_void,
     target: Arc<Target>,
     worker: Arc<Worker>,
+    /// Set by [`Self::release`], which has already queued the removal.
+    released: bool,
 }
 
 impl RenderThread {
@@ -98,6 +117,7 @@ impl RenderThread {
         let target = Arc::new(Target {
             slot: FrameSlot::new(),
             state: Mutex::new(TargetState::default()),
+            removed: AtomicBool::new(false),
         });
         let id = {
             let mut queue = worker.queue.lock().ok()?;
@@ -114,7 +134,30 @@ impl RenderThread {
             id
         };
         worker.wake();
-        Some(Self { id, target, worker })
+        Some(Self {
+            id,
+            window,
+            target,
+            worker,
+            released: false,
+        })
+    }
+
+    /// Detaches without waiting: the thread tears the surface down and then passes the window
+    /// to `release`, so the caller must not release it as well. Dropping instead blocks until
+    /// the thread gets to the removal, which can be behind a context being built for every
+    /// other view that just appeared: seconds of frozen UI when a page of them is swapped out.
+    pub fn release(mut self, release: ReleaseWindow) {
+        self.target.removed.store(true, Ordering::Release);
+        self.queue_removal(Removal::Release(Window(self.window), release));
+        self.released = true;
+    }
+
+    fn queue_removal(&self, removal: Removal) {
+        if let Ok(mut queue) = self.worker.queue.lock() {
+            queue.removes.push((self.id, removal));
+        }
+        self.worker.wake();
     }
 
     pub fn commit(&self, frame: RecordedFrame) {
@@ -137,11 +180,12 @@ impl RenderThread {
 
 impl Drop for RenderThread {
     fn drop(&mut self) {
-        let removed: Removed = Arc::new((Mutex::new(false), Condvar::new()));
-        if let Ok(mut queue) = self.worker.queue.lock() {
-            queue.removes.push((self.id, Arc::clone(&removed)));
+        if self.released {
+            return;
         }
-        self.worker.wake();
+        self.target.removed.store(true, Ordering::Release);
+        let removed: Removed = Arc::new((Mutex::new(false), Condvar::new()));
+        self.queue_removal(Removal::Wait(Arc::clone(&removed)));
         // Wait, not detach: GPU teardown after the caller releases the window crashes.
         let (done, signal) = &*removed;
         if let Ok(mut done) = done.lock() {
@@ -173,9 +217,19 @@ fn run(worker: Arc<Worker>) {
             queue.dirty = false;
             (std::mem::take(&mut queue.adds), std::mem::take(&mut queue.removes))
         };
+        let mut adds = VecDeque::from(adds);
+        remove(removes, &mut adds, &mut views);
 
-        // Adds first: a view dropped before its add was seen is in the same batch.
-        for add in adds {
+        // One at a time, each presented as soon as it exists: every surface is a whole GPU
+        // context, and a page of views would otherwise sit blank until the last one is up.
+        // Removals queued meanwhile are taken between them rather than after the lot.
+        loop {
+            remove(take_removes(&worker), &mut adds, &mut views);
+            let Some(add) = adds.pop_front() else { break };
+            if add.target.removed.load(Ordering::Acquire) {
+                // Detached while queued; its removal is already on its way.
+                continue;
+            }
             let surface = SvgGpuSurface::new(add.window.0, add.width, add.height, add.backend);
             if surface.is_none() {
                 // Nobody waits on startup, so report failure as a loss or the view stays blank.
@@ -183,37 +237,65 @@ fn run(worker: Arc<Worker>) {
                     state.status = Some(FrameStatus::Lost);
                 }
             }
-            views.push(View {
+            let mut view = View {
                 id: add.id,
                 target: add.target,
                 surface,
-            });
-        }
-
-        for (id, removed) in removes {
-            // Dropping the view tears its surface down before the owner releases the window.
-            views.retain(|view| view.id != id);
-            let (done, signal) = &*removed;
-            if let Ok(mut done) = done.lock() {
-                *done = true;
-            }
-            signal.notify_all();
+            };
+            present(&mut view);
+            views.push(view);
         }
 
         for view in views.iter_mut() {
-            let Some(surface) = view.surface.as_mut() else {
-                continue;
-            };
-            let resize = view.target.state.lock().ok().and_then(|mut s| s.resize.take());
-            if let Some((width, height)) = resize {
-                surface.resize(width, height);
-            }
-            if let Some(frame) = view.target.slot.take() {
-                let status = surface.present(&frame);
-                if let Ok(mut state) = view.target.state.lock() {
-                    state.status = Some(status);
+            present(view);
+        }
+    }
+}
+
+fn take_removes(worker: &Worker) -> Vec<(u64, Removal)> {
+    worker
+        .queue
+        .lock()
+        .map(|mut queue| std::mem::take(&mut queue.removes))
+        .unwrap_or_default()
+}
+
+fn remove(removes: Vec<(u64, Removal)>, adds: &mut VecDeque<Add>, views: &mut Vec<View>) {
+    for (id, removal) in removes {
+        // A view gone before its add was seen never gets a surface.
+        adds.retain(|add| add.id != id);
+        // Dropping the view tears its surface down before the window is released.
+        views.retain(|view| view.id != id);
+        match removal {
+            Removal::Wait(removed) => {
+                let (done, signal) = &*removed;
+                if let Ok(mut done) = done.lock() {
+                    *done = true;
                 }
+                signal.notify_all();
             }
+            Removal::Release(window, release) => unsafe { release(window.0) },
+        }
+    }
+}
+
+fn present(view: &mut View) {
+    // Its window may already be abandoned, and a failed present would rebuild the context.
+    if view.target.removed.load(Ordering::Acquire) {
+        return;
+    }
+    let Some(surface) = view.surface.as_mut() else {
+        return;
+    };
+    let resize = view.target.state.lock().ok().and_then(|mut s| s.resize.take());
+    if let Some((width, height)) = resize {
+        surface.resize(width, height);
+    }
+    if let Some(frame) = view.target.slot.take() {
+        let target = &view.target;
+        let status = surface.present(&frame, &|| !target.removed.load(Ordering::Acquire));
+        if let Ok(mut state) = view.target.state.lock() {
+            state.status = Some(status);
         }
     }
 }
@@ -253,6 +335,27 @@ mod tests {
             drop(RenderThread::new(std::ptr::null_mut(), 10, 10, Backend::Auto).unwrap());
         }
         assert!(start.elapsed() < Duration::from_secs(5));
+    }
+
+    static RELEASED: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+
+    unsafe extern "C" fn count_release(_window: *mut std::ffi::c_void) {
+        RELEASED.fetch_add(1, Ordering::SeqCst);
+    }
+
+    #[test]
+    fn release_returns_at_once_and_the_thread_releases_every_window() {
+        let before = RELEASED.load(Ordering::SeqCst);
+        for _ in 0..50 {
+            RenderThread::new(std::ptr::null_mut(), 10, 10, Backend::Auto)
+                .unwrap()
+                .release(count_release);
+        }
+        let deadline = Instant::now() + Duration::from_secs(5);
+        while RELEASED.load(Ordering::SeqCst) < before + 50 && Instant::now() < deadline {
+            std::thread::sleep(Duration::from_millis(5));
+        }
+        assert!(RELEASED.load(Ordering::SeqCst) >= before + 50);
     }
 
     #[test]

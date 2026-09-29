@@ -89,4 +89,16 @@ static CGFloat nscSVGNativeScale(void) {
     canvas_native_svg_render_thread_destroy((struct RenderThread *)handle);
 }
 
+/// Called on the render thread once the surface is gone. The view may be the last reference,
+/// and UIKit views must be deallocated on the main thread.
+static void CanvasSVGReleaseView(void *view) {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        CFRelease(view);
+    });
+}
+
++ (void)renderThreadRelease:(int64_t)handle {
+    canvas_native_svg_render_thread_release((struct RenderThread *)handle, CanvasSVGReleaseView);
+}
+
 @end

@@ -1,6 +1,6 @@
 use crate::smil::Timeline;
 use skia_safe::svg::{Dom, LoadError, Node};
-use skia_safe::{Canvas, FontMgr, Image, Matrix, Size};
+use skia_safe::{Canvas, Image, Matrix, Size};
 use std::collections::HashMap;
 
 /// `Dom` has no constructor that skips parsing.
@@ -50,8 +50,10 @@ impl SvgDocument {
 
     /// SMIL elements are extracted first, since Skia's parser silently drops them.
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, LoadError> {
-        let extracted = crate::smil::extract(bytes);
-        let mgr = FontMgr::new();
+        // Before extraction, so SMIL and CSS animation values are rewritten too.
+        let bytes = crate::prepare(bytes);
+        let extracted = crate::smil::extract(&bytes);
+        let mgr = crate::font_mgr();
         let dom = Dom::from_bytes(&extracted.source, mgr)?;
         Ok(Self {
             dom,
@@ -113,7 +115,8 @@ impl SvgDocument {
     /// selectors that exist in the document apply. Returns whether the timeline is now running,
     /// so a caller whose loop had stopped knows to restart it.
     pub fn add_stylesheet(&mut self, css: &str) -> bool {
-        self.timeline.extend(crate::smil::extract_from_css(css));
+        let css = crate::css_color::normalize(css);
+        self.timeline.extend(crate::smil::extract_from_css(&css));
         self.timeline.is_running()
     }
 
@@ -217,7 +220,7 @@ impl SvgDocument {
         // never having set it.
         let mut typed = node.typed();
         let previous = crate::get_attribute(&typed, "display");
-        crate::set_attribute(&mut typed, "display", "none");
+        crate::attr::set_normalized_attribute(&mut typed, "display", "none");
 
         let info = skia_safe::ImageInfo::new_n32_premul(skia_safe::ISize::new(width, height), None);
         let captured = skia_safe::surfaces::raster(&info, None, None).map(|mut surface| {
@@ -230,7 +233,7 @@ impl SvgDocument {
             surface.image_snapshot()
         });
 
-        crate::set_attribute(
+        crate::attr::set_normalized_attribute(
             &mut typed,
             "display",
             previous.as_deref().unwrap_or("inline"),

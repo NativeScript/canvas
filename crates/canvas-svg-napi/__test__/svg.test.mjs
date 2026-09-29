@@ -40,7 +40,7 @@ test('installs global.SVGModule with the V8 bindings\' members', () => {
 test('parses a document and renders it as RGBA, or BGRA on request', () => {
 	const document = SVGModule.createSVGDocument(RED_SQUARE);
 	assert.equal(document.root().tagName(), 'svg');
-	assert.ok(document.nativePointer() > 0);
+	assert.ok(BigInt(document.nativePointer()) > 0n);
 	const rgba = render(document, 20, 10);
 	assert.deepEqual(rgba(5, 5), [255, 0, 0, 255]);
 	assert.deepEqual(rgba(15, 5), [0, 0, 255, 255]);

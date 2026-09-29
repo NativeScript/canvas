@@ -218,15 +218,18 @@ void SVGDocumentImpl::InvalidateFrames(const v8::FunctionCallbackInfo<v8::Value>
 }
 
 // The raw SvgDocument*, so the platform layer can hand it to its own native renderer
-// (Android renders straight into a Bitmap). Android pointers fit well inside a double.
+// (Android renders straight into a Bitmap). A decimal string, not a double: arm64 Android
+// tags heap pointers in the top byte (0xb4...), which a double can't hold and a jlong only
+// holds signed, so the JS side passes it on as `long(ptr)`.
 void SVGDocumentImpl::NativePointer(const v8::FunctionCallbackInfo<v8::Value> &args) {
     SVGDocumentImpl *ptr = GetPointer(args.This());
     if (ptr == nullptr) {
-        args.GetReturnValue().Set(0);
+        args.GetReturnValue().SetEmptyString();
         return;
     }
-    auto value = static_cast<double>(reinterpret_cast<uintptr_t>(ptr->GetDocument()));
-    args.GetReturnValue().Set(value);
+    auto isolate = args.GetIsolate();
+    auto ret = std::to_string(reinterpret_cast<intptr_t>(ptr->GetDocument()));
+    args.GetReturnValue().Set(ConvertToV8String(isolate, ret));
 }
 
 void SVGDocumentImpl::HasAnimations(const v8::FunctionCallbackInfo<v8::Value> &args) {

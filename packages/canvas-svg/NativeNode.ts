@@ -199,7 +199,7 @@ export class SvgDocumentWrapper {
 	layerId: string | null = null;
 	/** Bumped on any visual change. */
 	revision = 0;
-	private __nativePointer = 0;
+	private __nativePointer = '';
 	private __containerWidth = 0;
 	private __containerHeight = 0;
 
@@ -318,9 +318,10 @@ export class SvgDocumentWrapper {
 	/**
 	 * The native SvgDocument, for platform renderers that draw it themselves. Read once, since
 	 * it is fixed for the document's lifetime, and this sits on the per-frame redraw path.
+	 * A decimal string: see `SVGDocumentImpl::NativePointer`.
 	 */
-	get nativePointer(): number {
-		if (this.__nativePointer === 0) {
+	get nativePointer(): string {
+		if (this.__nativePointer === '') {
 			this.__nativePointer = this.__native.nativePointer();
 		}
 		return this.__nativePointer;

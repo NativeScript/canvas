@@ -389,7 +389,7 @@ class NSCSVG : FrameLayout {
 
 	private fun destroyGpuContext() {
 		if (renderThread != 0L) {
-			// Blocks until the thread has joined and released its surface.
+			// Returns at once: the render thread tears the surface down, then releases the window.
 			nativeRenderThreadDestroy(renderThread)
 			renderThread = 0
 		}

@@ -248,6 +248,12 @@ fn get_specific_attribute(node: &TypedNode, name: &str) -> Option<String> {
 }
 
 pub fn set_attribute(node: &mut TypedNode, name: &str, value: &str) -> bool {
+    set_normalized_attribute(node, name, &crate::css_color::normalize(value))
+}
+
+/// For values that can't hold a colour Skia rejects: parsed markup and SMIL frames, which are
+/// rewritten when the document loads. Keeps the rewrite off the per-frame path.
+pub(crate) fn set_normalized_attribute(node: &mut TypedNode, name: &str, value: &str) -> bool {
     if name == "id" {
         // Tracked by `SvgDocument`.
         return true;

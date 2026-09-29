@@ -173,7 +173,8 @@ export class Svg extends SVGBase {
 			this.__document.setContainerSize(width, height);
 			// Renders into the view's own pixels directly, with no intermediate buffer, and
 			// nothing allocated per frame.
-			this._svg.renderDocument(this.__document.nativePointer, pixelWidth, pixelHeight, scale);
+			// iOS pointers fit exactly in a double.
+			this._svg.renderDocument(Number(this.__document.nativePointer), pixelWidth, pixelHeight, scale);
 		}
 	}
 

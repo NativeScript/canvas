@@ -228,10 +228,11 @@ impl SVGDocument {
     canvas_svg_c::canvas_native_svg_document_invalidate_frames(self.document);
   }
 
-  /// The canvas-svg-c document pointer, as a number (a native renderer takes it).
+  /// The canvas-svg-c document pointer (a native renderer takes it), as a decimal string like
+  /// the V8 bindings: a double can't hold every 64-bit pointer.
   #[napi]
-  pub fn native_pointer(&self) -> f64 {
-    self.document as usize as f64
+  pub fn native_pointer(&self) -> String {
+    (self.document as usize).to_string()
   }
 
   /// Renders the current frame into `buffer` (any typed array, `width` x `height` premultiplied

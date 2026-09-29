@@ -1,6 +1,6 @@
 import { Document as Doc } from './Document';
 
-import querySelector from 'query-selector';
+import querySelector from './querySelector';
 
 import { SVGSVGElement } from './svg/SVGSVGElement';
 

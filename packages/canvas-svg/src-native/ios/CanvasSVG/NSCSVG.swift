@@ -167,8 +167,6 @@ public class NSCSVG: UIView {
 
 	private var gpuContext: Int64 = 0
 	private var renderThread: Int64 = 0
-	/// The retained host handed to the render thread, released once it has joined.
-	private var renderThreadView: UnsafeMutableRawPointer?
 	/// Held as `UIView` rather than `SVGMetalView`: a stored property may not name a type that
 	/// is only available from iOS 13, and the GPU path is gated on that.
 	private var metalView: UIView?
@@ -259,7 +257,6 @@ public class NSCSVG: UIView {
 			let view = Unmanaged.passRetained(host).toOpaque()
 			renderThread = CanvasSVGHelper.renderThreadCreate(view, width: surfaceWidth, height: surfaceHeight, backend: backend.rawValue)
 			if renderThread != 0 {
-				renderThreadView = view
 				return true
 			}
 			// Could not start one; the single-threaded context still might work.
@@ -303,13 +300,10 @@ public class NSCSVG: UIView {
 
 	private func destroyGpuContext() {
 		if renderThread != 0 {
-			// Blocks until the thread has joined, so the host is safe to release after.
-			CanvasSVGHelper.renderThreadDestroy(renderThread)
+			// Returns at once: the render thread tears the surface down, then releases the host.
+			// Waiting instead queues this view behind every other surface being built.
+			CanvasSVGHelper.renderThreadRelease(renderThread)
 			renderThread = 0
-			if let view = renderThreadView {
-				Unmanaged<UIView>.fromOpaque(view).release()
-				renderThreadView = nil
-			}
 		}
 		if gpuContext == 0 { return }
 		// Read the view out first: `gpuDestroy` frees the surface that holds it.

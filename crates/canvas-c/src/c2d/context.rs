@@ -2643,19 +2643,8 @@ pub extern "C" fn canvas_native_context_draw_atlas_asset(
     if let Ok(blend_mode) = CompositeOperationType::try_from(blend_mode) {
         let asset = unsafe { &*asset };
         let context = unsafe { &mut *context };
-        let xform = unsafe { std::slice::from_raw_parts(xform, xform_size) };
-        let tex = unsafe { std::slice::from_raw_parts(tex, tex_size) };
-        let mut colors_value: Option<Vec<&CStr>> = None;
-
-        if !colors.is_null() {
-            let values = unsafe { std::slice::from_raw_parts(colors, colors_size) };
-            let values: Vec<_> = values
-                .iter()
-                .map(|value| unsafe { CStr::from_ptr(*value) })
-                .collect();
-
-            colors_value = Some(values);
-        }
+        let (xform, tex) = unsafe { atlas_rects(xform, xform_size, tex, tex_size) };
+        let colors_value = unsafe { atlas_colors(colors, colors_size) };
         context.context.draw_atlas_asset_color(
             &asset.0,
             xform,
@@ -2664,6 +2653,63 @@ pub extern "C" fn canvas_native_context_draw_atlas_asset(
             blend_mode,
         );
     }
+}
+
+/// Draws sprites of another 2D canvas's current contents.
+#[no_mangle]
+pub extern "C" fn canvas_native_context_draw_atlas_context(
+    context: *mut CanvasRenderingContext2D,
+    source: *mut CanvasRenderingContext2D,
+    xform: *const f32,
+    xform_size: usize,
+    tex: *const f32,
+    tex_size: usize,
+    colors: *const *const c_char,
+    colors_size: usize,
+    blend_mode: u32,
+) {
+    assert!(!context.is_null());
+    assert!(!source.is_null());
+
+    if let Ok(blend_mode) = CompositeOperationType::try_from(blend_mode) {
+        let context = unsafe { &mut *context };
+        let source = unsafe { &mut *source };
+        if let Some(image) = source.image() {
+            let (xform, tex) = unsafe { atlas_rects(xform, xform_size, tex, tex_size) };
+            let colors_value = unsafe { atlas_colors(colors, colors_size) };
+            context
+                .context
+                .draw_atlas_color(&image, xform, tex, colors_value.as_deref(), blend_mode);
+        }
+    }
+}
+
+/// An empty vector's data() may be null.
+unsafe fn atlas_rects<'a>(
+    xform: *const f32,
+    xform_size: usize,
+    tex: *const f32,
+    tex_size: usize,
+) -> (&'a [f32], &'a [f32]) {
+    if xform.is_null() || tex.is_null() {
+        return (&[], &[]);
+    }
+    (
+        std::slice::from_raw_parts(xform, xform_size),
+        std::slice::from_raw_parts(tex, tex_size),
+    )
+}
+
+unsafe fn atlas_colors<'a>(colors: *const *const c_char, colors_size: usize) -> Option<Vec<&'a CStr>> {
+    if colors.is_null() || colors_size == 0 {
+        return None;
+    }
+    Some(
+        std::slice::from_raw_parts(colors, colors_size)
+            .iter()
+            .map(|value| CStr::from_ptr(*value))
+            .collect(),
+    )
 }
 
 /*

@@ -132,10 +132,12 @@ impl Context {
         colors: Option<&[Color]>,
         blend_mode: CompositeOperationType,
     ) {
-        if xform.len() % 4 != 0 {
+        // Skia asserts one sprite rect, and one color if any, per transform.
+        let count = (xform.len() / 4).min(tex.len() / 4);
+        if count == 0 {
             return;
         }
-        let xform: Vec<_> = xform
+        let xform: Vec<_> = xform[..count * 4]
             .chunks(4)
             .map(|value| {
                 skia_safe::RSXform::new(
@@ -145,15 +147,14 @@ impl Context {
                 )
             })
             .collect();
-        if tex.len() % 4 != 0 {
-            return;
-        }
-        let tex: Vec<_> = tex
+        let tex: Vec<_> = tex[..count * 4]
             .chunks(4)
             .map(|value| skia_safe::Rect::from_xywh(value[0], value[1], value[2], value[3]))
             .collect();
+        let colors = colors.filter(|colors| colors.len() == count);
 
-        let paint = skia_safe::Paint::default();
+        let mut paint = skia_safe::Paint::default();
+        paint.set_alpha_f(self.state.global_alpha);
 
         #[cfg(feature = "gl")]{
             if let Some(ref context) = self.gl_context {
@@ -161,7 +162,7 @@ impl Context {
             }
         }
 
-        self.render_to_canvas(&paint, |canvas, _paint| {
+        self.render_to_canvas(&paint, |canvas, paint| {
             canvas.draw_atlas(
                 &image,
                 xform.as_slice(),
@@ -170,7 +171,7 @@ impl Context {
                 blend_mode.get_blend_mode(),
                 skia_safe::SamplingOptions::default(),
                 None,
-                None,
+                Some(paint),
             );
         });
     }

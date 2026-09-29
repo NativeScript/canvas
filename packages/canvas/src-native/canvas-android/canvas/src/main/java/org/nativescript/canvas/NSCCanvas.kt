@@ -988,7 +988,8 @@ class NSCCanvas : FrameLayout {
 		var bitmap: Bitmap? = null
 		var needsToFlip = false
 		if (is2D) {
-			bitmap = createBitmap(width, height)
+			// The drawing buffer, not the view: a canvas outside the view tree has no size.
+			bitmap = createBitmap(surfaceWidth.coerceAtLeast(1), surfaceHeight.coerceAtLeast(1))
 			nativeCustomWithBitmapFlush(nativeContext, bitmap)
 			return bitmap
 		} else {

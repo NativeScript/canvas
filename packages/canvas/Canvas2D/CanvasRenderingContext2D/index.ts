@@ -1050,7 +1050,6 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 					isNativeSource = true;
 					image = image._imageSource.ios;
 				}
-				return;
 			} else if (__ANDROID__ && image._image instanceof android.graphics.Bitmap) {
 				image = image._image;
 				isNativeSource = true;

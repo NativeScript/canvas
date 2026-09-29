@@ -126,7 +126,10 @@ pub fn resize_gl(context: &mut CanvasRenderingContext2D, width: f32, height: f32
 
     unsafe {
         gl_bindings::Viewport(0, 0, width as i32, height as i32);
-        gl_bindings::GetIntegerv(gl_bindings::FRAMEBUFFER_BINDING, fb.as_mut_ptr());
+        match context.window_framebuffer() {
+            Some(window) => fb[0] = window,
+            None => gl_bindings::GetIntegerv(gl_bindings::FRAMEBUFFER_BINDING, fb.as_mut_ptr()),
+        }
     }
 
     Context::resize_gl(context, width, height, density, fb[0], 0, alpha, ppi)

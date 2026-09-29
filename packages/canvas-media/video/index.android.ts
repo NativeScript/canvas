@@ -202,7 +202,8 @@ export class Video extends VideoBase {
 		}
 		const ptr = context2d.context.__getPointer();
 		const nativePtr = long(ptr);
-		const backendType: number = context2d.__engine ?? 0;
+		// VideoHelper.HARDWARE_BUFFER_2D: a threaded context has no GL context on this thread.
+		const backendType: number = context2d.__threaded ? 5 : (context2d.__engine ?? 0);
 		let dirty = false;
 		if (args.length === 3) {
 			dirty = this._instance.drawVideoFrame2D(backendType, nativePtr, args[1], args[2]);

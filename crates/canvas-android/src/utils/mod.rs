@@ -188,9 +188,7 @@ pub extern "system" fn nativeDataURL(
 
         return env
             .new_string(
-                context
-                    .get_context_mut()
-                    .as_data_url(format.as_ref(), (quality * 100f32) as u32),
+                context.data_url(format.as_ref(), (quality * 100f32) as u32),
             )
             .unwrap()
             .into_raw();

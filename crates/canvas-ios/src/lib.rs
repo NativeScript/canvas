@@ -80,6 +80,10 @@ pub extern "C" fn canvas_native_ios_flush_2d_context(context: i64) {
     let context = context as *mut CanvasRenderingContext2D;
     let context = unsafe { &mut *context };
 
+    if context.is_threaded() {
+        context.render();
+        return;
+    }
     context.get_context_mut().flush();
 }
 
@@ -92,6 +96,9 @@ pub extern "C" fn canvas_native_ios_present_drawable(context: i64) {
     let context = context as *mut CanvasRenderingContext2D;
     let context = unsafe { &mut *context };
 
+    if context.is_threaded() {
+        return;
+    }
     canvas_2d::context::Context::present(context.get_context_mut());
 }
 
@@ -543,7 +550,6 @@ pub extern "C" fn canvas_native_ios_context_custom_with_buffer_flush(
     
         let context = context as *mut CanvasRenderingContext2D;
         let context = &mut *context;
-        let context = context.get_context_mut();
 
         let data = std::slice::from_raw_parts_mut(bytes, size);
         let mut surface = skia_safe::surfaces::wrap_pixels(&info, data, None, None).unwrap();
@@ -559,10 +565,13 @@ pub extern "C" fn canvas_native_ios_context_custom_with_buffer_flush(
                 &paint,
             );
         }
-        {
-            context.draw_on_surface(&mut surface);
+        if context.is_threaded() {
+            if let Some(image) = context.image() {
+                surface.canvas().draw_image(&image, (0., 0.), None);
+            }
+        } else {
+            context.get_context_mut().draw_on_surface(&mut surface);
         }
-        
     }
 }
 

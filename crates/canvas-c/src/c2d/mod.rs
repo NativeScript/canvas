@@ -1,5 +1,6 @@
 mod context;
 pub use context::*;
+pub mod render_thread;
 mod custom;
 pub use custom::*;
 mod image_bitmap;

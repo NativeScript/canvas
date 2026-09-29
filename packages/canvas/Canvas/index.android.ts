@@ -97,6 +97,9 @@ export class Canvas extends CanvasBase {
 	private _pendingHeight: number | undefined;
 	static useSurface = false;
 
+	/** Default for `getContext('2d', { threaded })`: rasterize on a shared render thread. */
+	static threaded2D = true;
+
 	constructor(nativeInstance?) {
 		super();
 		if (nativeInstance) {
@@ -483,6 +486,8 @@ export class Canvas extends CanvasBase {
 			fontColor: this.parent?.style?.color?.android ?? -16777216,
 		};
 
+		const threaded = !!(contextAttributes?.threaded ?? Canvas.threaded2D);
+		this._canvas.setThreaded2D?.(threaded);
 		const ctx = this._canvas.create2DContext(opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible, opts.willReadFrequently ?? false, opts.colorSpace ?? 0);
 		const context = new (CanvasRenderingContext2D as any)(ctx, opts);
 		// @ts-ignore
@@ -490,6 +495,8 @@ export class Canvas extends CanvasBase {
 		context._type = '2d';
 		//@ts-ignore
 		context.__engine = this._canvas.getEngine?.()?.getValue?.() ?? 0;
+		//@ts-ignore
+		context.__threaded = threaded;
 		return context;
 	}
 

@@ -464,6 +464,8 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) NSMutableDic
 @property (nonatomic, readonly) int64_t nativeContext;
 @property (nonatomic, readonly) BOOL is2D;
 @property (nonatomic, readonly) BOOL willReadFrequently;
+/// Read when the 2D context is created.
+@property (nonatomic) BOOL threaded2D;
 @property (nonatomic, readonly) CGFloat drawingBufferWidth;
 @property (nonatomic, readonly) CGFloat drawingBufferHeight;
 @property (nonatomic, readonly) float width;

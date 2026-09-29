@@ -772,8 +772,10 @@ public class NSCRender: NSObject {
 					let mtlTexture = CVMetalTextureGetTexture(cvMetalTex) else { return false }
 		
 		let texPtr = Unmanaged.passUnretained(mtlTexture).toOpaque()
-		return canvas_native_ios_context_draw_image_with_metal_texture(
-			context, texPtr,
+		// +1 handed over; released once the GPU has read the texture.
+		let owner = Unmanaged.passRetained(cvMetalTex).toOpaque()
+		return canvas_native_ios_context_draw_external_metal_texture(
+			context, texPtr, owner,
 			Float(width), Float(height),
 			sx, sy, sw, sh,
 			dx, dy, dw, dh

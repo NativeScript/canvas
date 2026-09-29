@@ -159,6 +159,9 @@ public class NSCCanvas: UIView {
 	private(set) public var is2D = false
 	
 	private(set) public var willReadFrequently = false
+
+	/// Read when the 2D context is created.
+	@objc public var threaded2D = false
 	
 	internal var engine = Engine.None
 	

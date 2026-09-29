@@ -1,0 +1,9 @@
+<Page xmlns="http://schemas.nativescript.org/tns.xsd" navigatingTo="navigatingTo" class="page">
+	<Page.actionBar>
+		<ActionBar title="canvas busy screen" icon="" class="action-bar" />
+	</Page.actionBar>
+	<GridLayout rows="*, auto">
+		<GridLayout row="0" id="host" loaded="{{ hostLoaded }}" />
+		<Label row="1" text="{{ status }}" textWrap="true" class="p-10" />
+	</GridLayout>
+</Page>

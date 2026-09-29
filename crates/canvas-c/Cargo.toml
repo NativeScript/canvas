@@ -15,6 +15,7 @@ d3d = ["canvas-2d/d3d"]
 
 [dependencies]
 base64 = "0.22.1"
+libc = "0.2"
 gl-bindings.workspace = true
 canvas-core = { workspace = true, features = ["2d"] }
 canvas-2d = { workspace = true, optional = true }

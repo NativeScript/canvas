@@ -59,6 +59,23 @@ object Utils {
         dh: Float,
     ): Boolean
 
+    @JvmStatic
+    private external fun nativeContext2DDrawHardwareBuffer(
+        context: Long,
+        buffer: android.hardware.HardwareBuffer,
+        owner: Any?,
+        width: Int,
+        height: Int,
+        sx: Float,
+        sy: Float,
+        sw: Float,
+        sh: Float,
+        dx: Float,
+        dy: Float,
+        dw: Float,
+        dh: Float,
+    ): Boolean
+
     private var rating = -1
     val isEmulator: Boolean
         get() {
@@ -212,6 +229,30 @@ object Utils {
         )
     }
 
+
+    /** On true the native side owns `owner` and closes it once the GPU is done with the frame. */
+    @JvmStatic
+    fun drawVideoFrameHardwareBuffer(
+        context: Long,
+        buffer: android.hardware.HardwareBuffer,
+        owner: Any?,
+        width: Int,
+        height: Int,
+        sx: Float,
+        sy: Float,
+        sw: Float,
+        sh: Float,
+        dx: Float,
+        dy: Float,
+        dw: Float,
+        dh: Float,
+    ): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return false
+        return nativeContext2DDrawHardwareBuffer(
+            context, buffer, owner, width, height,
+            sx, sy, sw, sh, dx, dy, dw, dh,
+        )
+    }
 
     @JvmStatic
     fun createRenderAndAttachToGLContext(

@@ -20,6 +20,7 @@ fn clear_paint() -> &'static Paint {
 impl Context {
     #[inline]
     pub fn clear_rect(&mut self, x: c_float, y: c_float, width: c_float, height: c_float) {
+        self.discard_if_cleared(&Rect::from_xywh(x, y, width, height));
         let paint = clear_paint();
         self.render_to_canvas(paint, |canvas, paint| {
             let rect = Rect::from_xywh(x, y, width, height);

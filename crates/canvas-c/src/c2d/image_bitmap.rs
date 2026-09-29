@@ -394,7 +394,7 @@ pub extern "C" fn canvas_native_image_bitmap_create_from_context_with_output(
     }
     let context = unsafe { &mut *context };
     let output = unsafe { &*output };
-    let image = match context.get_context_mut().get_image() {
+    let image = match context.image() {
         Some(image) => image,
         None => return false,
     };

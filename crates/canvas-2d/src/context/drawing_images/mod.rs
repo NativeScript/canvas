@@ -48,7 +48,7 @@ impl Context {
                 )
             } else if let Some((dimensions, bytes)) = bytes {
                 let (width, height) = dimensions;
-                if let Some(image) = crate::utils::image::from_image_slice_no_copy(
+                if let Some(image) = self.asset_image(
                     bytes,
                     width as i32,
                     height as i32,
@@ -83,7 +83,7 @@ impl Context {
                 self.draw_image(image, src_rect, dst_rect)
             } else if let Some((dimensions, bytes)) = bytes {
                 let (width, height) = dimensions;
-                if let Some(image) = crate::utils::image::from_image_slice_no_copy(
+                if let Some(image) = self.asset_image(
                     bytes,
                     width as i32,
                     height as i32,
@@ -107,7 +107,7 @@ impl Context {
                 self.draw_image_dx_dy(image, x, y)
             } else if let Some((dimensions, bytes)) = bytes {
                 let (width, height) = dimensions;
-                if let Some(image) = crate::utils::image::from_image_slice_no_copy(
+                if let Some(image) = self.asset_image(
                     bytes,
                     width as i32,
                     height as i32,
@@ -139,7 +139,7 @@ impl Context {
             } else if let Some((dimensions, bytes)) = bytes {
                 let (w, h) = dimensions;
                 if let Some(image) =
-                    crate::utils::image::from_image_slice_no_copy(bytes, w as i32, h as i32)
+                    self.asset_image(bytes, w as i32, h as i32)
                 {
                     self.draw_image_dx_dy_dw_dh(&image, x, y, width, height)
                 }
@@ -162,7 +162,7 @@ impl Context {
                 self.draw_image_with_rect(image, dst_rect)
             } else if let Some((dimensions, bytes)) = bytes {
                 let (width, height) = dimensions;
-                if let Some(image) = crate::utils::image::from_image_slice_no_copy(
+                if let Some(image) = self.asset_image(
                     bytes,
                     width as i32,
                     height as i32,

@@ -1,6 +1,6 @@
 use std::os::raw::{c_float, c_int};
 
-use skia_safe::{AlphaType, ColorType, IPoint, ISize, IVector, ImageInfo, Rect};
+use skia_safe::{AlphaType, ColorType, IPoint, ISize, IVector, ImageInfo};
 
 pub use image_data::*;
 
@@ -65,61 +65,48 @@ impl Context {
             }
         }
 
-        let mut dx = dx;
-        let mut dy = dy;
-        let mut sx = sx;
-        let mut sy = sy;
-        let mut sw = sw;
-        let mut sh = sh;
-        let srect: Rect = Rect::from_xywh(sx, sy, sw, sh);
-        let info: ImageInfo;
-        let row_bytes: usize;
-        if srect.is_empty() {
-            info = ImageInfo::new(
-                ISize::new(data.width(), data.height()),
-                ColorType::RGBA8888,
-                AlphaType::Unpremul,
-                None,
-            );
-            row_bytes = (data.width() * 4) as usize;
-        } else {
-            if sw < 0.0 {
-                sx += sw;
-                sw = -sw;
-            }
-
-            if sy < 0.0 {
-                sy += sh;
-                sh = -sh;
-            }
-
-            if sx + sw > data.width() as f32 {
-                sw = data.width() as f32 - sx;
-            }
-            if sy + sh > data.height() as f32 {
-                sh = data.height() as f32 - sy;
-            }
-
-            dx += sx;
-            dy += sy;
-
-            info = ImageInfo::new(
-                ISize::new(sw as i32, sh as i32),
-                ColorType::RGBA8888,
-                AlphaType::Unpremul,
-                None,
-            );
-
-            row_bytes = (sw * 4.0) as usize;
+        let (mut x, mut y, mut w, mut h) = (sx, sy, sw, sh);
+        if w < 0. {
+            x += w;
+            w = -w;
+        }
+        if h < 0. {
+            y += h;
+            h = -h;
+        }
+        if x < 0. {
+            w += x;
+            x = 0.;
+        }
+        if y < 0. {
+            h += y;
+            y = 0.;
+        }
+        w = w.min(data.width() as f32 - x);
+        h = h.min(data.height() as f32 - y);
+        let (x, y, w, h) = (x.floor() as i32, y.floor() as i32, w.floor() as i32, h.floor() as i32);
+        if w <= 0 || h <= 0 {
+            return;
         }
 
+        let info = ImageInfo::new(
+            ISize::new(w, h),
+            ColorType::RGBA8888,
+            AlphaType::Unpremul,
+            None,
+        );
+        let row_bytes = data.width() as usize * 4;
+        let start = y as usize * row_bytes + x as usize * 4;
+        let pixels = &data.data()[start..];
+        let (dx, dy) = (dx + x as f32, dy + y as f32);
+
+        let origin = IVector::new(dx as i32, dy as i32);
+        if self.record_pixels(&info, pixels, row_bytes, origin) {
+            self.surface_state = self.surface_state | crate::context::SurfaceState::Pending;
+            return;
+        }
         self.with_canvas_dirty(|canvas| {
-            let _ = canvas.write_pixels(
-                &info,
-                &data.data(),
-                row_bytes,
-                IVector::new(dx as i32, dy as i32),
-            );
+            let _ = canvas.write_pixels(&info, pixels, row_bytes, origin);
         });
     }
 }

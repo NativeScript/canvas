@@ -562,7 +562,7 @@ class NSCCanvas : FrameLayout {
 					)
 					engine = Engine.GPU
 				} else {
-					nativeContext = nativeCreate2DContext(
+					nativeContext = create2DNative(
 						surfaceWidth,
 						surfaceHeight,
 						it,
@@ -622,7 +622,7 @@ class NSCCanvas : FrameLayout {
 						)
 						engine = Engine.GPU
 					} else {
-						nativeContext = nativeCreate2DContext(
+						nativeContext = create2DNative(
 							surfaceWidth,
 							surfaceHeight,
 							null,
@@ -670,7 +670,7 @@ class NSCCanvas : FrameLayout {
 						)
 						engine = Engine.GPU
 					} else {
-						nativeContext = nativeCreate2DContext(
+						nativeContext = create2DNative(
 							surfaceWidth,
 							surfaceHeight,
 							null,
@@ -705,6 +705,25 @@ class NSCCanvas : FrameLayout {
 		}
 
 		this.isAlpha = alpha
+	}
+
+	/** Read when the 2D context is created. */
+	var threaded2D = false
+
+	private fun create2DNative(
+		width: Int,
+		height: Int,
+		surface: Surface?,
+		alpha: Boolean,
+		density: Float,
+		fontColor: Int,
+		ppi: Float,
+		direction: Int,
+		colorSpace: Int
+	): Long = if (threaded2D) {
+		nativeCreate2DContextThreaded(width, height, surface, alpha, density, fontColor, ppi, direction, colorSpace)
+	} else {
+		nativeCreate2DContext(width, height, surface, alpha, density, fontColor, ppi, direction, colorSpace)
 	}
 
 	private var is2D = false
@@ -1271,6 +1290,20 @@ class NSCCanvas : FrameLayout {
 		@JvmStatic
 		@FastNative
 		external fun nativeCreate2DContext(
+			width: Int,
+			height: Int,
+			surface: Surface?,
+			alpha: Boolean,
+			density: Float,
+			fontColor: Int,
+			ppi: Float,
+			direction: Int,
+			colorSpace: Int
+		): Long
+
+		@JvmStatic
+		@FastNative
+		external fun nativeCreate2DContextThreaded(
 			width: Int,
 			height: Int,
 			surface: Surface?,

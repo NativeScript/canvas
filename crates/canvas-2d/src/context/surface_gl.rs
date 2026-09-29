@@ -20,6 +20,55 @@ fn gl_interface() -> Option<Interface> {
     }
 }
 
+fn with_offscreen(
+    ctx: &mut gpu::DirectContext,
+    window: skia_safe::Surface,
+    alpha: bool,
+    color_space: Option<skia_safe::ColorSpace>,
+) -> (skia_safe::Surface, Option<skia_safe::Surface>) {
+    #[cfg(target_os = "android")]
+    {
+        let (color_type, alpha_type) = if alpha {
+            (ColorType::RGBA8888, AlphaType::Premul)
+        } else {
+            (ColorType::RGB565, AlphaType::Opaque)
+        };
+        let info = ImageInfo::new(
+            ISize::new(window.width(), window.height()),
+            color_type,
+            alpha_type,
+            color_space,
+        );
+        let props = window.props().clone();
+        if let Some(offscreen) = gpu::surfaces::render_target(
+            ctx,
+            gpu::Budgeted::Yes,
+            &info,
+            Some(0),
+            gpu::SurfaceOrigin::TopLeft,
+            Some(&props),
+            false,
+            false,
+        ) {
+            return (offscreen, Some(window));
+        }
+    }
+    #[cfg(not(target_os = "android"))]
+    let _ = (ctx, alpha, color_space);
+    (window, None)
+}
+
+/// A pbuffer keeps its contents across swaps; a window does not.
+fn draws_to_window(gl: &canvas_core::gpu::gl::GLContext) -> bool {
+    #[cfg(target_os = "android")]
+    return !gl.is_pbuffer();
+    #[cfg(not(target_os = "android"))]
+    {
+        let _ = gl;
+        false
+    }
+}
+
 const GR_GL_RGB565: u32 = 0x8D62;
 const GR_GL_RGBA8: u32 = 0x8058;
 
@@ -131,6 +180,12 @@ impl Context {
             Some(&surface_props),
         )?;
 
+        let (surface, window_surface) = if draws_to_window(&gl_context) {
+            with_offscreen(&mut ctx, surface, alpha, color_space.into())
+        } else {
+            (surface, None)
+        };
+
         let direct_context = Some(ctx);
 
 
@@ -138,6 +193,7 @@ impl Context {
         state.direction = direction;
 
         Some(Context {
+            window_surface,
             direct_context,
             #[cfg(feature = "metal")]
             metal_context: None,
@@ -165,8 +221,65 @@ impl Context {
             state,
             state_stack: vec![],
             font_color: Color::new(font_color as u32),
+            recording: None,
             surface_state: SurfaceState::None,
         })
+    }
+
+    /// Call after raw GL made behind Skia's back.
+    pub fn reset_gpu_state(&mut self) {
+        if let Some(ctx) = self.direct_context.as_mut() {
+            ctx.reset(None);
+        }
+    }
+
+    pub fn presents_through_window(&self) -> bool {
+        self.window_surface.is_some()
+    }
+
+    /// For a canvas made before its view had a surface. Starts blank; the caller restores it.
+    pub fn use_offscreen_for_window(&mut self) {
+        if self.window_surface.is_some() {
+            return;
+        }
+        if !self.gl_context.as_ref().is_some_and(draws_to_window) {
+            return;
+        }
+        let Some(ctx) = self.direct_context.as_mut() else {
+            return;
+        };
+        let Some(placeholder) = surfaces::raster_n32_premul((1, 1)) else {
+            return;
+        };
+        let window = std::mem::replace(&mut self.surface, placeholder);
+        let (surface, window_surface) = with_offscreen(
+            ctx,
+            window,
+            !self.surface_data.is_opaque,
+            self.surface_data.color_space.into(),
+        );
+        self.surface = surface;
+        self.window_surface = window_surface;
+    }
+
+    pub fn present_to_window(&mut self) {
+        if self.window_surface.is_none() {
+            return;
+        }
+        self.bind_surface();
+        let Some(window) = self.window_surface.as_mut() else {
+            return;
+        };
+        {
+            // Dropped before the next draw, so the surface is not copied on write.
+            let image = self.surface.image_snapshot();
+            let mut paint = skia_safe::Paint::default();
+            paint.set_blend_mode(skia_safe::BlendMode::Src);
+            window.canvas().draw_image(&image, (0., 0.), Some(&paint));
+        }
+        if let Some(ctx) = self.direct_context.as_mut() {
+            ctx.flush_and_submit_surface(window, None);
+        }
     }
 
     pub fn resize_gl(
@@ -182,6 +295,7 @@ impl Context {
         let color_space: Option<skia_safe::ColorSpace> = context.surface_data.color_space.into();
         let bounds = skia_safe::Rect::from_wh(width, height);
         let mut direct_context = None;
+        let mut window_surface = None;
         let mut engine = SurfaceEngine::GL;
         let surface = if bounds.is_empty() {
             let color_type = if alpha {
@@ -255,15 +369,26 @@ impl Context {
                 &target,
                 gpu::SurfaceOrigin::BottomLeft,
                 color_type,
-                color_space,
+                color_space.clone(),
                 Some(&surface_props),
             );
+
+            let on_window = context.gl_context.as_ref().is_some_and(draws_to_window);
+            let surface = match surface {
+                Some(surface) if on_window => {
+                    let (surface, window) = with_offscreen(&mut ctx, surface, alpha, color_space);
+                    window_surface = window;
+                    Some(surface)
+                }
+                surface => surface,
+            };
 
             direct_context = Some(ctx);
             surface
         };
 
         if let Some(surface) = surface {
+            context.window_surface = window_surface;
             context.direct_context = direct_context;
             context.surface_state = SurfaceState::None;
             context.surface_data.engine = engine;

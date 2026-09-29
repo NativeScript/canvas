@@ -18,7 +18,7 @@ use log::LevelFilter;
 // #[cfg(feature = "vulkan")]
 use crate::jni_compat::org_nativescript_canvas_NSCCanvas::{nativeCreate2dContextVulkan, nativeGetVulkanVersion, nativeContext2DSetRenderFunc, nativeContext2DClearRenderFunc};
 
-use crate::jni_compat::org_nativescript_canvas_NSCCanvas::{nativeContext2DPathTest, nativeContext2DPathTestNormal, nativeContext2DRender, nativeContext2DTest, nativeContext2DTestNormal, nativeCreate2DContext, nativeCustomWithBitmapFlush, nativeInitWebGL, nativeInitWebGLNoSurface, nativeInitWebGPU, nativeMakeWebGLCurrent, nativeMakeWebGLCurrentNormal, nativeRelease2DContext, nativeRelease2DContextNormal, nativeReleaseWebGL, nativeReleaseWebGLNormal, nativeReleaseWebGPU, nativeDetachWebGPUSurface, nativeDetach2DSurface, nativeResizeWebGPU, nativeUpdate2DSurface, nativeUpdate2DSurfaceNoSurface, nativeUpdate2DSurfaceNoSurfaceNormal, nativeUpdateGLNoSurface, nativeUpdateWebGLNoSurfaceNormal, nativeUpdateWebGLSurface, nativeWebGLC2DRender, nativeWriteCurrentWebGLContextToBitmap, nativeContext2DConicTest};
+use crate::jni_compat::org_nativescript_canvas_NSCCanvas::{nativeContext2DPathTest, nativeContext2DPathTestNormal, nativeContext2DRender, nativeContext2DTest, nativeContext2DTestNormal, nativeCreate2DContext, nativeCreate2DContextThreaded, nativeCustomWithBitmapFlush, nativeInitWebGL, nativeInitWebGLNoSurface, nativeInitWebGPU, nativeMakeWebGLCurrent, nativeMakeWebGLCurrentNormal, nativeRelease2DContext, nativeRelease2DContextNormal, nativeReleaseWebGL, nativeReleaseWebGLNormal, nativeReleaseWebGPU, nativeDetachWebGPUSurface, nativeDetach2DSurface, nativeResizeWebGPU, nativeUpdate2DSurface, nativeUpdate2DSurfaceNoSurface, nativeUpdate2DSurfaceNoSurfaceNormal, nativeUpdateGLNoSurface, nativeUpdateWebGLNoSurfaceNormal, nativeUpdateWebGLSurface, nativeWebGLC2DRender, nativeWriteCurrentWebGLContextToBitmap, nativeContext2DConicTest};
 use crate::jni_compat::org_nativescript_canvas_NSCCanvasRenderingContext2D::{nativeCreatePattern, nativeDrawAtlasWithBitmap, nativeDrawImageDxDyDwDhWithAsset, nativeDrawImageDxDyDwDhWithBitmap, nativeDrawImageDxDyWithAsset, nativeDrawImageDxDyWithBitmap, nativeDrawImageWithAsset, nativeDrawImageWithBitmap, nativeScale};
 use crate::jni_compat::org_nativescript_canvas_NSCImageAsset::{nativeCreateImageAsset, nativeDestroyImageAsset, nativeGetDimensions, nativeGetError, nativeLoadFromBitmap, nativeLoadFromBuffer, nativeLoadFromBytes, nativeLoadFromEncodedBuffer, nativeLoadFromEncodedBytes, nativeLoadFromPath, nativeLoadFromUrl};
 use crate::jni_compat::org_nativescript_canvas_NSCImageBitmap::{nativeLoadBitmapFromBuffer, nativeLoadBitmapFromBufferOptions, nativeLoadBitmapFromBufferRectOptions, nativeLoadBitmapFromBytes, nativeLoadBitmapFromBytesOptions, nativeLoadBitmapFromBytesRectOptions};
@@ -107,6 +107,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                 canvas_method_names.push("nativeContext2DClearRenderFunc");
                 canvas_method_names.push("nativeDetachWebGPUSurface");
                 canvas_method_names.push("nativeDetach2DSurface");
+                canvas_method_names.push("nativeCreate2DContextThreaded");
 
             let canvas_signatures = if ret >= ANDROID_O {
                 let mut ret = vec![
@@ -143,6 +144,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                 ret.push("(J)V");
                 ret.push("(J)V");
                 ret.push("(J)V");
+                ret.push("(IILandroid/view/Surface;ZFIFII)J");
 
                 ret
             } else {
@@ -180,6 +182,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                 ret.push("!(J)V");
                 ret.push("!(J)V");
                 ret.push("!(J)V");
+                ret.push("!(IILandroid/view/Surface;ZFIFII)J");
                 ret
             };
 
@@ -246,6 +249,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
             canvas_methods.push(nativeContext2DClearRenderFunc as *mut c_void);
             canvas_methods.push(nativeDetachWebGPUSurface as *mut c_void);
             canvas_methods.push(nativeDetach2DSurface as *mut c_void);
+            canvas_methods.push(nativeCreate2DContextThreaded as *mut c_void);
 
             let canvas_native_methods: Vec<NativeMethod> =
                 izip!(canvas_method_names, canvas_signatures, canvas_methods)

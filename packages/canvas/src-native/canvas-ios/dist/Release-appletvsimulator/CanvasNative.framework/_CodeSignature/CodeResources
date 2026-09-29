@@ -6,7 +6,7 @@
 	<dict>
 		<key>Headers/CanvasNative-Swift.h</key>
 		<data>
-		B5IOXFrqfDCdvXUHHXtWWqpucfE=
+		Xi48so4Ehokl09SxzqzhZSrGpiY=
 		</data>
 		<key>Headers/CanvasNative.h</key>
 		<data>
@@ -18,7 +18,7 @@
 		</data>
 		<key>Headers/canvas_ios.h</key>
 		<data>
-		uZPa47NtAbPvcJH3E82VYMpmEt4=
+		HNf+rLuhwthUtz4sZGpouu2CnFs=
 		</data>
 		<key>Headers/canvas_native.h</key>
 		<data>
@@ -30,27 +30,27 @@
 		</data>
 		<key>Modules/CanvasNative.swiftmodule/Project/arm64-apple-tvos-simulator.swiftsourceinfo</key>
 		<data>
-		ckA6fFjz/KU4F/dGi2anhkXbkXs=
+		4LkeXSSw3YGrWDQ0p7gC/7u9F2s=
 		</data>
 		<key>Modules/CanvasNative.swiftmodule/arm64-apple-tvos-simulator.abi.json</key>
 		<data>
-		767b/WkhXokxxy5T/Eo+JY1bPLE=
+		45Y9JsrpbSBqf7q3I/xMeoTmBRA=
 		</data>
 		<key>Modules/CanvasNative.swiftmodule/arm64-apple-tvos-simulator.private.swiftinterface</key>
 		<data>
-		KQtI6QguSM+EmfOEvmqWiOpDVq0=
+		7ZMvgbA/l7RrBa+yHXOMCpnES1E=
 		</data>
 		<key>Modules/CanvasNative.swiftmodule/arm64-apple-tvos-simulator.swiftdoc</key>
 		<data>
-		Jp11PfP5xGH1sSgoPW3iDl8j0+g=
+		EK7xQ0xSWNwHXnq4mBb4yZqe8MU=
 		</data>
 		<key>Modules/CanvasNative.swiftmodule/arm64-apple-tvos-simulator.swiftinterface</key>
 		<data>
-		KQtI6QguSM+EmfOEvmqWiOpDVq0=
+		7ZMvgbA/l7RrBa+yHXOMCpnES1E=
 		</data>
 		<key>Modules/CanvasNative.swiftmodule/arm64-apple-tvos-simulator.swiftmodule</key>
 		<data>
-		l3Si/tDYda5/yeH7h7w6KobuWng=
+		RiGAVgqy9i/btmUUfievwkD73q8=
 		</data>
 		<key>Modules/module.modulemap</key>
 		<data>
@@ -99,7 +99,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			fDx6Vk016P90ib8Q3uHK/yNgVg7me5mEDzW3iy/1ygM=
+			wiyoRFeBR08uw571WKaQMtXn/u7T1Ned9p7JOop/f3k=
 			</data>
 		</dict>
 		<key>Headers/CanvasNative.h</key>
@@ -120,7 +120,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			shY+cv27jzx85/9YP2sIDFvL7NsmUpFsq6u2xtsefpE=
+			qe3UrXqqT3RrimGaTzMWF2MCj6QrIyI2fGhT5KWxs9M=
 			</data>
 		</dict>
 		<key>Headers/canvas_native.h</key>
@@ -134,42 +134,42 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			cCR6MhzgreG/8jUwikF1Fab3tpb6CF2l1WXt63Bx32Y=
+			+AliNCv8NScJQArlzIaAjo/HChUhpitfe5F0OPjTK9w=
 			</data>
 		</dict>
 		<key>Modules/CanvasNative.swiftmodule/arm64-apple-tvos-simulator.abi.json</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			KG9GMJGGA227zXL4e4W5A72qpdy2WdOMfk2mr14qkPo=
+			DnKULiH5iFIIL4cp+sAWj2xGifF1T9wfXZkd/Iq8OJg=
 			</data>
 		</dict>
 		<key>Modules/CanvasNative.swiftmodule/arm64-apple-tvos-simulator.private.swiftinterface</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			l4sa1ysbXwSR+2VlSjQU93w8DsPv2NCg6+0FT9PiXzI=
+			R+lOVs5cV0LaaCdogJpbw+c2I+QHucMXDns6gMHypRc=
 			</data>
 		</dict>
 		<key>Modules/CanvasNative.swiftmodule/arm64-apple-tvos-simulator.swiftdoc</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			4Qlj7B2IV6vGnK9jdfHPs3Ub4sCHC31w2xRauX22b5c=
+			Uci0u8L8DgneXSe7ogY1qCGDR57v0skYusvpi7RS1Ps=
 			</data>
 		</dict>
 		<key>Modules/CanvasNative.swiftmodule/arm64-apple-tvos-simulator.swiftinterface</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			l4sa1ysbXwSR+2VlSjQU93w8DsPv2NCg6+0FT9PiXzI=
+			R+lOVs5cV0LaaCdogJpbw+c2I+QHucMXDns6gMHypRc=
 			</data>
 		</dict>
 		<key>Modules/CanvasNative.swiftmodule/arm64-apple-tvos-simulator.swiftmodule</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			S56mDSjJ7mwZODc96jMJtLxph9r79nmS5mQhSyWMM58=
+			myTc7H5g0ePKVcUVCseCV8eXjnlqRALqE3kta7lPfNU=
 			</data>
 		</dict>
 		<key>Modules/module.modulemap</key>

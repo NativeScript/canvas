@@ -150,6 +150,15 @@ pub extern "system" fn nativeDetach2DSurface(_: JNIEnv, _: JClass, context: jlon
         return;
     }
     let context = unsafe { &mut *(context as *mut canvas_c::CanvasRenderingContext2D) };
+    if let Some(target) = context.render_target() {
+        // The window goes away when this returns.
+        target.sync(detach_2d_surface);
+        return;
+    }
+    detach_2d_surface(context);
+}
+
+fn detach_2d_surface(context: &mut canvas_c::CanvasRenderingContext2D) {
     let context = context.get_context_mut();
 
     if context.vulkan_context.is_some() {
@@ -382,6 +391,63 @@ pub extern "system" fn nativeCreate2DContext(
 }
 
 #[no_mangle]
+pub extern "system" fn nativeCreate2DContextThreaded(
+    env: JNIEnv,
+    _: JClass,
+    width: jint,
+    height: jint,
+    surface: jobject,
+    alpha: jboolean,
+    density: jfloat,
+    font_color: jint,
+    ppi: jfloat,
+    direction: jint,
+    color_space: jint,
+) -> jlong {
+    let window = if surface.is_null() {
+        None
+    } else {
+        unsafe { NativeWindow::from_surface(env.get_native_interface(), surface) }
+    };
+    drop(env);
+    let (w, h, cs) = match window.as_ref() {
+        Some(window) => (
+            window.width() as f32,
+            window.height() as f32,
+            match color_space {
+                1 => ColorSpace::P3,
+                _ => ColorSpace::Srgb,
+            },
+        ),
+        None => (width as f32, height as f32, ColorSpace::Srgb),
+    };
+    let window = window.map(SendWindow);
+    let alpha = alpha == JNI_TRUE;
+    let direction =
+        canvas_2d::context::text_styles::text_direction::TextDirection::from(direction as u32);
+
+    let context = canvas_c::CanvasRenderingContext2D::new_threaded_with(
+        w, h, density, alpha, font_color, ppi, direction, cs,
+        move || {
+            let view = window
+                .as_ref()
+                .map(|window| window.0.ptr().as_ptr() as *mut c_void)
+                .unwrap_or(ptr::null_mut());
+            let context = canvas_2d::context::Context::new_gl(
+                view, w, h, density, alpha, font_color, ppi, direction, cs,
+            )?;
+            // EGL holds its own reference to the window from here on.
+            drop(window);
+            Some(canvas_c::CanvasRenderingContext2D::new_gl(context, alpha))
+        },
+    );
+    match context {
+        Some(context) => Box::into_raw(Box::new(context)) as jlong,
+        None => 0,
+    }
+}
+
+#[no_mangle]
 pub extern "system" fn nativeUpdateWebGLSurface(
     env: JNIEnv,
     _: JClass,
@@ -424,14 +490,41 @@ pub extern "system" fn nativeUpdate2DSurface(
     let context = context as *mut canvas_c::CanvasRenderingContext2D;
     let context = unsafe { &mut *context };
 
+    let Some(window) = (unsafe { NativeWindow::from_surface(env.get_native_interface(), surface) })
+    else {
+        return;
+    };
+    drop(env);
+
+    if let Some(target) = context.render_target() {
+        // Not waited on: blocking this callback on the render thread can deadlock the buffer queue.
+        let window = SendWindow(window);
+        target.post(move |real| update_2d_surface(real, &window.0, width, height));
+        context.resize(width as f32, height as f32);
+        return;
+    }
+    update_2d_surface(context, &window, width, height);
+}
+
+struct SendWindow(NativeWindow);
+unsafe impl Send for SendWindow {}
+
+fn update_2d_surface(
+    context: &mut canvas_c::CanvasRenderingContext2D,
+    window: &NativeWindow,
+    width: jint,
+    height: jint,
+) {
     unsafe {
-        if let Some(window) = NativeWindow::from_surface(env.get_native_interface(), surface) {
+        {
             {
                 let context = context.get_context_mut();
                 let color_space = context.surface_data().color_space();
                 let alpha = !context.surface_data().is_opaque();
                 // A new EGL surface starts blank; resize() only clears on a size change.
+                let offscreen = context.presents_through_window();
                 let pixels = if context.gl_context.is_some()
+                    && !offscreen
                     && context.surface_data().width() as i32 == width
                     && context.surface_data().height() as i32 == height
                 {
@@ -462,8 +555,15 @@ pub extern "system" fn nativeUpdate2DSurface(
                     context.set_window_surface(&mut attr, width, height, handle);
                     context.make_current();
                 }
+                context.use_offscreen_for_window();
                 if let Some(pixels) = pixels {
                     context.draw_pixels(&pixels);
+                }
+                if context.presents_through_window() {
+                    context.present_to_window();
+                    if let Some(gl_context) = context.gl_context.as_ref() {
+                        gl_context.swap_buffers();
+                    }
                 }
 
                 if let Some(vulkan_context) = context.vulkan_context.as_mut() {
@@ -480,7 +580,6 @@ pub extern "system" fn nativeUpdate2DSurface(
 
             context.resize(width, height)
         }
-        drop(env);
     }
 }
 
@@ -841,8 +940,13 @@ pub extern "system" fn nativeCustomWithBitmapFlush(
                     ),
                     &paint,
                 );
-                let context = context.get_context_mut();
-                context.draw_on_surface(&mut surface);
+                if context.is_threaded() {
+                    if let Some(image) = context.image() {
+                        surface.canvas().draw_image(&image, (0., 0.), None);
+                    }
+                } else {
+                    context.get_context_mut().draw_on_surface(&mut surface);
+                }
             }
         }),
     );

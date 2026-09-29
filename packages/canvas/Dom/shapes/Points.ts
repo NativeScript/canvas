@@ -1,9 +1,11 @@
 import { colorProperty, Property, booleanConverter } from '@nativescript/core';
 import { Group } from '../Group';
 import { Paint } from '../Paint';
+import { parsePoints } from '../point';
 
 export const pointsProperty = new Property<Points, { x: number; y: number }[]>({
 	name: 'points',
+	valueConverter: parsePoints,
 	valueChanged(target, oldValue, newValue) {
 		target.invalidate();
 	},
@@ -22,12 +24,13 @@ export class Points extends Paint {
 	mode: 'points' | 'lines' | 'polygon';
 
 	draw() {
-		const override_color = (this.parent as any)._overrideColor;
+		const points = parsePoints(this.points);
+		if (points.length === 0) return;
 		const context = this._canvas.getContext('2d') as any as CanvasRenderingContext2D;
 		context.lineWidth = this._getStrokeWidth();
 		context.lineJoin = this._getStrokeJoin();
 		context.strokeStyle = this._getColor();
-		(context as any).drawPoints(this.mode ?? 'points', this.points);
+		(context as any).drawPoints(this.mode ?? 'points', points);
 	}
 }
 

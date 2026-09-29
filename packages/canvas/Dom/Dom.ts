@@ -17,6 +17,7 @@ export class Dom extends LayoutBase {
 
 	_raf: any;
 	_state: State = State.None;
+	_layoutListener: android.view.View.OnLayoutChangeListener;
 	_onFrameCallback: ((frame: number) => void) | undefined = undefined;
 
 	constructor() {
@@ -40,6 +41,37 @@ export class Dom extends LayoutBase {
 	initNativeView(): void {
 		super.initNativeView();
 		this._addView(this._canvas);
+		if (__ANDROID__) {
+			// Core lays out a plain LinearLayout natively and never calls onLayout, so size the
+			// canvas when Android lays it out.
+			const ref = new WeakRef(this);
+			this._layoutListener = new android.view.View.OnLayoutChangeListener({
+				onLayoutChange(view, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) {
+					if (right - left !== oldRight - oldLeft || bottom - top !== oldBottom - oldTop) {
+						ref.deref()?._resizeCanvas(right - left, bottom - top);
+					}
+				},
+			});
+			this.nativeView.addOnLayoutChangeListener(this._layoutListener);
+		}
+	}
+
+	disposeNativeView(): void {
+		if (__ANDROID__ && this._layoutListener) {
+			this.nativeView?.removeOnLayoutChangeListener(this._layoutListener);
+			this._layoutListener = undefined;
+		}
+		super.disposeNativeView();
+	}
+
+	/** Sizes in device pixels. */
+	_resizeCanvas(width: number, height: number) {
+		if (width <= 0 || height <= 0) {
+			return;
+		}
+		this._canvas.width = width;
+		this._canvas.height = height;
+		this._dirty();
 	}
 
 	onLoaded(): void {
@@ -60,12 +92,8 @@ export class Dom extends LayoutBase {
 	public onLayout(left: number, top: number, right: number, bottom: number): void {
 		super.onLayout(left, top, right, bottom);
 		View.layoutChild(this, this._canvas, left, top, right, bottom);
-		this._canvas.width = this.getMeasuredWidth();
-		this._canvas.height = this.getMeasuredHeight();
-		// Trigger a redraw now that dimensions are known. The scale transform is
-		// applied at the top of every _draw() call so it is always up to date.
-		this._dirty();
-		this._bindRaf();
+		// The scale transform is applied at the top of every _draw() call so it is always up to date.
+		this._resizeCanvas(this.getMeasuredWidth(), this.getMeasuredHeight());
 	}
 
 	public onMeasure(widthMeasureSpec: number, heightMeasureSpec: number) {
@@ -119,6 +147,7 @@ export class Dom extends LayoutBase {
 
 	_dirty() {
 		this._state = this._state | State.Pending;
+		this._bindRaf();
 	}
 
 	_addViewToNativeVisualTree(view: ViewBase, atIndex?: number): boolean {
@@ -128,7 +157,7 @@ export class Dom extends LayoutBase {
 			}
 
 			if (__ANDROID__) {
-				this.nativeView.addView(this._canvas.nativeView);
+				this.nativeView.addView(this._canvas.nativeView, new android.widget.LinearLayout.LayoutParams(-1, -1));
 			}
 			if (NAPI_HOST) {
 				addNativeChild(this.nativeView, this._canvas.nativeView);

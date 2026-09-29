@@ -57,6 +57,9 @@ function keyInfo(virtualKey: number): { key: string; code: string } {
 const WHEEL_PIXELS_PER_NOTCH = 100;
 
 export class Canvas extends NapiCanvas {
+	/** Default for `getContext('2d', { threaded })`: rasterize on a shared render thread. */
+	static threaded2D = true;
+
 	private _panel: any;
 	private _ignoreTouchEvents = false;
 	/** Pointers down on the panel (captured, so moves outside it still arrive). */

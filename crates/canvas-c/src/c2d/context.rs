@@ -96,6 +96,8 @@ pub extern "C" fn canvas_native_context_release(value: *mut CanvasRenderingConte
         return;
     }
     if unsafe { &*value }.refs.fetch_sub(1, Ordering::AcqRel) == 1 {
+        #[cfg(all(feature = "d3d", target_os = "windows"))]
+        let _shown = crate::c2d::d3d::forget_shown(value);
         unsafe { drop(Box::from_raw(value)) };
     }
 }
@@ -241,6 +243,37 @@ impl CanvasRenderingContext2D {
             refs: AtomicUsize::new(1),
             threaded: None,
         }
+    }
+
+    #[cfg(all(feature = "d3d", target_os = "windows"))]
+    pub fn new_d3d(context: Context, alpha: bool) -> Self {
+        Self {
+            context,
+            alpha,
+            engine: Engine::D3D,
+            refs: AtomicUsize::new(1),
+            threaded: None,
+        }
+    }
+
+    /// At the address it keeps until dropped.
+    pub(crate) fn settle(&mut self) {
+        #[cfg(all(feature = "d3d", target_os = "windows"))]
+        if self.engine == Engine::D3D {
+            unsafe { self.context.register_d3d() };
+        }
+    }
+
+    /// The real context's GPU device was lost: it draws nothing until restored.
+    pub fn gpu_lost(&self) -> bool {
+        if let Some(target) = self.threaded.as_ref() {
+            return target.is_lost();
+        }
+        #[cfg(all(feature = "d3d", target_os = "windows"))]
+        if self.engine == Engine::D3D {
+            return self.context.d3d_lost();
+        }
+        false
     }
 
     pub fn new_threaded(
@@ -577,19 +610,47 @@ pub extern "C" fn canvas_native_context_create_d3d(
         color_space.into(),
     ) {
         Some(context) => {
-            let context = Box::into_raw(Box::new(CanvasRenderingContext2D {
-                context,
-                alpha,
-                engine: Engine::D3D,
-                refs: AtomicUsize::new(1),
-                threaded: None,
-            }));
-            // Boxed: it stays at this address until released.
-            unsafe { (*context).context.register_d3d() };
+            let context = Box::into_raw(Box::new(CanvasRenderingContext2D::new_d3d(context, alpha)));
+            unsafe { (*context).settle() };
             context
         }
         None => std::ptr::null_mut(),
     }
+}
+
+/// `canvas_native_context_create_d3d`, rasterized and presented on the shared render thread's
+/// Direct3D 12 device; the context returned only records. Null when that thread has no usable
+/// device.
+#[cfg(all(feature = "d3d", target_os = "windows"))]
+#[no_mangle]
+pub extern "C" fn canvas_native_context_create_d3d_threaded(
+    width: f32,
+    height: f32,
+    density: f32,
+    alpha: bool,
+    font_color: i32,
+    ppi: f32,
+    direction: u32,
+    color_space: CanvasColorSpace,
+) -> *mut CanvasRenderingContext2D {
+    let direction = TextDirection::from(direction);
+    let color_space: ColorSpace = color_space.into();
+    let Some(context) = CanvasRenderingContext2D::new_threaded_with(
+        width, height, density, alpha, font_color, ppi, direction, color_space,
+        move || {
+            let context = Context::new_d3d(width, height, density, alpha, font_color, ppi, direction, color_space)?;
+            crate::c2d::d3d::note_render_thread_device(&context);
+            Some(CanvasRenderingContext2D::new_d3d(context, alpha))
+        },
+    ) else {
+        return std::ptr::null_mut();
+    };
+    // Unlike a surface callback, nothing the render thread does waits on this thread here; and
+    // the caller falls back to a CPU context on null.
+    if context.render_target().and_then(|target| target.sync(|_| ())).is_none() {
+        return std::ptr::null_mut();
+    }
+    Box::into_raw(Box::new(context))
 }
 
 /// Presents a D3D context in a WinUI `SwapChainPanel` (`panel`: any COM pointer to it). UI thread.
@@ -601,6 +662,9 @@ pub extern "C" fn canvas_native_context_attach_swap_chain_panel(
 ) -> bool {
     if context.is_null() || panel.is_null() {
         return false;
+    }
+    if unsafe { &*context }.is_threaded() {
+        return unsafe { crate::c2d::d3d::attach_swap_chain_panel(context, panel) };
     }
     let context = unsafe { &mut *context };
     context.engine == Engine::D3D && unsafe { context.context.attach_swap_chain_panel(panel) }
@@ -616,6 +680,9 @@ pub extern "C" fn canvas_native_context_attach_xaml_surface(
 ) -> bool {
     if context.is_null() || source.is_null() {
         return false;
+    }
+    if unsafe { &*context }.is_threaded() {
+        return unsafe { crate::c2d::d3d::attach_xaml_surface(context, source) };
     }
     let context = unsafe { &mut *context };
     context.engine == Engine::D3D && unsafe { context.context.attach_xaml_surface(source) }
@@ -635,6 +702,12 @@ pub extern "C" fn canvas_native_context_set_swap_chain_transform(
         return false;
     }
     let context = unsafe { &*context };
+    if let Some(target) = context.render_target() {
+        target.post(move |real| {
+            real.context.set_swap_chain_transform(scale_x, scale_y, offset_x, offset_y);
+        });
+        return true;
+    }
     context
         .context
         .set_swap_chain_transform(scale_x, scale_y, offset_x, offset_y)
@@ -647,8 +720,7 @@ pub extern "C" fn canvas_native_context_is_lost(context: *const CanvasRenderingC
     if context.is_null() {
         return false;
     }
-    let context = unsafe { &*context };
-    context.context.d3d_lost()
+    unsafe { &*context }.gpu_lost()
 }
 
 /// Moves a lost context to a new device, cleared and in its default state, shown in `panel`
@@ -662,15 +734,23 @@ pub unsafe extern "C" fn canvas_native_context_restore_d3d(
     if context.is_null() {
         return false;
     }
+    if unsafe { &*context }.is_threaded() {
+        return unsafe { crate::c2d::d3d::restore(context, panel) };
+    }
     let context = unsafe { &mut *context };
     unsafe { context.context.restore_d3d(panel) }
 }
 
-/// Removes this thread's shared Direct3D 12 device, as a driver reset would (tests).
+/// Removes this thread's and the render thread's shared Direct3D 12 devices, as a driver reset
+/// would (tests).
 #[cfg(all(feature = "d3d", target_os = "windows"))]
 #[no_mangle]
 pub extern "C" fn canvas_native_d3d_simulate_device_removal() -> bool {
-    canvas_core::gpu::d3d::D3D12Context::simulate_shared_removal()
+    let here = canvas_core::gpu::d3d::D3D12Context::simulate_shared_removal();
+    let render_thread = crate::c2d::render_thread::on_render_thread(|| {
+        canvas_core::gpu::d3d::D3D12Context::simulate_shared_removal()
+    });
+    here || render_thread.unwrap_or(false)
 }
 
 #[no_mangle]

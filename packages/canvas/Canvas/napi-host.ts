@@ -138,6 +138,8 @@ export abstract class NapiCanvas extends CanvasBase {
 
 	static useSurface = false;
 	static forceGL = false;
+	/** Default for `getContext('2d', { threaded })` where the host can rasterize on a render thread. */
+	static threaded2D = false;
 	surfaceOnTop = false;
 
 	protected constructor() {
@@ -513,10 +515,15 @@ export abstract class NapiCanvas extends CanvasBase {
 	private __create2DContext(type: CanvasContextType, options?: any): CanvasRenderingContext2D {
 		const opts = { ...defaultOpts, ...handleContextOptions(type, options), fontColor: (this.parent?.style?.color?.argb ?? 0xff000000) | 0 };
 		this._prepareSurface(opts.alpha !== false, false);
+		const threaded = 'threaded2D' in this._canvas && !!(options?.threaded ?? (this.constructor as typeof NapiCanvas).threaded2D);
+		if ('threaded2D' in this._canvas) {
+			this._canvas.threaded2D = threaded;
+		}
 		const ctx = this._canvas.create2DContext(opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible, opts.fontColor, opts.willReadFrequently ?? false, opts.colorSpace ?? 0);
 		const context = new (CanvasRenderingContext2D as any)(ctx, opts);
 		context._canvas = this;
 		context._type = '2d';
+		context.__threaded = threaded;
 		return context;
 	}
 

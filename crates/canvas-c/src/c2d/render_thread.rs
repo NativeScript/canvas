@@ -2,7 +2,9 @@
 //! make the JS thread wait on it.
 
 use std::collections::{HashMap, VecDeque};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{mpsc, Arc, Condvar, Mutex, OnceLock};
+use std::time::Duration;
 
 use canvas_2d::context::recording::Frame;
 
@@ -12,9 +14,24 @@ type Job = Box<dyn FnOnce(&mut Targets) + Send>;
 
 #[derive(Default)]
 struct Targets {
-    contexts: HashMap<u64, CanvasRenderingContext2D>,
+    contexts: HashMap<u64, Entry>,
     presents: Vec<u64>,
 }
+
+/// Boxed: a context stays at its address while it lives (`register_d3d`).
+struct Entry {
+    context: Box<CanvasRenderingContext2D>,
+    lost: Arc<AtomicBool>,
+}
+
+impl Entry {
+    fn update_lost(&self) {
+        self.lost.store(self.context.gpu_lost(), Ordering::Release);
+    }
+}
+
+/// How soon a present the display was not ready for is tried again.
+const RETRY_PRESENT: Duration = Duration::from_millis(4);
 
 /// Commits merge into a frame until this thread picks it up, so committing never blocks.
 type Slot = Arc<Mutex<Option<Frame>>>;
@@ -59,6 +76,13 @@ fn worker() -> Option<Arc<Worker>> {
 }
 
 fn raise_priority() {
+    #[cfg(target_os = "windows")]
+    unsafe {
+        use windows::Win32::System::Threading::{GetCurrentThread, SetThreadPriority, THREAD_PRIORITY_ABOVE_NORMAL};
+        let _ = SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_ABOVE_NORMAL);
+        // XAML surfaces are drawn from here.
+        let _ = windows::Win32::System::Com::CoInitializeEx(None, windows::Win32::System::Com::COINIT_MULTITHREADED);
+    }
     #[cfg(target_os = "android")]
     unsafe {
         // THREAD_PRIORITY_DISPLAY, for this thread only.
@@ -73,16 +97,28 @@ fn raise_priority() {
 fn run(worker: Arc<Worker>) {
     raise_priority();
     let mut targets = Targets::default();
+    let mut retry: Vec<u64> = Vec::new();
     loop {
         let jobs: Vec<Job> = {
             let Ok(mut queue) = worker.queue.lock() else {
                 return;
             };
             while queue.jobs.is_empty() {
-                queue = match worker.signal.wait(queue) {
-                    Ok(queue) => queue,
+                if retry.is_empty() {
+                    queue = match worker.signal.wait(queue) {
+                        Ok(queue) => queue,
+                        Err(_) => return,
+                    };
+                    continue;
+                }
+                let timed_out;
+                (queue, timed_out) = match worker.signal.wait_timeout(queue, RETRY_PRESENT) {
+                    Ok((queue, timeout)) => (queue, timeout.timed_out()),
                     Err(_) => return,
                 };
+                if timed_out {
+                    break;
+                }
             }
             queue.jobs.drain(..).collect()
         };
@@ -96,14 +132,51 @@ fn run(worker: Arc<Worker>) {
         }
 
         let mut presents = std::mem::take(&mut targets.presents);
+        presents.append(&mut retry);
         presents.sort_unstable();
         presents.dedup();
         for id in presents {
-            if let Some(context) = targets.contexts.get_mut(&id) {
-                context.render();
+            if let Some(entry) = targets.contexts.get_mut(&id) {
+                take_present_deferred();
+                entry.context.render();
+                if take_present_deferred() {
+                    retry.push(id);
+                }
+                entry.update_lost();
             }
         }
     }
+}
+
+/// The display was not ready for the last present (Windows: the swapchain's frame latency).
+fn take_present_deferred() -> bool {
+    #[cfg(all(feature = "d3d", target_os = "windows"))]
+    {
+        canvas_core::gpu::dxgi::take_present_deferred()
+    }
+    #[cfg(not(all(feature = "d3d", target_os = "windows")))]
+    {
+        false
+    }
+}
+
+/// Runs `f` on the render thread and waits for it; `None` if the thread was never started. What
+/// it does to the thread's device shows in every context's `is_lost` straight away.
+pub fn on_render_thread<R, F>(f: F) -> Option<R>
+where
+    R: Send + 'static,
+    F: FnOnce() -> R + Send + 'static,
+{
+    let worker = WORKER.get()?.clone()?;
+    let (tx, rx) = mpsc::sync_channel(1);
+    worker.push(Box::new(move |targets: &mut Targets| {
+        let result = f();
+        for entry in targets.contexts.values() {
+            entry.update_lost();
+        }
+        let _ = tx.send(result);
+    }));
+    rx.recv().ok()
 }
 
 /// Drop waits for the real context to go, so its window can be released afterwards.
@@ -111,6 +184,7 @@ pub struct RenderTarget {
     id: u64,
     worker: Arc<Worker>,
     open: Mutex<Option<Slot>>,
+    lost: Arc<AtomicBool>,
 }
 
 impl RenderTarget {
@@ -125,16 +199,26 @@ impl RenderTarget {
             queue.next_id += 1;
             queue.next_id
         };
+        let lost = Arc::new(AtomicBool::new(false));
+        let shared = Arc::clone(&lost);
         worker.push(Box::new(move |targets: &mut Targets| {
             if let Some(context) = create() {
-                targets.contexts.insert(id, context);
+                let mut context = Box::new(context);
+                context.settle();
+                targets.contexts.insert(id, Entry { context, lost: shared });
             }
         }));
         Some(Self {
             id,
             worker,
             open: Mutex::new(None),
+            lost,
         })
+    }
+
+    /// The real context's GPU device was lost, as of its last present or job.
+    pub fn is_lost(&self) -> bool {
+        self.lost.load(Ordering::Acquire)
     }
 
     pub fn commit(&self, frame: Frame) {
@@ -158,8 +242,8 @@ impl RenderTarget {
         let id = self.id;
         self.worker.push(Box::new(move |targets: &mut Targets| {
             let frame = slot.lock().ok().and_then(|mut pending| pending.take());
-            if let (Some(frame), Some(context)) = (frame, targets.contexts.get_mut(&id)) {
-                context.get_context_mut().replay(frame);
+            if let (Some(frame), Some(entry)) = (frame, targets.contexts.get_mut(&id)) {
+                entry.context.get_context_mut().replay(frame);
                 targets.presents.push(id);
             }
         }));
@@ -179,8 +263,9 @@ impl RenderTarget {
         self.seal();
         let id = self.id;
         self.worker.push(Box::new(move |targets: &mut Targets| {
-            if let Some(context) = targets.contexts.get_mut(&id) {
-                f(context);
+            if let Some(entry) = targets.contexts.get_mut(&id) {
+                f(&mut entry.context);
+                entry.update_lost();
             }
         }));
     }
@@ -194,7 +279,11 @@ impl RenderTarget {
         let (tx, rx) = mpsc::sync_channel(1);
         let id = self.id;
         self.worker.push(Box::new(move |targets: &mut Targets| {
-            let result = targets.contexts.get_mut(&id).map(f);
+            let result = targets.contexts.get_mut(&id).map(|entry| {
+                let result = f(&mut entry.context);
+                entry.update_lost();
+                result
+            });
             let _ = tx.send(result);
         }));
         rx.recv().ok().flatten()

@@ -257,6 +257,8 @@ public class NSCSVG: UIView {
 			let view = Unmanaged.passRetained(host).toOpaque()
 			renderThread = CanvasSVGHelper.renderThreadCreate(view, width: surfaceWidth, height: surfaceHeight, backend: backend.rawValue)
 			if renderThread != 0 {
+				// Clears the raster frame the layer is still holding.
+				setNeedsDisplay()
 				return true
 			}
 			// Could not start one; the single-threaded context still might work.
@@ -271,6 +273,7 @@ public class NSCSVG: UIView {
 			Unmanaged<UIView>.fromOpaque(view).release()
 			return false
 		}
+		setNeedsDisplay()
 		return true
 	}
 
@@ -601,7 +604,9 @@ public class NSCSVG: UIView {
 	}
 
 	public override func draw(_ rect: CGRect) {
-		if gpuContext != 0 {
+		// Either GPU path, not just the single-threaded one: the Metal layer is transparent, so
+		// a raster frame drawn from before it came up would show through under every GPU frame.
+		if isGpuActive {
 			return
 		}
 		if didInitDrawing {

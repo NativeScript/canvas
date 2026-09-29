@@ -1148,6 +1148,8 @@ declare const enum InvalidateState {
 declare class NSCCanvas extends UIView {
 	static alloc(): NSCCanvas; // inherited from NSObject
 
+	threaded2D: boolean;
+
 	static appearance(): NSCCanvas; // inherited from UIAppearance
 
 	/**

@@ -43,6 +43,23 @@ impl MetalTexture {
     }
 }
 
+/// Completes after all earlier work on its queue: command buffers on a queue complete in order.
+pub struct MetalMarker(Retained<ProtocolObject<dyn MTLCommandBuffer>>);
+
+unsafe impl Send for MetalMarker {}
+
+impl MetalMarker {
+    pub fn is_done(&self) -> bool {
+        let status = self.0.status();
+        status == objc2_metal::MTLCommandBufferStatus::Completed
+            || status == objc2_metal::MTLCommandBufferStatus::Error
+    }
+
+    pub fn wait(&self) {
+        self.0.waitUntilCompleted();
+    }
+}
+
 #[derive(Debug)]
 pub struct MetalContext {
     queue: Retained<ProtocolObject<dyn MTLCommandQueue>>,
@@ -159,6 +176,40 @@ impl MetalContext {
             current_drawable,
             is_offscreen: false,
         }
+    }
+
+    /// Without the view (UIKit is main-thread only), so it can live on another thread.
+    pub unsafe fn new_layer_device_queue(
+        layer: *mut c_void,
+        device: *mut c_void,
+        queue: *mut c_void,
+    ) -> Option<Self> {
+        let _pool = NSAutoreleasePool::new();
+        let device: Retained<ProtocolObject<dyn MTLDevice>> =
+            Retained::retain((device as *mut AnyObject).cast())?;
+        let queue: Retained<ProtocolObject<dyn MTLCommandQueue>> =
+            Retained::retain((queue as *mut AnyObject).cast())?;
+        let layer: Retained<CAMetalLayer> = Retained::retain(layer.cast())?;
+        let current_drawable = layer.nextDrawable().map(|drawable| drawable.to_owned());
+        Some(Self {
+            queue,
+            device,
+            layer,
+            view: None,
+            current_drawable,
+            is_offscreen: false,
+        })
+    }
+
+    pub fn commit_marker(&self) -> Option<MetalMarker> {
+        let buffer = self.queue.commandBuffer()?;
+        buffer.commit();
+        Some(MetalMarker(buffer))
+    }
+
+    /// `present` through the view hops to the main thread when called off it.
+    pub fn has_view(&self) -> bool {
+        self.view.is_some()
     }
 
     pub fn queue(&self) -> *mut c_void {

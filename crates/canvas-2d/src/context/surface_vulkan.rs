@@ -142,6 +142,9 @@ impl Context {
             state,
             state_stack: vec![],
             font_color: skia_safe::Color::new(font_color as u32),
+            recording: None,
+            #[cfg(feature = "gl")]
+            window_surface: None,
             surface_state: crate::context::SurfaceState::None,
         }
     }

@@ -6,9 +6,8 @@ use base64::Engine;
 use skia_safe::image::CachingHint;
 use skia_safe::BlendMode;
 pub use skia_safe::ColorType;
-use skia_safe::{
-    AlphaType, Color, EncodedImageFormat, IPoint, ISize, Image, ImageInfo, Point, Surface,
-};
+pub use skia_safe::Image;
+use skia_safe::{AlphaType, Color, EncodedImageFormat, IPoint, ISize, ImageInfo, Point, Surface};
 
 use compositing::composite_operation_type::CompositeOperationType;
 use fill_and_stroke_styles::paint::Paint;
@@ -32,6 +31,7 @@ pub mod drawing_images;
 pub mod drawing_text;
 pub mod fill_and_stroke_styles;
 pub mod paths;
+pub mod recording;
 pub mod pixel_manipulation;
 pub mod text_styles;
 
@@ -91,6 +91,9 @@ pub struct State {
     pub(crate) letter_spacing: f32,
     pub(crate) matrix: skia_safe::Matrix,
     pub(crate) clip: Option<Path>,
+    /// Device space; re-applied at picture boundaries.
+    pub(crate) clips: Vec<recording::DeviceClip>,
+    pub(crate) saved_matrix: skia_safe::M44,
 }
 
 impl Default for State {
@@ -127,6 +130,8 @@ impl Default for State {
             letter_spacing: 0.,
             matrix: skia_safe::Matrix::new_identity(),
             clip: None,
+            clips: Vec::new(),
+            saved_matrix: skia_safe::M44::new_identity(),
         }
     }
 }
@@ -213,6 +218,10 @@ pub struct Context {
     // native context first leaves GrDirectContext tearing itself down against
     // an already-destroyed device.
     pub(crate) surface: Surface,
+    /// Android: `surface` is then offscreen, as a swap leaves the window's next buffer undefined.
+    /// Must drop before `direct_context`.
+    #[cfg(feature = "gl")]
+    pub(crate) window_surface: Option<Surface>,
     pub(crate) surface_state: SurfaceState,
     #[cfg(any(feature = "gl", feature = "vulkan", feature = "metal", feature = "d3d"))]
     pub(crate) direct_context: Option<skia_safe::gpu::DirectContext>,
@@ -234,6 +243,7 @@ pub struct Context {
     pub(crate) state: State,
     pub(crate) state_stack: Vec<State>,
     pub(crate) font_color: Color,
+    pub(crate) recording: Option<recording::Recording>,
 }
 
 impl Drop for Context {
@@ -376,6 +386,13 @@ impl Context {
     /// Runs before every draw. Skia uploads a raster image the moment a draw records it (a pattern
     /// fill, say), so another canvas's GL context being current puts the texture in the wrong one.
     pub(crate) fn ensure_current(&mut self) {
+        if self.recording.is_none() {
+            self.bind_surface();
+        }
+    }
+
+    #[inline]
+    pub(crate) fn bind_surface(&mut self) {
         #[cfg(feature = "gl")]
         if let Some(ref context) = self.gl_context {
             context.make_current();
@@ -387,12 +404,20 @@ impl Context {
     }
 
     #[inline]
+    pub(crate) fn canvas(&mut self) -> &skia_safe::Canvas {
+        match self.recording.as_mut() {
+            Some(recording) => recording.canvas(),
+            None => self.surface.canvas(),
+        }
+    }
+
+    #[inline]
     pub fn with_canvas<F>(&mut self, f: F)
     where
         F: FnOnce(&skia_safe::Canvas),
     {
         self.ensure_current();
-        f(self.surface.canvas());
+        f(self.canvas());
     }
 
     #[inline]
@@ -401,7 +426,11 @@ impl Context {
         F: FnOnce(&skia_safe::Canvas, &mut Path),
     {
         self.ensure_current();
-        f(self.surface.canvas(), &mut self.path);
+        let canvas = match self.recording.as_mut() {
+            Some(recording) => recording.canvas(),
+            None => self.surface.canvas(),
+        };
+        f(canvas, &mut self.path);
         self.surface_state = self.surface_state | SurfaceState::Pending;
     }
 
@@ -411,7 +440,7 @@ impl Context {
         F: FnOnce(&skia_safe::Canvas),
     {
         self.ensure_current();
-        f(self.surface.canvas());
+        f(self.canvas());
         self.surface_state = self.surface_state | SurfaceState::Pending;
     }
 
@@ -421,7 +450,11 @@ impl Context {
         F: FnOnce(&skia_safe::Canvas, &Paint),
     {
         self.ensure_current();
-        f(self.surface.canvas(), &self.state.paint);
+        let canvas = match self.recording.as_mut() {
+            Some(recording) => recording.canvas(),
+            None => self.surface.canvas(),
+        };
+        f(canvas, &self.state.paint);
         self.surface_state = self.surface_state | SurfaceState::Pending;
     }
 
@@ -438,7 +471,7 @@ impl Context {
         F: FnOnce(&skia_safe::Canvas),
     {
         self.ensure_current();
-        f(self.surface.canvas());
+        f(self.canvas());
         self.surface_state = self.surface_state | SurfaceState::Pending;
     }
 
@@ -483,7 +516,7 @@ impl Context {
     }
 
     pub fn draw_pixels(&mut self, image: &Image) {
-        let canvas = self.surface.canvas();
+        let canvas = self.canvas();
         canvas.save();
         canvas.reset_matrix();
         let mut paint = skia_safe::Paint::default();
@@ -634,7 +667,7 @@ impl Context {
         layer_paint.set_blend_mode(BlendMode::SrcOver);
         let mut layer_recorder = skia_safe::PictureRecorder::new();
         layer_recorder.begin_recording(self.surface_data.bounds, false);
-        let current_matrix = self.surface.canvas().local_to_device();
+        let current_matrix = self.canvas().local_to_device();
         if let Some(layer) = layer_recorder.recording_canvas() {
             layer.set_matrix(&current_matrix);
             f(layer, &layer_paint, &mut self.path);
@@ -643,7 +676,7 @@ impl Context {
         if let Some(pict) =
             layer_recorder.finish_recording_as_picture(Some(&self.surface_data.bounds))
         {
-            let canvas = self.surface.canvas();
+            let canvas = self.canvas();
             canvas.save();
             let mut blend_paint = skia_safe::Paint::default();
             blend_paint.set_anti_alias(true);
@@ -692,7 +725,7 @@ impl Context {
         layer_paint.set_blend_mode(BlendMode::SrcOver);
         let mut layer_recorder = skia_safe::PictureRecorder::new();
         layer_recorder.begin_recording(self.surface_data.bounds, false);
-        let current_matrix = self.surface.canvas().local_to_device();
+        let current_matrix = self.canvas().local_to_device();
         if let Some(layer) = layer_recorder.recording_canvas() {
             layer.set_matrix(&current_matrix);
             f(layer, &layer_paint);
@@ -701,7 +734,7 @@ impl Context {
         if let Some(pict) =
             layer_recorder.finish_recording_as_picture(Some(&self.surface_data.bounds))
         {
-            let canvas = self.surface.canvas();
+            let canvas = self.canvas();
             canvas.save();
             let mut blend_paint = skia_safe::Paint::default();
             blend_paint.set_anti_alias(true);
@@ -732,7 +765,7 @@ impl Context {
                 | BlendMode::DstATop
                 | BlendMode::Src
         ) {
-            f(self.surface.canvas(), paint);
+            f(self.canvas(), paint);
             self.surface_state = self.surface_state | SurfaceState::Pending;
             return;
         }
@@ -758,7 +791,7 @@ impl Context {
         if let Some(pict) =
             layer_recorder.finish_recording_as_picture(Some(&self.surface_data.bounds))
         {
-            let canvas = self.surface.canvas();
+            let canvas = self.canvas();
             canvas.save();
             let mut blend_paint = skia_safe::Paint::default();
             blend_paint.set_anti_alias(true);
@@ -786,6 +819,12 @@ impl Context {
         self.state = State::default();
         self.state_stack.clear();
         self.state.direction = direction;
+        let base = if self.recording.is_some() {
+            recording::RECORDING_BASE
+        } else {
+            1
+        };
+        self.canvas().restore_to_count(base);
     }
 
     pub fn clear_canvas(&mut self) {

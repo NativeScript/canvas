@@ -74,6 +74,9 @@ impl Context {
             state,
             state_stack: vec![],
             font_color: Color::new(font_color as u32),
+            recording: None,
+            #[cfg(feature = "gl")]
+            window_surface: None,
             surface_state: SurfaceState::None,
         }
     }

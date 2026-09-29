@@ -13,7 +13,7 @@ use std::time::{Duration, Instant};
 
 use canvas_core::context_attributes::ColorSpace;
 use canvas_core::gpu::d3d::{D3D12Context, PowerPreference};
-use canvas_core::gpu::dxgi::{CompositionSwapChain, XamlSurface, BUFFER_COUNT};
+use canvas_core::gpu::dxgi::{CompositionSwapChain, XamlHandoff, XamlSurface, BUFFER_COUNT};
 use skia_safe::gpu::d3d::TextureResourceInfo;
 use skia_safe::gpu::{self, Budgeted, DirectContext, FlushInfo, Protected, SurfaceOrigin};
 use skia_safe::surfaces::BackendSurfaceAccess;
@@ -32,9 +32,13 @@ thread_local! {
     /// The thread's D3D canvases (`Context::register_d3d`), for `release_lost_canvases`.
     static CANVASES: RefCell<Vec<*mut Context>> = const { RefCell::new(Vec::new()) };
     static LAST_PURGE: Cell<Option<Instant>> = const { Cell::new(None) };
+    /// What other devices share with the thread's (video frames), opened on it, by their
+    /// producer's key. Dropped with a lost device, which it would otherwise keep alive.
+    static SHARED: RefCell<std::collections::HashMap<u64, IUnknown>> = RefCell::new(Default::default());
 }
 
 const RESOURCE_CACHE_LIMIT: usize = 64 << 20;
+const MAX_SHARED: usize = 16;
 
 fn purge_idle_resources(context: &mut DirectContext) {
     let now = Instant::now();
@@ -74,6 +78,7 @@ fn release_lost_canvases(caller: *mut Context) {
     });
     if let Some((_, mut context)) = stale {
         context.abandon();
+        SHARED.with(|shared| shared.borrow_mut().clear());
     }
 }
 
@@ -147,9 +152,9 @@ impl XamlTarget {
     unsafe fn new(
         direct_context: &mut DirectContext,
         device: &D3D12Context,
-        source: *mut c_void,
         width: u32,
         height: u32,
+        surface: impl FnOnce(&windows::Win32::Graphics::Direct3D11::ID3D11Device, u32, u32) -> windows::core::Result<XamlSurface>,
     ) -> Option<Self> {
         use windows::Win32::Graphics::Direct3D11::{ID3D11Resource, D3D11_BIND_RENDER_TARGET};
         use windows::Win32::Graphics::Direct3D11on12::D3D11_RESOURCE_FLAGS;
@@ -223,7 +228,7 @@ impl XamlTarget {
         }
         .ok()?;
         let wrapped = wrapped?;
-        let surface = unsafe { XamlSurface::new(source, &on12.device, width, height) }.ok()?;
+        let surface = surface(&on12.device, width, height).ok()?;
         Some(Self {
             back_buffer,
             wrapped,
@@ -341,6 +346,9 @@ impl Context {
             state,
             state_stack: vec![],
             font_color: Color::new(font_color as u32),
+            recording: None,
+            #[cfg(feature = "gl")]
+            window_surface: None,
         })
     }
 
@@ -394,8 +402,117 @@ impl Context {
         target.back_buffers.clear();
         target.swap_chain = None;
         target.panel = None;
-        target.xaml = unsafe { XamlTarget::new(direct_context, device, source, width, height) };
+        target.xaml = unsafe {
+            XamlTarget::new(direct_context, device, width, height, |on12, width, height| {
+                XamlSurface::new(source, on12, width, height)
+            })
+        };
         target.xaml.is_some()
+    }
+
+    /// Render thread: a swapchain for the UI thread to show in its panel
+    /// (`dxgi::bind_swap_chain`); this canvas presents into it. `None` when lost.
+    pub fn create_panel_swap_chain(&mut self) -> Option<IUnknown> {
+        let (width, height) = (self.surface.width() as u32, self.surface.height() as u32);
+        let target = self.d3d.as_mut()?;
+        let device = target.device.as_ref()?;
+        let direct_context = self.direct_context.as_mut()?;
+        target.xaml = None;
+        target.back_buffers.clear();
+        target.swap_chain = None;
+        target.panel = None;
+        let swap_chain = CompositionSwapChain::new(device, width, height, target.alpha).ok()?;
+        target.back_buffers = wrap_back_buffers(direct_context, &swap_chain)?;
+        let unknown = swap_chain.as_unknown();
+        target.swap_chain = Some(swap_chain);
+        Some(unknown)
+    }
+
+    /// Render thread: the D3D11 device a `XamlHandoff` for this canvas is made with (on the UI
+    /// thread), and the size it presents at. `None` when lost.
+    pub fn xaml_device(&self) -> Option<(windows::Win32::Graphics::Direct3D11::ID3D11Device, u32, u32)> {
+        let device = self.d3d.as_ref()?.device.as_ref()?;
+        let (width, height) = (self.surface.width().max(1) as u32, self.surface.height().max(1) as u32);
+        Some((device.d3d11_on_12()?.device.clone(), width, height))
+    }
+
+    /// Render thread: presents through `handoff` (made at the canvas's size with `xaml_device`).
+    pub fn attach_xaml_handoff(&mut self, handoff: std::sync::Arc<XamlHandoff>) -> bool {
+        let (width, height) = (self.surface.width() as u32, self.surface.height() as u32);
+        let Some(target) = self.d3d.as_mut() else { return false };
+        let Some(device) = target.device.as_ref() else { return false };
+        let Some(direct_context) = self.direct_context.as_mut() else { return false };
+        target.back_buffers.clear();
+        target.swap_chain = None;
+        target.panel = None;
+        target.xaml = unsafe {
+            XamlTarget::new(direct_context, device, width, height, |on12, _, _| {
+                XamlSurface::with_handoff(handoff, on12)
+            })
+        };
+        target.xaml.is_some()
+    }
+
+    pub fn d3d_device(&self) -> Option<Rc<D3D12Context>> {
+        self.d3d.as_ref()?.device.clone()
+    }
+
+    /// A resource or fence another device shares (`handle`, an NT handle), opened on this
+    /// canvas's device; `key` identifies it for as long as its producer keeps it (handle values
+    /// get reused).
+    pub fn d3d_open_shared<T: Interface>(&self, key: u64, handle: windows::Win32::Foundation::HANDLE) -> Option<T> {
+        let device = self.d3d_device().filter(|device| !device.is_removed())?;
+        if let Some(opened) = SHARED.with(|shared| shared.borrow().get(&key).and_then(|opened| opened.cast::<T>().ok())) {
+            return Some(opened);
+        }
+        let mut opened: Option<T> = None;
+        unsafe { device.device().OpenSharedHandle(handle, &mut opened) }.ok()?;
+        let opened = opened?;
+        SHARED.with(|shared| {
+            let mut shared = shared.borrow_mut();
+            // The producer makes new ones when the video size changes.
+            if shared.len() >= MAX_SHARED {
+                shared.clear();
+            }
+            shared.insert(key, opened.cast().ok()?);
+            Some(())
+        });
+        Some(opened)
+    }
+
+    /// An image over a texture on this canvas's device (in COMMON, read only), for this frame.
+    /// Declared in a shader-read state, so Skia issues no barrier: it is promoted implicitly and
+    /// decays back to COMMON after each submit, as a texture shared with another device must.
+    pub fn d3d_borrow_texture(
+        &mut self,
+        resource: &windows::Win32::Graphics::Direct3D12::ID3D12Resource,
+        width: i32,
+        height: i32,
+    ) -> Option<skia_safe::Image> {
+        use windows::Win32::Graphics::Direct3D12::D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+        let direct_context = self.direct_context.as_mut()?;
+        let texture = gpu::backend_textures::make_d3d(
+            (width, height),
+            &TextureResourceInfo {
+                resource: resource.clone(),
+                alloc: None,
+                resource_state: D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+                format: DXGI_FORMAT_B8G8R8A8_UNORM,
+                sample_count: 1,
+                level_count: 1,
+                sample_quality_pattern: DXGI_STANDARD_MULTISAMPLE_QUALITY_PATTERN,
+                protected: Protected::No,
+            },
+            "external",
+        );
+        gpu::images::borrow_texture_from(
+            direct_context,
+            &texture,
+            SurfaceOrigin::TopLeft,
+            ColorType::BGRA8888,
+            AlphaType::Premul,
+            None,
+        )
     }
 
     /// Maps the swapchain into the panel: DIPs = pixels * scale + offset.
@@ -425,7 +542,8 @@ impl Context {
         if let Some(context) = self.direct_context.as_mut() {
             context.abandon();
         }
-        target.lost_xaml_source = target.xaml.take().map(|xaml| {
+        // A handoff's image is released and attached again from the UI thread.
+        target.lost_xaml_source = target.xaml.take().filter(|xaml| !xaml.surface.is_handoff()).map(|xaml| {
             xaml.surface.release_device();
             xaml.surface.source()
         });

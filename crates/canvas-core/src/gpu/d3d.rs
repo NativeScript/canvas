@@ -282,6 +282,12 @@ impl D3D12Context {
             .unwrap_or_default()
     }
 
+    /// As shared resources carry it (`LowPart | HighPart << 32`).
+    pub fn adapter_luid(&self) -> u64 {
+        let luid = unsafe { self.device.GetAdapterLuid() };
+        luid.LowPart as u64 | ((luid.HighPart as u32 as u64) << 32)
+    }
+
     /// This thread's shared device as it is (none made yet, or removed), without making one.
     pub fn current_shared() -> Option<Rc<D3D12Context>> {
         SHARED.with(|shared| shared.borrow().clone())

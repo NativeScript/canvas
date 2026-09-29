@@ -34,10 +34,15 @@ pub struct D3DAdapterInfo {
 /// canvases), `null` before the first canvas (tests: a restore stays on the GPU it was on).
 #[napi(js_name = "__d3dAdapterInfo")]
 pub fn d3d_adapter_info() -> Option<D3DAdapterInfo> {
-  canvas_core::gpu::d3d::D3D12Context::current_shared().map(|device| D3DAdapterInfo {
-    description: device.adapter_name(),
-    is_warp: device.is_warp(),
-  })
+  // Threaded canvases are on the render thread's device.
+  canvas_c::d3d::render_thread_adapter()
+    .map(|(description, is_warp)| D3DAdapterInfo { description, is_warp })
+    .or_else(|| {
+      canvas_core::gpu::d3d::D3D12Context::current_shared().map(|device| D3DAdapterInfo {
+        description: device.adapter_name(),
+        is_warp: device.is_warp(),
+      })
+    })
 }
 
 thread_local! {
@@ -100,6 +105,8 @@ pub struct NSCCanvas {
   /// that blends with the page: a SwapChainPanel is external content in WinUI 3). Made by the
   /// view at the drawing buffer's size.
   xaml_source: Option<IUnknown>,
+  /// `create2DContext` rasterizes on the shared render thread.
+  threaded_2d: bool,
 }
 
 impl ObjectFinalize for NSCCanvas {
@@ -177,6 +184,7 @@ impl NSCCanvas {
       fit: CanvasFit::default(),
       context: Context::None,
       xaml_source: None,
+      threaded_2d: false,
     })
   }
 
@@ -212,6 +220,17 @@ impl NSCCanvas {
       self.fit = fit;
       self.apply_transform();
     }
+  }
+
+  #[napi(getter, js_name = "threaded2D")]
+  pub fn threaded_2d(&self) -> bool {
+    self.threaded_2d
+  }
+
+  /// Read by the next `create2DContext`.
+  #[napi(setter, js_name = "threaded2D")]
+  pub fn set_threaded_2d(&mut self, threaded: bool) {
+    self.threaded_2d = threaded;
   }
 
   #[napi(getter)]
@@ -305,8 +324,14 @@ impl NSCCanvas {
     };
     let (width, height) = (self.surface_width as f32, self.surface_height as f32);
     let density = self.density();
-    let mut context =
-      canvas_c::canvas_native_context_create_d3d(width, height, density, alpha, font_color, density * 96., 0, color_space);
+    let mut context = if self.threaded_2d {
+      canvas_c::canvas_native_context_create_d3d_threaded(width, height, density, alpha, font_color, density * 96., 0, color_space)
+    } else {
+      std::ptr::null_mut()
+    };
+    if context.is_null() {
+      context = canvas_c::canvas_native_context_create_d3d(width, height, density, alpha, font_color, density * 96., 0, color_space);
+    }
     if context.is_null() {
       // No usable D3D12 device: a CPU canvas still works offscreen (readback, toDataURL).
       context = canvas_c::canvas_native_context_create(width, height, density, alpha, font_color, density * 96., 0, color_space);

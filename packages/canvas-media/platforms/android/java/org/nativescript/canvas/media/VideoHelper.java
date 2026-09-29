@@ -751,9 +751,10 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 		try {
 			// PRIVATE, not RGBA_8888: a hardware decoder refuses to convert and fails with
 			// "producer output buffer format ... doesn't match the ImageReader's".
+			// A threaded 2D canvas holds a frame until the GPU has read it.
 			_imageReader = ImageReader.newInstance(
 					size[0], size[1],
-					ImageFormat.PRIVATE, 2,
+					ImageFormat.PRIVATE, 3,
 					android.hardware.HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE);
 			_imageReader.setOnImageAvailableListener(reader -> {
 				_hasFrame = true;
@@ -785,6 +786,11 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 	}
 
 	public GPUFrame getCurrentGPUFrame() {
+		return getCurrentGPUFrame(true);
+	}
+
+	/** @param requireImportable RGB only, which Vulkan samples directly; GL takes YCbCr too. */
+	public GPUFrame getCurrentGPUFrame(boolean requireImportable) {
 		if (!supportsGPUFrames()) return null;
 
 		if (_imageReader == null && _surfaceOwner == SurfaceOwner.NONE) {
@@ -804,7 +810,7 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 				return null;
 			}
 
-			if (!isImportableFormat(buffer.getFormat())) {
+			if (requireImportable && !isImportableFormat(buffer.getFormat())) {
 				// Give up for this player and hand the surface back to the upload path.
 				android.util.Log.d("JS", "getCurrentGPUFrame: decoder format "
 						+ buffer.getFormat() + " cannot be imported; using the upload path");
@@ -1029,9 +1035,13 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 		// On some devices onVideoSizeChanged only fires after the first rendered frame,
 		// so we must give ExoPlayer a surface first to break the deadlock.
 		if (backendType == 2) ensureGL2DSurface(context);
+		if (backendType == HARDWARE_BUFFER_2D && _imageReader == null && _surfaceOwner == SurfaceOwner.NONE) setupGpuSurface();
 		float w = (float) _videoWidth;
 		float h = (float) _videoHeight;
 		if (w <= 0 || h <= 0) return false;
+		if (backendType == HARDWARE_BUFFER_2D) {
+			return drawFrame2DHardwareBuffer(context, 0, 0, w, h, dx, dy, w, h);
+		}
 		if (backendType == 2) {
 			return drawFrame2DGL(context, 0, 0, w, h, dx, dy, w, h);
 		}
@@ -1041,9 +1051,13 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 	public boolean drawVideoFrame2D(int backendType, long context, float dx, float dy, float dw, float dh) {
 		if (context == 0) return false;
 		if (backendType == 2) ensureGL2DSurface(context);
+		if (backendType == HARDWARE_BUFFER_2D && _imageReader == null && _surfaceOwner == SurfaceOwner.NONE) setupGpuSurface();
 		float w = (float) _videoWidth;
 		float h = (float) _videoHeight;
 		if (w <= 0 || h <= 0) return false;
+		if (backendType == HARDWARE_BUFFER_2D) {
+			return drawFrame2DHardwareBuffer(context, 0, 0, w, h, dx, dy, dw, dh);
+		}
 		if (backendType == 2) {
 			return drawFrame2DGL(context, 0, 0, w, h, dx, dy, dw, dh);
 		}
@@ -1053,13 +1067,63 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 	public boolean drawVideoFrame2D(int backendType, long context, float sx, float sy, float sw, float sh, float dx, float dy, float dw, float dh) {
 		if (context == 0) return false;
 		if (backendType == 2) ensureGL2DSurface(context);
+		if (backendType == HARDWARE_BUFFER_2D && _imageReader == null && _surfaceOwner == SurfaceOwner.NONE) setupGpuSurface();
 		if (_videoWidth <= 0 || _videoHeight <= 0) return false;
+		if (backendType == HARDWARE_BUFFER_2D) {
+			return drawFrame2DHardwareBuffer(context, sx, sy, sw, sh, dx, dy, dw, dh);
+		}
 		if (backendType == 2) {
 			return drawFrame2DGL(context, sx, sy, sw, sh, dx, dy, dw, dh);
 		}
 		return drawFrame2DBitmap(context, sx, sy, sw, sh, dx, dy, dw, dh);
 	}
 
+
+	/** A threaded 2D canvas, which rasterizes off this thread. */
+	public static final int HARDWARE_BUFFER_2D = 5;
+
+	private static Method _drawHardwareBuffer;
+	private static boolean _drawHardwareBufferResolved = false;
+
+	private static Method drawHardwareBufferMethod() {
+		if (_drawHardwareBufferResolved) return _drawHardwareBuffer;
+		_drawHardwareBufferResolved = true;
+		try {
+			Class<?> utils = Class.forName("org.nativescript.canvas.Utils");
+			_drawHardwareBuffer = utils.getMethod("drawVideoFrameHardwareBuffer",
+					long.class, android.hardware.HardwareBuffer.class, Object.class, int.class, int.class,
+					float.class, float.class, float.class, float.class,
+					float.class, float.class, float.class, float.class);
+		} catch (Throwable t) {
+			if (IS_DEBUG) android.util.Log.d("JS", "drawVideoFrameHardwareBuffer unavailable: " + t);
+			_drawHardwareBuffer = null;
+		}
+		return _drawHardwareBuffer;
+	}
+
+	private boolean drawFrame2DHardwareBuffer(long context, float sx, float sy, float sw, float sh, float dx, float dy, float dw, float dh) {
+		Method draw = drawHardwareBufferMethod();
+		if (draw == null || !supportsGPUFrames()) {
+			return drawFrame2DBitmap(context, sx, sy, sw, sh, dx, dy, dw, dh);
+		}
+		GPUFrame frame = getCurrentGPUFrame(false);
+		if (frame == null) {
+			// No new frame, or the GPU path gave up and handed the surface back.
+			return _surfaceOwner == SurfaceOwner.GPU ? false : drawFrame2DBitmap(context, sx, sy, sw, sh, dx, dy, dw, dh);
+		}
+		boolean taken = false;
+		try {
+			Object result = draw.invoke(null, context, frame._buffer, frame, frame.getWidth(), frame.getHeight(),
+					sx, sy, sw, sh, dx, dy, dw, dh);
+			taken = result instanceof Boolean && (Boolean) result;
+		} catch (Throwable t) {
+			if (IS_DEBUG) android.util.Log.d("JS", "drawFrame2DHardwareBuffer: " + t);
+		}
+		if (!taken) {
+			frame.close();
+		}
+		return taken;
+	}
 
 	private void ensureGL2DSurface(long context) {
 		if (_glInitFailed || _glSt != null) return;

@@ -253,6 +253,39 @@ int64_t canvas_native_ios_create_2d_context_metal_device_queue(void *view,
                                                                int32_t direction,
                                                                CanvasColorSpace color_space);
 
+/**
+ * Call on the main thread, which reads `layer` and its drawable size: UIKit is main-thread only.
+ */
+int64_t canvas_native_ios_create_2d_context_metal_device_queue_threaded(void *layer,
+                                                                        void *device,
+                                                                        void *queue,
+                                                                        float width,
+                                                                        float height,
+                                                                        bool alpha,
+                                                                        float density,
+                                                                        uintptr_t samples,
+                                                                        int32_t font_color,
+                                                                        float ppi,
+                                                                        int32_t direction,
+                                                                        CanvasColorSpace color_space);
+
+/**
+ * Takes over `owner` (+1). A threaded context keeps it until the GPU has read the texture.
+ */
+bool canvas_native_ios_context_draw_external_metal_texture(int64_t context,
+                                                           void *mtl_texture,
+                                                           void *owner,
+                                                           float width,
+                                                           float height,
+                                                           float sx,
+                                                           float sy,
+                                                           float s_width,
+                                                           float s_height,
+                                                           float dx,
+                                                           float dy,
+                                                           float d_width,
+                                                           float d_height);
+
 long long canvas_native_init_ios_webgpu(int64_t instance,
                                         void *view,
                                         uint32_t width,

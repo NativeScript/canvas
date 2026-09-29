@@ -218,6 +218,9 @@ export class Video extends VideoBase {
 
 	/** 2D `drawImage(video, ...)`; `args` are drawImage's arguments. */
 	drawImageFrame(context2d: any, args: any[]) {
+		if (this._drawGPUFrame(context2d, args)) {
+			return;
+		}
 		const asset = this._currentAsset();
 		if (!asset || !context2d?.context) {
 			return;
@@ -228,6 +231,36 @@ export class Video extends VideoBase {
 			context2d.context.drawImage(asset, args[1], args[2], args[3], args[4]);
 		} else if (args.length === 9) {
 			context2d.context.drawImage(asset, args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]);
+		}
+	}
+
+	/** Without a readback: the frame is drawn on the canvas's (or its render thread's) D3D12 device. */
+	private _drawGPUFrame(context2d: any, args: any[]): boolean {
+		const native = context2d?.context;
+		const bridge = this._bridge;
+		if (typeof native?.__drawD3DSharedFrame !== 'function' || !bridge.sharesFrames || !bridge.frameId) {
+			return false;
+		}
+		const frame = bridge.gpuFrame();
+		if (!frame) {
+			return false;
+		}
+		const { width, height } = frame;
+		let rect: number[];
+		if (args.length === 3) {
+			rect = [0, 0, width, height, args[1], args[2], width, height];
+		} else if (args.length === 5) {
+			rect = [0, 0, width, height, args[1], args[2], args[3], args[4]];
+		} else if (args.length === 9) {
+			rect = args.slice(1, 9);
+		} else {
+			frame.close();
+			return false;
+		}
+		try {
+			return native.__drawD3DSharedFrame(frame.address, width, height, ...rect);
+		} finally {
+			frame.close();
 		}
 	}
 

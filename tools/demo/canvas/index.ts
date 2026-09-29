@@ -78,6 +78,7 @@ export { WEBGPU_SAMPLES, runWebGPUSample } from './webgpu/samples';
 export { runBoundsProbe } from './bounds-probe';
 export { runCallBound } from './callbound-native';
 export { profileDemo } from './canvas2d/profile';
+export { runBusyBench, parseBusySpec, BUSY_PRESETS } from './busy';
 export { swarm, cancelSwarm } from './canvas2d/particles/swarm';
 export { touchParticles, cancelTouchParticles } from './canvas2d/particles/particles';
 

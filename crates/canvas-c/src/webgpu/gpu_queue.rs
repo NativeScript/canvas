@@ -340,7 +340,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_context_to_texture(
     let mut data = vec![0u8; (width * height * 4) as usize];
     match destination_texture.format {
         CanvasGPUTextureFormat::Bgra8Unorm | CanvasGPUTextureFormat::Bgra8UnormSrgb => {
-            context.context.get_pixels_format(
+            context.read_pixels_format_into(
                 data.as_mut_slice(),
                 (0, 0),
                 (width as i32, height as i32),
@@ -348,9 +348,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_context_to_texture(
             );
         }
         _ => {
-            context
-                .context
-                .get_pixels(data.as_mut_slice(), (0, 0), (width as i32, height as i32));
+            context.read_pixels_into(data.as_mut_slice(), (0, 0), (width as i32, height as i32));
         }
     }
 

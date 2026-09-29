@@ -38,6 +38,9 @@ export declare class Canvas extends CanvasBase {
 
 	static useSurface: boolean;
 
+	/** Default for `getContext('2d', { threaded })`: rasterize on a shared render thread (Android, iOS, Windows). */
+	static threaded2D: boolean;
+
 	surfaceOnTop: boolean;
 
 	static forceGL: boolean;

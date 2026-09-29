@@ -13,3 +13,6 @@ features = ["2d", "webgl"]
 # Apple's <TargetConditionals.h> defines TARGET_OS_VISION (1 on visionOS), so
 # any(ios, visionos) items get declared on both iOS and visionOS builds.
 "target_os = visionos" = "TARGET_OS_VISION"
+[export]
+# Already declared by CoreFoundation.
+exclude = ["CFRetain", "CFRelease"]

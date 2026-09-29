@@ -137,6 +137,7 @@ import _SwiftConcurrencyShims
   @objc @_Concurrency.MainActor @preconcurrency public var willReadFrequently: Swift.Bool {
     get
   }
+  @objc @_Concurrency.MainActor @preconcurrency public var threaded2D: Swift.Bool
   @objc @_Concurrency.MainActor @preconcurrency public var drawingBufferWidth: CoreFoundation.CGFloat {
     @objc get
   }

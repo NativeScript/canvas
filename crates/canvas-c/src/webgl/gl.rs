@@ -3633,9 +3633,7 @@ pub extern "C" fn canvas_native_webgl_tex_image2d_canvas2d(
 
     let mut bytes = vec![0u8; (width * height * 4.) as usize];
 
-    canvas
-        .context
-        .get_pixels(bytes.as_mut_slice(), (0, 0), (width as i32, height as i32));
+    canvas.read_pixels_into(bytes.as_mut_slice(), (0, 0), (width as i32, height as i32));
 
     state.0.make_current();
 
@@ -3836,9 +3834,7 @@ pub extern "C" fn canvas_native_webgl_tex_sub_image2d_canvas2d(
 
     let mut bytes = vec![0u8; (width * height * 4.) as usize];
 
-    canvas
-        .context
-        .get_pixels(bytes.as_mut_slice(), (0, 0), (width as i32, height as i32));
+    canvas.read_pixels_into(bytes.as_mut_slice(), (0, 0), (width as i32, height as i32));
 
     state.0.make_current();
 

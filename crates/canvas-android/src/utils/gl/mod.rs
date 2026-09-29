@@ -2,6 +2,7 @@ use canvas_c::WebGLState;
 use jni::sys::{jboolean, jfloat, jint, jlong, JNI_FALSE, JNI_TRUE};
 use jni::JNIEnv;
 
+pub mod hardware_buffer_2d;
 pub mod st;
 pub(crate) mod surface_texture;
 pub mod texture_render;
@@ -117,7 +118,8 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_Utils_nativeContext2D
     );
 
     let inner = ctx.get_context_mut();
-    
+    // updateTexImage ran GL behind Skia's back; a stale framebuffer binding misses the offscreen.
+    inner.reset_gpu_state();
 
     // `recording_context()` returns an owned value — the borrow on `inner.surface`
     // ends before the subsequent draw call, which is safe.

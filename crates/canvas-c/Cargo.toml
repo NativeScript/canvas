@@ -15,6 +15,7 @@ d3d = ["canvas-2d/d3d"]
 
 [dependencies]
 base64 = "0.22.1"
+libc = "0.2"
 gl-bindings.workspace = true
 canvas-core = { workspace = true, features = ["2d"] }
 canvas-2d = { workspace = true, optional = true }
@@ -62,9 +63,15 @@ objc2-core-foundation = { workspace = true }
 wgpu-core = { workspace = true, features = ["wgsl", "dx12"] }
 wgpu-hal = { workspace = true, features = ["dx12"] }
 # gpu_shared_frame: D3D12 types for wgpu-hal's texture_from_raw (it does not re-export them).
-windows = { workspace = true, features = ["Win32_Foundation", "Win32_Graphics_Direct3D12"] }
+# c2d/d3d, render_thread: threaded 2D (handles, D3D11 for XAML surfaces, thread setup).
+windows = { workspace = true, features = ["Win32_Foundation", "Win32_Graphics_Direct3D11", "Win32_Graphics_Direct3D12", "Win32_System_Com", "Win32_System_Threading"] }
+skia-safe.workspace = true
 
 [target.'cfg(target_os="android")'.dependencies]
 ndk = { version = "0.7.0", features = ["bitmap"] }
 wgpu-core = { workspace = true, features = ["wgsl", "vulkan"] }
 wgpu-hal = { workspace = true, features = ["vulkan"] }
+
+# tests/threaded_d3d.rs: a D3D11 producer of shared video frames.
+[target.'cfg(target_os="windows")'.dev-dependencies]
+windows = { workspace = true, features = ["Win32_Graphics_Direct3D", "Win32_Graphics_Direct3D11", "Win32_Graphics_Dxgi", "Win32_Graphics_Dxgi_Common"] }

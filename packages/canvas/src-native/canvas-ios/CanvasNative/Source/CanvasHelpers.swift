@@ -235,6 +235,12 @@ public class CanvasHelpers: NSObject {
 													if colorSpace == 1 {
 														cs = CanvasColorSpaceP3
 													}
+                                if view.threaded2D {
+                                    // The render thread gets the layer, never the view: UIKit is main-thread only.
+                                    let layerPtr = Unmanaged.passUnretained(view.mtlView.layer).toOpaque()
+                                    let size = view.mtlView.drawableSize
+                                    return canvas_native_ios_create_2d_context_metal_device_queue_threaded(layerPtr, devicePtr, queuePtr, Float(size.width), Float(size.height), alpha, density, UInt(view.mtlView.sampleCount), fontColor, ppi, direction, cs)
+                                }
                                 return canvas_native_ios_create_2d_context_metal_device_queue(viewPtr,devicePtr, queuePtr, alpha, density, UInt(view.mtlView.sampleCount), fontColor, ppi, direction, cs)
     }
 

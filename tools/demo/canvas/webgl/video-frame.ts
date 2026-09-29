@@ -1,7 +1,7 @@
 let raf = 0;
 
 // Shared video creation used by both demos
-function createDemoVideo() {
+export function createDemoVideo() {
 	console.log('Creating demo video element');
 	// @ts-ignore
 	const video: any = document.createElement('video');

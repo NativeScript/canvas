@@ -6,11 +6,13 @@
 //! maps it back (1 / composition scale), which is also how the canvas "fit" modes are applied
 //! without resizing buffers.
 
-use std::cell::Cell;
+use std::cell::{Cell, RefCell};
 use std::ffi::c_void;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Weak};
 use std::time::{Duration, Instant};
 
-use windows::core::{Interface, Result, HRESULT};
+use windows::core::{Interface, Result, GUID, HRESULT};
 use windows::Win32::Foundation::{CloseHandle, HANDLE, WAIT_OBJECT_0};
 #[cfg(feature = "gl")]
 use windows::Win32::Graphics::Direct3D11::ID3D11Device;
@@ -61,15 +63,36 @@ pub unsafe trait ISurfaceImageSourceNative: windows::core::IUnknown {
     fn EndDraw(&self) -> HRESULT;
 }
 
+/// WinUI 3's `ISurfaceImageSourceNativeWithD2D`: the one XAML lets other threads draw through.
+#[windows::core::interface("cb833102-d5d1-448b-a31a-52a9509f24e6")]
+pub unsafe trait ISurfaceImageSourceNativeWithD2D: windows::core::IUnknown {
+    fn SetDevice(&self, device: *mut c_void) -> HRESULT;
+    fn BeginDraw(
+        &self,
+        update_rect: *const windows::Win32::Foundation::RECT,
+        iid: *const GUID,
+        update_object: *mut *mut c_void,
+        offset: *mut windows::Win32::Foundation::POINT,
+    ) -> HRESULT;
+    fn EndDraw(&self) -> HRESULT;
+    fn SuspendDraw(&self) -> HRESULT;
+    fn ResumeDraw(&self) -> HRESULT;
+}
+
 /// A XAML `SurfaceImageSource` a canvas presents into when it has to blend with the page: XAML
 /// composites it like any image. (A SwapChainPanel is external content in WinUI 3: nothing
 /// behind it shows through, whatever the swapchain's alpha mode.) Frames are copied in, BGRA
 /// premultiplied, with a D3D11 device.
 pub struct XamlSurface {
-    native: ISurfaceImageSourceNative,
+    native: XamlNative,
     context: windows::Win32::Graphics::Direct3D11::ID3D11DeviceContext,
     width: u32,
     height: u32,
+}
+
+enum XamlNative {
+    UiThread(ISurfaceImageSourceNative),
+    Handoff(Arc<XamlHandoff>),
 }
 
 impl XamlSurface {
@@ -88,7 +111,22 @@ impl XamlSurface {
         unsafe { native.SetDevice(dxgi.as_raw()) }.ok()?;
         let context = unsafe { device.GetImmediateContext() }?;
         Ok(Self {
-            native,
+            native: XamlNative::UiThread(native),
+            context,
+            width,
+            height,
+        })
+    }
+
+    /// Presents through `handoff` (made on the UI thread with `device`) from the calling thread.
+    pub fn with_handoff(
+        handoff: Arc<XamlHandoff>,
+        device: &windows::Win32::Graphics::Direct3D11::ID3D11Device,
+    ) -> Result<Self> {
+        let context = unsafe { device.GetImmediateContext() }?;
+        let (width, height) = (handoff.width, handoff.height);
+        Ok(Self {
+            native: XamlNative::Handoff(handoff),
             context,
             width,
             height,
@@ -103,53 +141,42 @@ impl XamlSurface {
         self.height
     }
 
+    /// Presented from another thread: the UI thread shows its frames and releases its device.
+    pub fn is_handoff(&self) -> bool {
+        matches!(self.native, XamlNative::Handoff(_))
+    }
+
     /// The `SurfaceImageSource`, to attach again (e.g. on a new device).
     pub fn source(&self) -> windows::core::IUnknown {
-        self.native.clone().into()
+        match &self.native {
+            XamlNative::UiThread(native) => native.clone().into(),
+            XamlNative::Handoff(handoff) => handoff.source(),
+        }
     }
 
     /// Makes the image let go of the device (lost), until it is attached again. XAML keeps the
     /// device it was given until it is given another (`SetDevice(null)` does not release it), so
     /// it gets a stand-in; it lets go of the old one shortly after, not during the call. UI thread.
+    /// A handoff's is released through [`XamlHandoff::release_device`].
     pub fn release_device(&self) {
-        use windows::Win32::Graphics::Direct3D11::{ID3D11DeviceContext1, ID3D11RenderTargetView, ID3D11Resource};
-        let Some((device, context)) = stand_in_device() else { return };
-        let Ok(dxgi) = device.cast::<windows::Win32::Graphics::Dxgi::IDXGIDevice>() else { return };
-        if unsafe { self.native.SetDevice(dxgi.as_raw()) }.is_err() {
-            return;
-        }
-        // XAML keeps what it last drew with the old device until it draws again: draw it blank.
-        let rect = windows::Win32::Foundation::RECT {
-            left: 0,
-            top: 0,
-            right: self.width as i32,
-            bottom: self.height as i32,
-        };
-        let mut surface = std::ptr::null_mut();
-        let mut offset = windows::Win32::Foundation::POINT::default();
-        if unsafe { self.native.BeginDraw(rect, &mut surface, &mut offset) }.is_err() {
-            return;
-        }
-        if let Ok(target) = unsafe { windows::Win32::Graphics::Dxgi::IDXGISurface::from_raw(surface) }.cast::<ID3D11Resource>() {
-            let mut view: Option<ID3D11RenderTargetView> = None;
-            if unsafe { device.CreateRenderTargetView(&target, None, Some(&mut view)) }.is_ok() {
-                // Only the update rectangle: the surface can be an atlas shared with other images.
-                let area = windows::Win32::Foundation::RECT {
-                    left: offset.x,
-                    top: offset.y,
-                    right: offset.x + self.width as i32,
-                    bottom: offset.y + self.height as i32,
-                };
-                if let Some(view) = view {
-                    unsafe { context.ClearView(&view, &[0.0; 4], Some(&[area])) };
-                }
-            }
-        }
-        let _ = unsafe { self.native.EndDraw() };
+        let XamlNative::UiThread(native) = &self.native else { return };
+        let (width, height) = (self.width, self.height);
+        blank_with_stand_in(
+            |device| unsafe { native.SetDevice(device) },
+            |rect, surface, offset| unsafe { native.BeginDraw(*rect, surface, offset) },
+            || unsafe { native.EndDraw() },
+            width,
+            height,
+        );
     }
 
-    /// Copies `texture` (on this surface's device, this surface's size) in. UI thread.
+    /// Copies `texture` (on this surface's device, this surface's size) in. UI thread, or for a
+    /// handoff the thread it was made for.
     pub fn present(&self, texture: &windows::Win32::Graphics::Direct3D11::ID3D11Resource) -> Result<()> {
+        let native = match &self.native {
+            XamlNative::UiThread(native) => native,
+            XamlNative::Handoff(handoff) => return handoff.present(&self.context, texture),
+        };
         let rect = windows::Win32::Foundation::RECT {
             left: 0,
             top: 0,
@@ -158,24 +185,297 @@ impl XamlSurface {
         };
         let mut surface = std::ptr::null_mut();
         let mut offset = windows::Win32::Foundation::POINT::default();
-        unsafe { self.native.BeginDraw(rect, &mut surface, &mut offset) }.ok()?;
+        unsafe { native.BeginDraw(rect, &mut surface, &mut offset) }.ok()?;
         // The update rectangle lives in XAML's atlas at `offset`.
         let copied = unsafe { windows::Win32::Graphics::Dxgi::IDXGISurface::from_raw(surface) }
             .cast::<windows::Win32::Graphics::Direct3D11::ID3D11Resource>()
-            .map(|target| unsafe {
-                self.context.CopySubresourceRegion(
-                    &target,
-                    0,
-                    offset.x.max(0) as u32,
-                    offset.y.max(0) as u32,
-                    0,
-                    texture,
-                    0,
-                    None,
-                )
-            });
-        let ended = unsafe { self.native.EndDraw() }.ok();
+            .map(|target| unsafe { copy_into(&self.context, &target, offset, texture) });
+        let ended = unsafe { native.EndDraw() }.ok();
         copied.and(ended)
+    }
+}
+
+unsafe fn copy_into(
+    context: &windows::Win32::Graphics::Direct3D11::ID3D11DeviceContext,
+    target: &windows::Win32::Graphics::Direct3D11::ID3D11Resource,
+    offset: windows::Win32::Foundation::POINT,
+    texture: &windows::Win32::Graphics::Direct3D11::ID3D11Resource,
+) {
+    unsafe {
+        context.CopySubresourceRegion(target, 0, offset.x.max(0) as u32, offset.y.max(0) as u32, 0, texture, 0, None)
+    }
+}
+
+/// Gives the image the stand-in device and draws it blank: XAML keeps what it last drew with the
+/// old device until it draws again.
+fn blank_with_stand_in(
+    set_device: impl FnOnce(*mut c_void) -> HRESULT,
+    begin: impl FnOnce(&windows::Win32::Foundation::RECT, *mut *mut c_void, *mut windows::Win32::Foundation::POINT) -> HRESULT,
+    end: impl FnOnce() -> HRESULT,
+    width: u32,
+    height: u32,
+) {
+    use windows::Win32::Graphics::Direct3D11::{ID3D11RenderTargetView, ID3D11Resource};
+    let Some((device, context)) = stand_in_device() else { return };
+    let Ok(dxgi) = device.cast::<windows::Win32::Graphics::Dxgi::IDXGIDevice>() else { return };
+    if set_device(dxgi.as_raw()).is_err() {
+        return;
+    }
+    let rect = windows::Win32::Foundation::RECT {
+        left: 0,
+        top: 0,
+        right: width as i32,
+        bottom: height as i32,
+    };
+    let mut surface = std::ptr::null_mut();
+    let mut offset = windows::Win32::Foundation::POINT::default();
+    if begin(&rect, &mut surface, &mut offset).is_err() {
+        return;
+    }
+    if let Ok(target) = unsafe { windows::Win32::Graphics::Dxgi::IDXGISurface::from_raw(surface) }.cast::<ID3D11Resource>() {
+        let mut view: Option<ID3D11RenderTargetView> = None;
+        if unsafe { device.CreateRenderTargetView(&target, None, Some(&mut view)) }.is_ok() {
+            // Only the update rectangle: the surface can be an atlas shared with other images.
+            let area = windows::Win32::Foundation::RECT {
+                left: offset.x,
+                top: offset.y,
+                right: offset.x + width as i32,
+                bottom: offset.y + height as i32,
+            };
+            if let Some(view) = view {
+                unsafe { context.ClearView(&view, &[0.0; 4], Some(&[area])) };
+            }
+        }
+    }
+    let _ = end();
+}
+
+/// A `SurfaceImageSource` presented from a render thread. XAML lets any thread begin (or resume)
+/// and suspend a draw, but only the UI thread end it, which is what shows the frame; so the
+/// render thread posts the UI thread a message to end it, and never waits on it. Frames drawn
+/// before the UI thread gets to it land in the same draw.
+pub struct XamlHandoff {
+    native: ISurfaceImageSourceNativeWithD2D,
+    width: u32,
+    height: u32,
+    draw: parking_lot::Mutex<HandoffDraw>,
+    wake_queued: AtomicBool,
+    /// The UI thread's message-only window (`wake_window`).
+    window: isize,
+}
+
+#[derive(Default)]
+struct HandoffDraw {
+    /// Begun, and suspended between frames, until the UI thread ends it.
+    begun: bool,
+    /// The begun draw's update surface, and where the image sits in it.
+    target: Option<(windows::Win32::Graphics::Direct3D11::ID3D11Resource, windows::Win32::Foundation::POINT)>,
+    /// Lost: the image has the stand-in device until attached again.
+    released: bool,
+}
+
+// XAML makes the interface for use from other threads; the device is multithread-protected.
+unsafe impl Send for XamlHandoff {}
+unsafe impl Sync for XamlHandoff {}
+
+const WM_END_XAML_DRAWS: u32 = windows::Win32::UI::WindowsAndMessaging::WM_APP + 0x2d0;
+
+thread_local! {
+    static WAKE_WINDOW: Cell<isize> = const { Cell::new(0) };
+    static HANDOFFS: RefCell<Vec<Weak<XamlHandoff>>> = const { RefCell::new(Vec::new()) };
+}
+
+unsafe extern "system" fn wake_proc(
+    window: windows::Win32::Foundation::HWND,
+    message: u32,
+    wparam: windows::Win32::Foundation::WPARAM,
+    lparam: windows::Win32::Foundation::LPARAM,
+) -> windows::Win32::Foundation::LRESULT {
+    if message == WM_END_XAML_DRAWS {
+        end_xaml_draws();
+        return windows::Win32::Foundation::LRESULT(0);
+    }
+    unsafe { windows::Win32::UI::WindowsAndMessaging::DefWindowProcW(window, message, wparam, lparam) }
+}
+
+/// This thread's message-only window, which ends the draws other threads hand it.
+fn wake_window() -> Result<isize> {
+    use windows::Win32::UI::WindowsAndMessaging::{CreateWindowExW, RegisterClassW, HWND_MESSAGE, WINDOW_EX_STYLE, WINDOW_STYLE, WNDCLASSW};
+    let existing = WAKE_WINDOW.get();
+    if existing != 0 {
+        return Ok(existing);
+    }
+    let instance: windows::Win32::Foundation::HINSTANCE =
+        unsafe { windows::Win32::System::LibraryLoader::GetModuleHandleW(None) }?.into();
+    let class = windows::core::w!("NSCanvasXamlHandoff");
+    let description = WNDCLASSW {
+        lpfnWndProc: Some(wake_proc),
+        hInstance: instance,
+        lpszClassName: class,
+        ..Default::default()
+    };
+    // 0 once another UI thread registered it.
+    unsafe { RegisterClassW(&description) };
+    let window = unsafe {
+        CreateWindowExW(
+            WINDOW_EX_STYLE(0),
+            class,
+            windows::core::PCWSTR::null(),
+            WINDOW_STYLE(0),
+            0,
+            0,
+            0,
+            0,
+            Some(HWND_MESSAGE),
+            None,
+            Some(instance),
+            None,
+        )
+    }?;
+    WAKE_WINDOW.set(window.0 as isize);
+    Ok(window.0 as isize)
+}
+
+/// Ends the draws handed to this (UI) thread, which shows their frames.
+pub fn end_xaml_draws() {
+    let handoffs: Vec<Arc<XamlHandoff>> = HANDOFFS.with(|handoffs| {
+        let mut handoffs = handoffs.borrow_mut();
+        handoffs.retain(|handoff| handoff.strong_count() > 0);
+        handoffs.iter().filter_map(Weak::upgrade).collect()
+    });
+    for handoff in handoffs {
+        handoff.end_draw();
+    }
+}
+
+impl XamlHandoff {
+    /// `source`: any COM pointer of the `SurfaceImageSource` (made `width` x `height`, not
+    /// opaque). `device`: the D3D11 device the other thread copies frames with. UI thread.
+    pub unsafe fn new(
+        source: *mut c_void,
+        device: &windows::Win32::Graphics::Direct3D11::ID3D11Device,
+        width: u32,
+        height: u32,
+    ) -> Result<Arc<Self>> {
+        use windows::Win32::Graphics::Direct3D11::ID3D11Multithread;
+        let unknown = unsafe { windows::core::IUnknown::from_raw_borrowed(&source) }
+            .ok_or_else(windows::core::Error::empty)?;
+        let native: ISurfaceImageSourceNativeWithD2D = unknown.cast()?;
+        // XAML uses the device on the UI thread while the render thread copies with it.
+        let context = unsafe { device.GetImmediateContext() }?;
+        let _ = unsafe { context.cast::<ID3D11Multithread>()?.SetMultithreadProtected(true) };
+        let dxgi: windows::Win32::Graphics::Dxgi::IDXGIDevice = device.cast()?;
+        unsafe { native.SetDevice(dxgi.as_raw()) }.ok()?;
+        let window = wake_window()?;
+        let handoff = Arc::new(Self {
+            native,
+            width,
+            height,
+            draw: parking_lot::Mutex::new(HandoffDraw::default()),
+            wake_queued: AtomicBool::new(false),
+            window,
+        });
+        HANDOFFS.with(|handoffs| {
+            let mut handoffs = handoffs.borrow_mut();
+            handoffs.retain(|handoff| handoff.strong_count() > 0);
+            handoffs.push(Arc::downgrade(&handoff));
+        });
+        Ok(handoff)
+    }
+
+    pub fn source(&self) -> windows::core::IUnknown {
+        self.native.clone().into()
+    }
+
+    fn present(
+        &self,
+        context: &windows::Win32::Graphics::Direct3D11::ID3D11DeviceContext,
+        texture: &windows::Win32::Graphics::Direct3D11::ID3D11Resource,
+    ) -> Result<()> {
+        let presented = {
+            let mut draw = self.draw.lock();
+            if draw.released {
+                return Ok(());
+            }
+            if draw.begun {
+                unsafe { self.native.ResumeDraw() }.ok()?;
+            } else {
+                let rect = windows::Win32::Foundation::RECT {
+                    left: 0,
+                    top: 0,
+                    right: self.width as i32,
+                    bottom: self.height as i32,
+                };
+                let mut surface = std::ptr::null_mut();
+                let mut offset = windows::Win32::Foundation::POINT::default();
+                let iid = windows::Win32::Graphics::Dxgi::IDXGISurface::IID;
+                unsafe { self.native.BeginDraw(&rect, &iid, &mut surface, &mut offset) }.ok()?;
+                draw.begun = true;
+                draw.target = unsafe { windows::Win32::Graphics::Dxgi::IDXGISurface::from_raw(surface) }
+                    .cast::<windows::Win32::Graphics::Direct3D11::ID3D11Resource>()
+                    .ok()
+                    .map(|target| (target, offset));
+            }
+            let copied = match draw.target.as_ref() {
+                Some((target, offset)) => {
+                    unsafe { copy_into(context, target, *offset, texture) };
+                    Ok(())
+                }
+                None => Err(windows::core::Error::empty()),
+            };
+            let suspended = unsafe { self.native.SuspendDraw() }.ok();
+            copied.and(suspended)
+        };
+        // After unlocking: a UI thread that found the draw busy is woken again.
+        if !self.wake_queued.swap(true, Ordering::AcqRel) {
+            let window = windows::Win32::Foundation::HWND(self.window as *mut c_void);
+            let posted = unsafe {
+                windows::Win32::UI::WindowsAndMessaging::PostMessageW(
+                    Some(window),
+                    WM_END_XAML_DRAWS,
+                    windows::Win32::Foundation::WPARAM(0),
+                    windows::Win32::Foundation::LPARAM(0),
+                )
+            };
+            if posted.is_err() {
+                self.wake_queued.store(false, Ordering::Release);
+            }
+        }
+        presented
+    }
+
+    /// UI thread.
+    pub fn end_draw(&self) {
+        self.wake_queued.store(false, Ordering::Release);
+        // Busy: the render thread is drawing and wakes this thread again when done.
+        let Some(mut draw) = self.draw.try_lock() else { return };
+        if std::mem::take(&mut draw.begun) {
+            draw.target = None;
+            if let Err(error) = unsafe { self.native.EndDraw() }.ok() {
+                log::warn!("canvas: presenting into the XAML surface failed: {error}");
+            }
+        }
+    }
+
+    /// Like [`XamlSurface::release_device`], for a lost canvas: nothing is drawn into the image
+    /// until it is attached again. UI thread.
+    pub fn release_device(&self) {
+        let mut draw = self.draw.lock();
+        draw.released = true;
+        if std::mem::take(&mut draw.begun) {
+            draw.target = None;
+            let _ = unsafe { self.native.EndDraw() };
+        }
+        let native = &self.native;
+        blank_with_stand_in(
+            |device| unsafe { native.SetDevice(device) },
+            |rect, surface, offset| unsafe {
+                native.BeginDraw(rect, &windows::Win32::Graphics::Dxgi::IDXGISurface::IID, surface, offset)
+            },
+            || unsafe { native.EndDraw() },
+            self.width,
+            self.height,
+        );
     }
 }
 
@@ -323,6 +623,13 @@ pub fn headless_panel() -> windows::core::IUnknown {
     panel.into()
 }
 
+/// Shows `swap_chain` (any COM pointer to it) in the panel (any COM pointer to it). UI thread.
+pub unsafe fn bind_swap_chain(panel: *mut c_void, swap_chain: *mut c_void) -> Result<()> {
+    let unknown = unsafe { windows::core::IUnknown::from_raw_borrowed(&panel) }.ok_or_else(windows::core::Error::empty)?;
+    let native: ISwapChainPanelNative = unknown.cast()?;
+    unsafe { native.SetSwapChain(swap_chain) }.ok()
+}
+
 pub struct CompositionSwapChain {
     swap_chain: IDXGISwapChain3,
     waitable: HANDLE,
@@ -395,10 +702,12 @@ impl CompositionSwapChain {
     /// Shows this swapchain in the panel. `panel` is any COM pointer of the `SwapChainPanel` (the
     /// runtime's `NSWinRT.interop.pointerKey(panel.handle)`). Must run on the UI thread.
     pub unsafe fn bind_panel(&self, panel: *mut c_void) -> Result<()> {
-        let unknown = windows::core::IUnknown::from_raw_borrowed(&panel)
-            .ok_or_else(windows::core::Error::empty)?;
-        let native: ISwapChainPanelNative = unknown.cast()?;
-        native.SetSwapChain(self.swap_chain.as_raw()).ok()
+        bind_swap_chain(panel, self.swap_chain.as_raw())
+    }
+
+    /// For binding on the UI thread (`bind_swap_chain`) while another thread presents.
+    pub fn as_unknown(&self) -> windows::core::IUnknown {
+        self.swap_chain.clone().into()
     }
 
     /// Detaches whatever swapchain the panel shows.

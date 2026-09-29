@@ -127,6 +127,9 @@ impl Context {
             state,
             state_stack: vec![],
             font_color: Color::new(font_color as u32),
+            recording: None,
+            #[cfg(feature = "gl")]
+            window_surface: None,
         }
     }
 
@@ -142,7 +145,45 @@ impl Context {
         direction: TextDirection,
         color_space: ColorSpace,
     ) -> Self {
-        let mut mtl_context = unsafe { MetalContext::new_device_queue(view, device, queue) };
+        let mtl_context = unsafe { MetalContext::new_device_queue(view, device, queue) };
+        Self::with_metal_device_queue(
+            mtl_context, device, queue, density, samples, alpha, font_color, ppi, direction,
+            color_space,
+        )
+    }
+
+    /// Needs only the layer, so it can be made and used off the main thread.
+    pub fn new_metal_layer_device_queue(
+        layer: *mut c_void,
+        device: *mut c_void,
+        queue: *mut c_void,
+        density: f32,
+        samples: usize,
+        alpha: bool,
+        font_color: i32,
+        ppi: f32,
+        direction: TextDirection,
+        color_space: ColorSpace,
+    ) -> Option<Self> {
+        let mtl_context = unsafe { MetalContext::new_layer_device_queue(layer, device, queue) }?;
+        Some(Self::with_metal_device_queue(
+            mtl_context, device, queue, density, samples, alpha, font_color, ppi, direction,
+            color_space,
+        ))
+    }
+
+    fn with_metal_device_queue(
+        mut mtl_context: MetalContext,
+        device: *mut c_void,
+        queue: *mut c_void,
+        density: f32,
+        samples: usize,
+        alpha: bool,
+        font_color: i32,
+        ppi: f32,
+        direction: TextDirection,
+        color_space: ColorSpace,
+    ) -> Self {
         let backend = unsafe {
             gpu::mtl::BackendContext::new(device as gpu::mtl::Handle, queue as gpu::mtl::Handle)
         };
@@ -202,6 +243,9 @@ impl Context {
             state,
             state_stack: vec![],
             font_color: Color::new(font_color as u32),
+            recording: None,
+            #[cfg(feature = "gl")]
+            window_surface: None,
         }
     }
 
@@ -281,6 +325,9 @@ impl Context {
             state,
             state_stack: vec![],
             font_color: Color::new(font_color as u32),
+            recording: None,
+            #[cfg(feature = "gl")]
+            window_surface: None,
         }
     }
 

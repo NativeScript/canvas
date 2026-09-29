@@ -1,5 +1,8 @@
 mod context;
 pub use context::*;
+pub mod render_thread;
+#[cfg(all(feature = "d3d", target_os = "windows"))]
+pub mod d3d;
 mod custom;
 pub use custom::*;
 mod image_bitmap;

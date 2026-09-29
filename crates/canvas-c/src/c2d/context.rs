@@ -44,6 +44,8 @@ pub struct CanvasRenderingContext2D {
     alpha: bool,
     engine: Engine,
     refs: AtomicUsize,
+    /// `context` only records; the real one lives on the render thread.
+    threaded: Option<crate::c2d::render_thread::RenderTarget>,
 }
 
 impl CanvasRenderingContext2D {
@@ -94,12 +96,14 @@ pub extern "C" fn canvas_native_context_release(value: *mut CanvasRenderingConte
         return;
     }
     if unsafe { &*value }.refs.fetch_sub(1, Ordering::AcqRel) == 1 {
+        #[cfg(all(feature = "d3d", target_os = "windows"))]
+        let _shown = crate::c2d::d3d::forget_shown(value);
         unsafe { drop(Box::from_raw(value)) };
     }
 }
 
 fn to_data_url(context: &mut CanvasRenderingContext2D, format: &str, quality: u32) -> String {
-    context.context.as_data_url(format, quality)
+    context.data_url(format, quality)
 }
 
 #[cfg(feature = "gl")]
@@ -142,6 +146,17 @@ pub fn resize_metal(context: &mut CanvasRenderingContext2D, width: f32, height: 
 }
 
 pub fn resize(context: &mut CanvasRenderingContext2D, width: f32, height: f32) {
+    if let Some(target) = context.threaded.as_ref() {
+        if width.floor() == context.context.surface_data().width().floor()
+            && height.floor() == context.context.surface_data().height().floor()
+        {
+            return;
+        }
+        context.context.resize_recording(width, height);
+        target.post(move |real| resize(real, width, height));
+        return;
+    }
+
     #[cfg(feature = "gl")]
     {
         if context.engine == Engine::GL {
@@ -193,6 +208,7 @@ impl CanvasRenderingContext2D {
             alpha,
             engine: Engine::CPU,
             refs: AtomicUsize::new(1),
+            threaded: None,
         }
     }
 
@@ -203,6 +219,7 @@ impl CanvasRenderingContext2D {
             alpha,
             engine: Engine::GL,
             refs: AtomicUsize::new(1),
+            threaded: None,
         }
     }
 
@@ -213,6 +230,7 @@ impl CanvasRenderingContext2D {
             alpha,
             engine: Engine::Vulkan,
             refs: AtomicUsize::new(1),
+            threaded: None,
         }
     }
 
@@ -223,10 +241,155 @@ impl CanvasRenderingContext2D {
             alpha,
             engine: Engine::Metal,
             refs: AtomicUsize::new(1),
+            threaded: None,
+        }
+    }
+
+    #[cfg(all(feature = "d3d", target_os = "windows"))]
+    pub fn new_d3d(context: Context, alpha: bool) -> Self {
+        Self {
+            context,
+            alpha,
+            engine: Engine::D3D,
+            refs: AtomicUsize::new(1),
+            threaded: None,
+        }
+    }
+
+    /// At the address it keeps until dropped.
+    pub(crate) fn settle(&mut self) {
+        #[cfg(all(feature = "d3d", target_os = "windows"))]
+        if self.engine == Engine::D3D {
+            unsafe { self.context.register_d3d() };
+        }
+    }
+
+    /// The real context's GPU device was lost: it draws nothing until restored.
+    pub fn gpu_lost(&self) -> bool {
+        if let Some(target) = self.threaded.as_ref() {
+            return target.is_lost();
+        }
+        #[cfg(all(feature = "d3d", target_os = "windows"))]
+        if self.engine == Engine::D3D {
+            return self.context.d3d_lost();
+        }
+        false
+    }
+
+    pub fn new_threaded(
+        context: Context,
+        alpha: bool,
+        target: crate::c2d::render_thread::RenderTarget,
+    ) -> Self {
+        Self {
+            context,
+            alpha,
+            engine: Engine::CPU,
+            refs: AtomicUsize::new(1),
+            threaded: Some(target),
+        }
+    }
+
+    pub fn new_threaded_with<F>(
+        width: f32,
+        height: f32,
+        density: f32,
+        alpha: bool,
+        font_color: i32,
+        ppi: f32,
+        direction: TextDirection,
+        color_space: ColorSpace,
+        create: F,
+    ) -> Option<Self>
+    where
+        F: FnOnce() -> Option<CanvasRenderingContext2D> + Send + 'static,
+    {
+        let target = crate::c2d::render_thread::RenderTarget::new(create)?;
+        // Only records and answers state queries, so 1x1 is enough.
+        let mut context =
+            Context::new(1., 1., density, alpha, font_color, ppi, direction, color_space);
+        context.begin_recording();
+        context.resize_recording(width, height);
+        Some(Self::new_threaded(context, alpha, target))
+    }
+
+    pub fn render_target(&self) -> Option<&crate::c2d::render_thread::RenderTarget> {
+        self.threaded.as_ref()
+    }
+
+    pub fn is_threaded(&self) -> bool {
+        self.threaded.is_some()
+    }
+
+    /// Threaded: runs on the render thread, after everything drawn so far.
+    pub fn with_pixels_source<R, F>(&mut self, f: F) -> Option<R>
+    where
+        R: Send + 'static,
+        F: FnOnce(&mut Context) -> R + Send + 'static,
+    {
+        match self.threaded.as_ref() {
+            Some(target) => {
+                target.commit(self.context.take_frame());
+                target.sync(move |real| f(real.get_context_mut()))
+            }
+            None => Some(f(&mut self.context)),
+        }
+    }
+
+    pub fn image(&mut self) -> Option<canvas_2d::context::Image> {
+        self.with_pixels_source(|context| context.get_image()).flatten()
+    }
+
+    pub fn image_data(
+        &mut self,
+        sx: f32,
+        sy: f32,
+        sw: f32,
+        sh: f32,
+    ) -> canvas_2d::context::pixel_manipulation::ImageData {
+        self.with_pixels_source(move |context| context.get_image_data(sx, sy, sw, sh))
+            .unwrap_or_else(|| {
+                canvas_2d::context::pixel_manipulation::ImageData::new(sw as i32, sh as i32)
+            })
+    }
+
+    pub fn data_url(&mut self, format: &str, quality: u32) -> String {
+        let format = format.to_owned();
+        self.with_pixels_source(move |context| context.as_data_url(&format, quality))
+            .unwrap_or_default()
+    }
+
+    pub fn read_pixels_into(&mut self, buffer: &mut [u8], origin: (i32, i32), size: (i32, i32)) {
+        self.read_pixels_format_into(buffer, origin, size, canvas_2d::context::ColorType::RGBA8888);
+    }
+
+    pub fn read_pixels_format_into(
+        &mut self,
+        buffer: &mut [u8],
+        origin: (i32, i32),
+        size: (i32, i32),
+        format: canvas_2d::context::ColorType,
+    ) {
+        if self.threaded.is_none() {
+            self.context.get_pixels_format(buffer, origin, size, format);
+            return;
+        }
+        let len = buffer.len();
+        if let Some(pixels) = self.with_pixels_source(move |context| {
+            let mut pixels = vec![0u8; len];
+            context.get_pixels_format(&mut pixels, origin, size, format);
+            pixels
+        }) {
+            buffer.copy_from_slice(&pixels);
         }
     }
 
     pub fn render(&mut self) {
+        if let Some(target) = self.threaded.as_ref() {
+            target.commit(self.context.take_frame());
+            return;
+        }
+
         #[cfg(feature = "gl")]
         if let Some(context) = self.context.gl_context.as_ref() {
             context.make_current();
@@ -239,7 +402,8 @@ impl CanvasRenderingContext2D {
         {
             if self.engine == Engine::Metal {
                 if let Some(context) = self.context.metal_context.as_ref() {
-                    flush = context.is_offscreen()
+                    // Presenting through the view flushes on its own.
+                    flush = context.is_offscreen() || !context.has_view()
                 } else {
                     flush = false;
                 }
@@ -268,14 +432,20 @@ impl CanvasRenderingContext2D {
         if let Some(context) = self.context.metal_context.as_mut() {
             if context.is_offscreen() {
                 context.present_drawable();
-            } else {
+            } else if context.has_view() {
                 context.present();
+            } else {
+                // Threaded: `[view present]` would hop to the main thread.
+                Context::present(&mut self.context);
             }
         }
 
         #[cfg(feature = "gl")]
-        if let Some(context) = self.context.gl_context.as_ref() {
-            context.swap_buffers();
+        if self.context.gl_context.is_some() {
+            self.context.present_to_window();
+            if let Some(context) = self.context.gl_context.as_ref() {
+                context.swap_buffers();
+            }
         }
 
         #[cfg(feature = "vulkan")]
@@ -307,7 +477,8 @@ impl CanvasRenderingContext2D {
     }
 
     #[cfg(feature = "gl")]
-    pub fn swap_buffers(&self) -> bool {
+    pub fn swap_buffers(&mut self) -> bool {
+        self.context.present_to_window();
         if let Some(ref context) = self.context.gl_context {
             return context.swap_buffers();
         }
@@ -439,18 +610,47 @@ pub extern "C" fn canvas_native_context_create_d3d(
         color_space.into(),
     ) {
         Some(context) => {
-            let context = Box::into_raw(Box::new(CanvasRenderingContext2D {
-                context,
-                alpha,
-                engine: Engine::D3D,
-                refs: AtomicUsize::new(1),
-            }));
-            // Boxed: it stays at this address until released.
-            unsafe { (*context).context.register_d3d() };
+            let context = Box::into_raw(Box::new(CanvasRenderingContext2D::new_d3d(context, alpha)));
+            unsafe { (*context).settle() };
             context
         }
         None => std::ptr::null_mut(),
     }
+}
+
+/// `canvas_native_context_create_d3d`, rasterized and presented on the shared render thread's
+/// Direct3D 12 device; the context returned only records. Null when that thread has no usable
+/// device.
+#[cfg(all(feature = "d3d", target_os = "windows"))]
+#[no_mangle]
+pub extern "C" fn canvas_native_context_create_d3d_threaded(
+    width: f32,
+    height: f32,
+    density: f32,
+    alpha: bool,
+    font_color: i32,
+    ppi: f32,
+    direction: u32,
+    color_space: CanvasColorSpace,
+) -> *mut CanvasRenderingContext2D {
+    let direction = TextDirection::from(direction);
+    let color_space: ColorSpace = color_space.into();
+    let Some(context) = CanvasRenderingContext2D::new_threaded_with(
+        width, height, density, alpha, font_color, ppi, direction, color_space,
+        move || {
+            let context = Context::new_d3d(width, height, density, alpha, font_color, ppi, direction, color_space)?;
+            crate::c2d::d3d::note_render_thread_device(&context);
+            Some(CanvasRenderingContext2D::new_d3d(context, alpha))
+        },
+    ) else {
+        return std::ptr::null_mut();
+    };
+    // Unlike a surface callback, nothing the render thread does waits on this thread here; and
+    // the caller falls back to a CPU context on null.
+    if context.render_target().and_then(|target| target.sync(|_| ())).is_none() {
+        return std::ptr::null_mut();
+    }
+    Box::into_raw(Box::new(context))
 }
 
 /// Presents a D3D context in a WinUI `SwapChainPanel` (`panel`: any COM pointer to it). UI thread.
@@ -462,6 +662,9 @@ pub extern "C" fn canvas_native_context_attach_swap_chain_panel(
 ) -> bool {
     if context.is_null() || panel.is_null() {
         return false;
+    }
+    if unsafe { &*context }.is_threaded() {
+        return unsafe { crate::c2d::d3d::attach_swap_chain_panel(context, panel) };
     }
     let context = unsafe { &mut *context };
     context.engine == Engine::D3D && unsafe { context.context.attach_swap_chain_panel(panel) }
@@ -477,6 +680,9 @@ pub extern "C" fn canvas_native_context_attach_xaml_surface(
 ) -> bool {
     if context.is_null() || source.is_null() {
         return false;
+    }
+    if unsafe { &*context }.is_threaded() {
+        return unsafe { crate::c2d::d3d::attach_xaml_surface(context, source) };
     }
     let context = unsafe { &mut *context };
     context.engine == Engine::D3D && unsafe { context.context.attach_xaml_surface(source) }
@@ -496,6 +702,12 @@ pub extern "C" fn canvas_native_context_set_swap_chain_transform(
         return false;
     }
     let context = unsafe { &*context };
+    if let Some(target) = context.render_target() {
+        target.post(move |real| {
+            real.context.set_swap_chain_transform(scale_x, scale_y, offset_x, offset_y);
+        });
+        return true;
+    }
     context
         .context
         .set_swap_chain_transform(scale_x, scale_y, offset_x, offset_y)
@@ -508,8 +720,7 @@ pub extern "C" fn canvas_native_context_is_lost(context: *const CanvasRenderingC
     if context.is_null() {
         return false;
     }
-    let context = unsafe { &*context };
-    context.context.d3d_lost()
+    unsafe { &*context }.gpu_lost()
 }
 
 /// Moves a lost context to a new device, cleared and in its default state, shown in `panel`
@@ -523,15 +734,23 @@ pub unsafe extern "C" fn canvas_native_context_restore_d3d(
     if context.is_null() {
         return false;
     }
+    if unsafe { &*context }.is_threaded() {
+        return unsafe { crate::c2d::d3d::restore(context, panel) };
+    }
     let context = unsafe { &mut *context };
     unsafe { context.context.restore_d3d(panel) }
 }
 
-/// Removes this thread's shared Direct3D 12 device, as a driver reset would (tests).
+/// Removes this thread's and the render thread's shared Direct3D 12 devices, as a driver reset
+/// would (tests).
 #[cfg(all(feature = "d3d", target_os = "windows"))]
 #[no_mangle]
 pub extern "C" fn canvas_native_d3d_simulate_device_removal() -> bool {
-    canvas_core::gpu::d3d::D3D12Context::simulate_shared_removal()
+    let here = canvas_core::gpu::d3d::D3D12Context::simulate_shared_removal();
+    let render_thread = crate::c2d::render_thread::on_render_thread(|| {
+        canvas_core::gpu::d3d::D3D12Context::simulate_shared_removal()
+    });
+    here || render_thread.unwrap_or(false)
 }
 
 #[no_mangle]
@@ -559,6 +778,7 @@ pub extern "C" fn canvas_native_context_create(
         alpha,
         engine: Engine::CPU,
         refs: AtomicUsize::new(1),
+        threaded: None,
     }))
 }
 
@@ -593,6 +813,7 @@ pub extern "C" fn canvas_native_context_create_gl(
         alpha,
         engine: Engine::GL,
         refs: AtomicUsize::new(1),
+        threaded: None,
     }))
 }
 
@@ -638,6 +859,7 @@ pub extern "C" fn canvas_native_context_create_gl_no_window(
         alpha,
         engine: Engine::GL,
         refs: AtomicUsize::new(1),
+        threaded: None,
     }))
 }
 
@@ -1866,7 +2088,7 @@ pub extern "C" fn canvas_native_context_create_pattern_canvas2d(
     let source = unsafe { &mut *source };
     let context = unsafe { &mut *context };
     let repetition: Repetition = repetition.into();
-    let image = source.context.get_image();
+    let image = source.image();
     // Snapshotting left the source's GL context current; restore the destination.
     #[cfg(feature = "gl")]
     {
@@ -2135,7 +2357,7 @@ pub extern "C" fn canvas_native_context_draw_image_dx_dy_context(
     assert!(!source.is_null());
     let context = unsafe { &mut *context };
     let source = unsafe { &mut *source };
-    if let Some(image) = source.context.get_image() {
+    if let Some(image) = source.image() {
         context.context.draw_image_dx_dy(&image, dx, dy);
     }
 }
@@ -2154,7 +2376,7 @@ pub extern "C" fn canvas_native_context_draw_image_dx_dy_dw_dh_context(
     let context = unsafe { &mut *context };
     let source = unsafe { &mut *source };
 
-    if let Some(image) = source.context.get_image() {
+    if let Some(image) = source.image() {
         context
             .context
             .draw_image_dx_dy_dw_dh(&image, dx, dy, d_width, d_height);
@@ -2178,7 +2400,7 @@ pub extern "C" fn canvas_native_context_draw_image_context(
     assert!(!source.is_null());
     let context = unsafe { &mut *context };
     let source = unsafe { &mut *source };
-    if let Some(image) = source.context.get_image() {
+    if let Some(image) = source.image() {
         context.context.draw_image_src_xywh_dst_xywh(
             &image, sx, sy, s_width, s_height, dx, dy, d_width, d_height,
         );
@@ -2601,7 +2823,7 @@ pub extern "C" fn canvas_native_context_get_image_data(
 ) -> *mut ImageData {
     let context = unsafe { &mut *context };
     Box::into_raw(Box::new(ImageData(
-        context.context.get_image_data(sx, sy, sw, sh),
+        context.image_data(sx, sy, sw, sh),
     )))
 }
 

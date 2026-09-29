@@ -155,24 +155,25 @@ impl Context {
 
     pub fn clip(&mut self, path: Option<&mut Path>, fill_rule: Option<FillRule>) {
         let fill_rule = fill_rule.unwrap_or(FillRule::NonZero);
-        match path {
-            Some(path) => {
-                let current = path.fill_type();
-                path.set_fill_type(fill_rule);
-                self.surface
-                    .canvas()
-                    .clip_path(path.path(), Some(ClipOp::Intersect), Some(true));
-                path.set_fill_type_raw(current);
-            }
-            None => {
-                let current = self.path.fill_type();
-                self.path.set_fill_type(fill_rule);
-                self.surface
-                    .canvas()
-                    .clip_path(self.path.path(), Some(ClipOp::Intersect), Some(true));
-                self.path.set_fill_type_raw(current);
-            }
-        }
+        let path = match path {
+            Some(path) => path,
+            None => &mut self.path,
+        };
+        let current = path.fill_type();
+        path.set_fill_type(fill_rule);
+        let clip = path.path().clone();
+        path.set_fill_type_raw(current);
+
+        let canvas = match self.recording.as_mut() {
+            Some(recording) => recording.canvas(),
+            None => self.surface.canvas(),
+        };
+        let matrix = canvas.local_to_device_as_3x3();
+        self.state.clips.push(crate::context::recording::DeviceClip {
+            path: clip.with_transform(&matrix),
+            anti_alias: true,
+        });
+        canvas.clip_path(&clip, Some(ClipOp::Intersect), Some(true));
     }
 
     /// The point is device-space per spec, paths are user-space. Note `state.matrix`
@@ -181,7 +182,7 @@ impl Context {
         if !x.is_finite() || !y.is_finite() {
             return None;
         }
-        let matrix = self.surface.canvas().local_to_device_as_3x3();
+        let matrix = self.canvas().local_to_device_as_3x3();
         if !is_invertible(&matrix) {
             return None;
         }

@@ -28,11 +28,10 @@ fn with_offscreen(
 ) -> (skia_safe::Surface, Option<skia_safe::Surface>) {
     #[cfg(target_os = "android")]
     {
-        let (color_type, alpha_type) = if alpha {
-            (ColorType::RGBA8888, AlphaType::Premul)
-        } else {
-            (ColorType::RGB565, AlphaType::Opaque)
-        };
+        // 8 bits a channel even when opaque, as on the web: at 5-6 bits (RGB565) a translucent
+        // fill never converges on its colour, so a trail fading out leaves a permanent tint.
+        let color_type = ColorType::RGBA8888;
+        let alpha_type = if alpha { AlphaType::Premul } else { AlphaType::Opaque };
         let info = ImageInfo::new(
             ISize::new(window.width(), window.height()),
             color_type,
@@ -40,11 +39,15 @@ fn with_offscreen(
             color_space,
         );
         let props = window.props().clone();
+        // Multisampled, so Skia draws antialiased paths on the GPU instead of rasterizing their
+        // coverage on this thread and uploading it every frame; on a tiled GPU the samples mostly
+        // stay in tile memory.
+        let samples = ctx.max_surface_sample_count_for_color_type(color_type).min(4);
         if let Some(offscreen) = gpu::surfaces::render_target(
             ctx,
             gpu::Budgeted::Yes,
             &info,
-            Some(0),
+            Some(samples),
             gpu::SurfaceOrigin::TopLeft,
             Some(&props),
             false,
@@ -69,7 +72,6 @@ fn draws_to_window(gl: &canvas_core::gpu::gl::GLContext) -> bool {
     }
 }
 
-const GR_GL_RGB565: u32 = 0x8D62;
 const GR_GL_RGBA8: u32 = 0x8058;
 
 #[cfg(feature = "gl")]
@@ -150,11 +152,7 @@ impl Context {
 
         let mut frame_buffer = gpu::gl::FramebufferInfo::from_fboid(buffer_id[0] as u32);
 
-        if alpha {
-            frame_buffer.format = GR_GL_RGBA8;
-        } else {
-            frame_buffer.format = GR_GL_RGB565;
-        }
+        frame_buffer.format = GR_GL_RGBA8;
 
         let target = gpu::backend_render_targets::make_gl(
             (width as i32, height as i32),
@@ -166,10 +164,7 @@ impl Context {
             skia_safe::SurfacePropsFlags::default(),
             PixelGeometry::Unknown,
         );
-        let mut color_type = ColorType::RGBA8888;
-        if !alpha {
-            color_type = ColorType::RGB565;
-        }
+        let color_type = ColorType::RGBA8888;
 
         let surface = gpu::surfaces::wrap_backend_render_target(
             &mut ctx,
@@ -310,11 +305,7 @@ impl Context {
         let mut window_surface = None;
         let mut engine = SurfaceEngine::GL;
         let surface = if bounds.is_empty() {
-            let color_type = if alpha {
-                ColorType::RGBA8888
-            } else {
-                ColorType::RGB565
-            };
+            let color_type = ColorType::RGBA8888;
 
             let alpha_type = if alpha {
                 AlphaType::Unpremul
@@ -353,11 +344,7 @@ impl Context {
 
             let mut frame_buffer = gpu::gl::FramebufferInfo::from_fboid(buffer_id as u32);
 
-            if alpha {
-                frame_buffer.format = GR_GL_RGBA8;
-            } else {
-                frame_buffer.format = GR_GL_RGB565;
-            }
+            frame_buffer.format = GR_GL_RGBA8;
 
             let target = gpu::backend_render_targets::make_gl(
                 (width as i32, height as i32),
@@ -370,11 +357,7 @@ impl Context {
                 skia_safe::SurfacePropsFlags::default(),
                 PixelGeometry::Unknown,
             );
-            let mut color_type = ColorType::RGBA8888;
-
-            if !alpha {
-                color_type = ColorType::RGB565;
-            }
+            let color_type = ColorType::RGBA8888;
 
             let surface = gpu::surfaces::wrap_backend_render_target(
                 &mut ctx,

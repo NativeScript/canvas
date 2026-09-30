@@ -82,6 +82,30 @@ export function canvasReady(args) {
 }
 ```
 
+### OffscreenCanvas
+
+A canvas with no view: draw with any context, then use it as an image (`drawImage`,
+`createPattern`, `createImageBitmap`, `texImage2D`, `copyExternalImageToTexture`), hand its
+frame over with `transferToImageBitmap()`, or encode it with `convertToBlob()`.
+
+```typescript
+import { OffscreenCanvas } from '@nativescript/canvas';
+
+const sprite = new OffscreenCanvas(64, 64);
+const ctx = sprite.getContext('2d');
+ctx.fillStyle = 'tomato';
+ctx.fillRect(0, 0, 64, 64);
+
+// Later, on a visible canvas:
+visible.getContext('2d').drawImage(sprite, 0, 0);
+
+const blob = await sprite.convertToBlob({ type: 'image/png' });
+```
+
+`canvas.transferControlToOffscreen()` returns an OffscreenCanvas that draws into that canvas's
+surface, so its frames show in the view. It runs on the UI thread like any canvas; it can't move to
+a Worker yet. With the polyfill, `OffscreenCanvas` is also a global.
+
 ## WebGPU
 
 _Note_ min ios support 11 | min android support 27

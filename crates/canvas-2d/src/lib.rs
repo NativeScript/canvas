@@ -86,12 +86,14 @@ pub fn bytes_to_data_url(
     "data:,".to_string()
 }
 
-// use native format
-pub fn bytes_to_data_n32_url(
+/// `bytes` are RGBA, or BGRA when `bgra`: the source texture's format sets the order, not the
+/// platform.
+pub fn bytes_to_data_rgba8_url(
     width: i32,
     height: i32,
     bytes: &[u8],
     row_bytes: usize,
+    bgra: bool,
     format: &str,
     quality: c_uint,
 ) -> String {
@@ -101,11 +103,7 @@ pub fn bytes_to_data_n32_url(
     encoded_prefix.push_str(format);
     encoded_prefix.push_str(";base64,");
 
-    #[cfg(any(target_os = "ios", target_os = "macos", target_os = "visionos", target_os = "tvos"))]
-    let fmt = ColorType::BGRA8888;
-
-    #[cfg(not(any(target_os = "ios", target_os = "macos", target_os = "visionos", target_os = "tvos")))]
-    let fmt = ColorType::RGBA8888;
+    let fmt = if bgra { ColorType::BGRA8888 } else { ColorType::RGBA8888 };
 
     let image_info = ImageInfo::new((width, height), fmt, AlphaType::Unpremul, None);
     if let Some(image) = images::raster_from_data(&image_info, data, row_bytes) {

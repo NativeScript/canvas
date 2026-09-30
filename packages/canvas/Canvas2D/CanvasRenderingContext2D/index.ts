@@ -12,6 +12,7 @@ import { DOMMatrix } from '../DOMMatrix';
 import type { CanvasRenderingContext } from '../../common';
 import { NAPI_HOST } from '../../platform';
 import { imageAssetFor } from '../../platform/index';
+import { isOffscreenCanvas } from '../../Canvas/utils';
 declare const NSCCanvasRenderingContext2D;
 
 const REPETITIONS = ['repeat', 'repeat-x', 'repeat-y', 'no-repeat'];
@@ -789,7 +790,7 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 			return null;
 		} else if (image instanceof ImageAsset) {
 			img = image.native;
-		} else if (image instanceof Canvas) {
+		} else if ((image instanceof Canvas || isOffscreenCanvas(image))) {
 			img = (image as any).native;
 		} else if (image && typeof image.tagName === 'string' && (image.tagName === 'IMG' || image.tagName === 'IMAGE')) {
 			if (__ANDROID__ && image._image instanceof android.graphics.Bitmap) {
@@ -907,7 +908,7 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 		} else if (__APPLE__ && image instanceof UIImage) {
 			drawNativeImage(args, image, this);
 			return;
-		} else if (image instanceof Canvas) {
+		} else if ((image instanceof Canvas || isOffscreenCanvas(image))) {
 			image = (image as any).native;
 		} else if (image && typeof image.tagName === 'string' && (image.tagName === 'IMG' || image.tagName === 'IMAGE')) {
 			if (image._imageSource instanceof ImageSource && !NAPI_HOST) {
@@ -1032,7 +1033,7 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 			isNativeSource = true;
 		} else if (__APPLE__ && image instanceof UIImage) {
 			isNativeSource = true;
-		} else if (image instanceof Canvas) {
+		} else if ((image instanceof Canvas || isOffscreenCanvas(image))) {
 			if (__APPLE__) {
 				image = _canvasToImageAssetIOS(image as Canvas);
 			} else {

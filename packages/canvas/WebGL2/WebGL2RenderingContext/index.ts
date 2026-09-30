@@ -22,6 +22,7 @@ import { ImageBitmap } from '../../ImageBitmap';
 import { Helpers } from '../../helpers';
 import { NAPI_HOST, POINTER_CONTEXT_HOST } from '../../platform';
 import { imageAssetFor } from '../../platform/index';
+import { isOffscreenCanvas } from '../../Canvas/utils';
 
 export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 	static {
@@ -264,6 +265,10 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 
 	//@ts-ignore
 	getParameter(pname: number): number[] | number | WebGLBuffer | WebGLProgram | WebGLFramebuffer | WebGLRenderbuffer | WebGLTexture | Uint32Array | Int32Array | Float32Array | string | null {
+		const tracked = this._trackedBinding(pname);
+		if (tracked !== undefined) {
+			return tracked;
+		}
 		const value = this.native.getParameter(pname);
 		switch (pname) {
 			case this.COPY_READ_BUFFER_BINDING:
@@ -414,7 +419,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 			this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, NAPI_HOST ? imageAssetFor(source)?.native : source.android);
 		} else if (source instanceof ImageAsset) {
 			this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, source.native);
-		} else if (source instanceof Canvas) {
+		} else if ((source instanceof Canvas || isOffscreenCanvas(source))) {
 			this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, source.native);
 		} else if (source instanceof ImageBitmap) {
 			this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, source.native);
@@ -467,7 +472,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 			this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, NAPI_HOST ? imageAssetFor(srcData)?.native : srcData.android);
 		} else if (srcData instanceof ImageAsset) {
 			this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData.native);
-		} else if (srcData instanceof Canvas) {
+		} else if ((srcData instanceof Canvas || isOffscreenCanvas(srcData))) {
 			this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData.native);
 		} else if (srcData instanceof ImageBitmap) {
 			this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData.native);

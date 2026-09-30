@@ -4,6 +4,7 @@ import { TextEncoder } from './TextEncoder';
 import { TextDecoder } from './TextDecoder';
 import { ImageBitmap } from './ImageBitmap';
 import { ImageBitmapRenderingContext } from './ImageBitmapRenderingContext';
+import { OffscreenCanvas, OffscreenCanvasRenderingContext2D } from './OffscreenCanvas';
 import { ImageAsset } from './ImageAsset';
 
 import { CanvasPattern, CanvasGradient, Path2D, ImageData, DOMMatrix } from './Canvas2D';
@@ -16,6 +17,7 @@ import { GPUBufferUsage, GPUMapMode, GPUShaderStage, GPUTextureUsage } from './W
 export * from './Canvas2D';
 export * from './ImageBitmap';
 export * from './ImageBitmapRenderingContext';
+export * from './OffscreenCanvas';
 export * from './ImageAsset';
 export * from './TextEncoder';
 export * from './TextDecoder';
@@ -93,6 +95,18 @@ Object.defineProperty(global, 'fonts', {
 
 Object.defineProperty(global, 'FontFace', {
 	value: FontFace,
+	configurable: true,
+	writable: true,
+});
+
+Object.defineProperty(global, 'OffscreenCanvas', {
+	value: OffscreenCanvas,
+	configurable: true,
+	writable: true,
+});
+
+Object.defineProperty(global, 'OffscreenCanvasRenderingContext2D', {
+	value: OffscreenCanvasRenderingContext2D,
 	configurable: true,
 	writable: true,
 });

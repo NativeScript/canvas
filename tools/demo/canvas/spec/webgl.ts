@@ -203,6 +203,48 @@ function registerCommon(version: 1 | 2) {
 	});
 
 	suite(`${label}.objects`, () => {
+		test('getParameter(FRAMEBUFFER_BINDING) returns the bound framebuffer', () => {
+			const { gl } = makeGL(version);
+			equal(gl.getParameter(gl.FRAMEBUFFER_BINDING), null, 'nothing bound yet');
+			const framebuffer = gl.createFramebuffer();
+			gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+			equal(gl.getParameter(gl.FRAMEBUFFER_BINDING), framebuffer);
+			gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+			equal(gl.getParameter(gl.FRAMEBUFFER_BINDING), null, 'after unbinding');
+		});
+
+		test('a framebuffer from getParameter binds again', () => {
+			const { gl } = makeGL(version);
+			const texture = gl.createTexture();
+			gl.bindTexture(gl.TEXTURE_2D, texture);
+			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 4, 4, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+			const framebuffer = gl.createFramebuffer();
+			gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+			gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+			// Save, draw to the canvas, restore: the usual state-preserving pattern.
+			const saved = gl.getParameter(gl.FRAMEBUFFER_BINDING);
+			gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+			gl.clearColor(0, 0, 0, 0);
+			gl.clear(gl.COLOR_BUFFER_BIT);
+			gl.bindFramebuffer(gl.FRAMEBUFFER, saved);
+			gl.clearColor(1, 0, 0, 1);
+			gl.clear(gl.COLOR_BUFFER_BIT);
+			const pixel = new Uint8Array(4);
+			gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
+			arrayEqual(pixel, [255, 0, 0, 255], 'the clear should land in the texture');
+			gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+			gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
+			arrayEqual(pixel, [0, 0, 0, 0], 'the drawing buffer should be untouched');
+		});
+
+		test('deleting the bound framebuffer unbinds it', () => {
+			const { gl } = makeGL(version);
+			const framebuffer = gl.createFramebuffer();
+			gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+			gl.deleteFramebuffer(framebuffer);
+			equal(gl.getParameter(gl.FRAMEBUFFER_BINDING), null);
+		});
+
 		test('createBuffer / isBuffer / deleteBuffer', () => {
 			const { gl } = makeGL(version);
 			const buffer = gl.createBuffer();
@@ -480,6 +522,19 @@ export function registerWebGLSpec() {
 	registerCommon(2);
 
 	suite('webgl2.only', () => {
+		test('the read and draw framebuffer bindings are separate', () => {
+			const { gl } = makeGL(2);
+			const read = gl.createFramebuffer();
+			const draw = gl.createFramebuffer();
+			gl.bindFramebuffer(gl.READ_FRAMEBUFFER, read);
+			gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, draw);
+			equal(gl.getParameter(gl.READ_FRAMEBUFFER_BINDING), read);
+			equal(gl.getParameter(gl.DRAW_FRAMEBUFFER_BINDING), draw);
+			gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+			equal(gl.getParameter(gl.READ_FRAMEBUFFER_BINDING), null, 'FRAMEBUFFER sets both');
+			equal(gl.getParameter(gl.DRAW_FRAMEBUFFER_BINDING), null, 'FRAMEBUFFER sets both');
+		});
+
 		test('WebGL2 reports a WebGL 2.0 version string', () => {
 			const { gl } = makeGL(2);
 			const version = gl.getParameter(gl.VERSION) as string;

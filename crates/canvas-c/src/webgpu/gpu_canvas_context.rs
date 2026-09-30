@@ -482,11 +482,12 @@ fn to_data_url_with_texture(
                 let row_bytes = round_up_to_256_u64((4 * width) as u64) as usize;
 
                 #[cfg(feature = "2d")]
-                let encoded = Some(canvas_2d::bytes_to_data_n32_url(
+                let encoded = Some(canvas_2d::bytes_to_data_rgba8_url(
                     width as i32,
                     height as i32,
                     bytes,
                     row_bytes,
+                    is_bgra,
                     format,
                     quality,
                 ));

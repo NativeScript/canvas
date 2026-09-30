@@ -480,6 +480,12 @@ export function lengthToDevicePixels(value: any, parent: any, isWidth: boolean):
 
 let warnedReady = false;
 
+function domError(name: string, message: string) {
+	const error: any = new Error(message);
+	error.name = name;
+	return error;
+}
+
 @CSSType('Canvas')
 export abstract class CanvasBase extends ContainerView implements ICanvasBase {
 	/** @deprecated The canvas is usable as soon as it exists; call getContext() directly. */
@@ -1308,7 +1314,54 @@ export abstract class CanvasBase extends ContainerView implements ICanvasBase {
 		this[attrib] = value ?? attrib;
 	}
 
-	public abstract getContext(type: string, contextAttributes?: any): CanvasRenderingContext | null;
+	/** Set by `transferControlToOffscreen()`: the canvas then only shows its OffscreenCanvas's frames. */
+	protected _transferredToOffscreen = false;
+
+	/** Builds the OffscreenCanvas a transferred canvas hands out; set by the OffscreenCanvas module. */
+	static _offscreenFromPlaceholder: ((canvas: CanvasBase) => any) | null = null;
+
+	/** getContext() without the transfer check, for this canvas's OffscreenCanvas. */
+	public abstract _getContext(type: string, contextAttributes?: any): CanvasRenderingContext | null;
+
+	/** @internal */
+	public abstract _hasContext(): boolean;
+
+	/** Sets the drawing buffer's size, as `width`/`height` do but without the transfer check. */
+	public abstract _resizeBitmap(width: number, height: number): void;
+
+	public getContext(type: string, contextAttributes?: any): CanvasRenderingContext | null {
+		if (this._transferredToOffscreen) {
+			throw domError('InvalidStateError', "Failed to execute 'getContext' on 'HTMLCanvasElement': Cannot get context from a canvas that has transferred its control to offscreen.");
+		}
+		return this._getContext(type, contextAttributes);
+	}
+
+	/**
+	 * Hands drawing over to an OffscreenCanvas, which draws into this canvas's surface so its frames
+	 * still show here. The canvas can't have a context, and can't be transferred twice.
+	 */
+	transferControlToOffscreen() {
+		if (this._transferredToOffscreen) {
+			throw domError('InvalidStateError', "Failed to execute 'transferControlToOffscreen' on 'HTMLCanvasElement': Cannot transfer control from a canvas for more than one time.");
+		}
+		if (this._hasContext()) {
+			throw domError('InvalidStateError', "Failed to execute 'transferControlToOffscreen' on 'HTMLCanvasElement': Cannot transfer control from a canvas that has a rendering context.");
+		}
+		const create = CanvasBase._offscreenFromPlaceholder;
+		if (!create) {
+			throw new Error('OffscreenCanvas is unavailable: import it from @nativescript/canvas.');
+		}
+		const offscreen = create(this);
+		this._transferredToOffscreen = true;
+		return offscreen;
+	}
+
+	/** A transferred canvas's size belongs to its OffscreenCanvas. */
+	protected __assertCanResize(name: 'width' | 'height') {
+		if (this._transferredToOffscreen) {
+			throw domError('InvalidStateError', `Failed to set the '${name}' property on 'HTMLCanvasElement': Cannot resize canvas after call to transferControlToOffscreen().`);
+		}
+	}
 
 	public abstract getBoundingClientRect(): {
 		x: number;

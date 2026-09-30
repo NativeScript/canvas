@@ -2303,7 +2303,8 @@ pub fn canvas_native_webgl_read_drawing_buffer(source: &mut WebGLState) -> (i32,
             gl_bindings::GetIntegerv(gl_bindings::PIXEL_PACK_BUFFER_BINDING, &mut pack_buffer);
             gl_bindings::BindBuffer(gl_bindings::PIXEL_PACK_BUFFER, 0);
         }
-        gl_bindings::BindFramebuffer(gl_bindings::FRAMEBUFFER, 0);
+        // The drawing buffer: framebuffer 0, or on iOS the view's own (what binding null means).
+        canvas_native_webgl_bind_frame_buffer(gl_bindings::FRAMEBUFFER, 0, source);
         gl_bindings::PixelStorei(gl_bindings::PACK_ALIGNMENT, 4);
         gl_bindings::ReadPixels(
             0,

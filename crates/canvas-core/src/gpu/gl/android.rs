@@ -16,7 +16,7 @@ use glutin::config::{
     Api, ColorBufferType, ConfigSurfaceTypes, ConfigTemplate, ConfigTemplateBuilder,
 };
 use glutin::context::AsRawContext;
-use glutin::context::{ContextApi, RawContext, Version};
+use glutin::context::{ContextApi, ContextAttributesBuilder, Priority, RawContext, Version};
 use glutin::display::AsRawDisplay;
 use glutin::display::{GetGlDisplay, RawDisplay};
 use glutin::prelude::GlSurface;
@@ -114,6 +114,17 @@ pub(crate) enum SurfaceHelper {
     Window(Surface<WindowSurface>),
     Pbuffer(Surface<PbufferSurface>),
     Pixmap(Surface<PixmapSurface>),
+}
+
+
+/// WebGL contexts (not a 2D canvas's) run at low GPU priority where the driver allows it, so the
+/// UI's own rendering is scheduled ahead of a scene that saturates the GPU.
+fn webgl_priority(builder: ContextAttributesBuilder, is_canvas: bool) -> ContextAttributesBuilder {
+    if is_canvas {
+        builder
+    } else {
+        builder.with_priority(Priority::Low)
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -629,6 +640,7 @@ impl GLContext {
                             .map(|v| SurfaceHelper::Window(v))
                             .ok();
 
+                        let context_attrs_is_canvas = context_attrs.get_is_canvas();
                         let mut context_attrs = glutin::context::ContextAttributesBuilder::new()
                             .with_context_api(ContextApi::Gles(Some(
                                 if context_attrs.get_is_canvas() | context_attrs.get_gl_legacy() {
@@ -644,7 +656,8 @@ impl GLContext {
                             }
                         }
 
-                        let context_attrs = context_attrs.build(Some(window));
+                        let context_attrs = webgl_priority(context_attrs, context_attrs_is_canvas)
+                            .build(Some(window));
 
                         let context = display
                             .create_context(&config, &context_attrs)
@@ -1077,15 +1090,19 @@ impl GLContext {
                             .map(SurfaceHelper::Pbuffer)
                             .ok();
 
-                        let context_attrs = glutin::context::ContextAttributesBuilder::new()
-                            .with_context_api(ContextApi::Gles(Some(
-                                if context_attrs.get_is_canvas() | context_attrs.get_gl_legacy() {
-                                    Version::new(2, 0)
-                                } else {
-                                    Version::new(3, 0)
-                                },
-                            )))
-                            .build(None);
+                        let context_attrs = webgl_priority(
+                            glutin::context::ContextAttributesBuilder::new().with_context_api(
+                                ContextApi::Gles(Some(
+                                    if context_attrs.get_is_canvas() | context_attrs.get_gl_legacy() {
+                                        Version::new(2, 0)
+                                    } else {
+                                        Version::new(3, 0)
+                                    },
+                                )),
+                            ),
+                            context_attrs.get_is_canvas(),
+                        )
+                        .build(None);
 
                         let context = display
                             .create_context(&config, &context_attrs)

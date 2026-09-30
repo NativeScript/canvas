@@ -5,6 +5,7 @@ import { GPUBuffer } from './GPUBuffer';
 import { GPUCommandBuffer } from './GPUCommandBuffer';
 import { GPUImageCopyExternalImage, GPUImageCopyTexture, GPUImageCopyTextureTagged, GPUImageDataLayout } from './Interfaces';
 import { GPUExtent3D } from './Types';
+import { isOffscreenCanvas } from '../Canvas/utils';
 export class GPUQueue {
 	[native_]: any;
 
@@ -96,7 +97,7 @@ export class GPUQueue {
 			} else if (source.source?._type === '2d' || source.source?._type?.indexOf('webgl') > -1 || source.source?._type === 'webgpu') {
 				_keepAlive = source.source;
 				src.source = (source.source as any).native;
-			} else if (source.source instanceof Canvas) {
+			} else if ((source.source instanceof Canvas || isOffscreenCanvas(source.source))) {
 				_keepAlive = source.source;
 				src.source = source.source.native;
 			} else if (typeof source.source.tagName === 'string' && source.source.tagName === 'CANVAS') {

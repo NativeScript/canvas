@@ -188,3 +188,12 @@ export function holdBackAnimationFramesWhileBehind() {
 		target.window.cancelAnimationFrame = cancelAnimationFrame;
 	}
 }
+
+/**
+ * An OffscreenCanvas, which image sources (drawImage, createPattern, createImageBitmap, texImage2D,
+ * copyExternalImageToTexture) take like a Canvas: both hand their context's native object as `native`.
+ * Checked by tag so the consumers need not import the OffscreenCanvas module.
+ */
+export function isOffscreenCanvas(value: any): boolean {
+	return !!value && typeof value === 'object' && value[Symbol.toStringTag] === 'OffscreenCanvas';
+}

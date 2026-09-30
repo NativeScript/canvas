@@ -264,6 +264,7 @@ export abstract class NapiCanvas extends CanvasBase {
 
 	// @ts-ignore
 	set width(value: any) {
+		this.__assertCanResize('width');
 		this.__setSurfaceWidth(value);
 		this.__resetAfterResize();
 	}
@@ -278,6 +279,7 @@ export abstract class NapiCanvas extends CanvasBase {
 
 	// @ts-ignore
 	set height(value: any) {
+		this.__assertCanResize('height');
 		this.__setSurfaceHeight(value);
 		this.__resetAfterResize();
 	}
@@ -518,7 +520,16 @@ export abstract class NapiCanvas extends CanvasBase {
 		return context;
 	}
 
-	getContext(type: string, options?: any): CanvasRenderingContext2D | WebGLRenderingContext | WebGL2RenderingContext | GPUCanvasContext | null {
+	_hasContext(): boolean {
+		return this._contextType !== ContextType.None;
+	}
+
+	_resizeBitmap(width: number, height: number) {
+		this.__setSurfaceWidth(width);
+		this.__setSurfaceHeight(height);
+	}
+
+	_getContext(type: string, options?: any): CanvasRenderingContext2D | WebGLRenderingContext | WebGL2RenderingContext | GPUCanvasContext | null {
 		if (!this._canvas || typeof type !== 'string') {
 			return null;
 		}

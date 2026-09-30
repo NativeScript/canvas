@@ -44,6 +44,7 @@ import { ImageBitmap } from '../../ImageBitmap';
 import { Helpers } from '../../helpers';
 import { NAPI_HOST, POINTER_CONTEXT_HOST } from '../../platform';
 import { imageAssetFor } from '../../platform/index';
+import { isOffscreenCanvas } from '../../Canvas/utils';
 
 enum ContextType {
 	None,
@@ -847,7 +848,7 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 				this.native.texImage2D(target, level, internalformat, width, height, border, format, type ?? internalformat, pixels.native);
 			} else if (pixels instanceof ImageBitmap) {
 				this.native.texImage2D(target, level, internalformat, width, height, border, format, type ?? internalformat, pixels.native);
-			} else if (pixels instanceof Canvas) {
+			} else if ((pixels instanceof Canvas || isOffscreenCanvas(pixels))) {
 				this.native.texImage2D(target, level, internalformat, width, height, border, format, type ?? internalformat, pixels.native);
 			} else if (__ANDROID__ && pixels instanceof android.graphics.Bitmap) {
 				(<any>org).nativescript.canvas.NSCWebGLRenderingContext.texImage2D(java.lang.Long.valueOf(this._contextPtr), target, level, internalformat, width, height, pixels, this.native.__flipY);
@@ -903,7 +904,7 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 				this.native.texImage2D(target, level, internalformat, width, height, border.native);
 			} else if (border instanceof ImageBitmap) {
 				this.native.texImage2D(target, level, internalformat, width, height, border.native);
-			} else if (border instanceof Canvas) {
+			} else if ((border instanceof Canvas || isOffscreenCanvas(border))) {
 				this.native.texImage2D(target, level, internalformat, width, height, border.native);
 			} else if (__ANDROID__ && border instanceof android.graphics.Bitmap) {
 				(<any>org).nativescript.canvas.NSCWebGLRenderingContext.texImage2D(java.lang.Long.valueOf(this._contextPtr), target, level, internalformat, width, height, border, this.native.__flipY);
@@ -983,7 +984,7 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 				}
 			} else if (format instanceof ImageAsset) {
 				this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, format.native);
-			} else if (format instanceof Canvas) {
+			} else if ((format instanceof Canvas || isOffscreenCanvas(format))) {
 				this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, format.native);
 			} else if (format instanceof ImageBitmap) {
 				this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, format.native);

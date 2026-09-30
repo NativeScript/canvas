@@ -5,6 +5,7 @@ import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
 import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
 import { GPUCanvasContext } from '../WebGPU';
 import { ImageBitmapRenderingContext } from '../ImageBitmapRenderingContext';
+import type { OffscreenCanvas } from '../OffscreenCanvas';
 import { LengthPercentage } from '@nativescript/core/css/parser';
 
 export declare function createSVGMatrix(): DOMMatrix;
@@ -41,6 +42,9 @@ export declare class Canvas extends CanvasBase {
 	/** Default for `getContext('2d', { threaded })`: rasterize on a shared render thread (Android, iOS, Windows). */
 	static threaded2D: boolean;
 
+	/** Default for `getContext('webgl' | 'webgl2', { threaded })`: run the context on the WebGL thread (Android). */
+	static threadedWebGL: boolean;
+
 	surfaceOnTop: boolean;
 
 	static forceGL: boolean;
@@ -54,6 +58,13 @@ export declare class Canvas extends CanvasBase {
 	disposeNativeView(): void;
 
 	toDataURL(type?: string, encoderOptions?: number): any;
+
+	/**
+	 * Hands drawing over to an OffscreenCanvas that draws into this canvas's surface. Throws an
+	 * `InvalidStateError` if the canvas already has a context or was transferred; afterwards its
+	 * getContext() and width/height setters throw too.
+	 */
+	transferControlToOffscreen(): OffscreenCanvas;
 
 	getContext(type: '2d', options?: any): CanvasRenderingContext2D | null;
 

@@ -129,7 +129,8 @@ CopyFastOneByteStringToScratch(const v8::FastOneByteString &str, std::vector<cha
     return scratch.data();
 }
 
-inline static std::string_view
+// Both return a copy: a view would point into the Utf8Value, which is gone once they return.
+inline static std::string
 ConvertFromV8StringView(v8::Isolate *isolate, const v8::Local<v8::Value> &value) {
     if (value.IsEmpty()) {
         return {};
@@ -148,10 +149,10 @@ ConvertFromV8StringView(v8::Isolate *isolate, const v8::Local<v8::Value> &value)
         return {};
     }
 
-    return {*result};
+    return {val, static_cast<size_t>(result.length())};
 }
 
-inline static std::string_view
+inline static std::string
 ConvertFromV8StringViewValue(v8::Isolate *isolate, v8::Local<v8::Value> value) {
     if (value.IsEmpty()) {
         return {};
@@ -170,7 +171,7 @@ ConvertFromV8StringViewValue(v8::Isolate *isolate, v8::Local<v8::Value> value) {
         return {};
     }
 
-    return {*result};
+    return {val, static_cast<size_t>(result.length())};
 }
 
 

@@ -8,7 +8,7 @@
 import Foundation
 import UIKit
 #if !os(visionOS)
-import GLKit
+import OpenGLES
 #endif
 #if canImport(WebKit)
 import WebKit
@@ -100,7 +100,7 @@ public class NSCCanvas: UIView {
 		didSet {
 			CATransaction.begin()
 			CATransaction.setDisableActions(true)
-			glkView.layer.transform = CATransform3DIdentity
+			glView.layer.transform = CATransform3DIdentity
 			mtlView.layer.transform = CATransform3DIdentity
 			cpuView.layer.transform = CATransform3DIdentity
 			CATransaction.commit()
@@ -122,9 +122,10 @@ public class NSCCanvas: UIView {
 	var mtlPtr: UnsafeMutableRawPointer? = nil
 	var mtlLayerPtr: UnsafeMutableRawPointer? = nil
 	
-	public func getGlViewPtr() -> UnsafeMutableRawPointer {
+	/// The GL view's `CAEAGLLayer`, which a GL context stores its drawing buffer in.
+	public func getGlLayerPtr() -> UnsafeMutableRawPointer {
 		if(glPtr == nil){
-			glPtr = Unmanaged.passRetained(glkView).toOpaque()
+			glPtr = Unmanaged.passRetained(glView.layer).toOpaque()
 		}
 		return glPtr!
 	}
@@ -147,9 +148,9 @@ public class NSCCanvas: UIView {
 	public var autoScale: Bool = true {
 		didSet {
 			if(!autoScale){
-				glkView.contentScaleFactor = 1
+				glView.contentScaleFactor = 1
 			}else {
-				glkView.contentScaleFactor = nscNativeScale()
+				glView.contentScaleFactor = nscNativeScale()
 			}
 		}
 	}
@@ -162,12 +163,15 @@ public class NSCCanvas: UIView {
 
 	/// Read when the 2D context is created.
 	@objc public var threaded2D = false
+
+	/// Read when the WebGL context is created: it then lives on the WebGL thread, which presents it.
+	@objc public var threadedWebGL = false
 	
 	internal var engine = Engine.None
 	
 	internal var mtlView: NSCMTLView
 	
-	internal var glkView: CanvasGLKView
+	internal var glView: CanvasGLView
 	
 	internal var cpuView: CanvasCPUView
 	
@@ -203,7 +207,7 @@ public class NSCCanvas: UIView {
 			return cpuView.frame.size.width
 		}
 		
-		return glkView.frame.size.width
+		return glView.frame.size.width
 	}
 	
 	var drawingBufferHeightRaw: CGFloat {
@@ -215,7 +219,7 @@ public class NSCCanvas: UIView {
 			return cpuView.frame.size.height
 		}
 		
-		return glkView.frame.size.height
+		return glView.frame.size.height
 	}
 	
 	public var width: Float {
@@ -406,56 +410,33 @@ public class NSCCanvas: UIView {
 			if(alpha){
 				properties[kEAGLDrawablePropertyColorFormat] = kEAGLColorFormatRGBA8
 				isOpaque = false
-				glkView.isOpaque = false
-				(glkView.layer as! CAEAGLLayer).isOpaque = false
+				glView.isOpaque = false
+				glView.eaglLayer.isOpaque = false
 			}else {
 				properties[kEAGLDrawablePropertyColorFormat] = kEAGLColorFormatRGBA8
 				isOpaque = true
-				(glkView.layer as! CAEAGLLayer).isOpaque = true
-				glkView.isOpaque = true
+				glView.eaglLayer.isOpaque = true
+				glView.isOpaque = true
 			}
 			
 			
 			if(!properties.isEmpty){
-				let eaglLayer = self.glkView.layer as! CAEAGLLayer
-				eaglLayer.drawableProperties = properties
+				glView.eaglLayer.drawableProperties = properties
 			}
 			
-			if(useWebGL && depth){
-				glkView.drawableDepthFormat = .format24
-			}else {
-				glkView.drawableDepthFormat = .formatNone
-			}
-			
-			if(useWebGL && stencil){
-				glkView.drawableStencilFormat = .format8
-			}else if(isCanvas) {
-				glkView.drawableStencilFormat = .format8
-			}
-			
-			// antialias fails in 2D
-			if(useWebGL && antialias){
-				glkView.drawableMultisample = .multisample4X
-			}
-			
-			
-			
+			// Depth and stencil come with the context's drawing buffer, from its attributes.
 			if(is2D){
 				// Use surfaceWidth/Height directly — at this point engine is still .None so
-				// drawingBufferWidth would return glkView.frame * scale, which has float
+				// drawingBufferWidth would return glView.frame * scale, which has float
 				// precision loss from the divide-then-multiply round-trip in forceLayout.
 				nativeContext = CanvasHelpers.create2DContext(self, Int32(surfaceWidth), Int32(surfaceHeight), alpha, density, -16777216, density * 160, direction, colorSpace)
 			}else {
-				nativeContext = CanvasHelpers.initWebGLWithView(self, alpha, antialias, depth, failIfMajorPerformanceCaveat, powerPreference, premultipliedAlpha, preserveDrawingBuffer, stencil, desynchronized, xrCompatible, version)
+				nativeContext = CanvasHelpers.initWebGLWithView(self, alpha, antialias, depth, failIfMajorPerformanceCaveat, powerPreference, premultipliedAlpha, preserveDrawingBuffer, stencil, desynchronized, xrCompatible, version, threadedWebGL)
 			}
 			
 			engine = .GL
 			
-			if(glkView.drawableWidth == 0 && glkView.drawableHeight == 0){
-				glkView.bindDrawable()
-			}
-			
-			glkView.isHidden = false
+			glView.isHidden = false
 			#endif
 		}else if(is2D) {
 			isOpaque = !alpha
@@ -524,13 +505,11 @@ public class NSCCanvas: UIView {
 		}
 		var snapshot: UIImage? = nil
 		if(engine == .GL){
-			#if !os(visionOS)
-			if(nativeContext != 0){
-				glkView.display()
+			if(is2D){
+				snapshot = CanvasHelpers.snapshot2DContext(nativeContext, surfaceWidth, surfaceHeight)
+			}else {
+				snapshot = CanvasHelpers.snapshotWebGL(nativeContext)
 			}
-
-			snapshot = glkView.snapshot
-			#endif
 		}else if(engine == .GPU){
 			if(is2D && nativeContext != 0){
 				snapshot = CanvasHelpers.snapshot2DContext(nativeContext, surfaceWidth, surfaceHeight)
@@ -653,7 +632,7 @@ public class NSCCanvas: UIView {
 		
 		let frame = CGRect(x: 0, y: 0, width: unscaledWidth, height: unscaledHeight)
 		mtlView = NSCMTLView(frame: frame)
-		glkView = CanvasGLKView(frame: frame)
+		glView = CanvasGLView(frame: frame)
 		cpuView	= CanvasCPUView(frame: frame)
 		mtlView.drawableSize = CGSize(width: 300, height: 150)
 		super.init(coder: coder)
@@ -669,7 +648,7 @@ public class NSCCanvas: UIView {
 		let unscaledHeight = (150 / scale).rounded(.down)
 		
 		mtlView = NSCMTLView(frame: CGRect(x: 0, y: 0, width: unscaledWidth, height: unscaledHeight))
-		glkView = CanvasGLKView(frame: CGRect(x: 0, y: 0, width: unscaledWidth, height: unscaledHeight))
+		glView = CanvasGLView(frame: CGRect(x: 0, y: 0, width: unscaledWidth, height: unscaledHeight))
 		cpuView	= CanvasCPUView(frame: CGRect(x: 0, y: 0, width: unscaledWidth, height: unscaledHeight))
 		mtlView.drawableSize = CGSize(width: 300, height: 150)
 		super.init(frame: frame)
@@ -681,21 +660,18 @@ public class NSCCanvas: UIView {
 	private func initializeView(){
 		setup()
 		let scale = nscNativeScale()
-		glkView.contentScaleFactor = scale
+		glView.contentScaleFactor = scale
 		mtlView.contentScaleFactor = scale
 		
-		glkView.canvas = self
+		glView.canvas = self
 		mtlView.canvas = self
 		cpuView.canvas = self
 		handler = NSCTouchHandler(canvas: self)
 		backgroundColor = .clear
-		#if !os(visionOS)
-		glkView.enableSetNeedsDisplay = false
-		#endif
-		glkView.isHidden = true
+		glView.isHidden = true
 		mtlView.isHidden = true
 		cpuView.isHidden = true
-		addSubview(glkView)
+		addSubview(glView)
 		addSubview(mtlView)
 		addSubview(cpuView)
 		scaleSurface()
@@ -774,16 +750,10 @@ public class NSCCanvas: UIView {
 			scaleSurface()
 			return
 		}
-		#if !os(visionOS)
-		if(engine == .GL){
-			EAGLContext.setCurrent(glkView.context)
+		// A 2D context reallocates its GL drawable as it resizes.
+		if(engine == .GL && !is2D){
+			CanvasHelpers.resizeWebGL(nativeContext, surfaceWidth, surfaceHeight)
 		}
-
-		if(engine == .GL){
-			glkView.deleteDrawable()
-			glkView.bindDrawable()
-		}
-		#endif
 		if(is2D){
 			CanvasHelpers.resize2DContext(nativeContext, Float(surfaceWidth), Float(surfaceHeight))
 		}
@@ -818,14 +788,14 @@ public class NSCCanvas: UIView {
 		// causes UIKit to compute wrong layer.position, resulting in misplaced child views.
 		CATransaction.begin()
 		CATransaction.setDisableActions(true)
-		glkView.layer.transform = CATransform3DIdentity
+		glView.layer.transform = CATransform3DIdentity
 		mtlView.layer.transform = CATransform3DIdentity
 		cpuView.layer.transform = CATransform3DIdentity
 		CATransaction.commit()
 		lastScaledSurfaceFrame = .null
 		lastScaledSurfaceTransform = CATransform3DIdentity
 
-		glkView.frame = CGRect(x: 0, y: 0, width: unscaledWidth, height: unscaledHeight)
+		glView.frame = CGRect(x: 0, y: 0, width: unscaledWidth, height: unscaledHeight)
 		mtlView.frame = CGRect(x: 0, y: 0, width: unscaledWidth, height: unscaledHeight)
 		mtlView.drawableSize = CGSize(width: width.rounded(.down), height: height.rounded(.down))
 
@@ -833,10 +803,10 @@ public class NSCCanvas: UIView {
 
 		cpuView.data = NSMutableData(length: Int(surfaceWidth * surfaceHeight) * 4)
 
-		glkView.setNeedsLayout()
+		glView.setNeedsLayout()
 		mtlView.setNeedsLayout()
 		cpuView.setNeedsLayout()
-		glkView.layoutIfNeeded()
+		glView.layoutIfNeeded()
 		mtlView.layoutIfNeeded()
 		cpuView.layoutIfNeeded()
 	}
@@ -909,7 +879,7 @@ public class NSCCanvas: UIView {
 		guard let transform = makeSurfaceTransform() else {
 			CATransaction.begin()
 			CATransaction.setDisableActions(true)
-			glkView.layer.transform = CATransform3DIdentity
+			glView.layer.transform = CATransform3DIdentity
 			mtlView.layer.transform = CATransform3DIdentity
 			cpuView.layer.transform = CATransform3DIdentity
 			CATransaction.commit()
@@ -952,17 +922,17 @@ public class NSCCanvas: UIView {
 		CATransaction.begin()
 		CATransaction.setDisableActions(true)
 		if(frameChanged){
-			glkView.layer.transform = CATransform3DIdentity
+			glView.layer.transform = CATransform3DIdentity
 			mtlView.layer.transform = CATransform3DIdentity
 			cpuView.layer.transform = CATransform3DIdentity
 			
-			glkView.frame = surfaceFrame
+			glView.frame = surfaceFrame
 			mtlView.frame = surfaceFrame
 			cpuView.frame = surfaceFrame
 		}
 		
 		if(transformChanged){
-			glkView.layer.transform = transform
+			glView.layer.transform = transform
 			mtlView.layer.transform = transform
 			cpuView.layer.transform = transform
 		}

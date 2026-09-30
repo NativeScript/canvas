@@ -1685,7 +1685,7 @@ void WebGLRenderingContext::DeleteProgram(const v8::FunctionCallbackInfo<v8::Val
     if (type == NativeType::WebGLProgram) {
         auto program = WebGLProgram::GetPointer(value.As<v8::Object>());
         if (program != nullptr) {
-            canvas_native_webgl_delete_framebuffer(
+            canvas_native_webgl_delete_program(
                     program->GetProgram(),
                     ptr->GetState()
             );

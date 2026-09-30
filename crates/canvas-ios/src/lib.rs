@@ -16,9 +16,11 @@ use std::ffi::{c_int, c_longlong, c_void, CStr};
 use std::os::raw::c_char;
 use std::ptr::NonNull;
 
+/// A WebGL context drawing to `layer`, the view's `CAEAGLLayer`. A threaded one lives on the WebGL
+/// thread, so presents never wait on the GPU here.
 #[no_mangle]
 pub extern "C" fn canvas_native_ios_create_webgl_context(
-    view: *mut c_void,
+    layer: *mut c_void,
     alpha: bool,
     antialias: bool,
     depth: bool,
@@ -30,17 +32,21 @@ pub extern "C" fn canvas_native_ios_create_webgl_context(
     desynchronized: bool,
     xr_compatible: bool,
     version: u32,
+    threaded: bool,
 ) -> c_longlong {
     if version == 2 && !GLContext::has_gl2support() {
         return 0;
     }
-
-    // let _ = env_logger::try_init();
-
-    if let Some(power_preference) = PowerPreference::try_from(power_preference).ok() {
-        return Box::into_raw(Box::new(WebGLState::new_with_view(
-            view,
-            WebGLVersion::try_from(version as i32).unwrap(),
+    let (Ok(version), Ok(power_preference)) = (
+        WebGLVersion::try_from(version as i32),
+        PowerPreference::try_from(power_preference),
+    ) else {
+        return 0;
+    };
+    let create = || {
+        WebGLState::new_with_view(
+            layer,
+            version,
             alpha,
             antialias,
             depth,
@@ -52,10 +58,14 @@ pub extern "C" fn canvas_native_ios_create_webgl_context(
             desynchronized,
             xr_compatible,
             false,
-        ))) as i64;
-    }
-
-    0
+        )
+    };
+    let state = if threaded {
+        WebGLState::create_threaded(create)
+    } else {
+        create().map_or(std::ptr::null_mut(), |state| Box::into_raw(Box::new(state)))
+    };
+    state as i64
 }
 
 #[no_mangle]
@@ -63,12 +73,60 @@ pub extern "C" fn canvas_native_ios_flush_webgl(context: i64) -> bool {
     if context == 0 {
         return false;
     }
+    unsafe { &*(context as *const WebGLState) }.present()
+}
 
-    let context = context as *mut WebGLState;
-    let context = unsafe { &mut *context };
+/// Reallocates the drawing buffer after the view's layer changed size. Queued: whatever reads the
+/// size next runs after it.
+#[no_mangle]
+pub extern "C" fn canvas_native_ios_resize_webgl(context: i64, width: i32, height: i32) {
+    if context == 0 {
+        return;
+    }
+    unsafe { &*(context as *const WebGLState) }
+        .post(move |state| state.resize_drawable(width, height));
+}
 
-    context.get_inner().make_current();
-    context.get_inner().swap_buffers()
+/// The drawing buffer as top-down RGBA, `width` x `height`.
+#[no_mangle]
+pub extern "C" fn canvas_native_ios_webgl_read_pixels(
+    context: i64,
+    width: *mut i32,
+    height: *mut i32,
+) -> *mut U8Buffer {
+    if context == 0 || width.is_null() || height.is_null() {
+        return std::ptr::null_mut();
+    }
+    let state = unsafe { &*(context as *const WebGLState) };
+    let (w, h, pixels) = state.sync(|state| {
+        let (w, h) = state.get_dimensions();
+        (w, h, state.snapshot().unwrap_or_default())
+    });
+    unsafe {
+        *width = w;
+        *height = h;
+    }
+    Box::into_raw(Box::new(U8Buffer::from(pixels)))
+}
+
+/// Runs `callback(data)` with the context current, on the thread that owns it, and waits for it:
+/// native code that draws with a threaded context (video frames) has to run there.
+#[no_mangle]
+pub extern "C" fn canvas_native_ios_webgl_run(
+    context: i64,
+    callback: Option<extern "C" fn(*mut c_void)>,
+    data: *mut c_void,
+) {
+    let Some(callback) = callback else {
+        return;
+    };
+    if context == 0 {
+        return;
+    }
+    unsafe { &*(context as *const WebGLState) }.sync(|state| {
+        state.make_current();
+        callback(data);
+    });
 }
 
 #[no_mangle]
@@ -189,12 +247,8 @@ pub extern "C" fn canvas_native_ios_update_webgl_surface(
         return;
     }
 
-    if let Some(ios_view) = NonNull::new(view as *mut c_void) {
-        let context = context as *mut WebGLState;
-        let context = unsafe { &mut *context };
-
-        let context = context.get_inner_mut();
-        context.set_surface(ios_view);
+    if let Some(layer) = NonNull::new(view as *mut c_void) {
+        unsafe { &*(context as *const WebGLState) }.sync(|state| state.set_surface(layer));
     }
 }
 
@@ -221,7 +275,7 @@ pub extern "C" fn canvas_native_ios_gl_make_current(context: i64) {
     }
     let gl_context = context as *mut WebGLState;
     let gl_context = unsafe { &*gl_context };
-    gl_context.get_inner().make_current();
+    gl_context.sync(|state| state.make_current());
 }
 
 #[no_mangle]
@@ -629,43 +683,44 @@ pub extern "C" fn canvas_native_ios_webgl_tex_image_2d(
 
     let gl_context = context as *mut WebGLState;
     let gl_context = unsafe { &*gl_context };
-    gl_context.get_inner().make_current();
+    gl_context.sync(|state| {
+        state.make_current();
+        unsafe {
+            if flip_y {
+                let mut buffer = bytes.to_vec();
+                canvas_webgl::utils::gl::flip_in_place(
+                    buffer.as_mut_ptr(),
+                    buffer.len(),
+                    canvas_webgl::utils::gl::bytes_per_pixel(type_ as _, format as _) as _,
+                    height as usize,
+                );
 
-    unsafe {
-        if flip_y {
-            let mut buffer = bytes.to_vec();
-            canvas_webgl::utils::gl::flip_in_place(
-                buffer.as_mut_ptr(),
-                buffer.len(),
-                canvas_webgl::utils::gl::bytes_per_pixel(type_ as _, format as _) as _,
-                height as usize,
-            );
-
-            gl_bindings::TexImage2D(
-                target as u32,
-                level,
-                internalformat,
-                width as i32,
-                height as i32,
-                0,
-                format as u32,
-                type_ as u32,
-                buffer.as_ptr() as *const std::os::raw::c_void,
-            );
-        } else {
-            gl_bindings::TexImage2D(
-                target as u32,
-                level,
-                internalformat,
-                width as i32,
-                height as i32,
-                0,
-                format as u32,
-                type_ as u32,
-                bytes.as_ptr() as *const std::os::raw::c_void,
-            );
+                gl_bindings::TexImage2D(
+                    target as u32,
+                    level,
+                    internalformat,
+                    width as i32,
+                    height as i32,
+                    0,
+                    format as u32,
+                    type_ as u32,
+                    buffer.as_ptr() as *const std::os::raw::c_void,
+                );
+            } else {
+                gl_bindings::TexImage2D(
+                    target as u32,
+                    level,
+                    internalformat,
+                    width as i32,
+                    height as i32,
+                    0,
+                    format as u32,
+                    type_ as u32,
+                    bytes.as_ptr() as *const std::os::raw::c_void,
+                );
+            }
         }
-    }
+    });
 }
 
 #[no_mangle]
@@ -690,41 +745,42 @@ pub extern "C" fn canvas_native_ios_webgl_tex_sub_image_2d(
 
     let gl_context = context as *mut WebGLState;
     let gl_context = unsafe { &*gl_context };
-    gl_context.get_inner().make_current();
+    gl_context.sync(|state| {
+        state.make_current();
+        unsafe {
+            if flip_y {
+                let mut buffer = bytes.to_vec();
+                canvas_webgl::utils::gl::flip_in_place(
+                    buffer.as_mut_ptr(),
+                    buffer.len(),
+                    canvas_webgl::utils::gl::bytes_per_pixel(type_ as _, format as _) as _,
+                    height as usize,
+                );
 
-    unsafe {
-        if flip_y {
-            let mut buffer = bytes.to_vec();
-            canvas_webgl::utils::gl::flip_in_place(
-                buffer.as_mut_ptr(),
-                buffer.len(),
-                canvas_webgl::utils::gl::bytes_per_pixel(type_ as _, format as _) as _,
-                height as usize,
-            );
-
-            gl_bindings::TexSubImage2D(
-                target as u32,
-                level,
-                xoffset,
-                yoffset,
-                width as i32,
-                height as i32,
-                format as u32,
-                type_ as u32,
-                buffer.as_ptr() as *const std::os::raw::c_void,
-            );
-        } else {
-            gl_bindings::TexSubImage2D(
-                target as u32,
-                level,
-                xoffset,
-                yoffset,
-                width as i32,
-                height as i32,
-                format as u32,
-                type_ as u32,
-                bytes.as_ptr() as *const std::os::raw::c_void,
-            );
+                gl_bindings::TexSubImage2D(
+                    target as u32,
+                    level,
+                    xoffset,
+                    yoffset,
+                    width as i32,
+                    height as i32,
+                    format as u32,
+                    type_ as u32,
+                    buffer.as_ptr() as *const std::os::raw::c_void,
+                );
+            } else {
+                gl_bindings::TexSubImage2D(
+                    target as u32,
+                    level,
+                    xoffset,
+                    yoffset,
+                    width as i32,
+                    height as i32,
+                    format as u32,
+                    type_ as u32,
+                    bytes.as_ptr() as *const std::os::raw::c_void,
+                );
+            }
         }
-    }
+    });
 }

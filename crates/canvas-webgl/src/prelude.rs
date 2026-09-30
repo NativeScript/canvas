@@ -264,6 +264,12 @@ impl WebGLState {
         self.context.set_surface(view)
     }
 
+    /// After the view's layer changed size (`width` and `height` size an offscreen drawing buffer).
+    #[cfg(any(target_os = "ios", target_os = "visionos", target_os = "tvos"))]
+    pub fn resize_drawable(&mut self, width: i32, height: i32) {
+        self.context.resize_drawable(width, height)
+    }
+
     #[cfg(target_os = "android")]
     pub fn set_surface(
         &mut self,

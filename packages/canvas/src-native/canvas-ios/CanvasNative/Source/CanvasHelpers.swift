@@ -134,16 +134,10 @@ public class CanvasHelpers: NSObject {
                                _ stencil:Bool,
                         _ desynchronized:Bool,
                          _ xr_compatible:Bool,
-                               _ version: Int32) -> Int64{
+                               _ version: Int32,
+                              _ threaded: Bool) -> Int64{
         
-        let ret =  canvas_native_webgl_create(view.getGlViewPtr(), version, alpha, antialias, depth, fail_if_major_performance_caveat, power_preference, premultiplied_alpha, preserve_drawing_buffer, stencil, desynchronized, xr_compatible)
-		
-			
-        if(ret == nil){
-            return 0
-        }
-        return unsafeBitCast(ret, to: Int64.self)
-        
+        return canvas_native_ios_create_webgl_context(view.getGlLayerPtr(), alpha, antialias, depth, fail_if_major_performance_caveat, power_preference, premultiplied_alpha, preserve_drawing_buffer, stencil, desynchronized, xr_compatible, UInt32(version), threaded)
     }
     
     
@@ -212,6 +206,50 @@ public class CanvasHelpers: NSObject {
     public static func flushWebGL(_ context: Int64)-> Bool {
         return canvas_native_ios_flush_webgl(context)
     }
+
+    /// After the GL view's layer changed size.
+    public static func resizeWebGL(_ context: Int64, _ width: Int, _ height: Int) {
+        canvas_native_ios_resize_webgl(context, Int32(width), Int32(height))
+    }
+
+    /// A WebGL context's drawing buffer as an image, read on the thread that owns the context.
+    public static func snapshotWebGL(_ context: Int64) -> UIImage? {
+        var width: Int32 = 0
+        var height: Int32 = 0
+        guard context != 0, let buffer = canvas_native_ios_webgl_read_pixels(context, &width, &height) else {
+            return nil
+        }
+        defer { canvas_native_u8_buffer_release(buffer) }
+        let (w, h) = (Int(width), Int(height))
+        let length = Int(canvas_native_u8_buffer_get_length(buffer))
+        guard w > 0, h > 0, length >= w * h * 4, let bytes = canvas_native_u8_buffer_get_bytes(buffer),
+              let provider = CGDataProvider(data: Data(bytes: bytes, count: length) as CFData),
+              let image = CGImage(width: w, height: h, bitsPerComponent: 8, bitsPerPixel: 32,
+                                  bytesPerRow: w * 4, space: CGColorSpaceCreateDeviceRGB(),
+                                  bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue),
+                                  provider: provider, decode: nil, shouldInterpolate: false,
+                                  intent: .defaultIntent) else {
+            return nil
+        }
+        return UIImage(cgImage: image)
+    }
+
+    /// Runs `block` with the WebGL context current, on the thread that owns it, and waits for it: a
+    /// threaded context is only ever current on the WebGL thread, so GL work against it runs there.
+    public static func runWithWebGL(_ context: Int64, _ block: () -> Void) {
+        if context == 0 {
+            block()
+            return
+        }
+        withoutActuallyEscaping(block) { block in
+            var block = block
+            withUnsafeMutablePointer(to: &block) { pointer in
+                canvas_native_ios_webgl_run(context, { data in
+                    data?.assumingMemoryBound(to: (() -> Void).self).pointee()
+                }, pointer)
+            }
+        }
+    }
   
 
     public static func releaseWebGL(_ context: Int64) {
@@ -242,7 +280,7 @@ public class CanvasHelpers: NSObject {
 																					 cs = CanvasColorSpaceP3
 																				 }
 																				 
-                                           return canvas_native_ios_create_2d_context(view.getGlViewPtr(), width, height, alpha, density, fontColor, ppi, direction, cs)
+                                           return canvas_native_ios_create_2d_context(view.getGlLayerPtr(), width, height, alpha, density, fontColor, ppi, direction, cs)
     }
     
     public static func create2DContextMetal(

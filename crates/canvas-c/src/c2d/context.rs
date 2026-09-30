@@ -124,6 +124,13 @@ pub fn resize_gl(context: &mut CanvasRenderingContext2D, width: f32, height: f32
     context.clear_rect(0., 0., width, height);
     context.flush_and_render_to_surface();
 
+    // The view's layer changed size; its drawable follows, and is what the surface wraps.
+    #[cfg(any(target_os = "ios", target_os = "visionos", target_os = "tvos"))]
+    if let Some(gl) = context.gl_context.as_mut() {
+        gl.resize_drawable(width as i32, height as i32);
+        gl.bind_drawable();
+    }
+
     unsafe {
         gl_bindings::Viewport(0, 0, width as i32, height as i32);
         match context.window_framebuffer() {

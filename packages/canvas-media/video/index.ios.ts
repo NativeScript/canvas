@@ -4,6 +4,11 @@ import { controlsProperty, playsinlineProperty, mutedProperty, currentTimeProper
 import { booleanConverter, knownFolders, path } from '@nativescript/core';
 declare const NSCCanvasUtils, NSCVideoHelper, NSCRender, NSCVideoFrameBridge;
 
+/** The native context behind a WebGL context, whose thread video frames are uploaded on. */
+function webglContextPointer(context: any): number {
+	return Number(context?._contextPtr ?? 0);
+}
+
 interface NSCVideoHelperListener {}
 
 //@ts-ignore
@@ -126,7 +131,7 @@ export class Video extends VideoBase {
 				if (!this._renderer) {
 					this._renderer = NSCRender.alloc().init();
 				}
-				this._renderer.drawFrame(this.helper.player, this.helper.assetOutput, this.helper.videoSize, arguments[4], arguments[5], flipY);
+				this._renderer.drawFrame(this.helper.player, this.helper.assetOutput, this.helper.videoSize, arguments[4], arguments[5], flipY, webglContextPointer(arguments[1]));
 				//	NSCCanvasUtils.drawFrame(this.helper.player, this.helper.assetOutput, this.helper.videoSize, arguments[4], arguments[5], flipY);
 			} catch (e) {
 				console.error('getCurrentFrame error:', e);
@@ -146,7 +151,7 @@ export class Video extends VideoBase {
 			}
 			try {
 				//@ts-ignore
-				this._renderer.drawFrameTexImage3D(this.helper.player, this.helper.assetOutput, this.helper.videoSize, target, level, internalformat, width, height, depth, border, format, type, flipY);
+				this._renderer.drawFrameTexImage3D(this.helper.player, this.helper.assetOutput, this.helper.videoSize, target, level, internalformat, width, height, depth, border, format, type, flipY, webglContextPointer(ctx));
 				return;
 			} catch (e) {
 				console.error('getFrameForTexImage3D error:', e);
@@ -187,7 +192,7 @@ export class Video extends VideoBase {
 			}
 			try {
 				//@ts-ignore
-				this._renderer.drawFrameTexSubImage3D(this.helper.player, this.helper.assetOutput, this.helper.videoSize, target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, flipY);
+				this._renderer.drawFrameTexSubImage3D(this.helper.player, this.helper.assetOutput, this.helper.videoSize, target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, flipY, webglContextPointer(ctx));
 				return;
 			} catch (e) {
 				console.error('getFrameForTexSubImage3D error:', e);

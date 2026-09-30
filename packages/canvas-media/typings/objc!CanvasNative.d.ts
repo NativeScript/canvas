@@ -1203,7 +1203,7 @@ declare class NSCCanvas extends UIView {
 
 	forceLayout(width: number, height: number): void;
 
-	getGlViewPtr(): interop.Pointer | interop.Reference<any>;
+	getGlLayerPtr(): interop.Pointer | interop.Reference<any>;
 
 	getMtlLayerPtr(): interop.Pointer | interop.Reference<any>;
 
@@ -1498,6 +1498,8 @@ declare class NSCRender extends NSObject {
 	constructor();
 
 	drawFrame(player: AVPlayer, output: AVPlayerItemVideoOutput, videoSize: CGSize, internalFormat: number, format: number, flipYWebGL: boolean): void;
+
+	drawFrame(player: AVPlayer, output: AVPlayerItemVideoOutput, videoSize: CGSize, internalFormat: number, format: number, flipYWebGL: boolean, context: number): void;
 
 	drawFrameWithBufferWidthHeightInternalFormatFormatFlipYWebGL(buffer: any, width: number, height: number, internalFormat: number, format: number, flipYWebGL: boolean): void;
 

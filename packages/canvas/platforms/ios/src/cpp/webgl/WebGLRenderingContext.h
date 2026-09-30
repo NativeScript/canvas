@@ -1218,7 +1218,7 @@ public:
         if (type == NativeType::WebGLProgram) {
             auto program = WebGLProgram::GetPointer(value);
             if (program != nullptr) {
-                canvas_native_webgl_delete_framebuffer(
+                canvas_native_webgl_delete_program(
                         program->GetProgram(),
                         ptr->GetState()
                 );

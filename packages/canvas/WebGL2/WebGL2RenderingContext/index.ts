@@ -265,6 +265,10 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 
 	//@ts-ignore
 	getParameter(pname: number): number[] | number | WebGLBuffer | WebGLProgram | WebGLFramebuffer | WebGLRenderbuffer | WebGLTexture | Uint32Array | Int32Array | Float32Array | string | null {
+		const tracked = this._trackedBinding(pname);
+		if (tracked !== undefined) {
+			return tracked;
+		}
 		const value = this.native.getParameter(pname);
 		switch (pname) {
 			case this.COPY_READ_BUFFER_BINDING:

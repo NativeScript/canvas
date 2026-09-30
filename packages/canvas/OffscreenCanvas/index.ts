@@ -78,22 +78,21 @@ function bitmapFromWebGL(gl: any): ImageBitmap | null {
 	if (!width || !height) {
 		return null;
 	}
-	const native = gl.native;
-	const framebuffer = native.getParameter(FRAMEBUFFER_BINDING);
-	const packBuffer = gl._type === 'webgl2' ? native.getParameter(PIXEL_PACK_BUFFER_BINDING) : null;
+	const framebuffer = gl.getParameter(FRAMEBUFFER_BINDING);
+	const packBuffer = gl._type === 'webgl2' ? gl.getParameter(PIXEL_PACK_BUFFER_BINDING) : null;
 	if (framebuffer) {
-		native.bindFramebuffer(FRAMEBUFFER, null);
+		gl.bindFramebuffer(FRAMEBUFFER, null);
 	}
 	if (packBuffer) {
-		native.bindBuffer(PIXEL_PACK_BUFFER, null);
+		gl.bindBuffer(PIXEL_PACK_BUFFER, null);
 	}
 	const rows = new Uint8Array(width * height * 4);
-	native.readPixels(0, 0, width, height, RGBA, UNSIGNED_BYTE, rows);
+	gl.native.readPixels(0, 0, width, height, RGBA, UNSIGNED_BYTE, rows);
 	if (framebuffer) {
-		native.bindFramebuffer(FRAMEBUFFER, framebuffer);
+		gl.bindFramebuffer(FRAMEBUFFER, framebuffer);
 	}
 	if (packBuffer) {
-		native.bindBuffer(PIXEL_PACK_BUFFER, packBuffer);
+		gl.bindBuffer(PIXEL_PACK_BUFFER, packBuffer);
 	}
 
 	const stride = width * 4;
@@ -147,7 +146,7 @@ const CLEAR_ALL = 0x4000 | 0x0100 | 0x0400;
 /** Clears the drawing buffer as a present would, leaving the app's GL state as it was. */
 function clearWebGL(gl: any) {
 	const native = gl.native;
-	const framebuffer = native.getParameter(FRAMEBUFFER_BINDING);
+	const framebuffer = gl.getParameter(FRAMEBUFFER_BINDING);
 	const scissor = native.isEnabled(SCISSOR_TEST);
 	const color = native.getParameter(COLOR_CLEAR_VALUE);
 	const colorMask = native.getParameter(COLOR_WRITEMASK);
@@ -157,7 +156,7 @@ function clearWebGL(gl: any) {
 	const stencilMask = native.getParameter(STENCIL_WRITEMASK);
 
 	if (framebuffer) {
-		native.bindFramebuffer(FRAMEBUFFER, null);
+		gl.bindFramebuffer(FRAMEBUFFER, null);
 	}
 	if (scissor) {
 		native.disable(SCISSOR_TEST);
@@ -180,7 +179,7 @@ function clearWebGL(gl: any) {
 		native.enable(SCISSOR_TEST);
 	}
 	if (framebuffer) {
-		native.bindFramebuffer(FRAMEBUFFER, framebuffer);
+		gl.bindFramebuffer(FRAMEBUFFER, framebuffer);
 	}
 }
 

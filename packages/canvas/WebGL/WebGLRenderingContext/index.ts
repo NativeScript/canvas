@@ -55,7 +55,37 @@ enum ContextType {
 
 let ctor;
 declare const NSCWebGLRenderingContext;
+const FRAMEBUFFER = 0x8d40;
+const READ_FRAMEBUFFER = 0x8ca8;
+const DRAW_FRAMEBUFFER = 0x8ca9;
+const FRAMEBUFFER_BINDING = 0x8ca6;
+const READ_FRAMEBUFFER_BINDING = 0x8caa;
+const PIXEL_PACK_BUFFER = 0x88eb;
+const PIXEL_PACK_BUFFER_BINDING = 0x88ed;
+
 export class WebGLRenderingContextBase extends WebGLRenderingCommon {
+	/**
+	 * What this context last bound, which getParameter hands back as the web does. The native side
+	 * reports bare names, which bind nothing when passed back, and on iOS names the view's own
+	 * framebuffer when none is bound.
+	 */
+	protected _drawFramebuffer: WebGLFramebuffer | null = null;
+	protected _readFramebuffer: WebGLFramebuffer | null = null;
+	protected _pixelPackBuffer: WebGLBuffer | null = null;
+
+	/** A binding getParameter answers from what was bound; `undefined` for any other pname. */
+	protected _trackedBinding(pname: number): WebGLFramebuffer | WebGLBuffer | null | undefined {
+		switch (pname) {
+			case FRAMEBUFFER_BINDING:
+				return this._drawFramebuffer;
+			case READ_FRAMEBUFFER_BINDING:
+				return this._type === 'webgl2' ? this._readFramebuffer : undefined;
+			case PIXEL_PACK_BUFFER_BINDING:
+				return this._type === 'webgl2' ? this._pixelPackBuffer : undefined;
+			default:
+				return undefined;
+		}
+	}
 	public static isDebug = false;
 	public static filter: 'both' | 'error' | 'args' = 'both';
 	_context;
@@ -139,12 +169,21 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 	bindBuffer(target: number, buffer: WebGLBuffer): void {
 		const value = buffer ? buffer.native : 0;
 		this.native.bindBuffer(target, value);
+		if (target === PIXEL_PACK_BUFFER) {
+			this._pixelPackBuffer = buffer ?? null;
+		}
 	}
 
 	@profile
 	bindFramebuffer(target: number, framebuffer: WebGLFramebuffer): void {
 		const value = framebuffer ? framebuffer.native : 0;
 		this.native.bindFramebuffer(target, value);
+		if (target === FRAMEBUFFER || target === DRAW_FRAMEBUFFER) {
+			this._drawFramebuffer = framebuffer ?? null;
+		}
+		if (target === FRAMEBUFFER || target === READ_FRAMEBUFFER) {
+			this._readFramebuffer = framebuffer ?? null;
+		}
 	}
 
 	@profile
@@ -300,12 +339,22 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 	deleteBuffer(buffer: WebGLBuffer): void {
 		const value = buffer.native;
 		this.native.deleteBuffer(value);
+		if (this._pixelPackBuffer === buffer) {
+			this._pixelPackBuffer = null;
+		}
 	}
 
 	@profile
 	deleteFramebuffer(frameBuffer: WebGLFramebuffer): void {
 		const value = frameBuffer.native;
 		this.native.deleteFramebuffer(value);
+		// Deleting a bound framebuffer unbinds it.
+		if (this._drawFramebuffer === frameBuffer) {
+			this._drawFramebuffer = null;
+		}
+		if (this._readFramebuffer === frameBuffer) {
+			this._readFramebuffer = null;
+		}
 	}
 
 	@profile
@@ -589,6 +638,10 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 
 	@profile
 	getParameter(pname: number): number[] | number | WebGLBuffer | WebGLProgram | WebGLFramebuffer | WebGLRenderbuffer | WebGLTexture | Uint32Array | Int32Array | Float32Array | string | null {
+		const tracked = this._trackedBinding(pname);
+		if (tracked !== undefined) {
+			return tracked;
+		}
 		const value = this.native.getParameter(pname);
 		return this._handleGetParameter(pname, value);
 	}

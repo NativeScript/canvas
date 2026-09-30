@@ -7,8 +7,7 @@ use std::sync::OnceLock;
 
 use objc2::ffi::BOOL;
 use objc2::{class, msg_send, msg_send_id, rc::Id, Encode, Encoding};
-use objc2_foundation::{NSData, NSInteger, NSObject, NSUInteger};
-use objc2_foundation::{NSPoint, NSRect, NSSize};
+use objc2_foundation::{NSObject, NSUInteger};
 
 use crate::context_attributes::ContextAttributes;
 
@@ -57,18 +56,17 @@ fn forget_current_binding() {
     set_current_binding(UNBOUND);
 }
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default)]
 pub(crate) struct GLContextInner {
     context: Option<EAGLContext>,
     sharegroup: EAGLSharegroup,
-    view: Option<GLKView>,
+    drawable: Drawable,
 }
 
 #[derive(Debug, Clone)]
 pub struct GLContextRaw {
     context: Option<EAGLContext>,
     sharegroup: EAGLSharegroup,
-    view: Option<GLKView>,
 }
 
 impl GLContextRaw {
@@ -89,6 +87,19 @@ impl GLContextRaw {
 unsafe impl Sync for GLContextInner {}
 
 unsafe impl Send for GLContextInner {}
+
+impl Drop for GLContextInner {
+    fn drop(&mut self) {
+        let Some(context) = self.context.as_ref() else {
+            return;
+        };
+        if EAGLContext::set_current_context(Some(context)) {
+            self.drawable.delete();
+            // EAGL keeps the current context alive until another replaces it.
+            EAGLContext::set_current_context(None);
+        }
+    }
+}
 
 #[derive(Debug, Default)]
 pub struct GLContext(GLContextInner);
@@ -234,221 +245,255 @@ impl EAGLContext {
         let result: BOOL = unsafe { msg_send![&self.0, presentRenderbuffer: 0x8d41 as NSUInteger] };
         result.into()
     }
-}
 
-#[derive(Debug)]
-#[repr(i32)]
-pub enum GLKViewDrawableColorFormat {
-    RGBA8888 = 0,
-    RGB565 = 1,
-    SRGBA8888 = 2,
-}
-
-unsafe impl Encode for GLKViewDrawableColorFormat {
-    const ENCODING: Encoding = Encoding::ULong;
-}
-
-impl TryFrom<i32> for GLKViewDrawableColorFormat {
-    type Error = &'static str;
-
-    fn try_from(value: i32) -> Result<Self, Self::Error> {
-        match value {
-            0 => Ok(GLKViewDrawableColorFormat::RGBA8888),
-            1 => Ok(GLKViewDrawableColorFormat::RGB565),
-            2 => Ok(GLKViewDrawableColorFormat::SRGBA8888),
-            _ => Err("Invalid GLKViewDrawableColorFormat"),
-        }
-    }
-}
-
-#[derive(Debug)]
-#[repr(i32)]
-pub enum GLKViewDrawableDepthFormat {
-    DepthFormatNone = 0,
-    DepthFormat16 = 1,
-    DepthFormat24 = 2,
-}
-
-unsafe impl Encode for GLKViewDrawableDepthFormat {
-    const ENCODING: Encoding = Encoding::ULong;
-}
-
-impl TryFrom<i32> for GLKViewDrawableDepthFormat {
-    type Error = &'static str;
-
-    fn try_from(value: i32) -> Result<Self, Self::Error> {
-        match value {
-            0 => Ok(GLKViewDrawableDepthFormat::DepthFormatNone),
-            1 => Ok(GLKViewDrawableDepthFormat::DepthFormat16),
-            2 => Ok(GLKViewDrawableDepthFormat::DepthFormat24),
-            _ => Err("Invalid GLKViewDrawableDepthFormat"),
-        }
-    }
-}
-
-#[derive(Debug)]
-#[repr(i32)]
-pub enum GLKViewDrawableStencilFormat {
-    StencilFormatNone = 0,
-    StencilFormat8 = 1,
-}
-
-unsafe impl Encode for GLKViewDrawableStencilFormat {
-    const ENCODING: Encoding = Encoding::ULong;
-}
-
-impl TryFrom<i32> for GLKViewDrawableStencilFormat {
-    type Error = &'static str;
-
-    fn try_from(value: i32) -> Result<Self, Self::Error> {
-        match value {
-            0 => Ok(GLKViewDrawableStencilFormat::StencilFormatNone),
-            1 => Ok(GLKViewDrawableStencilFormat::StencilFormat8),
-            _ => Err("Invalid GLKViewDrawableStencilFormat"),
-        }
-    }
-}
-
-#[derive(Debug)]
-#[repr(i32)]
-pub enum GLKViewDrawableMultisample {
-    DrawableMultisampleNone = 0,
-    DrawableMultisample4X = 1,
-}
-
-unsafe impl Encode for GLKViewDrawableMultisample {
-    const ENCODING: Encoding = Encoding::ULong;
-}
-
-impl TryFrom<i32> for GLKViewDrawableMultisample {
-    type Error = &'static str;
-
-    fn try_from(value: i32) -> Result<Self, Self::Error> {
-        match value {
-            0 => Ok(GLKViewDrawableMultisample::DrawableMultisampleNone),
-            1 => Ok(GLKViewDrawableMultisample::DrawableMultisample4X),
-            _ => Err("Invalid GLKViewDrawableMultisample"),
-        }
-    }
-}
-
-#[derive(Clone, Debug)]
-pub(crate) struct GLKView(Id<NSObject>);
-
-impl GLKView {
-    pub fn new() -> Self {
-        let cls = class!(CanvasGLKView);
-        let instance = unsafe { msg_send_id![cls, alloc] };
-        GLKView(unsafe {
-            msg_send_id![
-                instance,
-                initWithFrame: NSRect::default()
-            ]
-        })
-    }
-
-    pub fn new_with_frame(x: f32, y: f32, width: f32, height: f32) -> Self {
-        unsafe {
-            let cls = class!(CanvasGLKView);
-            let instance = msg_send_id![cls, alloc];
-            let point = NSPoint::new(x as f64, y as f64);
-            let size = NSSize::new(width as f64, height as f64);
-            let frame = NSRect::new(point, size);
-            GLKView(msg_send_id![instance, initWithFrame: frame])
-        }
-    }
-
-    pub fn snapshot(&self) -> Vec<u8> {
-        let width = self.drawable_width();
-        let height = self.drawable_height();
-        let size = width * height * 4;
-        let mut buf = vec![0u8; size as usize];
-        let mut data = unsafe {
-            NSData::dataWithBytesNoCopy_length(
-                NonNull::new(buf.as_mut_ptr() as _).unwrap(),
-                size as NSUInteger,
-            )
+    /// Stores the bound renderbuffer in `layer` (a `CAEAGLLayer`), at the layer's size in pixels.
+    pub fn renderbuffer_storage_from_drawable(&self, layer: &NSObject) -> bool {
+        let result: BOOL = unsafe {
+            msg_send![&self.0, renderbufferStorage: 0x8d41 as NSUInteger, fromDrawable: layer]
         };
-        let _: () = unsafe { msg_send![&self.0, snapshotWithData: &*data] };
-        forget_current_binding(); // GLKView binds its own context
-        buf
+        result.into()
     }
+}
 
-    pub fn display(&self) {
-        let _: () = unsafe { msg_send![&self.0, display] };
-        forget_current_binding(); // GLKView binds its own context
-    }
+type DiscardFramebuffer = unsafe extern "C" fn(target: u32, count: i32, attachments: *const u32);
 
-    pub fn drawable_width(&self) -> NSInteger {
-        return unsafe { msg_send![&self.0, drawableWidth] };
-    }
+/// `glDiscardFramebufferEXT`, for GLES2 contexts, which lack `glInvalidateFramebuffer`.
+fn discard_framebuffer_ext() -> Option<DiscardFramebuffer> {
+    static DISCARD: OnceLock<Option<DiscardFramebuffer>> = OnceLock::new();
+    *DISCARD.get_or_init(|| {
+        let function = super::get_proc_address("glDiscardFramebufferEXT");
+        (!function.is_null())
+            .then(|| unsafe { std::mem::transmute::<*const c_void, DiscardFramebuffer>(function) })
+    })
+}
 
-    pub fn drawable_height(&self) -> NSInteger {
-        return unsafe { msg_send![&self.0, drawableHeight] };
-    }
+fn bound(binding: u32) -> u32 {
+    let mut name = 0;
+    unsafe { gl_bindings::GetIntegerv(binding, &mut name) };
+    name as u32
+}
 
-    pub fn bind_drawable(&self) {
-        let _: () = unsafe { msg_send![&self.0, bindDrawable] };
-        forget_current_binding(); // GLKView binds its own context
-    }
+/// What a context draws to by default (WebGL's null framebuffer, a 2D surface): a framebuffer
+/// whose color buffer is stored in a view's `CAEAGLLayer` and presented to it, or a plain one
+/// offscreen. Everything here runs with the context current, on whichever thread owns it: none of
+/// it needs the main thread.
+#[derive(Debug, Default)]
+struct Drawable {
+    layer: Option<Id<NSObject>>,
+    framebuffer: u32,
+    color: u32,
+    /// Packed depth and stencil, attached as either or both.
+    depth_stencil: u32,
+    depth: bool,
+    stencil: bool,
+    /// Depth and stencil outlive a present (preserveDrawingBuffer).
+    preserve: bool,
+    legacy: bool,
+    width: i32,
+    height: i32,
+}
 
-    pub fn delete_drawable(&self) {
-        let _: () = unsafe { msg_send![&self.0, deleteDrawable] };
-    }
-
-    pub fn set_alpha(&self, alpha: bool) {
-        let layer: Id<NSObject> = unsafe { msg_send_id![&self.0, layer] };
-        let _: () = unsafe { msg_send![&layer, setOpaque: !alpha] };
-    }
-
-    pub fn get_alpha(&self) -> bool {
-        let layer: Id<NSObject> = unsafe { msg_send_id![&self.0, layer] };
-        let ret: bool = unsafe { msg_send![&layer, isOpaque] };
-        !ret
-    }
-
-    pub fn set_drawable_depth_format(&self, format: GLKViewDrawableDepthFormat) {
-        let _: () = unsafe { msg_send![&self.0, drawableDepthFormat: format] };
-    }
-
-    pub fn get_drawable_depth_format(&self) -> GLKViewDrawableDepthFormat {
-        let depth: i32 = unsafe { msg_send![&self.0, drawableDepthFormat] };
-        GLKViewDrawableDepthFormat::try_from(depth).unwrap()
-    }
-
-    pub fn set_drawable_stencil_format(&self, format: GLKViewDrawableStencilFormat) {
-        let _: () = unsafe { msg_send![&self.0, drawableStencilFormat: format] };
-    }
-
-    pub fn get_drawable_stencil_format(&self) -> GLKViewDrawableStencilFormat {
-        let stencil: i32 = unsafe { msg_send![&self.0, drawableStencilFormat] };
-        GLKViewDrawableStencilFormat::try_from(stencil).unwrap()
-    }
-
-    pub fn set_drawable_multisample(&self, sample: GLKViewDrawableMultisample) {
-        let _: () = unsafe { msg_send![&self.0, drawableMultisample: sample] };
-    }
-
-    pub fn get_drawable_multisample(&self) -> GLKViewDrawableMultisample {
-        let sample: i32 = unsafe { msg_send![&self.0, drawableMultisample] };
-        GLKViewDrawableMultisample::try_from(sample).unwrap()
-    }
-
-    pub fn set_context(&mut self, context: Option<&EAGLContext>) {
-        match context {
-            Some(context) => {
-                let _: () = unsafe { msg_send![&self.0, setContext: &*context.0] };
+impl Drawable {
+    fn new(layer: Option<Id<NSObject>>, attrs: &ContextAttributes) -> Self {
+        let mut drawable = Drawable {
+            layer,
+            depth: attrs.get_depth(),
+            // 2D clips through the stencil.
+            stencil: attrs.get_stencil() || attrs.get_is_canvas(),
+            preserve: attrs.get_preserve_drawing_buffer(),
+            legacy: attrs.get_gl_legacy(),
+            ..Default::default()
+        };
+        unsafe {
+            gl_bindings::GenFramebuffers(1, &mut drawable.framebuffer);
+            gl_bindings::GenRenderbuffers(1, &mut drawable.color);
+            if drawable.depth || drawable.stencil {
+                gl_bindings::GenRenderbuffers(1, &mut drawable.depth_stencil);
             }
-            None => {
-                let nil: *mut NSObject = std::ptr::null_mut();
-                let _: () = unsafe { msg_send![&self.0, setContext: nil] };
+        }
+        drawable
+    }
+
+    /// (Re)allocates the buffers, at the layer's size in pixels or `width` x `height` offscreen, and
+    /// leaves the framebuffer bound. A layer with no size yet leaves it incomplete.
+    fn store(&mut self, context: &EAGLContext, width: i32, height: i32) {
+        unsafe {
+            let renderbuffer = bound(gl_bindings::RENDERBUFFER_BINDING);
+            gl_bindings::BindRenderbuffer(gl_bindings::RENDERBUFFER, self.color);
+            match self.layer.as_ref() {
+                Some(layer) => {
+                    context.renderbuffer_storage_from_drawable(layer);
+                }
+                None => gl_bindings::RenderbufferStorage(
+                    gl_bindings::RENDERBUFFER,
+                    gl_bindings::RGBA8,
+                    width.max(1),
+                    height.max(1),
+                ),
+            }
+            gl_bindings::GetRenderbufferParameteriv(
+                gl_bindings::RENDERBUFFER,
+                gl_bindings::RENDERBUFFER_WIDTH,
+                &mut self.width,
+            );
+            gl_bindings::GetRenderbufferParameteriv(
+                gl_bindings::RENDERBUFFER,
+                gl_bindings::RENDERBUFFER_HEIGHT,
+                &mut self.height,
+            );
+            if self.depth_stencil != 0 && self.width > 0 && self.height > 0 {
+                gl_bindings::BindRenderbuffer(gl_bindings::RENDERBUFFER, self.depth_stencil);
+                gl_bindings::RenderbufferStorage(
+                    gl_bindings::RENDERBUFFER,
+                    gl_bindings::DEPTH24_STENCIL8,
+                    self.width,
+                    self.height,
+                );
+            }
+            gl_bindings::BindRenderbuffer(gl_bindings::RENDERBUFFER, renderbuffer);
+
+            gl_bindings::BindFramebuffer(gl_bindings::FRAMEBUFFER, self.framebuffer);
+            gl_bindings::FramebufferRenderbuffer(
+                gl_bindings::FRAMEBUFFER,
+                gl_bindings::COLOR_ATTACHMENT0,
+                gl_bindings::RENDERBUFFER,
+                self.color,
+            );
+            if self.depth {
+                gl_bindings::FramebufferRenderbuffer(
+                    gl_bindings::FRAMEBUFFER,
+                    gl_bindings::DEPTH_ATTACHMENT,
+                    gl_bindings::RENDERBUFFER,
+                    self.depth_stencil,
+                );
+            }
+            if self.stencil {
+                gl_bindings::FramebufferRenderbuffer(
+                    gl_bindings::FRAMEBUFFER,
+                    gl_bindings::STENCIL_ATTACHMENT,
+                    gl_bindings::RENDERBUFFER,
+                    self.depth_stencil,
+                );
             }
         }
     }
 
-    pub fn get_context(&self) -> Option<EAGLContext> {
-        let context: Option<Id<NSObject>> = unsafe { msg_send_id![&self.0, context] };
-        context.map(EAGLContext)
+    fn bind(&self) {
+        unsafe { gl_bindings::BindFramebuffer(gl_bindings::FRAMEBUFFER, self.framebuffer) };
+    }
+
+    /// Tells the GPU depth and stencil needn't be written back to memory: the next frame starts
+    /// them over.
+    fn discard_depth_stencil(&self) {
+        let mut attachments = [0u32; 2];
+        let mut count = 0;
+        if self.depth {
+            attachments[count] = gl_bindings::DEPTH_ATTACHMENT;
+            count += 1;
+        }
+        if self.stencil {
+            attachments[count] = gl_bindings::STENCIL_ATTACHMENT;
+            count += 1;
+        }
+        if count == 0 {
+            return;
+        }
+        unsafe {
+            let framebuffer = bound(gl_bindings::FRAMEBUFFER_BINDING);
+            self.bind();
+            if self.legacy {
+                if let Some(discard) = discard_framebuffer_ext() {
+                    discard(gl_bindings::FRAMEBUFFER, count as i32, attachments.as_ptr());
+                }
+            } else {
+                gl_bindings::InvalidateFramebuffer(
+                    gl_bindings::FRAMEBUFFER,
+                    count as i32,
+                    attachments.as_ptr(),
+                );
+            }
+            gl_bindings::BindFramebuffer(gl_bindings::FRAMEBUFFER, framebuffer);
+        }
+    }
+
+    /// Hands the color buffer to the layer. Callable from any thread: the layer takes it with the
+    /// next Core Animation commit, without waiting on the main thread.
+    fn present(&self, context: &EAGLContext) -> bool {
+        if self.layer.is_none() || self.width == 0 || self.height == 0 {
+            return false;
+        }
+        if !self.preserve {
+            self.discard_depth_stencil();
+        }
+        unsafe {
+            let renderbuffer = bound(gl_bindings::RENDERBUFFER_BINDING);
+            gl_bindings::BindRenderbuffer(gl_bindings::RENDERBUFFER, self.color);
+            let presented = context.present_renderbuffer();
+            gl_bindings::BindRenderbuffer(gl_bindings::RENDERBUFFER, renderbuffer);
+            presented
+        }
+    }
+
+    /// The color buffer as top-down RGBA.
+    fn read(&self) -> Vec<u8> {
+        let (width, height) = (self.width.max(0) as usize, self.height.max(0) as usize);
+        let row = width * 4;
+        let mut pixels = vec![0u8; row * height];
+        if pixels.is_empty() {
+            return pixels;
+        }
+        unsafe {
+            let framebuffer = bound(gl_bindings::FRAMEBUFFER_BINDING);
+            let pack_buffer = if self.legacy {
+                0
+            } else {
+                bound(gl_bindings::PIXEL_PACK_BUFFER_BINDING)
+            };
+            let mut alignment = 4;
+            gl_bindings::GetIntegerv(gl_bindings::PACK_ALIGNMENT, &mut alignment);
+            if pack_buffer != 0 {
+                gl_bindings::BindBuffer(gl_bindings::PIXEL_PACK_BUFFER, 0);
+            }
+            self.bind();
+            gl_bindings::PixelStorei(gl_bindings::PACK_ALIGNMENT, 4);
+            gl_bindings::ReadPixels(
+                0,
+                0,
+                width as i32,
+                height as i32,
+                gl_bindings::RGBA,
+                gl_bindings::UNSIGNED_BYTE,
+                pixels.as_mut_ptr() as *mut c_void,
+            );
+            gl_bindings::PixelStorei(gl_bindings::PACK_ALIGNMENT, alignment);
+            gl_bindings::BindFramebuffer(gl_bindings::FRAMEBUFFER, framebuffer);
+            if pack_buffer != 0 {
+                gl_bindings::BindBuffer(gl_bindings::PIXEL_PACK_BUFFER, pack_buffer);
+            }
+        }
+        // GL reads bottom-up.
+        for y in 0..height / 2 {
+            let (upper, lower) = pixels.split_at_mut((height - 1 - y) * row);
+            upper[y * row..(y + 1) * row].swap_with_slice(&mut lower[..row]);
+        }
+        pixels
+    }
+
+    fn delete(&mut self) {
+        unsafe {
+            if self.framebuffer != 0 {
+                gl_bindings::DeleteFramebuffers(1, &self.framebuffer);
+            }
+            if self.color != 0 {
+                gl_bindings::DeleteRenderbuffers(1, &self.color);
+            }
+            if self.depth_stencil != 0 {
+                gl_bindings::DeleteRenderbuffers(1, &self.depth_stencil);
+            }
+        }
+        self.framebuffer = 0;
+        self.color = 0;
+        self.depth_stencil = 0;
     }
 }
 
@@ -457,57 +502,68 @@ impl GLContext {
         GLContextRaw {
             context: self.0.context.clone(),
             sharegroup: self.0.sharegroup.clone(),
-            view: self.0.view.clone(),
         }
     }
 
-    pub fn set_surface(&mut self, view: NonNull<c_void>) -> bool {
-        let glview = unsafe { Id::<NSObject>::from_raw(view.as_ptr() as _) };
-        match glview {
-            None => false,
-            Some(glview) => {
-                let id = glview.clone();
-                let glview = GLKView(id);
-                self.0.view = Some(glview);
-                true
-            }
+    /// Moves the drawable to another `CAEAGLLayer`.
+    pub fn set_surface(&mut self, layer: NonNull<c_void>) -> bool {
+        let Some(layer) = (unsafe { Id::<NSObject>::retain(layer.as_ptr() as _) }) else {
+            return false;
+        };
+        let Some(context) = self.0.context.clone() else {
+            return false;
+        };
+        if !EAGLContext::set_current_context(Some(&context)) {
+            return false;
         }
+        let framebuffer = bound(gl_bindings::FRAMEBUFFER_BINDING);
+        self.0.drawable.layer = Some(layer);
+        self.0.drawable.store(&context, 0, 0);
+        unsafe { gl_bindings::BindFramebuffer(gl_bindings::FRAMEBUFFER, framebuffer) };
+        true
     }
+
+    /// Reallocates the drawable after its layer changed size (`width` and `height` size an
+    /// offscreen one). Its contents are lost; the bindings are kept.
+    pub fn resize_drawable(&mut self, width: i32, height: i32) {
+        let Some(context) = self.0.context.clone() else {
+            return;
+        };
+        if !EAGLContext::set_current_context(Some(&context)) {
+            return;
+        }
+        let framebuffer = bound(gl_bindings::FRAMEBUFFER_BINDING);
+        self.0.drawable.store(&context, width, height);
+        unsafe { gl_bindings::BindFramebuffer(gl_bindings::FRAMEBUFFER, framebuffer) };
+    }
+
+    /// `layer` is the view's `CAEAGLLayer`.
     pub fn create_shared_window_context(
         context_attrs: &mut ContextAttributes,
-        view: NonNull<c_void>,
+        layer: NonNull<c_void>,
         context: &GLContext,
     ) -> Option<Self> {
-        let glview = unsafe { Id::<NSObject>::retain(view.as_ptr() as _) };
-        match glview {
-            None => None,
-            Some(glview) => {
-                let glview = GLKView(glview);
-                GLContext::create_window_context_with_gl_view(context_attrs, glview, Some(context))
-            }
-        }
+        let layer = unsafe { Id::<NSObject>::retain(layer.as_ptr() as _) }?;
+        GLContext::create(context_attrs, Some(layer), 0, 0, Some(context))
     }
 
+    /// `layer` is the view's `CAEAGLLayer`.
     pub fn create_window_context(
         context_attrs: &mut ContextAttributes,
-        view: NonNull<c_void>,
+        layer: NonNull<c_void>,
     ) -> Option<Self> {
-        let glview = unsafe { Id::<NSObject>::from_raw(view.as_ptr() as _) };
-        match glview {
-            None => None,
-            Some(glview) => {
-                let glview = GLKView(glview);
-                GLContext::create_window_context_with_gl_view(context_attrs, glview, None)
-            }
-        }
+        let layer = unsafe { Id::<NSObject>::retain(layer.as_ptr() as _) }?;
+        GLContext::create(context_attrs, Some(layer), 0, 0, None)
     }
 
-    pub(crate) fn create_window_context_with_gl_view(
+    /// Makes the context current on the calling thread, with its drawable bound.
+    fn create(
         context_attrs: &mut ContextAttributes,
-        mut view: GLKView,
+        layer: Option<Id<NSObject>>,
+        width: i32,
+        height: i32,
         shared_context: Option<&GLContext>,
     ) -> Option<Self> {
-        let gl_view = view.clone();
         IS_GL_SYMBOLS_LOADED.get_or_init(|| {
             gl_bindings::load_with(|symbol| super::get_proc_address(symbol).cast());
             true
@@ -531,24 +587,21 @@ impl GLContext {
             }
         };
 
-        let context = EAGLContext::new_with_api_sharegroup(api, &share_group);
+        let context = EAGLContext::new_with_api_sharegroup(api, &share_group)?;
 
-        if context.is_none() {
+        if !EAGLContext::set_current_context(Some(&context)) {
             return None;
         }
 
-        view.set_context(context.as_ref());
+        let mut drawable = Drawable::new(layer, context_attrs);
+        drawable.store(&context, width, height);
+        unsafe { gl_bindings::Viewport(0, 0, drawable.width, drawable.height) };
 
-        EAGLContext::set_current_context(context.as_ref());
-        view.display();
-
-        let inner = GLContextInner {
-            context,
+        Some(GLContext(GLContextInner {
+            context: Some(context),
             sharegroup: share_group,
-            view: Some(view),
-        };
-
-        Some(GLContext(inner))
+            drawable,
+        }))
     }
 
     pub fn create_offscreen_context(
@@ -556,9 +609,7 @@ impl GLContext {
         width: i32,
         height: i32,
     ) -> Option<GLContext> {
-        let view = GLKView::new_with_frame(0., 0., width as f32, height as f32);
-
-        GLContext::create_window_context_with_gl_view(context_attrs, view, None)
+        GLContext::create(context_attrs, None, width, height, None)
     }
 
     pub fn create_shared_offscreen_context(
@@ -567,8 +618,7 @@ impl GLContext {
         height: i32,
         shared_context: &GLContext,
     ) -> Option<GLContext> {
-        let view = GLKView::new_with_frame(0., 0., width as f32, height as f32);
-        GLContext::create_window_context_with_gl_view(context_attrs, view, Some(shared_context))
+        GLContext::create(context_attrs, None, width, height, Some(shared_context))
     }
 
     fn has_extension(extensions: &str, name: &str) -> bool {
@@ -579,8 +629,12 @@ impl GLContext {
         true
     }
 
+    /// The drawable as top-down RGBA.
     pub fn snapshot(&self) -> Option<Vec<u8>> {
-        self.0.view.as_ref().map(|view| view.snapshot())
+        if !self.make_current() {
+            return None;
+        }
+        Some(self.0.drawable.read())
     }
 
     pub fn set_vsync(&self, _sync: bool) -> bool {
@@ -603,45 +657,25 @@ impl GLContext {
     }
 
     pub fn bind_drawable(&self) {
-        if let Some(view) = self.0.view.as_ref() {
-            view.bind_drawable();
-        }
+        self.0.drawable.bind();
     }
 
     pub fn swap_buffers(&self) -> bool {
-        if let Some(view) = self.0.view.as_ref() {
-            view.display();
-            return true;
+        match self.0.context.as_ref() {
+            Some(context) => self.0.drawable.present(context),
+            None => false,
         }
-        false
     }
 
     pub fn get_surface_width(&self) -> i32 {
-        self.0
-            .view
-            .as_ref()
-            .map(|v| v.drawable_width().try_into().unwrap_or_default())
-            .unwrap()
+        self.0.drawable.width
     }
 
     pub fn get_surface_height(&self) -> i32 {
-        self.0
-            .view
-            .as_ref()
-            .map(|v| v.drawable_height().try_into().unwrap_or_default())
-            .unwrap()
+        self.0.drawable.height
     }
 
     pub fn get_surface_dimensions(&self) -> (i32, i32) {
-        self.0
-            .view
-            .as_ref()
-            .map(|v| {
-                (
-                    v.drawable_width().try_into().unwrap_or_default(),
-                    v.drawable_height().try_into().unwrap_or_default(),
-                )
-            })
-            .unwrap()
+        (self.0.drawable.width, self.0.drawable.height)
     }
 }

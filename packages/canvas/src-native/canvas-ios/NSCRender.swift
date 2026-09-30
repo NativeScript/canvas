@@ -29,9 +29,19 @@ public class NSCRender: NSObject {
 	private var context: EAGLContext?
 	private var width: GLuint = 0
 	private var height: GLuint = 0
+	private var glReady = false
 	
 	public override init() {
 		super.init()
+	}
+
+	/// Made on first use, with the context current then: a threaded WebGL context is only current
+	/// on its own thread, not where this was made.
+	private func setupGL() {
+		if(glReady){
+			return
+		}
+		glReady = true
 		context = EAGLContext.current()
 		guard let context = context else {return}
 #if !targetEnvironment(simulator)
@@ -95,22 +105,31 @@ public class NSCRender: NSObject {
 		return (tex, c)
 	}
 	
-	public func drawFrame(_ player: AVPlayer, _ output: AVPlayerItemVideoOutput,_ videoSize: CGSize, _ internalFormat: Int32,_ format: Int32,_ flipYWebGL: Bool){
+	private func nextPixelBuffer(_ player: AVPlayer, _ output: AVPlayerItemVideoOutput) -> CVPixelBuffer? {
 		let currentTime = player.currentTime()
 		
-		if(!output.hasNewPixelBuffer(forItemTime: currentTime)) {return}
+		if(!output.hasNewPixelBuffer(forItemTime: currentTime)) {return nil}
 		
 		var presentationTime = CMTime.zero
 		
-		let buffer = output.copyPixelBuffer(forItemTime: currentTime, itemTimeForDisplay: &presentationTime)
-		
-		guard let pixel_buffer = buffer else {return}
-		
+		return output.copyPixelBuffer(forItemTime: currentTime, itemTimeForDisplay: &presentationTime)
+	}
+	
+	public func drawFrame(_ player: AVPlayer, _ output: AVPlayerItemVideoOutput,_ videoSize: CGSize, _ internalFormat: Int32,_ format: Int32,_ flipYWebGL: Bool){
+		drawFrame(player, output, videoSize, internalFormat, format, flipYWebGL, 0)
+	}
+	
+	/// Uploads the current frame into the texture bound in `context` (a WebGL context), on the thread
+	/// that owns it.
+	public func drawFrame(_ player: AVPlayer, _ output: AVPlayerItemVideoOutput,_ videoSize: CGSize, _ internalFormat: Int32,_ format: Int32,_ flipYWebGL: Bool, _ context: Int64){
+		guard let pixel_buffer = nextPixelBuffer(player, output) else {return}
 		
 		let width = CVPixelBufferGetWidth(pixel_buffer)
 		let height = CVPixelBufferGetHeight(pixel_buffer)
 		
-		drawFrame(buffer: pixel_buffer, width: Int(width), height: Int(height), internalFormat: internalFormat, format: format, flipYWebGL: flipYWebGL)
+		CanvasHelpers.runWithWebGL(context) {
+			drawFrame(buffer: pixel_buffer, width: Int(width), height: Int(height), internalFormat: internalFormat, format: format, flipYWebGL: flipYWebGL)
+		}
 	}
 	
 	
@@ -410,6 +429,7 @@ public class NSCRender: NSObject {
 	public func drawFrame(buffer:CVPixelBuffer, width: Int, height: Int, internalFormat: Int32,
 												format: Int32,
 												flipYWebGL: Bool){
+		setupGL()
 #if targetEnvironment(simulator)
 		drawBuffer(buffer: buffer, width: width, height: height, internalFormat: internalFormat, format: format, flipYWebGL: flipYWebGL)
 #else
@@ -561,13 +581,20 @@ public class NSCRender: NSObject {
 	                                 _ target: Int32, _ level: Int32, _ internalFormat: Int32,
 	                                 _ width: Int32, _ height: Int32, _ depth: Int32, _ border: Int32,
 	                                 _ format: Int32, _ type: Int32, _ flipYWebGL: Bool) {
-		let currentTime = player.currentTime()
-		guard output.hasNewPixelBuffer(forItemTime: currentTime) else { return }
-		var presentationTime = CMTime.zero
-		guard let buffer = output.copyPixelBuffer(forItemTime: currentTime, itemTimeForDisplay: &presentationTime) else { return }
-		uploadPixelBufferTexImage3D(buffer: buffer, target: target, level: level,
-		                            internalFormat: internalFormat, width: width, height: height,
-		                            depth: depth, border: border, flipYWebGL: flipYWebGL)
+		drawFrameTexImage3D(player, output, videoSize, target, level, internalFormat, width, height, depth, border, format, type, flipYWebGL, 0)
+	}
+
+	/// `drawFrameTexImage3D`, on the thread that owns `context` (a WebGL context).
+	public func drawFrameTexImage3D(_ player: AVPlayer, _ output: AVPlayerItemVideoOutput, _ videoSize: CGSize,
+	                                 _ target: Int32, _ level: Int32, _ internalFormat: Int32,
+	                                 _ width: Int32, _ height: Int32, _ depth: Int32, _ border: Int32,
+	                                 _ format: Int32, _ type: Int32, _ flipYWebGL: Bool, _ context: Int64) {
+		guard let buffer = nextPixelBuffer(player, output) else { return }
+		CanvasHelpers.runWithWebGL(context) {
+			uploadPixelBufferTexImage3D(buffer: buffer, target: target, level: level,
+			                            internalFormat: internalFormat, width: width, height: height,
+			                            depth: depth, border: border, flipYWebGL: flipYWebGL)
+		}
 	}
 
 	public func drawFrameTexSubImage3D(_ player: AVPlayer, _ output: AVPlayerItemVideoOutput, _ videoSize: CGSize,
@@ -575,13 +602,21 @@ public class NSCRender: NSObject {
 	                                    _ xoffset: Int32, _ yoffset: Int32, _ zoffset: Int32,
 	                                    _ width: Int32, _ height: Int32, _ depth: Int32,
 	                                    _ format: Int32, _ type: Int32, _ flipYWebGL: Bool) {
-		let currentTime = player.currentTime()
-		guard output.hasNewPixelBuffer(forItemTime: currentTime) else { return }
-		var presentationTime = CMTime.zero
-		guard let buffer = output.copyPixelBuffer(forItemTime: currentTime, itemTimeForDisplay: &presentationTime) else { return }
-		uploadPixelBufferTexSubImage3D(buffer: buffer, target: target, level: level,
-		                               xoffset: xoffset, yoffset: yoffset, zoffset: zoffset,
-		                               width: width, height: height, depth: depth, flipYWebGL: flipYWebGL)
+		drawFrameTexSubImage3D(player, output, videoSize, target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, flipYWebGL, 0)
+	}
+
+	/// `drawFrameTexSubImage3D`, on the thread that owns `context` (a WebGL context).
+	public func drawFrameTexSubImage3D(_ player: AVPlayer, _ output: AVPlayerItemVideoOutput, _ videoSize: CGSize,
+	                                    _ target: Int32, _ level: Int32,
+	                                    _ xoffset: Int32, _ yoffset: Int32, _ zoffset: Int32,
+	                                    _ width: Int32, _ height: Int32, _ depth: Int32,
+	                                    _ format: Int32, _ type: Int32, _ flipYWebGL: Bool, _ context: Int64) {
+		guard let buffer = nextPixelBuffer(player, output) else { return }
+		CanvasHelpers.runWithWebGL(context) {
+			uploadPixelBufferTexSubImage3D(buffer: buffer, target: target, level: level,
+			                               xoffset: xoffset, yoffset: yoffset, zoffset: zoffset,
+			                               width: width, height: height, depth: depth, flipYWebGL: flipYWebGL)
+		}
 	}
 
 

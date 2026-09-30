@@ -60,6 +60,12 @@ export class Canvas extends CanvasBase {
 
 	/** Default for `getContext('2d', { threaded })`: rasterize on a shared render thread. */
 	static threaded2D = true;
+
+	/**
+	 * Default for `getContext('webgl' | 'webgl2', { threaded })`: run the context on the WebGL
+	 * thread, so GL work and presenting never block the UI thread.
+	 */
+	static threadedWebGL = true;
 	surfaceOnTop = false;
 	_renderer;
 
@@ -521,6 +527,16 @@ export class Canvas extends CanvasBase {
 		return context;
 	}
 
+	private __setThreadedWebGL(options?: any) {
+		const threaded = !!(options?.threaded ?? Canvas.threadedWebGL);
+		if ('threadedWebGL' in this._canvas) {
+			this._canvas.threadedWebGL = threaded;
+		}
+		if (threaded) {
+			holdBackAnimationFramesWhileBehind();
+		}
+	}
+
 	_hasContext(): boolean {
 		return this._contextType !== ContextType.None;
 	}
@@ -569,6 +585,7 @@ export class Canvas extends CanvasBase {
 				if (!this._webglContext) {
 					const opts = { version: 1, ...defaultOpts, ...handleContextOptions(type, options) };
 
+					this.__setThreadedWebGL(options);
 					this._canvas.initContext(type, opts.alpha, false, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible, false, opts.colorSpace ?? 0);
 
 					this._webglContext = new (WebGLRenderingContext as any)(this._canvas, opts);
@@ -585,6 +602,7 @@ export class Canvas extends CanvasBase {
 				if (!this._webgl2Context) {
 					const opts = { version: 2, ...defaultOpts, ...handleContextOptions(type, options) };
 
+					this.__setThreadedWebGL(options);
 					this._canvas.initContext(type, opts.alpha, false, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible, false, opts.colorSpace ?? 0);
 
 					this._webgl2Context = new (WebGL2RenderingContext as any)(this._canvas, opts);

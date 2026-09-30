@@ -7,87 +7,33 @@
 
 import Foundation
 #if !os(visionOS)
-import GLKit
+import OpenGLES
 #endif
 import UIKit
 
 #if !os(visionOS)
+/// Shows a GL context's drawing buffer. The context stores its color buffer in this view's layer
+/// and presents it there itself, from whichever thread it runs on.
 @objcMembers
-@objc(CanvasGLKView)
-public class CanvasGLKView: GLKView, GLKViewDelegate {
-    var isDirty: Bool = false
+@objc(CanvasGLView)
+public class CanvasGLView: UIView {
     internal(set) public weak var canvas: NSCCanvas? = nil
-    
-    private(set) var fbo: UInt32 = 0
-    
-    public init() {
-        super.init(frame: .zero)
-    }
-    public override init(frame: CGRect) {
-        super.init(frame: frame)
-        delegate = self
-    }
-    
-    required init?(coder: NSCoder) {
-        super.init(coder: coder)
-        delegate = self
-    }
-    
-    public override func bindDrawable() {
-        super.bindDrawable()
-        var fbo: UInt32 = 0
-        glGetIntegerv(GLenum(GL_FRAMEBUFFER_BINDING), &fbo)
-        self.fbo = fbo
-    }
-    
-    public override func deleteDrawable() {
-        super.deleteDrawable()
-        self.fbo = 0
-    }
-    
-    public func glkView(_ view: GLKView, drawIn rect: CGRect) {
-//        guard let canvas = canvas else {return}
-//        if(canvas.is2D){
-//            CanvasHelpers.flush2DContext(canvas.nativeContext)
-//        }
-    }
-    
-}
 
+    public override class var layerClass: AnyClass {
+        return CAEAGLLayer.self
+    }
 
-extension GLKView {
-    @objc public func snapshotWithData(_ data: Data){
-        let pixels = self.snapshot
-        
-        var cgImage: CGImage?
-        
-        if let image = pixels.cgImage {
-            cgImage = image
-        } else if let image = pixels.ciImage {
-            let ctx = CIContext()
-            cgImage = ctx.createCGImage(image, from: image.extent)
-        }
-        
-        if let image = cgImage {
-            let width = Int(pixels.size.width)
-            let height = Int(pixels.size.height)
-            let row = width * 4
-            var buffer = [UInt8](data)
-            let colorSpace = CGColorSpaceCreateDeviceRGB()
-            let imageCtx = CGContext(data: &buffer, width: width, height: height, bitsPerComponent: 8, bytesPerRow: row, space: colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue)
-            imageCtx!.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
-        }
+    public var eaglLayer: CAEAGLLayer {
+        return layer as! CAEAGLLayer
     }
 }
 #else
-// visionOS has no OpenGL ES. CanvasGLKView is a no-op UIView stand-in so NSCCanvas's
+// visionOS has no OpenGL ES. CanvasGLView is a no-op UIView stand-in so NSCCanvas's
 // layout/lifecycle code compiles; the GL engine is never selected on visionOS.
 @objcMembers
-@objc(CanvasGLKView)
-public class CanvasGLKView: UIView {
-    var isDirty: Bool = false
+@objc(CanvasGLView)
+public class CanvasGLView: UIView {
     internal(set) public weak var canvas: NSCCanvas? = nil
-    private(set) var fbo: UInt32 = 0
 }
 #endif
 

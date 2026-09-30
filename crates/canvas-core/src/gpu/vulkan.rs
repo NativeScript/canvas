@@ -30,11 +30,22 @@ pub struct AshGraphics {
 impl Drop for AshGraphics {
     fn drop(&mut self) {
         unsafe {
-            self.device.device_wait_idle().unwrap();
+            // A lost device fails this; teardown goes ahead regardless.
+            let _ = self.device.device_wait_idle();
 
-            if let Some(surface) = self.surface {
+            for view in self.swap_chain_image_view.take().unwrap_or_default() {
+                self.device.destroy_image_view(view, None);
+            }
+            // Before the surface: a live swapchain keeps the window connected to Vulkan, and
+            // anything that later presents to it (a GL fallback) fails to connect.
+            if let Some(swap_chain) = self.swap_chain.take() {
+                self.swap_chain_loader.destroy_swapchain(swap_chain, None);
+            }
+            if let Some(surface) = self.surface.take() {
                 self.surface_loader.destroy_surface(surface, None);
             }
+            self.device.destroy_semaphore(self.image_available_semaphore, None);
+            self.device.destroy_semaphore(self.present_semaphore, None);
 
             self.device.destroy_device(None);
             self.instance.destroy_instance(None);

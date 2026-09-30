@@ -2,7 +2,7 @@
 //! make the JS thread wait on it.
 
 use std::collections::{HashMap, VecDeque};
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::{mpsc, Arc, Condvar, Mutex, OnceLock};
 use std::time::Duration;
 
@@ -179,12 +179,20 @@ where
     rx.recv().ok()
 }
 
+/// Frames that may merge into one this thread hasn't picked up before `commit` waits for it.
+/// Merging keeps committing from blocking, but a frame that doesn't clear the whole canvas keeps
+/// everything drawn before it, so an unbounded merge grows without limit and replays ever slower.
+const MAX_MERGED_FRAMES: u32 = 4;
+
 /// Drop waits for the real context to go, so its window can be released afterwards.
 pub struct RenderTarget {
     id: u64,
     worker: Arc<Worker>,
     open: Mutex<Option<Slot>>,
     lost: Arc<AtomicBool>,
+    /// Frames merged into the open slot since this thread last took it. Non-zero means this canvas
+    /// is behind, which holds requestAnimationFrame back (`canvas_native_canvases_behind`).
+    merged: Arc<AtomicU32>,
 }
 
 impl RenderTarget {
@@ -213,6 +221,7 @@ impl RenderTarget {
             worker,
             open: Mutex::new(None),
             lost,
+            merged: Arc::new(AtomicU32::new(0)),
         })
     }
 
@@ -225,6 +234,11 @@ impl RenderTarget {
         if frame.is_empty() {
             return;
         }
+        if self.merged.load(Ordering::Acquire) >= MAX_MERGED_FRAMES {
+            // Something is drawing faster than this thread can keep up, outside the
+            // requestAnimationFrame hold-back: wait for the pending frame to be drawn.
+            self.sync(|_| ());
+        }
         let Ok(mut open) = self.open.lock() else {
             return;
         };
@@ -233,6 +247,9 @@ impl RenderTarget {
             if let Ok(mut pending) = slot.lock() {
                 if let Some(queued) = pending.as_mut() {
                     queued.append(frame.take().expect("set above"));
+                    if self.merged.fetch_add(1, Ordering::AcqRel) == 0 {
+                        crate::webgl::thread::canvas_behind();
+                    }
                     return;
                 }
             }
@@ -240,8 +257,13 @@ impl RenderTarget {
         let slot: Slot = Arc::new(Mutex::new(frame));
         *open = Some(Arc::clone(&slot));
         let id = self.id;
+        let merged = Arc::clone(&self.merged);
         self.worker.push(Box::new(move |targets: &mut Targets| {
             let frame = slot.lock().ok().and_then(|mut pending| pending.take());
+            // Taken under the slot's lock above, so a commit merging now lands in a new slot.
+            if merged.swap(0, Ordering::AcqRel) > 0 {
+                crate::webgl::thread::canvas_caught_up();
+            }
             if let (Some(frame), Some(entry)) = (frame, targets.contexts.get_mut(&id)) {
                 entry.context.get_context_mut().replay(frame);
                 targets.presents.push(id);
@@ -292,6 +314,9 @@ impl RenderTarget {
 
 impl Drop for RenderTarget {
     fn drop(&mut self) {
+        if self.merged.swap(0, Ordering::AcqRel) > 0 {
+            crate::webgl::thread::canvas_caught_up();
+        }
         let (tx, rx) = mpsc::sync_channel::<()>(1);
         let id = self.id;
         self.worker.push(Box::new(move |targets: &mut Targets| {

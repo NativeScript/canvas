@@ -44,11 +44,11 @@ object Utils {
     private external fun nativeRunWithWebGL(state: Long, block: Runnable)
 
     @JvmStatic
-    private external fun nativeWebGLContextsBehind(): Int
+    private external fun nativeCanvasesBehind(): Int
 
-    /** Threaded WebGL contexts the GPU has fallen behind (a frame queued behind an unpresented one). */
+    /** Threaded canvases (WebGL, 2D) with a frame waiting behind one that hasn't reached the screen. */
     @JvmStatic
-    fun webGLContextsBehind(): Int = nativeWebGLContextsBehind()
+    fun canvasesBehind(): Int = nativeCanvasesBehind()
 
     /**
      * Runs [block] with the WebGL context [state] current, on the thread that owns it, and returns

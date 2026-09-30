@@ -509,6 +509,9 @@ export class Canvas extends CanvasBase {
 
 		const threaded = !!(contextAttributes?.threaded ?? Canvas.threaded2D);
 		this._canvas.setThreaded2D?.(threaded);
+		if (threaded) {
+			holdBackAnimationFramesWhileBehind();
+		}
 		const ctx = this._canvas.create2DContext(opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible, opts.willReadFrequently ?? false, opts.colorSpace ?? 0);
 		const context = new (CanvasRenderingContext2D as any)(ctx, opts);
 		// @ts-ignore
@@ -525,7 +528,7 @@ export class Canvas extends CanvasBase {
 		const threaded = !!(contextAttributes?.threaded ?? Canvas.threadedWebGL);
 		this._canvas.setThreadedWebGL?.(threaded);
 		if (threaded) {
-			holdBackAnimationFramesWhileGLBehind();
+			holdBackAnimationFramesWhileBehind();
 		}
 	}
 
@@ -649,24 +652,24 @@ export class Canvas extends CanvasBase {
 }
 
 /**
- * Holds requestAnimationFrame callbacks back a frame while the GPU is behind a threaded WebGL
- * context (it has a frame queued behind one not yet presented), as a browser does when its
- * compositor falls behind. The UI thread then stays free between the frames the GPU can take,
- * instead of queueing more work for it every vsync.
+ * Holds requestAnimationFrame callbacks back a frame while a threaded canvas is behind (it has a
+ * frame waiting behind one that hasn't reached the screen), as a browser does when its compositor
+ * falls behind. The UI thread then stays free between the frames the GPU can take, instead of
+ * queueing more work for it every vsync.
  *
  * Installed with the first threaded context, over whatever requestAnimationFrame is global by then
  * (core's, or a polyfill's).
  */
-function holdBackAnimationFramesWhileGLBehind() {
+function holdBackAnimationFramesWhileBehind() {
 	const target = global as any;
 	const request = target.requestAnimationFrame;
 	const cancel = target.cancelAnimationFrame;
-	if (typeof request !== 'function' || request.__holdsBackForGL) {
+	if (typeof request !== 'function' || request.__holdsBack) {
 		return;
 	}
 	const utils = org.nativescript.canvas.Utils;
 	// An older native library: leave requestAnimationFrame alone rather than break every frame.
-	if (typeof utils?.webGLContextsBehind !== 'function') {
+	if (typeof utils?.canvasesBehind !== 'function') {
 		return;
 	}
 	// Our ids stay put while a held-back callback is re-requested under a new one.
@@ -675,7 +678,7 @@ function holdBackAnimationFramesWhileGLBehind() {
 	const requestAnimationFrame = (callback: (time: number) => void) => {
 		const id = nextId++;
 		const run = (time: number) => {
-			if (utils.webGLContextsBehind() > 0) {
+			if (utils.canvasesBehind() > 0) {
 				pending.set(id, request(run));
 				return;
 			}
@@ -685,7 +688,7 @@ function holdBackAnimationFramesWhileGLBehind() {
 		pending.set(id, request(run));
 		return id;
 	};
-	requestAnimationFrame.__holdsBackForGL = true;
+	requestAnimationFrame.__holdsBack = true;
 	const cancelAnimationFrame = (id: number) => {
 		const current = pending.get(id);
 		if (current !== undefined) {

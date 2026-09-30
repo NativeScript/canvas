@@ -23,21 +23,23 @@ pub extern "system" fn nativeTexImage2D(
     }
 
     let context = context as *mut WebGLState;
-    let context = unsafe { &mut *context };
+    let context = unsafe { &*context };
 
     let bytes = crate::utils::image::get_bytes_from_bitmap(&env, bitmap);
 
     if let Some((bytes, info)) = bytes {
-        context.get_inner().make_current();
         let width = info.width();
         let height = info.height();
-        unsafe {
+        let stride = info.stride();
+        // The bitmap's bytes are a copy, so the upload can queue.
+        context.post(move |state| unsafe {
+            state.make_current();
             if flip_y == JNI_TRUE {
                 let mut buffer = bytes;
                 canvas_webgl::utils::gl::flip_in_place(
                     buffer.as_mut_ptr(),
                     buffer.len(),
-                    info.stride() as usize,
+                    stride as usize,
                     height as usize,
                 );
 
@@ -65,7 +67,7 @@ pub extern "system" fn nativeTexImage2D(
                     bytes.as_ptr() as *const c_void,
                 );
             }
-        }
+        });
     }
 }
 
@@ -88,21 +90,23 @@ pub extern "system" fn nativeTexSubImage2D(
     }
 
     let context = context as *mut WebGLState;
-    let context = unsafe { &mut *context };
+    let context = unsafe { &*context };
 
     let bytes = crate::utils::image::get_bytes_from_bitmap(&env, bitmap);
 
     if let Some((bytes, info)) = bytes {
-        unsafe {
-            context.get_inner().make_current();
-            let width = info.width();
-            let height = info.height();
+        let width = info.width();
+        let height = info.height();
+        let stride = info.stride();
+        // The bitmap's bytes are a copy, so the upload can queue.
+        context.post(move |state| unsafe {
+            state.make_current();
             if flip_y == JNI_TRUE {
                 let mut buffer = bytes;
                 canvas_webgl::utils::gl::flip_in_place(
                     buffer.as_mut_ptr(),
                     buffer.len(),
-                    info.stride() as usize,
+                    stride as usize,
                     height as usize,
                 );
 
@@ -130,6 +134,6 @@ pub extern "system" fn nativeTexSubImage2D(
                     bytes.as_ptr() as *const c_void,
                 );
             }
-        }
+        });
     }
 }

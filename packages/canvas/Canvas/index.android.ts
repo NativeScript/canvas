@@ -6,7 +6,7 @@ import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
 import { Application, View, Screen, ImageSource, Utils, widthProperty, heightProperty, isUserInteractionEnabledProperty } from '@nativescript/core';
 import { GPUCanvasContext } from '../WebGPU';
 import { ImageBitmapRenderingContext } from '../ImageBitmapRenderingContext';
-import { handleContextOptions, microtask, CanvasContextType } from './utils';
+import { handleContextOptions, microtask, CanvasContextType, setParentPercentSize, holdBackAnimationFramesWhileBehind } from './utils';
 
 export function createSVGMatrix(): DOMMatrix {
 	return new DOMMatrix();
@@ -99,6 +99,12 @@ export class Canvas extends CanvasBase {
 
 	/** Default for `getContext('2d', { threaded })`: rasterize on a shared render thread. */
 	static threaded2D = true;
+
+	/**
+	 * Default for `getContext('webgl' | 'webgl2', { threaded })`: run the context on the WebGL
+	 * thread, so GL work and presenting never block the UI thread.
+	 */
+	static threadedWebGL = true;
 
 	constructor(nativeInstance?) {
 		super();
@@ -325,18 +331,20 @@ export class Canvas extends CanvasBase {
 
 	[widthProperty.setNative](value) {
 		this.__setLayoutLength(widthProperty.setNative, value);
+		setParentPercentSize(this, true, value);
 		this.__setSurfaceWidth(fromCssLength(value));
 	}
 
 	[heightProperty.setNative](value) {
 		this.__setLayoutLength(heightProperty.setNative, value);
+		setParentPercentSize(this, false, value);
 		this.__setSurfaceHeight(fromCssLength(value));
 	}
 
 	/**
 	 * A fixed CSS size also goes to the view's layout params, as for any view: a parent that
 	 * measures the canvas natively (MasonKit) would otherwise size it to its surface. % and auto
-	 * keep the layout params the canvas was given.
+	 * keep the layout params the canvas was given; a % also goes to such a parent to resolve.
 	 */
 	private __setLayoutLength(setNative: symbol, value: any) {
 		if (typeof value === 'number' || value?.unit === 'dip' || value?.unit === 'px') {
@@ -501,6 +509,9 @@ export class Canvas extends CanvasBase {
 
 		const threaded = !!(contextAttributes?.threaded ?? Canvas.threaded2D);
 		this._canvas.setThreaded2D?.(threaded);
+		if (threaded) {
+			holdBackAnimationFramesWhileBehind();
+		}
 		const ctx = this._canvas.create2DContext(opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible, opts.willReadFrequently ?? false, opts.colorSpace ?? 0);
 		const context = new (CanvasRenderingContext2D as any)(ctx, opts);
 		// @ts-ignore
@@ -511,6 +522,14 @@ export class Canvas extends CanvasBase {
 		//@ts-ignore
 		context.__threaded = threaded;
 		return context;
+	}
+
+	private __setThreadedWebGL(contextAttributes?: any) {
+		const threaded = !!(contextAttributes?.threaded ?? Canvas.threadedWebGL);
+		this._canvas.setThreadedWebGL?.(threaded);
+		if (threaded) {
+			holdBackAnimationFramesWhileBehind();
+		}
 	}
 
 	getContext(type: string, contextAttributes?: any): CanvasRenderingContext2D | WebGLRenderingContext | WebGL2RenderingContext | GPUCanvasContext | null {
@@ -551,6 +570,7 @@ export class Canvas extends CanvasBase {
 				}
 				if (!this._webglContext) {
 					const opts = { version: 1, ...defaultOpts, ...handleContextOptions(type, contextAttributes) };
+					this.__setThreadedWebGL(contextAttributes);
 					this._canvas.initContext(type, opts.alpha, false, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
 					this._webglContext = new (WebGLRenderingContext as any)(this._canvas, opts);
 					(this._webglContext as any)._canvas = this;
@@ -566,6 +586,7 @@ export class Canvas extends CanvasBase {
 				}
 				if (!this._webgl2Context) {
 					const opts = { version: 2, ...defaultOpts, ...handleContextOptions(type, contextAttributes) };
+					this.__setThreadedWebGL(contextAttributes);
 					this._canvas.initContext(type, opts.alpha, false, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
 					this._webgl2Context = new (WebGL2RenderingContext as any)(this._canvas, opts);
 					(this._webgl2Context as any)._canvas = this;

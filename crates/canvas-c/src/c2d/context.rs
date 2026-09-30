@@ -2452,19 +2452,18 @@ pub extern "C" fn canvas_native_context_draw_image_dx_dy_webgl(
     assert!(!source.is_null());
 
     // let context = unsafe { &*context };
-    let source = unsafe { &mut *source };
-    let (width, height) = {
-        let state = source.get_inner_mut();
+    let source = unsafe { &*source };
+    // Read where the context lives: a threaded one is only touched on the WebGL thread.
+    let ((width, height), pixels) = source.sync(|state| {
         state.make_current();
         let (w, h) = state.get_dimensions();
-        (w as f32, h as f32)
-    };
-
-    let pixels = canvas_native_context_read_webgl_pixels(
-        &mut source.0,
-        gl_bindings::RGBA as i32,
-        gl_bindings::UNSIGNED_BYTE as i32,
-    );
+        let pixels = canvas_native_context_read_webgl_pixels(
+            state,
+            gl_bindings::RGBA as i32,
+            gl_bindings::UNSIGNED_BYTE as i32,
+        );
+        ((w as f32, h as f32), pixels)
+    });
 
     let ptr = pixels.2.as_ptr();
     let size = pixels.2.len();
@@ -2484,19 +2483,18 @@ pub extern "C" fn canvas_native_context_draw_image_dx_dy_dw_dh_webgl(
     assert!(!source.is_null());
 
     //  let context = unsafe { &*context };
-    let source = unsafe { &mut *source };
-    let (width, height) = {
-        let state = source.get_inner_mut();
+    let source = unsafe { &*source };
+    // Read where the context lives: a threaded one is only touched on the WebGL thread.
+    let ((width, height), pixels) = source.sync(|state| {
         state.make_current();
         let (w, h) = state.get_dimensions();
-        (w as f32, h as f32)
-    };
-
-    let pixels = canvas_native_context_read_webgl_pixels(
-        &mut source.0,
-        gl_bindings::RGBA as i32,
-        gl_bindings::UNSIGNED_BYTE as i32,
-    );
+        let pixels = canvas_native_context_read_webgl_pixels(
+            state,
+            gl_bindings::RGBA as i32,
+            gl_bindings::UNSIGNED_BYTE as i32,
+        );
+        ((w as f32, h as f32), pixels)
+    });
 
     let ptr = pixels.2.as_ptr();
     let size = pixels.2.len();
@@ -2523,19 +2521,18 @@ pub extern "C" fn canvas_native_context_draw_image_webgl(
     assert!(!source.is_null());
 
     // let context = unsafe { &*context };
-    let source = unsafe { &mut *source };
-    let (width, height) = {
-        let state = source.get_inner_mut();
+    let source = unsafe { &*source };
+    // Read where the context lives: a threaded one is only touched on the WebGL thread.
+    let ((width, height), pixels) = source.sync(|state| {
         state.make_current();
         let (w, h) = state.get_dimensions();
-        (w as f32, h as f32)
-    };
-
-    let pixels = canvas_native_context_read_webgl_pixels(
-        &mut source.0,
-        gl_bindings::RGBA as i32,
-        gl_bindings::UNSIGNED_BYTE as i32,
-    );
+        let pixels = canvas_native_context_read_webgl_pixels(
+            state,
+            gl_bindings::RGBA as i32,
+            gl_bindings::UNSIGNED_BYTE as i32,
+        );
+        ((w as f32, h as f32), pixels)
+    });
 
     let ptr = pixels.2.as_ptr();
     let size = pixels.2.len();

@@ -15,7 +15,7 @@ import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
 import { GPUCanvasContext } from '../WebGPU';
 import { ImageBitmapRenderingContext } from '../ImageBitmapRenderingContext';
 import { ImageSource, Screen, Utils, widthProperty, heightProperty } from '@nativescript/core';
-import { handleContextOptions, microtask, CanvasContextType } from './utils';
+import { handleContextOptions, microtask, CanvasContextType, isPercentLength, setParentPercentSize } from './utils';
 import { Helpers } from '../helpers';
 
 export function createSVGMatrix(): DOMMatrix {
@@ -52,15 +52,6 @@ export const enum CanvasFit {
 	FitX = 2,
 	FitY = 3,
 	ScaleDown = 4,
-}
-
-function isPercentLength(value: any) {
-	return (typeof value === 'object' && value?.unit === '%') || (typeof value === 'string' && value.trim().endsWith('%'));
-}
-
-/** A % length as a 0-1 fraction. */
-function percentFraction(value: any): number {
-	return typeof value === 'string' ? parseFloat(value) / 100 : value.value;
 }
 
 function isFixedLength(value: any) {
@@ -261,13 +252,13 @@ export abstract class NapiCanvas extends CanvasBase {
 	// handed the % size (`_setChildPercentSize`), to resolve against its containing block.
 	[widthProperty.setNative](value: any) {
 		(Object.getPrototypeOf(NapiCanvas.prototype) as any)[widthProperty.setNative]?.call(this, isPercentLength(value) ? 'auto' : value);
-		if (isPercentLength(value)) (this.parent as any)?._setChildPercentSize?.(this, true, percentFraction(value));
+		setParentPercentSize(this, true, value);
 		this.__setSurfaceWidth(fromCssLength(value));
 	}
 
 	[heightProperty.setNative](value: any) {
 		(Object.getPrototypeOf(NapiCanvas.prototype) as any)[heightProperty.setNative]?.call(this, isPercentLength(value) ? 'auto' : value);
-		if (isPercentLength(value)) (this.parent as any)?._setChildPercentSize?.(this, false, percentFraction(value));
+		setParentPercentSize(this, false, value);
 		this.__setSurfaceHeight(fromCssLength(value));
 	}
 

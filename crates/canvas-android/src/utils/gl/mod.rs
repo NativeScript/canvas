@@ -26,12 +26,47 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_Utils_nativeMakeState
     if state.is_null() {
         return JNI_FALSE;
     }
-    let state = &mut *state;
+    let state = &*state;
 
-    if state.get_inner().make_current() {
+    if state.sync(|state| state.make_current()) {
         return JNI_TRUE;
     }
     JNI_FALSE
+}
+
+/// Runs `block` (a `Runnable`) with `state` current, on the thread that owns it, and waits for it:
+/// a threaded WebGL context can only be current on the WebGL thread, so Java that draws with it
+/// (SurfaceTexture, GLES) has to run there too.
+#[no_mangle]
+pub unsafe extern "system" fn Java_org_nativescript_canvas_Utils_nativeRunWithWebGL(
+    mut env: JNIEnv,
+    _: jni::objects::JClass,
+    state: jlong,
+    block: jni::objects::JObject,
+) {
+    if state == 0 {
+        return;
+    }
+    let state = &*(state as *const WebGLState);
+    if !state.is_threaded() {
+        state.sync(|state| state.make_current());
+        let _ = env.call_method(&block, "run", "()V", &[]);
+        return;
+    }
+    let (Ok(block), Some(vm)) = (env.new_global_ref(block), crate::JVM.get()) else {
+        return;
+    };
+    state.sync(|state| {
+        state.make_current();
+        if let Ok(mut env) = vm.attach_current_thread_permanently() {
+            let _ = env.call_method(block.as_obj(), "run", "()V", &[]);
+            // Surface it here: nothing on this thread would otherwise.
+            if env.exception_check().unwrap_or(false) {
+                let _ = env.exception_describe();
+                let _ = env.exception_clear();
+            }
+        }
+    });
 }
 
 /// Makes the EGL context of a 2D canvas context current on the calling thread.

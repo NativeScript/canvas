@@ -6,7 +6,7 @@ import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
 import { ImageSource, Utils, Screen, isUserInteractionEnabledProperty, widthProperty, heightProperty } from '@nativescript/core';
 import { GPUCanvasContext } from '../WebGPU';
 import { ImageBitmapRenderingContext } from '../ImageBitmapRenderingContext';
-import { handleContextOptions, microtask, CanvasContextType } from './utils';
+import { handleContextOptions, microtask, CanvasContextType, setParentPercentSize, holdBackAnimationFramesWhileBehind } from './utils';
 declare var NSCCanvas, NSCCanvasListener;
 
 export function createSVGMatrix(): DOMMatrix {
@@ -192,6 +192,7 @@ export class Canvas extends CanvasBase {
 	}
 
 	[widthProperty.setNative](value: any) {
+		setParentPercentSize(this, true, value);
 		this.__setSurfaceWidth(fromCssLength(value));
 	}
 
@@ -260,6 +261,7 @@ export class Canvas extends CanvasBase {
 	}
 
 	[heightProperty.setNative](value: any) {
+		setParentPercentSize(this, false, value);
 		this.__setSurfaceHeight(fromCssLength(value));
 	}
 
@@ -499,6 +501,9 @@ export class Canvas extends CanvasBase {
 		const opts = { ...defaultOpts, ...handleContextOptions(type, options), fontColor: this.parent?.style?.color?.android || -16777216 };
 
 		const threaded = !!(options?.threaded ?? Canvas.threaded2D);
+		if (threaded) {
+			holdBackAnimationFramesWhileBehind();
+		}
 		if ('threaded2D' in this._canvas) {
 			this._canvas.threaded2D = threaded;
 		}

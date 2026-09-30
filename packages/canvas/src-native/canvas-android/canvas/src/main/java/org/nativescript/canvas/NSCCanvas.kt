@@ -589,7 +589,8 @@ class NSCCanvas : FrameLayout {
 					stencil,
 					desynchronized,
 					xrCompatible,
-					version
+					version,
+					threadedWebGL
 				)
 				engine = Engine.GL
 			}
@@ -649,7 +650,8 @@ class NSCCanvas : FrameLayout {
 						stencil,
 						desynchronized,
 						xrCompatible,
-						version
+						version,
+						threadedWebGL
 					)
 					engine = Engine.GL
 				}
@@ -697,7 +699,8 @@ class NSCCanvas : FrameLayout {
 						stencil,
 						desynchronized,
 						xrCompatible,
-						version
+						version,
+						threadedWebGL
 					)
 					engine = Engine.GL
 				}
@@ -709,6 +712,9 @@ class NSCCanvas : FrameLayout {
 
 	/** Read when the 2D context is created. */
 	var threaded2D = false
+
+	/** Read when a WebGL context is created: it then lives on, and is drawn from, the WebGL thread. */
+	var threadedWebGL = false
 
 	private fun create2DNative(
 		width: Int,
@@ -1253,8 +1259,8 @@ class NSCCanvas : FrameLayout {
 		@FastNative
 		external fun nativeDetach2DSurface(context: Long)
 
+		// Not @FastNative: a threaded context waits for the WebGL thread to build it.
 		@JvmStatic
-		@FastNative
 		external fun nativeInitWebGL(
 			surface: Surface?,
 			alpha: Boolean,
@@ -1267,11 +1273,11 @@ class NSCCanvas : FrameLayout {
 			stencil: Boolean,
 			desynchronized: Boolean,
 			xrCompatible: Boolean,
-			version: Int
+			version: Int,
+			threaded: Boolean
 		): Long
 
 		@JvmStatic
-		@FastNative
 		external fun nativeInitWebGLNoSurface(
 			width: Int,
 			height: Int,
@@ -1285,7 +1291,8 @@ class NSCCanvas : FrameLayout {
 			stencil: Boolean,
 			desynchronized: Boolean,
 			xrCompatible: Boolean,
-			version: Int
+			version: Int,
+			threaded: Boolean
 		): Long
 
 		@JvmStatic

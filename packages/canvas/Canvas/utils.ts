@@ -95,3 +95,96 @@ export function removeItemFromArray(array: any[], item) {
 }
 
 export const microtask: (cb: () => void) => void = typeof queueMicrotask === 'function' ? queueMicrotask : (cb) => Promise.resolve().then(cb);
+
+export function isPercentLength(value: any) {
+	return (typeof value === 'object' && value?.unit === '%') || (typeof value === 'string' && value.trim().endsWith('%'));
+}
+
+/** A % length as a 0-1 fraction. */
+export function percentFraction(value: any): number {
+	return typeof value === 'string' ? parseFloat(value) / 100 : value.value;
+}
+
+const percentAxes_ = Symbol('percentAxes');
+
+/**
+ * Hands a % width/height to a parent that lays out its children itself (MasonKit), so it resolves
+ * against the containing block rather than the canvas being sized to its surface. A size that
+ * stops being a % clears it again.
+ */
+export function setParentPercentSize(view: any, horizontal: boolean, value: any) {
+	const axis = horizontal ? 1 : 2;
+	const axes = view[percentAxes_] ?? 0;
+	if (isPercentLength(value)) {
+		if (view.parent?._setChildPercentSize?.(view, horizontal, percentFraction(value))) {
+			view[percentAxes_] = axes | axis;
+		}
+	} else if (axes & axis) {
+		view.parent?._setChildPercentSize?.(view, horizontal, null);
+		view[percentAxes_] = axes & ~axis;
+	}
+}
+
+let behind: Uint32Array | null | undefined;
+
+/** The count of threaded canvases behind, read straight from native memory: this runs every frame. */
+function canvasesBehind(): Uint32Array | null {
+	if (behind === undefined) {
+		const buffer = (global as any).CanvasModule?.__canvasesBehind;
+		behind = buffer instanceof ArrayBuffer ? new Uint32Array(buffer) : null;
+	}
+	return behind;
+}
+
+/**
+ * Holds requestAnimationFrame callbacks back a frame while a threaded canvas is behind (it has a
+ * frame waiting behind one that hasn't reached the screen), as a browser does when its compositor
+ * falls behind. The UI thread then stays free between the frames the GPU can take, instead of
+ * queueing more work for it every vsync.
+ *
+ * Installed with the first threaded context, over whatever requestAnimationFrame is global by then
+ * (core's, or a polyfill's).
+ */
+export function holdBackAnimationFramesWhileBehind() {
+	const target = global as any;
+	const request = target.requestAnimationFrame;
+	const cancel = target.cancelAnimationFrame;
+	if (typeof request !== 'function' || request.__holdsBack) {
+		return;
+	}
+	const count = canvasesBehind();
+	// An older native library: leave requestAnimationFrame alone.
+	if (!count) {
+		return;
+	}
+	// Our ids stay put while a held-back callback is re-requested under a new one.
+	const pending = new Map<number, number>();
+	let nextId = 1;
+	const requestAnimationFrame = (callback: (time: number) => void) => {
+		const id = nextId++;
+		const run = (time: number) => {
+			if (count[0] > 0) {
+				pending.set(id, request(run));
+				return;
+			}
+			pending.delete(id);
+			callback(time);
+		};
+		pending.set(id, request(run));
+		return id;
+	};
+	requestAnimationFrame.__holdsBack = true;
+	const cancelAnimationFrame = (id: number) => {
+		const current = pending.get(id);
+		if (current !== undefined) {
+			pending.delete(id);
+			cancel?.(current);
+		}
+	};
+	target.requestAnimationFrame = requestAnimationFrame;
+	target.cancelAnimationFrame = cancelAnimationFrame;
+	if (target.window && target.window !== target && target.window.requestAnimationFrame === request) {
+		target.window.requestAnimationFrame = requestAnimationFrame;
+		target.window.cancelAnimationFrame = cancelAnimationFrame;
+	}
+}

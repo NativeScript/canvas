@@ -250,6 +250,7 @@ pub extern "system" fn nativeInitWebGL(
     desynchronized: jboolean,
     xr_compatible: jboolean,
     version: jint,
+    threaded: jboolean,
 ) -> jlong {
     unsafe {
         let interface = env.get_native_interface();
@@ -261,7 +262,12 @@ pub extern "system" fn nativeInitWebGL(
                 return 0;
             }
             if let Ok(power_preference) = PowerPreference::try_from(power_preference) {
-                let context = canvas_c::canvas_native_webgl_create(
+                let create = if threaded == JNI_TRUE {
+                    canvas_c::canvas_native_webgl_create_threaded
+                } else {
+                    canvas_c::canvas_native_webgl_create
+                };
+                let context = create(
                     window.ptr().as_ptr() as _,
                     window.width(),
                     window.height(),
@@ -308,6 +314,7 @@ pub extern "system" fn nativeInitWebGLNoSurface(
     desynchronized: jboolean,
     xr_compatible: jboolean,
     version: jint,
+    threaded: jboolean,
 ) -> jlong {
     if version == 2 && !GLContext::has_gl2support() {
         return 0;
@@ -317,7 +324,12 @@ pub extern "system" fn nativeInitWebGLNoSurface(
     let height = height.max(1);
 
     if let Ok(power_preference) = PowerPreference::try_from(power_preference) {
-        let context = canvas_c::canvas_native_webgl_create_no_window(
+        let create = if threaded == JNI_TRUE {
+            canvas_c::canvas_native_webgl_create_no_window_threaded
+        } else {
+            canvas_c::canvas_native_webgl_create_no_window
+        };
+        let context = create(
             width,
             height,
             version as i32,
@@ -458,19 +470,23 @@ pub extern "system" fn nativeUpdateWebGLSurface(
         return;
     }
     let context = context as *mut WebGLState;
-    let context = unsafe { &mut *context };
+    let context = unsafe { &*context };
     unsafe {
         if let Some(window) = NativeWindow::from_surface(env.get_native_interface(), surface) {
-            // NativeWindow::ptr() is NonNull<ANativeWindow>; the as *mut c_void cast
-            // preserves non-nullness, but guard defensively to avoid a panic.
-            let Some(nn_ptr) = NonNull::new(window.ptr().as_ptr() as _) else { return };
-            context.get_inner_mut().set_window_surface(
-                window.width(),
-                window.height(),
-                nn_ptr,
-            );
-            context.get_inner().make_current();
             drop(env);
+            let (width, height) = (window.width(), window.height());
+            // Queued, not waited on: this runs from the view's surface callbacks, and blocking them
+            // on a thread that may be waiting for a buffer from this window can deadlock its queue.
+            // `window` holds a reference until the job is done with it.
+            context.post(move |state| {
+                // NativeWindow::ptr() is NonNull<ANativeWindow>; the as *mut c_void cast
+                // preserves non-nullness, but guard defensively to avoid a panic.
+                let Some(nn_ptr) = NonNull::new(window.ptr().as_ptr() as _) else {
+                    return;
+                };
+                state.set_window_surface(width, height, nn_ptr);
+                state.make_current();
+            });
         }
     }
 }
@@ -616,9 +632,12 @@ fn native_update_gl_no_surface(width: jint, height: jint, context: jlong) {
         return;
     }
     let context = context as *mut WebGLState;
-    let context = unsafe { &mut *context };
-    context.get_inner().make_current();
-    context.get_inner_mut().resize_pbuffer(width, height);
+    let context = unsafe { &*context };
+    // Waited on: when the window is going away this is how the context lets go of it.
+    context.detach(|state| {
+        state.make_current();
+        state.resize_pbuffer(width, height);
+    });
 }
 
 #[no_mangle]
@@ -676,7 +695,8 @@ pub extern "system" fn nativeMakeWebGLCurrent(gl_context: jlong) -> jboolean {
     }
     let gl_context = gl_context as *mut WebGLState;
     let gl_context = unsafe { &*gl_context };
-    if gl_context.get_inner().make_current() {
+    // A threaded context is made current on its own thread, where everything that uses it runs.
+    if gl_context.sync(|state| state.make_current()) {
         return JNI_TRUE;
     }
     JNI_FALSE
@@ -693,7 +713,8 @@ pub extern "system" fn nativeMakeWebGLCurrentNormal(
     }
     let gl_context = gl_context as *mut WebGLState;
     let gl_context = unsafe { &*gl_context };
-    if gl_context.get_inner().make_current() {
+    // A threaded context is made current on its own thread, where everything that uses it runs.
+    if gl_context.sync(|state| state.make_current()) {
         return JNI_TRUE;
     }
     JNI_FALSE
@@ -851,7 +872,7 @@ pub extern "system" fn nativeWriteCurrentWebGLContextToBitmap(
     }
 
     let context = context as *mut WebGLState;
-    let context = unsafe { &mut *context };
+    let context = unsafe { &*context };
 
     unsafe {
         crate::utils::image::bitmap_handler(
@@ -859,24 +880,27 @@ pub extern "system" fn nativeWriteCurrentWebGLContextToBitmap(
             bitmap,
             Box::new(move |cb| {
                 if let Some((image_data, info)) = cb {
-                    context.get_inner().make_current();
-                    // Use checked arithmetic — width/height are u32 and can overflow on multiply.
-                    let buf_size = (info.width() as usize)
-                        .checked_mul(info.height() as usize)
-                        .and_then(|n| n.checked_mul(4));
-                    let Some(buf_size) = buf_size else { return };
-                    let mut buf = vec![0u8; buf_size];
-                    gl_bindings::Flush();
-                    gl_bindings::ReadPixels(
-                        0,
-                        0,
-                        info.width() as i32,
-                        info.height() as i32,
-                        gl_bindings::RGBA as std::os::raw::c_uint,
-                        gl_bindings::UNSIGNED_BYTE as std::os::raw::c_uint,
-                        buf.as_mut_ptr() as *mut c_void,
-                    );
-                    image_data.copy_from_slice(buf.as_slice());
+                    // The bitmap stays locked while this waits for the read.
+                    context.sync(|state| {
+                        state.make_current();
+                        // Use checked arithmetic — width/height are u32 and can overflow on multiply.
+                        let buf_size = (info.width() as usize)
+                            .checked_mul(info.height() as usize)
+                            .and_then(|n| n.checked_mul(4));
+                        let Some(buf_size) = buf_size else { return };
+                        let mut buf = vec![0u8; buf_size];
+                        gl_bindings::Flush();
+                        gl_bindings::ReadPixels(
+                            0,
+                            0,
+                            info.width() as i32,
+                            info.height() as i32,
+                            gl_bindings::RGBA as std::os::raw::c_uint,
+                            gl_bindings::UNSIGNED_BYTE as std::os::raw::c_uint,
+                            buf.as_mut_ptr() as *mut c_void,
+                        );
+                        image_data.copy_from_slice(buf.as_slice());
+                    });
                 }
             }),
         )

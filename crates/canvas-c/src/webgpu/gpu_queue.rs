@@ -283,9 +283,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_webgl_to_texture(
         return;
     }
     // An image: RGBA8, top row first (flip_y then flips it, as for the other sources).
-    let (width, height, mut bytes) = canvas_webgl::webgl::canvas_native_webgl_read_drawing_buffer(
-        &mut (*(source.source as *mut crate::webgl::WebGLState)).0,
-    );
+    let (width, height, mut bytes) = (*source.source).read_drawing_buffer();
 
     {
         let destination = &*destination;

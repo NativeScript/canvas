@@ -39,8 +39,12 @@ enum Direction {
     AlternateReverse,
 }
 
-/// Pulls every CSS animation out of the document's `<style>` blocks.
-/// Only `#id` selectors are honoured, since the timeline addresses elements by id.
+/// Every CSS animation in the document, with the `@keyframes` of all its `<style>` blocks.
+///
+/// Which elements animate is read from their `style`: the stylesheet cascade has already folded
+/// every matching rule into it, whatever the selector, and given each animating element an id,
+/// which the timeline addresses elements by. `#id` rules are still read for a document the
+/// cascade could not rewrite.
 pub(super) fn extract(source: &[u8]) -> Vec<Animation> {
     let Ok(text) = std::str::from_utf8(source) else {
         return Vec::new();
@@ -49,11 +53,74 @@ pub(super) fn extract(source: &[u8]) -> Vec<Animation> {
         return Vec::new();
     }
 
-    let mut animations = Vec::new();
+    let mut keyframes = HashMap::new();
+    let mut rules = Vec::new();
     for css in style_blocks(text) {
-        animations.extend(extract_from_css(&css));
+        let (blocks, block_rules) = parse(&css);
+        keyframes.extend(blocks);
+        rules.extend(block_rules);
+    }
+    if keyframes.is_empty() {
+        return Vec::new();
+    }
+
+    let mut animations = Vec::new();
+    let mut styled = std::collections::HashSet::new();
+    for (id, style) in animated_elements(source) {
+        let declarations = parse_declarations(&style);
+        for spec in animation_specs(&declarations) {
+            if let Some(frames) = keyframes.get(&spec.name) {
+                build(&id, &spec, frames, &mut animations);
+            }
+        }
+        styled.insert(id);
+    }
+    for (selector, declarations) in rules {
+        let Some(id) = selector.strip_prefix('#') else {
+            continue;
+        };
+        if styled.contains(id) {
+            continue;
+        }
+        for spec in animation_specs(&declarations) {
+            if let Some(frames) = keyframes.get(&spec.name) {
+                build(id, &spec, frames, &mut animations);
+            }
+        }
     }
     animations
+}
+
+/// `(id, style)` of every element whose `style` names an animation.
+fn animated_elements(source: &[u8]) -> Vec<(String, String)> {
+    use quick_xml::events::Event;
+    let mut reader = quick_xml::Reader::from_reader(source);
+    let mut buffer = Vec::new();
+    let mut out = Vec::new();
+    loop {
+        match reader.read_event_into(&mut buffer) {
+            Ok(Event::Start(start)) | Ok(Event::Empty(start)) => {
+                let mut id = None;
+                let mut style = None;
+                for attribute in start.attributes().flatten() {
+                    match attribute.key.local_name().as_ref() {
+                        b"id" => id = attribute.unescape_value().ok().map(|v| v.into_owned()),
+                        b"style" => style = attribute.unescape_value().ok().map(|v| v.into_owned()),
+                        _ => {}
+                    }
+                }
+                if let (Some(id), Some(style)) = (id, style) {
+                    if style.contains("animation") {
+                        out.push((id, style));
+                    }
+                }
+            }
+            Ok(Event::Eof) | Err(_) => break,
+            _ => {}
+        }
+        buffer.clear();
+    }
+    out
 }
 
 /// The same extraction for CSS supplied outside the document. `#id` selectors must match ids
@@ -406,7 +473,15 @@ fn build_transform(
     easings: &[Option<[f64; 4]>],
     out: &mut Vec<Animation>,
 ) {
-    let per_frame: Vec<Vec<(String, Vec<f64>)>> = raw.iter().map(|v| transform_functions(v)).collect();
+    let mut per_frame: Vec<Vec<(String, Vec<f64>)>> = raw.iter().map(|v| transform_functions(v)).collect();
+    // `none` is the identity of whatever the other keyframes list.
+    if let Some(template) = per_frame.iter().find(|frame| !frame.is_empty()).cloned() {
+        for (frame, value) in per_frame.iter_mut().zip(raw) {
+            if frame.is_empty() && value.trim().eq_ignore_ascii_case("none") {
+                *frame = template.iter().map(|(name, args)| (name.clone(), identity(name, args.len()))).collect();
+            }
+        }
+    }
     // Pairwise interpolation needs every keyframe to list the same functions in the same order.
     let Some(first) = per_frame.first() else { return };
     if per_frame
@@ -451,6 +526,16 @@ fn transform_functions(value: &str) -> Vec<(String, Vec<f64>)> {
             .filter_map(parse_length)
             .collect();
         if !name.is_empty() && !numbers.is_empty() {
+            // SVG has no one-axis functions, and `translate(n)` / `scale(n)` mean something else.
+            let (name, numbers) = match name.as_str() {
+                "translatex" => ("translate".to_owned(), vec![numbers[0], 0.0]),
+                "translatey" => ("translate".to_owned(), vec![0.0, numbers[0]]),
+                "scalex" => ("scale".to_owned(), vec![numbers[0], 1.0]),
+                "scaley" => ("scale".to_owned(), vec![1.0, numbers[0]]),
+                "translate" if numbers.len() == 1 => (name, vec![numbers[0], 0.0]),
+                "scale" if numbers.len() == 1 => (name, vec![numbers[0], numbers[0]]),
+                _ => (name, numbers),
+            };
             out.push((name, numbers));
         }
         rest = &rest[open + close + 1..];
@@ -478,10 +563,16 @@ fn parse_length(token: &str) -> Option<f64> {
     token.parse::<f64>().ok()
 }
 
+/// The arguments that make `function` do nothing.
+fn identity(function: &str, count: usize) -> Vec<f64> {
+    let value = if function == "scale" { 1.0 } else { 0.0 };
+    vec![value; count.max(1)]
+}
+
 fn transform_kind(function: &str) -> Option<TransformKind> {
     Some(match function {
-        "translate" | "translatex" | "translatey" => TransformKind::Translate,
-        "scale" | "scalex" | "scaley" => TransformKind::Scale,
+        "translate" => TransformKind::Translate,
+        "scale" => TransformKind::Scale,
         "rotate" => TransformKind::Rotate,
         "skewx" => TransformKind::SkewX,
         "skewy" => TransformKind::SkewY,
@@ -778,12 +869,12 @@ mod tests {
     }
 
     #[test]
-    fn only_id_selectors_are_taken() {
+    fn class_rules_are_left_to_the_cascade() {
         let animations = extract(
             wrap(".cls { animation: fade 1s } @keyframes fade { 0% {opacity: 0} 100% {opacity: 1} }")
                 .as_bytes(),
         );
-        assert!(animations.is_empty(), "class selectors are not resolved to elements");
+        assert!(animations.is_empty(), "only the stylesheet cascade matches selectors to elements");
     }
 
     #[test]

@@ -66,11 +66,37 @@ Supported on elements: `setAttribute`, `getAttribute`, `appendChild`, `append`, 
 | Property | Default | Description |
 | --- | --- | --- |
 | `src` | | Path, URL or inline markup to render. |
+| `stylesheet` | | CSS for the document, as text or a `~/`, absolute or http path to a `.css` file. See [Styling](#styling). |
 | `gpu` | `true` | Rasterize on the GPU (Metal on iOS, Vulkan or GL on Android). Falls back to the CPU automatically if no GPU context can be created. |
 | `threaded` | `true` | Rasterize off the UI thread. The frame is recorded on the UI thread and drawn on one render thread shared by every threaded view, so a heavy SVG does not hold up the rest of the UI. |
 | `shareSrc` | `true` | Views with the same `src` share one parsed document, one animation clock and one recording per frame, like `<img>` tags pointing at the same file on the web. Shared copies animate in step. Set it to `false` to give a view its own copy. |
 | `backend` | `auto` | Force `gl`, `vulkan` or `metal`. Only needed to work around a driver problem. |
 | `surfaceType` | `texture` | Android only. `texture` behaves like a normal view. `surface` is faster to composite but cannot be transformed or overlapped. |
+
+## Styling
+
+CSS in `app.css` styles the `<Svg>` view, not the elements inside the document, so rules for those
+elements (a CodePen's CSS panel, say) go in the `stylesheet` property. It works like a `<style>`
+at the top of the SVG: rules with any supported selector, and `@keyframes`. It is applied again
+whenever `src` reloads.
+
+```xml
+<Svg src="~/assets/loader.svg" stylesheet="~/assets/loader.css" />
+```
+
+The view's own `color`, `fill`, `fill-rule`, `fill-opacity`, `stroke`, `stroke-width`,
+`stroke-linecap`, `stroke-linejoin` and `stroke-miterlimit` are inherited by the document, as for
+an inline `<svg>` on the web, whether they are set by a class in `app.css` or an inline `style`.
+`color` is what `currentColor` resolves to.
+
+```xml
+<Svg src="~/assets/icon.svg" style="color: #f43f5e; stroke-width: 2" />
+```
+
+Selectors: type, `*`, `#id`, `.class`, attribute selectors, `:root`, `:first-child`,
+`:last-child`, `:only-child`, and the descendant, `>`, `+` and `~` combinators.
+
+For a document built with the DOM rather than `src`, only the `@keyframes` of `stylesheet` apply.
 
 ## Events
 
@@ -90,7 +116,7 @@ Skia's SVG renderer does not animate, so this plugin includes its own animation 
 
 **SMIL:** `<animate>`, `<animateTransform>`, `<animateMotion>` (including `rotate="auto"`) and `<set>`, with `values`, `from`/`to`/`by`, `keyTimes`, `keySplines`, `calcMode`, `repeatCount`, `fill="freeze"`, `additive` and `accumulate`. A `begin` that waits for an event (such as `click`) does not start on its own.
 
-**CSS:** `@keyframes` in a `<style>` block, applied through the `animation` shorthand or its longhands (duration, delay, iteration count, direction, fill mode and timing function). Keyword and `cubic-bezier()` easings are supported; `steps()` runs as linear. Only `#id` selectors are read, which is what SVG exporters produce.
+**CSS:** `@keyframes` in a `<style>` block, applied through the `animation` shorthand or its longhands (duration, delay, iteration count, direction, fill mode and timing function). Keyword and `cubic-bezier()` easings are supported; `steps()` runs as linear. Any selector the [stylesheet](#styling) supports can start an animation, as can an element's own `style`. `transform` takes `translate`, `translateX`/`Y`, `scale`, `scaleX`/`Y`, `rotate`, `skewX`/`Y` and `none`; `transform-origin` is not supported.
 
 Only changes that are actually visible trigger a redraw, so an animation that is holding still costs nothing.
 

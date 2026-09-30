@@ -33,7 +33,7 @@ core-foundation = {workspace = true}
 [target.'cfg(target_os = "android")'.dependencies]
 egl = { version = "0.2.7", optional = true }
 android_log = "0.1.3"
-glutin = { version = "0.32.0", features = ["egl"], optional = true }
+glutin = { version = "0.32.3", features = ["egl"], optional = true }
 jni = { workspace = true }
 
 [target.'cfg(target_os = "windows")'.dependencies]

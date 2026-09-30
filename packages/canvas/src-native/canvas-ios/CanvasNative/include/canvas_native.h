@@ -4605,6 +4605,23 @@ struct WebGLState *canvas_native_webgl_create_d3d(int32_t width,
                                                   bool xr_compatible);
 
 /**
+ * `canvas_native_webgl_create_d3d`, for a context that lives on the WebGL thread.
+ */
+struct WebGLState *canvas_native_webgl_create_d3d_threaded(int32_t width,
+                                                           int32_t height,
+                                                           int32_t version,
+                                                           bool alpha,
+                                                           bool antialias,
+                                                           bool depth,
+                                                           bool fail_if_major_performance_caveat,
+                                                           int32_t power_preference,
+                                                           bool premultiplied_alpha,
+                                                           bool preserve_drawing_buffer,
+                                                           bool stencil,
+                                                           bool desynchronized,
+                                                           bool xr_compatible);
+
+/**
  * Windows: shows a `canvas_native_webgl_create_d3d` context in a `SwapChainPanel` (any COM
  * pointer to it). UI thread.
  */
@@ -4627,7 +4644,8 @@ bool canvas_native_webgl_set_swap_chain_transform(struct WebGLState *state,
                                                   float offset_y);
 
 /**
- * Windows: resizes (and clears) a `canvas_native_webgl_create_d3d` drawing buffer.
+ * Windows: resizes (and clears) a `canvas_native_webgl_create_d3d` drawing buffer. A threaded
+ * context queues it, so it reports success.
  */
 bool canvas_native_webgl_resize_d3d(struct WebGLState *state, int32_t width, int32_t height);
 

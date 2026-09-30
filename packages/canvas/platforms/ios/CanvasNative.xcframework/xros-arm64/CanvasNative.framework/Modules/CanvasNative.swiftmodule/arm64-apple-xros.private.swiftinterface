@@ -29,7 +29,7 @@ import _SwiftConcurrencyShims
   @objc public static func initWebGPUWithViewLayer(_ instance: Swift.Int64, _ view: CanvasNative.NSCCanvas, _ width: Swift.UInt32, _ height: Swift.UInt32) -> Swift.Int64
   @objc public static func initWebGPUWithView(_ instance: Swift.Int64, _ view: CanvasNative.NSCCanvas, _ width: Swift.UInt32, _ height: Swift.UInt32) -> Swift.Int64
   @objc public static func resizeWebGPUWithView(_ context: Swift.Int64, _ view: CanvasNative.NSCCanvas, _ width: Swift.UInt32, _ height: Swift.UInt32)
-  @objc public static func initWebGLWithView(_ view: CanvasNative.NSCCanvas, _ alpha: Swift.Bool, _ antialias: Swift.Bool, _ depth: Swift.Bool, _ fail_if_major_performance_caveat: Swift.Bool, _ power_preference: Swift.Int32, _ premultiplied_alpha: Swift.Bool, _ preserve_drawing_buffer: Swift.Bool, _ stencil: Swift.Bool, _ desynchronized: Swift.Bool, _ xr_compatible: Swift.Bool, _ version: Swift.Int32) -> Swift.Int64
+  @objc public static func initWebGLWithView(_ view: CanvasNative.NSCCanvas, _ alpha: Swift.Bool, _ antialias: Swift.Bool, _ depth: Swift.Bool, _ fail_if_major_performance_caveat: Swift.Bool, _ power_preference: Swift.Int32, _ premultiplied_alpha: Swift.Bool, _ preserve_drawing_buffer: Swift.Bool, _ stencil: Swift.Bool, _ desynchronized: Swift.Bool, _ xr_compatible: Swift.Bool, _ version: Swift.Int32, _ threaded: Swift.Bool) -> Swift.Int64
   @objc public static func initWebGLWithWidthAndHeight(_ width: Swift.Int32, _ height: Swift.Int32, _ alpha: Swift.Bool, _ antialias: Swift.Bool, _ depth: Swift.Bool, _ fail_if_major_performance_caveat: Swift.Bool, _ power_preference: Swift.Int32, _ premultiplied_alpha: Swift.Bool, _ preserve_drawing_buffer: Swift.Bool, _ stencil: Swift.Bool, _ desynchronized: Swift.Bool, _ xr_compatible: Swift.Bool, _ version: Swift.Int32) -> Swift.Int64
   @objc public static func resize2DContext(_ context: Swift.Int64, _ width: Swift.Float, _ height: Swift.Float)
   @objc public static func snapshot2DContext(_ context: Swift.Int64, _ width: Swift.Int, _ height: Swift.Int) -> UIKit.UIImage?
@@ -37,6 +37,9 @@ import _SwiftConcurrencyShims
   @objc public static func flush2DContextAndSyncCPU(_ context: Swift.Int64)
   @objc public static func presentDrawable(_ context: Swift.Int64)
   @objc public static func flushWebGL(_ context: Swift.Int64) -> Swift.Bool
+  @objc public static func resizeWebGL(_ context: Swift.Int64, _ width: Swift.Int, _ height: Swift.Int)
+  @objc public static func snapshotWebGL(_ context: Swift.Int64) -> UIKit.UIImage?
+  @objc public static func runWithWebGL(_ context: Swift.Int64, _ block: () -> Swift.Void)
   @objc public static func releaseWebGL(_ context: Swift.Int64)
   @objc public static func release2DContext(_ context: Swift.Int64)
   @objc public static func releaseWebGPU(_ context: Swift.Int64)
@@ -119,7 +122,7 @@ import _SwiftConcurrencyShims
   }
   @objc @_Concurrency.MainActor @preconcurrency public static let store: Foundation.NSMutableDictionary
   @objc @_Concurrency.MainActor @preconcurrency public static func getViews() -> Foundation.NSMapTable<Foundation.NSString, CanvasNative.NSCCanvas>
-  @objc @_Concurrency.MainActor @preconcurrency public func getGlViewPtr() -> Swift.UnsafeMutableRawPointer
+  @objc @_Concurrency.MainActor @preconcurrency public func getGlLayerPtr() -> Swift.UnsafeMutableRawPointer
   @objc @_Concurrency.MainActor @preconcurrency public func getMtlViewPtr() -> Swift.UnsafeMutableRawPointer
   @objc @_Concurrency.MainActor @preconcurrency public func getMtlLayerPtr() -> Swift.UnsafeMutableRawPointer
   @objc @_Concurrency.MainActor @preconcurrency public var autoScale: Swift.Bool {
@@ -136,6 +139,7 @@ import _SwiftConcurrencyShims
     get
   }
   @objc @_Concurrency.MainActor @preconcurrency public var threaded2D: Swift.Bool
+  @objc @_Concurrency.MainActor @preconcurrency public var threadedWebGL: Swift.Bool
   @objc @_Concurrency.MainActor @preconcurrency public var drawingBufferWidth: CoreFoundation.CGFloat {
     @objc get
   }
@@ -223,7 +227,7 @@ extension UIKit.UIView {
   @objc override dynamic public init()
   @objc deinit
 }
-@_inheritsConvenienceInitializers @objcMembers @objc(CanvasGLKView) @_Concurrency.MainActor @preconcurrency public class CanvasGLKView : UIKit.UIView {
+@_inheritsConvenienceInitializers @objcMembers @objc(CanvasGLView) @_Concurrency.MainActor @preconcurrency public class CanvasGLView : UIKit.UIView {
   @objc @_Concurrency.MainActor @preconcurrency weak public var canvas: CanvasNative.NSCCanvas? {
     get
   }

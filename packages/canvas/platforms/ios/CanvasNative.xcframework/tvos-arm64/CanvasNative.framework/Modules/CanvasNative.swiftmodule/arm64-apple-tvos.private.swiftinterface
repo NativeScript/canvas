@@ -7,7 +7,6 @@ import Accelerate
 @_exported import CanvasNative
 import CoreVideo
 import Foundation
-import GLKit
 import Metal
 import MetalKit
 import OpenGLES
@@ -31,7 +30,7 @@ import _SwiftConcurrencyShims
   @objc public static func initWebGPUWithViewLayer(_ instance: Swift.Int64, _ view: CanvasNative.NSCCanvas, _ width: Swift.UInt32, _ height: Swift.UInt32) -> Swift.Int64
   @objc public static func initWebGPUWithView(_ instance: Swift.Int64, _ view: CanvasNative.NSCCanvas, _ width: Swift.UInt32, _ height: Swift.UInt32) -> Swift.Int64
   @objc public static func resizeWebGPUWithView(_ context: Swift.Int64, _ view: CanvasNative.NSCCanvas, _ width: Swift.UInt32, _ height: Swift.UInt32)
-  @objc public static func initWebGLWithView(_ view: CanvasNative.NSCCanvas, _ alpha: Swift.Bool, _ antialias: Swift.Bool, _ depth: Swift.Bool, _ fail_if_major_performance_caveat: Swift.Bool, _ power_preference: Swift.Int32, _ premultiplied_alpha: Swift.Bool, _ preserve_drawing_buffer: Swift.Bool, _ stencil: Swift.Bool, _ desynchronized: Swift.Bool, _ xr_compatible: Swift.Bool, _ version: Swift.Int32) -> Swift.Int64
+  @objc public static func initWebGLWithView(_ view: CanvasNative.NSCCanvas, _ alpha: Swift.Bool, _ antialias: Swift.Bool, _ depth: Swift.Bool, _ fail_if_major_performance_caveat: Swift.Bool, _ power_preference: Swift.Int32, _ premultiplied_alpha: Swift.Bool, _ preserve_drawing_buffer: Swift.Bool, _ stencil: Swift.Bool, _ desynchronized: Swift.Bool, _ xr_compatible: Swift.Bool, _ version: Swift.Int32, _ threaded: Swift.Bool) -> Swift.Int64
   @objc public static func initWebGLWithWidthAndHeight(_ width: Swift.Int32, _ height: Swift.Int32, _ alpha: Swift.Bool, _ antialias: Swift.Bool, _ depth: Swift.Bool, _ fail_if_major_performance_caveat: Swift.Bool, _ power_preference: Swift.Int32, _ premultiplied_alpha: Swift.Bool, _ preserve_drawing_buffer: Swift.Bool, _ stencil: Swift.Bool, _ desynchronized: Swift.Bool, _ xr_compatible: Swift.Bool, _ version: Swift.Int32) -> Swift.Int64
   @objc public static func resize2DContext(_ context: Swift.Int64, _ width: Swift.Float, _ height: Swift.Float)
   @objc public static func snapshot2DContext(_ context: Swift.Int64, _ width: Swift.Int, _ height: Swift.Int) -> UIKit.UIImage?
@@ -39,6 +38,9 @@ import _SwiftConcurrencyShims
   @objc public static func flush2DContextAndSyncCPU(_ context: Swift.Int64)
   @objc public static func presentDrawable(_ context: Swift.Int64)
   @objc public static func flushWebGL(_ context: Swift.Int64) -> Swift.Bool
+  @objc public static func resizeWebGL(_ context: Swift.Int64, _ width: Swift.Int, _ height: Swift.Int)
+  @objc public static func snapshotWebGL(_ context: Swift.Int64) -> UIKit.UIImage?
+  @objc public static func runWithWebGL(_ context: Swift.Int64, _ block: () -> Swift.Void)
   @objc public static func releaseWebGL(_ context: Swift.Int64)
   @objc public static func release2DContext(_ context: Swift.Int64)
   @objc public static func releaseWebGPU(_ context: Swift.Int64)
@@ -121,7 +123,7 @@ import _SwiftConcurrencyShims
   }
   @objc @_Concurrency.MainActor @preconcurrency public static let store: Foundation.NSMutableDictionary
   @objc @_Concurrency.MainActor @preconcurrency public static func getViews() -> Foundation.NSMapTable<Foundation.NSString, CanvasNative.NSCCanvas>
-  @objc @_Concurrency.MainActor @preconcurrency public func getGlViewPtr() -> Swift.UnsafeMutableRawPointer
+  @objc @_Concurrency.MainActor @preconcurrency public func getGlLayerPtr() -> Swift.UnsafeMutableRawPointer
   @objc @_Concurrency.MainActor @preconcurrency public func getMtlViewPtr() -> Swift.UnsafeMutableRawPointer
   @objc @_Concurrency.MainActor @preconcurrency public func getMtlLayerPtr() -> Swift.UnsafeMutableRawPointer
   @objc @_Concurrency.MainActor @preconcurrency public var autoScale: Swift.Bool {
@@ -138,6 +140,7 @@ import _SwiftConcurrencyShims
     get
   }
   @objc @_Concurrency.MainActor @preconcurrency public var threaded2D: Swift.Bool
+  @objc @_Concurrency.MainActor @preconcurrency public var threadedWebGL: Swift.Bool
   @objc @_Concurrency.MainActor @preconcurrency public var drawingBufferWidth: CoreFoundation.CGFloat {
     @objc get
   }
@@ -198,9 +201,12 @@ extension UIKit.UIView {
   @objc override dynamic public init()
   @objc public init(device: any Metal.MTLDevice)
   @objc public func drawFrame(_ player: AVFoundation.AVPlayer, _ output: AVFoundation.AVPlayerItemVideoOutput, _ videoSize: CoreFoundation.CGSize, _ internalFormat: Swift.Int32, _ format: Swift.Int32, _ flipYWebGL: Swift.Bool)
+  @objc public func drawFrame(_ player: AVFoundation.AVPlayer, _ output: AVFoundation.AVPlayerItemVideoOutput, _ videoSize: CoreFoundation.CGSize, _ internalFormat: Swift.Int32, _ format: Swift.Int32, _ flipYWebGL: Swift.Bool, _ context: Swift.Int64)
   @objc public func drawFrame(buffer: CoreVideo.CVPixelBuffer, width: Swift.Int, height: Swift.Int, internalFormat: Swift.Int32, format: Swift.Int32, flipYWebGL: Swift.Bool)
   @objc public func drawFrameTexImage3D(_ player: AVFoundation.AVPlayer, _ output: AVFoundation.AVPlayerItemVideoOutput, _ videoSize: CoreFoundation.CGSize, _ target: Swift.Int32, _ level: Swift.Int32, _ internalFormat: Swift.Int32, _ width: Swift.Int32, _ height: Swift.Int32, _ depth: Swift.Int32, _ border: Swift.Int32, _ format: Swift.Int32, _ type: Swift.Int32, _ flipYWebGL: Swift.Bool)
+  @objc public func drawFrameTexImage3D(_ player: AVFoundation.AVPlayer, _ output: AVFoundation.AVPlayerItemVideoOutput, _ videoSize: CoreFoundation.CGSize, _ target: Swift.Int32, _ level: Swift.Int32, _ internalFormat: Swift.Int32, _ width: Swift.Int32, _ height: Swift.Int32, _ depth: Swift.Int32, _ border: Swift.Int32, _ format: Swift.Int32, _ type: Swift.Int32, _ flipYWebGL: Swift.Bool, _ context: Swift.Int64)
   @objc public func drawFrameTexSubImage3D(_ player: AVFoundation.AVPlayer, _ output: AVFoundation.AVPlayerItemVideoOutput, _ videoSize: CoreFoundation.CGSize, _ target: Swift.Int32, _ level: Swift.Int32, _ xoffset: Swift.Int32, _ yoffset: Swift.Int32, _ zoffset: Swift.Int32, _ width: Swift.Int32, _ height: Swift.Int32, _ depth: Swift.Int32, _ format: Swift.Int32, _ type: Swift.Int32, _ flipYWebGL: Swift.Bool)
+  @objc public func drawFrameTexSubImage3D(_ player: AVFoundation.AVPlayer, _ output: AVFoundation.AVPlayerItemVideoOutput, _ videoSize: CoreFoundation.CGSize, _ target: Swift.Int32, _ level: Swift.Int32, _ xoffset: Swift.Int32, _ yoffset: Swift.Int32, _ zoffset: Swift.Int32, _ width: Swift.Int32, _ height: Swift.Int32, _ depth: Swift.Int32, _ format: Swift.Int32, _ type: Swift.Int32, _ flipYWebGL: Swift.Bool, _ context: Swift.Int64)
   @objc public static func drawVideoFrame(_ player: AVFoundation.AVPlayer, _ output: AVFoundation.AVPlayerItemVideoOutput, _ videoSize: CoreFoundation.CGSize, _ context: Swift.Int64, _ dx: Swift.Float, _ dy: Swift.Float) -> Swift.Bool
   @objc public static func drawVideoFrame(_ player: AVFoundation.AVPlayer, _ output: AVFoundation.AVPlayerItemVideoOutput, _ videoSize: CoreFoundation.CGSize, _ context: Swift.Int64, _ dx: Swift.Float, _ dy: Swift.Float, _ dw: Swift.Float, _ dh: Swift.Float) -> Swift.Bool
   @objc public static func drawVideoFrame(_ player: AVFoundation.AVPlayer, _ output: AVFoundation.AVPlayerItemVideoOutput, _ videoSize: CoreFoundation.CGSize, _ context: Swift.Int64, _ sx: Swift.Float, _ sy: Swift.Float, _ sw: Swift.Float, _ sh: Swift.Float, _ dx: Swift.Float, _ dy: Swift.Float, _ dw: Swift.Float, _ dh: Swift.Float) -> Swift.Bool
@@ -250,19 +256,19 @@ extension UIKit.UIView {
   @objc override dynamic public init()
   @objc deinit
 }
-@_hasMissingDesignatedInitializers @objcMembers @objc(CanvasGLKView) @_Concurrency.MainActor @preconcurrency public class CanvasGLKView : GLKit.GLKView, GLKit.GLKViewDelegate {
+@_inheritsConvenienceInitializers @objcMembers @objc(CanvasGLView) @_Concurrency.MainActor @preconcurrency public class CanvasGLView : UIKit.UIView {
   @objc @_Concurrency.MainActor @preconcurrency weak public var canvas: CanvasNative.NSCCanvas? {
     get
   }
-  @_Concurrency.MainActor @preconcurrency @objc dynamic public init()
+  @_Concurrency.MainActor @preconcurrency @objc override dynamic public class var layerClass: Swift.AnyClass {
+    @objc get
+  }
+  @objc @_Concurrency.MainActor @preconcurrency public var eaglLayer: QuartzCore.CAEAGLLayer {
+    @objc get
+  }
   @_Concurrency.MainActor @preconcurrency @objc override dynamic public init(frame: CoreFoundation.CGRect)
-  @_Concurrency.MainActor @preconcurrency @objc override dynamic public func bindDrawable()
-  @_Concurrency.MainActor @preconcurrency @objc override dynamic public func deleteDrawable()
-  @_Concurrency.MainActor @preconcurrency @objc public func glkView(_ view: GLKit.GLKView, drawIn rect: CoreFoundation.CGRect)
+  @_Concurrency.MainActor @preconcurrency @objc required dynamic public init?(coder: Foundation.NSCoder)
   @objc deinit
-}
-extension GLKit.GLKView {
-  @objc @_Concurrency.MainActor @preconcurrency dynamic public func snapshotWithData(_ data: Foundation.Data)
 }
 @_inheritsConvenienceInitializers @_hasMissingDesignatedInitializers @objcMembers @objc(CanvasCPUView) @_Concurrency.MainActor @preconcurrency public class CanvasCPUView : UIKit.UIView {
   @objc @_Concurrency.MainActor @preconcurrency public var ignorePixelScaling: Swift.Bool

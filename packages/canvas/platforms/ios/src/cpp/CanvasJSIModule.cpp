@@ -149,6 +149,16 @@ void CanvasJSIModule::install(v8::Isolate *isolate) {
 																																												 GPUSupportedLimitsImpl::Init(canvasMod, isolate);
 																																												 GPUDeviceImpl::Init(canvasMod, isolate);
 																																												 GPUQueueImpl::Init(canvasMod, isolate);
+
+																																												 // The count of canvases behind (canvas_native_canvases_behind), as memory JS reads every
+																																												 // frame without a call. The counter is static, so nothing frees it.
+																																												 {
+																																												     auto store = v8::ArrayBuffer::NewBackingStore(
+																																												             (void *) canvas_native_canvases_behind_address(), sizeof(uint32_t),
+																																												             [](void *, size_t, void *) {}, nullptr);
+																																												     canvasMod->Set(context, ConvertToV8String(isolate, "__canvasesBehind"),
+																																												                    v8::ArrayBuffer::New(isolate, std::move(store))).FromJust();
+																																												 }
 																																												 
 																																												 v8Global->Set(context, ConvertToV8String(isolate, "CanvasModule"), canvasMod).FromJust();
 																																												 canvasMod->Set(context, ConvertToV8String(isolate, "create2DContext"),

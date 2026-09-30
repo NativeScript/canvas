@@ -175,3 +175,9 @@ pub(crate) fn canvas_caught_up() {
 pub extern "C" fn canvas_native_canvases_behind() -> u32 {
     CANVASES_BEHIND.load(Ordering::Acquire)
 }
+
+/// Where that count lives, for the JS side to read as memory every frame instead of calling in.
+#[no_mangle]
+pub extern "C" fn canvas_native_canvases_behind_address() -> *const u32 {
+    CANVASES_BEHIND.as_ptr()
+}

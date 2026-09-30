@@ -34,15 +34,6 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_Utils_nativeMakeState
     JNI_FALSE
 }
 
-/// `canvas_native_canvases_behind`, for the requestAnimationFrame hold-back.
-#[no_mangle]
-pub extern "system" fn Java_org_nativescript_canvas_Utils_nativeCanvasesBehind(
-    _: JNIEnv,
-    _: jni::objects::JClass,
-) -> jint {
-    canvas_c::canvas_native_canvases_behind() as jint
-}
-
 /// Runs `block` (a `Runnable`) with `state` current, on the thread that owns it, and waits for it:
 /// a threaded WebGL context can only be current on the WebGL thread, so Java that draws with it
 /// (SurfaceTexture, GLES) has to run there too.

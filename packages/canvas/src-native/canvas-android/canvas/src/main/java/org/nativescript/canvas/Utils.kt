@@ -43,13 +43,6 @@ object Utils {
     @JvmStatic
     private external fun nativeRunWithWebGL(state: Long, block: Runnable)
 
-    @JvmStatic
-    private external fun nativeCanvasesBehind(): Int
-
-    /** Threaded canvases (WebGL, 2D) with a frame waiting behind one that hasn't reached the screen. */
-    @JvmStatic
-    fun canvasesBehind(): Int = nativeCanvasesBehind()
-
     /**
      * Runs [block] with the WebGL context [state] current, on the thread that owns it, and returns
      * its result: a threaded context can only be current on the WebGL thread, so GLES and

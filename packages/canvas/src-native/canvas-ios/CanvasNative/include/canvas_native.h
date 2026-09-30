@@ -860,6 +860,9 @@ typedef struct WEBGL_lose_context WEBGL_lose_context;
 
 typedef struct WebGLActiveInfo WebGLActiveInfo;
 
+/**
+ * `.1`: its context is threaded, so the typed extension's calls go to the WebGL thread too.
+ */
 typedef struct WebGLExtension WebGLExtension;
 
 typedef struct WebGLFramebufferAttachmentParameter WebGLFramebufferAttachmentParameter;
@@ -870,6 +873,10 @@ typedef struct WebGLResult WebGLResult;
 
 typedef struct WebGLShaderPrecisionFormat WebGLShaderPrecisionFormat;
 
+/**
+ * A WebGL context. A threaded one is built, used and dropped on the WebGL thread (`thread`), and
+ * its inner state is only ever touched there: calls reach it through `post` and `sync`.
+ */
 typedef struct WebGLState WebGLState;
 
 typedef struct WebGLSync WebGLSync;
@@ -6048,5 +6055,16 @@ void canvas_native_webgl2_tex_image2d_image_data(int32_t target,
                                                  int32_t type_,
                                                  const struct ImageData *image_data,
                                                  struct WebGLState *state);
+
+/**
+ * How many threaded canvases are behind. The JS side holds requestAnimationFrame back while any
+ * are, as a browser does when its compositor falls behind, rather than queue more work.
+ */
+uint32_t canvas_native_canvases_behind(void);
+
+/**
+ * Where that count lives, for the JS side to read as memory every frame instead of calling in.
+ */
+const uint32_t *canvas_native_canvases_behind_address(void);
 
 #endif  /* CANVAS_C_H */

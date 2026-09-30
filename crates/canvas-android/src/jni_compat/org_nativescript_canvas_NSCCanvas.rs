@@ -634,7 +634,7 @@ fn native_update_gl_no_surface(width: jint, height: jint, context: jlong) {
     let context = context as *mut WebGLState;
     let context = unsafe { &*context };
     // Waited on: when the window is going away this is how the context lets go of it.
-    context.sync(|state| {
+    context.detach(|state| {
         state.make_current();
         state.resize_pbuffer(width, height);
     });

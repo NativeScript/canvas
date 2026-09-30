@@ -14,7 +14,7 @@ use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_void};
 use std::ptr::NonNull;
 use std::cell::UnsafeCell;
-use std::sync::atomic::{AtomicU32, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU32, AtomicUsize, Ordering};
 
 /* GL */
 
@@ -270,6 +270,8 @@ pub struct WebGLState {
     threaded: bool,
     /// Presents queued and not yet made (threaded only).
     in_flight: AtomicU32,
+    /// Queued presents are skipped: the context is letting go of its window (threaded only).
+    detaching: AtomicBool,
 }
 
 /// Presents a threaded context may have queued before `present` waits for the oldest.
@@ -342,10 +344,22 @@ impl WebGLState {
         crate::webgl::thread::post(move || {
             let state = state;
             let state = unsafe { &*state.0 };
-            state.inner_mut().make_current_and_swap_buffers();
+            if !state.detaching.load(Ordering::Acquire) {
+                state.inner_mut().make_current_and_swap_buffers();
+            }
             crate::webgl::thread::frame_presented(state.in_flight.fetch_sub(1, Ordering::AcqRel));
         });
         true
+    }
+
+    /// Runs `f` (which lets go of the window) after every queued call, skipping the presents queued
+    /// meanwhile: they are for a window that is going away, and waiting on each would stall the
+    /// caller for as many frames as the GPU is behind.
+    pub fn detach<R>(&self, f: impl FnOnce(&mut canvas_webgl::prelude::WebGLState) -> R) -> R {
+        self.detaching.store(true, Ordering::Release);
+        let result = self.sync(f);
+        self.detaching.store(false, Ordering::Release);
+        result
     }
 
     /// The drawing buffer as an image (`canvas_native_webgl_read_drawing_buffer`), read on the
@@ -405,6 +419,7 @@ impl WebGLState {
             refs: AtomicUsize::new(1),
             threaded: false,
             in_flight: AtomicU32::new(0),
+            detaching: AtomicBool::new(false),
         }
     }
 }

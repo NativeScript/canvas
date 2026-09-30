@@ -207,6 +207,8 @@ declare module org {
 				public static TAG: string = 'CanvasView';
 				public getThreaded2D(): boolean;
 				public setThreaded2D(value: boolean): void;
+				public getThreadedWebGL(): boolean;
+				public setThreadedWebGL(value: boolean): void;
 				public create2DContext(alpha: boolean, antialias: boolean, depth: boolean, failIfMajorPerformanceCaveat: boolean, powerPreference: number, premultipliedAlpha: boolean, preserveDrawingBuffer: boolean, stencil: boolean, desynchronized: boolean, xrCompatible: boolean, willReadFrequently: boolean, colorSpace: number): number;
 				public makeContextCurrent(): void;
 				public setSurfaceView(value: org.nativescript.canvas.GLViewSV): void;
@@ -890,6 +892,7 @@ declare module org {
 				public getByteBufferFromBitmap(bitmap: globalAndroid.graphics.Bitmap): java.nio.ByteBuffer;
 				public isEmulator(): boolean;
 				public static createSurfaceTexture(render: number): androidNative.Array<any>;
+				public static webGLContextsBehind(): number;
 				public getBytesFromBitmap(bitmap: globalAndroid.graphics.Bitmap): androidNative.Array<number>;
 				public static updateTexImage(state: number, flipY: boolean, texture: globalAndroid.graphics.SurfaceTexture, render: org.nativescript.canvas.TextureRender, width: number, height: number, internalFormat: number, format: number): void;
 				public static createRenderAndAttachToGLContext(render: number, state: globalAndroid.graphics.SurfaceTexture): org.nativescript.canvas.TextureRender;

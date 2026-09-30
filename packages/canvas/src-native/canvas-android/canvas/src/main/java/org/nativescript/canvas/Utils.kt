@@ -41,6 +41,28 @@ object Utils {
     private external fun nativeMakeStateContextCurrent(state: Long): Boolean
 
     @JvmStatic
+    private external fun nativeRunWithWebGL(state: Long, block: Runnable)
+
+    @JvmStatic
+    private external fun nativeWebGLContextsBehind(): Int
+
+    /** Threaded WebGL contexts the GPU has fallen behind (a frame queued behind an unpresented one). */
+    @JvmStatic
+    fun webGLContextsBehind(): Int = nativeWebGLContextsBehind()
+
+    /**
+     * Runs [block] with the WebGL context [state] current, on the thread that owns it, and returns
+     * its result: a threaded context can only be current on the WebGL thread, so GLES and
+     * SurfaceTexture calls against it have to run there.
+     */
+    private fun <T> withWebGL(state: Long, block: () -> T): T {
+        var result: Any? = null
+        nativeRunWithWebGL(state) { result = block() }
+        @Suppress("UNCHECKED_CAST")
+        return result as T
+    }
+
+    @JvmStatic
     private external fun nativeMake2DContextCurrent(context: Long): Boolean
 
     @JvmStatic
@@ -186,11 +208,10 @@ object Utils {
 
 
     @JvmStatic
-    fun createSurfaceTexture(state: Long): Array<Any> {
-        nativeMakeStateContextCurrent(state)
+    fun createSurfaceTexture(state: Long): Array<Any> = withWebGL(state) {
         val render = TextureRender()
         render.surfaceCreated()
-        return arrayOf(SurfaceTexture(render.textureId), render)
+        arrayOf(SurfaceTexture(render.textureId), render)
     }
 
 
@@ -258,12 +279,11 @@ object Utils {
     fun createRenderAndAttachToGLContext(
         state: Long,
         texture: SurfaceTexture,
-    ): TextureRender {
-        nativeMakeStateContextCurrent(state)
+    ): TextureRender = withWebGL(state) {
         val render = TextureRender()
         render.surfaceCreated()
         texture.attachToGLContext(render.textureId)
-        return render
+        render
     }
 
 
@@ -272,14 +292,12 @@ object Utils {
         state: Long,
         texture: SurfaceTexture,
         render: TextureRender
-    ) {
-        nativeMakeStateContextCurrent(state)
+    ) = withWebGL(state) {
         texture.attachToGLContext(render.textureId)
     }
 
     @JvmStatic
-    fun detachFromGLContext(state: Long, texture: SurfaceTexture) {
-        nativeMakeStateContextCurrent(state)
+    fun detachFromGLContext(state: Long, texture: SurfaceTexture) = withWebGL(state) {
         texture.detachFromGLContext()
     }
 
@@ -293,8 +311,7 @@ object Utils {
         height: Int,
         internalFormat: Int,
         format: Int
-    ) {
-        nativeMakeStateContextCurrent(state)
+    ) = withWebGL(state) {
         render.drawFrame(texture, width, height, internalFormat, format, flipY)
 
         if (render.width != width || render.height != width) {
@@ -319,8 +336,7 @@ object Utils {
         depth: Int,
         border: Int,
         zoffset: Int,
-    ) {
-        nativeMakeStateContextCurrent(state)
+    ) = withWebGL(state) {
         render.drawFrameTexImage3D(
             texture, target, level, internalformat,
             width, height, depth, border, zoffset, flipY
@@ -340,8 +356,7 @@ object Utils {
         zoffset: Int,
         width: Int,
         height: Int,
-    ) {
-        nativeMakeStateContextCurrent(state)
+    ) = withWebGL(state) {
         render.drawFrameTexSubImage3D(
             texture, target, level, xoffset, yoffset, zoffset, width, height, flipY
         )

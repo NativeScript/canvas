@@ -100,6 +100,12 @@ export class Canvas extends CanvasBase {
 	/** Default for `getContext('2d', { threaded })`: rasterize on a shared render thread. */
 	static threaded2D = true;
 
+	/**
+	 * Default for `getContext('webgl' | 'webgl2', { threaded })`: run the context on the WebGL
+	 * thread, so GL work and presenting never block the UI thread.
+	 */
+	static threadedWebGL = true;
+
 	constructor(nativeInstance?) {
 		super();
 		if (nativeInstance) {
@@ -515,6 +521,14 @@ export class Canvas extends CanvasBase {
 		return context;
 	}
 
+	private __setThreadedWebGL(contextAttributes?: any) {
+		const threaded = !!(contextAttributes?.threaded ?? Canvas.threadedWebGL);
+		this._canvas.setThreadedWebGL?.(threaded);
+		if (threaded) {
+			holdBackAnimationFramesWhileGLBehind();
+		}
+	}
+
 	getContext(type: string, contextAttributes?: any): CanvasRenderingContext2D | WebGLRenderingContext | WebGL2RenderingContext | GPUCanvasContext | null {
 		if (!this._canvas) {
 			return null;
@@ -553,6 +567,7 @@ export class Canvas extends CanvasBase {
 				}
 				if (!this._webglContext) {
 					const opts = { version: 1, ...defaultOpts, ...handleContextOptions(type, contextAttributes) };
+					this.__setThreadedWebGL(contextAttributes);
 					this._canvas.initContext(type, opts.alpha, false, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
 					this._webglContext = new (WebGLRenderingContext as any)(this._canvas, opts);
 					(this._webglContext as any)._canvas = this;
@@ -568,6 +583,7 @@ export class Canvas extends CanvasBase {
 				}
 				if (!this._webgl2Context) {
 					const opts = { version: 2, ...defaultOpts, ...handleContextOptions(type, contextAttributes) };
+					this.__setThreadedWebGL(contextAttributes);
 					this._canvas.initContext(type, opts.alpha, false, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
 					this._webgl2Context = new (WebGL2RenderingContext as any)(this._canvas, opts);
 					(this._webgl2Context as any)._canvas = this;
@@ -630,4 +646,57 @@ export class Canvas extends CanvasBase {
 	setPointerCapture() {}
 
 	releasePointerCapture() {}
+}
+
+/**
+ * Holds requestAnimationFrame callbacks back a frame while the GPU is behind a threaded WebGL
+ * context (it has a frame queued behind one not yet presented), as a browser does when its
+ * compositor falls behind. The UI thread then stays free between the frames the GPU can take,
+ * instead of queueing more work for it every vsync.
+ *
+ * Installed with the first threaded context, over whatever requestAnimationFrame is global by then
+ * (core's, or a polyfill's).
+ */
+function holdBackAnimationFramesWhileGLBehind() {
+	const target = global as any;
+	const request = target.requestAnimationFrame;
+	const cancel = target.cancelAnimationFrame;
+	if (typeof request !== 'function' || request.__holdsBackForGL) {
+		return;
+	}
+	const utils = org.nativescript.canvas.Utils;
+	// An older native library: leave requestAnimationFrame alone rather than break every frame.
+	if (typeof utils?.webGLContextsBehind !== 'function') {
+		return;
+	}
+	// Our ids stay put while a held-back callback is re-requested under a new one.
+	const pending = new Map<number, number>();
+	let nextId = 1;
+	const requestAnimationFrame = (callback: (time: number) => void) => {
+		const id = nextId++;
+		const run = (time: number) => {
+			if (utils.webGLContextsBehind() > 0) {
+				pending.set(id, request(run));
+				return;
+			}
+			pending.delete(id);
+			callback(time);
+		};
+		pending.set(id, request(run));
+		return id;
+	};
+	requestAnimationFrame.__holdsBackForGL = true;
+	const cancelAnimationFrame = (id: number) => {
+		const current = pending.get(id);
+		if (current !== undefined) {
+			pending.delete(id);
+			cancel?.(current);
+		}
+	};
+	target.requestAnimationFrame = requestAnimationFrame;
+	target.cancelAnimationFrame = cancelAnimationFrame;
+	if (target.window && target.window !== target && target.window.requestAnimationFrame === request) {
+		target.window.requestAnimationFrame = requestAnimationFrame;
+		target.window.cancelAnimationFrame = cancelAnimationFrame;
+	}
 }

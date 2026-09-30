@@ -111,8 +111,8 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
 
             let canvas_signatures = if ret >= ANDROID_O {
                 let mut ret = vec![
-                    "(Landroid/view/Surface;ZZZZIZZZZZI)J",
-                    "(IIZZZZIZZZZZI)J",
+                    "(Landroid/view/Surface;ZZZZIZZZZZIZ)J",
+                    "(IIZZZZIZZZZZIZ)J",
                     "(IILandroid/view/Surface;ZFIFII)J",
                     "(Landroid/view/Surface;J)V",
                     "(Landroid/view/Surface;IIJ)V",
@@ -149,8 +149,8 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                 ret
             } else {
                 let mut ret = vec![
-                    "!(Landroid/view/Surface;ZZZZIZZZZZI)J",
-                    "!(IIZZZZIZZZZZI)J",
+                    "(Landroid/view/Surface;ZZZZIZZZZZIZ)J",
+                    "(IIZZZZIZZZZZIZ)J",
                     "!(IILandroid/view/Surface;ZFIFII)J",
                     "!(Landroid/view/Surface;J)V",
                     "!(Landroid/view/Surface;IIJ)V",

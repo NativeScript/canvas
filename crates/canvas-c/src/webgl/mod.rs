@@ -4,6 +4,8 @@ mod gl2;
 pub use gl2::*;
 mod result;
 pub use result::*;
+pub(crate) mod thread;
+pub use thread::canvas_native_webgl_contexts_behind;
 
 #[allow(non_camel_case_types)]
 #[derive(Copy, Clone, Debug, PartialOrd, PartialEq)]

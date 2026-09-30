@@ -303,6 +303,21 @@ function registerCommon(version: 1 | 2) {
 			equal(gl.getUniformLocation(program, 'nope'), null, 'an unknown uniform must be null');
 		});
 
+		test('deleteProgram deletes the program and nothing else', () => {
+			const { gl } = makeGL(version);
+			// A fresh context's first program shares its name with the first framebuffer, which is
+			// the canvas's own on iOS.
+			const program = gl.createProgram();
+			gl.deleteProgram(program);
+			equal(gl.isProgram(program), false, 'the program should be gone');
+			gl.clearColor(0, 1, 0, 1);
+			gl.clear(gl.COLOR_BUFFER_BIT);
+			const pixel = new Uint8Array(4);
+			gl.readPixels(32, 32, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
+			arrayEqual(pixel, [0, 255, 0, 255], 'the canvas should still take the clear');
+			equal(gl.getError(), gl.NO_ERROR, 'getError');
+		});
+
 		test('getActiveAttrib / getActiveUniform describe the program', () => {
 			const { gl } = makeGL(version);
 			const program = buildProgram(gl);

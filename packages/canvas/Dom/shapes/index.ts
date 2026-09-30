@@ -11,8 +11,8 @@ export * from './Points';
 export * from './Oval';
 export * from './Atlas';
 
-export function vec(x: number, y: number) {
-	return { x, y };
+export function vec(x = 0, y?: number) {
+	return { x, y: y ?? x };
 }
 
 export function rect(x: number, y: number, width: number, height: number) {

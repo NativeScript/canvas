@@ -247,14 +247,6 @@ export class Group extends Paint {
 		}
 	}
 
-	addChild(view: View): void {
-		if (view instanceof Paint || view instanceof Image) {
-			view._addCanvas(this._canvas);
-			(view as any)._inGroup = true;
-			this._children.add(view as any);
-		}
-	}
-
 	draw() {
 		if (this._children.size > 0) {
 			const context = this._canvas.getContext('2d') as any as CanvasRenderingContext2D;

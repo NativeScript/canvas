@@ -4,14 +4,24 @@ import { Dom } from './Dom';
 
 export const paintStyleProperty = new Property<Paint, 'fill' | 'stroke'>({
 	name: 'paintStyle',
+	valueChanged(target) {
+		target.invalidate();
+	},
 });
 
 export const strokeWidthProperty = new Property<Paint, number>({
 	name: 'strokeWidth',
+	valueConverter: parseFloat,
+	valueChanged(target) {
+		target.invalidate();
+	},
 });
 
 export const strokeJoinProperty = new Property<Paint, 'bevel' | 'miter' | 'round'>({
 	name: 'strokeJoin',
+	valueChanged(target) {
+		target.invalidate();
+	},
 });
 
 const defaultColor = new Color('black');
@@ -34,27 +44,33 @@ export class Paint extends LayoutBase {
 	}
 
 	invalidate() {
-		const parent = this.parent as Dom;
-		if (parent != null) {
-			parent._dirty?.();
+		let parent = this.parent as any;
+		while (parent && typeof parent._dirty !== 'function') {
+			parent = parent.parent;
 		}
+		(parent as Dom)?._dirty();
 	}
 
-	_getStrokeJoin() {
-		return (this.parent as any)?.strokeJoin ?? this.strokeJoin ?? 'miter';
+	// An element's own paint props win over those it inherits.
+	_getStrokeJoin(): 'bevel' | 'miter' | 'round' {
+		const parent = this.parent as any;
+		return this.strokeJoin ?? parent?._getStrokeJoin?.() ?? parent?.strokeJoin ?? 'miter';
 	}
 
-	_getStrokeWidth() {
-		return (this.parent as any)?.strokeWidth ?? this.strokeWidth ?? 1;
+	_getStrokeWidth(): number {
+		if (Number.isFinite(this.strokeWidth)) {
+			return this.strokeWidth;
+		}
+		const parent = this.parent as any;
+		return parent?._getStrokeWidth?.() ?? (Number.isFinite(parent?.strokeWidth) ? parent.strokeWidth : 1);
 	}
 
-	_getPaintStyle() {
-		const paintStyle = this.paintStyle;
-		if (paintStyle === 'stroke') {
-			return paintStyle;
+	_getPaintStyle(): 'fill' | 'stroke' {
+		if (this.paintStyle === 'fill' || this.paintStyle === 'stroke') {
+			return this.paintStyle;
 		}
 		if (this._inGroup) {
-			return (this.parent as any)?._getPaintStyle?.();
+			return (this.parent as any)?._getPaintStyle?.() ?? 'fill';
 		}
 		return 'fill';
 	}

@@ -577,11 +577,11 @@ impl web_g_l_2_rendering_context {
   ) -> String {
     let state = unsafe { &mut *self.state };
 
-    canvas_webgl::webgl2::canvas_native_webgl2_get_active_uniform_block_name(
+    state.sync(|state| canvas_webgl::webgl2::canvas_native_webgl2_get_active_uniform_block_name(
       program.0,
       uniform_block_index,
-      state.get_inner_mut(),
-    )
+      state,
+    ))
   }
 
   #[napi]
@@ -722,17 +722,17 @@ impl web_g_l_2_rendering_context {
   ) -> i32 {
     // -1 for a name that is not an output, as WebGL 2 specifies.
     let state = unsafe { &mut *self.state };
-    canvas_webgl::webgl2::canvas_native_webgl2_get_frag_data_location(program.0, name.as_str(), state.get_inner_mut())
+    state.sync(|state| canvas_webgl::webgl2::canvas_native_webgl2_get_frag_data_location(program.0, name.as_str(), state))
   }
 
   #[napi]
   pub fn get_indexed_parameter<'env>(&self, env: &'env Env, target: u32, index: u32) -> Result<Unknown<'env>> {
     let state = unsafe { &mut *self.state };
-    let ret = canvas_webgl::webgl2::canvas_native_webgl2_get_indexed_parameter(
+    let ret = state.sync(|state| canvas_webgl::webgl2::canvas_native_webgl2_get_indexed_parameter(
       target,
       index,
-      state.get_inner_mut(),
-    );
+      state,
+    ));
 
     if ret.get_is_buffer() {
       WebGLBuffer(ret.get_buffer_value() as u32)
@@ -1013,11 +1013,11 @@ impl web_g_l_2_rendering_context {
     uniform_block_name: String,
   ) -> u32 {
     let state = unsafe { &mut *self.state };
-    canvas_webgl::webgl2::canvas_native_webgl2_get_uniform_block_index(
+    state.sync(|state| canvas_webgl::webgl2::canvas_native_webgl2_get_uniform_block_index(
       program.0,
       uniform_block_name.as_str(),
-      state.get_inner_mut(),
-    )
+      state,
+    ))
   }
 
   #[napi]
@@ -1028,22 +1028,22 @@ impl web_g_l_2_rendering_context {
   ) -> Result<Vec<u32>> {
     let state = unsafe { &mut *self.state };
     Ok(
-      canvas_webgl::webgl2::canvas_native_webgl2_get_uniform_indices(
+      state.sync(|state| canvas_webgl::webgl2::canvas_native_webgl2_get_uniform_indices(
         program.0,
         uniform_names.deref(),
-        state.get_inner_mut(),
-      ),
+        state,
+      )),
     )
   }
 
   #[napi]
   pub fn invalidate_framebuffer(&self, target: u32, attachments: Vec<u32>) {
     let state = unsafe { &mut *self.state };
-    canvas_webgl::webgl2::canvas_native_webgl2_invalidate_framebuffer(
+    state.sync(|state| canvas_webgl::webgl2::canvas_native_webgl2_invalidate_framebuffer(
       target,
       attachments.as_slice(),
-      state.get_inner_mut(),
-    )
+      state,
+    ))
   }
 
   #[napi]
@@ -1057,15 +1057,15 @@ impl web_g_l_2_rendering_context {
     height: i32,
   ) {
     let state = unsafe { &mut *self.state };
-    canvas_webgl::webgl2::canvas_native_webgl2_invalidate_sub_framebuffer(
+    state.sync(|state| canvas_webgl::webgl2::canvas_native_webgl2_invalidate_sub_framebuffer(
       target,
       attachments.as_slice(),
       x,
       y,
       width,
       height,
-      state.get_inner_mut(),
-    )
+      state,
+    ))
   }
 
   #[napi]
@@ -1376,12 +1376,12 @@ impl web_g_l_2_rendering_context {
     buffer_mode: u32,
   ) {
     let state = unsafe { &mut *self.state };
-    canvas_webgl::webgl2::canvas_native_webgl2_transform_feedback_varyings(
+    state.sync(|state| canvas_webgl::webgl2::canvas_native_webgl2_transform_feedback_varyings(
       program.0,
       varyings.deref(),
       buffer_mode,
-      state.get_inner_mut(),
-    )
+      state,
+    ))
   }
 
   #[napi(js_name = "uniform1ui")]

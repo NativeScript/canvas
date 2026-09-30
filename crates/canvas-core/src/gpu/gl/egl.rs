@@ -155,12 +155,27 @@ fn load() -> Option<Egl> {
         .map(|s| s.to_string_lossy().into_owned())
         .unwrap_or_default();
 
-    Some(Egl {
+    let egl = Egl {
         instance,
         display,
         extensions,
         _gles: gles,
-    })
+    };
+    #[cfg(target_os = "windows")]
+    protect_immediate_context(&egl);
+    Some(egl)
+}
+
+/// Threaded WebGL contexts copy frames with ANGLE's immediate context outside ANGLE's lock while
+/// contexts on other threads call into ANGLE, so D3D has to serialize the two.
+#[cfg(target_os = "windows")]
+fn protect_immediate_context(egl: &Egl) {
+    use windows::core::Interface;
+    use windows::Win32::Graphics::Direct3D11::ID3D11Multithread;
+    let Some(device) = d3d11_device(egl) else { return };
+    if let Ok(multithread) = unsafe { device.GetImmediateContext() }.and_then(|context| context.cast::<ID3D11Multithread>()) {
+        let _ = unsafe { multithread.SetMultithreadProtected(true) };
+    }
 }
 
 /// ANGLE on a D3D11 device of ours, made with BGRA support: XAML SurfaceImageSources (what
@@ -289,8 +304,12 @@ impl Egl {
 /// ANGLE's own D3D11 device. Textures that ANGLE renders into must be created on it.
 #[cfg(target_os = "windows")]
 pub fn angle_d3d11_device() -> Option<windows::Win32::Graphics::Direct3D11::ID3D11Device> {
+    d3d11_device(shared()?)
+}
+
+#[cfg(target_os = "windows")]
+fn d3d11_device(egl: &Egl) -> Option<windows::Win32::Graphics::Direct3D11::ID3D11Device> {
     use windows::core::Interface;
-    let egl = shared()?;
     let query_display: QueryDisplayAttribExt =
         unsafe { std::mem::transmute(egl.instance.get_proc_address("eglQueryDisplayAttribEXT")?) };
     let query_device: QueryDeviceAttribExt =
@@ -405,6 +424,51 @@ pub(crate) struct GLContextInner {
 pub(crate) struct Presenter {
     swap_chain: crate::gpu::dxgi::CompositionSwapChain,
     context: windows::Win32::Graphics::Direct3D11::ID3D11DeviceContext,
+    /// A frame the display wasn't ready for, copied out of the drawing buffer so it can be shown
+    /// later without what's drawn next (`present_or_hold`).
+    held: parking_lot::Mutex<Option<windows::Win32::Graphics::Direct3D11::ID3D11Texture2D>>,
+}
+
+#[cfg(target_os = "windows")]
+impl Presenter {
+    fn new(swap_chain: crate::gpu::dxgi::CompositionSwapChain, context: windows::Win32::Graphics::Direct3D11::ID3D11DeviceContext) -> Self {
+        Self {
+            swap_chain,
+            context,
+            held: parking_lot::Mutex::new(None),
+        }
+    }
+
+    fn present_from(&self, texture: &windows::Win32::Graphics::Direct3D11::ID3D11Texture2D) -> bool {
+        let Ok(back_buffer) = self.swap_chain.buffer::<windows::Win32::Graphics::Direct3D11::ID3D11Texture2D>(0) else {
+            return false;
+        };
+        unsafe { self.context.CopyResource(&back_buffer, texture) };
+        drop(back_buffer);
+        self.swap_chain.present(true).is_ok()
+    }
+}
+
+#[cfg(target_os = "windows")]
+fn hold_frame(
+    presenter: &Presenter,
+    texture: &windows::Win32::Graphics::Direct3D11::ID3D11Texture2D,
+    reuse: Option<windows::Win32::Graphics::Direct3D11::ID3D11Texture2D>,
+) -> Option<windows::Win32::Graphics::Direct3D11::ID3D11Texture2D> {
+    use windows::Win32::Graphics::Direct3D11::D3D11_TEXTURE2D_DESC;
+    let mut desc = D3D11_TEXTURE2D_DESC::default();
+    unsafe { texture.GetDesc(&mut desc) };
+    let fits = |held: &windows::Win32::Graphics::Direct3D11::ID3D11Texture2D| {
+        let mut held_desc = D3D11_TEXTURE2D_DESC::default();
+        unsafe { held.GetDesc(&mut held_desc) };
+        (held_desc.Width, held_desc.Height) == (desc.Width, desc.Height)
+    };
+    let held = match reuse.filter(fits) {
+        Some(held) => held,
+        None => create_render_texture(desc.Width as i32, desc.Height as i32)?,
+    };
+    unsafe { presenter.context.CopyResource(&held, texture) };
+    Some(held)
 }
 
 /// A BGRA texture on ANGLE's device that a pbuffer can wrap and a swapchain buffer can be
@@ -704,9 +768,31 @@ impl GLContext {
         // A SurfaceImageSource has a fixed size: the host attaches one of the new size.
         self.0.xaml = None;
         match self.0.presenter.as_mut() {
-            Some(presenter) => presenter.swap_chain.resize(width.max(1) as u32, height.max(1) as u32).is_ok(),
+            Some(presenter) => {
+                *presenter.held.lock() = None;
+                presenter.swap_chain.resize(width.max(1) as u32, height.max(1) as u32).is_ok()
+            }
             None => true,
         }
+    }
+
+    /// Presents into a XAML `SurfaceImageSource` through `handoff` (made on the UI thread with
+    /// [`angle_d3d11_device`] at the context's size), from the thread that owns the context.
+    #[cfg(target_os = "windows")]
+    pub fn attach_xaml_handoff(&mut self, handoff: Arc<crate::gpu::dxgi::XamlHandoff>) -> bool {
+        if self.0.texture.is_none() {
+            return false;
+        }
+        let Some(device) = angle_d3d11_device() else { return false };
+        self.0.presenter = None;
+        self.0.xaml = match crate::gpu::dxgi::XamlSurface::with_handoff(handoff, &device) {
+            Ok(surface) => Some(surface),
+            Err(error) => {
+                log::error!("canvas: could not use the XAML surface for WebGL: {error}");
+                None
+            }
+        };
+        self.0.xaml.is_some()
     }
 
     /// Presents a texture context into a XAML `SurfaceImageSource` (any COM pointer to it, made
@@ -733,26 +819,35 @@ impl GLContext {
     /// Shows a texture context in a WinUI `SwapChainPanel` (any COM pointer to it). UI thread.
     #[cfg(target_os = "windows")]
     pub unsafe fn attach_swap_chain_panel(&mut self, panel: *mut c_void, alpha: bool) -> bool {
-        if self.0.texture.is_none() {
+        use windows::core::Interface;
+        let Some(swap_chain) = self.create_panel_swap_chain(alpha) else { return false };
+        if let Err(error) = unsafe { crate::gpu::dxgi::bind_swap_chain(panel, swap_chain.as_raw()) } {
+            log::error!("canvas: could not show the WebGL swapchain in its panel: {error}");
+            self.0.presenter = None;
             return false;
         }
-        let Some(device) = angle_d3d11_device() else { return false };
-        let Ok(context) = (unsafe { device.GetImmediateContext() }) else { return false };
+        true
+    }
+
+    /// The swapchain a texture context now presents into, for the UI thread to show in a
+    /// `SwapChainPanel` (`dxgi::bind_swap_chain`). The thread that owns the context.
+    #[cfg(target_os = "windows")]
+    pub fn create_panel_swap_chain(&mut self, alpha: bool) -> Option<crate::gpu::dxgi::SwapChainRef> {
+        self.0.texture.as_ref()?;
+        let device = angle_d3d11_device()?;
+        let context = unsafe { device.GetImmediateContext() }.ok()?;
         let (width, height) = self.get_surface_dimensions();
         self.0.xaml = None;
         let swap_chain = match crate::gpu::dxgi::CompositionSwapChain::new_d3d11(&device, width as u32, height as u32, alpha) {
             Ok(swap_chain) => swap_chain,
             Err(error) => {
                 log::error!("canvas: could not create a WebGL swapchain: {error}");
-                return false;
+                return None;
             }
         };
-        if let Err(error) = unsafe { swap_chain.bind_panel(panel) } {
-            log::error!("canvas: could not show the WebGL swapchain in its panel: {error}");
-            return false;
-        }
-        self.0.presenter = Some(Presenter { swap_chain, context });
-        true
+        let unknown = swap_chain.as_unknown();
+        self.0.presenter = Some(Presenter::new(swap_chain, context));
+        Some(unknown)
     }
 
     /// Maps the swapchain into its panel: DIPs = pixels * scale + offset. The texture holds GL's
@@ -797,6 +892,34 @@ impl GLContext {
     /// leaves ANGLE's cached D3D11 pipeline state untouched, unlike a draw would.
     #[cfg(target_os = "windows")]
     pub fn present(&self) -> bool {
+        self.present_frame(false)
+    }
+
+    /// `present` for a context on a thread of its own, with no frame loop to try again from: a
+    /// frame the display isn't ready for is copied aside and shown by `present_held` once it is,
+    /// unless a newer frame comes first.
+    #[cfg(target_os = "windows")]
+    pub fn present_or_hold(&self) -> bool {
+        self.present_frame(true)
+    }
+
+    /// Shows the frame `present_or_hold` held if the display takes it now. `true` while one is
+    /// still held.
+    #[cfg(target_os = "windows")]
+    pub fn present_held(&self) -> bool {
+        let Some(presenter) = self.0.presenter.as_ref() else { return false };
+        let mut held = presenter.held.lock();
+        let Some(texture) = held.as_ref() else { return false };
+        if !presenter.swap_chain.acquire_frame() {
+            return true;
+        }
+        presenter.present_from(texture);
+        *held = None;
+        false
+    }
+
+    #[cfg(target_os = "windows")]
+    fn present_frame(&self, hold: bool) -> bool {
         if self.0.lost.load(std::sync::atomic::Ordering::Relaxed) || !self.make_current() {
             return false;
         }
@@ -816,15 +939,15 @@ impl GLContext {
         let (Some(presenter), Some(texture)) = (self.0.presenter.as_ref(), self.0.texture.as_ref()) else {
             return true;
         };
+        // A held frame is superseded by this one either way.
+        let superseded = if hold { presenter.held.lock().take() } else { None };
         if !presenter.swap_chain.acquire_frame() {
+            if hold {
+                *presenter.held.lock() = hold_frame(presenter, texture, superseded);
+            }
             return true;
         }
-        let Ok(back_buffer) = presenter.swap_chain.buffer::<windows::Win32::Graphics::Direct3D11::ID3D11Texture2D>(0) else {
-            return false;
-        };
-        unsafe { presenter.context.CopyResource(&back_buffer, texture) };
-        drop(back_buffer);
-        presenter.swap_chain.present(true).is_ok()
+        presenter.present_from(texture)
     }
 
     fn replace_surface(&mut self, egl: &Egl, surface: egl::Surface) {

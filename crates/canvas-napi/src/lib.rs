@@ -32,9 +32,26 @@ pub fn install_global(exports: napi::bindgen_prelude::Object, env: napi::Env) ->
   logger::install(env.raw())?;
   frame::install_microtask_scheduler(env.raw())?;
   fast::install(env.raw(), napi::JsValue::raw(&exports))?;
+  install_canvases_behind(env.raw(), napi::JsValue::raw(&exports));
   let mut global = env.get_global()?;
   if !global.has_named_property("CanvasModule")? {
     global.set_named_property("CanvasModule", exports)?;
   }
   Ok(())
+}
+
+/// `CanvasModule.__canvasesBehind`: the count of threaded canvases behind
+/// (`canvas_native_canvases_behind`) as memory, which packages/canvas reads every frame. Left out
+/// where the host allows no external buffers: requestAnimationFrame is then left alone.
+fn install_canvases_behind(env: napi::sys::napi_env, exports: napi::sys::napi_value) {
+  use napi::sys;
+  let address = canvas_c::canvas_native_canvases_behind_address() as *mut std::ffi::c_void;
+  let mut buffer = std::ptr::null_mut();
+  unsafe {
+    if sys::napi_create_external_arraybuffer(env, address, std::mem::size_of::<u32>(), None, std::ptr::null_mut(), &mut buffer)
+      == sys::Status::napi_ok
+    {
+      sys::napi_set_named_property(env, exports, c"__canvasesBehind".as_ptr(), buffer);
+    }
+  }
 }

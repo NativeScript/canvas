@@ -272,6 +272,23 @@ pub struct WebGLState {
     in_flight: AtomicU32,
     /// Queued presents are skipped: the context is letting go of its window (threaded only).
     detaching: AtomicBool,
+    /// A present found the context lost (threaded only: an unthreaded one is asked directly).
+    lost: AtomicBool,
+    /// The XAML surface a threaded context presents into, as the UI thread holds it: that thread
+    /// ends the last draw once the context moves on from it.
+    #[cfg(target_os = "windows")]
+    xaml: ShownXaml,
+}
+
+#[cfg(target_os = "windows")]
+#[derive(Default)]
+struct ShownXaml(std::sync::Mutex<Option<std::sync::Arc<canvas_core::gpu::dxgi::XamlHandoff>>>);
+
+#[cfg(target_os = "windows")]
+impl std::fmt::Debug for ShownXaml {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("ShownXaml")
+    }
 }
 
 /// Presents a threaded context may have queued before `present` waits for the oldest.
@@ -334,7 +351,13 @@ impl WebGLState {
     /// side holds back, would otherwise queue frames without limit.
     pub fn present(&self) -> bool {
         if !self.threaded {
+            #[cfg(target_os = "windows")]
+            return self.inner_mut().present();
+            #[cfg(not(target_os = "windows"))]
             return self.inner_mut().make_current_and_swap_buffers();
+        }
+        if self.lost.load(Ordering::Acquire) {
+            return false;
         }
         if self.in_flight.load(Ordering::Acquire) >= MAX_QUEUED_FRAMES {
             crate::webgl::thread::sync(|| ());
@@ -343,13 +366,38 @@ impl WebGLState {
         let state = StatePtr(self);
         crate::webgl::thread::post(move || {
             let state = state;
-            let state = unsafe { &*state.0 };
-            if !state.detaching.load(Ordering::Acquire) {
-                state.inner_mut().make_current_and_swap_buffers();
+            let this = unsafe { &*state.0 };
+            if !this.detaching.load(Ordering::Acquire) {
+                this.present_here(state);
             }
-            crate::webgl::thread::frame_presented(state.in_flight.fetch_sub(1, Ordering::AcqRel));
+            crate::webgl::thread::frame_presented(this.in_flight.fetch_sub(1, Ordering::AcqRel));
         });
         true
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    fn present_here(&self, _: StatePtr) {
+        self.inner_mut().make_current_and_swap_buffers();
+    }
+
+    /// The WebGL thread's half of `present`. A frame the display isn't ready for is held and
+    /// shown from the thread's retries: nothing here may wait on a display that could be
+    /// hidden, as every other context on the thread would wait with it.
+    #[cfg(target_os = "windows")]
+    fn present_here(&self, state: StatePtr) {
+        let inner = self.inner_mut();
+        if !inner.present_or_hold() {
+            if canvas_webgl::webgl::canvas_native_webgl_get_is_context_lost(inner) {
+                self.lost.store(true, Ordering::Release);
+            }
+            return;
+        }
+        if inner.present_held() {
+            crate::webgl::thread::retry(state.0 as usize, move || {
+                let state = state;
+                unsafe { &*state.0 }.inner_mut().present_held()
+            });
+        }
     }
 
     /// Runs `f` (which lets go of the window) after every queued call, skipping the presents queued
@@ -405,6 +453,7 @@ pub extern "C" fn canvas_native_webgl_state_destroy(state: *mut WebGLState) {
         let state = StatePtr(state);
         crate::webgl::thread::post(move || {
             let state = state;
+            crate::webgl::thread::cancel_retry(state.0 as usize);
             let _ = unsafe { Box::from_raw(state.0 as *mut WebGLState) };
         });
     } else {
@@ -420,6 +469,9 @@ impl WebGLState {
             threaded: false,
             in_flight: AtomicU32::new(0),
             detaching: AtomicBool::new(false),
+            lost: AtomicBool::new(false),
+            #[cfg(target_os = "windows")]
+            xaml: ShownXaml::default(),
         }
     }
 }
@@ -713,8 +765,9 @@ impl WebGLShaderPrecisionFormat {
 pub struct WebGLExtension(Option<Box<dyn canvas_webgl::prelude::WebGLExtension>>, bool);
 
 impl WebGLExtension {
-    pub fn new(extension: Option<Box<dyn canvas_webgl::prelude::WebGLExtension>>) -> Self {
-        Self(extension, false)
+    /// An extension of `state`: its calls go where the context lives.
+    pub fn new(extension: Option<Box<dyn canvas_webgl::prelude::WebGLExtension>>, state: &WebGLState) -> Self {
+        Self(extension, state.is_threaded())
     }
 }
 
@@ -2077,6 +2130,83 @@ pub extern "C" fn canvas_native_webgl_create_d3d(
     ) else {
         return std::ptr::null_mut();
     };
+    create_d3d(
+        width,
+        height,
+        version,
+        alpha,
+        antialias,
+        depth,
+        fail_if_major_performance_caveat,
+        power_preference,
+        premultiplied_alpha,
+        preserve_drawing_buffer,
+        stencil,
+        desynchronized,
+        xr_compatible,
+    )
+    .map_or(std::ptr::null_mut(), |state| Box::into_raw(Box::new(state)))
+}
+
+/// `canvas_native_webgl_create_d3d`, for a context that lives on the WebGL thread.
+#[cfg(target_os = "windows")]
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_create_d3d_threaded(
+    width: i32,
+    height: i32,
+    version: i32,
+    alpha: bool,
+    antialias: bool,
+    depth: bool,
+    fail_if_major_performance_caveat: bool,
+    power_preference: i32,
+    premultiplied_alpha: bool,
+    preserve_drawing_buffer: bool,
+    stencil: bool,
+    desynchronized: bool,
+    xr_compatible: bool,
+) -> *mut WebGLState {
+    let (Ok(version), Ok(power_preference)) = (
+        WebGLVersion::try_from(version),
+        PowerPreference::try_from(power_preference),
+    ) else {
+        return std::ptr::null_mut();
+    };
+    WebGLState::create_threaded(|| {
+        create_d3d(
+            width,
+            height,
+            version,
+            alpha,
+            antialias,
+            depth,
+            fail_if_major_performance_caveat,
+            power_preference,
+            premultiplied_alpha,
+            preserve_drawing_buffer,
+            stencil,
+            desynchronized,
+            xr_compatible,
+        )
+    })
+}
+
+#[cfg(target_os = "windows")]
+fn create_d3d(
+    width: i32,
+    height: i32,
+    version: WebGLVersion,
+    alpha: bool,
+    antialias: bool,
+    depth: bool,
+    fail_if_major_performance_caveat: bool,
+    power_preference: PowerPreference,
+    premultiplied_alpha: bool,
+    preserve_drawing_buffer: bool,
+    stencil: bool,
+    desynchronized: bool,
+    xr_compatible: bool,
+) -> Option<WebGLState> {
     let mut attrs = canvas_core::context_attributes::ContextAttributes::new(
         alpha,
         antialias,
@@ -2092,10 +2222,8 @@ pub extern "C" fn canvas_native_webgl_create_d3d(
         version == WebGLVersion::V1,
         ColorSpace::Srgb,
     );
-    let Some(ctx) = GLContext::create_texture_context(&mut attrs, width, height) else {
-        return std::ptr::null_mut();
-    };
-    let state = WebGLState::wrap(canvas_webgl::prelude::WebGLState::new_with_context_attributes(
+    let ctx = GLContext::create_texture_context(&mut attrs, width, height)?;
+    Some(WebGLState::wrap(canvas_webgl::prelude::WebGLState::new_with_context_attributes(
         ctx,
         version,
         attrs.get_alpha(),
@@ -2110,8 +2238,22 @@ pub extern "C" fn canvas_native_webgl_create_d3d(
         attrs.get_xr_compatible(),
         false,
         version == WebGLVersion::V1,
-    ));
-    Box::into_raw(Box::new(state))
+    )))
+}
+
+#[cfg(target_os = "windows")]
+impl WebGLState {
+    /// UI thread: the XAML surface a threaded context presents into from now on (none: it moved
+    /// to a panel). The one before shows its last frame.
+    fn show_xaml(&self, handoff: Option<std::sync::Arc<canvas_core::gpu::dxgi::XamlHandoff>>) {
+        let previous = match self.xaml.0.lock() {
+            Ok(mut shown) => std::mem::replace(&mut *shown, handoff),
+            Err(_) => None,
+        };
+        if let Some(previous) = previous {
+            previous.end_draw();
+        }
+    }
 }
 
 /// Windows: shows a `canvas_native_webgl_create_d3d` context in a `SwapChainPanel` (any COM
@@ -2123,7 +2265,21 @@ pub extern "C" fn canvas_native_webgl_attach_swap_chain_panel(state: *mut WebGLS
         return false;
     }
     let state = unsafe { &mut *state };
-    unsafe { state.get_inner_mut().attach_swap_chain_panel(panel) }
+    if !state.is_threaded() {
+        return unsafe { state.get_inner_mut().attach_swap_chain_panel(panel) };
+    }
+    // Made where the context presents; only binding it has to happen here.
+    let Some(swap_chain) = state.sync(|inner| inner.create_panel_swap_chain()) else {
+        return false;
+    };
+    state.show_xaml(None);
+    match unsafe { canvas_core::gpu::dxgi::bind_swap_chain(panel, windows::core::Interface::as_raw(&swap_chain)) } {
+        Ok(()) => true,
+        Err(error) => {
+            log::error!("canvas: could not show the WebGL swapchain in its panel: {error}");
+            false
+        }
+    }
 }
 
 /// Windows: presents a `canvas_native_webgl_create_d3d` context into a XAML `SurfaceImageSource`
@@ -2136,7 +2292,28 @@ pub extern "C" fn canvas_native_webgl_attach_xaml_surface(state: *mut WebGLState
         return false;
     }
     let state = unsafe { &mut *state };
-    unsafe { state.get_inner_mut().attach_xaml_surface(source) }
+    if !state.is_threaded() {
+        return unsafe { state.get_inner_mut().attach_xaml_surface(source) };
+    }
+    let Some(device) = canvas_core::gpu::gl::angle_d3d11_device() else {
+        return false;
+    };
+    let (width, height) = state.get_dimensions();
+    let handoff = match unsafe {
+        canvas_core::gpu::dxgi::XamlHandoff::new(source, &device, width.max(1) as u32, height.max(1) as u32)
+    } {
+        Ok(handoff) => handoff,
+        Err(error) => {
+            log::error!("canvas: the XAML surface cannot be drawn from the WebGL thread: {error}");
+            return false;
+        }
+    };
+    let shared = std::sync::Arc::clone(&handoff);
+    let attached = state.sync(move |inner| inner.attach_xaml_handoff(shared));
+    if attached {
+        state.show_xaml(Some(handoff));
+    }
+    attached
 }
 
 /// Windows: maps the drawing buffer into its panel (DIPs = pixels * scale + offset).
@@ -2153,10 +2330,17 @@ pub extern "C" fn canvas_native_webgl_set_swap_chain_transform(
         return false;
     }
     let state = unsafe { &*state };
-    state.get_inner().set_swap_chain_transform(scale_x, scale_y, offset_x, offset_y)
+    if !state.is_threaded() {
+        return state.get_inner().set_swap_chain_transform(scale_x, scale_y, offset_x, offset_y);
+    }
+    state.post(move |inner| {
+        inner.set_swap_chain_transform(scale_x, scale_y, offset_x, offset_y);
+    });
+    true
 }
 
-/// Windows: resizes (and clears) a `canvas_native_webgl_create_d3d` drawing buffer.
+/// Windows: resizes (and clears) a `canvas_native_webgl_create_d3d` drawing buffer. A threaded
+/// context queues it, so it reports success.
 #[cfg(target_os = "windows")]
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_resize_d3d(state: *mut WebGLState, width: i32, height: i32) -> bool {
@@ -2164,7 +2348,13 @@ pub extern "C" fn canvas_native_webgl_resize_d3d(state: *mut WebGLState, width: 
         return false;
     }
     let state = unsafe { &mut *state };
-    state.get_inner_mut().resize_texture_surface(width, height)
+    if !state.is_threaded() {
+        return state.get_inner_mut().resize_texture_surface(width, height);
+    }
+    state.post(move |inner| {
+        inner.resize_texture_surface(width, height);
+    });
+    true
 }
 
 /// Ends a frame: presents it where the context is on screen (Windows panels), else flushes.
@@ -2173,15 +2363,7 @@ pub extern "C" fn canvas_native_webgl_present(state: *mut WebGLState) -> bool {
     if state.is_null() {
         return false;
     }
-    let state = unsafe { &*state };
-    #[cfg(target_os = "windows")]
-    {
-        state.get_inner().present()
-    }
-    #[cfg(not(target_os = "windows"))]
-    {
-        state.present()
-    }
+    unsafe { &*state }.present()
 }
 
 pub(crate) fn canvas_native_webgl_create_no_window_internal(
@@ -3492,9 +3674,10 @@ pub extern "C" fn canvas_native_webgl_get_is_context_lost(state: *mut WebGLState
         return false;
     }
     let state = unsafe { &*state };
-    // Only Android threads a context, and loss is only tracked on Windows: skip the round trip.
+    // Loss is only tracked on Windows, where a threaded context's presents record it: no round
+    // trip either way.
     if state.is_threaded() {
-        return false;
+        return state.lost.load(Ordering::Acquire);
     }
     state.sync(|state| canvas_webgl::webgl::canvas_native_webgl_get_is_context_lost(state))
 }

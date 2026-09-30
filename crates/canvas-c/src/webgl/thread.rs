@@ -3,10 +3,11 @@
 //! behind each other, and the rest run here while the caller waits. One thread for all of them keeps
 //! reads from one context into another (texImage2D from a WebGL canvas) on a single thread.
 
-use std::cell::Cell;
+use std::cell::{Cell, RefCell};
 use std::collections::VecDeque;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::{mpsc, Arc, Condvar, Mutex, OnceLock};
+use std::time::Duration;
 
 type Job = Box<dyn FnOnce() + Send>;
 
@@ -32,7 +33,12 @@ static CANVASES_BEHIND: AtomicU32 = AtomicU32::new(0);
 
 thread_local! {
     static ON_GL_THREAD: Cell<bool> = const { Cell::new(false) };
+    /// Work tried again until it's done (`retry`), by key.
+    static RETRIES: RefCell<Vec<(usize, Box<dyn FnMut() -> bool>)>> = const { RefCell::new(Vec::new()) };
 }
+
+/// How soon an idle thread tries its retries again.
+const RETRY_AFTER: Duration = Duration::from_millis(4);
 
 fn worker() -> Option<Arc<Worker>> {
     WORKER
@@ -52,6 +58,13 @@ fn worker() -> Option<Arc<Worker>> {
 }
 
 fn raise_priority() {
+    #[cfg(target_os = "windows")]
+    unsafe {
+        use windows::Win32::System::Threading::{GetCurrentThread, SetThreadPriority, THREAD_PRIORITY_ABOVE_NORMAL};
+        let _ = SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_ABOVE_NORMAL);
+        // XAML surfaces are drawn from here.
+        let _ = windows::Win32::System::Com::CoInitializeEx(None, windows::Win32::System::Com::COINIT_MULTITHREADED);
+    }
     #[cfg(target_os = "android")]
     unsafe {
         // THREAD_PRIORITY_DISPLAY, for this thread only.
@@ -77,17 +90,55 @@ fn run(worker: Arc<Worker>) {
                 return;
             };
             while queue.is_empty() {
-                queue = match worker.signal.wait(queue) {
-                    Ok(queue) => queue,
+                if RETRIES.with(|retries| retries.borrow().is_empty()) {
+                    queue = match worker.signal.wait(queue) {
+                        Ok(queue) => queue,
+                        Err(_) => return,
+                    };
+                    continue;
+                }
+                let timed_out;
+                (queue, timed_out) = match worker.signal.wait_timeout(queue, RETRY_AFTER) {
+                    Ok((queue, timeout)) => (queue, timeout.timed_out()),
                     Err(_) => return,
                 };
+                if timed_out {
+                    break;
+                }
             }
             queue.drain(..).collect()
         };
         for job in jobs {
             job();
         }
+        run_retries();
     }
+}
+
+fn run_retries() {
+    let mut retries = RETRIES.with(|retries| std::mem::take(&mut *retries.borrow_mut()));
+    retries.retain_mut(|(_, retry)| retry());
+    RETRIES.with(|current| {
+        // Registered while they ran: those replace them.
+        let mut current = current.borrow_mut();
+        retries.retain(|(key, _)| !current.iter().any(|(other, _)| other == key));
+        current.append(&mut retries);
+    });
+}
+
+/// GL thread: runs `f` again after each batch of jobs and every few milliseconds while idle, until
+/// it returns false. Replaces an earlier retry for `key`.
+#[cfg_attr(not(target_os = "windows"), allow(dead_code))]
+pub(crate) fn retry(key: usize, f: impl FnMut() -> bool + 'static) {
+    RETRIES.with(|retries| {
+        let mut retries = retries.borrow_mut();
+        retries.retain(|(other, _)| *other != key);
+        retries.push((key, Box::new(f)));
+    });
+}
+
+pub(crate) fn cancel_retry(key: usize) {
+    RETRIES.with(|retries| retries.borrow_mut().retain(|(other, _)| *other != key));
 }
 
 /// Whether contexts can be threaded at all: false if the thread could not be started.

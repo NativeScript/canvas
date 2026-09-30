@@ -107,6 +107,8 @@ pub struct NSCCanvas {
   xaml_source: Option<IUnknown>,
   /// `create2DContext` rasterizes on the shared render thread.
   threaded_2d: bool,
+  /// `initContext` makes a context that runs on the shared WebGL thread.
+  threaded_webgl: bool,
 }
 
 impl ObjectFinalize for NSCCanvas {
@@ -185,6 +187,7 @@ impl NSCCanvas {
       context: Context::None,
       xaml_source: None,
       threaded_2d: false,
+      threaded_webgl: false,
     })
   }
 
@@ -231,6 +234,17 @@ impl NSCCanvas {
   #[napi(setter, js_name = "threaded2D")]
   pub fn set_threaded_2d(&mut self, threaded: bool) {
     self.threaded_2d = threaded;
+  }
+
+  #[napi(getter, js_name = "threadedWebGL")]
+  pub fn threaded_webgl(&self) -> bool {
+    self.threaded_webgl
+  }
+
+  /// Read by the next `initContext`.
+  #[napi(setter, js_name = "threadedWebGL")]
+  pub fn set_threaded_webgl(&mut self, threaded: bool) {
+    self.threaded_webgl = threaded;
   }
 
   #[napi(getter)]
@@ -376,7 +390,12 @@ impl NSCCanvas {
       Context::None => {}
     }
     let version = if context_type.contains("webgl2") { 2 } else { 1 };
-    let state = canvas_c::canvas_native_webgl_create_d3d(
+    let create = if self.threaded_webgl {
+      canvas_c::canvas_native_webgl_create_d3d_threaded
+    } else {
+      canvas_c::canvas_native_webgl_create_d3d
+    };
+    let state = create(
       self.surface_width as i32,
       self.surface_height as i32,
       version,
@@ -485,9 +504,7 @@ impl NSCCanvas {
   pub fn is_context_lost(&self) -> bool {
     match self.context {
       Context::TwoD(context) => canvas_c::canvas_native_context_is_lost(context),
-      Context::WebGL(state) => {
-        canvas_webgl::webgl::canvas_native_webgl_get_is_context_lost(unsafe { &mut *state }.get_inner_mut())
-      }
+      Context::WebGL(state) => canvas_c::canvas_native_webgl_get_is_context_lost(state),
       Context::None | Context::WebGPU(_) => false,
     }
   }

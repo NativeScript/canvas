@@ -2881,231 +2881,231 @@
   },
   "ConstValues": [
     {
-      "filePath": "\/tmp\/canvas-svg-fix\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas-perf\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
       "kind": "IntegerLiteral",
       "offset": 236,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/tmp\/canvas-svg-fix\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas-perf\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
       "kind": "BooleanLiteral",
       "offset": 2590,
       "length": 5,
       "value": "false"
     },
     {
-      "filePath": "\/tmp\/canvas-svg-fix\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas-perf\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
       "kind": "BooleanLiteral",
       "offset": 2615,
       "length": 5,
       "value": "false"
     },
     {
-      "filePath": "\/tmp\/canvas-svg-fix\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas-perf\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
       "kind": "BooleanLiteral",
       "offset": 2640,
       "length": 5,
       "value": "false"
     },
     {
-      "filePath": "\/tmp\/canvas-svg-fix\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas-perf\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
       "kind": "BooleanLiteral",
       "offset": 2693,
       "length": 5,
       "value": "false"
     },
     {
-      "filePath": "\/tmp\/canvas-svg-fix\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas-perf\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
       "kind": "BooleanLiteral",
       "offset": 2724,
       "length": 5,
       "value": "false"
     },
     {
-      "filePath": "\/tmp\/canvas-svg-fix\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas-perf\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
       "kind": "BooleanLiteral",
       "offset": 2789,
       "length": 4,
       "value": "true"
     },
     {
-      "filePath": "\/tmp\/canvas-svg-fix\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas-perf\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
       "kind": "BooleanLiteral",
       "offset": 2754,
       "length": 4,
       "value": "true"
     },
     {
-      "filePath": "\/tmp\/canvas-svg-fix\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas-perf\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
       "kind": "BooleanLiteral",
       "offset": 2940,
       "length": 4,
       "value": "true"
     },
     {
-      "filePath": "\/tmp\/canvas-svg-fix\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas-perf\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
       "kind": "BooleanLiteral",
       "offset": 2962,
       "length": 5,
       "value": "false"
     },
     {
-      "filePath": "\/tmp\/canvas-svg-fix\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas-perf\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
       "kind": "BooleanLiteral",
       "offset": 3161,
       "length": 4,
       "value": "true"
     },
     {
-      "filePath": "\/tmp\/canvas-svg-fix\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas-perf\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
       "kind": "BooleanLiteral",
       "offset": 3183,
       "length": 5,
       "value": "false"
     },
     {
-      "filePath": "\/tmp\/canvas-svg-fix\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas-perf\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
       "kind": "BooleanLiteral",
       "offset": 3234,
       "length": 5,
       "value": "false"
     },
     {
-      "filePath": "\/tmp\/canvas-svg-fix\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas-perf\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
       "kind": "IntegerLiteral",
       "offset": 3653,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/tmp\/canvas-svg-fix\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas-perf\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
       "kind": "IntegerLiteral",
       "offset": 3667,
       "length": 1,
       "value": "1"
     },
     {
-      "filePath": "\/tmp\/canvas-svg-fix\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas-perf\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
       "kind": "IntegerLiteral",
       "offset": 3685,
       "length": 1,
       "value": "2"
     },
     {
-      "filePath": "\/tmp\/canvas-svg-fix\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas-perf\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
       "kind": "IntegerLiteral",
       "offset": 3702,
       "length": 1,
       "value": "3"
     },
     {
-      "filePath": "\/tmp\/canvas-svg-fix\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas-perf\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
       "kind": "IntegerLiteral",
       "offset": 3800,
       "length": 1,
       "value": "2"
     },
     {
-      "filePath": "\/tmp\/canvas-svg-fix\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas-perf\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
       "kind": "IntegerLiteral",
       "offset": 3842,
       "length": 1,
       "value": "3"
     },
     {
-      "filePath": "\/tmp\/canvas-svg-fix\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas-perf\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
       "kind": "IntegerLiteral",
       "offset": 3878,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/tmp\/canvas-svg-fix\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas-perf\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
       "kind": "IntegerLiteral",
       "offset": 3915,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/tmp\/canvas-svg-fix\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas-perf\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
       "kind": "IntegerLiteral",
       "offset": 4151,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/tmp\/canvas-svg-fix\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas-perf\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
       "kind": "IntegerLiteral",
       "offset": 4188,
       "length": 1,
       "value": "1"
     },
     {
-      "filePath": "\/tmp\/canvas-svg-fix\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas-perf\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
       "kind": "IntegerLiteral",
       "offset": 4225,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/tmp\/canvas-svg-fix\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas-perf\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
       "kind": "IntegerLiteral",
       "offset": 4263,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/tmp\/canvas-svg-fix\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas-perf\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
       "kind": "IntegerLiteral",
       "offset": 4300,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/tmp\/canvas-svg-fix\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas-perf\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
       "kind": "IntegerLiteral",
       "offset": 4338,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/tmp\/canvas-svg-fix\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas-perf\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
       "kind": "BooleanLiteral",
       "offset": 4773,
       "length": 4,
       "value": "true"
     },
     {
-      "filePath": "\/tmp\/canvas-svg-fix\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas-perf\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
       "kind": "BooleanLiteral",
       "offset": 4935,
       "length": 4,
       "value": "true"
     },
     {
-      "filePath": "\/tmp\/canvas-svg-fix\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas-perf\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
       "kind": "IntegerLiteral",
       "offset": 5316,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/tmp\/canvas-svg-fix\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas-perf\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
       "kind": "IntegerLiteral",
       "offset": 5583,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/tmp\/canvas-svg-fix\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas-perf\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
       "kind": "IntegerLiteral",
       "offset": 5678,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/tmp\/canvas-svg-fix\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas-perf\/packages\/canvas-svg\/src-native\/ios\/CanvasSVG\/NSCSVG.swift",
       "kind": "IntegerLiteral",
       "offset": 5699,
       "length": 1,

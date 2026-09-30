@@ -2141,6 +2141,20 @@ struct CanvasRenderingContext2D *canvas_native_context_create_d3d(float width,
                                                                   enum CanvasColorSpace color_space);
 
 /**
+ * `canvas_native_context_create_d3d`, rasterized and presented on the shared render thread's
+ * Direct3D 12 device; the context returned only records. Null when that thread has no usable
+ * device.
+ */
+struct CanvasRenderingContext2D *canvas_native_context_create_d3d_threaded(float width,
+                                                                           float height,
+                                                                           float density,
+                                                                           bool alpha,
+                                                                           int32_t font_color,
+                                                                           float ppi,
+                                                                           uint32_t direction,
+                                                                           enum CanvasColorSpace color_space);
+
+/**
  * Presents a D3D context in a WinUI `SwapChainPanel` (`panel`: any COM pointer to it). UI thread.
  */
 bool canvas_native_context_attach_swap_chain_panel(struct CanvasRenderingContext2D *context,
@@ -2174,7 +2188,8 @@ bool canvas_native_context_is_lost(const struct CanvasRenderingContext2D *contex
 bool canvas_native_context_restore_d3d(struct CanvasRenderingContext2D *context, void *panel);
 
 /**
- * Removes this thread's shared Direct3D 12 device, as a driver reset would (tests).
+ * Removes this thread's and the render thread's shared Direct3D 12 devices, as a driver reset
+ * would (tests).
  */
 bool canvas_native_d3d_simulate_device_removal(void);
 
@@ -2647,6 +2662,19 @@ void canvas_native_context_draw_atlas_asset(struct CanvasRenderingContext2D *con
                                             uintptr_t colors_size,
                                             uint32_t blend_mode);
 
+/**
+ * Draws sprites of another 2D canvas's current contents.
+ */
+void canvas_native_context_draw_atlas_context(struct CanvasRenderingContext2D *context,
+                                              struct CanvasRenderingContext2D *source,
+                                              const float *xform,
+                                              uintptr_t xform_size,
+                                              const float *tex,
+                                              uintptr_t tex_size,
+                                              const char *const *colors,
+                                              uintptr_t colors_size,
+                                              uint32_t blend_mode);
+
 void canvas_native_context_ellipse(struct CanvasRenderingContext2D *context,
                                    float x,
                                    float y,
@@ -2844,6 +2872,25 @@ void canvas_native_context_render(struct CanvasRenderingContext2D *context);
 const char *canvas_native_to_data_url(struct CanvasRenderingContext2D *context,
                                       const char *format,
                                       uint32_t quality);
+
+/**
+ * Draws a video frame another device shares (canvas-media's `gpuFrame()`: a
+ * `CanvasD3DSharedFrame`) on the context's device, without a readback; threaded contexts draw it
+ * on the render thread's. `false` when it cannot (another adapter, not a D3D context), and the
+ * frame is then not consumed: the caller draws it some other way.
+ */
+bool canvas_native_context_draw_d3d_shared_frame(struct CanvasRenderingContext2D *context,
+                                                 void *frame,
+                                                 int32_t width,
+                                                 int32_t height,
+                                                 float sx,
+                                                 float sy,
+                                                 float sw,
+                                                 float sh,
+                                                 float dx,
+                                                 float dy,
+                                                 float dw,
+                                                 float dh);
 
 void canvas_native_image_filter_reference(const struct ImageFilter *value);
 

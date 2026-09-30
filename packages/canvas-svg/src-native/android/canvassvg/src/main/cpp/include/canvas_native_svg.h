@@ -23,6 +23,11 @@ typedef struct SvgGpuSurface SvgGpuSurface;
 
 typedef struct SvgNode SvgNode;
 
+/**
+ * Hands a view's window back once its surface is gone. Called on the render thread.
+ */
+typedef void (*ReleaseWindow)(void*);
+
 struct SvgDocument *canvas_native_svg_document_create(void);
 
 struct SvgDocument *canvas_native_svg_document_create_with_string(const char *svg);
@@ -59,6 +64,19 @@ void canvas_native_svg_document_render_to_buffer(struct SvgDocument *doc,
                                                  int32_t width,
                                                  int32_t height,
                                                  float scale);
+
+/**
+ * As `canvas_native_svg_document_render_to_buffer`, premultiplied RGBA (`bgra` false: what
+ * image assets load) or BGRA (`bgra` true: what Windows' XAML bitmaps show), whatever the
+ * platform's native order.
+ */
+void canvas_native_svg_document_render_to_buffer_ordered(struct SvgDocument *doc,
+                                                         uint8_t *pixels,
+                                                         uintptr_t pixels_len,
+                                                         int32_t width,
+                                                         int32_t height,
+                                                         float scale,
+                                                         bool bgra);
 
 /**
  * As above, into caller-owned pixels (e.g. a locked Android `Bitmap`) that may be row-padded.
@@ -213,6 +231,12 @@ void canvas_native_svg_render_thread_resize(struct RenderThread *render,
  * The `FrameStatus` of the last present, or -1 if nothing has presented since the last call.
  */
 int32_t canvas_native_svg_render_thread_status(struct RenderThread *render);
+
+/**
+ * Detaches without blocking: the thread tears the surface down, then passes the window to
+ * `release` on its own thread, so the caller must not release the window itself.
+ */
+void canvas_native_svg_render_thread_release(struct RenderThread *render, ReleaseWindow release);
 
 /**
  * Blocks until the thread has torn down its surface, since the caller releases the window next.

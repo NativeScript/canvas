@@ -34,6 +34,7 @@ import _SwiftConcurrencyShims
   @objc public static func initWebGLWithView(_ view: CanvasNative.NSCCanvas, _ alpha: Swift.Bool, _ antialias: Swift.Bool, _ depth: Swift.Bool, _ fail_if_major_performance_caveat: Swift.Bool, _ power_preference: Swift.Int32, _ premultiplied_alpha: Swift.Bool, _ preserve_drawing_buffer: Swift.Bool, _ stencil: Swift.Bool, _ desynchronized: Swift.Bool, _ xr_compatible: Swift.Bool, _ version: Swift.Int32) -> Swift.Int64
   @objc public static func initWebGLWithWidthAndHeight(_ width: Swift.Int32, _ height: Swift.Int32, _ alpha: Swift.Bool, _ antialias: Swift.Bool, _ depth: Swift.Bool, _ fail_if_major_performance_caveat: Swift.Bool, _ power_preference: Swift.Int32, _ premultiplied_alpha: Swift.Bool, _ preserve_drawing_buffer: Swift.Bool, _ stencil: Swift.Bool, _ desynchronized: Swift.Bool, _ xr_compatible: Swift.Bool, _ version: Swift.Int32) -> Swift.Int64
   @objc public static func resize2DContext(_ context: Swift.Int64, _ width: Swift.Float, _ height: Swift.Float)
+  @objc public static func snapshot2DContext(_ context: Swift.Int64, _ width: Swift.Int, _ height: Swift.Int) -> UIKit.UIImage?
   @objc public static func flush2DContext(_ context: Swift.Int64)
   @objc public static func flush2DContextAndSyncCPU(_ context: Swift.Int64)
   @objc public static func presentDrawable(_ context: Swift.Int64)

@@ -51,6 +51,10 @@
 +(int32_t) renderThreadStatus:(int64_t)handle;
 /// Stops the thread and tears its surface down; blocks until it has joined.
 +(void) renderThreadDestroy:(int64_t)handle;
+/// As `renderThreadDestroy` without waiting: the render thread tears the surface down, then
+/// releases the retained view passed to `renderThreadCreate` (on the main queue). The caller
+/// must not release it too.
++(void) renderThreadRelease:(int64_t)handle;
 @end
 
 #endif /* CanvasSVGHelper_h */

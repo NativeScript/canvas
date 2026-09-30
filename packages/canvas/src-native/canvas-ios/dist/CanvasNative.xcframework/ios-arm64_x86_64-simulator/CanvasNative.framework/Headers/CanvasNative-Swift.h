@@ -419,6 +419,8 @@ SWIFT_CLASS_NAMED("CanvasHelpers")
 + (int64_t)initWebGLWithView:(NSCCanvas * _Nonnull)view :(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)fail_if_major_performance_caveat :(int32_t)power_preference :(BOOL)premultiplied_alpha :(BOOL)preserve_drawing_buffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xr_compatible :(int32_t)version SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
 + (int64_t)initWebGLWithWidthAndHeight:(int32_t)width :(int32_t)height :(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)fail_if_major_performance_caveat :(int32_t)power_preference :(BOOL)premultiplied_alpha :(BOOL)preserve_drawing_buffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xr_compatible :(int32_t)version SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
 + (void)resize2DContext:(int64_t)context :(float)width :(float)height;
+/// A 2D context’s pixels as an image: a Metal-backed canvas has no view to snapshot.
++ (UIImage * _Nullable)snapshot2DContext:(int64_t)context :(NSInteger)width :(NSInteger)height SWIFT_WARN_UNUSED_RESULT;
 + (void)flush2DContext:(int64_t)context;
 + (void)flush2DContextAndSyncCPU:(int64_t)context;
 + (void)presentDrawable:(int64_t)context;
@@ -1050,6 +1052,8 @@ SWIFT_CLASS_NAMED("CanvasHelpers")
 + (int64_t)initWebGLWithView:(NSCCanvas * _Nonnull)view :(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)fail_if_major_performance_caveat :(int32_t)power_preference :(BOOL)premultiplied_alpha :(BOOL)preserve_drawing_buffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xr_compatible :(int32_t)version SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
 + (int64_t)initWebGLWithWidthAndHeight:(int32_t)width :(int32_t)height :(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)fail_if_major_performance_caveat :(int32_t)power_preference :(BOOL)premultiplied_alpha :(BOOL)preserve_drawing_buffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xr_compatible :(int32_t)version SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
 + (void)resize2DContext:(int64_t)context :(float)width :(float)height;
+/// A 2D context’s pixels as an image: a Metal-backed canvas has no view to snapshot.
++ (UIImage * _Nullable)snapshot2DContext:(int64_t)context :(NSInteger)width :(NSInteger)height SWIFT_WARN_UNUSED_RESULT;
 + (void)flush2DContext:(int64_t)context;
 + (void)flush2DContextAndSyncCPU:(int64_t)context;
 + (void)presentDrawable:(int64_t)context;

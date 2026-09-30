@@ -14,11 +14,11 @@
 		</data>
 		<key>Headers/CanvasSVGHelper.h</key>
 		<data>
-		zEtvI+OFcIi4OMEaVdNkvgCDhpY=
+		KjCwLcxS9K04fRH0YwVPJcCQI9c=
 		</data>
 		<key>Headers/canvas_svg.h</key>
 		<data>
-		UWS+YUxG3tvPs3Zf2F24OXCGY3o=
+		WSzni1drQtHD/w9K3uSpG9JuQ8s=
 		</data>
 		<key>Info.plist</key>
 		<data>
@@ -26,11 +26,11 @@
 		</data>
 		<key>Modules/CanvasSVG.swiftmodule/Project/arm64-apple-tvos-simulator.swiftsourceinfo</key>
 		<data>
-		b59q7UOspQtjXEPOlG+1C1gwiGE=
+		CVRxOz9lRPtDxX4u9AtDIi9l7H0=
 		</data>
 		<key>Modules/CanvasSVG.swiftmodule/arm64-apple-tvos-simulator.abi.json</key>
 		<data>
-		R1KPgQjEfvOTa4xSD1MxghQvGT4=
+		gM95Re4iN2kplZSYyRb/iHkuloE=
 		</data>
 		<key>Modules/CanvasSVG.swiftmodule/arm64-apple-tvos-simulator.private.swiftinterface</key>
 		<data>
@@ -46,7 +46,7 @@
 		</data>
 		<key>Modules/CanvasSVG.swiftmodule/arm64-apple-tvos-simulator.swiftmodule</key>
 		<data>
-		DmDL6IK2TChDVNalUd8K4XITTx4=
+		2trheSyw4KP9GrToGgxWHlA4/a0=
 		</data>
 		<key>Modules/module.modulemap</key>
 		<data>
@@ -73,28 +73,28 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			Bf2r44xlz3NmWEGCuBdFtIYknFOmr8s3wU0oWgZQDlI=
+			LVObFGJP/Ohpt2lHTCQBG8e590JEAvJA3f0XtwegygM=
 			</data>
 		</dict>
 		<key>Headers/canvas_svg.h</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			f5rLLyho5FFjxCRogYPRcTx/0ZKaBhvtSZn3974pmtc=
+			jtPHW9CgYeH/c6viNnoLYJZUP0PM+yXxtgzmBJWVMH0=
 			</data>
 		</dict>
 		<key>Modules/CanvasSVG.swiftmodule/Project/arm64-apple-tvos-simulator.swiftsourceinfo</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			fkmPoqwfc4sBuUzqPWfejGv2Vgha34Hai2WnxBlF8aQ=
+			ZeEW7rOsSwjb0UYbBotSmcE6mrkD9aJdkXnF97PFc7E=
 			</data>
 		</dict>
 		<key>Modules/CanvasSVG.swiftmodule/arm64-apple-tvos-simulator.abi.json</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			sdFRPnAICgSzdNT9tLdbZ9sT5NLLAtsQdjxj7Vsg9jE=
+			k6b5er5Hl3K4iI7A++5l2t/VaN+jhO5OHmfqe1Y7bnc=
 			</data>
 		</dict>
 		<key>Modules/CanvasSVG.swiftmodule/arm64-apple-tvos-simulator.private.swiftinterface</key>
@@ -122,7 +122,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			oaSuySpH0SJshNuhWYckSQNAFtMUmVF9zETUYQmM6ic=
+			Cyv8Coa0MGSyNOBfzZqrVmZ7K8/gcvhTcEsxzVGvQ9Y=
 			</data>
 		</dict>
 		<key>Modules/module.modulemap</key>

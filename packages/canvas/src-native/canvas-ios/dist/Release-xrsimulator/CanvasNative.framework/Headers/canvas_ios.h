@@ -8,7 +8,11 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-long long canvas_native_ios_create_webgl_context(void *view,
+/**
+ * A WebGL context drawing to `layer`, the view's `CAEAGLLayer`. A threaded one lives on the WebGL
+ * thread, so presents never wait on the GPU here.
+ */
+long long canvas_native_ios_create_webgl_context(void *layer,
                                                  bool alpha,
                                                  bool antialias,
                                                  bool depth,
@@ -19,9 +23,27 @@ long long canvas_native_ios_create_webgl_context(void *view,
                                                  bool stencil,
                                                  bool desynchronized,
                                                  bool xr_compatible,
-                                                 uint32_t version);
+                                                 uint32_t version,
+                                                 bool threaded);
 
 bool canvas_native_ios_flush_webgl(int64_t context);
+
+/**
+ * Reallocates the drawing buffer after the view's layer changed size. Queued: whatever reads the
+ * size next runs after it.
+ */
+void canvas_native_ios_resize_webgl(int64_t context, int32_t width, int32_t height);
+
+/**
+ * The drawing buffer as top-down RGBA, `width` x `height`.
+ */
+U8Buffer *canvas_native_ios_webgl_read_pixels(int64_t context, int32_t *width, int32_t *height);
+
+/**
+ * Runs `callback(data)` with the context current, on the thread that owns it, and waits for it:
+ * native code that draws with a threaded context (video frames) has to run there.
+ */
+void canvas_native_ios_webgl_run(int64_t context, void (*callback)(void*), void *data);
 
 void canvas_native_ios_flush_2d_context(int64_t context);
 

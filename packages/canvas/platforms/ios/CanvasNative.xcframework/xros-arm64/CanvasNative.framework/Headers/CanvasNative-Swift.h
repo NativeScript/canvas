@@ -385,8 +385,8 @@ SWIFT_CLASS_NAMED("CanvasCPUView")
 @end
 
 @class NSCCanvas;
-SWIFT_CLASS_NAMED("CanvasGLKView")
-@interface CanvasGLKView : UIView
+SWIFT_CLASS_NAMED("CanvasGLView")
+@interface CanvasGLView : UIView
 @property (nonatomic, readonly, weak) NSCCanvas * _Nullable canvas;
 - (nonnull instancetype)initWithFrame:(CGRect)frame OBJC_DESIGNATED_INITIALIZER;
 - (nullable instancetype)initWithCoder:(NSCoder * _Nonnull)coder OBJC_DESIGNATED_INITIALIZER;
@@ -408,7 +408,7 @@ SWIFT_CLASS_NAMED("CanvasHelpers")
 + (int64_t)initWebGPUWithViewLayer:(int64_t)instance :(NSCCanvas * _Nonnull)view :(uint32_t)width :(uint32_t)height SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
 + (int64_t)initWebGPUWithView:(int64_t)instance :(NSCCanvas * _Nonnull)view :(uint32_t)width :(uint32_t)height SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
 + (void)resizeWebGPUWithView:(int64_t)context :(NSCCanvas * _Nonnull)view :(uint32_t)width :(uint32_t)height;
-+ (int64_t)initWebGLWithView:(NSCCanvas * _Nonnull)view :(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)fail_if_major_performance_caveat :(int32_t)power_preference :(BOOL)premultiplied_alpha :(BOOL)preserve_drawing_buffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xr_compatible :(int32_t)version SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
++ (int64_t)initWebGLWithView:(NSCCanvas * _Nonnull)view :(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)fail_if_major_performance_caveat :(int32_t)power_preference :(BOOL)premultiplied_alpha :(BOOL)preserve_drawing_buffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xr_compatible :(int32_t)version :(BOOL)threaded SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
 + (int64_t)initWebGLWithWidthAndHeight:(int32_t)width :(int32_t)height :(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)fail_if_major_performance_caveat :(int32_t)power_preference :(BOOL)premultiplied_alpha :(BOOL)preserve_drawing_buffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xr_compatible :(int32_t)version SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
 + (void)resize2DContext:(int64_t)context :(float)width :(float)height;
 /// A 2D context’s pixels as an image: a Metal-backed canvas has no view to snapshot.
@@ -417,6 +417,13 @@ SWIFT_CLASS_NAMED("CanvasHelpers")
 + (void)flush2DContextAndSyncCPU:(int64_t)context;
 + (void)presentDrawable:(int64_t)context;
 + (BOOL)flushWebGL:(int64_t)context SWIFT_WARN_UNUSED_RESULT;
+/// After the GL view’s layer changed size.
++ (void)resizeWebGL:(int64_t)context :(NSInteger)width :(NSInteger)height;
+/// A WebGL context’s drawing buffer as an image, read on the thread that owns the context.
++ (UIImage * _Nullable)snapshotWebGL:(int64_t)context SWIFT_WARN_UNUSED_RESULT;
+/// Runs <code>block</code> with the WebGL context current, on the thread that owns it, and waits for it: a
+/// threaded context is only ever current on the WebGL thread, so GL work against it runs there.
++ (void)runWithWebGL:(int64_t)context :(SWIFT_NOESCAPE void (^ _Nonnull)(void))block;
 + (void)releaseWebGL:(int64_t)context;
 + (void)release2DContext:(int64_t)context;
 + (void)releaseWebGPU:(int64_t)context;
@@ -445,7 +452,8 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class) BOOL forceGL;)
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) NSMutableDictionary * _Nonnull store;)
 + (NSMutableDictionary * _Nonnull)store SWIFT_WARN_UNUSED_RESULT;
 + (NSMapTable<NSString *, NSCCanvas *> * _Nonnull)getViews SWIFT_WARN_UNUSED_RESULT;
-- (void * _Nonnull)getGlViewPtr SWIFT_WARN_UNUSED_RESULT;
+/// The GL view’s <code>CAEAGLLayer</code>, which a GL context stores its drawing buffer in.
+- (void * _Nonnull)getGlLayerPtr SWIFT_WARN_UNUSED_RESULT;
 - (void * _Nonnull)getMtlViewPtr SWIFT_WARN_UNUSED_RESULT;
 - (void * _Nonnull)getMtlLayerPtr SWIFT_WARN_UNUSED_RESULT;
 @property (nonatomic) BOOL autoScale;
@@ -454,6 +462,8 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) NSMutableDic
 @property (nonatomic, readonly) BOOL willReadFrequently;
 /// Read when the 2D context is created.
 @property (nonatomic) BOOL threaded2D;
+/// Read when the WebGL context is created: it then lives on the WebGL thread, which presents it.
+@property (nonatomic) BOOL threadedWebGL;
 @property (nonatomic, readonly) CGFloat drawingBufferWidth;
 @property (nonatomic, readonly) CGFloat drawingBufferHeight;
 @property (nonatomic, readonly) float width;

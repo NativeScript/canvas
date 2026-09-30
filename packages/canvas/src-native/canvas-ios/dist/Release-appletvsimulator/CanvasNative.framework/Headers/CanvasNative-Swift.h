@@ -350,7 +350,6 @@ extern "C" {
 @import CoreVideo;
 @import Dispatch;
 @import Foundation;
-@import GLKit;
 @import ObjectiveC;
 @import UIKit;
 #endif
@@ -387,17 +386,17 @@ SWIFT_CLASS_NAMED("CanvasCPUView")
 @end
 
 @class NSCCanvas;
-@class EAGLContext;
-SWIFT_CLASS_NAMED("CanvasGLKView")
-@interface CanvasGLKView : GLKView <GLKViewDelegate>
+@class CAEAGLLayer;
+/// Shows a GL context’s drawing buffer. The context stores its color buffer in this view’s layer
+/// and presents it there itself, from whichever thread it runs on.
+SWIFT_CLASS_NAMED("CanvasGLView")
+@interface CanvasGLView : UIView
 @property (nonatomic, readonly, weak) NSCCanvas * _Nullable canvas;
-- (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
+SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly) Class _Nonnull layerClass;)
++ (Class _Nonnull)layerClass SWIFT_WARN_UNUSED_RESULT;
+@property (nonatomic, readonly, strong) CAEAGLLayer * _Nonnull eaglLayer;
 - (nonnull instancetype)initWithFrame:(CGRect)frame OBJC_DESIGNATED_INITIALIZER;
-- (nullable instancetype)initWithCoder:(NSCoder * _Nonnull)coder SWIFT_UNAVAILABLE;
-- (void)bindDrawable;
-- (void)deleteDrawable;
-- (void)glkView:(GLKView * _Nonnull)view drawInRect:(CGRect)rect;
-- (nonnull instancetype)initWithFrame:(CGRect)frame context:(EAGLContext * _Nonnull)context SWIFT_UNAVAILABLE;
+- (nullable instancetype)initWithCoder:(NSCoder * _Nonnull)coder OBJC_DESIGNATED_INITIALIZER;
 @end
 
 @class UIImage;
@@ -416,7 +415,7 @@ SWIFT_CLASS_NAMED("CanvasHelpers")
 + (int64_t)initWebGPUWithViewLayer:(int64_t)instance :(NSCCanvas * _Nonnull)view :(uint32_t)width :(uint32_t)height SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
 + (int64_t)initWebGPUWithView:(int64_t)instance :(NSCCanvas * _Nonnull)view :(uint32_t)width :(uint32_t)height SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
 + (void)resizeWebGPUWithView:(int64_t)context :(NSCCanvas * _Nonnull)view :(uint32_t)width :(uint32_t)height;
-+ (int64_t)initWebGLWithView:(NSCCanvas * _Nonnull)view :(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)fail_if_major_performance_caveat :(int32_t)power_preference :(BOOL)premultiplied_alpha :(BOOL)preserve_drawing_buffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xr_compatible :(int32_t)version SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
++ (int64_t)initWebGLWithView:(NSCCanvas * _Nonnull)view :(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)fail_if_major_performance_caveat :(int32_t)power_preference :(BOOL)premultiplied_alpha :(BOOL)preserve_drawing_buffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xr_compatible :(int32_t)version :(BOOL)threaded SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
 + (int64_t)initWebGLWithWidthAndHeight:(int32_t)width :(int32_t)height :(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)fail_if_major_performance_caveat :(int32_t)power_preference :(BOOL)premultiplied_alpha :(BOOL)preserve_drawing_buffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xr_compatible :(int32_t)version SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
 + (void)resize2DContext:(int64_t)context :(float)width :(float)height;
 /// A 2D context’s pixels as an image: a Metal-backed canvas has no view to snapshot.
@@ -425,6 +424,13 @@ SWIFT_CLASS_NAMED("CanvasHelpers")
 + (void)flush2DContextAndSyncCPU:(int64_t)context;
 + (void)presentDrawable:(int64_t)context;
 + (BOOL)flushWebGL:(int64_t)context SWIFT_WARN_UNUSED_RESULT;
+/// After the GL view’s layer changed size.
++ (void)resizeWebGL:(int64_t)context :(NSInteger)width :(NSInteger)height;
+/// A WebGL context’s drawing buffer as an image, read on the thread that owns the context.
++ (UIImage * _Nullable)snapshotWebGL:(int64_t)context SWIFT_WARN_UNUSED_RESULT;
+/// Runs <code>block</code> with the WebGL context current, on the thread that owns it, and waits for it: a
+/// threaded context is only ever current on the WebGL thread, so GL work against it runs there.
++ (void)runWithWebGL:(int64_t)context :(SWIFT_NOESCAPE void (^ _Nonnull)(void))block;
 + (void)releaseWebGL:(int64_t)context;
 + (void)release2DContext:(int64_t)context;
 + (void)releaseWebGPU:(int64_t)context;
@@ -437,10 +443,6 @@ SWIFT_CLASS_NAMED("CanvasHelpers")
 + (void)handleBase64Image:(NSString * _Nonnull)mime :(NSString * _Nonnull)dir :(NSString * _Nonnull)base64 :(void (^ _Nonnull)(NSString * _Nullable, NSString * _Nullable))callback;
 + (NSString * _Nonnull)getPixelsPerInchForCurrentDevice SWIFT_WARN_UNUSED_RESULT;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
-@end
-
-@interface GLKView (SWIFT_EXTENSION(CanvasNative))
-- (void)snapshotWithData:(NSData * _Nonnull)data;
 @end
 
 SWIFT_ENUM_FWD_DECL(NSInteger, CanvasFit)
@@ -459,7 +461,8 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class) BOOL forceGL;)
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) NSMutableDictionary * _Nonnull store;)
 + (NSMutableDictionary * _Nonnull)store SWIFT_WARN_UNUSED_RESULT;
 + (NSMapTable<NSString *, NSCCanvas *> * _Nonnull)getViews SWIFT_WARN_UNUSED_RESULT;
-- (void * _Nonnull)getGlViewPtr SWIFT_WARN_UNUSED_RESULT;
+/// The GL view’s <code>CAEAGLLayer</code>, which a GL context stores its drawing buffer in.
+- (void * _Nonnull)getGlLayerPtr SWIFT_WARN_UNUSED_RESULT;
 - (void * _Nonnull)getMtlViewPtr SWIFT_WARN_UNUSED_RESULT;
 - (void * _Nonnull)getMtlLayerPtr SWIFT_WARN_UNUSED_RESULT;
 @property (nonatomic) BOOL autoScale;
@@ -468,6 +471,8 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) NSMutableDic
 @property (nonatomic, readonly) BOOL willReadFrequently;
 /// Read when the 2D context is created.
 @property (nonatomic) BOOL threaded2D;
+/// Read when the WebGL context is created: it then lives on the WebGL thread, which presents it.
+@property (nonatomic) BOOL threadedWebGL;
 @property (nonatomic, readonly) CGFloat drawingBufferWidth;
 @property (nonatomic, readonly) CGFloat drawingBufferHeight;
 @property (nonatomic, readonly) float width;
@@ -559,9 +564,16 @@ SWIFT_CLASS_NAMED("NSCRender")
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 - (nonnull instancetype)initWithDevice:(id <MTLDevice> _Nonnull)device OBJC_DESIGNATED_INITIALIZER;
 - (void)drawFrame:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize :(int32_t)internalFormat :(int32_t)format :(BOOL)flipYWebGL;
+/// Uploads the current frame into the texture bound in <code>context</code> (a WebGL context), on the thread
+/// that owns it.
+- (void)drawFrame:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize :(int32_t)internalFormat :(int32_t)format :(BOOL)flipYWebGL :(int64_t)context;
 - (void)drawFrameWithBuffer:(CVPixelBufferRef _Nonnull)buffer width:(NSInteger)width height:(NSInteger)height internalFormat:(int32_t)internalFormat format:(int32_t)format flipYWebGL:(BOOL)flipYWebGL;
 - (void)drawFrameTexImage3D:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize :(int32_t)target :(int32_t)level :(int32_t)internalFormat :(int32_t)width :(int32_t)height :(int32_t)depth :(int32_t)border :(int32_t)format :(int32_t)type :(BOOL)flipYWebGL;
+/// <code>drawFrameTexImage3D</code>, on the thread that owns <code>context</code> (a WebGL context).
+- (void)drawFrameTexImage3D:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize :(int32_t)target :(int32_t)level :(int32_t)internalFormat :(int32_t)width :(int32_t)height :(int32_t)depth :(int32_t)border :(int32_t)format :(int32_t)type :(BOOL)flipYWebGL :(int64_t)context;
 - (void)drawFrameTexSubImage3D:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize :(int32_t)target :(int32_t)level :(int32_t)xoffset :(int32_t)yoffset :(int32_t)zoffset :(int32_t)width :(int32_t)height :(int32_t)depth :(int32_t)format :(int32_t)type :(BOOL)flipYWebGL;
+/// <code>drawFrameTexSubImage3D</code>, on the thread that owns <code>context</code> (a WebGL context).
+- (void)drawFrameTexSubImage3D:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize :(int32_t)target :(int32_t)level :(int32_t)xoffset :(int32_t)yoffset :(int32_t)zoffset :(int32_t)width :(int32_t)height :(int32_t)depth :(int32_t)format :(int32_t)type :(BOOL)flipYWebGL :(int64_t)context;
 + (BOOL)drawVideoFrame:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize :(int64_t)context :(float)dx :(float)dy SWIFT_WARN_UNUSED_RESULT;
 + (BOOL)drawVideoFrame:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize :(int64_t)context :(float)dx :(float)dy :(float)dw :(float)dh SWIFT_WARN_UNUSED_RESULT;
 + (BOOL)drawVideoFrame:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize :(int64_t)context :(float)sx :(float)sy :(float)sw :(float)sh :(float)dx :(float)dy :(float)dw :(float)dh SWIFT_WARN_UNUSED_RESULT;

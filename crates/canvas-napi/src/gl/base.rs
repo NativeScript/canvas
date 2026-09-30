@@ -78,12 +78,12 @@ macro_rules! impl_webgl_context {
         let name = name.as_str()?;
         let state = unsafe { &mut *self.state };
         unsafe {
-          canvas_webgl::webgl::canvas_native_webgl_bind_attrib_location(
+          state.sync(|state| canvas_webgl::webgl::canvas_native_webgl_bind_attrib_location(
             program.0,
             index,
             name,
-            state.get_inner_mut(),
-          )
+            state,
+          ))
         }
         Ok(())
       }
@@ -454,7 +454,7 @@ macro_rules! impl_webgl_context {
     #[napi]
     pub fn get_attached_shaders(&self, program: ClassInstance<WebGLProgram>) -> Vec<WebGLShader> {
         let state = unsafe { &mut *self.state };
-        let shaders = canvas_webgl::webgl::canvas_native_webgl_get_attached_shaders(program.0, state.get_inner_mut());
+        let shaders = state.sync(|state| canvas_webgl::webgl::canvas_native_webgl_get_attached_shaders(program.0, state));
         shaders.into_iter()
             .map(|shader| {
                 WebGLShader(shader)
@@ -466,7 +466,7 @@ macro_rules! impl_webgl_context {
         let name = name.into_utf8()?;
         let name = name.as_str()?;
         let state = unsafe { &mut *self.state };
-        Ok(canvas_webgl::webgl::canvas_native_webgl_get_attrib_location(program.0, name, state.get_inner_mut()))
+        Ok(state.sync(|state| canvas_webgl::webgl::canvas_native_webgl_get_attrib_location(program.0, name, state)))
     }
 
     #[napi]
@@ -497,10 +497,10 @@ macro_rules! impl_webgl_context {
         }
         let state = unsafe { &mut *self.state };
 
-        let ext = canvas_webgl::webgl::canvas_native_webgl_get_extension(
+        let ext = state.sync(|state| canvas_webgl::webgl::canvas_native_webgl_get_extension(
             name.as_ref(),
-            state.get_inner_mut(),
-        );
+            state,
+        ));
 
 
         match ext {
@@ -508,7 +508,7 @@ macro_rules! impl_webgl_context {
                 Null.to_js(env)
             }
             Some(ext) => {
-                let ext = Box::into_raw(Box::new(WebGLExtension::new(Some(ext))));
+                let ext = Box::into_raw(Box::new(WebGLExtension::new(Some(ext), state)));
 
                 match name {
                     "ANGLE_instanced_arrays" => {
@@ -648,12 +648,12 @@ macro_rules! impl_webgl_context {
     #[napi]
     pub fn get_framebuffer_attachment_parameter<'env>(&self, env: &'env Env, target: u32, attachment: u32, pname: u32) -> Result<Unknown<'env>> {
         let mut state = unsafe { &mut *self.state };
-        let ret = canvas_webgl::webgl::canvas_native_webgl_get_framebuffer_attachment_parameter(
+        let ret = state.sync(|state| canvas_webgl::webgl::canvas_native_webgl_get_framebuffer_attachment_parameter(
             target,
             attachment,
             pname,
-            state.get_inner_mut(),
-        );
+            state,
+        ));
 
 
         if ret.get_is_renderbuffer() {
@@ -671,7 +671,7 @@ macro_rules! impl_webgl_context {
     #[napi]
     pub fn get_program_info_log(&self, program: ClassInstance<WebGLProgram>) -> String {
         let state = unsafe { &mut *self.state };
-        canvas_webgl::webgl::canvas_native_webgl_get_program_info_log(program.0, state.get_inner_mut())
+        state.sync(|state| canvas_webgl::webgl::canvas_native_webgl_get_program_info_log(program.0, state))
     }
 
     #[napi]
@@ -709,7 +709,7 @@ macro_rules! impl_webgl_context {
     #[napi]
     pub fn get_shader_info_log(&self, shader: ClassInstance<WebGLShader>) -> String {
         let state = unsafe { &mut *self.state };
-        canvas_webgl::webgl::canvas_native_webgl_get_shader_info_log(shader.0, state.get_inner_mut())
+        state.sync(|state| canvas_webgl::webgl::canvas_native_webgl_get_shader_info_log(shader.0, state))
     }
 
     #[napi]
@@ -738,13 +738,13 @@ macro_rules! impl_webgl_context {
     #[napi]
     pub fn get_shader_source(&self, shader: ClassInstance<WebGLShader>) -> String {
         let state = unsafe { &mut *self.state };
-        canvas_webgl::webgl::canvas_native_webgl_get_shader_source(shader.0, state.get_inner_mut())
+        state.sync(|state| canvas_webgl::webgl::canvas_native_webgl_get_shader_source(shader.0, state))
     }
 
     #[napi]
     pub fn get_supported_extensions(&self) -> Vec<String> {
         let state = unsafe { &mut *self.state };
-        canvas_webgl::webgl::canvas_native_webgl_get_supported_extensions(state.get_inner_mut())
+        state.sync(|state| canvas_webgl::webgl::canvas_native_webgl_get_supported_extensions(state))
     }
 
     #[napi]
@@ -755,7 +755,7 @@ macro_rules! impl_webgl_context {
     #[napi]
     pub fn get_uniform_location<'env>(&self, env: &'env Env, program: ClassInstance<WebGLProgram>, name: String) -> Result<Unknown<'env>> {
         let state = unsafe { &mut *self.state };
-        let location = canvas_webgl::webgl::canvas_native_webgl_get_uniform_location(program.0, name.as_str(), state.get_inner_mut());
+        let location = state.sync(|state| canvas_webgl::webgl::canvas_native_webgl_get_uniform_location(program.0, name.as_str(), state));
 
         if location == -1 {
             return Null.to_js(env);
@@ -1028,7 +1028,7 @@ macro_rules! impl_webgl_context {
             }
         }
 
-        canvas_webgl::webgl::canvas_native_webgl_shader_source(shader.0, source.as_str(), state.get_inner_mut());
+        state.sync(|state| canvas_webgl::webgl::canvas_native_webgl_shader_source(shader.0, source.as_str(), state));
     }
 
     #[napi(ts_args_type = "face:number, func: number, ref: number, mask: number")]

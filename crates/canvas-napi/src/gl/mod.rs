@@ -115,7 +115,7 @@ where
 pub(crate) unsafe fn present_webgl(state: *mut std::ffi::c_void) {
   let state = state as *mut WebGLState;
   if !canvas_c::canvas_native_webgl_present(state)
-    && canvas_webgl::webgl::canvas_native_webgl_get_is_context_lost((*state).get_inner_mut())
+    && canvas_c::canvas_native_webgl_get_is_context_lost(state)
   {
     crate::frame::report_lost();
   }

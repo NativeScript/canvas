@@ -15,7 +15,7 @@ import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
 import { GPUCanvasContext } from '../WebGPU';
 import { ImageBitmapRenderingContext } from '../ImageBitmapRenderingContext';
 import { ImageSource, Screen, Utils, widthProperty, heightProperty } from '@nativescript/core';
-import { handleContextOptions, microtask, CanvasContextType, isPercentLength, setParentPercentSize } from './utils';
+import { handleContextOptions, microtask, CanvasContextType, isPercentLength, setParentPercentSize, holdBackAnimationFramesWhileBehind } from './utils';
 import { Helpers } from '../helpers';
 
 export function createSVGMatrix(): DOMMatrix {
@@ -131,6 +131,8 @@ export abstract class NapiCanvas extends CanvasBase {
 	static forceGL = false;
 	/** Default for `getContext('2d', { threaded })` where the host can rasterize on a render thread. */
 	static threaded2D = false;
+	/** Default for `getContext('webgl' | 'webgl2', { threaded })` where the host can run the context on a WebGL thread. */
+	static threadedWebGL = false;
 	surfaceOnTop = false;
 
 	protected constructor() {
@@ -512,6 +514,9 @@ export abstract class NapiCanvas extends CanvasBase {
 		if ('threaded2D' in this._canvas) {
 			this._canvas.threaded2D = threaded;
 		}
+		if (threaded) {
+			holdBackAnimationFramesWhileBehind();
+		}
 		const ctx = this._canvas.create2DContext(opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible, opts.fontColor, opts.willReadFrequently ?? false, opts.colorSpace ?? 0);
 		const context = new (CanvasRenderingContext2D as any)(ctx, opts);
 		context._canvas = this;
@@ -566,6 +571,13 @@ export abstract class NapiCanvas extends CanvasBase {
 				const opts = { version: isWebGL2 ? 2 : 1, ...defaultOpts, ...handleContextOptions(type as CanvasContextType, options) };
 				// GL renders bottom-up.
 				this._prepareSurface(opts.alpha !== false, true);
+				const threaded = 'threadedWebGL' in this._canvas && !!(options?.threaded ?? (this.constructor as typeof NapiCanvas).threadedWebGL);
+				if ('threadedWebGL' in this._canvas) {
+					this._canvas.threadedWebGL = threaded;
+				}
+				if (threaded) {
+					holdBackAnimationFramesWhileBehind();
+				}
 				this._canvas.initContext(type, opts.alpha, false, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible, false, opts.colorSpace ?? 0);
 				if (isWebGL2) {
 					this._webgl2Context = new (WebGL2RenderingContext as any)(this._canvas, opts);

@@ -42,7 +42,7 @@ export declare class Canvas extends CanvasBase {
 	/** Default for `getContext('2d', { threaded })`: rasterize on a shared render thread (Android, iOS, Windows). */
 	static threaded2D: boolean;
 
-	/** Default for `getContext('webgl' | 'webgl2', { threaded })`: run the context on the WebGL thread (Android). */
+	/** Default for `getContext('webgl' | 'webgl2', { threaded })`: run the context on a shared WebGL thread (Android, iOS, Windows). */
 	static threadedWebGL: boolean;
 
 	surfaceOnTop: boolean;

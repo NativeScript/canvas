@@ -59,6 +59,8 @@ const WHEEL_PIXELS_PER_NOTCH = 100;
 export class Canvas extends NapiCanvas {
 	/** Default for `getContext('2d', { threaded })`: rasterize on a shared render thread. */
 	static threaded2D = true;
+	/** Default for `getContext('webgl' | 'webgl2', { threaded })`: run the context on the shared WebGL thread. */
+	static threadedWebGL = true;
 
 	private _panel: any;
 	private _ignoreTouchEvents = false;

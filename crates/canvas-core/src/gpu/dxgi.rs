@@ -623,6 +623,9 @@ pub fn headless_panel() -> windows::core::IUnknown {
     panel.into()
 }
 
+/// A swapchain made off the UI thread, to show there with `bind_swap_chain`.
+pub type SwapChainRef = windows::core::IUnknown;
+
 /// Shows `swap_chain` (any COM pointer to it) in the panel (any COM pointer to it). UI thread.
 pub unsafe fn bind_swap_chain(panel: *mut c_void, swap_chain: *mut c_void) -> Result<()> {
     let unknown = unsafe { windows::core::IUnknown::from_raw_borrowed(&panel) }.ok_or_else(windows::core::Error::empty)?;

@@ -628,10 +628,36 @@ impl WebGLState {
         unsafe { self.context.attach_swap_chain_panel(panel, alpha) }
     }
 
+    /// `attach_swap_chain_panel` for a context on another thread than the UI's: the swapchain to
+    /// show in the panel there.
+    #[cfg(target_os = "windows")]
+    pub fn create_panel_swap_chain(&mut self) -> Option<canvas_core::gpu::dxgi::SwapChainRef> {
+        let alpha = self.get_attributes().get_alpha();
+        self.context.create_panel_swap_chain(alpha)
+    }
+
     /// Presents into a XAML `SurfaceImageSource` instead (a canvas that blends with the page).
     #[cfg(target_os = "windows")]
     pub unsafe fn attach_xaml_surface(&mut self, source: *mut std::ffi::c_void) -> bool {
         unsafe { self.context.attach_xaml_surface(source) }
+    }
+
+    /// `attach_xaml_surface` for a context on another thread than the UI's.
+    #[cfg(target_os = "windows")]
+    pub fn attach_xaml_handoff(&mut self, handoff: std::sync::Arc<canvas_core::gpu::dxgi::XamlHandoff>) -> bool {
+        self.context.attach_xaml_handoff(handoff)
+    }
+
+    /// `present` for a context on a thread of its own (`GLContext::present_or_hold`).
+    #[cfg(target_os = "windows")]
+    pub fn present_or_hold(&self) -> bool {
+        self.context.present_or_hold()
+    }
+
+    /// `true` while a frame `present_or_hold` held is still waiting for the display.
+    #[cfg(target_os = "windows")]
+    pub fn present_held(&self) -> bool {
+        self.context.present_held()
     }
 
     #[cfg(target_os = "windows")]

@@ -1,7 +1,7 @@
 import { Node } from './Node';
 import { Frame, StackLayout, View, ViewBase } from '@nativescript/core';
 import setValue from 'set-value';
-import querySelector from 'query-selector';
+import querySelector from './querySelector';
 import { HTMLCollection } from './HTMLCollection';
 import { Canvas } from '@nativescript/canvas';
 import { domGetElementsByClassName, domGetElementsByTagName } from './domUtils';
@@ -303,9 +303,12 @@ export class Element extends Node {
 		return [];
 	}
 
+	private get __selectorContext() {
+		return (<any>this)._xmlDom?.documentElement ?? (<any>this)._xmlDom ?? this.__instance ?? this.nativeElement?.__domElement;
+	}
+
 	querySelector(selector: string) {
-		const context = (<any>this)._xmlDom?.documentElement ?? (<any>this)._xmlDom ?? this.__instance ?? this.nativeElement?.__domElement;
-		const selection = querySelector(selector, context);
+		const selection = querySelector(selector, this.__selectorContext);
 		if (Array.isArray(selection)) {
 			const item = selection[0];
 			if (item) {
@@ -327,7 +330,7 @@ export class Element extends Node {
 	}
 
 	querySelectorAll(selector: string) {
-		return querySelector(selector, this);
+		return querySelector(selector, this.__selectorContext);
 	}
 
 	getBoundingClientRect() {

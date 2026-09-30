@@ -6,7 +6,7 @@ import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
 import { ImageSource, Utils, Screen, isUserInteractionEnabledProperty, widthProperty, heightProperty } from '@nativescript/core';
 import { GPUCanvasContext } from '../WebGPU';
 import { ImageBitmapRenderingContext } from '../ImageBitmapRenderingContext';
-import { handleContextOptions, microtask, CanvasContextType } from './utils';
+import { handleContextOptions, microtask, CanvasContextType, setParentPercentSize } from './utils';
 declare var NSCCanvas, NSCCanvasListener;
 
 export function createSVGMatrix(): DOMMatrix {
@@ -192,6 +192,7 @@ export class Canvas extends CanvasBase {
 	}
 
 	[widthProperty.setNative](value: any) {
+		setParentPercentSize(this, true, value);
 		this.__setSurfaceWidth(fromCssLength(value));
 	}
 
@@ -260,6 +261,7 @@ export class Canvas extends CanvasBase {
 	}
 
 	[heightProperty.setNative](value: any) {
+		setParentPercentSize(this, false, value);
 		this.__setSurfaceHeight(fromCssLength(value));
 	}
 

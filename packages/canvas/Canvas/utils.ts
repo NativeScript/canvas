@@ -95,3 +95,32 @@ export function removeItemFromArray(array: any[], item) {
 }
 
 export const microtask: (cb: () => void) => void = typeof queueMicrotask === 'function' ? queueMicrotask : (cb) => Promise.resolve().then(cb);
+
+export function isPercentLength(value: any) {
+	return (typeof value === 'object' && value?.unit === '%') || (typeof value === 'string' && value.trim().endsWith('%'));
+}
+
+/** A % length as a 0-1 fraction. */
+export function percentFraction(value: any): number {
+	return typeof value === 'string' ? parseFloat(value) / 100 : value.value;
+}
+
+const percentAxes_ = Symbol('percentAxes');
+
+/**
+ * Hands a % width/height to a parent that lays out its children itself (MasonKit), so it resolves
+ * against the containing block rather than the canvas being sized to its surface. A size that
+ * stops being a % clears it again.
+ */
+export function setParentPercentSize(view: any, horizontal: boolean, value: any) {
+	const axis = horizontal ? 1 : 2;
+	const axes = view[percentAxes_] ?? 0;
+	if (isPercentLength(value)) {
+		if (view.parent?._setChildPercentSize?.(view, horizontal, percentFraction(value))) {
+			view[percentAxes_] = axes | axis;
+		}
+	} else if (axes & axis) {
+		view.parent?._setChildPercentSize?.(view, horizontal, null);
+		view[percentAxes_] = axes & ~axis;
+	}
+}

@@ -6,7 +6,7 @@ import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
 import { Application, View, Screen, ImageSource, Utils, widthProperty, heightProperty, isUserInteractionEnabledProperty } from '@nativescript/core';
 import { GPUCanvasContext } from '../WebGPU';
 import { ImageBitmapRenderingContext } from '../ImageBitmapRenderingContext';
-import { handleContextOptions, microtask, CanvasContextType } from './utils';
+import { handleContextOptions, microtask, CanvasContextType, setParentPercentSize } from './utils';
 
 export function createSVGMatrix(): DOMMatrix {
 	return new DOMMatrix();
@@ -325,18 +325,20 @@ export class Canvas extends CanvasBase {
 
 	[widthProperty.setNative](value) {
 		this.__setLayoutLength(widthProperty.setNative, value);
+		setParentPercentSize(this, true, value);
 		this.__setSurfaceWidth(fromCssLength(value));
 	}
 
 	[heightProperty.setNative](value) {
 		this.__setLayoutLength(heightProperty.setNative, value);
+		setParentPercentSize(this, false, value);
 		this.__setSurfaceHeight(fromCssLength(value));
 	}
 
 	/**
 	 * A fixed CSS size also goes to the view's layout params, as for any view: a parent that
 	 * measures the canvas natively (MasonKit) would otherwise size it to its surface. % and auto
-	 * keep the layout params the canvas was given.
+	 * keep the layout params the canvas was given; a % also goes to such a parent to resolve.
 	 */
 	private __setLayoutLength(setNative: symbol, value: any) {
 		if (typeof value === 'number' || value?.unit === 'dip' || value?.unit === 'px') {

@@ -172,6 +172,31 @@ public class CanvasHelpers: NSObject {
         canvas_native_ios_resize_context_2d(context, width, height)
     }
     
+    /// A 2D context's pixels as an image: a Metal-backed canvas has no view to snapshot.
+    public static func snapshot2DContext(_ context: Int64, _ width: Int, _ height: Int) -> UIImage? {
+        guard width > 0, height > 0, let pointer = OpaquePointer(bitPattern: Int(context)),
+              let imageData = canvas_native_context_get_image_data(pointer, 0, 0, Float(width), Float(height)) else {
+            return nil
+        }
+        defer { canvas_native_image_data_release(imageData) }
+        guard let buffer = canvas_native_image_data_get_data(imageData) else {
+            return nil
+        }
+        defer { canvas_native_u8_buffer_release(buffer) }
+        let length = Int(canvas_native_u8_buffer_get_length(buffer))
+        guard length >= width * height * 4, let bytes = canvas_native_u8_buffer_get_bytes(buffer),
+              let provider = CGDataProvider(data: Data(bytes: bytes, count: length) as CFData),
+              // getImageData is unpremultiplied RGBA.
+              let image = CGImage(width: width, height: height, bitsPerComponent: 8, bitsPerPixel: 32,
+                                  bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(),
+                                  bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.last.rawValue),
+                                  provider: provider, decode: nil, shouldInterpolate: false,
+                                  intent: .defaultIntent) else {
+            return nil
+        }
+        return UIImage(cgImage: image)
+    }
+
     public static func flush2DContext(_ context: Int64) {
         canvas_native_ios_flush_2d_context(context)
     }

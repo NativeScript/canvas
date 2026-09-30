@@ -22,12 +22,10 @@ export function rect(x: number, y: number, width: number, height: number) {
 export function drawAsImage(elements: Paint[], size: { width: number; height: number } = { width: 300, height: 150 }) {
 	const canvas = Canvas.createCustomView();
 
-	if (size.width !== 300 && size.height !== 150) {
-		(canvas as any)._isBatch = true;
+	if (size.width !== 300 || size.height !== 150) {
+		// Both in one turn: the surface is resized once, before anything is drawn.
 		canvas.width = size.width;
 		canvas.height = size.height;
-		(canvas as any)._isBatch = false;
-		(canvas as any)._layoutNative();
 	}
 
 	for (const element of elements) {

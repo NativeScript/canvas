@@ -532,9 +532,9 @@ public class NSCCanvas: UIView {
 			snapshot = glkView.snapshot
 			#endif
 		}else if(engine == .GPU){
-			// todo
-			//            let drawable = mtlView.currentDrawable?.texture
-			//            snapshot =  drawable?.toImage()
+			if(is2D && nativeContext != 0){
+				snapshot = CanvasHelpers.snapshot2DContext(nativeContext, surfaceWidth, surfaceHeight)
+			}
 		}else if(engine == .CPU){
 			snapshot = cpuView.snapshot()
 		}

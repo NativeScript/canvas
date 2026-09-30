@@ -244,8 +244,8 @@ pub extern "system" fn nativeDrawAtlasWithBitmap(
             return;
         }
 
-        let mut xform_buf: Vec<f32> = Vec::with_capacity(xform_len as usize);
-        let mut tex_buf: Vec<f32> = Vec::with_capacity(tex_len as usize);
+        let mut xform_buf = vec![0f32; xform_len as usize];
+        let mut tex_buf = vec![0f32; tex_len as usize];
 
         if let (Ok(_), Ok(_)) = (
             env.get_float_array_region(xform, 0, xform_buf.as_mut_slice()),
@@ -262,7 +262,7 @@ pub extern "system" fn nativeDrawAtlasWithBitmap(
                 let context = context.get_context_mut();
 
                 let colors_value: Option<Vec<Color>> = if colors_len > 0 {
-                    let mut colors_buf: Vec<i32> = Vec::with_capacity(colors_len as usize);
+                    let mut colors_buf = vec![0i32; colors_len as usize];
                     let _ = env.get_int_array_region(colors, 0, colors_buf.as_mut_slice());
 
                     Some(

@@ -2647,6 +2647,19 @@ void canvas_native_context_draw_atlas_asset(struct CanvasRenderingContext2D *con
                                             uintptr_t colors_size,
                                             uint32_t blend_mode);
 
+/**
+ * Draws sprites of another 2D canvas's current contents.
+ */
+void canvas_native_context_draw_atlas_context(struct CanvasRenderingContext2D *context,
+                                              struct CanvasRenderingContext2D *source,
+                                              const float *xform,
+                                              uintptr_t xform_size,
+                                              const float *tex,
+                                              uintptr_t tex_size,
+                                              const char *const *colors,
+                                              uintptr_t colors_size,
+                                              uint32_t blend_mode);
+
 void canvas_native_context_ellipse(struct CanvasRenderingContext2D *context,
                                    float x,
                                    float y,

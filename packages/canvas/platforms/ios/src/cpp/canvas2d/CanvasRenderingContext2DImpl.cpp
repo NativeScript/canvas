@@ -2490,11 +2490,14 @@ CanvasRenderingContext2DImpl::DrawAtlas(const v8::FunctionCallbackInfo<v8::Value
             auto colorsArray = colorsValue.As<v8::Array>();
             auto colorsLen = colorsArray->Length();
             colors.reserve(colorsLen);
-            colors_ref.reserve(colorsLen);
             for (int i = 0; i < colorsLen; i++) {
-                auto str = ConvertFromV8String(isolate, texArray->Get(context, i).ToLocalChecked());
-                colors.emplace_back(str);
-                colors_ref.emplace_back(str.c_str());
+                colors.emplace_back(
+                        ConvertFromV8String(isolate, colorsArray->Get(context, i).ToLocalChecked()));
+            }
+            // Only once `colors` is filled: its strings own the characters.
+            colors_ref.reserve(colors.size());
+            for (const auto &color: colors) {
+                colors_ref.emplace_back(color.c_str());
             }
         }
 
@@ -2543,13 +2546,20 @@ CanvasRenderingContext2DImpl::DrawAtlas(const v8::FunctionCallbackInfo<v8::Value
                                                                tex.size(), colors_ref.data(),
                                                                colors_ref.size(), mode);
                     }
+                    ptr->UpdateInvalidateState();
                 }
             }
                 break;
             case NativeType::CanvasRenderingContext2D: {
                 auto image_canvas = CanvasRenderingContext2DImpl::GetPointer(image);
                 if (image_canvas != nullptr) {
-
+                    canvas_native_context_draw_atlas_context(ptr->GetContext(),
+                                                             image_canvas->GetContext(),
+                                                             xform.data(), xform.size(),
+                                                             tex.data(), tex.size(),
+                                                             colors.empty() ? nullptr
+                                                                            : colors_ref.data(),
+                                                             colors_ref.size(), mode);
                     ptr->UpdateInvalidateState();
                 }
             }

@@ -868,13 +868,25 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create_swap_chain_panel(
     width: u32,
     height: u32,
 ) -> *const CanvasGPUCanvasContext {
+    create_swap_chain_panel(instance, panel, None, width, height)
+}
+
+/// `ui`: where the panel lives, when called from another thread.
+#[cfg(all(target_os = "windows", feature = "d3d"))]
+pub(crate) unsafe fn create_swap_chain_panel(
+    instance: *const CanvasWebGPUInstance,
+    panel: *mut c_void,
+    ui: Option<canvas_core::gpu::dxgi::UiThread>,
+    width: u32,
+    height: u32,
+) -> *const CanvasGPUCanvasContext {
     if instance.is_null() || panel.is_null() {
         return std::ptr::null();
     }
     Arc::increment_strong_count(instance);
     let instance = Arc::from_raw(instance);
 
-    let target = match canvas_core::gpu::dxgi::PanelSurfaceTarget::new(panel) {
+    let target = match canvas_core::gpu::dxgi::PanelSurfaceTarget::with_ui(panel, ui) {
         Ok(target) => target,
         Err(error) => {
             log::error!("canvas_native_webgpu_context_create_swap_chain_panel: not a SwapChainPanel: {error}");

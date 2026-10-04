@@ -1,4 +1,5 @@
-//! `CanvasModule.OffscreenSurface`. Viewless only: a transferred canvas still draws through its host.
+//! `CanvasModule.OffscreenSurface`: viewless, or a transferred canvas's panel
+//! (`NSCCanvas.transferToOffscreenSurface`).
 
 use std::cell::Cell;
 use std::ffi::{CStr, CString};
@@ -28,7 +29,7 @@ impl ObjectFinalize for OffscreenSurface {
 }
 
 impl OffscreenSurface {
-  fn wrap(surface: *const CanvasOffscreenSurface) -> Option<Self> {
+  pub(crate) fn from_raw(surface: *const CanvasOffscreenSurface) -> Option<Self> {
     (!surface.is_null()).then(|| Self { surface: Cell::new(surface) })
   }
 
@@ -42,12 +43,12 @@ impl OffscreenSurface {
   #[napi]
   pub fn create(width: u32, height: u32, density: f64, ppi: f64, direction: u32, color_space: u32) -> Option<OffscreenSurface> {
     let color_space = if color_space == 1 { CanvasColorSpace::P3 } else { CanvasColorSpace::Srgb };
-    Self::wrap(canvas_native_offscreen_surface_create(width, height, density as f32, ppi as f32, direction, color_space))
+    Self::from_raw(canvas_native_offscreen_surface_create(width, height, density as f32, ppi as f32, direction, color_space))
   }
 
   #[napi]
   pub fn adopt(handle: u32) -> Option<OffscreenSurface> {
-    Self::wrap(canvas_native_offscreen_surface_adopt(handle))
+    Self::from_raw(canvas_native_offscreen_surface_adopt(handle))
   }
 
   #[napi(js_name = "releaseHandle")]

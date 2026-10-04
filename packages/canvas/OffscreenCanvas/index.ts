@@ -185,9 +185,6 @@ export class OffscreenCanvas {
 	static threaded2D = true;
 	static threadedWebGL = true;
 
-	/** @internal Set by hosts without surfaces. */
-	static _legacyHost: (() => Canvas) | null = null;
-
 	private _width: number;
 	private _height: number;
 	private _surface: any = null;
@@ -537,7 +534,7 @@ export class OffscreenCanvas {
 	}
 
 	private _hostContext(id: OffscreenRenderingContextId, options?: any): any {
-		const host = this._ensureHost();
+		const host = this._host;
 		if (!host) {
 			return null;
 		}
@@ -554,18 +551,6 @@ export class OffscreenCanvas {
 			}
 		}
 		return context;
-	}
-
-	private _ensureHost(): Canvas | null {
-		if (!this._host) {
-			const host = OffscreenCanvas._legacyHost?.() ?? null;
-			if (!host) {
-				return null;
-			}
-			host._resizeBitmap(this._width, this._height);
-			this._attachHost(host);
-		}
-		return this._host;
 	}
 
 	private _attachHost(host: Canvas) {

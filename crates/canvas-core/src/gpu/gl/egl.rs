@@ -776,6 +776,12 @@ impl GLContext {
         }
     }
 
+    #[cfg(target_os = "windows")]
+    pub fn detach_view(&mut self) {
+        self.0.presenter = None;
+        self.0.xaml = None;
+    }
+
     /// Presents into a XAML `SurfaceImageSource` through `handoff` (made on the UI thread with
     /// [`angle_d3d11_device`] at the context's size), from the thread that owns the context.
     #[cfg(target_os = "windows")]

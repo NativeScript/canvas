@@ -40,4 +40,11 @@ export function installCanvasGlobals() {
 			writable: true,
 		});
 	}
+	// Runtimes with transfer hooks (NativeScript Windows) then move it with postMessage(…, [canvas]).
+	(global as any).__nsRegisterTransferable?.('OffscreenCanvas', {
+		test: (value: any) => value instanceof OffscreenCanvas,
+		detach: (canvas: OffscreenCanvas) => OffscreenCanvas._toHandle(canvas),
+		attach: (handle: number) => OffscreenCanvas._fromHandle(handle),
+		release: (handle: number) => OffscreenCanvas._releaseHandle(handle),
+	});
 }

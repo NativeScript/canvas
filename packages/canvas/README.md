@@ -108,22 +108,21 @@ surface, so its frames show in the view. With the polyfill, `OffscreenCanvas` is
 #### In a Worker
 
 An OffscreenCanvas can move to a Worker, which then draws into it on its own thread: a transferred
-canvas keeps showing the Worker's frames in its view. NativeScript can't transfer it through
-`postMessage` yet, so send a handle instead:
+canvas keeps showing the Worker's frames in its view. Where the runtime can transfer it (NativeScript
+Windows, with transfer support in `postMessage`), it moves as on the web:
 
 ```typescript
 // Main thread
 const offscreen = canvas.transferControlToOffscreen();
-worker.postMessage({ canvas: OffscreenCanvas._toHandle(offscreen) });
+worker.postMessage({ canvas: offscreen }, [offscreen]);
 ```
 
 ```typescript
 // The Worker
 import '@nativescript/canvas/worker';
-import { OffscreenCanvas } from '@nativescript/canvas/worker';
 
 self.onmessage = ({ data }) => {
-	const canvas = OffscreenCanvas._fromHandle(data.canvas);
+	const canvas: OffscreenCanvas = data.canvas;
 	const ctx = canvas.getContext('2d');
 	const draw = () => {
 		ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -133,11 +132,21 @@ self.onmessage = ({ data }) => {
 };
 ```
 
+Elsewhere (the Android and iOS runtimes, for now), send a handle instead:
+
+```typescript
+// Main thread
+worker.postMessage({ canvas: OffscreenCanvas._toHandle(offscreen) });
+
+// The Worker
+import { OffscreenCanvas } from '@nativescript/canvas/worker';
+const canvas = OffscreenCanvas._fromHandle(data.canvas);
+```
+
 - `@nativescript/canvas/worker` is the canvas API without the `Canvas` view: import it first in the Worker.
-- `_toHandle` detaches the OffscreenCanvas it is given, as a transfer does, and it can't have a context yet. A handle is received once; `OffscreenCanvas._releaseHandle(handle)` drops one nothing will receive.
-- `2d`, `bitmaprenderer`, `webgl`, `webgl2` and `webgpu` all work there, as does `new OffscreenCanvas(w, h)` made in the Worker.
+- A transfer (or `_toHandle`) detaches the OffscreenCanvas it is given, and it can't have a context yet. A handle is received once; `OffscreenCanvas._releaseHandle(handle)` drops one nothing will receive.
+- `2d`, `bitmaprenderer`, `webgl`, `webgl2` and `webgpu` all work there, as does `new OffscreenCanvas(w, h)` made in the Worker, which can be transferred back.
 - Resizing it in the Worker resizes the view on the UI thread a moment later.
-- Windows draws worker canvases without a view; a transferred canvas there can't move to a Worker yet.
 
 ## WebGPU
 

@@ -6,6 +6,9 @@ declare const navigator: any;
 declare function requestAnimationFrame(callback: (time: number) => void): number;
 
 function canvasFor(args: any): OffscreenCanvas {
+	if (args?.canvas) {
+		return args.canvas;
+	}
 	return args?.handle ? OffscreenCanvas._fromHandle(args.handle) : new OffscreenCanvas(args?.width ?? 8, args?.height ?? 8);
 }
 
@@ -154,6 +157,11 @@ const ops: Record<string, (args: any) => any> = {
 		return { pixel: pixel2D(held.ctx, 1, 1) };
 	},
 
+	sendBack(args) {
+		const canvas = new OffscreenCanvas(args?.width ?? 8, args?.height ?? 8);
+		return { canvas, received: args?.canvas instanceof OffscreenCanvas, transfer: [canvas] };
+	},
+
 	loop(args) {
 		const canvas = canvasFor(args);
 		looping = { ctx: canvas.getContext('2d'), frames: 0 };
@@ -179,7 +187,7 @@ self.onmessage = async (event: any) => {
 			throw new Error(`unknown op ${op}`);
 		}
 		const result = await run(args);
-		self.postMessage({ id, ok: true, result });
+		self.postMessage({ id, ok: true, result }, result?.transfer);
 	} catch (e) {
 		self.postMessage({ id, ok: false, name: e?.name ?? 'Error', message: e?.message ?? String(e) });
 	}

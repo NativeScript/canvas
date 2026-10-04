@@ -54,6 +54,17 @@ export const enum CanvasFit {
 	ScaleDown = 4,
 }
 
+/** `CanvasOffscreenEvent` and `CanvasOffscreenEngine` (crates/canvas-c/src/offscreen). */
+const enum OffscreenEvent {
+	Resize = 1,
+	Engine = 2,
+}
+
+const enum OffscreenEngine {
+	GL = 2,
+	GPU = 3,
+}
+
 function isFixedLength(value: any) {
 	return value?.unit === 'px' || value?.unit === 'dip';
 }
@@ -499,6 +510,8 @@ export abstract class NapiCanvas extends CanvasBase {
 		if (this._liveRef) {
 			liveCanvases.delete(this._liveRef);
 		}
+		// A transferred canvas's OffscreenCanvas draws on without it.
+		this._canvas?.detachOffscreenSurface?.();
 		this._canvas = undefined;
 		super.disposeNativeView();
 	}
@@ -527,6 +540,22 @@ export abstract class NapiCanvas extends CanvasBase {
 
 	_hasContext(): boolean {
 		return this._contextType !== ContextType.None;
+	}
+
+	/** @internal */
+	_createOffscreenSurface() {
+		const ref = new WeakRef(this);
+		return this._canvas?.transferToOffscreenSurface?.((event: number, a: number, b: number) => ref.deref()?._onOffscreenEvent(event, a, b)) ?? null;
+	}
+
+	private _onOffscreenEvent(event: number, a: number, b: number) {
+		if (!this._canvas) {
+			return;
+		}
+		if (event === OffscreenEvent.Engine && a !== OffscreenEngine.GPU) {
+			this._prepareSurface(b === 1, a === OffscreenEngine.GL);
+		}
+		this._syncFit();
 	}
 
 	_resizeBitmap(width: number, height: number) {
@@ -637,6 +666,10 @@ export abstract class NapiCanvas extends CanvasBase {
 		}
 		if (this._contextType === ContextType.WebGPU) {
 			return this._gpuContext.__toDataURL(type, encoderOptions);
+		}
+		const transferred = this._transferredToOffscreen ? this._canvas?.offscreenToDataURL?.(type, encoderOptions) : null;
+		if (transferred) {
+			return transferred;
 		}
 		if (!this.native) {
 			// No context yet: the (transparent) bitmap is still this.width x this.height.

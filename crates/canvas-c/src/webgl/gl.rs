@@ -2268,11 +2268,15 @@ pub extern "C" fn canvas_native_webgl_attach_swap_chain_panel(state: *mut WebGLS
     if state.is_null() || panel.is_null() {
         return false;
     }
-    let state = unsafe { &mut *state };
-    if !state.is_threaded() {
-        return unsafe { state.get_inner_mut().attach_swap_chain_panel(panel) };
+    if !unsafe { &*state }.is_threaded() {
+        return unsafe { (*state).get_inner_mut().attach_swap_chain_panel(panel) };
     }
-    // Made where the context presents; only binding it has to happen here.
+    unsafe { attach_swap_chain_panel_threaded(&*state, panel) }
+}
+
+/// UI thread. Made where the context presents; only binding it has to happen here.
+#[cfg(target_os = "windows")]
+pub(crate) unsafe fn attach_swap_chain_panel_threaded(state: &WebGLState, panel: *mut c_void) -> bool {
     let Some(swap_chain) = state.sync(|inner| inner.create_panel_swap_chain()) else {
         return false;
     };
@@ -2286,6 +2290,13 @@ pub extern "C" fn canvas_native_webgl_attach_swap_chain_panel(state: *mut WebGLS
     }
 }
 
+/// UI thread.
+#[cfg(target_os = "windows")]
+pub(crate) fn detach_view_threaded(state: &WebGLState) {
+    state.post(|inner| inner.detach_view());
+    state.show_xaml(None);
+}
+
 /// Windows: presents a `canvas_native_webgl_create_d3d` context into a XAML `SurfaceImageSource`
 /// (any COM pointer to it, made at the drawing buffer's size) instead of a swapchain, so it blends
 /// with the page. The rows are bottom-up: the host flips the image. UI thread.
@@ -2295,10 +2306,15 @@ pub extern "C" fn canvas_native_webgl_attach_xaml_surface(state: *mut WebGLState
     if state.is_null() || source.is_null() {
         return false;
     }
-    let state = unsafe { &mut *state };
-    if !state.is_threaded() {
-        return unsafe { state.get_inner_mut().attach_xaml_surface(source) };
+    if !unsafe { &*state }.is_threaded() {
+        return unsafe { (*state).get_inner_mut().attach_xaml_surface(source) };
     }
+    unsafe { attach_xaml_surface_threaded(&*state, source) }
+}
+
+/// UI thread.
+#[cfg(target_os = "windows")]
+pub(crate) unsafe fn attach_xaml_surface_threaded(state: &WebGLState, source: *mut c_void) -> bool {
     let Some(device) = canvas_core::gpu::gl::angle_d3d11_device() else {
         return false;
     };

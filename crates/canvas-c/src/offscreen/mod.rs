@@ -19,6 +19,10 @@ use crate::{CanvasColorSpace, CanvasRenderingContext2D, WebGLState};
 pub mod android;
 #[cfg(any(target_os = "ios", target_os = "tvos", target_os = "visionos"))]
 mod apple;
+#[cfg(all(target_os = "windows", feature = "d3d"))]
+mod windows;
+#[cfg(all(target_os = "windows", feature = "d3d"))]
+pub use self::windows::*;
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -35,9 +39,11 @@ pub enum CanvasOffscreenEngine {
     Metal = 1,
     GL = 2,
     GPU = 3,
+    D3D = 4,
 }
 
 /// `call` comes from any thread; it must hop to the UI thread, or run inline when already there.
+/// (Windows calls it on the UI thread.)
 #[repr(C)]
 pub struct CanvasOffscreenUiSink {
     pub data: *mut c_void,
@@ -97,6 +103,8 @@ struct Inner {
     view: Option<apple::View>,
     #[cfg(target_os = "android")]
     view: Option<android::View>,
+    #[cfg(all(target_os = "windows", feature = "d3d"))]
+    view: Option<windows::View>,
     binding: Binding,
     sink: Option<Arc<Sink>>,
 }
@@ -120,7 +128,7 @@ impl CanvasOffscreenSurface {
             color_space: color_space.into(),
             size: Mutex::new((width, height)),
             inner: Mutex::new(Inner {
-                #[cfg(any(target_os = "ios", target_os = "tvos", target_os = "visionos", target_os = "android"))]
+                #[cfg(any(target_os = "ios", target_os = "tvos", target_os = "visionos", target_os = "android", all(target_os = "windows", feature = "d3d")))]
                 view: None,
                 binding: Binding::None,
                 sink: None,
@@ -159,8 +167,15 @@ impl CanvasOffscreenSurface {
     fn bind(&self, binding: Binding, engine: Option<CanvasOffscreenEngine>, alpha: bool) {
         self.inner().binding = binding;
         if let Some(engine) = engine {
-            self.notify(CanvasOffscreenEvent::Engine, engine as u32, alpha as u32);
+            self.tell_view(CanvasOffscreenEvent::Engine, engine as u32, alpha as u32);
         }
+    }
+
+    fn tell_view(&self, event: CanvasOffscreenEvent, a: u32, b: u32) {
+        #[cfg(all(target_os = "windows", feature = "d3d"))]
+        self.tell_windows_view(event, a, b);
+        #[cfg(not(all(target_os = "windows", feature = "d3d")))]
+        self.notify(event, a, b);
     }
 
     /// Owner thread, after a 2D context resized its own recording.
@@ -185,7 +200,7 @@ impl CanvasOffscreenSurface {
             has_view(&inner)
         };
         if has_view {
-            self.notify(CanvasOffscreenEvent::Resize, width, height);
+            self.tell_view(CanvasOffscreenEvent::Resize, width, height);
         }
     }
 
@@ -229,6 +244,13 @@ impl CanvasOffscreenSurface {
             };
             return;
         }
+        #[cfg(all(target_os = "windows", feature = "d3d"))]
+        if inner.view.is_some() {
+            unsafe {
+                crate::webgpu::gpu_canvas_context::canvas_native_webgpu_context_resize_swap_chain_panel(context, width, height)
+            };
+            return;
+        }
         let _ = inner;
         unsafe {
             crate::webgpu::gpu_canvas_context::canvas_native_webgpu_context_resize_offscreen(context, width, height)
@@ -267,6 +289,15 @@ impl CanvasOffscreenSurface {
                 }
                 None => std::ptr::null_mut(),
             };
+        }
+
+        #[cfg(all(target_os = "windows", feature = "d3d"))]
+        if self.has_view() {
+            if let Some(context) = windows::threaded_d3d_2d(w, h, density, alpha, font_color, ppi, direction, color_space) {
+                let handle = context.render_target().map(|target| target.handle());
+                self.bind(handle.map_or(Binding::TwoDDirect, Binding::TwoD), Some(CanvasOffscreenEngine::D3D), alpha);
+                return Box::into_raw(Box::new(context));
+            }
         }
 
         #[cfg(target_os = "android")]
@@ -324,16 +355,33 @@ impl CanvasOffscreenSurface {
         #[cfg(target_os = "android")]
         let window = self.inner().view.as_ref().and_then(|view| view.window.clone());
         let threaded = threaded || self.has_view();
-        let create = if threaded {
-            crate::canvas_native_webgl_create_no_window_threaded
-        } else {
-            crate::canvas_native_webgl_create_no_window
+        // A texture context: it resizes, and shows in a panel.
+        #[cfg(target_os = "windows")]
+        let state = {
+            let create = if threaded {
+                crate::canvas_native_webgl_create_d3d_threaded
+            } else {
+                crate::canvas_native_webgl_create_d3d
+            };
+            create(
+                width as i32, height as i32, a.version, a.alpha, a.antialias, a.depth,
+                a.fail_if_major_performance_caveat, a.power_preference, a.premultiplied_alpha,
+                a.preserve_drawing_buffer, a.stencil, a.desynchronized, a.xr_compatible,
+            )
         };
-        let state = create(
-            width as i32, height as i32, a.version, a.alpha, a.antialias, a.depth,
-            a.fail_if_major_performance_caveat, a.power_preference, a.premultiplied_alpha,
-            a.preserve_drawing_buffer, a.stencil, a.desynchronized, a.xr_compatible, false,
-        );
+        #[cfg(not(target_os = "windows"))]
+        let state = {
+            let create = if threaded {
+                crate::canvas_native_webgl_create_no_window_threaded
+            } else {
+                crate::canvas_native_webgl_create_no_window
+            };
+            create(
+                width as i32, height as i32, a.version, a.alpha, a.antialias, a.depth,
+                a.fail_if_major_performance_caveat, a.power_preference, a.premultiplied_alpha,
+                a.preserve_drawing_buffer, a.stencil, a.desynchronized, a.xr_compatible, false,
+            )
+        };
         #[cfg(target_os = "android")]
         if let (false, Some(window)) = (state.is_null(), window) {
             android::attach_webgl(unsafe { &*state }, window);
@@ -383,6 +431,19 @@ impl CanvasOffscreenSurface {
                 crate::webgpu::gpu_canvas_context::canvas_native_webgpu_context_create(
                     instance as *mut _,
                     window.ptr().as_ptr() as *mut c_void,
+                    width,
+                    height,
+                )
+            };
+            engine = Some(CanvasOffscreenEngine::GPU);
+        }
+        #[cfg(all(target_os = "windows", feature = "d3d"))]
+        if let Some((panel, ui)) = self.panel() {
+            context = unsafe {
+                crate::webgpu::gpu_canvas_context::create_swap_chain_panel(
+                    instance,
+                    ::windows::core::Interface::as_raw(&panel),
+                    Some(ui),
                     width,
                     height,
                 )
@@ -449,6 +510,8 @@ impl CanvasOffscreenSurface {
     pub fn detach_view(&self) {
         #[cfg(target_os = "android")]
         self.window_destroyed();
+        #[cfg(all(target_os = "windows", feature = "d3d"))]
+        self.detach_windows_view();
         let sink = {
             let mut inner = self.inner();
             #[cfg(any(target_os = "ios", target_os = "tvos", target_os = "visionos", target_os = "android"))]
@@ -507,9 +570,9 @@ fn viewless_2d(
 }
 
 fn has_view(inner: &Inner) -> bool {
-    #[cfg(any(target_os = "ios", target_os = "tvos", target_os = "visionos", target_os = "android"))]
+    #[cfg(any(target_os = "ios", target_os = "tvos", target_os = "visionos", target_os = "android", all(target_os = "windows", feature = "d3d")))]
     let has = inner.view.is_some();
-    #[cfg(not(any(target_os = "ios", target_os = "tvos", target_os = "visionos", target_os = "android")))]
+    #[cfg(not(any(target_os = "ios", target_os = "tvos", target_os = "visionos", target_os = "android", all(target_os = "windows", feature = "d3d"))))]
     let has = {
         let _ = inner;
         false
@@ -526,7 +589,11 @@ fn resize_webgl_offscreen(state: &WebGLState, width: u32, height: u32) {
         state.make_current();
         state.resize_pbuffer(width, height);
     });
-    #[cfg(not(any(target_os = "ios", target_os = "tvos", target_os = "visionos", target_os = "android")))]
+    #[cfg(target_os = "windows")]
+    state.post(move |state| {
+        state.resize_texture_surface(width, height);
+    });
+    #[cfg(not(any(target_os = "ios", target_os = "tvos", target_os = "visionos", target_os = "android", target_os = "windows")))]
     let _ = (state, width, height);
 }
 

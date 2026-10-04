@@ -51,7 +51,7 @@ class WorkerClient {
 		};
 	}
 
-	call(op: string, args?: any, timeout = 10000): Promise<any> {
+	call(op: string, args?: any, timeout = 10000, transfer?: any[]): Promise<any> {
 		const id = this.next++;
 		return new Promise((resolve, reject) => {
 			const timer = setTimeout(() => {
@@ -68,7 +68,7 @@ class WorkerClient {
 					reject(error);
 				},
 			});
-			this.worker.postMessage({ id, op, args });
+			this.worker.postMessage({ id, op, args }, transfer);
 		});
 	}
 
@@ -217,6 +217,55 @@ export function registerOffscreenWorkerSpec() {
 			await new Promise((resolve) => setTimeout(resolve, 100));
 			const result = await worker().call('drawHeld', { color: 'blue' });
 			expectNear(result.pixel, BLUE, 'in the Worker');
+		});
+	});
+
+	suite('offscreen.worker.postMessage', () => {
+		if (typeof (global as any).__nsRegisterTransferable !== 'function') {
+			skip('postMessage transfers an OffscreenCanvas', 'no transfer hooks in this runtime');
+			return;
+		}
+
+		test('postMessage transfers an OffscreenCanvas', async () => {
+			const canvas = new OffscreenCanvas(10, 10);
+			const result = await worker().call('2d', { canvas }, 10000, [canvas]);
+			equal(canvas.width, 0, 'the sent canvas is detached');
+			equal(result.width, 10);
+			expectNear(result.corner, BLUE, 'corner');
+			expectNear(result.rest, RED, 'rest');
+		});
+
+		test("postMessage transfers a view's OffscreenCanvas", async () => {
+			const { canvas, offscreen } = transferred(10, 10);
+			await worker().call('2d', { canvas: offscreen }, 10000, [offscreen]);
+			await eventually(() => {
+				const url = canvas.toDataURL();
+				expectNear(pixelOfDataURL(url, 10, 10, 1, 1), BLUE, 'the view, corner');
+				expectNear(pixelOfDataURL(url, 10, 10, 8, 8), RED, 'the view, rest');
+			});
+		});
+
+		test('the Worker transfers an OffscreenCanvas back', async () => {
+			const result = await worker().call('sendBack', { width: 6, height: 4 });
+			ok(result.canvas instanceof OffscreenCanvas, 'not an OffscreenCanvas');
+			equal(result.canvas.width, 6);
+			const ctx = result.canvas.getContext('2d') as any;
+			ctx.fillStyle = 'red';
+			ctx.fillRect(0, 0, 6, 4);
+			expectNear(pixelAt(ctx, 3, 2), RED, 'pixel');
+		});
+
+		test('a canvas with a context cannot be transferred', async () => {
+			const canvas = new OffscreenCanvas(4, 4);
+			canvas.getContext('2d');
+			const error = await rejects(worker().call('2d', { canvas }, 1000, [canvas]));
+			equal(error?.name, 'InvalidStateError');
+			equal(canvas.width, 4, 'still attached');
+		});
+
+		test('a value that is not transferable throws', async () => {
+			const error = await rejects(worker().call('2d', {}, 1000, [{}]));
+			equal(error?.name, 'DataCloneError');
 		});
 	});
 

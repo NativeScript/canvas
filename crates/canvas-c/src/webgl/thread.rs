@@ -28,10 +28,12 @@ impl Worker {
 static WORKER: OnceLock<Option<Arc<Worker>>> = OnceLock::new();
 
 /// Threaded canvases (WebGL here, 2D on its render thread) with a frame waiting behind another
-/// that hasn't reached the screen yet: the GPU is behind them.
-static CANVASES_BEHIND: AtomicU32 = AtomicU32::new(0);
+/// that hasn't reached the screen yet: the GPU is behind them. One count per JS thread.
+pub(crate) type Behind = &'static AtomicU32;
 
 thread_local! {
+    // Leaked: JS reads it as memory.
+    static BEHIND: Behind = Box::leak(Box::new(AtomicU32::new(0)));
     static ON_GL_THREAD: Cell<bool> = const { Cell::new(false) };
     /// Work tried again until it's done (`retry`), by key.
     static RETRIES: RefCell<Vec<(usize, Box<dyn FnMut() -> bool>)>> = const { RefCell::new(Vec::new()) };
@@ -198,37 +200,42 @@ pub(crate) fn sync<R>(f: impl FnOnce() -> R) -> R {
 /// Frames a context may have queued before it counts as behind: one being presented, one next.
 pub(crate) const BEHIND_AT: u32 = 2;
 
+pub(crate) fn behind_counter() -> Behind {
+    BEHIND.with(|behind| *behind)
+}
+
 /// A context's queued presents went from `before` to `before + 1`.
-pub(crate) fn frame_queued(before: u32) {
+pub(crate) fn frame_queued(behind: Behind, before: u32) {
     if before + 1 == BEHIND_AT {
-        canvas_behind();
+        canvas_behind(behind);
     }
 }
 
 /// A context's queued presents went from `before` to `before - 1`.
-pub(crate) fn frame_presented(before: u32) {
+pub(crate) fn frame_presented(behind: Behind, before: u32) {
     if before == BEHIND_AT {
-        canvas_caught_up();
+        canvas_caught_up(behind);
     }
 }
 
-pub(crate) fn canvas_behind() {
-    CANVASES_BEHIND.fetch_add(1, Ordering::AcqRel);
+pub(crate) fn canvas_behind(behind: Behind) {
+    behind.fetch_add(1, Ordering::AcqRel);
 }
 
-pub(crate) fn canvas_caught_up() {
-    CANVASES_BEHIND.fetch_sub(1, Ordering::AcqRel);
+pub(crate) fn canvas_caught_up(behind: Behind) {
+    behind.fetch_sub(1, Ordering::AcqRel);
 }
 
-/// How many threaded canvases are behind. The JS side holds requestAnimationFrame back while any
-/// are, as a browser does when its compositor falls behind, rather than queue more work.
+/// How many of the calling thread's threaded canvases are behind. The JS side holds
+/// requestAnimationFrame back while any are, as a browser does when its compositor falls behind,
+/// rather than queue more work.
 #[no_mangle]
 pub extern "C" fn canvas_native_canvases_behind() -> u32 {
-    CANVASES_BEHIND.load(Ordering::Acquire)
+    behind_counter().load(Ordering::Acquire)
 }
 
 /// Where that count lives, for the JS side to read as memory every frame instead of calling in.
 #[no_mangle]
 pub extern "C" fn canvas_native_canvases_behind_address() -> *const u32 {
-    CANVASES_BEHIND.as_ptr()
+    behind_counter().as_ptr()
 }

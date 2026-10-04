@@ -13,7 +13,7 @@ use std::sync::{Mutex, OnceLock};
 use log::{Level, LevelFilter, Log, Metadata, Record};
 use napi::sys;
 
-struct Console(sys::napi_threadsafe_function);
+struct Console(sys::napi_threadsafe_function, std::thread::ThreadId);
 
 // Only called through napi's threadsafe-function API, which is thread-safe.
 unsafe impl Send for Console {}
@@ -49,7 +49,7 @@ impl Log for Logger {
     debugger_output(&message);
 
     let console = CONSOLE.lock().unwrap_or_else(|e| e.into_inner());
-    if let Some(Console(function)) = console.as_ref() {
+    if let Some(Console(function, _)) = console.as_ref() {
       let data = Box::into_raw(Box::new((record.level(), message)));
       let status = unsafe {
         sys::napi_call_threadsafe_function(*function, data as *mut c_void, sys::ThreadsafeFunctionCallMode::nonblocking)
@@ -111,6 +111,16 @@ pub fn install(env: sys::napi_env) -> napi::Result<()> {
     }
   });
 
+  let thread = std::thread::current().id();
+  // A Worker's env keeps the main thread's console.
+  if CONSOLE
+    .lock()
+    .unwrap_or_else(|e| e.into_inner())
+    .as_ref()
+    .is_some_and(|console| console.1 != thread)
+  {
+    return Ok(());
+  }
   let mut function = ptr::null_mut();
   unsafe {
     let mut name = ptr::null_mut();
@@ -131,8 +141,8 @@ pub fn install(env: sys::napi_env) -> napi::Result<()> {
     // Logging never keeps the host alive.
     napi::check_status!(sys::napi_unref_threadsafe_function(env, function))?;
   }
-  let previous = CONSOLE.lock().unwrap_or_else(|e| e.into_inner()).replace(Console(function));
-  if let Some(Console(previous)) = previous {
+  let previous = CONSOLE.lock().unwrap_or_else(|e| e.into_inner()).replace(Console(function, thread));
+  if let Some(Console(previous, _)) = previous {
     unsafe { sys::napi_release_threadsafe_function(previous, sys::ThreadsafeFunctionReleaseMode::release) };
   }
   Ok(())

@@ -16,13 +16,12 @@ import { WebGLBuffer } from '../../WebGL/WebGLBuffer';
 import { ImageAsset, fromSvgSource } from '../../ImageAsset';
 import { ImageSource, Screen } from '@nativescript/core';
 import { WebGL2RenderingContextBase } from './common';
-import { Canvas } from '../../Canvas';
 import { ImageBitmap } from '../../ImageBitmap';
 
 import { Helpers } from '../../helpers';
 import { NAPI_HOST, POINTER_CONTEXT_HOST } from '../../platform';
 import { imageAssetFor } from '../../platform/index';
-import { isOffscreenCanvas } from '../../Canvas/utils';
+import { isCanvasView, isOffscreenCanvas } from '../../Canvas/utils';
 
 export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 	static {
@@ -31,8 +30,12 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 
 	_context;
 	_contextPtr: string;
-	constructor(context, contextOptions) {
+	constructor(context, contextOptions, existing?: any) {
 		super(null);
+		if (existing) {
+			this._context = existing;
+			return;
+		}
 		let nativeContext = '0';
 		if (__ANDROID__) {
 			nativeContext = context.getNativeContextString();
@@ -419,7 +422,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 			this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, NAPI_HOST ? imageAssetFor(source)?.native : source.android);
 		} else if (source instanceof ImageAsset) {
 			this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, source.native);
-		} else if ((source instanceof Canvas || isOffscreenCanvas(source))) {
+		} else if ((isCanvasView(source) || isOffscreenCanvas(source))) {
 			this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, source.native);
 		} else if (source instanceof ImageBitmap) {
 			this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, source.native);
@@ -434,7 +437,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 				const result = ImageSource.fromFileSync(source.src);
 				this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, result ? (NAPI_HOST ? imageAssetFor(result)?.native : result.android) : null);
 			}
-		} else if (source && typeof source.tagName === 'string' && source.tagName === 'CANVAS' && source._canvas instanceof Canvas) {
+		} else if (source && typeof source.tagName === 'string' && source.tagName === 'CANVAS' && isCanvasView(source._canvas)) {
 			this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, source._canvas.native);
 		}
 	}
@@ -472,7 +475,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 			this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, NAPI_HOST ? imageAssetFor(srcData)?.native : srcData.android);
 		} else if (srcData instanceof ImageAsset) {
 			this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData.native);
-		} else if ((srcData instanceof Canvas || isOffscreenCanvas(srcData))) {
+		} else if ((isCanvasView(srcData) || isOffscreenCanvas(srcData))) {
 			this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData.native);
 		} else if (srcData instanceof ImageBitmap) {
 			this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData.native);
@@ -487,7 +490,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 				const result = ImageSource.fromFileSync(srcData.src);
 				this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, result ? (NAPI_HOST ? imageAssetFor(result)?.native : result.android) : null);
 			}
-		} else if (srcData && typeof srcData.tagName === 'string' && srcData.tagName === 'CANVAS' && srcData._canvas instanceof Canvas) {
+		} else if (srcData && typeof srcData.tagName === 'string' && srcData.tagName === 'CANVAS' && isCanvasView(srcData._canvas)) {
 			this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData._canvas.native);
 		}
 	}

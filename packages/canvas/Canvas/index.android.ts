@@ -538,6 +538,15 @@ export class Canvas extends CanvasBase {
 		return this._contextType !== ContextType.None;
 	}
 
+	/** @internal */
+	_createOffscreenSurface() {
+		const pointer = (this._canvas as any)?.transferToOffscreenSurface?.();
+		if (pointer == null || String(pointer) === '0') {
+			return null;
+		}
+		return global.CanvasModule.OffscreenSurface?.fromPointer(BigInt(String(pointer))) ?? null;
+	}
+
 	_resizeBitmap(width: number, height: number) {
 		this.__setSurfaceWidth(width);
 		this.__setSurfaceHeight(height);

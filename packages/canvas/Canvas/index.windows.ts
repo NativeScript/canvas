@@ -208,14 +208,22 @@ export class Canvas extends NapiCanvas {
 				this._imageSize = size;
 			}
 		}
+		// The panel clips a swapchain to its bounds, but not its children.
+		const panel = this._panel;
+		if (panel) {
+			const clip = new Microsoft.UI.Xaml.Media.RectangleGeometry();
+			clip.Rect = { X: 0, Y: 0, Width: panel.ActualWidth || 0, Height: panel.ActualHeight || 0 };
+			panel.Clip = clip;
+		}
 		const [scaleX, scaleY, offsetX, offsetY] = host.surfaceTransform;
 		const shownWidth = width * scaleX;
 		const shownHeight = height * scaleY;
 		image.Width = shownWidth;
 		image.Height = shownHeight;
+		// A margin, not a translate: an image larger than the panel is clipped to its layout slot
+		// before its render transform moves it.
+		image.Margin = { Left: offsetX, Top: offsetY, Right: 0, Bottom: 0 };
 		const transform = new Microsoft.UI.Xaml.Media.CompositeTransform();
-		transform.TranslateX = offsetX;
-		transform.TranslateY = offsetY;
 		if (this._imageFlipped) {
 			transform.ScaleY = -1;
 			transform.CenterY = shownHeight / 2;

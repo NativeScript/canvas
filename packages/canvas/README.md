@@ -103,8 +103,50 @@ const blob = await sprite.convertToBlob({ type: 'image/png' });
 ```
 
 `canvas.transferControlToOffscreen()` returns an OffscreenCanvas that draws into that canvas's
-surface, so its frames show in the view. It runs on the UI thread like any canvas; it can't move to
-a Worker yet. With the polyfill, `OffscreenCanvas` is also a global.
+surface, so its frames show in the view. With the polyfill, `OffscreenCanvas` is also a global.
+
+#### In a Worker
+
+An OffscreenCanvas can move to a Worker, which then draws into it on its own thread: a transferred
+canvas keeps showing the Worker's frames in its view. Where the runtime can transfer it (NativeScript
+Windows, with transfer support in `postMessage`), it moves as on the web:
+
+```typescript
+// Main thread
+const offscreen = canvas.transferControlToOffscreen();
+worker.postMessage({ canvas: offscreen }, [offscreen]);
+```
+
+```typescript
+// The Worker
+import '@nativescript/canvas/worker';
+
+self.onmessage = ({ data }) => {
+	const canvas: OffscreenCanvas = data.canvas;
+	const ctx = canvas.getContext('2d');
+	const draw = () => {
+		ctx.fillRect(0, 0, canvas.width, canvas.height);
+		requestAnimationFrame(draw);
+	};
+	requestAnimationFrame(draw);
+};
+```
+
+Elsewhere (the Android and iOS runtimes, for now), send a handle instead:
+
+```typescript
+// Main thread
+worker.postMessage({ canvas: OffscreenCanvas._toHandle(offscreen) });
+
+// The Worker
+import { OffscreenCanvas } from '@nativescript/canvas/worker';
+const canvas = OffscreenCanvas._fromHandle(data.canvas);
+```
+
+- `@nativescript/canvas/worker` is the canvas API without the `Canvas` view: import it first in the Worker.
+- A transfer (or `_toHandle`) detaches the OffscreenCanvas it is given, and it can't have a context yet. A handle is received once; `OffscreenCanvas._releaseHandle(handle)` drops one nothing will receive.
+- `2d`, `bitmaprenderer`, `webgl`, `webgl2` and `webgpu` all work there, as does `new OffscreenCanvas(w, h)` made in the Worker, which can be transferred back.
+- Resizing it in the Worker resizes the view on the UI thread a moment later.
 
 ## WebGPU
 

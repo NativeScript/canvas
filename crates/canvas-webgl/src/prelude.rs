@@ -648,6 +648,11 @@ impl WebGLState {
         self.context.attach_xaml_handoff(handoff)
     }
 
+    #[cfg(target_os = "windows")]
+    pub fn detach_view(&mut self) {
+        self.context.detach_view()
+    }
+
     /// `present` for a context on a thread of its own (`GLContext::present_or_hold`).
     #[cfg(target_os = "windows")]
     pub fn present_or_hold(&self) -> bool {

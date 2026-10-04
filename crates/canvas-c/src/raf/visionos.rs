@@ -107,10 +107,10 @@ impl Raf {
         let display_link =
             unsafe { CADisplayLink::displayLinkWithTarget_selector(&*target, sel!(step:)) };
 
-        // Start paused; `start()` unpauses. Schedule on the main run loop for common modes
-        // so it keeps firing during UI tracking (scrolling, etc.).
+        // Start paused; `start()` unpauses. Schedule on the creating thread's run loop for common
+        // modes so it keeps firing during UI tracking.
         display_link.setPaused(true);
-        let run_loop = NSRunLoop::mainRunLoop();
+        let run_loop = NSRunLoop::currentRunLoop();
         unsafe { display_link.addToRunLoop_forMode(&run_loop, NSRunLoopCommonModes) };
 
         Self {

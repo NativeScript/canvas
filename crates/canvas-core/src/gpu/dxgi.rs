@@ -279,6 +279,9 @@ unsafe impl Send for XamlHandoff {}
 unsafe impl Sync for XamlHandoff {}
 
 const WM_END_XAML_DRAWS: u32 = windows::Win32::UI::WindowsAndMessaging::WM_APP + 0x2d0;
+const WM_RUN: u32 = windows::Win32::UI::WindowsAndMessaging::WM_APP + 0x2d1;
+
+type UiJob = Box<dyn FnOnce() + Send>;
 
 thread_local! {
     static WAKE_WINDOW: Cell<isize> = const { Cell::new(0) };
@@ -295,7 +298,52 @@ unsafe extern "system" fn wake_proc(
         end_xaml_draws();
         return windows::Win32::Foundation::LRESULT(0);
     }
+    if message == WM_RUN {
+        let job = unsafe { Box::from_raw(lparam.0 as *mut UiJob) };
+        job();
+        return windows::Win32::Foundation::LRESULT(0);
+    }
     unsafe { windows::Win32::UI::WindowsAndMessaging::DefWindowProcW(window, message, wparam, lparam) }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct UiThread {
+    window: isize,
+    thread: u32,
+}
+
+impl UiThread {
+    /// The calling thread, which must pump messages.
+    pub fn current() -> Result<Self> {
+        Ok(Self {
+            window: wake_window()?,
+            thread: unsafe { windows::Win32::System::Threading::GetCurrentThreadId() },
+        })
+    }
+
+    pub fn is_current(&self) -> bool {
+        self.thread == unsafe { windows::Win32::System::Threading::GetCurrentThreadId() }
+    }
+
+    /// Dropped unrun if the thread is gone.
+    pub fn run(&self, f: impl FnOnce() + Send + 'static) {
+        if self.is_current() {
+            f();
+            return;
+        }
+        let job = Box::into_raw(Box::new(Box::new(f) as UiJob));
+        let posted = unsafe {
+            windows::Win32::UI::WindowsAndMessaging::PostMessageW(
+                Some(windows::Win32::Foundation::HWND(self.window as *mut c_void)),
+                WM_RUN,
+                windows::Win32::Foundation::WPARAM(0),
+                windows::Win32::Foundation::LPARAM(job as isize),
+            )
+        };
+        if posted.is_err() {
+            drop(unsafe { Box::from_raw(job) });
+        }
+    }
 }
 
 /// This thread's message-only window, which ends the draws other threads hand it.
@@ -524,9 +572,11 @@ pub struct PanelSurfaceTarget {
     proxy: ISwapChainPanelNative,
     panel: ISwapChainPanelNative,
     state: std::sync::Arc<parking_lot::Mutex<ProxyState>>,
+    /// Set when the library binds from another thread: the panel only takes a swapchain there.
+    ui: Option<UiThread>,
 }
 
-// Only used on the UI thread; the wrapper travels with the context that owns it.
+// The panel is only called on the UI thread; the wrapper travels with the context that owns it.
 unsafe impl Send for PanelSurfaceTarget {}
 unsafe impl Sync for PanelSurfaceTarget {}
 
@@ -540,6 +590,27 @@ struct ProxyState {
 struct PanelProxy {
     panel: ISwapChainPanelNative,
     state: std::sync::Arc<parking_lot::Mutex<ProxyState>>,
+    ui: Option<UiThread>,
+}
+
+struct SendCom<T>(T);
+
+unsafe impl<T> Send for SendCom<T> {}
+
+fn set_panel_swap_chain(ui: Option<UiThread>, panel: &ISwapChainPanelNative, swap_chain: *mut c_void) -> HRESULT {
+    let Some(ui) = ui.filter(|ui| !ui.is_current()) else {
+        return unsafe { panel.SetSwapChain(swap_chain) };
+    };
+    let swap_chain = unsafe { windows::core::IUnknown::from_raw_borrowed(&swap_chain) }.cloned();
+    let (panel, swap_chain) = (SendCom(panel.clone()), SendCom(swap_chain));
+    ui.run(move || {
+        let (panel, swap_chain) = (panel, swap_chain);
+        let raw = swap_chain.0.as_ref().map_or(std::ptr::null_mut(), |swap_chain| swap_chain.as_raw());
+        if let Err(error) = unsafe { panel.0.SetSwapChain(raw) }.ok() {
+            log::error!("canvas: could not show the swapchain in its panel: {error}");
+        }
+    });
+    HRESULT(0)
 }
 
 impl ISwapChainPanelNative_Impl for PanelProxy_Impl {
@@ -550,22 +621,27 @@ impl ISwapChainPanelNative_Impl for PanelProxy_Impl {
         if let (Some(swap_chain), Some(transform)) = (state.swap_chain.as_ref(), state.transform.as_ref()) {
             let _ = unsafe { swap_chain.SetMatrixTransform(transform) };
         }
-        unsafe { self.panel.SetSwapChain(swap_chain) }
+        set_panel_swap_chain(self.ui, &self.panel, swap_chain)
     }
 }
 
 impl PanelSurfaceTarget {
     /// `panel`: any COM pointer of the `SwapChainPanel`. UI thread.
     pub unsafe fn new(panel: *mut c_void) -> Result<Self> {
+        unsafe { Self::with_ui(panel, None) }
+    }
+
+    pub unsafe fn with_ui(panel: *mut c_void, ui: Option<UiThread>) -> Result<Self> {
         let unknown = unsafe { windows::core::IUnknown::from_raw_borrowed(&panel) }.ok_or_else(windows::core::Error::empty)?;
         let panel: ISwapChainPanelNative = unknown.cast()?;
         let state = std::sync::Arc::new(parking_lot::Mutex::new(ProxyState::default()));
         let proxy: ISwapChainPanelNative = PanelProxy {
             panel: panel.clone(),
             state: state.clone(),
+            ui,
         }
         .into();
-        Ok(Self { proxy, panel, state })
+        Ok(Self { proxy, panel, state, ui })
     }
 
     /// The `ISwapChainPanelNative` to hand to the library.
@@ -595,7 +671,7 @@ impl PanelSurfaceTarget {
 impl Drop for PanelSurfaceTarget {
     fn drop(&mut self) {
         // Detach whatever the library bound, so the panel does not keep a dead swapchain.
-        let _ = unsafe { self.panel.SetSwapChain(std::ptr::null_mut()) };
+        let _ = set_panel_swap_chain(self.ui, &self.panel, std::ptr::null_mut());
     }
 }
 

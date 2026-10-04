@@ -131,6 +131,32 @@ pub fn resize_gl(context: &mut CanvasRenderingContext2D, width: f32, height: f32
         gl.bind_drawable();
     }
 
+    // A pbuffer keeps its size.
+    #[cfg(target_os = "android")]
+    let color_space = context.surface_data().color_space();
+    #[cfg(target_os = "android")]
+    if let Some(gl) = context.gl_context.as_mut() {
+        if gl.is_pbuffer() {
+            let mut attr = canvas_core::context_attributes::ContextAttributes::new(
+                alpha,
+                false,
+                false,
+                false,
+                canvas_core::context_attributes::PowerPreference::Default,
+                true,
+                false,
+                false,
+                false,
+                false,
+                true,
+                false,
+                color_space,
+            );
+            gl.resize_pbuffer(&mut attr, width as i32, height as i32);
+            gl.make_current();
+        }
+    }
+
     unsafe {
         gl_bindings::Viewport(0, 0, width as i32, height as i32);
         match context.window_framebuffer() {

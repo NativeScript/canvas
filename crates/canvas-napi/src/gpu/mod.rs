@@ -61,6 +61,12 @@ mod texture_view;
 // (empty) OnceLock and create a new wgpu Instance.
 static GPU_INSTANCE: std::sync::OnceLock<Arc<CanvasWebGPUInstance>> = std::sync::OnceLock::new();
 
+pub(crate) fn gpu_instance() -> Arc<CanvasWebGPUInstance> {
+  Arc::clone(GPU_INSTANCE.get_or_init(|| unsafe {
+    Arc::from_raw(canvas_c::webgpu::gpu::canvas_native_webgpu_instance_create())
+  }))
+}
+
 #[napi(js_name = "GPU")]
 pub struct g_p_u {
   instance: Arc<CanvasWebGPUInstance>,

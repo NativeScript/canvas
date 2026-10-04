@@ -38,13 +38,12 @@ import {
 	WEBGL_lose_context,
 } from '../WebGLExtensions';
 import { ImageAsset, fromSvgSource } from '../../ImageAsset';
-import { Canvas } from '../../Canvas';
 import { ImageBitmap } from '../../ImageBitmap';
 
 import { Helpers } from '../../helpers';
 import { NAPI_HOST, POINTER_CONTEXT_HOST } from '../../platform';
 import { imageAssetFor } from '../../platform/index';
-import { isOffscreenCanvas } from '../../Canvas/utils';
+import { isCanvasView, isOffscreenCanvas } from '../../Canvas/utils';
 
 enum ContextType {
 	None,
@@ -131,14 +130,14 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 
 	get drawingBufferHeight() {
 		if (__ANDROID__) {
-			return this._canvas?.drawingBufferHeight ?? 0;
+			return this._canvas?.drawingBufferHeight ?? this.native.drawingBufferHeight;
 		}
 		return this.native.drawingBufferHeight;
 	}
 
 	get drawingBufferWidth() {
 		if (__ANDROID__) {
-			return this._canvas?.drawingBufferWidth ?? 0;
+			return this._canvas?.drawingBufferWidth ?? this.native.drawingBufferWidth;
 		}
 		return this.native.drawingBufferWidth;
 	}
@@ -901,7 +900,7 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 				this.native.texImage2D(target, level, internalformat, width, height, border, format, type ?? internalformat, pixels.native);
 			} else if (pixels instanceof ImageBitmap) {
 				this.native.texImage2D(target, level, internalformat, width, height, border, format, type ?? internalformat, pixels.native);
-			} else if ((pixels instanceof Canvas || isOffscreenCanvas(pixels))) {
+			} else if ((isCanvasView(pixels) || isOffscreenCanvas(pixels))) {
 				this.native.texImage2D(target, level, internalformat, width, height, border, format, type ?? internalformat, pixels.native);
 			} else if (__ANDROID__ && pixels instanceof android.graphics.Bitmap) {
 				(<any>org).nativescript.canvas.NSCWebGLRenderingContext.texImage2D(java.lang.Long.valueOf(this._contextPtr), target, level, internalformat, width, height, pixels, this.native.__flipY);
@@ -938,7 +937,7 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 						(<any>org).nativescript.canvas.NSCWebGLRenderingContext.texImage2D(java.lang.Long.valueOf(this._contextPtr), target, level, internalformat, width, height, ImageSource.fromFileSync(pixels.src).android, this.native.__flipY);
 					}
 				}
-			} else if (pixels && typeof pixels.tagName === 'string' && pixels.tagName === 'CANVAS' && pixels._canvas instanceof Canvas) {
+			} else if (pixels && typeof pixels.tagName === 'string' && pixels.tagName === 'CANVAS' && isCanvasView(pixels._canvas)) {
 				this.native.texImage2D(target, level, internalformat, width, height, border, format, type, pixels._canvas.native);
 			} else if (pixels instanceof ImageData) {
 				this.native.texImage2D(target, level, internalformat, width, height, border, format, type, (<any>pixels).native);
@@ -957,7 +956,7 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 				this.native.texImage2D(target, level, internalformat, width, height, border.native);
 			} else if (border instanceof ImageBitmap) {
 				this.native.texImage2D(target, level, internalformat, width, height, border.native);
-			} else if ((border instanceof Canvas || isOffscreenCanvas(border))) {
+			} else if ((isCanvasView(border) || isOffscreenCanvas(border))) {
 				this.native.texImage2D(target, level, internalformat, width, height, border.native);
 			} else if (__ANDROID__ && border instanceof android.graphics.Bitmap) {
 				(<any>org).nativescript.canvas.NSCWebGLRenderingContext.texImage2D(java.lang.Long.valueOf(this._contextPtr), target, level, internalformat, width, height, border, this.native.__flipY);
@@ -984,7 +983,7 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 						(<any>org).nativescript.canvas.NSCWebGLRenderingContext.texImage2D(java.lang.Long.valueOf(this._contextPtr), target, level, internalformat, width, height, ImageSource.fromFileSync(border.src).android, this.native.__flipY);
 					}
 				}
-			} else if (border && typeof border.tagName === 'string' && border.tagName === 'CANVAS' && border._canvas instanceof Canvas) {
+			} else if (border && typeof border.tagName === 'string' && border.tagName === 'CANVAS' && isCanvasView(border._canvas)) {
 				this.native.texImage2D(target, level, internalformat, width, height, border._canvas.native);
 			} else if (border instanceof ImageData) {
 				this.native.texImage2D(target, level, internalformat, width, height, (<any>border).native);
@@ -1037,7 +1036,7 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 				}
 			} else if (format instanceof ImageAsset) {
 				this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, format.native);
-			} else if ((format instanceof Canvas || isOffscreenCanvas(format))) {
+			} else if ((isCanvasView(format) || isOffscreenCanvas(format))) {
 				this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, format.native);
 			} else if (format instanceof ImageBitmap) {
 				this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, format.native);
@@ -1064,7 +1063,7 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 						this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, result.ios);
 					}
 				}
-			} else if (format && typeof format.tagName === 'string' && format.tagName === 'CANVAS' && format._canvas instanceof Canvas) {
+			} else if (format && typeof format.tagName === 'string' && format.tagName === 'CANVAS' && isCanvasView(format._canvas)) {
 				this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, format._canvas.native);
 			} else if (format instanceof ImageData) {
 				this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, (<any>format).native);

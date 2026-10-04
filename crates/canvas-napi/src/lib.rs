@@ -23,6 +23,7 @@ mod frame;
 mod logger;
 mod fast;
 mod image_bitmap;
+mod offscreen;
 mod module;
 /// Like the V8 bindings' `install()`: `globalThis.CanvasModule = exports` unless one is already
 /// installed.

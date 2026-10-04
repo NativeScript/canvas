@@ -9,10 +9,12 @@
 
 use std::ffi::c_void;
 
+use canvas_c::offscreen::{CanvasOffscreenEvent, CanvasOffscreenSurface, CanvasOffscreenUiSink};
 use canvas_c::webgpu::gpu_canvas_context::CanvasGPUCanvasContext;
 use canvas_c::{CanvasRenderingContext2D as CCanvasRenderingContext2D, WebGLState};
 use canvas_core::fit::{surface_transform, CanvasFit};
-use napi::bindgen_prelude::ObjectFinalize;
+use napi::bindgen_prelude::{FnArgs, Function, ObjectFinalize};
+use napi::threadsafe_function::{ThreadsafeFunctionCallMode, UnknownReturnValue};
 use napi::{Env, Error, Result};
 use napi_derive::napi;
 use windows_core::{IUnknown, Interface};
@@ -109,10 +111,29 @@ pub struct NSCCanvas {
   threaded_2d: bool,
   /// `initContext` makes a context that runs on the shared WebGL thread.
   threaded_webgl: bool,
+  offscreen: *const CanvasOffscreenSurface,
+}
+
+fn transferred() -> Error {
+  Error::from_reason("The canvas was transferred to an OffscreenCanvas")
+}
+
+type OffscreenListener<'a> = Function<'a, FnArgs<(u32, u32, u32)>, UnknownReturnValue>;
+
+struct OffscreenSink(Box<dyn Fn(u32, u32, u32) + Send + Sync>);
+
+extern "C" fn offscreen_event(data: *mut c_void, event: CanvasOffscreenEvent, a: u32, b: u32) {
+  let sink = unsafe { &*(data as *const OffscreenSink) };
+  (sink.0)(event as u32, a, b);
+}
+
+extern "C" fn offscreen_release(data: *mut c_void) {
+  drop(unsafe { Box::from_raw(data as *mut OffscreenSink) });
 }
 
 impl ObjectFinalize for NSCCanvas {
-  fn finalize(self, _: Env) -> Result<()> {
+  fn finalize(mut self, _: Env) -> Result<()> {
+    self.detach_offscreen_surface();
     if let Some(panel) = self.panel.as_ref() {
       unsafe { canvas_core::gpu::dxgi::CompositionSwapChain::unbind_panel(panel.as_raw()) };
     }
@@ -136,6 +157,19 @@ impl NSCCanvas {
   }
 
   fn apply_transform(&self) {
+    if !self.offscreen.is_null() {
+      unsafe {
+        canvas_c::offscreen::canvas_native_offscreen_surface_set_layout(
+          self.offscreen,
+          self.fit as i32,
+          self.scale_x,
+          self.scale_y,
+          self.view_width,
+          self.view_height,
+        )
+      };
+      return;
+    }
     let t = surface_transform(
       self.fit,
       (self.surface_width as f32, self.surface_height as f32),
@@ -188,11 +222,92 @@ impl NSCCanvas {
       xaml_source: None,
       threaded_2d: false,
       threaded_webgl: false,
+      offscreen: std::ptr::null(),
     })
+  }
+
+  /// `listener(event, a, b)`: a `CanvasOffscreenEvent`, on this thread.
+  #[napi(
+    js_name = "transferToOffscreenSurface",
+    ts_args_type = "listener: (event: number, a: number, b: number) => void"
+  )]
+  pub fn transfer_to_offscreen_surface(&mut self, listener: OffscreenListener) -> Result<Option<crate::offscreen::OffscreenSurface>> {
+    if !matches!(self.context, Context::None) || !self.offscreen.is_null() || self.panel.is_none() {
+      return Ok(None);
+    }
+    let density = self.density();
+    let surface = unsafe {
+      canvas_c::offscreen::canvas_native_offscreen_surface_create_windows(
+        self.surface_width,
+        self.surface_height,
+        density,
+        density * 96.,
+        0,
+        canvas_c::CanvasColorSpace::Srgb,
+        self.panel_ptr(),
+      )
+    };
+    if surface.is_null() {
+      return Ok(None);
+    }
+    // Weak: a view's events don't keep the env alive.
+    let tsfn = listener
+      .build_threadsafe_function::<(u32, u32, u32)>()
+      .weak::<true>()
+      .build_callback(|ctx| Ok(FnArgs::from(ctx.value)))?;
+    let sink = Box::new(OffscreenSink(Box::new(move |event, a, b| {
+      tsfn.call((event, a, b), ThreadsafeFunctionCallMode::NonBlocking);
+    })));
+    unsafe {
+      canvas_c::offscreen::canvas_native_offscreen_surface_set_ui_sink(
+        surface,
+        CanvasOffscreenUiSink {
+          data: Box::into_raw(sink) as *mut c_void,
+          call: Some(offscreen_event),
+          release: Some(offscreen_release),
+        },
+      );
+    }
+    self.offscreen = surface;
+    self.apply_transform();
+    unsafe { canvas_c::offscreen::canvas_native_offscreen_surface_reference(surface) };
+    Ok(crate::offscreen::OffscreenSurface::from_raw(surface))
+  }
+
+  /// `quality` is 0..1.
+  #[napi(js_name = "offscreenToDataURL")]
+  pub fn offscreen_to_data_url(&self, format: String, quality: f64) -> Option<String> {
+    if self.offscreen.is_null() {
+      return None;
+    }
+    let format = std::ffi::CString::new(format).ok()?;
+    let url = unsafe {
+      canvas_c::offscreen::canvas_native_offscreen_surface_to_data_url(self.offscreen, format.as_ptr(), (quality * 100.) as u32)
+    };
+    if url.is_null() {
+      return None;
+    }
+    let string = unsafe { std::ffi::CStr::from_ptr(url) }.to_string_lossy().into_owned();
+    canvas_c::canvas_native_string_destroy(url);
+    Some(string)
+  }
+
+  #[napi]
+  pub fn detach_offscreen_surface(&mut self) {
+    let surface = std::mem::replace(&mut self.offscreen, std::ptr::null());
+    if !surface.is_null() {
+      unsafe {
+        canvas_c::offscreen::canvas_native_offscreen_surface_detach_view(surface);
+        canvas_c::offscreen::canvas_native_offscreen_surface_release(surface);
+      }
+    }
   }
 
   #[napi(getter)]
   pub fn surface_width(&self) -> u32 {
+    if !self.offscreen.is_null() {
+      return unsafe { canvas_c::offscreen::canvas_native_offscreen_surface_get_width(self.offscreen) };
+    }
     self.surface_width
   }
 
@@ -203,6 +318,9 @@ impl NSCCanvas {
 
   #[napi(getter)]
   pub fn surface_height(&self) -> u32 {
+    if !self.offscreen.is_null() {
+      return unsafe { canvas_c::offscreen::canvas_native_offscreen_surface_get_height(self.offscreen) };
+    }
     self.surface_height
   }
 
@@ -249,12 +367,12 @@ impl NSCCanvas {
 
   #[napi(getter)]
   pub fn drawing_buffer_width(&self) -> u32 {
-    self.surface_width
+    self.surface_width()
   }
 
   #[napi(getter)]
   pub fn drawing_buffer_height(&self) -> u32 {
-    self.surface_height
+    self.surface_height()
   }
 
   /// The context's pointer as a decimal string (0 without one), as the iOS view's
@@ -269,7 +387,8 @@ impl NSCCanvas {
   pub fn set_surface_size(&mut self, width: f64, height: f64) {
     // `max` also maps NaN to 1.
     let (width, height) = (width.max(1.) as u32, height.max(1.) as u32);
-    if (width, height) == (self.surface_width, self.surface_height) {
+    // A transferred canvas's bitmap is its OffscreenCanvas's.
+    if !self.offscreen.is_null() || (width, height) == (self.surface_width, self.surface_height) {
       return;
     }
     self.surface_width = width;
@@ -330,6 +449,7 @@ impl NSCCanvas {
       Context::WebGL(_) | Context::WebGPU(_) => {
         return Err(Error::from_reason("The canvas already has a WebGL or WebGPU context"))
       }
+      Context::None if !self.offscreen.is_null() => return Err(transferred()),
       Context::None => {}
     }
     let color_space = match color_space.unwrap_or(0) {
@@ -387,6 +507,7 @@ impl NSCCanvas {
       Context::TwoD(_) | Context::WebGPU(_) => {
         return Err(Error::from_reason("The canvas already has a 2D or WebGPU context"))
       }
+      Context::None if !self.offscreen.is_null() => return Err(transferred()),
       Context::None => {}
     }
     let version = if context_type.contains("webgl2") { 2 } else { 1 };
@@ -434,6 +555,7 @@ impl NSCCanvas {
       Context::TwoD(_) | Context::WebGL(_) => {
         return Err(Error::from_reason("The canvas already has a 2D or WebGL context"))
       }
+      Context::None if !self.offscreen.is_null() => return Err(transferred()),
       Context::None => {}
     }
     let (instance, _) = instance.get_i64();
@@ -472,6 +594,9 @@ impl NSCCanvas {
     let source = unsafe { IUnknown::from_raw_borrowed(&raw) }
       .cloned()
       .ok_or_else(|| Error::from_reason("Invalid SurfaceImageSource pointer"))?;
+    if !self.offscreen.is_null() {
+      return Ok(unsafe { canvas_c::offscreen::canvas_native_offscreen_surface_attach_xaml_surface(self.offscreen, source.as_raw()) });
+    }
     let attached = match self.context {
       Context::None => true,
       Context::TwoD(context) => canvas_c::canvas_native_context_attach_xaml_surface(context, source.as_raw()),
@@ -489,6 +614,11 @@ impl NSCCanvas {
   /// view places a XAML surface's image with it (a swapchain gets it natively).
   #[napi(getter)]
   pub fn surface_transform(&self) -> Vec<f64> {
+    if !self.offscreen.is_null() {
+      let mut t = [0f32; 4];
+      unsafe { canvas_c::offscreen::canvas_native_offscreen_surface_get_transform(self.offscreen, t.as_mut_ptr()) };
+      return t.iter().map(|value| *value as f64).collect();
+    }
     let t = surface_transform(
       self.fit,
       (self.surface_width as f32, self.surface_height as f32),

@@ -643,6 +643,23 @@ CanvasRenderingContext2DImpl::GetPointer(const v8::Local<v8::Object> &object) {
 }
 
 
+void CanvasRenderingContext2DImpl::WithCpu(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    auto width = (float) args[0]->NumberValue(context).FromMaybe(300);
+    auto height = (float) args[1]->NumberValue(context).FromMaybe(150);
+    auto density = (float) args[2]->NumberValue(context).FromMaybe(1);
+    auto alpha = args[3]->BooleanValue(isolate);
+    auto fontColor = args[4]->Int32Value(context).FromMaybe(-16777216);
+    auto ppi = (float) args[5]->NumberValue(context).FromMaybe(160);
+    auto direction = args[6]->Uint32Value(context).FromMaybe(0);
+    auto ctx = canvas_native_context_create(width, height, density, alpha, fontColor, ppi,
+                                            direction, CanvasColorSpaceSrgb);
+    auto ret = CanvasRenderingContext2DImpl::NewInstance(isolate, new CanvasRenderingContext2DImpl(
+            ctx, true));
+    args.GetReturnValue().Set(ret);
+}
+
 void CanvasRenderingContext2DImpl::StartRaf() {
     auto raf = this->GetRaf();
     if (raf != nullptr) {
@@ -672,6 +689,7 @@ v8::Local<v8::FunctionTemplate> CanvasRenderingContext2DImpl::GetCtor(v8::Isolat
 
     v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
     ctorTmpl->SetClassName(ConvertToV8String(isolate, "CanvasRenderingContext2D"));
+    ctorTmpl->Set(ConvertToV8String(isolate, "withCpu"), v8::FunctionTemplate::New(isolate, WithCpu));
 
     auto tmpl = ctorTmpl->InstanceTemplate();
     tmpl->SetInternalFieldCount(2);

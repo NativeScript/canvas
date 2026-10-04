@@ -129,6 +129,7 @@ add_library(
 
         ${CPP_DIR}/ImageAssetImpl.cpp
         ${CPP_DIR}/ImageBitmapImpl.cpp
+        ${CPP_DIR}/OffscreenSurfaceImpl.cpp
         ${CPP_DIR}/TextDecoderImpl.cpp
         ${CPP_DIR}/TextEncoderImpl.cpp
         ${CPP_DIR}/WorkerPool.cpp

@@ -453,6 +453,15 @@ impl Context {
         target.xaml.is_some()
     }
 
+    pub fn detach_d3d_view(&mut self) {
+        let Some(target) = self.d3d.as_mut() else { return };
+        target.xaml = None;
+        target.lost_xaml_source = None;
+        target.back_buffers.clear();
+        target.swap_chain = None;
+        target.panel = None;
+    }
+
     pub fn d3d_device(&self) -> Option<Rc<D3D12Context>> {
         self.d3d.as_ref()?.device.clone()
     }

@@ -68,6 +68,8 @@ pub struct MetalContext {
     view: Option<Retained<NSObject>>,
     current_drawable: Option<Retained<ProtocolObject<dyn CAMetalDrawable>>>,
     is_offscreen: bool,
+    /// Sets the layer's drawableSize itself, not the view's layout.
+    sizes_drawable: bool,
 }
 
 impl MetalContext {
@@ -77,6 +79,10 @@ impl MetalContext {
 
     pub fn is_offscreen(&self) -> bool {
         self.is_offscreen
+    }
+
+    pub fn sizes_drawable(&self) -> bool {
+        self.sizes_drawable
     }
     pub fn new(view: *mut c_void) -> Self {
         let _pool = unsafe { NSAutoreleasePool::new() };
@@ -121,6 +127,7 @@ impl MetalContext {
             view: Some(view),
             current_drawable,
             is_offscreen: false,
+            sizes_drawable: false,
         }
     }
 
@@ -150,6 +157,7 @@ impl MetalContext {
             view: None,
             current_drawable,
             is_offscreen: true,
+            sizes_drawable: false,
         }
     }
 
@@ -175,6 +183,7 @@ impl MetalContext {
             view: Some(view),
             current_drawable,
             is_offscreen: false,
+            sizes_drawable: false,
         }
     }
 
@@ -198,6 +207,36 @@ impl MetalContext {
             view: None,
             current_drawable,
             is_offscreen: false,
+            sizes_drawable: false,
+        })
+    }
+
+    pub unsafe fn new_layer_device_queue_sized(
+        layer: *mut c_void,
+        device: *mut c_void,
+        queue: *mut c_void,
+        width: f64,
+        height: f64,
+    ) -> Option<Self> {
+        let _pool = NSAutoreleasePool::new();
+        let device: Retained<ProtocolObject<dyn MTLDevice>> =
+            Retained::retain((device as *mut AnyObject).cast())?;
+        let queue: Retained<ProtocolObject<dyn MTLCommandQueue>> =
+            Retained::retain((queue as *mut AnyObject).cast())?;
+        let layer: Retained<CAMetalLayer> = Retained::retain(layer.cast())?;
+        let mut size = layer.drawableSize();
+        size.width = width.max(1.) as _;
+        size.height = height.max(1.) as _;
+        layer.setDrawableSize(size);
+        let current_drawable = layer.nextDrawable().map(|drawable| drawable.to_owned());
+        Some(Self {
+            queue,
+            device,
+            layer,
+            view: None,
+            current_drawable,
+            is_offscreen: false,
+            sizes_drawable: true,
         })
     }
 

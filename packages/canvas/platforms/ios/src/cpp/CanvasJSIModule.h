@@ -12,6 +12,7 @@
 #include "ImageAssetImpl.h"
 #include "canvas2d/ImageDataImpl.h"
 #include "ImageBitmapImpl.h"
+#include "OffscreenSurfaceImpl.h"
 #include "TextDecoderImpl.h"
 #include "TextEncoderImpl.h"
 #include "canvas2d/MatrixImpl.h"

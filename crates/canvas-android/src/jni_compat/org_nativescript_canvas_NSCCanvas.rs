@@ -14,6 +14,8 @@ use std::ffi::c_void;
 use std::ptr;
 use std::ptr::NonNull;
 
+use canvas_c::offscreen::android::{detach_2d_surface, update_2d_surface};
+
 fn to_raw_window_handler(window: &NativeWindow) -> RawWindowHandle {
     let handle = raw_window_handle::AndroidNdkWindowHandle::new(
         ptr::NonNull::new(window.ptr().as_ptr() as *mut c_void).unwrap(),
@@ -156,40 +158,6 @@ pub extern "system" fn nativeDetach2DSurface(_: JNIEnv, _: JClass, context: jlon
         return;
     }
     detach_2d_surface(context);
-}
-
-fn detach_2d_surface(context: &mut canvas_c::CanvasRenderingContext2D) {
-    let context = context.get_context_mut();
-
-    if context.vulkan_context.is_some() {
-        context.detach_vulkan_view();
-        return;
-    }
-
-    let color_space = context.surface_data().color_space();
-    let alpha = !context.surface_data().is_opaque();
-    let width = context.surface_data().width() as i32;
-    let height = context.surface_data().height() as i32;
-    context.flush_and_render_to_surface();
-    if let Some(gl_context) = context.gl_context.as_mut() {
-        let mut attr = canvas_core::context_attributes::ContextAttributes::new(
-            alpha,
-            false,
-            false,
-            false,
-            PowerPreference::Default,
-            true,
-            false,
-            false,
-            false,
-            false,
-            true,
-            false,
-            color_space,
-        );
-        gl_context.resize_pbuffer(&mut attr, width, height);
-        gl_context.make_current();
-    }
 }
 
 // #[cfg(feature = "vulkan")]
@@ -515,89 +483,18 @@ pub extern "system" fn nativeUpdate2DSurface(
     if let Some(target) = context.render_target() {
         // Not waited on: blocking this callback on the render thread can deadlock the buffer queue.
         let window = SendWindow(window);
-        target.post(move |real| update_2d_surface(real, &window.0, width, height));
+        target.post(move |real| {
+            let window = window;
+            update_2d_surface(real, window.0.ptr().cast(), width, height, true)
+        });
         context.resize(width as f32, height as f32);
         return;
     }
-    update_2d_surface(context, &window, width, height);
+    update_2d_surface(context, window.ptr().cast(), width, height, true);
 }
 
 struct SendWindow(NativeWindow);
 unsafe impl Send for SendWindow {}
-
-fn update_2d_surface(
-    context: &mut canvas_c::CanvasRenderingContext2D,
-    window: &NativeWindow,
-    width: jint,
-    height: jint,
-) {
-    unsafe {
-        {
-            {
-                let context = context.get_context_mut();
-                let color_space = context.surface_data().color_space();
-                let alpha = !context.surface_data().is_opaque();
-                // A new EGL surface starts blank; resize() only clears on a size change.
-                let offscreen = context.presents_through_window();
-                let pixels = if context.gl_context.is_some()
-                    && !offscreen
-                    && context.surface_data().width() as i32 == width
-                    && context.surface_data().height() as i32 == height
-                {
-                    context.get_image()
-                } else {
-                    None
-                };
-                if let Some(context) = context.gl_context.as_mut() {
-                    let mut attr = canvas_core::context_attributes::ContextAttributes::new(
-                        alpha,
-                        false,
-                        false,
-                        false,
-                        PowerPreference::Default,
-                        true,
-                        false,
-                        false,
-                        false,
-                        false,
-                        true,
-                        false,
-                        color_space
-                    );
-
-                    let Some(nn_ptr) = NonNull::new(window.ptr().as_ptr() as _) else { return };
-                    let handle = raw_window_handle::AndroidNdkWindowHandle::new(nn_ptr);
-                    let handle = RawWindowHandle::AndroidNdk(handle);
-                    context.set_window_surface(&mut attr, width, height, handle);
-                    context.make_current();
-                }
-                context.use_offscreen_for_window();
-                if let Some(pixels) = pixels {
-                    context.draw_pixels(&pixels);
-                }
-                if context.presents_through_window() {
-                    context.present_to_window();
-                    if let Some(gl_context) = context.gl_context.as_ref() {
-                        gl_context.swap_buffers();
-                    }
-                }
-
-                if let Some(vulkan_context) = context.vulkan_context.as_mut() {
-                    vulkan_context.set_view(
-                        window.ptr().as_ptr() as *mut std::os::raw::c_void,
-                        width as u32,
-                        height as u32,
-                    );
-                }
-            }
-
-            let width = width as f32;
-            let height = height as f32;
-
-            context.resize(width, height)
-        }
-    }
-}
 
 fn native_update_2d_surface_no_surface(width: jint, height: jint, context: jlong) {
     if context == 0 {

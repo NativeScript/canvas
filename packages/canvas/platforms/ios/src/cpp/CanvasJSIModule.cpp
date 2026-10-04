@@ -121,9 +121,12 @@ void CanvasJSIModule::install(v8::Isolate *isolate) {
 	auto context = isolate->GetCurrentContext();
 	auto global = context->Global();
 	
-	if (!global->
-			HasOwnProperty(context, ConvertToV8String(isolate, "CanvasJSIModule")).FromMaybe(
-																																											 false)) {
+	// Not the CanvasModule global: on iOS that is the ObjC class first.
+	auto installed = v8::Private::ForApi(isolate, ConvertToV8String(isolate, "nsc:CanvasModule"));
+	if (!global->HasPrivate(context, installed).FromMaybe(false)) {
+		global->SetPrivate(context, installed, v8::True(isolate)).FromJust();
+		// A new isolate may reuse a dead Worker's address.
+		Caches::Remove(isolate);
 																																												 
 																																												 
 																																												 v8::Locker locker(isolate);
@@ -139,6 +142,7 @@ void CanvasJSIModule::install(v8::Isolate *isolate) {
 																																												 ImageDataImpl::Init(canvasMod, isolate);
 																																												 ImageAssetImpl::Init(canvasMod, isolate);
 																																												 ImageBitmapImpl::Init(canvasMod, isolate);
+		OffscreenSurfaceImpl::Init(canvasMod, isolate);
 																																												 CanvasGradient::Init(canvasMod, isolate);
 																																												 CanvasPattern::Init(canvasMod, isolate);
 																																												 MatrixImpl::Init(canvasMod, isolate);

@@ -3,12 +3,13 @@
 
 use std::collections::{HashMap, VecDeque};
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
-use std::sync::{mpsc, Arc, Condvar, Mutex, OnceLock};
+use std::sync::{mpsc, Arc, Condvar, Mutex, OnceLock, Weak};
 use std::time::Duration;
 
 use canvas_2d::context::recording::Frame;
 
 use super::context::CanvasRenderingContext2D;
+use crate::webgl::thread::Behind;
 
 type Job = Box<dyn FnOnce(&mut Targets) + Send>;
 
@@ -186,6 +187,10 @@ const MAX_MERGED_FRAMES: u32 = 4;
 
 /// Drop waits for the real context to go, so its window can be released afterwards.
 pub struct RenderTarget {
+    shared: Arc<TargetShared>,
+}
+
+struct TargetShared {
     id: u64,
     worker: Arc<Worker>,
     open: Mutex<Option<Slot>>,
@@ -193,6 +198,34 @@ pub struct RenderTarget {
     /// Frames merged into the open slot since this thread last took it. Non-zero means this canvas
     /// is behind, which holds requestAnimationFrame back (`canvas_native_canvases_behind`).
     merged: Arc<AtomicU32>,
+    behind: Behind,
+}
+
+/// The real context without the recording one, which belongs to the JS thread.
+#[derive(Clone)]
+pub struct TargetHandle(Weak<TargetShared>);
+
+impl TargetHandle {
+    pub fn post<F>(&self, f: F)
+    where
+        F: FnOnce(&mut CanvasRenderingContext2D) + Send + 'static,
+    {
+        if let Some(shared) = self.0.upgrade() {
+            shared.post(f);
+        }
+    }
+
+    pub fn sync<R, F>(&self, f: F) -> Option<R>
+    where
+        R: Send + 'static,
+        F: FnOnce(&mut CanvasRenderingContext2D) -> R + Send + 'static,
+    {
+        self.0.upgrade()?.sync(f)
+    }
+
+    pub fn is_lost(&self) -> bool {
+        self.0.upgrade().is_some_and(|shared| shared.lost.load(Ordering::Acquire))
+    }
 }
 
 impl RenderTarget {
@@ -217,29 +250,37 @@ impl RenderTarget {
             }
         }));
         Some(Self {
-            id,
-            worker,
-            open: Mutex::new(None),
-            lost,
-            merged: Arc::new(AtomicU32::new(0)),
+            shared: Arc::new(TargetShared {
+                id,
+                worker,
+                open: Mutex::new(None),
+                lost,
+                merged: Arc::new(AtomicU32::new(0)),
+                behind: crate::webgl::thread::behind_counter(),
+            }),
         })
+    }
+
+    pub fn handle(&self) -> TargetHandle {
+        TargetHandle(Arc::downgrade(&self.shared))
     }
 
     /// The real context's GPU device was lost, as of its last present or job.
     pub fn is_lost(&self) -> bool {
-        self.lost.load(Ordering::Acquire)
+        self.shared.lost.load(Ordering::Acquire)
     }
 
     pub fn commit(&self, frame: Frame) {
+        let shared = &self.shared;
         if frame.is_empty() {
             return;
         }
-        if self.merged.load(Ordering::Acquire) >= MAX_MERGED_FRAMES {
+        if shared.merged.load(Ordering::Acquire) >= MAX_MERGED_FRAMES {
             // Something is drawing faster than this thread can keep up, outside the
             // requestAnimationFrame hold-back: wait for the pending frame to be drawn.
-            self.sync(|_| ());
+            shared.sync(|_| ());
         }
-        let Ok(mut open) = self.open.lock() else {
+        let Ok(mut open) = shared.open.lock() else {
             return;
         };
         let mut frame = Some(frame);
@@ -247,8 +288,8 @@ impl RenderTarget {
             if let Ok(mut pending) = slot.lock() {
                 if let Some(queued) = pending.as_mut() {
                     queued.append(frame.take().expect("set above"));
-                    if self.merged.fetch_add(1, Ordering::AcqRel) == 0 {
-                        crate::webgl::thread::canvas_behind();
+                    if shared.merged.fetch_add(1, Ordering::AcqRel) == 0 {
+                        crate::webgl::thread::canvas_behind(shared.behind);
                     }
                     return;
                 }
@@ -256,13 +297,14 @@ impl RenderTarget {
         }
         let slot: Slot = Arc::new(Mutex::new(frame));
         *open = Some(Arc::clone(&slot));
-        let id = self.id;
-        let merged = Arc::clone(&self.merged);
-        self.worker.push(Box::new(move |targets: &mut Targets| {
+        let id = shared.id;
+        let merged = Arc::clone(&shared.merged);
+        let behind = shared.behind;
+        shared.worker.push(Box::new(move |targets: &mut Targets| {
             let frame = slot.lock().ok().and_then(|mut pending| pending.take());
             // Taken under the slot's lock above, so a commit merging now lands in a new slot.
             if merged.swap(0, Ordering::AcqRel) > 0 {
-                crate::webgl::thread::canvas_caught_up();
+                crate::webgl::thread::canvas_caught_up(behind);
             }
             if let (Some(frame), Some(entry)) = (frame, targets.contexts.get_mut(&id)) {
                 entry.context.get_context_mut().replay(frame);
@@ -271,6 +313,23 @@ impl RenderTarget {
         }));
     }
 
+    pub fn post<F>(&self, f: F)
+    where
+        F: FnOnce(&mut CanvasRenderingContext2D) + Send + 'static,
+    {
+        self.shared.post(f);
+    }
+
+    pub fn sync<R, F>(&self, f: F) -> Option<R>
+    where
+        R: Send + 'static,
+        F: FnOnce(&mut CanvasRenderingContext2D) -> R + Send + 'static,
+    {
+        self.shared.sync(f)
+    }
+}
+
+impl TargetShared {
     /// Later commits must not merge into a frame queued before other work.
     fn seal(&self) {
         if let Ok(mut open) = self.open.lock() {
@@ -278,7 +337,7 @@ impl RenderTarget {
         }
     }
 
-    pub fn post<F>(&self, f: F)
+    fn post<F>(&self, f: F)
     where
         F: FnOnce(&mut CanvasRenderingContext2D) + Send + 'static,
     {
@@ -292,7 +351,7 @@ impl RenderTarget {
         }));
     }
 
-    pub fn sync<R, F>(&self, f: F) -> Option<R>
+    fn sync<R, F>(&self, f: F) -> Option<R>
     where
         R: Send + 'static,
         F: FnOnce(&mut CanvasRenderingContext2D) -> R + Send + 'static,
@@ -314,12 +373,13 @@ impl RenderTarget {
 
 impl Drop for RenderTarget {
     fn drop(&mut self) {
-        if self.merged.swap(0, Ordering::AcqRel) > 0 {
-            crate::webgl::thread::canvas_caught_up();
+        let shared = &self.shared;
+        if shared.merged.swap(0, Ordering::AcqRel) > 0 {
+            crate::webgl::thread::canvas_caught_up(shared.behind);
         }
         let (tx, rx) = mpsc::sync_channel::<()>(1);
-        let id = self.id;
-        self.worker.push(Box::new(move |targets: &mut Targets| {
+        let id = shared.id;
+        shared.worker.push(Box::new(move |targets: &mut Targets| {
             targets.presents.retain(|target| *target != id);
             drop(targets.contexts.remove(&id));
             let _ = tx.send(());

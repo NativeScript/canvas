@@ -237,6 +237,10 @@ public class NSCCanvas: UIView {
 	
 	
 	@objc public func toDataURL(_ format: String, _ quality: Float) -> String {
+		if let surface = offscreenSurface, let url = canvas_native_offscreen_surface_to_data_url(surface, format, UInt32(max(quality, 0) * 100)) {
+			defer { canvas_native_string_destroy(url) }
+			return String(cString: url)
+		}
 		if(engine == .None){
 			let rect = CGRect(x: 0, y: 0, width: surfaceWidth, height: surfaceHeight)
 			let renderer = UIGraphicsImageRenderer(bounds: rect)
@@ -308,6 +312,48 @@ public class NSCCanvas: UIView {
 			colorSpace
 		)
 	}
+	private var offscreenSurface: OpaquePointer? = nil
+
+	@objc public func transferToOffscreenSurface() -> Int64 {
+		if nativeContext != 0 || offscreenSurface != nil {
+			return 0
+		}
+		let density = autoScale ? Float(nscNativeScale()) : 1
+		let direction: UInt32 = UIView.userInterfaceLayoutDirection(for: semanticContentAttribute) == .rightToLeft ? 1 : 0
+		#if os(visionOS)
+		let glLayer: UnsafeMutableRawPointer? = nil
+		#else
+		let glLayer: UnsafeMutableRawPointer? = Unmanaged.passUnretained(glView.layer).toOpaque()
+		#endif
+		let metalLayer = Unmanaged.passUnretained(mtlView.layer).toOpaque()
+		guard let surface = canvas_native_offscreen_surface_create_ios(UInt32(surfaceWidth), UInt32(surfaceHeight), density, density * 160, direction, CanvasColorSpaceSrgb, metalLayer, mtlView.getDevicePtr(), mtlView.getQueuePtr(), mtlView.sampleCount, glLayer) else {
+			return 0
+		}
+		offscreenSurface = surface
+		let sink = Unmanaged.passRetained(NSCOffscreenSink(self)).toOpaque()
+		canvas_native_offscreen_surface_set_ui_sink(surface, CanvasOffscreenUiSink(data: sink, call: nscOffscreenSinkCall, release: nscOffscreenSinkRelease))
+		canvas_native_offscreen_surface_reference(surface)
+		return Int64(Int(bitPattern: surface))
+	}
+
+	fileprivate func offscreenEvent(_ event: CanvasOffscreenEvent, _ a: Int, _ b: Int) {
+		if event == CanvasOffscreenEventResize {
+			setSurfaceSize(a, b)
+		} else if event == CanvasOffscreenEventEngine {
+			let alpha = b == 1
+			isOpaque = !alpha
+			// 2: CanvasOffscreenEngine::GL.
+			if a == 2 {
+				glView.isOpaque = !alpha
+				glView.layer.isOpaque = !alpha
+				glView.isHidden = false
+			} else {
+				mtlView.isOpaque = !alpha
+				mtlView.isHidden = false
+			}
+		}
+	}
+
 	@objc public func initWebGPUContext(_ instance: Int64){
 		if (nativeContext != 0) {
 			return
@@ -739,6 +785,11 @@ public class NSCCanvas: UIView {
 	}
 	
 	private func resize(){
+		if let surface = offscreenSurface {
+			scaleSurface()
+			canvas_native_offscreen_surface_view_resized(surface)
+			return
+		}
 		if(nativeContext == 0){
 			scaleSurface()
 			return
@@ -797,7 +848,10 @@ public class NSCCanvas: UIView {
 
 		glView.frame = CGRect(x: 0, y: 0, width: unscaledWidth, height: unscaledHeight)
 		mtlView.frame = CGRect(x: 0, y: 0, width: unscaledWidth, height: unscaledHeight)
-		mtlView.drawableSize = CGSize(width: width.rounded(.down), height: height.rounded(.down))
+		// A transferred view's drawable is sized by its render thread.
+		if offscreenSurface == nil {
+			mtlView.drawableSize = CGSize(width: width.rounded(.down), height: height.rounded(.down))
+		}
 
 		cpuView.frame = CGRect(x: 0, y: 0, width: unscaledWidth, height: unscaledHeight)
 
@@ -965,6 +1019,11 @@ public class NSCCanvas: UIView {
 	}
 	
 	deinit {
+		if let surface = offscreenSurface {
+			canvas_native_offscreen_surface_detach_view(surface)
+			canvas_native_offscreen_surface_release(surface)
+			offscreenSurface = nil
+		}
 		if(nativeContext != 0){
 			if(is2D){
 				CanvasHelpers.release2DContext(nativeContext)
@@ -1044,4 +1103,33 @@ extension MTLTexture {
 		
 		return UIImage(cgImage: cgImage)
 	}
+}
+
+private final class NSCOffscreenSink {
+	weak var canvas: NSCCanvas?
+
+	init(_ canvas: NSCCanvas) {
+		self.canvas = canvas
+	}
+
+	func send(_ event: CanvasOffscreenEvent, _ a: UInt32, _ b: UInt32) {
+		let run: () -> Void = { [weak self] in
+			self?.canvas?.offscreenEvent(event, Int(a), Int(b))
+		}
+		if Thread.isMainThread {
+			run()
+		} else {
+			DispatchQueue.main.async(execute: run)
+		}
+	}
+}
+
+private let nscOffscreenSinkCall: @convention(c) (UnsafeMutableRawPointer?, CanvasOffscreenEvent, UInt32, UInt32) -> Void = { data, event, a, b in
+	guard let data = data else { return }
+	Unmanaged<NSCOffscreenSink>.fromOpaque(data).takeUnretainedValue().send(event, a, b)
+}
+
+private let nscOffscreenSinkRelease: @convention(c) (UnsafeMutableRawPointer?) -> Void = { data in
+	guard let data = data else { return }
+	Unmanaged<NSCOffscreenSink>.fromOpaque(data).release()
 }

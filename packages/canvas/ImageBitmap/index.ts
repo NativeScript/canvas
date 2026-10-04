@@ -1,12 +1,11 @@
 import { ImageAsset, fromSvgSource } from '../ImageAsset';
 import { ImageData } from '../Canvas2D';
-import { Canvas } from '../Canvas';
 import { ImageSource } from '@nativescript/core';
 
 import { Helpers } from '../helpers';
 import { NAPI_HOST } from '../platform';
 import { imageAssetFor } from '../platform/index';
-import { isOffscreenCanvas } from '../Canvas/utils';
+import { isCanvasView, isOffscreenCanvas } from '../Canvas/utils';
 
 function parseOptions(options) {
 	if (__ANDROID__) {
@@ -62,7 +61,7 @@ function invalidSource(source: any) {
 /** `undefined` for an unrecognised source, so the caller rejects instead of hanging. */
 function resolveSource(source: any): any {
 	source = fromSvgSource(source);
-	if ((source instanceof Canvas || isOffscreenCanvas(source))) {
+	if ((isCanvasView(source) || isOffscreenCanvas(source))) {
 		return (source as any).native;
 	}
 	if (source instanceof ImageBitmap) {
@@ -86,7 +85,7 @@ function resolveSource(source: any): any {
 		if (source.tagName === 'IMG' || source.tagName === 'IMAGE') {
 			return source._asset?.native;
 		}
-		if (source.tagName === 'CANVAS' && source._canvas instanceof Canvas) {
+		if (source.tagName === 'CANVAS' && isCanvasView(source._canvas)) {
 			return source._canvas.native;
 		}
 		return undefined;

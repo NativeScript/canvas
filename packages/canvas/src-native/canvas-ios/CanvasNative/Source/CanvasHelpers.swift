@@ -339,8 +339,18 @@ public class CanvasHelpers: NSObject {
         return _ReadQueue!
     }
     
+    /// A Worker thread has no OperationQueue.current, and its callbacks must not run on main.
+    private struct CallerRunLoop {
+        let runLoop = CFRunLoopGetCurrent()
+
+        func addOperation(_ block: @escaping () -> Void) {
+            CFRunLoopPerformBlock(runLoop, CFRunLoopMode.commonModes.rawValue, block)
+            CFRunLoopWakeUp(runLoop)
+        }
+    }
+
     public static func writeFile(_ data: NSData, _ path: String, _ callback:@escaping (String?, String?) -> Void){
-        let queue = OperationQueue.current ?? OperationQueue.main
+        let queue = CallerRunLoop()
         WriteQueue.addOperation {
             let done = data.write(toFile: path, atomically: true)
             if(!done){
@@ -358,7 +368,7 @@ public class CanvasHelpers: NSObject {
     
     
     public static func readFile(_ path: String, _ callback:@escaping (String?, NSData?) -> Void){
-        let queue = OperationQueue.current ?? OperationQueue.main
+        let queue = CallerRunLoop()
         ReadQueue.addOperation {
             let data = NSData(contentsOfFile: path)
             if(data == nil){
@@ -375,7 +385,7 @@ public class CanvasHelpers: NSObject {
     
     
     public static func deleteFile(_ path: String, _ callback:@escaping (NSError?, Bool) -> Void){
-        let queue = OperationQueue.current ?? OperationQueue.main
+        let queue = CallerRunLoop()
         ReadQueue.addOperation {
             do {
                 try FileManager.default.removeItem(atPath: path)
@@ -392,7 +402,7 @@ public class CanvasHelpers: NSObject {
     
     
     public static func handleBase64Image(_ mime: String, _ dir: String, _ base64: String, _ callback:@escaping (String?, String?) -> Void){
-        let queue = OperationQueue.current ?? OperationQueue.main
+        let queue = CallerRunLoop()
         WriteQueue.addOperation {
     
             let id = UUID().uuidString

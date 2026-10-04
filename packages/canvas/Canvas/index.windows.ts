@@ -6,6 +6,7 @@
 import { isUserInteractionEnabledProperty } from '@nativescript/core';
 import { ignoreTouchEventsProperty } from './common';
 import { NapiCanvas } from './napi-host';
+import { OffscreenCanvas } from '../OffscreenCanvas';
 
 export * from './common';
 export { createSVGMatrix } from './napi-host';
@@ -317,3 +318,5 @@ export class Canvas extends NapiCanvas {
 		}
 	}
 }
+
+OffscreenCanvas._legacyHost = () => Canvas.createCustomView();

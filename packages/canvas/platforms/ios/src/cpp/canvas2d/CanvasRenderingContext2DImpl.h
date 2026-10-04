@@ -141,6 +141,8 @@ public:
 
     static void __StartRaf(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void WithCpu(const v8::FunctionCallbackInfo<v8::Value> &args);
+
     static void __FastStartRaf(v8::Local<v8::Object> receiver_obj) {
         CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {

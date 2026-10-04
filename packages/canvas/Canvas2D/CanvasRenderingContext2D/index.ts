@@ -5,14 +5,14 @@ import { TextMetrics } from '../TextMetrics';
 import { ImageSource, Screen, Color, ImageAsset as NSImageAsset } from '@nativescript/core';
 import { ImageAsset, fromSvgSource, getSvgNaturalSize, resolveSvgSource, svgToImageAsset } from '../../ImageAsset';
 import { CanvasPattern } from '../CanvasPattern';
-import { Canvas } from '../../Canvas';
+import type { Canvas } from '../../Canvas';
 
 import { Helpers } from '../../helpers';
 import { DOMMatrix } from '../DOMMatrix';
 import type { CanvasRenderingContext } from '../../common';
 import { NAPI_HOST } from '../../platform';
 import { imageAssetFor } from '../../platform/index';
-import { isOffscreenCanvas } from '../../Canvas/utils';
+import { isCanvasView, isOffscreenCanvas } from '../../Canvas/utils';
 declare const NSCCanvasRenderingContext2D;
 
 const REPETITIONS = ['repeat', 'repeat-x', 'repeat-y', 'no-repeat'];
@@ -368,10 +368,9 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 	private _fillStyleObject: CanvasGradient | CanvasPattern | null = null;
 	private _strokeStyleObject: CanvasGradient | CanvasPattern | null = null;
 
-	constructor(context: any, contextOptions) {
+	constructor(context: any, contextOptions, native?: any) {
 		this.contextPtr = context;
-		const ctxPtr = BigInt(context.toString());
-		this.context = global.CanvasModule.create2DContextWithPointer(ctxPtr);
+		this.context = native ?? global.CanvasModule.create2DContextWithPointer(BigInt(context.toString()));
 		this._type = '2d';
 		this._contextAttributes = {
 			alpha: contextOptions?.alpha ?? true,
@@ -790,7 +789,7 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 			return null;
 		} else if (image instanceof ImageAsset) {
 			img = image.native;
-		} else if ((image instanceof Canvas || isOffscreenCanvas(image))) {
+		} else if ((isCanvasView(image) || isOffscreenCanvas(image))) {
 			img = (image as any).native;
 		} else if (image && typeof image.tagName === 'string' && (image.tagName === 'IMG' || image.tagName === 'IMAGE')) {
 			if (__ANDROID__ && image._image instanceof android.graphics.Bitmap) {
@@ -815,7 +814,7 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 
 				return null;
 			}
-		} else if (image && typeof image.tagName === 'string' && image.tagName === 'CANVAS' && image._canvas instanceof Canvas) {
+		} else if (image && typeof image.tagName === 'string' && image.tagName === 'CANVAS' && isCanvasView(image._canvas)) {
 			img = image._canvas.native;
 		} else if (image instanceof ImageBitmap) {
 			img = (image as any).native;
@@ -908,7 +907,7 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 		} else if (__APPLE__ && image instanceof UIImage) {
 			drawNativeImage(args, image, this);
 			return;
-		} else if ((image instanceof Canvas || isOffscreenCanvas(image))) {
+		} else if ((isCanvasView(image) || isOffscreenCanvas(image))) {
 			image = (image as any).native;
 		} else if (image && typeof image.tagName === 'string' && (image.tagName === 'IMG' || image.tagName === 'IMAGE')) {
 			if (image._imageSource instanceof ImageSource && !NAPI_HOST) {
@@ -936,7 +935,7 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 				image = new ImageAsset();
 				image.fromFileSync(image.src);
 			}
-		} else if (image && typeof image.tagName === 'string' && image.tagName === 'CANVAS' && image._canvas instanceof Canvas) {
+		} else if (image && typeof image.tagName === 'string' && image.tagName === 'CANVAS' && isCanvasView(image._canvas)) {
 			image = image._canvas.native;
 		} else if (image && typeof image.tagName === 'string' && (image.tagName === 'VIDEO' || image.tagName === 'VID' || image.tagName.toLowerCase() === 'video') && image._video && typeof image._video.drawImageFrame === 'function') {
 			image._video.drawImageFrame(this, args);
@@ -1033,8 +1032,8 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 			isNativeSource = true;
 		} else if (__APPLE__ && image instanceof UIImage) {
 			isNativeSource = true;
-		} else if ((image instanceof Canvas || isOffscreenCanvas(image))) {
-			if (__APPLE__) {
+		} else if ((isCanvasView(image) || isOffscreenCanvas(image))) {
+			if (__APPLE__ && isCanvasView(image)) {
 				image = _canvasToImageAssetIOS(image as Canvas);
 			} else {
 				image = (image as any).native;
@@ -1063,7 +1062,7 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 				image = new ImageAsset();
 				image.fromFileSync(image.src);
 			}
-		} else if (image && typeof image.tagName === 'string' && image.tagName === 'CANVAS' && image._canvas instanceof Canvas) {
+		} else if (image && typeof image.tagName === 'string' && image.tagName === 'CANVAS' && isCanvasView(image._canvas)) {
 			if (__APPLE__) {
 				image = _canvasToImageAssetIOS(image._canvas as Canvas);
 			} else {

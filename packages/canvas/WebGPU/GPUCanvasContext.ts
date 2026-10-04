@@ -29,7 +29,12 @@ export class GPUCanvasContext implements CanvasRenderingContext {
 		this._swapchainViews.push(view);
 	}
 
-	constructor(context: any, contextOptions: any = {}) {
+	constructor(context: any, contextOptions: any = {}, native?: any) {
+		this._type = 'webgpu';
+		if (native) {
+			this[native_] = native;
+			return;
+		}
 		let nativeContext = '0';
 		if (__ANDROID__) {
 			nativeContext = context.getNativeContext().toString();
@@ -244,8 +249,13 @@ export class GPUCanvasContext implements CanvasRenderingContext {
 	__toDataURL(type: string, quality: number) {
 		if (this[device_]) {
 			return this.native.__toDataURL(type, quality);
-		} else {
-			return (<any>this.canvas)._canvas.toDataURL(type, quality);
 		}
+		// Unconfigured: a blank bitmap.
+		const canvas: any = this.canvas;
+		if (canvas?._canvas?.toDataURL) {
+			return canvas._canvas.toDataURL(type, quality);
+		}
+		const blank = global.CanvasModule.CanvasRenderingContext2D.withCpu(canvas?.width || 300, canvas?.height || 150, 1, true, 0, 160, 0);
+		return blank.__toDataURL(type, quality);
 	}
 }

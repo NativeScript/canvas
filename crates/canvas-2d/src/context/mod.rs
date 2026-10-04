@@ -585,7 +585,11 @@ impl Context {
             return "data:,".to_string();
         }
 
-        //  self.flush();
+        // The render thread holds many contexts; read through this one.
+        #[cfg(feature = "gl")]
+        if let Some(ref context) = self.gl_context {
+            context.make_current();
+        }
 
         let image = self.surface.image_snapshot();
 

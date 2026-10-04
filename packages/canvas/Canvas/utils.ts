@@ -194,6 +194,13 @@ export function holdBackAnimationFramesWhileBehind() {
  * copyExternalImageToTexture) take like a Canvas: both hand their context's native object as `native`.
  * Checked by tag so the consumers need not import the OffscreenCanvas module.
  */
+/** Lets code a Worker loads recognize a `Canvas` view without importing it. */
+export const CANVAS_VIEW = Symbol.for('@nativescript/canvas:Canvas');
+
+export function isCanvasView(value: any): boolean {
+	return !!value && typeof value === 'object' && value[CANVAS_VIEW] === true;
+}
+
 export function isOffscreenCanvas(value: any): boolean {
 	return !!value && typeof value === 'object' && value[Symbol.toStringTag] === 'OffscreenCanvas';
 }

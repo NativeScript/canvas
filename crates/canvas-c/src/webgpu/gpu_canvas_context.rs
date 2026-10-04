@@ -559,6 +559,90 @@ fn to_data_url_with_texture(
     }
 }
 
+/// No surface: getCurrentTexture hands out an offscreen texture.
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_context_create_offscreen(
+    instance: *const CanvasWebGPUInstance,
+    width: u32,
+    height: u32,
+) -> *const CanvasGPUCanvasContext {
+    if instance.is_null() {
+        return std::ptr::null();
+    }
+    Arc::increment_strong_count(instance);
+    let instance = Arc::from_raw(instance);
+    Arc::into_raw(Arc::new(CanvasGPUCanvasContext {
+        instance,
+        surface: Mutex::new(None),
+        has_surface_presented: Arc::default(),
+        data: Mutex::default(),
+        view_data: Mutex::new(ViewData { width, height }),
+        read_back_texture: Mutex::default(),
+        current_texture: Mutex::default(),
+        offscreen_texture: Mutex::default(),
+        last_capabilities: Mutex::default(),
+        #[cfg(all(target_os = "windows", feature = "d3d"))]
+        panel: None,
+    }))
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_context_resize_offscreen(
+    context: *const CanvasGPUCanvasContext,
+    width: u32,
+    height: u32,
+) {
+    if context.is_null() || width == 0 || height == 0 {
+        return;
+    }
+    let context = &*context;
+    discard_current_texture(context, "canvas_native_webgpu_context_resize_offscreen");
+    {
+        let mut view_data = context.view_data.lock();
+        view_data.width = width;
+        view_data.height = height;
+    }
+    let mut data = context.data.lock();
+    let Some(data) = data.as_mut() else {
+        return;
+    };
+    data.texture_data.size.width = width;
+    data.texture_data.size.height = height;
+    data.previous_configuration.width = width;
+    data.previous_configuration.height = height;
+
+    #[cfg(not(target_os = "android"))]
+    let format = wgt::TextureFormat::Bgra8Unorm;
+    #[cfg(target_os = "android")]
+    let format = wgt::TextureFormat::Rgba8Unorm;
+    let desc = wgt::TextureDescriptor {
+        label: Some(Cow::Borrowed("ContextReadBack")),
+        size: wgt::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        },
+        mip_level_count: 1,
+        sample_count: 1,
+        dimension: wgt::TextureDimension::D2,
+        format,
+        usage: wgt::TextureUsages::COPY_SRC | wgt::TextureUsages::COPY_DST,
+        view_formats: vec![],
+    };
+    let texture_data = TextureData {
+        usage: desc.usage,
+        dimension: desc.dimension,
+        size: desc.size,
+        format: desc.format,
+        mip_level_count: desc.mip_level_count,
+        sample_count: desc.sample_count,
+    };
+    *context.read_back_texture.lock() = Some(ReadBackTexture {
+        texture: data.device.device.create_texture(&desc),
+        data: texture_data,
+    });
+}
+
 #[cfg(any(target_os = "android"))]
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_context_create(

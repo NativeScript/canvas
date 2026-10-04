@@ -63,6 +63,9 @@ public:
     std::unique_ptr<v8::Persistent<v8::FunctionTemplate>> ImageBitmapTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
             nullptr);
 
+    std::unique_ptr<v8::Persistent<v8::FunctionTemplate>> OffscreenSurfaceTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
     std::unique_ptr<v8::Persistent<v8::FunctionTemplate>> ANGLE_instanced_arraysTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
             nullptr);
 

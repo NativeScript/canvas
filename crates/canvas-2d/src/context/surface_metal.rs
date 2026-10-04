@@ -172,6 +172,29 @@ impl Context {
         ))
     }
 
+    pub fn new_metal_layer_device_queue_sized(
+        layer: *mut c_void,
+        device: *mut c_void,
+        queue: *mut c_void,
+        width: f32,
+        height: f32,
+        density: f32,
+        samples: usize,
+        alpha: bool,
+        font_color: i32,
+        ppi: f32,
+        direction: TextDirection,
+        color_space: ColorSpace,
+    ) -> Option<Self> {
+        let mtl_context = unsafe {
+            MetalContext::new_layer_device_queue_sized(layer, device, queue, width as f64, height as f64)
+        }?;
+        Some(Self::with_metal_device_queue(
+            mtl_context, device, queue, density, samples, alpha, font_color, ppi, direction,
+            color_space,
+        ))
+    }
+
     fn with_metal_device_queue(
         mut mtl_context: MetalContext,
         device: *mut c_void,
@@ -343,7 +366,7 @@ impl Context {
         let mut info: Option<TextureInfo> = None;
         if let Some(context) = context.metal_context.as_mut() {
             samples = context.sample_count();
-            if context.is_offscreen() {
+            if context.is_offscreen() || context.sizes_drawable() {
                 context.set_drawable_size(width as f64, height as f64)
             }
 

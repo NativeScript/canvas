@@ -261,6 +261,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                     .collect();
 
             let _ = env.register_native_methods(&canvas_class, canvas_native_methods.as_slice());
+            crate::jni_compat::org_nativescript_canvas_NSCCanvas_offscreen::register(&mut env, &canvas_class);
 
             let text_render_class = env
                 .find_class("org/nativescript/canvas/TextureRender")

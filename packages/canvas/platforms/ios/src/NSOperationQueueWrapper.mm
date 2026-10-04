@@ -25,7 +25,8 @@
 -(instancetype)initWithCurrentQueue {
     self = [super init];
     if (self) {
-        current = CFRunLoopGetCurrent();
+        // A callback can outlive a Worker's thread.
+        current = (__CFRunLoop*)CFRetain(CFRunLoopGetCurrent());
     }
     return self;
 }
@@ -38,7 +39,12 @@
     return self;
 }
 
-- (void)dealloc {}
+- (void)dealloc {
+    if (current != NULL) {
+        CFRelease(current);
+        current = NULL;
+    }
+}
 
 - (void)addOperation:(void (^)())task {
     

@@ -1,6 +1,7 @@
 import { CSSType, View, Property, booleanConverter, Screen, ContainerView } from '@nativescript/core';
 import type { CanvasRenderingContext } from '../common';
-import { removeItemFromArray } from './utils';
+import { CANVAS_VIEW, removeItemFromArray } from './utils';
+import { OffscreenCanvas } from '../OffscreenCanvas';
 
 export interface ICanvasBase {
 	/** @deprecated The canvas is usable as soon as it exists; call getContext() directly. */
@@ -1317,9 +1318,6 @@ export abstract class CanvasBase extends ContainerView implements ICanvasBase {
 	/** Set by `transferControlToOffscreen()`: the canvas then only shows its OffscreenCanvas's frames. */
 	protected _transferredToOffscreen = false;
 
-	/** Builds the OffscreenCanvas a transferred canvas hands out; set by the OffscreenCanvas module. */
-	static _offscreenFromPlaceholder: ((canvas: CanvasBase) => any) | null = null;
-
 	/** getContext() without the transfer check, for this canvas's OffscreenCanvas. */
 	public abstract _getContext(type: string, contextAttributes?: any): CanvasRenderingContext | null;
 
@@ -1347,11 +1345,7 @@ export abstract class CanvasBase extends ContainerView implements ICanvasBase {
 		if (this._hasContext()) {
 			throw domError('InvalidStateError', "Failed to execute 'transferControlToOffscreen' on 'HTMLCanvasElement': Cannot transfer control from a canvas that has a rendering context.");
 		}
-		const create = CanvasBase._offscreenFromPlaceholder;
-		if (!create) {
-			throw new Error('OffscreenCanvas is unavailable: import it from @nativescript/canvas.');
-		}
-		const offscreen = create(this);
+		const offscreen = OffscreenCanvas._fromPlaceholder(this as any);
 		this._transferredToOffscreen = true;
 		return offscreen;
 	}
@@ -1382,3 +1376,5 @@ export abstract class CanvasBase extends ContainerView implements ICanvasBase {
 		return this;
 	}
 }
+
+(CanvasBase.prototype as any)[CANVAS_VIEW] = true;

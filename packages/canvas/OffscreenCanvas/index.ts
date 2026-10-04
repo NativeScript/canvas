@@ -1,18 +1,15 @@
-/**
- * `OffscreenCanvas`: a canvas with no view.
- *
- * It draws through the same native contexts as `Canvas`, on a detached `Canvas` made at the
- * first getContext(), or, after `canvas.transferControlToOffscreen()`, on that canvas's own
- * surface so the frames show in its view. The contexts belong to the UI thread, so it cannot
- * move to a Worker yet.
- */
-import { Canvas } from '../Canvas';
-import { CanvasBase } from '../Canvas/common';
+// Imports no view, so a Worker can load it.
+import type { Canvas } from '../Canvas';
 import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
 import { ImageBitmap } from '../ImageBitmap';
 import { ImageBitmapRenderingContext } from '../ImageBitmapRenderingContext';
-import { handleContextOptions } from '../Canvas/utils';
+import { handleContextOptions, holdBackAnimationFramesWhileBehind, parsePowerPreference } from '../Canvas/utils';
 import { Helpers } from '../helpers';
+import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
+import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
+import { GPUCanvasContext } from '../WebGPU/GPUCanvasContext';
+
+declare const navigator: any;
 
 export type OffscreenRenderingContextId = '2d' | 'bitmaprenderer' | 'webgl' | 'webgl2' | 'webgpu';
 
@@ -184,10 +181,18 @@ function clearWebGL(gl: any) {
 }
 
 export class OffscreenCanvas {
+	/** A canvas shown in a view is always threaded. */
+	static threaded2D = true;
+	static threadedWebGL = true;
+
+	/** @internal Set by hosts without surfaces. */
+	static _legacyHost: (() => Canvas) | null = null;
+
 	private _width: number;
 	private _height: number;
-	/** Detached, or the placeholder canvas. Made at the first getContext(). */
+	private _surface: any = null;
 	private _host: Canvas | null = null;
+	private _detached = false;
 	private _contextId: OffscreenRenderingContextId | null = null;
 	private _context: any = null;
 	private _listeners: Map<string, { listener: any; once: boolean }[]> | null = null;
@@ -203,11 +208,61 @@ export class OffscreenCanvas {
 		this._height = enforceRange(height, "Failed to construct 'OffscreenCanvas'");
 	}
 
-	/** @internal `canvas.transferControlToOffscreen()`: draws into the canvas's own surface. */
+	/** @internal */
 	static _fromPlaceholder(canvas: Canvas): OffscreenCanvas {
+		const surface = surfaces() ? (canvas as any)._createOffscreenSurface?.() : null;
+		if (surface) {
+			return OffscreenCanvas._fromSurface(surface);
+		}
 		const offscreen = new OffscreenCanvas(canvas.width, canvas.height);
 		offscreen._attachHost(canvas);
 		return offscreen;
+	}
+
+	/** @internal */
+	static _fromSurface(surface: any): OffscreenCanvas {
+		const offscreen = new OffscreenCanvas(surface.width, surface.height);
+		offscreen._surface = surface;
+		return offscreen;
+	}
+
+	/** @internal Detaches `offscreen`, as a transfer does. */
+	static _toHandle(offscreen: OffscreenCanvas): number {
+		if (!(offscreen instanceof OffscreenCanvas)) {
+			throw new TypeError("Failed to transfer: the value is not an 'OffscreenCanvas'.");
+		}
+		if (offscreen._detached) {
+			throw domError('DataCloneError', 'An OffscreenCanvas could not be transferred because it was detached.');
+		}
+		if (offscreen._context) {
+			throw domError('InvalidStateError', 'An OffscreenCanvas could not be transferred because it had a rendering context.');
+		}
+		const surface = offscreen._ensureSurface();
+		if (!surface) {
+			throw domError('NotSupportedError', 'An OffscreenCanvas can not be transferred on this platform yet.');
+		}
+		const handle = surface.toHandle();
+		if (!handle) {
+			throw domError('DataCloneError', 'An OffscreenCanvas could not be transferred.');
+		}
+		surface.dispose();
+		offscreen._surface = null;
+		offscreen._detached = true;
+		return handle;
+	}
+
+	/** @internal */
+	static _fromHandle(handle: number): OffscreenCanvas {
+		const surface = surfaces()?.adopt(handle) ?? null;
+		if (!surface) {
+			throw domError('DataCloneError', 'The OffscreenCanvas was already received, or released.');
+		}
+		return OffscreenCanvas._fromSurface(surface);
+	}
+
+	/** @internal */
+	static _releaseHandle(handle: number): boolean {
+		return !!surfaces()?.releaseHandle(handle);
 	}
 
 	get [Symbol.toStringTag]() {
@@ -215,19 +270,21 @@ export class OffscreenCanvas {
 	}
 
 	get width(): number {
-		return this._width;
+		return this._detached ? 0 : this._width;
 	}
 
 	set width(value: number) {
+		this._assertNotDetached('width');
 		this._width = enforceRange(value, "Failed to set the 'width' property on 'OffscreenCanvas'");
 		this._resize();
 	}
 
 	get height(): number {
-		return this._height;
+		return this._detached ? 0 : this._height;
 	}
 
 	set height(value: number) {
+		this._assertNotDetached('height');
 		this._height = enforceRange(value, "Failed to set the 'height' property on 'OffscreenCanvas'");
 		this._resize();
 	}
@@ -250,25 +307,15 @@ export class OffscreenCanvas {
 		if (CONTEXT_IDS.indexOf(id) === -1) {
 			throw new TypeError(`Failed to execute 'getContext' on 'OffscreenCanvas': The provided value '${id}' is not a valid enum value of type OffscreenRenderingContextType.`);
 		}
+		if (this._detached) {
+			throw domError('InvalidStateError', "Failed to execute 'getContext' on 'OffscreenCanvas': OffscreenCanvas object is detached.");
+		}
 		if (this._context) {
 			return this._contextId === id ? this._context : null;
 		}
 
-		const host = this._ensureHost();
-		let context: any = null;
-		if (id === 'bitmaprenderer') {
-			// Backed by a 2D surface that is never handed out, as Canvas does it.
-			const backing = host._getContext('2d', options);
-			if (backing) {
-				context = new ImageBitmapRenderingContext(this as any, backing, handleContextOptions('bitmaprenderer', options));
-			}
-		} else {
-			context = host._getContext(id, options);
-			if (context) {
-				Object.defineProperty(context, 'canvas', { value: this, configurable: true });
-			}
-		}
-
+		const surface = this._ensureSurface();
+		const context = surface ? this._surfaceContext(surface, id, options) : this._hostContext(id, options);
 		if (context) {
 			this._context = context;
 			this._contextId = id;
@@ -277,6 +324,9 @@ export class OffscreenCanvas {
 	}
 
 	transferToImageBitmap(): ImageBitmap {
+		if (this._detached) {
+			throw domError('InvalidStateError', "Failed to execute 'transferToImageBitmap' on 'OffscreenCanvas': Cannot transfer an ImageBitmap from a detached OffscreenCanvas");
+		}
 		const context = this._context;
 		if (!context) {
 			throw domError('InvalidStateError', "Failed to execute 'transferToImageBitmap' on 'OffscreenCanvas': Cannot transfer an ImageBitmap from an OffscreenCanvas with no context");
@@ -314,6 +364,10 @@ export class OffscreenCanvas {
 
 	convertToBlob(options?: ImageEncodeOptions): Promise<Blob> {
 		return new Promise((resolve, reject) => {
+			if (this._detached) {
+				reject(domError('InvalidStateError', "Failed to execute 'convertToBlob' on 'OffscreenCanvas': OffscreenCanvas object is detached."));
+				return;
+			}
 			if (this._width === 0 || this._height === 0) {
 				reject(domError('IndexSizeError', "Failed to execute 'convertToBlob' on 'OffscreenCanvas': The size of the OffscreenCanvas is zero."));
 				return;
@@ -405,9 +459,109 @@ export class OffscreenCanvas {
 		return !event.defaultPrevented;
 	}
 
-	private _ensureHost(): Canvas {
+	private _assertNotDetached(name: 'width' | 'height') {
+		if (this._detached) {
+			throw domError('InvalidStateError', `Failed to set the '${name}' property on 'OffscreenCanvas': OffscreenCanvas object is detached.`);
+		}
+	}
+
+	private _ensureSurface(): any {
+		if (!this._surface && !this._host) {
+			this._surface = surfaces()?.create(this._width, this._height, 1, 160, 0, 0) ?? null;
+		}
+		return this._surface;
+	}
+
+	private _surfaceContext(surface: any, id: OffscreenRenderingContextId, options?: any): any {
+		const shown = surface.hasView;
+		let context: any = null;
+		switch (id) {
+			case '2d':
+				context = this._surface2D(surface, '2d', options, shown);
+				break;
+			case 'bitmaprenderer': {
+				const backing = this._surface2D(surface, 'bitmaprenderer', options, shown);
+				if (backing) {
+					context = new ImageBitmapRenderingContext(this as any, backing, handleContextOptions('bitmaprenderer', options));
+				}
+				return context;
+			}
+			case 'webgl':
+			case 'webgl2': {
+				const opts = handleContextOptions(id, options);
+				const threaded = shown || !!(options?.threaded ?? OffscreenCanvas.threadedWebGL);
+				const powerPreference = typeof opts.powerPreference === 'number' ? opts.powerPreference : parsePowerPreference(opts.powerPreference);
+				const native = surface.createWebGL(id === 'webgl2' ? 2 : 1, opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, powerPreference < 0 ? 0 : powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible, threaded);
+				if (!native) {
+					return null;
+				}
+				if (threaded) {
+					holdBackAnimationFramesWhileBehind();
+				}
+				context = id === 'webgl2' ? new (WebGL2RenderingContext as any)(null, null, native) : new (WebGLRenderingContext as any)(native);
+				context._type = id;
+				break;
+			}
+			case 'webgpu': {
+				const gpu = typeof navigator !== 'undefined' ? navigator?.gpu?.native : null;
+				const native = gpu ? surface.createWebGPU(gpu) : null;
+				if (!native) {
+					return null;
+				}
+				context = new (GPUCanvasContext as any)(null, {}, native);
+				break;
+			}
+		}
+		if (context) {
+			context._canvas = this;
+			Object.defineProperty(context, 'canvas', { value: this, configurable: true });
+		}
+		return context;
+	}
+
+	private _surface2D(surface: any, type: '2d' | 'bitmaprenderer', options: any, shown: boolean): CanvasRenderingContext2D | null {
+		const opts = handleContextOptions(type, options);
+		const threaded = shown || !!(options?.threaded ?? OffscreenCanvas.threaded2D);
+		const native = surface.create2D(opts.alpha, -16777216, threaded);
+		if (!native) {
+			return null;
+		}
+		if (threaded) {
+			holdBackAnimationFramesWhileBehind();
+		}
+		const context = new (CanvasRenderingContext2D as any)(null, opts, native);
+		context._type = '2d';
+		context.__threaded = threaded;
+		context._canvas = this;
+		return context;
+	}
+
+	private _hostContext(id: OffscreenRenderingContextId, options?: any): any {
+		const host = this._ensureHost();
+		if (!host) {
+			return null;
+		}
+		let context: any = null;
+		if (id === 'bitmaprenderer') {
+			const backing = host._getContext('2d', options);
+			if (backing) {
+				context = new ImageBitmapRenderingContext(this as any, backing, handleContextOptions('bitmaprenderer', options));
+			}
+		} else {
+			context = host._getContext(id, options);
+			if (context) {
+				Object.defineProperty(context, 'canvas', { value: this, configurable: true });
+			}
+		}
+		return context;
+	}
+
+	private _ensureHost(): Canvas | null {
 		if (!this._host) {
-			const host = Canvas.createCustomView();
+			const host = OffscreenCanvas._legacyHost?.() ?? null;
+			if (!host) {
+				return null;
+			}
 			host._resizeBitmap(this._width, this._height);
 			this._attachHost(host);
 		}
@@ -443,10 +597,15 @@ export class OffscreenCanvas {
 
 	/** Per spec a 2D context resets even when the size is unchanged. */
 	private _resize() {
-		if (!this._host) {
+		if (this._surface) {
+			const backing = this._contextId === 'bitmaprenderer' ? (this._context as any)?._context : this._contextId === '2d' ? this._context : null;
+			backing?.native?.__resize(this._width, this._height);
+			this._surface.resize(this._width, this._height);
+		} else if (this._host) {
+			this._host._resizeBitmap(this._width, this._height);
+		} else {
 			return;
 		}
-		this._host._resizeBitmap(this._width, this._height);
 		if (this._contextId === '2d') {
 			this._context.reset();
 		}
@@ -461,19 +620,15 @@ export class OffscreenCanvas {
 			return native.__toDataURL(type, quality);
 		}
 		// No context: the bitmap is transparent black.
-		const scratch = Canvas.createCustomView();
-		try {
-			scratch._resizeBitmap(this._width, this._height);
-			return (scratch._getContext('2d', { threaded: false }) as any)?.native?.__toDataURL(type, quality) ?? 'data:,';
-		} finally {
-			try {
-				scratch.disposeNativeView();
-			} catch (e) {}
-		}
+		const blank = global.CanvasModule.CanvasRenderingContext2D.withCpu(this._width || 1, this._height || 1, 1, true, 0, 160, 0);
+		return blank?.__toDataURL(type, quality) ?? 'data:,';
 	}
 }
 
-CanvasBase._offscreenFromPlaceholder = (canvas) => OffscreenCanvas._fromPlaceholder(canvas as Canvas);
+function surfaces(): any {
+	Helpers.initialize();
+	return global.CanvasModule?.OffscreenSurface ?? null;
+}
 
 /** Only a 2D context whose canvas is an OffscreenCanvas matches; there is no separate class. */
 export class OffscreenCanvasRenderingContext2D {

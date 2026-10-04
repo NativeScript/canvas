@@ -193,6 +193,9 @@ class NSCCanvas : FrameLayout {
 
 	internal fun surfaceDestroyed() {
 		listener?.surfaceDestroyed()
+		if (offscreenSurface != 0L) {
+			nativeOffscreenSurfaceWindowDestroyed(offscreenSurface)
+		}
 		// CPU contexts draw into their own view.
 		if (engine != Engine.CPU) {
 			detachSurface(nativeContext, engine, is2D)
@@ -248,6 +251,16 @@ class NSCCanvas : FrameLayout {
 	fun releaseNativeContext() {
 		val ctx = nativeContext
 		val texture = textureView.surfaceTexture
+		val offscreen = offscreenSurface
+		if (offscreen != 0L) {
+			offscreenSurface = 0
+			mainHandler.post {
+				nativeOffscreenSurfaceDetachView(offscreen)
+				nativeOffscreenSurfaceRelease(offscreen)
+				texture?.release()
+			}
+			return
+		}
 		if (ctx == 0L) {
 			texture?.release()
 			return
@@ -284,6 +297,43 @@ class NSCCanvas : FrameLayout {
 	@Throws(Throwable::class)
 	protected fun finalize() {
 		releaseNativeContext()
+	}
+
+	private var offscreenSurface: Long = 0
+
+	/** A string: a tagged pointer does not fit a JS number. */
+	fun transferToOffscreenSurface(): String {
+		if (nativeContext != 0L || offscreenSurface != 0L) {
+			return "0"
+		}
+		val metrics = resources.displayMetrics
+		val ptr = nativeOffscreenSurfaceCreate(surfaceWidth, surfaceHeight, metrics.density, metrics.densityDpi.toFloat(), direction, 0)
+		if (ptr == 0L) {
+			return "0"
+		}
+		offscreenSurface = ptr
+		nativeOffscreenSurfaceSetSink(ptr, OffscreenSink(this))
+		surface?.let { nativeOffscreenSurfaceSetWindow(ptr, it) }
+		return nativeOffscreenSurfaceReference(ptr).toString()
+	}
+
+	class OffscreenSink internal constructor(canvas: NSCCanvas) {
+		private val canvas = java.lang.ref.WeakReference(canvas)
+
+		fun onEvent(event: Int, a: Int, b: Int) {
+			val run = Runnable {
+				val view = canvas.get() ?: return@Runnable
+				when (event) {
+					1 -> view.setSurfaceSize(a, b)
+					2 -> view.textureView.isOpaque = b == 0
+				}
+			}
+			if (Looper.myLooper() == Looper.getMainLooper()) {
+				run.run()
+			} else {
+				mainHandler.post(run)
+			}
+		}
 	}
 
 	fun initWebGPUContext(instance: Long) {
@@ -906,6 +956,12 @@ class NSCCanvas : FrameLayout {
 
 	internal fun resize() {
 		scaleSurface()
+		if (offscreenSurface != 0L) {
+			isSurfaceDestroyed = false
+			surface?.let { nativeOffscreenSurfaceSetWindow(offscreenSurface, it) }
+			listener?.surfaceResize(surfaceWidth, surfaceHeight)
+			return
+		}
 		if (nativeContext != 0L) {
 			isSurfaceDestroyed = false
 			when (engine) {
@@ -1029,6 +1085,9 @@ class NSCCanvas : FrameLayout {
 	}
 
 	fun toDataURL(type: String, quality: Float): String {
+		if (offscreenSurface != 0L) {
+			nativeOffscreenSurfaceToDataURL(offscreenSurface, type, (quality * 100).toInt())?.let { return it }
+		}
 		var bitmap: Bitmap? = null
 		var format = Bitmap.CompressFormat.PNG
 		var retType = "image/png"
@@ -1258,6 +1317,30 @@ class NSCCanvas : FrameLayout {
 		@JvmStatic
 		@FastNative
 		external fun nativeDetach2DSurface(context: Long)
+
+		@JvmStatic
+		external fun nativeOffscreenSurfaceCreate(width: Int, height: Int, density: Float, ppi: Float, direction: Int, colorSpace: Int): Long
+
+		@JvmStatic
+		external fun nativeOffscreenSurfaceSetWindow(surface: Long, window: Surface)
+
+		@JvmStatic
+		external fun nativeOffscreenSurfaceWindowDestroyed(surface: Long)
+
+		@JvmStatic
+		external fun nativeOffscreenSurfaceDetachView(surface: Long)
+
+		@JvmStatic
+		external fun nativeOffscreenSurfaceSetSink(surface: Long, sink: Any)
+
+		@JvmStatic
+		external fun nativeOffscreenSurfaceReference(surface: Long): Long
+
+		@JvmStatic
+		external fun nativeOffscreenSurfaceRelease(surface: Long)
+
+		@JvmStatic
+		external fun nativeOffscreenSurfaceToDataURL(surface: Long, format: String, quality: Int): String?
 
 		// Not @FastNative: a threaded context waits for the WebGL thread to build it.
 		@JvmStatic

@@ -1,11 +1,10 @@
-import { Canvas } from '../Canvas';
 import { ImageAsset, fromSvgSource } from '../ImageAsset';
 import { GPUTextureUsage, native_ } from './Constants';
 import { GPUBuffer } from './GPUBuffer';
 import { GPUCommandBuffer } from './GPUCommandBuffer';
 import { GPUImageCopyExternalImage, GPUImageCopyTexture, GPUImageCopyTextureTagged, GPUImageDataLayout } from './Interfaces';
 import { GPUExtent3D } from './Types';
-import { isOffscreenCanvas } from '../Canvas/utils';
+import { isCanvasView, isOffscreenCanvas } from '../Canvas/utils';
 export class GPUQueue {
 	[native_]: any;
 
@@ -97,11 +96,11 @@ export class GPUQueue {
 			} else if (source.source?._type === '2d' || source.source?._type?.indexOf('webgl') > -1 || source.source?._type === 'webgpu') {
 				_keepAlive = source.source;
 				src.source = (source.source as any).native;
-			} else if ((source.source instanceof Canvas || isOffscreenCanvas(source.source))) {
+			} else if ((isCanvasView(source.source) || isOffscreenCanvas(source.source))) {
 				_keepAlive = source.source;
 				src.source = source.source.native;
 			} else if (typeof source.source.tagName === 'string' && source.source.tagName === 'CANVAS') {
-				if (source.source._canvas instanceof Canvas) {
+				if (isCanvasView(source.source._canvas)) {
 					_keepAlive = source.source._canvas;
 					src.source = source.source._canvas.native;
 				}

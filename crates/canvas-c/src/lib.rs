@@ -36,6 +36,7 @@ mod text_encoder;
 pub use text_encoder::*;
 mod webgl;
 pub use webgl::*;
+pub mod offscreen;
 pub mod impl_test;
 /* Raf */
 #[cfg(any(target_os = "android", target_os = "ios", target_os = "visionos", target_os = "tvos"))]

@@ -6,7 +6,7 @@
  *   adb logcat -d | grep 'SPEC|'
  *
  * `--es suite <prefix>` narrows the run: a group (`2d`, `webgl`, `webgpu`,
- * `imagebitmap`, `bitmaprenderer`, `lifecycle`, `offscreen`, `audio` and `media` on Windows) or a single suite (`2d.path2d`).
+ * `imagebitmap`, `bitmaprenderer`, `lifecycle`, `offscreen` (with `offscreen.worker`), `audio` and `media` on Windows) or a single suite (`2d.path2d`).
  * `contextlost` (Windows) runs on its own: it removes the GPU device.
  */
 
@@ -22,6 +22,7 @@ import { registerAudioSpec } from './audio';
 import { registerMediaSpec } from './media';
 import { registerLifecycleSpec } from './lifecycle';
 import { registerOffscreenCanvasSpec } from './offscreen';
+import { registerOffscreenWorkerSpec } from './offscreen-worker';
 
 declare const __WINDOWS__: boolean;
 
@@ -40,6 +41,7 @@ export async function runSpecTests(group: SpecGroup = 'all') {
 	registerScalingSpec();
 	registerLifecycleSpec();
 	registerOffscreenCanvasSpec();
+	registerOffscreenWorkerSpec();
 	if (typeof __WINDOWS__ !== 'undefined' && __WINDOWS__) {
 		registerAudioSpec();
 		registerMediaSpec();

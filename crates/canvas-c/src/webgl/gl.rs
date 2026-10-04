@@ -274,6 +274,7 @@ pub struct WebGLState {
     detaching: AtomicBool,
     /// A present found the context lost (threaded only: an unthreaded one is asked directly).
     lost: AtomicBool,
+    behind: crate::webgl::thread::Behind,
     /// The XAML surface a threaded context presents into, as the UI thread holds it: that thread
     /// ends the last draw once the context moves on from it.
     #[cfg(target_os = "windows")]
@@ -362,7 +363,7 @@ impl WebGLState {
         if self.in_flight.load(Ordering::Acquire) >= MAX_QUEUED_FRAMES {
             crate::webgl::thread::sync(|| ());
         }
-        crate::webgl::thread::frame_queued(self.in_flight.fetch_add(1, Ordering::AcqRel));
+        crate::webgl::thread::frame_queued(self.behind, self.in_flight.fetch_add(1, Ordering::AcqRel));
         let state = StatePtr(self);
         crate::webgl::thread::post(move || {
             let state = state;
@@ -370,7 +371,7 @@ impl WebGLState {
             if !this.detaching.load(Ordering::Acquire) {
                 this.present_here(state);
             }
-            crate::webgl::thread::frame_presented(this.in_flight.fetch_sub(1, Ordering::AcqRel));
+            crate::webgl::thread::frame_presented(this.behind, this.in_flight.fetch_sub(1, Ordering::AcqRel));
         });
         true
     }
@@ -422,9 +423,11 @@ impl WebGLState {
         if !crate::webgl::thread::available() {
             return create().map_or(std::ptr::null_mut(), |state| Box::into_raw(Box::new(state)));
         }
+        let behind = crate::webgl::thread::behind_counter();
         crate::webgl::thread::sync(|| {
             create().map_or(std::ptr::null_mut(), |mut state| {
                 state.threaded = true;
+                state.behind = behind;
                 Box::into_raw(Box::new(state))
             })
         })
@@ -470,6 +473,7 @@ impl WebGLState {
             in_flight: AtomicU32::new(0),
             detaching: AtomicBool::new(false),
             lost: AtomicBool::new(false),
+            behind: crate::webgl::thread::behind_counter(),
             #[cfg(target_os = "windows")]
             xaml: ShownXaml::default(),
         }
@@ -2062,7 +2066,7 @@ pub extern "C" fn canvas_native_webgl_create_threaded(
 }
 
 /// `canvas_native_webgl_create_no_window`, for a context that lives on the WebGL thread.
-#[cfg(target_os = "android")]
+#[no_mangle]
 pub extern "C" fn canvas_native_webgl_create_no_window_threaded(
     width: i32,
     height: i32,

@@ -156,6 +156,7 @@ import _SwiftConcurrencyShims
   }
   @objc @_Concurrency.MainActor @preconcurrency public func toDataURL(_ format: Swift.String, _ quality: Swift.Float) -> Swift.String
   @objc @_Concurrency.MainActor @preconcurrency public func initContext(_ type: Swift.String, _ alpha: Swift.Bool = true, _ antialias: Swift.Bool = true, _ depth: Swift.Bool = true, _ failIfMajorPerformanceCaveat: Swift.Bool = false, _ powerPreference: Swift.Int32 = 0, _ premultipliedAlpha: Swift.Bool = true, _ preserveDrawingBuffer: Swift.Bool = false, _ stencil: Swift.Bool = false, _ desynchronized: Swift.Bool = false, _ xrCompatible: Swift.Bool = false, _ willReadFrequently: Swift.Bool = false, _ colorSpace: Swift.Int32 = 0)
+  @objc @_Concurrency.MainActor @preconcurrency public func transferToOffscreenSurface() -> Swift.Int64
   @objc @_Concurrency.MainActor @preconcurrency public func initWebGPUContext(_ instance: Swift.Int64)
   @objc @_Concurrency.MainActor @preconcurrency public func create2DContext(_ alpha: Swift.Bool, _ antialias: Swift.Bool, _ depth: Swift.Bool, _ failIfMajorPerformanceCaveat: Swift.Bool, _ powerPreference: Swift.Int32, _ premultipliedAlpha: Swift.Bool, _ preserveDrawingBuffer: Swift.Bool, _ stencil: Swift.Bool, _ desynchronized: Swift.Bool, _ xrCompatible: Swift.Bool, _ fontColor: Swift.Int32, _ willReadFrequently: Swift.Bool, _ colorSpace: Swift.Int32) -> Swift.Int64
   @objc @_Concurrency.MainActor @preconcurrency public func snapshot(_ flip: Swift.Bool) -> UIKit.UIImage?

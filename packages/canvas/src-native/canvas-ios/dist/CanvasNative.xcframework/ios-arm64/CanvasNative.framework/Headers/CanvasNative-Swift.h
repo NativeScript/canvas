@@ -477,6 +477,7 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) NSMutableDic
 @property (nonatomic, readonly) float height;
 - (NSString * _Nonnull)toDataURL:(NSString * _Nonnull)format :(float)quality SWIFT_WARN_UNUSED_RESULT;
 - (void)initContext:(NSString * _Nonnull)type :(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)failIfMajorPerformanceCaveat :(int32_t)powerPreference :(BOOL)premultipliedAlpha :(BOOL)preserveDrawingBuffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xrCompatible :(BOOL)willReadFrequently :(int32_t)colorSpace SWIFT_METHOD_FAMILY(none);
+- (int64_t)transferToOffscreenSurface SWIFT_WARN_UNUSED_RESULT;
 - (void)initWebGPUContext:(int64_t)instance SWIFT_METHOD_FAMILY(none);
 - (int64_t)create2DContext:(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)failIfMajorPerformanceCaveat :(int32_t)powerPreference :(BOOL)premultipliedAlpha :(BOOL)preserveDrawingBuffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xrCompatible :(int32_t)fontColor :(BOOL)willReadFrequently :(int32_t)colorSpace SWIFT_WARN_UNUSED_RESULT;
 - (UIImage * _Nullable)snapshot:(BOOL)flip SWIFT_WARN_UNUSED_RESULT;

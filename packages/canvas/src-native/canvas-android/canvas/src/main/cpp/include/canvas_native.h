@@ -357,16 +357,13 @@ typedef enum CanvasLoadOp {
   CanvasLoadOpLoad = 1,
 } CanvasLoadOp;
 
-/**
- * What the surface tells its view, on the UI thread.
- */
 typedef enum CanvasOffscreenEvent {
   /**
-   * The bitmap is now `a` x `b`: lay the view out to show it.
+   * `a` x `b`.
    */
   CanvasOffscreenEventResize = 1,
   /**
-   * A context was made: `a` is its `CanvasOffscreenEngine`, `b` is 1 if it has alpha.
+   * `a`: a `CanvasOffscreenEngine`, `b`: 1 with alpha.
    */
   CanvasOffscreenEventEngine = 2,
 } CanvasOffscreenEvent;
@@ -2092,9 +2089,8 @@ typedef struct FileHelperMime {
 } FileHelperMime;
 
 /**
- * The view's side of a surface. `call` may come from any thread; it must hop to the UI thread,
- * running at once when already there (so a main-thread OffscreenCanvas resizes its view
- * synchronously). `release` frees `data` once the surface is done with the view.
+ * `call` comes from any thread; it must hop to the UI thread, or run inline when already there.
+ * (Windows calls it on the UI thread.)
  */
 typedef struct CanvasOffscreenUiSink {
   void *data;
@@ -2102,9 +2098,6 @@ typedef struct CanvasOffscreenUiSink {
   void (*release)(void *data);
 } CanvasOffscreenUiSink;
 
-/**
- * `getContext('webgl' | 'webgl2')`'s attributes.
- */
 typedef struct WebGLAttributes {
   int32_t version;
   bool alpha;
@@ -3476,16 +3469,12 @@ char *canvas_native_webgpu_to_data_url_with_texture(const struct CanvasGPUCanvas
                                                     uint32_t quality);
 
 /**
- * A context with no surface (an OffscreenCanvas without a view): getCurrentTexture hands out an
- * offscreen texture, read back like a presented one.
+ * No surface: getCurrentTexture hands out an offscreen texture.
  */
 const struct CanvasGPUCanvasContext *canvas_native_webgpu_context_create_offscreen(const struct CanvasWebGPUInstance *instance,
                                                                                    uint32_t width,
                                                                                    uint32_t height);
 
-/**
- * Resizes a context's textures, without touching its surface (none, for one made offscreen).
- */
 void canvas_native_webgpu_context_resize_offscreen(const struct CanvasGPUCanvasContext *context,
                                                    uint32_t width,
                                                    uint32_t height);
@@ -6159,14 +6148,10 @@ void canvas_native_webgl2_tex_image2d_image_data(int32_t target,
 uint32_t canvas_native_canvases_behind(void);
 
 /**
- * Where the calling thread's count lives, for its JS to read as memory every frame instead of
- * calling in.
+ * Where that count lives, for the JS side to read as memory every frame instead of calling in.
  */
 const uint32_t *canvas_native_canvases_behind_address(void);
 
-/**
- * A surface with no view: `new OffscreenCanvas(width, height)`.
- */
 const struct CanvasOffscreenSurface *canvas_native_offscreen_surface_create(uint32_t width,
                                                                             uint32_t height,
                                                                             float density,
@@ -6176,9 +6161,7 @@ const struct CanvasOffscreenSurface *canvas_native_offscreen_surface_create(uint
 
 #if (defined(TARGET_OS_IOS) || defined(TARGET_OS_VISION))
 /**
- * A canvas view's surface, which its OffscreenCanvas draws into (`transferControlToOffscreen`).
- * UI thread. Retains `metal_layer`, `device`, `queue` (the view's Metal layer, null without one)
- * and `gl_layer` (its CAEAGLLayer, null without one).
+ * UI thread. Retains the layers, device and queue; any may be null.
  */
 const struct CanvasOffscreenSurface *canvas_native_offscreen_surface_create_ios(uint32_t width,
                                                                                 uint32_t height,
@@ -6195,8 +6178,7 @@ const struct CanvasOffscreenSurface *canvas_native_offscreen_surface_create_ios(
 
 #if defined(TARGET_OS_ANDROID)
 /**
- * A canvas view's surface on Android. Its window comes and goes with the view's
- * (`canvas_native_offscreen_surface_set_window`).
+ * UI thread. The window arrives with `canvas_native_offscreen_surface_set_window`.
  */
 const struct CanvasOffscreenSurface *canvas_native_offscreen_surface_create_android(uint32_t width,
                                                                                     uint32_t height,
@@ -6211,23 +6193,23 @@ void canvas_native_offscreen_surface_reference(const struct CanvasOffscreenSurfa
 void canvas_native_offscreen_surface_release(const struct CanvasOffscreenSurface *surface);
 
 /**
- * UI thread. Replaces the previous sink, releasing it.
+ * UI thread.
  */
 void canvas_native_offscreen_surface_set_ui_sink(const struct CanvasOffscreenSurface *surface,
                                                  struct CanvasOffscreenUiSink sink);
 
 /**
- * UI thread, synchronously: the view is going away (its OffscreenCanvas draws on, offscreen).
+ * UI thread, synchronously.
  */
 void canvas_native_offscreen_surface_detach_view(const struct CanvasOffscreenSurface *surface);
 
 /**
- * UI thread, after the view laid out a resize: a WebGL drawing buffer follows its layer.
+ * UI thread, after the view laid out a resize.
  */
 void canvas_native_offscreen_surface_view_resized(const struct CanvasOffscreenSurface *surface);
 
 /**
- * Owner thread: the OffscreenCanvas's width and height.
+ * Owner thread.
  */
 void canvas_native_offscreen_surface_resize(const struct CanvasOffscreenSurface *surface,
                                             uint32_t width,
@@ -6246,7 +6228,7 @@ uint32_t canvas_native_offscreen_surface_get_direction(const struct CanvasOffscr
 bool canvas_native_offscreen_surface_has_view(const struct CanvasOffscreenSurface *surface);
 
 /**
- * Owner thread. Null if the surface already has a context.
+ * Owner thread. Null if the surface has a context.
  */
 struct CanvasRenderingContext2D *canvas_native_offscreen_surface_create_2d(const struct CanvasOffscreenSurface *surface,
                                                                            bool alpha,
@@ -6254,44 +6236,40 @@ struct CanvasRenderingContext2D *canvas_native_offscreen_surface_create_2d(const
                                                                            bool threaded);
 
 /**
- * Owner thread. Null if the surface already has a context, or the context could not be made.
+ * Owner thread. Null if the surface has a context.
  */
 struct WebGLState *canvas_native_offscreen_surface_create_webgl(const struct CanvasOffscreenSurface *surface,
                                                                 const struct WebGLAttributes *attributes,
                                                                 bool threaded);
 
 /**
- * Owner thread. Null if the surface already has a context.
+ * Owner thread. Null if the surface has a context.
  */
 const struct CanvasGPUCanvasContext *canvas_native_offscreen_surface_create_webgpu(const struct CanvasOffscreenSurface *surface,
                                                                                    const struct CanvasWebGPUInstance *instance);
 
 /**
- * Any thread. Null without a context; free with `canvas_native_string_destroy`.
+ * Any thread. Null without a context.
  */
 char *canvas_native_offscreen_surface_to_data_url(const struct CanvasOffscreenSurface *surface,
                                                   const char *format,
                                                   uint32_t quality);
 
 /**
- * A handle another thread adopts the surface by, once: 0 if it already has a context. The
- * handle holds a reference until adopted or released.
+ * 0 if the surface has a context. The handle holds a reference until adopted or released.
  */
 uint32_t canvas_native_offscreen_surface_to_handle(const struct CanvasOffscreenSurface *surface);
 
 /**
- * Takes the surface a handle names, with its reference: null if it was adopted or released.
+ * Take-once: null after the first adopt or a release.
  */
 const struct CanvasOffscreenSurface *canvas_native_offscreen_surface_adopt(uint32_t handle);
 
-/**
- * Drops a handle nothing adopted. False if it was adopted or released already.
- */
 bool canvas_native_offscreen_surface_release_handle(uint32_t handle);
 
 #if defined(TARGET_OS_ANDROID)
 /**
- * UI thread: the view's window (`ANativeWindow*`), new or resized. Takes its own reference.
+ * UI thread. Takes its own reference to the window.
  */
 void canvas_native_offscreen_surface_set_window(const struct CanvasOffscreenSurface *surface,
                                                 void *window);
@@ -6299,9 +6277,42 @@ void canvas_native_offscreen_surface_set_window(const struct CanvasOffscreenSurf
 
 #if defined(TARGET_OS_ANDROID)
 /**
- * UI thread, synchronously: the view's window is going away.
+ * UI thread, synchronously.
  */
 void canvas_native_offscreen_surface_window_destroyed(const struct CanvasOffscreenSurface *surface);
 #endif
+
+/**
+ * UI thread.
+ */
+const struct CanvasOffscreenSurface *canvas_native_offscreen_surface_create_windows(uint32_t width,
+                                                                                    uint32_t height,
+                                                                                    float density,
+                                                                                    float ppi,
+                                                                                    uint32_t direction,
+                                                                                    enum CanvasColorSpace color_space,
+                                                                                    void *panel);
+
+/**
+ * UI thread.
+ */
+void canvas_native_offscreen_surface_set_layout(const struct CanvasOffscreenSurface *surface,
+                                                int32_t fit,
+                                                float scale_x,
+                                                float scale_y,
+                                                float view_width,
+                                                float view_height);
+
+/**
+ * UI thread. `false` for WebGPU: wgpu owns its swapchain.
+ */
+bool canvas_native_offscreen_surface_attach_xaml_surface(const struct CanvasOffscreenSurface *surface,
+                                                         void *source);
+
+/**
+ * UI thread. `out`: `[scaleX, scaleY, offsetX, offsetY]`.
+ */
+void canvas_native_offscreen_surface_get_transform(const struct CanvasOffscreenSurface *surface,
+                                                   float *out);
 
 #endif  /* CANVAS_C_H */

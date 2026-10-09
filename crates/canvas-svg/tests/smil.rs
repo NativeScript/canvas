@@ -338,3 +338,140 @@ fn rocket_svg_animates_without_falling_over() {
         .count();
     assert!(distinct > 0, "every frame was identical, nothing animated");
 }
+
+/// The GitHub corner's octocat arm: a rotate with a centre point (`angle cx cy`) in
+/// `values`, inside a viewBox scaled down to the view.
+const OCTO_BODY: &str = "M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z";
+const OCTO_ARM: &str = "M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2";
+
+fn github_corner(animation: &str) -> String {
+    format!(
+        r##"<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 250 250">
+  <path fill="#64ceaa" d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"/>
+  <path fill="#192d38" d="{OCTO_ARM}">{animation}</path>
+  <path fill="#192d38" d="{OCTO_BODY}"/>
+</svg>"##
+    )
+}
+
+fn render_80(doc: &mut SvgDocument, time: f64) -> Vec<u8> {
+    doc.set_container_size(80.0, 80.0);
+    doc.set_current_time(time);
+    let info = skia_safe::ImageInfo::new_n32_premul(skia_safe::ISize::new(80, 80), None);
+    let mut surface = skia_safe::surfaces::raster(&info, None, None).expect("raster surface");
+    surface.canvas().clear(skia_safe::Color::TRANSPARENT);
+    doc.render_frame(surface.canvas(), 80, 80, 1.0);
+    let mut pixels = vec![0u8; 80 * 80 * 4];
+    assert!(surface.image_snapshot().read_pixels(
+        &info,
+        &mut pixels,
+        80 * 4,
+        skia_safe::IPoint::new(0, 0),
+        skia_safe::image::CachingHint::Disallow,
+    ));
+    pixels
+}
+
+#[test]
+fn a_rotate_with_a_centre_leaves_the_rest_of_the_drawing_alone() {
+    let wave = r#"<animateTransform attributeName="transform" type="rotate" dur="0.56s" begin="0.4s" fill="freeze"
+      values="0 130 106; -25 130 106; 10 130 106; -25 130 106; 10 130 106; 0 130 106"
+      keyTimes="0; 0.2; 0.4; 0.6; 0.8; 1"/>"#;
+    let still = render_80(&mut document(&github_corner("")), 0.0);
+    let mut animated = document(&github_corner(wave));
+
+    // Before `begin` nothing is written, and the frozen end is rotate(0 130 106): both
+    // must draw exactly what the document without the animation draws.
+    assert!(
+        render_80(&mut animated, 0.0) == still,
+        "frame before begin differs from the static drawing"
+    );
+    assert!(
+        render_80(&mut animated, 1.2) == still,
+        "frozen identity rotation differs from the static drawing"
+    );
+    // And in between, the arm does move: 0.4s + 0.2 * 0.56s is the -25° keyframe.
+    assert!(
+        render_80(&mut animated, 0.512) != still,
+        "the arm should be rotated mid-wave"
+    );
+}
+
+/// Asserts `id`'s transform is `rotate(angle cx cy)`, which Skia reads back as a matrix.
+fn assert_rotation(doc: &mut SvgDocument, id: &str, angle: f32, cx: f32, cy: f32) {
+    let transform = attribute(doc, id, "transform").expect("transform");
+    let numbers: Vec<f32> = transform
+        .trim_start_matches("matrix(")
+        .trim_end_matches(')')
+        .split(',')
+        .map(|n| n.trim().parse().expect("matrix component"))
+        .collect();
+    let (sin, cos) = angle.to_radians().sin_cos();
+    let expected = [
+        cos,
+        sin,
+        -sin,
+        cos,
+        cx - cos * cx + sin * cy,
+        cy - sin * cx - cos * cy,
+    ];
+    for (index, expected) in expected.iter().enumerate() {
+        assert!(
+            (numbers[index] - expected).abs() < 1e-3,
+            "component {index} of {transform}: expected rotate({angle} {cx} {cy})"
+        );
+    }
+}
+
+fn rotating(animation: &str) -> SvgDocument {
+    document(&format!(
+        r#"<svg><rect id="arm" width="10" height="10">{animation}</rect></svg>"#
+    ))
+}
+
+#[test]
+fn a_to_rotation_about_a_centre_interpolates_from_zero_about_that_centre() {
+    let mut doc = rotating(
+        r#"<animateTransform attributeName="transform" type="rotate" to="90 50 50" dur="2s" fill="freeze"/>"#,
+    );
+    doc.set_current_time(0.5);
+    assert_rotation(&mut doc, "arm", 22.5, 50.0, 50.0);
+}
+
+#[test]
+fn a_by_rotation_about_a_centre_keeps_the_centre() {
+    let mut doc = rotating(
+        r#"<animateTransform attributeName="transform" type="rotate" by="90 50 50" dur="2s" fill="freeze"/>"#,
+    );
+    doc.set_current_time(0.5);
+    assert_rotation(&mut doc, "arm", 22.5, 50.0, 50.0);
+}
+
+#[test]
+fn from_plus_by_adds_the_angles_not_the_centres() {
+    let mut doc = rotating(
+        r#"<animateTransform attributeName="transform" type="rotate" from="0 50 50" by="90 50 50" dur="2s" fill="freeze"/>"#,
+    );
+    doc.set_current_time(1.0);
+    assert_rotation(&mut doc, "arm", 45.0, 50.0, 50.0);
+}
+
+#[test]
+fn accumulating_a_rotation_keeps_its_centre() {
+    let mut doc = rotating(
+        r#"<animateTransform attributeName="transform" type="rotate" from="0 50 50" to="90 50 50"
+             dur="1s" repeatCount="2" accumulate="sum"/>"#,
+    );
+    // Half way through the second repeat: 45° on top of the first repeat's 90°.
+    doc.set_current_time(1.5);
+    assert_rotation(&mut doc, "arm", 135.0, 50.0, 50.0);
+}
+
+#[test]
+fn a_bare_angle_in_rotate_values_takes_the_lists_centre() {
+    let mut doc = rotating(
+        r#"<animateTransform attributeName="transform" type="rotate" values="0; 90 50 50" dur="2s" fill="freeze"/>"#,
+    );
+    doc.set_current_time(1.0);
+    assert_rotation(&mut doc, "arm", 45.0, 50.0, 50.0);
+}

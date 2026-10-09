@@ -435,7 +435,10 @@ fn build_frames(
             .map(Value::parse)
             .collect();
         if !parsed.is_empty() {
-            return Some(Frames::Values(parsed));
+            return Some(Frames::Values(match kind {
+                Kind::Transform(transform) => transform.align(parsed),
+                _ => parsed,
+            }));
         }
     }
 
@@ -446,7 +449,11 @@ fn build_frames(
         ])),
         (Some(from), None, Some(by)) => {
             let start = Value::parse(from);
-            let end = start.add(&Value::parse(by));
+            let by = Value::parse(by);
+            let end = match kind {
+                Kind::Transform(transform) => transform.add(&start, &by),
+                _ => start.add(&by),
+            };
             Some(Frames::Values(vec![start, end]))
         }
         // Without a `from`, the animation starts from whatever the element already is, which

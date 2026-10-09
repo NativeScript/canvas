@@ -64,15 +64,62 @@ impl TransformKind {
         }
     }
 
-    /// Identity: the start value for a transform animation with only `to` or `by`.
-    fn neutral(self) -> Value {
+    /// Identity: the start value for a transform animation with only `to` or `by`. It takes the
+    /// shape of `like`, the value animated towards, so the two interpolate instead of stepping
+    /// half way: a rotation keeps `like`'s centre, translate and scale match its arity.
+    fn neutral(self, like: &Value) -> Value {
+        let numbers = like.numbers().unwrap_or(&[]);
+        let values = match self {
+            TransformKind::Rotate if numbers.len() == 3 => vec![0.0, numbers[1], numbers[2]],
+            TransformKind::Scale => vec![1.0; numbers.len().clamp(1, 2)],
+            TransformKind::Translate => vec![0.0; numbers.len().clamp(1, 2)],
+            _ => vec![0.0],
+        };
         Value::Numbers {
-            values: match self {
-                TransformKind::Scale => vec![1.0],
-                _ => vec![0.0],
-            },
+            values,
             unit: String::new(),
         }
+    }
+
+    /// `a + b`, for `by` and `accumulate="sum"`. A rotation's centre is a point, not an amount:
+    /// the angles add and the centre stays put (`a`'s, else `b`'s).
+    pub(crate) fn add(self, a: &Value, b: &Value) -> Value {
+        if self == TransformKind::Rotate {
+            if let (Some(x), Some(y)) = (a.numbers(), b.numbers()) {
+                if !x.is_empty() && !y.is_empty() && (x.len() == 3 || y.len() == 3) {
+                    let centre = if x.len() == 3 { &x[1..] } else { &y[1..] };
+                    return Value::Numbers {
+                        values: vec![x[0] + y[0], centre[0], centre[1]],
+                        unit: String::new(),
+                    };
+                }
+            }
+        }
+        a.add(b)
+    }
+
+    /// Gives a bare angle in a rotate `values` list the list's centre, so `0; 90 50 50`
+    /// interpolates about (50, 50) instead of stepping between two shapes.
+    pub(crate) fn align(self, mut frames: Vec<Value>) -> Vec<Value> {
+        if self != TransformKind::Rotate {
+            return frames;
+        }
+        let centre = frames
+            .iter()
+            .filter_map(Value::numbers)
+            .find(|n| n.len() == 3)
+            .map(|n| (n[1], n[2]));
+        if let Some((cx, cy)) = centre {
+            for frame in &mut frames {
+                if let Some(&[angle]) = frame.numbers() {
+                    *frame = Value::Numbers {
+                        values: vec![angle, cx, cy],
+                        unit: String::new(),
+                    };
+                }
+            }
+        }
+        frames
     }
 }
 
@@ -401,19 +448,32 @@ impl Animation {
             // A transform's base is the identity; `compose_transform` keeps the element's own
             // `transform` as a prefix instead.
             kind => {
-                let base = match kind {
-                    Kind::Transform(transform) => Some(transform.neutral()),
-                    _ => base.cloned(),
+                let transform = match kind {
+                    Kind::Transform(transform) => Some(*transform),
+                    _ => None,
                 };
                 match &self.frames {
                     Frames::Values(values) => self.evaluate(values, &sample),
                     Frames::ToOnly(to) => {
-                        let start = base.unwrap_or_else(|| to.clone());
+                        let start = match transform {
+                            Some(transform) => transform.neutral(to),
+                            None => base.cloned().unwrap_or_else(|| to.clone()),
+                        };
                         self.evaluate(&[start, to.clone()], &sample)
                     }
                     Frames::ByOnly(by) => {
-                        let start = base?;
-                        let end = start.add(by);
+                        let (start, end) = match transform {
+                            Some(transform) => {
+                                let start = transform.neutral(by);
+                                let end = transform.add(&start, by);
+                                (start, end)
+                            }
+                            None => {
+                                let start = base?.clone();
+                                let end = start.add(by);
+                                (start, end)
+                            }
+                        };
                         self.evaluate(&[start, end], &sample)
                     }
                 }
@@ -431,7 +491,11 @@ impl Animation {
         let mut value = self.timing.interpolate(frames, sample.fraction);
         if self.timing.accumulate && sample.iteration > 0.0 {
             if let Some(last) = frames.last() {
-                value = value.add(&last.scale(sample.iteration));
+                let repeats = last.scale(sample.iteration);
+                value = match &self.kind {
+                    Kind::Transform(transform) => transform.add(&value, &repeats),
+                    _ => value.add(&repeats),
+                };
             }
         }
         value

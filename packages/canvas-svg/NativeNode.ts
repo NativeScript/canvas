@@ -203,9 +203,20 @@ export class SvgDocumentWrapper {
 	private __containerWidth = 0;
 	private __containerHeight = 0;
 
-	constructor(src?: string) {
+	/** Parses `src`, or returns null when it is not a well-formed SVG document. */
+	static parse(src: string): SvgDocumentWrapper | null {
 		Helpers.initialize();
-		this.__native = typeof src === 'string' ? SVGModule.createSVGDocument(src) : SVGModule.createSVGDocument();
+		const native = SVGModule.createSVGDocument(src);
+		return native ? new SvgDocumentWrapper(undefined, native) : null;
+	}
+
+	constructor(src?: string, native?: any) {
+		Helpers.initialize();
+		this.__native = native ?? (typeof src === 'string' ? SVGModule.createSVGDocument(src) : SVGModule.createSVGDocument());
+		if (!this.__native) {
+			// The native parse returns null for markup it can't read.
+			throw new Error('Svg: src is not a well-formed SVG document');
+		}
 		this.rootElement = new SvgNodeWrapper(this.__native.root(), this);
 	}
 

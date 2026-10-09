@@ -15,11 +15,28 @@
 				"assets": [
 					"packages/canvas-svg/*.md",
 					"packages/canvas-svg/index.d.ts",
+					"packages/canvas-svg/nativescript.config.ts",
 					"LICENSE",
 					{
 						"glob": "**/*",
 						"input": "packages/canvas-svg/platforms/",
 						"output": "./platforms/"
+					},
+					{
+						"glob": "Package.swift",
+						"input": "nativescript-v8/",
+						"output": "./platforms/ios/NativeScriptV8/"
+					},
+					{
+						"glob": "**/*",
+						"input": "nativescript-v8/Headers/",
+						"output": "./platforms/ios/NativeScriptV8/Headers/",
+						"ignore": ["**/.gitignore"]
+					},
+					{
+						"glob": "**/*",
+						"input": "nativescript-v8/Sources/",
+						"output": "./platforms/ios/NativeScriptV8/Sources/"
 					}
 				],
 				"dependsOn": [

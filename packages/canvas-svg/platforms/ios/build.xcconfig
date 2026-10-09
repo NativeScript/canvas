@@ -4,3 +4,20 @@ OTHER_LDFLAGS[sdk=xrsimulator*] = $(inherited) -framework Foundation -framework 
 OTHER_LDFLAGS[sdk=appletvos*] = $(inherited) -framework Foundation -framework CanvasSVG
 OTHER_LDFLAGS[sdk=appletvsimulator*] = $(inherited) -framework Foundation -framework CanvasSVG
 OTHER_LDFLAGS[sdk=macosx*] = $(inherited) -framework Foundation -framework CanvasSVG
+
+// V8 14.9's headers use C++20 concepts/requires-clauses (e.g. v8-internal.h).
+CLANG_CXX_LANGUAGE_STANDARD = c++20
+
+// The NativeScriptV8 SwiftPM shim (nativescript.config.ts) puts its Headers dir on the
+// search path, which resolves "include/v8.h". The V8 headers then include each other by
+// bare name (cppgc/common.h -> "v8config.h"), which needs Headers/include itself on the
+// path too - the same reason @nativescript/canvas's build.xcconfig adds it. Passed as -I
+// flags rather than HEADER_SEARCH_PATHS, which the CLI's xcconfig merge would let drop
+// the CocoaPods paths, and named apart from canvas's so both plugins' flags are kept.
+// Two roots, as in canvas: an installed plugin, and this monorepo's demo apps (whose
+// node_modules link packages/canvas-svg, where the shim isn't materialised).
+CANVAS_SVG_V8_HEADERS_NPM = $(SRCROOT)/../../node_modules/@nativescript/canvas-svg/platforms/ios/NativeScriptV8/Headers/include
+CANVAS_SVG_V8_HEADERS_MONOREPO = $(SRCROOT)/../../../../nativescript-v8/Headers/include
+CANVAS_SVG_V8_HEADER_FLAGS = -I"$(CANVAS_SVG_V8_HEADERS_NPM)" -I"$(CANVAS_SVG_V8_HEADERS_MONOREPO)"
+OTHER_CFLAGS = $(inherited) $(CANVAS_SVG_V8_HEADER_FLAGS)
+OTHER_CPLUSPLUSFLAGS = $(inherited) $(CANVAS_SVG_V8_HEADER_FLAGS)

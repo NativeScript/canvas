@@ -1,1 +1,17 @@
 OTHER_LDFLAGS = $(inherited) -framework "AVFoundation" -framework "Accelerate" -framework "MediaToolbox" -framework "AudioToolbox" -framework "CoreMedia" -framework "AudioContextNative"
+
+// V8 14.9's headers use C++20 concepts/requires-clauses (e.g. v8-internal.h).
+CLANG_CXX_LANGUAGE_STANDARD = c++20
+
+// AudioModule.mm includes the runtime's Runtime.h, whose headers include V8 by bare name
+// ("v8.h", "v8config.h"), so the NativeScriptV8 shim's Headers/include must be on the path
+// itself - the same reason @nativescript/canvas's build.xcconfig adds it, which used to
+// mask this when both plugins were installed. Passed as -I flags rather than
+// HEADER_SEARCH_PATHS, which the CLI's xcconfig merge would let drop the CocoaPods paths,
+// and named apart from canvas's so both plugins' flags are kept. Two roots, as in canvas:
+// an installed plugin, and this monorepo's demo apps (where the shim isn't materialised).
+AUDIO_CONTEXT_V8_HEADERS_NPM = $(SRCROOT)/../../node_modules/@nativescript/audio-context/platforms/ios/NativeScriptV8/Headers/include
+AUDIO_CONTEXT_V8_HEADERS_MONOREPO = $(SRCROOT)/../../../../nativescript-v8/Headers/include
+AUDIO_CONTEXT_V8_HEADER_FLAGS = -I"$(AUDIO_CONTEXT_V8_HEADERS_NPM)" -I"$(AUDIO_CONTEXT_V8_HEADERS_MONOREPO)"
+OTHER_CFLAGS = $(inherited) $(AUDIO_CONTEXT_V8_HEADER_FLAGS)
+OTHER_CPLUSPLUSFLAGS = $(inherited) $(AUDIO_CONTEXT_V8_HEADER_FLAGS)

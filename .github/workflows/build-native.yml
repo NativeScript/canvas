@@ -204,7 +204,7 @@ jobs:
           cache: gradle
       - name: Setup Android SDK
         if: steps.audio-aar.outputs.cache-hit != 'true'
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
       - name: Build audiocontext AAR
         if: steps.audio-aar.outputs.cache-hit != 'true'
         working-directory: packages/audio-context/src-native/android
@@ -235,6 +235,22 @@ jobs:
         if: steps.audio-xcframework.outputs.cache-hit != 'true'
         with:
           install-rust: 'false'
+      # libogg / libvorbis / libopus / libopusfile static libs per slice: gitignored, built from
+      # the xiph release tarballs.
+      - name: Restore cached opus deps
+        if: steps.audio-xcframework.outputs.cache-hit != 'true'
+        id: opus-deps
+        uses: actions/cache@v4
+        with:
+          path: packages/audio-context/src-native/ios/AudioContextNative/AudioContextNative/third_party/build
+          key: ${{ env.NATIVE_CACHE_VERSION }}-audio-context-opus-deps-${{ hashFiles('packages/audio-context/src-native/ios/AudioContextNative/AudioContextNative/scripts/fetch_opus_deps.sh', 'packages/audio-context/src-native/ios/AudioContextNative/AudioContextNative/scripts/build_opus_deps_ios.sh') }}
+      - name: Build opus deps
+        if: steps.audio-xcframework.outputs.cache-hit != 'true' && steps.opus-deps.outputs.cache-hit != 'true'
+        working-directory: packages/audio-context/src-native/ios/AudioContextNative/AudioContextNative
+        run: |
+          # opusfile's configure finds the ogg and opus it builds against through pkg-config
+          command -v pkg-config || brew install pkgconf
+          ./scripts/build_opus_deps_ios.sh
       # same as `npm run build.audiocontext.ios.framework.release`
       - name: Build AudioContextNative.xcframework
         if: steps.audio-xcframework.outputs.cache-hit != 'true'

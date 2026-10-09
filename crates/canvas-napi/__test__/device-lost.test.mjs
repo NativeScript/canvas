@@ -20,6 +20,20 @@ function pixel(ctx, x, y) {
 	return Array.from(ctx.getImageData(x, y, 1, 1).data);
 }
 
+// Skips the test where the device cannot be removed. Also on WARP (the CI runners): there, once a
+// device was removed, the process exits with 2170 (FACILITY_DXGI) after its tests pass.
+function removeDevice(t) {
+	if (CanvasModule.__d3dAdapterInfo()?.isWarp) {
+		t.skip('WARP: a removed device fails the process at exit');
+		return false;
+	}
+	if (!CanvasModule.__simulateD3DDeviceRemoval()) {
+		t.skip('ID3D12Device5::RemoveDevice unavailable');
+		return false;
+	}
+	return true;
+}
+
 test('a removed device loses every 2D context; restoreContext brings each back', { skip }, (t) => {
 	const drawing = hostContext(16, 16);
 	const idle = hostContext(8, 8);
@@ -34,10 +48,7 @@ test('a removed device loses every 2D context; restoreContext brings each back',
 	CanvasModule.__setContextLostListener(() => notified++);
 	t.after(() => CanvasModule.__setContextLostListener(null));
 
-	if (!CanvasModule.__simulateD3DDeviceRemoval()) {
-		t.skip('ID3D12Device5::RemoveDevice unavailable');
-		return;
-	}
+	if (!removeDevice(t)) return;
 	// The next flush finds it and tells the listener once.
 	drawing.ctx.fillRect(0, 0, 4, 4);
 	CanvasModule.__flushAll();
@@ -88,10 +99,7 @@ test('a lost canvas resized before its restore comes back at the new size', { sk
 	const { host, ctx } = hostContext(16, 16);
 	ctx.fillRect(0, 0, 16, 16);
 	CanvasModule.__flushAll();
-	if (!CanvasModule.__simulateD3DDeviceRemoval()) {
-		t.skip('ID3D12Device5::RemoveDevice unavailable');
-		return;
-	}
+	if (!removeDevice(t)) return;
 	ctx.fillRect(0, 0, 4, 4);
 	CanvasModule.__flushAll();
 	assert.equal(host.isContextLost(), true);
@@ -114,10 +122,7 @@ test('an on-screen 2D context (headless panel) is restored into its panel', { sk
 	host.present();
 	assert.deepEqual(pixel(ctx, 16, 16), [255, 0, 0, 255]);
 
-	if (!CanvasModule.__simulateD3DDeviceRemoval()) {
-		t.skip('ID3D12Device5::RemoveDevice unavailable');
-		return;
-	}
+	if (!removeDevice(t)) return;
 	ctx.fillRect(0, 0, 4, 4);
 	CanvasModule.__flushAll();
 	assert.equal(host.isContextLost(), true);

@@ -6,13 +6,17 @@ description: >
 
 inputs:
   ndk-version:
-    description: NDK version to install via sdkmanager (must match ndkVersion in canvas build.gradle and the default in tools/scripts/build-android.sh)
+    description: NDK the Rust crates build with (must match NDK_VERSION in tools/scripts/build-android.sh and build-svg-android.sh)
+    required: false
+    default: '28.2.13676358'
+  gradle-ndk-version:
+    description: NDK the gradle CMake builds pin (ndkVersion in the canvas and canvassvg build.gradle), installed alongside
     required: false
     default: '29.0.14206865'
   api-level:
-    description: Android API level used for the NDK clang wrappers
+    description: Android API level used for the NDK clang wrappers (API_VERSION in the same scripts)
     required: false
-    default: '21'
+    default: '23'
   install-rust:
     description: Install Rust nightly + cargo cache (set 'false' for gradle-only projects)
     required: false
@@ -28,13 +32,13 @@ runs:
         cache: gradle
 
     - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
+      uses: android-actions/setup-android@v4
 
     - name: Setup NDK
       shell: bash
       run: |
         set -e
-        (yes || true) | sdkmanager "ndk;${{ inputs.ndk-version }}" > /dev/null
+        (yes || true) | sdkmanager "ndk;${{ inputs.ndk-version }}" "ndk;${{ inputs.gradle-ndk-version }}" > /dev/null
         NDK="$ANDROID_HOME/ndk/${{ inputs.ndk-version }}"
         TOOLCHAIN="$NDK/toolchains/llvm/prebuilt/linux-x86_64"
         API=${{ inputs.api-level }}

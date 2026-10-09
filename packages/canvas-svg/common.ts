@@ -1,4 +1,5 @@
 import { booleanConverter, colorProperty, CssProperty, CSSType, File, Http, knownFolders, path, Property, Style, Utils, View } from '@nativescript/core';
+import type { EventData } from '@nativescript/core';
 import { ANIMATION_CHANGED, ANIMATION_RUNNING, SvgDocumentWrapper, SvgNodeWrapper } from './NativeNode';
 
 declare const requestAnimationFrame: ((cb: () => void) => void) | undefined;
@@ -210,13 +211,20 @@ export function readSrc(value: string, done: (source: string) => void, failed: (
 	File.fromPath(file).readText().then(done).catch(failed);
 }
 
+/** Data for `SVGBase.errorEvent`. */
+export interface SvgErrorEventData extends EventData {
+	error: unknown;
+}
+
 const sharedSources = new Map<string, SharedSource>();
 
 /** One document and clock for every view showing the same `src` (Blink's `SVGImage`). */
 class SharedSource {
 	document: SvgDocumentWrapper | null = null;
 	readonly holders = new Set<SVGBase>();
-	private waiting: Array<(document: SvgDocumentWrapper) => void> = [];
+	/** Why `src` could not be read or parsed; the source is then out of the cache. */
+	error: unknown = null;
+	private waiting: Array<[(document: SvgDocumentWrapper) => void, (error: unknown) => void]> = [];
 	private ticking = false;
 	private start = 0;
 
@@ -237,13 +245,15 @@ class SharedSource {
 			} else {
 				readSrc(
 					src,
-					(markup) => source.ready(new SvgDocumentWrapper(withStylesheet(markup, css))),
-					(error) => {
-						console.error('Svg: could not load src', error);
-						if (sharedSources.get(key) === source) {
-							sharedSources.delete(key);
+					(markup) => {
+						const document = SvgDocumentWrapper.parse(withStylesheet(markup, css));
+						if (document) {
+							source.ready(document);
+						} else {
+							source.fail(new Error('Svg: src is not a well-formed SVG document'));
 						}
 					},
+					(error) => source.fail(error),
 				);
 			}
 		}
@@ -260,11 +270,14 @@ class SharedSource {
 		}
 	}
 
-	whenReady(callback: (document: SvgDocumentWrapper) => void) {
+	/** Inline markup is read synchronously, so a source can already have failed when a view asks. */
+	whenReady(callback: (document: SvgDocumentWrapper) => void, failed: (error: unknown) => void) {
 		if (this.document) {
 			callback(this.document);
+		} else if (this.error) {
+			failed(this.error);
 		} else {
-			this.waiting.push(callback);
+			this.waiting.push([callback, failed]);
 		}
 	}
 
@@ -274,8 +287,21 @@ class SharedSource {
 		document.setFrameSharing(true);
 		const waiting = this.waiting;
 		this.waiting = [];
-		for (const callback of waiting) {
+		for (const [callback] of waiting) {
 			callback(document);
+		}
+	}
+
+	/** Never cache a failure: the next view with this `src` tries again. */
+	fail(error: unknown) {
+		this.error = error;
+		if (sharedSources.get(this.key) === this) {
+			sharedSources.delete(this.key);
+		}
+		const waiting = this.waiting;
+		this.waiting = [];
+		for (const [, failed] of waiting) {
+			failed(error);
 		}
 	}
 
@@ -348,6 +374,9 @@ export class SVGBase extends View {
 
 	/** Every SMIL animation in the document has finished. Never fires for one that repeats. */
 	public static animationEndEvent = 'animationEnd';
+
+	/** `src` could not be read or is not a well-formed SVG document; `error` says why. The view draws nothing. */
+	public static errorEvent = 'error';
 	__document: SvgDocumentWrapper;
 	__domElement: SvgNodeWrapper;
 	__children = [];
@@ -484,18 +513,29 @@ export class SVGBase extends View {
 					this.__loadSource(withStylesheet(source, css));
 				}
 			},
-			(error) => console.error('Svg: could not load src', error),
+			(error) => {
+				if (this.__srcKey === value) {
+					this.__loadFailed(error);
+				}
+			},
 		);
 	}
 
 	private __joinShared(src: string, existing?: SvgDocumentWrapper) {
 		const source = SharedSource.acquire(src, this.__css, this, existing);
 		this.__shared = source;
-		source.whenReady((document) => {
-			if (this.__shared === source) {
-				this.__adoptDocument(document);
-			}
-		});
+		source.whenReady(
+			(document) => {
+				if (this.__shared === source) {
+					this.__adoptDocument(document);
+				}
+			},
+			(error) => {
+				if (this.__shared === source) {
+					this.__loadFailed(error);
+				}
+			},
+		);
 	}
 
 	__releaseShared() {
@@ -508,9 +548,22 @@ export class SVGBase extends View {
 	 * if it has any.
 	 */
 	__loadSource(source: string) {
-		const document = new SvgDocumentWrapper(source);
+		const document = SvgDocumentWrapper.parse(source);
+		if (!document) {
+			this.__loadFailed(new Error('Svg: src is not a well-formed SVG document'));
+			return;
+		}
 		document.owner = this;
 		this.__adoptDocument(document);
+	}
+
+	/** `src` could not be read or parsed: draw nothing and report it, rather than throw. */
+	__loadFailed(error: unknown) {
+		console.error('Svg: could not load src', error);
+		const empty = new SvgDocumentWrapper();
+		empty.owner = this;
+		this.__adoptDocument(empty);
+		this.notify<SvgErrorEventData>({ eventName: SVGBase.errorEvent, object: this, error });
 	}
 
 	private __adoptDocument(document: SvgDocumentWrapper) {

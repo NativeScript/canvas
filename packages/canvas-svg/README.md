@@ -103,6 +103,7 @@ For a document built with the DOM rather than `src`, only the `@keyframes` of `s
 | Event | When |
 | --- | --- |
 | `animationEnd` | Every animation in the document has finished. Never fires for one that repeats forever. |
+| `error` | `src` could not be read or is not a well-formed SVG document. `args.error` says why; the view draws nothing. |
 | `contextLost` | The GPU context could not be rebuilt and drawing has moved to the CPU. |
 | `contextRestored` | A lost GPU context was rebuilt and GPU drawing has resumed. |
 

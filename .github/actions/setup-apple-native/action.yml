@@ -2,7 +2,7 @@ name: Setup Apple native build environment
 description: >
   Selects Xcode, installs the visionOS platform (SDK + simulator runtime, not
   preinstalled on GitHub macOS runners), and optionally installs the Rust
-  nightly toolchain (with rust-src for -Z build-std) plus a cargo cache.
+  nightly toolchain (with rust-src for -Z build-std), cbindgen and a cargo cache.
 
 inputs:
   xcode-version:
@@ -39,6 +39,12 @@ runs:
         rustup toolchain install nightly --profile minimal --component rust-src
         rustup default nightly
         rustc --version
+
+    # The Xcode pre-build phases regenerate the C headers with it. No macOS release binaries.
+    - name: Install cbindgen
+      if: ${{ inputs.install-rust == 'true' }}
+      shell: bash
+      run: cargo install cbindgen@0.29.0 --locked
 
     - name: Cache cargo
       if: ${{ inputs.install-rust == 'true' }}

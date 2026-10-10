@@ -123,7 +123,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.ref }}
+          ref: ${{ github.ref }}
       - name: Restore cached AAR
         id: svg-aar
         uses: actions/cache@v4
@@ -235,6 +235,7 @@ jobs:
         with:
           ref: ${{ inputs.ref }}
       - name: Restore cached xcframework
+        if: github.event_name != 'workflow_dispatch'
         id: audio-xcframework
         uses: actions/cache@v4
         with:
@@ -247,7 +248,7 @@ jobs:
       # libogg / libvorbis / libopus / libopusfile static libs per slice: gitignored, built from
       # the xiph release tarballs.
       - name: Restore cached opus deps
-        if: steps.audio-xcframework.outputs.cache-hit != 'true'
+        if: github.event_name != 'workflow_dispatch' && steps.audio-xcframework.outputs.cache-hit != 'true'
         id: opus-deps
         uses: actions/cache@v4
         with:

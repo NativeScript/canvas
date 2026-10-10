@@ -159,7 +159,7 @@ jobs:
           if-no-files-found: error
 
   canvas-svg-ios:
-    name: Canvas SVG iOS + visionOS
+    name: Canvas SVG iOS + visionOS + tvOS
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
@@ -173,7 +173,7 @@ jobs:
           key: ${{ env.NATIVE_CACHE_VERSION }}-canvas-svg-ios-${{ hashFiles('crates/canvas-svg/**', 'crates/canvas-svg-ios/**', 'packages/canvas-svg/src-native/ios/**', '!packages/canvas-svg/src-native/ios/dist/**', 'Cargo.lock', 'tools/scripts/canvas-svg-build.sh', 'Makefile') }}
       - uses: ./.github/actions/setup-apple-native
         if: steps.svg-xcframework.outputs.cache-hit != 'true'
-      - name: Build Rust libraries (iOS + visionOS)
+      - name: Build Rust libraries (iOS + visionOS + tvOS)
         if: steps.svg-xcframework.outputs.cache-hit != 'true'
         run: make svg
       # same as `npm run build.canvas.svg.ios.framework.release`

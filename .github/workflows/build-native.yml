@@ -132,6 +132,13 @@ jobs:
           key: ${{ env.NATIVE_CACHE_VERSION }}-canvas-svg-android-${{ hashFiles('crates/canvas-svg/**', 'crates/canvas-svg-android/**', 'packages/canvas-svg/src-native/android/**', '!packages/canvas-svg/src-native/android/**/build/**', '!packages/canvas-svg/src-native/android/**/jniLibs/**', 'Cargo.lock', 'tools/scripts/build-svg-android.sh', 'tools/scripts/copy-svg-android.sh', 'Makefile') }}
       - uses: ./.github/actions/setup-android-native
         if: steps.svg-aar.outputs.cache-hit != 'true'
+      # canvassvg's CMake borrows both from packages/canvas (see its CMakeLists.txt)
+      - name: Fetch V8 + NativeScript runtime headers
+        if: steps.svg-aar.outputs.cache-hit != 'true'
+        run: ./tools/scripts/download-v8.sh
+      - name: Build libNativeScript.so stub for linking
+        if: steps.svg-aar.outputs.cache-hit != 'true'
+        run: ./tools/scripts/build-android-v8-stub.sh
       - name: Build Rust libraries
         if: steps.svg-aar.outputs.cache-hit != 'true'
         run: make android-svg

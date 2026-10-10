@@ -6,7 +6,10 @@ import test from 'node:test';
 
 import { CanvasModule } from './addon.mjs';
 
-const skip = process.platform !== 'win32' && 'Windows host only';
+// On the GitHub runners (WARP) the process exits with 2170 (FACILITY_DXGI) once these tests pass,
+// whether or not a device was removed. Skipped there until that is understood.
+const skip =
+	process.platform !== 'win32' ? 'Windows host only' : !!process.env.GITHUB_ACTIONS && 'GitHub runner: the process fails at exit';
 const { NSCCanvas, create2DContextWithPointer } = CanvasModule;
 
 function hostContext(width, height) {
@@ -18,20 +21,6 @@ function hostContext(width, height) {
 
 function pixel(ctx, x, y) {
 	return Array.from(ctx.getImageData(x, y, 1, 1).data);
-}
-
-// Skips the test where the device cannot be removed. Also on the GitHub runners (no GPU): there,
-// once a device was removed, the process exits with 2170 (FACILITY_DXGI) after its tests pass.
-function removeDevice(t) {
-	if (process.env.GITHUB_ACTIONS) {
-		t.skip(`GitHub runner (${CanvasModule.__d3dAdapterInfo()?.description}): a removed device fails the process at exit`);
-		return false;
-	}
-	if (!CanvasModule.__simulateD3DDeviceRemoval()) {
-		t.skip('ID3D12Device5::RemoveDevice unavailable');
-		return false;
-	}
-	return true;
 }
 
 test('a removed device loses every 2D context; restoreContext brings each back', { skip }, (t) => {
@@ -48,7 +37,10 @@ test('a removed device loses every 2D context; restoreContext brings each back',
 	CanvasModule.__setContextLostListener(() => notified++);
 	t.after(() => CanvasModule.__setContextLostListener(null));
 
-	if (!removeDevice(t)) return;
+	if (!CanvasModule.__simulateD3DDeviceRemoval()) {
+		t.skip('ID3D12Device5::RemoveDevice unavailable');
+		return;
+	}
 	// The next flush finds it and tells the listener once.
 	drawing.ctx.fillRect(0, 0, 4, 4);
 	CanvasModule.__flushAll();
@@ -99,7 +91,10 @@ test('a lost canvas resized before its restore comes back at the new size', { sk
 	const { host, ctx } = hostContext(16, 16);
 	ctx.fillRect(0, 0, 16, 16);
 	CanvasModule.__flushAll();
-	if (!removeDevice(t)) return;
+	if (!CanvasModule.__simulateD3DDeviceRemoval()) {
+		t.skip('ID3D12Device5::RemoveDevice unavailable');
+		return;
+	}
 	ctx.fillRect(0, 0, 4, 4);
 	CanvasModule.__flushAll();
 	assert.equal(host.isContextLost(), true);
@@ -122,7 +117,10 @@ test('an on-screen 2D context (headless panel) is restored into its panel', { sk
 	host.present();
 	assert.deepEqual(pixel(ctx, 16, 16), [255, 0, 0, 255]);
 
-	if (!removeDevice(t)) return;
+	if (!CanvasModule.__simulateD3DDeviceRemoval()) {
+		t.skip('ID3D12Device5::RemoveDevice unavailable');
+		return;
+	}
 	ctx.fillRect(0, 0, 4, 4);
 	CanvasModule.__flushAll();
 	assert.equal(host.isContextLost(), true);

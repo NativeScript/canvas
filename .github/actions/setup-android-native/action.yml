@@ -81,8 +81,10 @@ runs:
       shell: bash
       # rust-src is required: Android release builds go through
       # `cargo +nightly build -Z build-std` (see tools/scripts/build-android.sh).
+      # rustfmt too: skia-bindings fixes up i686 opaque-blob alignment by matching bindgen's
+      # formatted output, which bindgen only formats when rustfmt is there.
       run: |
-        rustup toolchain install nightly --profile minimal --component rust-src
+        rustup toolchain install nightly --profile minimal --component rust-src,rustfmt
         rustup default nightly
         rustc --version
 

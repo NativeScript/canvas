@@ -116,7 +116,7 @@ export ANDROID_NDK="$NDK"
 RUSTFLAGS="$RUSTFLAGS" \
 env "CC_${TRIPLE_ENV}=$CLANG" "CXX_${TRIPLE_ENV}=$CLANGXX" "AR_${TRIPLE_ENV}=$TOOLS/bin/llvm-ar" \
     "${LINKER_ENV}=$CLANG" \
-cargo +"${CANVAS_RUST_TOOLCHAIN:-nightly}" build $EXTRA_ARGS --target $TARGET -p canvas-android
+cargo +nightly build $EXTRA_ARGS --target $TARGET -p canvas-android
 
 # Don't let the trailing strip guard below swallow a failed build: without this
 # a cargo failure still exited 0, so `make android` reported success having

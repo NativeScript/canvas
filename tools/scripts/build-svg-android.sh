@@ -79,7 +79,7 @@ export ANDROID_NDK="$NDK"
 RUSTFLAGS="$RUSTFLAGS" \
 env "CC_${TRIPLE_ENV}=$CLANG" "CXX_${TRIPLE_ENV}=$CLANGXX" "AR_${TRIPLE_ENV}=$TOOLS/bin/llvm-ar" \
     "${LINKER_ENV}=$CLANG" \
-cargo +"${CANVAS_RUST_TOOLCHAIN:-nightly}" build $EXTRA_ARGS --target $TARGET -p canvas-svg-android
+cargo +nightly build $EXTRA_ARGS --target $TARGET -p canvas-svg-android
 
 status=$?
 if [ "$status" -ne 0 ]; then

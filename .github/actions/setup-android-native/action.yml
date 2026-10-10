@@ -49,6 +49,9 @@ runs:
           echo "ANDROID_NDK_HOME=$NDK"
           echo "ANDROID_NDK_ROOT=$NDK"
           echo "NDK_HOST=linux-x86_64"
+          # bindgen (skia-bindings) otherwise loads the runner's libclang 15, older than the
+          # NDK's libc++ headers accept (Clang 16+)
+          echo "LIBCLANG_PATH=$TOOLCHAIN/lib"
           echo "CARGO_TARGET_ARMV7_LINUX_ANDROIDEABI_LINKER=$TOOLCHAIN/bin/armv7a-linux-androideabi${API}-clang"
           echo "CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=$TOOLCHAIN/bin/aarch64-linux-android${API}-clang"
           echo "CARGO_TARGET_I686_LINUX_ANDROID_LINKER=$TOOLCHAIN/bin/i686-linux-android${API}-clang"
@@ -67,6 +70,7 @@ runs:
           echo "AR_x86_64_linux_android=$TOOLCHAIN/bin/llvm-ar"
         } >> "$GITHUB_ENV"
         echo "$TOOLCHAIN/bin" >> "$GITHUB_PATH"
+        ls "$TOOLCHAIN"/lib/libclang.so*
 
     - name: Install build tools
       shell: bash

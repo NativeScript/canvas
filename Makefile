@@ -4,6 +4,8 @@ ARCHS_TVOS = aarch64-apple-tvos aarch64-apple-tvos-sim
 ARCHS_ANDROID = i686-linux-android x86_64-linux-android aarch64-linux-android armv7-linux-androideabi
 # Node-API hosts (crates/canvas-napi).
 ARCHS_WINDOWS = x86_64-pc-windows-msvc aarch64-pc-windows-msvc
+# The nightly the Apple and Android builds use (-Z build-std). CI pins a dated one.
+CANVAS_RUST_TOOLCHAIN ?= nightly
 
 XCFRAMEWORK = CanvasNative.xcframework
 RUST_LIB = canvasnative
@@ -69,7 +71,7 @@ apple_env = SDKROOT="$$(xcrun --sdk $(call apple_sdk,$1) --show-sdk-path)" IPHON
 .PHONY: $(ARCHS_IOS)
 $(ARCHS_IOS): %:
 	$(call apple_env,$@) RUSTFLAGS="-Zlocation-detail=none -Zunstable-options -Cpanic=immediate-abort" \
-	cargo +nightly build -Z build-std='std,panic_abort' \
+	cargo +$(CANVAS_RUST_TOOLCHAIN) build -Z build-std='std,panic_abort' \
 	    --target $@ --release -p canvas-ios
 
 $(XCFRAMEWORK): $(ARCHS_IOS)
@@ -77,13 +79,13 @@ $(XCFRAMEWORK): $(ARCHS_IOS)
 .PHONY: $(ARCHS_VISIONOS)
 $(ARCHS_VISIONOS): %:
 	$(call apple_env,$@) RUSTFLAGS="-Zlocation-detail=none -Zunstable-options -Cpanic=immediate-abort" \
-	cargo +nightly build -Z build-std='std,panic_abort' \
+	cargo +$(CANVAS_RUST_TOOLCHAIN) build -Z build-std='std,panic_abort' \
 	    --target $@ --release -p canvas-ios
 
 .PHONY: $(ARCHS_TVOS)
 $(ARCHS_TVOS): %:
 	$(call apple_env,$@) RUSTFLAGS="-Zlocation-detail=none -Zunstable-options -Cpanic=immediate-abort" \
-	cargo +nightly build -Z build-std='std,panic_abort' \
+	cargo +$(CANVAS_RUST_TOOLCHAIN) build -Z build-std='std,panic_abort' \
 	    --target $@ --release -p canvas-ios
 
 .PHONY: $(ARCHS_ANDROID)
@@ -116,7 +118,7 @@ GENERATE_ANDROID: $(ARCHS_ANDROID)
 .PHONY: $(addsuffix _svg,$(ARCHS_IOS))
 $(addsuffix _svg,$(ARCHS_IOS)): %_svg:
 	$(call apple_env,$*) RUSTFLAGS="-Zlocation-detail=none -Zunstable-options -Cpanic=immediate-abort" \
-	cargo +nightly build -Z build-std='std,panic_abort' \
+	cargo +$(CANVAS_RUST_TOOLCHAIN) build -Z build-std='std,panic_abort' \
 	    --target $* --release -p canvas-svg-ios
 
 .PHONY: GENERATE_IOS_SVG
@@ -125,7 +127,7 @@ GENERATE_IOS_SVG: $(addsuffix _svg,$(ARCHS_IOS))
 .PHONY: $(addsuffix _svg,$(ARCHS_VISIONOS))
 $(addsuffix _svg,$(ARCHS_VISIONOS)): %_svg:
 	$(call apple_env,$*) RUSTFLAGS="-Zlocation-detail=none -Zunstable-options -Cpanic=immediate-abort" \
-	cargo +nightly build -Z build-std='std,panic_abort' \
+	cargo +$(CANVAS_RUST_TOOLCHAIN) build -Z build-std='std,panic_abort' \
 	    --target $* --release -p canvas-svg-ios
 
 .PHONY: GENERATE_VISIONOS_SVG
@@ -134,7 +136,7 @@ GENERATE_VISIONOS_SVG: $(addsuffix _svg,$(ARCHS_VISIONOS))
 .PHONY: $(addsuffix _svg,$(ARCHS_TVOS))
 $(addsuffix _svg,$(ARCHS_TVOS)): %_svg:
 	$(call apple_env,$*) RUSTFLAGS="-Zlocation-detail=none -Zunstable-options -Cpanic=immediate-abort" \
-	cargo +nightly build -Z build-std='std,panic_abort' \
+	cargo +$(CANVAS_RUST_TOOLCHAIN) build -Z build-std='std,panic_abort' \
 	    --target $* --release -p canvas-svg-ios
 
 .PHONY: GENERATE_TVOS_SVG
@@ -157,14 +159,14 @@ android_debug: $(addsuffix _debug,$(ARCHS_ANDROID))
 
 .PHONY: $(addsuffix _debug,$(ARCHS_IOS))
 $(addsuffix _debug,$(ARCHS_IOS)): %_debug:
-	cargo +nightly build --target $* -p canvas-ios
+	cargo +$(CANVAS_RUST_TOOLCHAIN) build --target $* -p canvas-ios
 
 .PHONY: visionos_debug
 visionos_debug: $(addsuffix _debug,$(ARCHS_VISIONOS))
 
 .PHONY: $(addsuffix _debug,$(ARCHS_VISIONOS))
 $(addsuffix _debug,$(ARCHS_VISIONOS)): %_debug:
-	cargo +nightly build -Z build-std='std,panic_abort' --target $* -p canvas-ios
+	cargo +$(CANVAS_RUST_TOOLCHAIN) build -Z build-std='std,panic_abort' --target $* -p canvas-ios
 
 .PHONY: $(addsuffix _debug,$(ARCHS_ANDROID))
 $(addsuffix _debug,$(ARCHS_ANDROID)): %_debug:

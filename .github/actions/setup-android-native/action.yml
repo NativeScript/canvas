@@ -17,6 +17,10 @@ inputs:
     description: Android API level used for the NDK clang wrappers (API_VERSION in the same scripts)
     required: false
     default: '23'
+  rust-toolchain:
+    description: Dated nightly the Rust builds use (exported as CANVAS_RUST_TOOLCHAIN). A newer one lays out i686-android structs unlike Skia's bindgen output.
+    required: false
+    default: 'nightly-2026-01-25'
   install-rust:
     description: Install Rust nightly + cargo cache (set 'false' for gradle-only projects)
     required: false
@@ -80,10 +84,11 @@ runs:
       if: ${{ inputs.install-rust == 'true' }}
       shell: bash
       # rust-src is required: Android release builds go through
-      # `cargo +nightly build -Z build-std` (see tools/scripts/build-android.sh).
+      # `cargo +$CANVAS_RUST_TOOLCHAIN build -Z build-std` (see tools/scripts/build-android.sh).
       run: |
-        rustup toolchain install nightly --profile minimal --component rust-src
-        rustup default nightly
+        rustup toolchain install ${{ inputs.rust-toolchain }} --profile minimal --component rust-src
+        rustup default ${{ inputs.rust-toolchain }}
+        echo "CANVAS_RUST_TOOLCHAIN=${{ inputs.rust-toolchain }}" >> "$GITHUB_ENV"
         rustc --version
 
     - name: Cache cargo

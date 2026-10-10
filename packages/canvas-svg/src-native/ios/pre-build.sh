@@ -118,5 +118,5 @@ export RUST_BUILD_TARGET="$RUST_BUILD_TARGET"
 
 
 # Build the staticlib crate (canvas-svg-ios → libcanvassvg.a) that the framework links via -lcanvassvg.
-RUSTFLAGS="-Zlocation-detail=none -Zunstable-options -Cpanic=immediate-abort" cargo +nightly build -Z build-std='std,panic_abort' --manifest-path Cargo.toml --target $RUST_BUILD_TARGET $RUST_BUILD_TYPE -p canvas-svg-ios
+RUSTFLAGS="-Zlocation-detail=none -Zunstable-options -Cpanic=immediate-abort" cargo +"${CANVAS_RUST_TOOLCHAIN:-nightly}" build -Z build-std='std,panic_abort' --manifest-path Cargo.toml --target $RUST_BUILD_TARGET $RUST_BUILD_TYPE -p canvas-svg-ios
 popd

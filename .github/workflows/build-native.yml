@@ -235,7 +235,7 @@ jobs:
         with:
           ref: ${{ inputs.ref }}
       - name: Restore cached xcframework
-        if: github.event_name != 'workflow_dispatch'
+        if: github.event_name != 'workflow_dispatch' && inputs.ref == ''
         id: audio-xcframework
         uses: actions/cache@v4
         with:
@@ -248,7 +248,7 @@ jobs:
       # libogg / libvorbis / libopus / libopusfile static libs per slice: gitignored, built from
       # the xiph release tarballs.
       - name: Restore cached opus deps
-        if: github.event_name != 'workflow_dispatch' && steps.audio-xcframework.outputs.cache-hit != 'true'
+        if: github.event_name != 'workflow_dispatch' && inputs.ref == '' && steps.audio-xcframework.outputs.cache-hit != 'true'
         id: opus-deps
         uses: actions/cache@v4
         with:

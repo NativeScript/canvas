@@ -190,6 +190,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
+          # Oboe
+          submodules: true
       - name: Restore cached AAR
         id: audio-aar
         uses: actions/cache@v4

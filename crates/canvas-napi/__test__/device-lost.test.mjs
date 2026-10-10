@@ -20,11 +20,11 @@ function pixel(ctx, x, y) {
 	return Array.from(ctx.getImageData(x, y, 1, 1).data);
 }
 
-// Skips the test where the device cannot be removed. Also on WARP (the CI runners): there, once a
-// device was removed, the process exits with 2170 (FACILITY_DXGI) after its tests pass.
+// Skips the test where the device cannot be removed. Also on the GitHub runners (no GPU): there,
+// once a device was removed, the process exits with 2170 (FACILITY_DXGI) after its tests pass.
 function removeDevice(t) {
-	if (CanvasModule.__d3dAdapterInfo()?.isWarp) {
-		t.skip('WARP: a removed device fails the process at exit');
+	if (process.env.GITHUB_ACTIONS) {
+		t.skip(`GitHub runner (${CanvasModule.__d3dAdapterInfo()?.description}): a removed device fails the process at exit`);
 		return false;
 	}
 	if (!CanvasModule.__simulateD3DDeviceRemoval()) {

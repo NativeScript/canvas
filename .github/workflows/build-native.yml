@@ -49,13 +49,6 @@ on:
         required: false
         type: string
         default: ''
-  workflow_dispatch:
-    inputs:
-      ref:
-        description: Git ref to build
-        required: false
-        type: string
-        default: ''
 
 env:
   # bump to invalidate the canvas-svg / audio-context / canvas-media artifact caches

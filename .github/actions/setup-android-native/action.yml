@@ -6,13 +6,17 @@ description: >
 
 inputs:
   ndk-version:
-    description: NDK version to install via sdkmanager (must match ndkVersion in canvas build.gradle and the default in tools/scripts/build-android.sh)
+    description: NDK the Rust crates build with (must match NDK_VERSION in tools/scripts/build-android.sh and build-svg-android.sh)
+    required: false
+    default: '28.2.13676358'
+  gradle-ndk-version:
+    description: NDK the gradle CMake builds pin (ndkVersion in the canvas and canvassvg build.gradle), installed alongside
     required: false
     default: '29.0.14206865'
   api-level:
-    description: Android API level used for the NDK clang wrappers
+    description: Android API level used for the NDK clang wrappers (API_VERSION in the same scripts)
     required: false
-    default: '21'
+    default: '23'
   install-rust:
     description: Install Rust nightly + cargo cache (set 'false' for gradle-only projects)
     required: false
@@ -28,13 +32,13 @@ runs:
         cache: gradle
 
     - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
+      uses: android-actions/setup-android@v4
 
     - name: Setup NDK
       shell: bash
       run: |
         set -e
-        (yes || true) | sdkmanager "ndk;${{ inputs.ndk-version }}" > /dev/null
+        (yes || true) | sdkmanager "ndk;${{ inputs.ndk-version }}" "ndk;${{ inputs.gradle-ndk-version }}" > /dev/null
         NDK="$ANDROID_HOME/ndk/${{ inputs.ndk-version }}"
         TOOLCHAIN="$NDK/toolchains/llvm/prebuilt/linux-x86_64"
         API=${{ inputs.api-level }}
@@ -45,6 +49,9 @@ runs:
           echo "ANDROID_NDK_HOME=$NDK"
           echo "ANDROID_NDK_ROOT=$NDK"
           echo "NDK_HOST=linux-x86_64"
+          # bindgen (skia-bindings) otherwise loads the runner's libclang 15, older than the
+          # NDK's libc++ headers accept (Clang 16+)
+          echo "LIBCLANG_PATH=$TOOLCHAIN/lib"
           echo "CARGO_TARGET_ARMV7_LINUX_ANDROIDEABI_LINKER=$TOOLCHAIN/bin/armv7a-linux-androideabi${API}-clang"
           echo "CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=$TOOLCHAIN/bin/aarch64-linux-android${API}-clang"
           echo "CARGO_TARGET_I686_LINUX_ANDROID_LINKER=$TOOLCHAIN/bin/i686-linux-android${API}-clang"
@@ -63,6 +70,7 @@ runs:
           echo "AR_x86_64_linux_android=$TOOLCHAIN/bin/llvm-ar"
         } >> "$GITHUB_ENV"
         echo "$TOOLCHAIN/bin" >> "$GITHUB_PATH"
+        ls "$TOOLCHAIN"/lib/libclang.so*
 
     - name: Install build tools
       shell: bash
@@ -73,8 +81,10 @@ runs:
       shell: bash
       # rust-src is required: Android release builds go through
       # `cargo +nightly build -Z build-std` (see tools/scripts/build-android.sh).
+      # rustfmt too: skia-bindings fixes up i686 opaque-blob alignment by matching bindgen's
+      # formatted output, which bindgen only formats when rustfmt is there.
       run: |
-        rustup toolchain install nightly --profile minimal --component rust-src
+        rustup toolchain install nightly --profile minimal --component rust-src,rustfmt
         rustup default nightly
         rustc --version
 

@@ -2432,6 +2432,13 @@ void WebGLRenderingContext::GetExtension(const v8::FunctionCallbackInfo<v8::Valu
             canvas_native_webgl_extension_destroy(ext);
             return;
         }
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeKHR_parallel_shader_compile: {
+            auto ret = KHR_parallel_shader_compileImpl::NewInstance(isolate,
+                                                                    new KHR_parallel_shader_compileImpl());
+            args.GetReturnValue().Set(ret);
+            canvas_native_webgl_extension_destroy(ext);
+            return;
+        }
         case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeOES_element_index_uint: {
             auto ret = OES_element_index_uintImpl::NewInstance(isolate,
                                                                new OES_element_index_uintImpl());
@@ -2733,6 +2740,7 @@ void WebGLRenderingContext::GetProgramParameter(const v8::FunctionCallbackInfo<v
                 case GL_DELETE_STATUS:
                 case GL_LINK_STATUS:
                 case GL_VALIDATE_STATUS:
+                case 0x91B1: // COMPLETION_STATUS_KHR
                     args.GetReturnValue().Set(canvas_native_webgl_result_get_bool(
                             ret));
                     canvas_native_webgl_WebGLResult_destroy(ret);
@@ -2841,7 +2849,8 @@ void WebGLRenderingContext::GetShaderParameter(const v8::FunctionCallbackInfo<v8
             if (pname ==
                 GL_DELETE_STATUS ||
                 pname ==
-                GL_COMPILE_STATUS) {
+                GL_COMPILE_STATUS ||
+                pname == 0x91B1 /* COMPLETION_STATUS_KHR */) {
                 args.GetReturnValue().Set(canvas_native_webgl_result_get_bool(
                         ret));
 

@@ -696,6 +696,7 @@ typedef enum WebGLExtensionType {
   WebGLExtensionTypeWebGLExtensionTypeWEBGL_draw_buffers,
   WebGLExtensionTypeWebGLExtensionTypeOES_fbo_render_mipmap,
   WebGLExtensionTypeWebGLExtensionTypeNone,
+  WebGLExtensionTypeWebGLExtensionTypeKHR_parallel_shader_compile,
 } WebGLExtensionType;
 
 typedef enum WebGLResultType {

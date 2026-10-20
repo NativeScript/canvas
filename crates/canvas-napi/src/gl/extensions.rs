@@ -73,6 +73,12 @@ constant_extension!(
 constant_extension!(EXT_shader_texture_lod, "EXT_shader_texture_lod");
 
 constant_extension!(
+  KHR_parallel_shader_compile,
+  "KHR_parallel_shader_compile",
+  "COMPLETION_STATUS_KHR" completion_status_khr = 0x91B1,
+);
+
+constant_extension!(
   EXT_texture_filter_anisotropic,
   "EXT_texture_filter_anisotropic",
   "TEXTURE_MAX_ANISOTROPY_EXT" texture_max_anisotropy_ext = 0x84FE,

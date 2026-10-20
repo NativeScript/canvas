@@ -102,6 +102,14 @@ export class EXT_shader_texture_lod {
 	constructor(nativeInstance) {}
 }
 
+export class KHR_parallel_shader_compile {
+	COMPLETION_STATUS_KHR: number;
+
+	constructor(nativeInstance) {
+		this.COMPLETION_STATUS_KHR = nativeInstance.COMPLETION_STATUS_KHR;
+	}
+}
+
 export class EXT_texture_filter_anisotropic {
 	MAX_TEXTURE_MAX_ANISOTROPY_EXT: number;
 

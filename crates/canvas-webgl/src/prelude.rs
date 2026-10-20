@@ -58,6 +58,7 @@ pub enum WebGLExtensionType {
     WEBGL_draw_buffers,
     OES_fbo_render_mipmap,
     None,
+    KHR_parallel_shader_compile,
 }
 
 #[derive(Copy, Clone, Debug, PartialOrd, PartialEq)]
@@ -797,12 +798,12 @@ impl WebGLState {
         Some(active_blocks)
     }
 
-    /// Set the cached active uniform-block count for a program (used after linking)
-    pub fn set_program_active_uniform_blocks(&mut self, program: u32, count: i32) {
+    /// Drops the cached active uniform-block count for a program (after linking it again)
+    pub fn forget_program_active_uniform_blocks(&mut self, program: u32) {
         self.state
             .borrow_mut()
             .program_active_uniform_blocks
-            .insert(program, count);
+            .remove(&program);
     }
 
     /// Remove the current context if it's the stored context. Returns true if it was removed.
@@ -1143,6 +1144,20 @@ impl EXT_sRGB {
 impl WebGLExtension for EXT_sRGB {
     fn extension_type(&self) -> WebGLExtensionType {
         WebGLExtensionType::EXT_sRGB
+    }
+}
+
+pub struct KHR_parallel_shader_compile {}
+
+impl KHR_parallel_shader_compile {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
+impl WebGLExtension for KHR_parallel_shader_compile {
+    fn extension_type(&self) -> WebGLExtensionType {
+        WebGLExtensionType::KHR_parallel_shader_compile
     }
 }
 

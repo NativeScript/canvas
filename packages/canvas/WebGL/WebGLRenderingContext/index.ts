@@ -19,6 +19,7 @@ import {
 	EXT_shader_texture_lod,
 	EXT_sRGB,
 	EXT_texture_filter_anisotropic,
+	KHR_parallel_shader_compile,
 	OES_element_index_uint,
 	OES_standard_derivatives,
 	OES_texture_float,
@@ -530,6 +531,8 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 					return new EXT_shader_texture_lod(ext);
 				case 'EXT_texture_filter_anisotropic':
 					return new EXT_texture_filter_anisotropic(ext);
+				case 'KHR_parallel_shader_compile':
+					return new KHR_parallel_shader_compile(ext);
 				case 'OES_element_index_uint':
 					return new OES_element_index_uint(ext);
 				case 'OES_standard_derivatives':

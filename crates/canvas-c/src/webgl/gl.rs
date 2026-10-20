@@ -48,6 +48,7 @@ pub enum WebGLExtensionType {
     WebGLExtensionTypeWEBGL_draw_buffers,
     WebGLExtensionTypeOES_fbo_render_mipmap,
     WebGLExtensionTypeNone,
+    WebGLExtensionTypeKHR_parallel_shader_compile,
 }
 
 impl Into<WebGLExtensionType> for canvas_webgl::prelude::WebGLExtensionType {
@@ -67,6 +68,9 @@ impl Into<WebGLExtensionType> for canvas_webgl::prelude::WebGLExtensionType {
             }
             canvas_webgl::prelude::WebGLExtensionType::EXT_shader_texture_lod => {
                 WebGLExtensionType::WebGLExtensionTypeEXT_shader_texture_lod
+            }
+            canvas_webgl::prelude::WebGLExtensionType::KHR_parallel_shader_compile => {
+                WebGLExtensionType::WebGLExtensionTypeKHR_parallel_shader_compile
             }
             canvas_webgl::prelude::WebGLExtensionType::EXT_texture_filter_anisotropic => {
                 WebGLExtensionType::WebGLExtensionTypeEXT_texture_filter_anisotropic

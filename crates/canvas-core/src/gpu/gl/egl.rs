@@ -161,6 +161,10 @@ fn load() -> Option<Egl> {
         extensions,
         _gles: gles,
     };
+    if egl.has_extension("EGL_ANDROID_blob_cache") {
+        let set_funcs = egl.instance.get_proc_address("eglSetBlobCacheFuncsANDROID");
+        super::program_cache::install(set_funcs.map_or(std::ptr::null(), |f| f as *const c_void), display.as_ptr());
+    }
     #[cfg(target_os = "windows")]
     protect_immediate_context(&egl);
     Some(egl)

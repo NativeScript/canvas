@@ -19,6 +19,9 @@ pub use android::*;
 mod egl;
 
 #[cfg(target_os = "windows")]
+mod program_cache;
+
+#[cfg(target_os = "windows")]
 pub use egl::*;
 
 pub fn get_shader_info_log(shader: u32) -> String {

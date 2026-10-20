@@ -58,6 +58,7 @@ pub enum WebGLExtensionType {
     WEBGL_draw_buffers,
     OES_fbo_render_mipmap,
     None,
+    KHR_parallel_shader_compile,
 }
 
 #[derive(Copy, Clone, Debug, PartialOrd, PartialEq)]
@@ -1143,6 +1144,20 @@ impl EXT_sRGB {
 impl WebGLExtension for EXT_sRGB {
     fn extension_type(&self) -> WebGLExtensionType {
         WebGLExtensionType::EXT_sRGB
+    }
+}
+
+pub struct KHR_parallel_shader_compile {}
+
+impl KHR_parallel_shader_compile {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
+impl WebGLExtension for KHR_parallel_shader_compile {
+    fn extension_type(&self) -> WebGLExtensionType {
+        WebGLExtensionType::KHR_parallel_shader_compile
     }
 }
 

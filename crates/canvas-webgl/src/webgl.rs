@@ -1543,6 +1543,9 @@ pub fn canvas_native_webgl_get_program_info_log(program: u32, state: &mut WebGLS
     c_str.to_string_lossy().to_string()
 }
 
+/// KHR_parallel_shader_compile
+pub const COMPLETION_STATUS_KHR: u32 = 0x91B1;
+
 pub fn canvas_native_webgl_get_program_parameter(
     program: u32,
     pname: u32,
@@ -1553,7 +1556,10 @@ pub fn canvas_native_webgl_get_program_parameter(
     unsafe { gl_bindings::GetProgramiv(program, pname, &mut param) }
 
     match pname {
-        gl_bindings::DELETE_STATUS | gl_bindings::LINK_STATUS | gl_bindings::VALIDATE_STATUS => {
+        gl_bindings::DELETE_STATUS
+        | gl_bindings::LINK_STATUS
+        | gl_bindings::VALIDATE_STATUS
+        | COMPLETION_STATUS_KHR => {
             if param as u32 == gl_bindings::TRUE as u32 {
                 return WebGLResult::Boolean(true);
             }
@@ -1610,7 +1616,7 @@ pub fn canvas_native_webgl_get_shader_parameter(
     unsafe { gl_bindings::GetShaderiv(shader, pname, &mut params) }
 
     return match pname {
-        gl_bindings::DELETE_STATUS | gl_bindings::COMPILE_STATUS => {
+        gl_bindings::DELETE_STATUS | gl_bindings::COMPILE_STATUS | COMPLETION_STATUS_KHR => {
             if params as u32 == gl_bindings::TRUE as u32 {
                 WebGLResult::Boolean(true)
             } else {

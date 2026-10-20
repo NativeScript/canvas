@@ -549,6 +549,11 @@ macro_rules! impl_webgl_context {
                         EXT_texture_filter_anisotropic
                             .to_js(env)
                     }
+                    "KHR_parallel_shader_compile" => {
+                        canvas_c::canvas_native_webgl_extension_destroy(ext);
+                        KHR_parallel_shader_compile
+                            .to_js(env)
+                    }
                     "OES_element_index_uint" => {
                         canvas_c::canvas_native_webgl_extension_destroy(ext);
                         OES_element_index_uint
@@ -687,7 +692,8 @@ macro_rules! impl_webgl_context {
         match pname {
             gl_bindings::DELETE_STATUS |
             gl_bindings::LINK_STATUS |
-            gl_bindings::VALIDATE_STATUS => {
+            gl_bindings::VALIDATE_STATUS |
+            canvas_webgl::webgl::COMPLETION_STATUS_KHR => {
                 let ret = canvas_c::canvas_native_webgl_result_get_bool(result);
                 canvas_c::canvas_native_webgl_WebGLResult_destroy(result);
                 (ret).to_js(env)
@@ -716,7 +722,7 @@ macro_rules! impl_webgl_context {
     pub fn get_shader_parameter<'env>(&self, env: &'env Env, shader: ClassInstance<WebGLShader>, pname: u32) -> Result<Unknown<'env>> {
         let result = canvas_c::canvas_native_webgl_get_shader_parameter(shader.0, pname, self.state);
         match pname {
-            gl_bindings::DELETE_STATUS | gl_bindings::COMPILE_STATUS => {
+            gl_bindings::DELETE_STATUS | gl_bindings::COMPILE_STATUS | canvas_webgl::webgl::COMPLETION_STATUS_KHR => {
                 let ret = canvas_c::canvas_native_webgl_result_get_bool(result);
                 canvas_c::canvas_native_webgl_WebGLResult_destroy(result);
                 (ret).to_js(env)

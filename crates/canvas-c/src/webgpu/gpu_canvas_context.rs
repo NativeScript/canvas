@@ -34,6 +34,11 @@ pub struct SurfaceData {
     pub(crate) error_sink: ErrorSink,
     pub texture_data: TextureData,
     pub(crate) previous_configuration: wgt::SurfaceConfiguration<Vec<wgt::TextureFormat>>,
+    /// Not applied yet; frames go offscreen until it is.
+    pub(crate) pending_configuration: Option<wgt::SurfaceConfiguration<Vec<wgt::TextureFormat>>>,
+    pending_failed: bool,
+    /// The last presented frame's submission, until the GPU finishes it.
+    presented_submission: Option<wgpu_core::SubmissionIndex>,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -87,6 +92,97 @@ fn discard_current_texture(context: &CanvasGPUCanvasContext, operation: &'static
             context
                 .has_surface_presented
                 .store(true, std::sync::atomic::Ordering::SeqCst);
+        }
+    }
+}
+
+/// Configuring waits for the GPU, and the last presented frame can wait on the compositor, which
+/// waits on this (the UI) thread: so only once that frame is done. Never blocks.
+fn presented_frame_done(surface_data: &mut SurfaceData) -> bool {
+    let Some(index) = surface_data.presented_submission else {
+        return true;
+    };
+    let done = surface_data
+        .device
+        .device
+        .poll(wgt::PollType::Wait {
+            submission_index: Some(index),
+            timeout: Some(std::time::Duration::ZERO),
+        })
+        .is_ok();
+    if done {
+        surface_data.presented_submission = None;
+    }
+    done
+}
+
+/// A resize gets a new swapchain: `ResizeBuffers` fails while the page still holds a texture of the
+/// old one, until it is garbage collected.
+fn configure_surface(
+    surface: &Arc<wgpu_core::instance::Surface>,
+    device: &Arc<wgpu_core::device::Device>,
+    previous: Option<&wgt::SurfaceConfiguration<Vec<wgt::TextureFormat>>>,
+    config: &wgt::SurfaceConfiguration<Vec<wgt::TextureFormat>>,
+) -> Option<wgpu_core::present::ConfigureSurfaceError> {
+    #[cfg(all(target_os = "windows", feature = "d3d"))]
+    if let Some(previous) = previous {
+        let mut resized = previous.clone();
+        resized.width = config.width;
+        resized.height = config.height;
+        if &resized == config {
+            let raw = surface
+                .raw(wgt::Backend::Dx12)
+                .and_then(|raw| raw.as_any().downcast_ref::<wgpu_hal::dx12::Surface>());
+            if let (Some(raw), Some(hal_device)) = (raw, unsafe { Arc::clone(device).as_hal::<wgpu_hal::api::Dx12>() }) {
+                unsafe { wgpu_hal::Surface::unconfigure(raw, &*hal_device) };
+            }
+        }
+    }
+    #[cfg(not(all(target_os = "windows", feature = "d3d")))]
+    let _ = previous;
+    surface.configure(device, config)
+}
+
+/// `false` while pending: not safe to configure yet, or it failed (retried, reported once).
+fn apply_pending_configuration(
+    context: &CanvasGPUCanvasContext,
+    surface: &Arc<wgpu_core::instance::Surface>,
+    operation: &'static str,
+) -> bool {
+    let mut data = context.data.lock();
+    let Some(surface_data) = data.as_mut() else {
+        return true;
+    };
+    if surface_data.pending_configuration.is_none() {
+        return true;
+    }
+    if !presented_frame_done(surface_data) {
+        return false;
+    }
+    let Some(config) = surface_data.pending_configuration.take() else {
+        return true;
+    };
+    match configure_surface(
+        surface,
+        &surface_data.device.device,
+        Some(&surface_data.previous_configuration),
+        &config,
+    ) {
+        None => {
+            surface_data.previous_configuration = config;
+            surface_data.pending_failed = false;
+            context
+                .has_surface_presented
+                .store(false, std::sync::atomic::Ordering::SeqCst);
+            true
+        }
+        Some(cause) => {
+            if !surface_data.pending_failed {
+                surface_data.pending_failed = true;
+                handle_error_fatal(cause, operation);
+            }
+            surface_data.pending_configuration = Some(config);
+            false
         }
     }
 }
@@ -960,7 +1056,10 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize_swap_chain_panel(
     };
     surface_data.texture_data.size.width = width;
     surface_data.texture_data.size.height = height;
-    let mut new_config = surface_data.previous_configuration.clone();
+    let mut new_config = surface_data
+        .pending_configuration
+        .take()
+        .unwrap_or_else(|| surface_data.previous_configuration.clone());
     new_config.width = width;
     new_config.height = height;
 
@@ -992,17 +1091,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize_swap_chain_panel(
         data: texture_data,
     });
 
-    let error = surface
-        .as_ref()
-        .and_then(|surface| surface.configure(&surface_data.device.device, &new_config));
-    if let Some(cause) = error {
-        handle_error_fatal(cause, "canvas_native_webgpu_context_resize_swap_chain_panel");
-    } else {
-        context
-            .has_surface_presented
-            .store(false, std::sync::atomic::Ordering::SeqCst);
-        surface_data.previous_configuration = new_config;
-    }
+    surface_data.pending_configuration = Some(new_config);
 }
 
 #[cfg(any(target_os = "ios", target_os = "visionos", target_os = "tvos"))]
@@ -1660,9 +1749,23 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_configure(
         });
     }
 
-    let error = surface_id
-        .as_ref()
-        .and_then(|surface| surface.configure(&device_id, &config));
+    let (presented_submission, previous) = context
+        .data
+        .lock()
+        .as_mut()
+        .filter(|data| Arc::ptr_eq(&data.device.device, &device_id))
+        .map(|data| {
+            let busy = !presented_frame_done(data);
+            (data.presented_submission.filter(|_| busy), Some(data.previous_configuration.clone()))
+        })
+        .unwrap_or_default();
+    let error = match (presented_submission, surface_id.as_ref()) {
+        (None, Some(surface)) => {
+            discard_current_texture(&context, "canvas_native_webgpu_context_configure");
+            configure_surface(surface, &device_id, previous.as_ref(), &config)
+        }
+        _ => None,
+    };
     if let Some(cause) = error {
         handle_error_fatal(cause, "canvas_native_webgpu_context_configure");
         let mut lock = context.data.lock();
@@ -1688,6 +1791,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_configure(
                 mip_level_count: 1,
                 sample_count: 1,
             },
+            pending_configuration: presented_submission.map(|_| config.clone()),
+            pending_failed: false,
+            presented_submission,
             previous_configuration: config,
         });
         {
@@ -1766,14 +1872,26 @@ pub extern "C" fn canvas_native_webgpu_context_get_current_texture(
         return offscreen_current_texture(context);
     };
 
+    if !apply_pending_configuration(context, surface_id, "canvas_native_webgpu_context_get_current_texture") {
+        return offscreen_current_texture(context);
+    }
+
     let result = surface_id.get_current_texture();
 
     match result {
         Ok(texture) => {
             match texture.status {
                 SurfaceStatus::Good | SurfaceStatus::Suboptimal | SurfaceStatus::Outdated => {}
-                _ => {
-                    return std::ptr::null_mut();
+                // No image this frame: draw offscreen rather than hand the page nothing.
+                status => {
+                    if matches!(status, SurfaceStatus::Lost) {
+                        if let Some(data) = context.data.lock().as_mut() {
+                            if data.pending_configuration.is_none() {
+                                data.pending_configuration = Some(data.previous_configuration.clone());
+                            }
+                        }
+                    }
+                    return offscreen_current_texture(context);
                 }
             }
 
@@ -1834,7 +1952,7 @@ pub extern "C" fn canvas_native_webgpu_context_get_current_texture(
             handle_error_fatal(cause,
                 "canvas_native_webgpu_context_get_current_texture",
             );
-            std::ptr::null_mut()
+            offscreen_current_texture(context)
         }
     }
 }
@@ -1855,8 +1973,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_present_surface(
 
     {
         let lock = context.read_back_texture.lock();
-        let surface_lock = context.data.lock();
-        if let (Some(dst_texture), Some(data)) = (lock.as_ref(), surface_lock.as_ref()) {
+        let mut surface_lock = context.data.lock();
+        if let (Some(dst_texture), Some(data)) = (lock.as_ref(), surface_lock.as_mut()) {
             unsafe {
                 let texture_extent = wgt::Extent3d {
                     width: dst_texture.data.size.width,
@@ -1901,7 +2019,10 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_present_surface(
 
                             let id = encoder.finish(&desc);
 
-                            data.device.queue.queue.id.submit(&[id]);
+                            let index = data.device.queue.queue.id.submit(&[id]);
+                            if texture.surface_id.is_some() {
+                                data.presented_submission = Some(index);
+                            }
                         }
                     }
                 }

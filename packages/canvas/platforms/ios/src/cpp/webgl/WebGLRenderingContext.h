@@ -36,6 +36,7 @@
 #include "extensions/EXT_sRGBImpl.h"
 #include "extensions/EXT_shader_texture_lodImpl.h"
 #include "extensions/EXT_texture_filter_anisotropicImpl.h"
+#include "extensions/KHR_parallel_shader_compileImpl.h"
 #include "extensions/OES_element_index_uintImpl.h"
 #include "extensions/OES_standard_derivativesImpl.h"
 #include "extensions/OES_texture_floatImpl.h"

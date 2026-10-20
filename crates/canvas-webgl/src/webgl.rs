@@ -1111,6 +1111,10 @@ pub fn canvas_native_webgl_get_extension(
         return Some(Box::new(EXT_shader_texture_lod::new()));
     } else if name.eq("EXT_texture_filter_anisotropic") {
         return Some(Box::new(EXT_texture_filter_anisotropic::new()));
+    } else if name.eq("KHR_parallel_shader_compile")
+        && extensions.contains("GL_KHR_parallel_shader_compile")
+    {
+        return Some(Box::new(KHR_parallel_shader_compile::new()));
     } else if name.eq("OES_element_index_uint") && extensions.contains("GL_OES_element_index_uint")
     {
         return Some(Box::new(OES_element_index_uint::new()));

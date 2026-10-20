@@ -797,12 +797,12 @@ impl WebGLState {
         Some(active_blocks)
     }
 
-    /// Set the cached active uniform-block count for a program (used after linking)
-    pub fn set_program_active_uniform_blocks(&mut self, program: u32, count: i32) {
+    /// Drops the cached active uniform-block count for a program (after linking it again)
+    pub fn forget_program_active_uniform_blocks(&mut self, program: u32) {
         self.state
             .borrow_mut()
             .program_active_uniform_blocks
-            .insert(program, count);
+            .remove(&program);
     }
 
     /// Remove the current context if it's the stored context. Returns true if it was removed.

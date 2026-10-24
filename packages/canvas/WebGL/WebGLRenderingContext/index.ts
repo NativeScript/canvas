@@ -46,6 +46,11 @@ import { NAPI_HOST, POINTER_CONTEXT_HOST } from '../../platform';
 import { imageAssetFor } from '../../platform/index';
 import { isCanvasView, isOffscreenCanvas } from '../../Canvas/utils';
 
+/** An image, canvas, video, bitmap or ImageData: not pixels in a buffer, an offset or null. */
+function isTexImageSource(value: unknown): boolean {
+	return !!value && typeof value === 'object' && !ArrayBuffer.isView(value) && !(value instanceof ArrayBuffer);
+}
+
 enum ContextType {
 	None,
 	Canvas,
@@ -893,7 +898,11 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 		const length = arguments.length;
 		if (length === 9) {
 			pixels = fromSvgSource(pixels);
-			if (pixels && typeof pixels.tagName === 'string' && (pixels.tagName === 'VID' || pixels.tagName === 'VIDEO') && pixels._video && typeof pixels._video.getCurrentFrame === 'function') {
+			if (NAPI_HOST && isTexImageSource(pixels)) {
+				// WebGL2's sized form with an image or canvas (PixiJS uploads text this way). Node-API hosts take
+				// sources in the unsized form only, which sizes the texture from the source as the sized one does.
+				this.texImage2D(target, level, internalformat, format, type ?? internalformat, pixels);
+			} else if (pixels && typeof pixels.tagName === 'string' && (pixels.tagName === 'VID' || pixels.tagName === 'VIDEO') && pixels._video && typeof pixels._video.getCurrentFrame === 'function') {
 				pixels._video.getCurrentFrame(this.native, this, target, level, internalformat, width, height);
 			} else if (pixels && typeof pixels.getCurrentFrame === 'function') {
 				pixels.getCurrentFrame(this.native, this, target, level, internalformat, width, height);
@@ -903,7 +912,7 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 				this.native.texImage2D(target, level, internalformat, width, height, border, format, type ?? internalformat, pixels.native);
 			} else if (pixels instanceof ImageBitmap) {
 				this.native.texImage2D(target, level, internalformat, width, height, border, format, type ?? internalformat, pixels.native);
-			} else if ((isCanvasView(pixels) || isOffscreenCanvas(pixels))) {
+			} else if (isCanvasView(pixels) || isOffscreenCanvas(pixels)) {
 				this.native.texImage2D(target, level, internalformat, width, height, border, format, type ?? internalformat, pixels.native);
 			} else if (__ANDROID__ && pixels instanceof android.graphics.Bitmap) {
 				(<any>org).nativescript.canvas.NSCWebGLRenderingContext.texImage2D(java.lang.Long.valueOf(this._contextPtr), target, level, internalformat, width, height, pixels, this.native.__flipY);
@@ -959,7 +968,7 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 				this.native.texImage2D(target, level, internalformat, width, height, border.native);
 			} else if (border instanceof ImageBitmap) {
 				this.native.texImage2D(target, level, internalformat, width, height, border.native);
-			} else if ((isCanvasView(border) || isOffscreenCanvas(border))) {
+			} else if (isCanvasView(border) || isOffscreenCanvas(border)) {
 				this.native.texImage2D(target, level, internalformat, width, height, border.native);
 			} else if (__ANDROID__ && border instanceof android.graphics.Bitmap) {
 				(<any>org).nativescript.canvas.NSCWebGLRenderingContext.texImage2D(java.lang.Long.valueOf(this._contextPtr), target, level, internalformat, width, height, border, this.native.__flipY);
@@ -1012,7 +1021,11 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 	texSubImage2D(target: any, level: any, xoffset: any, yoffset: any, width: any, height: any, format: any, type?: any, pixels?: any) {
 		const length = arguments.length;
 		if (length === 9) {
-			if (pixels && typeof pixels.tagName === 'string' && (pixels.tagName === 'VID' || pixels.tagName === 'VIDEO') && pixels._video && typeof pixels._video.getCurrentFrame === 'function') {
+			pixels = fromSvgSource(pixels);
+			if (NAPI_HOST && isTexImageSource(pixels)) {
+				// As in texImage2D: sources go through the unsized form on Node-API hosts.
+				this.texSubImage2D(target, level, xoffset, yoffset, format, type, pixels);
+			} else if (pixels && typeof pixels.tagName === 'string' && (pixels.tagName === 'VID' || pixels.tagName === 'VIDEO') && pixels._video && typeof pixels._video.getCurrentFrame === 'function') {
 				pixels._video.getCurrentFrame(this.native, this, target, level, format, format);
 			} else if (pixels && typeof pixels.getCurrentFrame === 'function') {
 				pixels.getCurrentFrame(this.native, this, target, level, format, format);
@@ -1039,7 +1052,7 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 				}
 			} else if (format instanceof ImageAsset) {
 				this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, format.native);
-			} else if ((isCanvasView(format) || isOffscreenCanvas(format))) {
+			} else if (isCanvasView(format) || isOffscreenCanvas(format)) {
 				this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, format.native);
 			} else if (format instanceof ImageBitmap) {
 				this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, format.native);

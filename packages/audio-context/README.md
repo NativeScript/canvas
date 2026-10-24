@@ -134,6 +134,22 @@ Context lifecycle and routing:
 - `state`, `onstatechange`
 - `sinkId`, `setSinkId(deviceId)`
 
+## Android memory
+
+Decoded audio is held in native memory, not on the Java heap, so long tracks can't throw
+`OutOfMemoryError`. The samples are freed when the `AudioBuffer` is garbage collected. Neither
+V8 nor ART sees that memory, so while a lot of native audio is live the plugin asks Java to
+collect. For V8 to follow, enable the runtime's GC bridge in `nativescript.config.ts`:
+
+```ts
+android: {
+  v8Flags: '--expose_gc',
+  gcThrottleTime: 1000,
+}
+```
+
+Without it the memory is still freed, but only when V8 happens to collect.
+
 ## Windows
 
 On Windows the graph is rendered by the [web-audio-api](https://github.com/orottier/web-audio-api-rs)

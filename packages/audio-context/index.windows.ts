@@ -33,6 +33,7 @@ import {
 	normalizeSourcePath,
 	panningModelFromNumber,
 	panningModelToNumber,
+	resolveLatencyHint,
 	throwInvalidMediaElement,
 	unmarkMediaElementUsed,
 } from './common';
@@ -1174,7 +1175,8 @@ export class AudioContext extends NativeAudioContextBase {
 		super(
 			new Native.AudioContext({
 				sampleRate: options?.sampleRate,
-				latencyHint: options?.latencyHint,
+				// Seconds, as on iOS and Android (`interactive` is 5 ms).
+				latencyHint: resolveLatencyHint(options?.latencyHint),
 				sinkId: options?.sinkId === 'default' ? '' : options?.sinkId,
 			}),
 		);

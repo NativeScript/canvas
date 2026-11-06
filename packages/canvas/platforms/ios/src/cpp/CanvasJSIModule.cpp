@@ -596,9 +596,11 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
 							}
 							delete asset_data;
 							func->data = nullptr;
-							v8::Local<v8::Value> args[1] = {
-								v8::String::NewFromUtf8Literal(isolate, "Failed to decode image")};
-							callback->Call(context, context->Global(), 1, args);
+							v8::Local<v8::Value> args[2] = {
+								ConvertToV8String(isolate,
+												  "Failed to execute 'createImageBitmap' : The provided source could not be decoded"),
+								v8::Null(isolate)};
+							callback->Call(context, context->Global(), 2, args);
 						} else if (func->data != nullptr) {
 							auto asset_data = static_cast<ImageBitmapData *>(func->data);
 							

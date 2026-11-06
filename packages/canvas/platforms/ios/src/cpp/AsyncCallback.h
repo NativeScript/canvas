@@ -49,6 +49,13 @@ struct AsyncCallback {
                 auto* callback = static_cast<AsyncCallback*>(data);
                 auto inner_shared = callback->inner_;
                 if (!inner_shared) return;
+                // a callback that completes without a queue
+                // (not prepared, or completed twice) used to return here, so
+                // its JS promise never settled and the image never loaded or
+                // retried. Complete it on the main queue instead.
+                if (inner_shared->current_queue == nullptr && inner_shared->isolate_ != nullptr) {
+                    inner_shared->current_queue = Caches::Get(inner_shared->isolate_)->GetMainQueue();
+                }
                 if (inner_shared->current_queue == nullptr) return;
 
                 std::shared_ptr<Inner> inner_copy = inner_shared;

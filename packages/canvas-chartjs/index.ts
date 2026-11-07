@@ -1,10 +1,14 @@
 import { BasePlatform, Chart, ChartEvent } from 'chart.js';
 import { Screen } from '@nativescript/core';
 
+declare const __LINUX__: boolean;
+
 // Intl polyfills for engines without (full) Intl. Their feature probes can throw where Intl has
 // no locale data (e.g. V8 without ICU data rejects 'und-x-private'); a failed probe must not keep
-// the plugin from loading.
-for (const load of [() => require('@formatjs/intl-getcanonicallocales/polyfill'), () => require('@formatjs/intl-locale/polyfill'), () => require('@formatjs/intl-pluralrules/polyfill'), () => require('@formatjs/intl-numberformat/polyfill'), () => require('@formatjs/intl-pluralrules/locale-data/en'), () => require('@formatjs/intl-numberformat/locale-data/en')]) {
+// the plugin from loading. Linux V8 ships without ICU data: Intl exists but throws, so the
+// polyfills replace it.
+const polyfills = typeof __LINUX__ !== 'undefined' && __LINUX__ ? [() => require('@formatjs/intl-getcanonicallocales/polyfill-force'), () => require('@formatjs/intl-locale/polyfill-force'), () => require('@formatjs/intl-pluralrules/polyfill-force'), () => require('@formatjs/intl-numberformat/polyfill-force')] : [() => require('@formatjs/intl-getcanonicallocales/polyfill'), () => require('@formatjs/intl-locale/polyfill'), () => require('@formatjs/intl-pluralrules/polyfill'), () => require('@formatjs/intl-numberformat/polyfill')];
+for (const load of [...polyfills, () => require('@formatjs/intl-pluralrules/locale-data/en'), () => require('@formatjs/intl-numberformat/locale-data/en')]) {
 	try {
 		load();
 	} catch (e) {

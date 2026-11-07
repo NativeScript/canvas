@@ -87,6 +87,40 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_adapter_info(
     Arc::into_raw(Arc::new(CanvasGPUAdapterInfo::new(info)))
 }
 
+/// `Adapter::request_device` with VK_KHR_external_semaphore_fd, which video frames shared with
+/// GL synchronize with (`linux_video_frame`).
+#[cfg(target_os = "linux")]
+fn request_device_sharing_semaphores(
+    adapter: &Arc<wgpu_core::instance::Adapter>,
+    descriptor: &wgpu_core::device::DeviceDescriptor,
+) -> Result<
+    (Arc<wgpu_core::device::Device>, Arc<wgpu_core::device::queue::Queue>),
+    wgpu_core::instance::RequestDeviceError,
+> {
+    let Some(hal) = (unsafe { Arc::clone(adapter).as_hal::<wgpu_hal::api::Vulkan>() }) else {
+        return adapter.request_device(descriptor);
+    };
+    let mut descriptor = descriptor.clone();
+    adapter.validate_device_descriptor(&mut descriptor)?;
+    let extension = ash::khr::external_semaphore_fd::NAME;
+    let supported = hal.physical_device_capabilities().supports_extension(extension);
+    let open = unsafe {
+        hal.open_with_callback(
+            descriptor.required_features,
+            &descriptor.required_limits,
+            &descriptor.memory_hints,
+            Some(Box::new(move |args: wgpu_hal::vulkan::CreateDeviceCallbackArgs| {
+                if supported && !args.extensions.contains(&extension) {
+                    args.extensions.push(extension);
+                }
+            })),
+        )
+    }
+    .map_err(wgpu_core::device::DeviceError::from_hal)?;
+    drop(hal);
+    unsafe { adapter.create_device_and_queue_from_hal(open.into(), &descriptor) }
+}
+
 #[no_mangle]
 pub extern "C" fn canvas_native_webgpu_adapter_request_device(
     adapter: *const CanvasGPUAdapter,
@@ -153,7 +187,11 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
         };
         let callback_data = callback_data as *mut c_void;
 
-        match adapter_inner.request_device(&descriptor) {
+        #[cfg(target_os = "linux")]
+        let device = request_device_sharing_semaphores(&adapter_inner, &descriptor);
+        #[cfg(not(target_os = "linux"))]
+        let device = adapter_inner.request_device(&descriptor);
+        match device {
             Ok((device, queue)) => {
                 let error_sink = Arc::new(parking_lot::Mutex::new(ErrorSinkRaw::new(
                     DEFAULT_DEVICE_LOST_HANDLER,
@@ -170,6 +208,8 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
                     blit: Arc::new(parking_lot::Mutex::new(None)),
                     #[cfg(target_os = "windows")]
                     shared_frames: Default::default(),
+                    #[cfg(target_os = "linux")]
+                    linux_frames: Default::default(),
                 });
 
                 let ret = Arc::into_raw(Arc::new(CanvasGPUDevice {

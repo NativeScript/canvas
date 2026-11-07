@@ -17,9 +17,12 @@ export class GPU {
 	}
 
 	getPreferredCanvasFormat() {
-		// BGRA is the native swapchain format on Apple and on Windows (DXGI).
-		if (__APPLE__ || NAPI_HOST) {
+		// BGRA is the native swapchain format on Apple and on Windows (DXGI); the native module knows.
+		if (__APPLE__) {
 			return 'bgra8unorm';
+		}
+		if (NAPI_HOST) {
+			return this.native?.getPreferredCanvasFormat?.() ?? 'bgra8unorm';
 		}
 		return 'rgba8unorm';
 	}

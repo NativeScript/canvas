@@ -67,6 +67,9 @@ pub struct CanvasGPUCanvasContext {
     /// swapchain's DPI / fit transform ours).
     #[cfg(all(target_os = "windows", feature = "d3d"))]
     pub(crate) panel: Option<canvas_core::gpu::dxgi::PanelSurfaceTarget>,
+    /// Linux: frames go to the host's view instead of a surface.
+    #[cfg(target_os = "linux")]
+    pub(crate) linux: parking_lot::Mutex<Option<Arc<super::linux_frames::LinuxPresenter>>>,
 }
 
 impl Drop for CanvasGPUCanvasContext {
@@ -267,7 +270,18 @@ fn offscreen_current_texture(context: &CanvasGPUCanvasContext) -> *const CanvasG
     // present_surface copies it into the read-back texture.
     let usage = data.usage | wgt::TextureUsages::COPY_SRC;
 
-    let texture = {
+    #[cfg(target_os = "linux")]
+    let shown = context
+        .linux
+        .lock()
+        .clone()
+        .and_then(|presenter| presenter.acquire(surface_data));
+    #[cfg(not(target_os = "linux"))]
+    let shown: Option<Arc<wgpu_core::resource::Texture>> = None;
+
+    let texture = if let Some(texture) = shown {
+        texture
+    } else {
         let mut offscreen = context.offscreen_texture.lock();
         match offscreen.as_ref() {
             Some(offscreen)
@@ -712,6 +726,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create_offscreen(
         current_texture: Mutex::default(),
         offscreen_texture: Mutex::default(),
         last_capabilities: Mutex::default(),
+        #[cfg(target_os = "linux")]
+        linux: Default::default(),
         #[cfg(all(target_os = "windows", feature = "d3d"))]
         panel: None,
     }))
@@ -742,10 +758,12 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize_offscreen(
     data.previous_configuration.width = width;
     data.previous_configuration.height = height;
 
-    #[cfg(not(target_os = "android"))]
+    #[cfg(not(any(target_os = "android", target_os = "linux")))]
     let format = wgt::TextureFormat::Bgra8Unorm;
     #[cfg(target_os = "android")]
     let format = wgt::TextureFormat::Rgba8Unorm;
+    #[cfg(target_os = "linux")]
+    let format = data.texture_data.format;
     let desc = wgt::TextureDescriptor {
         label: Some(Cow::Borrowed("ContextReadBack")),
         size: wgt::Extent3d {
@@ -814,6 +832,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create(
                 current_texture: Mutex::default(),
                 offscreen_texture: Mutex::default(),
                 last_capabilities: Mutex::default(),
+                #[cfg(target_os = "linux")]
+                linux: Default::default(),
             };
 
             Arc::into_raw(Arc::new(ctx))
@@ -980,6 +1000,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create(
                 current_texture: Mutex::default(),
                 offscreen_texture: Mutex::default(),
                 last_capabilities: Mutex::default(),
+                #[cfg(target_os = "linux")]
+                linux: Default::default(),
             };
             Arc::into_raw(Arc::new(ctx))
         }
@@ -1035,6 +1057,8 @@ pub(crate) unsafe fn create_swap_chain_panel(
             current_texture: Mutex::default(),
             offscreen_texture: Mutex::default(),
             last_capabilities: Mutex::default(),
+            #[cfg(target_os = "linux")]
+            linux: Default::default(),
             panel: Some(target),
         })),
         Err(cause) => {
@@ -1160,6 +1184,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create_uiview(
                 current_texture: Mutex::default(),
                 offscreen_texture: Mutex::default(),
                 last_capabilities: Mutex::default(),
+                #[cfg(target_os = "linux")]
+                linux: Default::default(),
             };
 
             Arc::into_raw(Arc::new(ctx))
@@ -1313,6 +1339,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create_nsview(
                 current_texture: Mutex::default(),
                 offscreen_texture: Mutex::default(),
                 last_capabilities: Mutex::default(),
+                #[cfg(target_os = "linux")]
+                linux: Default::default(),
             };
 
             Arc::into_raw(Arc::new(ctx))
@@ -1739,11 +1767,15 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_configure(
     }
 
     let (read_back, texture_data) = {
-        #[cfg(not(target_os = "android"))]
+        #[cfg(not(any(target_os = "android", target_os = "linux")))]
         let mut format = wgt::TextureFormat::Bgra8Unorm;
 
         #[cfg(any(target_os = "android"))]
         let mut format = wgt::TextureFormat::Rgba8Unorm;
+
+        // Linux: frames are copied into it as they are, whatever the page configured.
+        #[cfg(target_os = "linux")]
+        let mut format = config.format;
 
         let desc = wgt::TextureDescriptor {
             label: Some(Cow::Borrowed("ContextReadBack")),
@@ -2063,6 +2095,14 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_present_surface(
                 }
             }
         };
+    }
+
+    #[cfg(target_os = "linux")]
+    if texture.surface_id.is_none() {
+        let presenter = context.linux.lock().clone();
+        if let (Some(presenter), Some(data)) = (presenter, context.data.lock().as_ref()) {
+            presenter.present(data);
+        }
     }
 
     let presented = match (texture.surface_id.is_some(), surface_id.as_ref()) {

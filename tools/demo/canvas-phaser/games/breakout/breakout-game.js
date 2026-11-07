@@ -123,7 +123,7 @@ export function setupGame(canvas) {
 
 	console.log('config', config);
 
-	game = Phaser.Game({
+	game = new Phaser.Game({
 		canvas,
 		type: 2,
 		scene: [Breakout],

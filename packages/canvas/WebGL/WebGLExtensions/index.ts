@@ -181,7 +181,7 @@ export class OES_vertex_array_object {
 	}
 
 	bindVertexArrayOES(arrayObject: WebGLVertexArrayObject) {
-		const value = arrayObject ? arrayObject.native : null;
+		const value = arrayObject ? arrayObject.native : 0;
 		this.nativeInstance.bindVertexArrayOES(value);
 	}
 }

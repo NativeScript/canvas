@@ -110,7 +110,11 @@ pub extern "C" fn canvas_native_webgl2_bind_transform_feedback(
     assert!(!state.is_null());
     let state = unsafe { &*state };
     state.post(move |state| {
-        canvas_webgl::webgl2::canvas_native_webgl2_bind_sampler(target, transform_feedback, state)
+        canvas_webgl::webgl2::canvas_native_webgl2_bind_transform_feedback(
+            target,
+            transform_feedback,
+            state,
+        )
     })
 }
 

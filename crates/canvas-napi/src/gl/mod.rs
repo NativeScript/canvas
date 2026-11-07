@@ -119,6 +119,8 @@ pub(crate) unsafe fn present_webgl(state: *mut std::ffi::c_void) {
   {
     crate::frame::report_lost();
   }
+  #[cfg(target_os = "linux")]
+  crate::host::linux::presented(state as *mut std::ffi::c_void);
 }
 
 impl web_g_l_rendering_context {

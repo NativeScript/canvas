@@ -421,15 +421,18 @@ export class GPUDevice extends EventTarget {
 			throw error;
 		}
 
-		const texture = GPUExternalTexture.fromNative(
-			this.native.importExternalTexture({
-				label: descriptor.label,
-				nativeTexture: frame.texturePointer,
-				width: frame.width,
-				height: frame.height,
-			}),
-			frame,
-		);
+		const imported = this.native.importExternalTexture({
+			label: descriptor.label,
+			nativeTexture: frame.texturePointer,
+			width: frame.width,
+			height: frame.height,
+		});
+		// Frames the import copies are released at once rather than when collected.
+		const copied = frame.copiedOnImport === true;
+		if (copied) {
+			frame.close();
+		}
+		const texture = GPUExternalTexture.fromNative(imported, copied ? undefined : frame);
 
 		if (!texture) {
 			const error: any = new Error(`Failed to execute 'importExternalTexture' on 'GPUDevice': the frame could not be imported.`);
@@ -442,7 +445,7 @@ export class GPUDevice extends EventTarget {
 	}
 
 	private _metalDevice: number | undefined;
-	/** For videos' GPU frames: the `MTLDevice` on Apple, the adapter LUID on Windows (frames are shared per adapter); else 0. */
+	/** For videos' GPU frames: the `MTLDevice` on Apple, the adapter LUID on Windows, the device UUID key on Linux (frames are shared per GPU); else 0. */
 	get __frameDevice(): number {
 		return this.__metalDevice || this.__adapterLuid;
 	}

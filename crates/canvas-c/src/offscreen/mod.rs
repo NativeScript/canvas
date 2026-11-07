@@ -19,8 +19,12 @@ use crate::{CanvasColorSpace, CanvasRenderingContext2D, WebGLState};
 pub mod android;
 #[cfg(any(target_os = "ios", target_os = "tvos", target_os = "visionos"))]
 mod apple;
+#[cfg(target_os = "linux")]
+mod linux;
 #[cfg(all(target_os = "windows", feature = "d3d"))]
 mod windows;
+#[cfg(target_os = "linux")]
+pub use self::linux::canvas_native_offscreen_surface_create_linux;
 #[cfg(all(target_os = "windows", feature = "d3d"))]
 pub use self::windows::*;
 
@@ -105,6 +109,8 @@ struct Inner {
     view: Option<android::View>,
     #[cfg(all(target_os = "windows", feature = "d3d"))]
     view: Option<windows::View>,
+    #[cfg(target_os = "linux")]
+    view: Option<linux::View>,
     binding: Binding,
     sink: Option<Arc<Sink>>,
 }
@@ -128,7 +134,14 @@ impl CanvasOffscreenSurface {
             color_space: color_space.into(),
             size: Mutex::new((width, height)),
             inner: Mutex::new(Inner {
-                #[cfg(any(target_os = "ios", target_os = "tvos", target_os = "visionos", target_os = "android", all(target_os = "windows", feature = "d3d")))]
+                #[cfg(any(
+                    target_os = "ios",
+                    target_os = "tvos",
+                    target_os = "visionos",
+                    target_os = "android",
+                    target_os = "linux",
+                    all(target_os = "windows", feature = "d3d")
+                ))]
                 view: None,
                 binding: Binding::None,
                 sink: None,
@@ -322,9 +335,9 @@ impl CanvasOffscreenSurface {
                 if let (Some(handle), Some(window)) = (handle.as_ref(), window) {
                     android::attach_2d(handle, window, width, height);
                 }
-                #[cfg(target_os = "android")]
+                #[cfg(any(target_os = "android", target_os = "linux"))]
                 let engine = self.has_view().then_some(CanvasOffscreenEngine::GL);
-                #[cfg(not(target_os = "android"))]
+                #[cfg(not(any(target_os = "android", target_os = "linux")))]
                 let engine = None;
                 self.bind(handle.map_or(Binding::TwoDDirect, Binding::TwoD), engine, alpha);
                 context
@@ -334,6 +347,10 @@ impl CanvasOffscreenSurface {
                 viewless_2d(w, h, density, alpha, font_color, ppi, direction, color_space)
             }
         };
+        #[cfg(target_os = "linux")]
+        if let Some(hook) = self.linux_hook() {
+            linux::hook_2d(&context, hook);
+        }
         Box::into_raw(Box::new(context))
     }
 
@@ -385,6 +402,10 @@ impl CanvasOffscreenSurface {
         #[cfg(target_os = "android")]
         if let (false, Some(window)) = (state.is_null(), window) {
             android::attach_webgl(unsafe { &*state }, window);
+        }
+        #[cfg(target_os = "linux")]
+        if let (false, Some(hook)) = (state.is_null(), self.linux_hook()) {
+            linux::hook_webgl(unsafe { &*state }, hook);
         }
         let has_view = self.has_view();
         self.bind_webgl(state, has_view, a.alpha)
@@ -514,13 +535,24 @@ impl CanvasOffscreenSurface {
         self.detach_windows_view();
         let sink = {
             let mut inner = self.inner();
-            #[cfg(any(target_os = "ios", target_os = "tvos", target_os = "visionos", target_os = "android"))]
+            #[cfg(any(
+                target_os = "ios",
+                target_os = "tvos",
+                target_os = "visionos",
+                target_os = "android",
+                target_os = "linux"
+            ))]
             {
                 inner.view = None;
             }
             inner.sink.take()
         };
         drop(sink);
+    }
+
+    #[cfg(target_os = "linux")]
+    fn linux_hook(&self) -> Option<canvas_core::gpu::gl::PresentHook> {
+        self.inner().view.as_ref().map(|view| view.hook.clone())
     }
 
     fn set_sink(&self, sink: Option<Sink>) {
@@ -553,12 +585,12 @@ fn viewless_2d(
         Context::new_metal_offscreen(width, height, density, 1, alpha, font_color, ppi, direction, color_space),
         alpha,
     ));
-    #[cfg(all(feature = "gl", target_os = "android"))]
+    #[cfg(all(feature = "gl", any(target_os = "android", target_os = "linux")))]
     let gpu = Context::new_gl(std::ptr::null_mut(), width, height, density, alpha, font_color, ppi, direction, color_space)
         .map(|context| CanvasRenderingContext2D::new_gl(context, alpha));
     #[cfg(not(any(
         all(feature = "metal", any(target_os = "ios", target_os = "tvos", target_os = "visionos")),
-        all(feature = "gl", target_os = "android")
+        all(feature = "gl", any(target_os = "android", target_os = "linux"))
     )))]
     let gpu: Option<CanvasRenderingContext2D> = None;
     gpu.unwrap_or_else(|| {
@@ -570,9 +602,23 @@ fn viewless_2d(
 }
 
 fn has_view(inner: &Inner) -> bool {
-    #[cfg(any(target_os = "ios", target_os = "tvos", target_os = "visionos", target_os = "android", all(target_os = "windows", feature = "d3d")))]
+    #[cfg(any(
+        target_os = "ios",
+        target_os = "tvos",
+        target_os = "visionos",
+        target_os = "android",
+        target_os = "linux",
+        all(target_os = "windows", feature = "d3d")
+    ))]
     let has = inner.view.is_some();
-    #[cfg(not(any(target_os = "ios", target_os = "tvos", target_os = "visionos", target_os = "android", all(target_os = "windows", feature = "d3d"))))]
+    #[cfg(not(any(
+        target_os = "ios",
+        target_os = "tvos",
+        target_os = "visionos",
+        target_os = "android",
+        target_os = "linux",
+        all(target_os = "windows", feature = "d3d")
+    )))]
     let has = {
         let _ = inner;
         false
@@ -584,7 +630,7 @@ fn resize_webgl_offscreen(state: &WebGLState, width: u32, height: u32) {
     let (width, height) = (width as i32, height as i32);
     #[cfg(any(target_os = "ios", target_os = "tvos", target_os = "visionos"))]
     state.post(move |state| state.resize_drawable(width, height));
-    #[cfg(target_os = "android")]
+    #[cfg(any(target_os = "android", target_os = "linux"))]
     state.post(move |state| {
         state.make_current();
         state.resize_pbuffer(width, height);
@@ -593,7 +639,14 @@ fn resize_webgl_offscreen(state: &WebGLState, width: u32, height: u32) {
     state.post(move |state| {
         state.resize_texture_surface(width, height);
     });
-    #[cfg(not(any(target_os = "ios", target_os = "tvos", target_os = "visionos", target_os = "android", target_os = "windows")))]
+    #[cfg(not(any(
+        target_os = "ios",
+        target_os = "tvos",
+        target_os = "visionos",
+        target_os = "android",
+        target_os = "windows",
+        target_os = "linux"
+    )))]
     let _ = (state, width, height);
 }
 

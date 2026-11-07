@@ -310,10 +310,7 @@ impl CanvasGPUDevice {
                         wgpu_core::binding_model::BindingResource::TextureView(Arc::clone(&view.texture_view))
                     }
                     CanvasBindGroupEntryResource::ExternalTexture(texture) => {
-                        let texture = unsafe { &**texture };
-                        wgpu_core::binding_model::BindingResource::ExternalTexture(Arc::clone(
-                            &texture.external_texture,
-                        ))
+                        unsafe { &**texture }.binding_resource()
                     }
                 },
             })
@@ -338,9 +335,21 @@ impl CanvasGPUDevice {
         label: Option<Cow<'static, str>>,
         entries: &[CanvasBindGroupLayoutEntry],
     ) -> *const CanvasGPUBindGroupLayout {
+        let emulated = !self.device.features().contains(wgt::Features::EXTERNAL_TEXTURE);
         let wgpu_entries = entries
             .iter()
-            .map(|entry| (*entry).into())
+            .map(|entry| {
+                let mut entry: wgt::BindGroupLayoutEntry = (*entry).into();
+                if emulated && entry.ty == wgt::BindingType::ExternalTexture {
+                    // As `lower_external_textures` declares it.
+                    entry.ty = wgt::BindingType::Texture {
+                        sample_type: wgt::TextureSampleType::Float { filterable: true },
+                        view_dimension: wgt::TextureViewDimension::D2,
+                        multisampled: false,
+                    };
+                }
+                entry
+            })
             .collect::<Vec<_>>();
 
         let desc = wgpu_core::binding_model::BindGroupLayoutDescriptor {
@@ -1005,9 +1014,17 @@ pub extern "C" fn canvas_native_webgpu_device_create_shader_module(
 
     let src = unsafe { CStr::from_ptr(source) };
     let src = src.to_str().unwrap();
-    let source = wgpu_core::pipeline::ShaderModuleSource::Wgsl(Cow::Owned(src.to_string()));
-
     let device = unsafe { &*device };
+    let lowered = (!device
+        .device
+        .features()
+        .contains(wgt::Features::EXTERNAL_TEXTURE))
+    .then(|| crate::webgpu::gpu_external_texture::lower_external_textures(src))
+    .flatten();
+    let source = wgpu_core::pipeline::ShaderModuleSource::Wgsl(Cow::Owned(
+        lowered.unwrap_or_else(|| src.to_string()),
+    ));
+
     let desc = wgpu_core::pipeline::ShaderModuleDescriptor {
         label,
         runtime_checks: Default::default(),
@@ -1015,8 +1032,21 @@ pub extern "C" fn canvas_native_webgpu_device_create_shader_module(
     let module = device.device.create_shader_module(&desc, source);
 
     // Messages hang off the module now instead of arriving with an error.
-    let msgs: Vec<crate::webgpu::gpu_shader_module::CanvasGPUCompilationMessage> = module
-        .compilation_info()
+    let info = module.compilation_info();
+    // As browsers do: the reason a module is invalid, in the console.
+    for message in info
+        .messages
+        .iter()
+        .filter(|m| m.message_type == wgt::CompilationMessageType::Error)
+    {
+        let line = message.location.map_or(0, |location| location.line_number);
+        log::error!(
+            "WGSL error in shader module '{}' (line {line}): {}",
+            desc.label.as_deref().unwrap_or(""),
+            message.message
+        );
+    }
+    let msgs: Vec<crate::webgpu::gpu_shader_module::CanvasGPUCompilationMessage> = info
         .messages
         .iter()
         .map(|message| {

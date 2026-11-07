@@ -2005,9 +2005,7 @@ impl Into<BindGroupEntry<'static>> for CanvasBindGroupEntry {
                 let texture = unsafe { &*texture };
                 BindGroupEntry {
                     binding: self.binding,
-                    resource: wgpu_core::binding_model::BindingResource::ExternalTexture(
-                        Arc::clone(&texture.external_texture),
-                    ),
+                    resource: texture.binding_resource(),
                 }
             }
         }

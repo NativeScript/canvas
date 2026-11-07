@@ -408,3 +408,14 @@ impl ImageAsset {
     })
   }
 }
+
+#[cfg(target_os = "linux")]
+#[napi]
+impl ImageAsset {
+  /// A GdkTexture (core's `ImageSource.linux`, by address): its pixels, downloaded once.
+  #[napi]
+  pub fn from_gdk_texture_sync(&self, texture: f64) -> bool {
+    crate::host::linux::texture_pixels(texture as usize)
+      .is_some_and(|(width, height, pixels)| load_raw(&self.asset, width, height, &pixels, true))
+  }
+}

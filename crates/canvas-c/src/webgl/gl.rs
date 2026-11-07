@@ -2381,6 +2381,42 @@ pub extern "C" fn canvas_native_webgl_resize_d3d(state: *mut WebGLState, width: 
     true
 }
 
+/// Linux: resizes (and clears) the pbuffer drawing buffer.
+#[cfg(target_os = "linux")]
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_resize_pbuffer(
+    state: *mut WebGLState,
+    width: i32,
+    height: i32,
+) -> bool {
+    if state.is_null() {
+        return false;
+    }
+    let state = unsafe { &mut *state };
+    let resize = move |inner: &mut canvas_webgl::prelude::WebGLState| {
+        inner.make_current();
+        inner.resize_pbuffer(width, height);
+    };
+    if state.is_threaded() {
+        state.post(resize);
+    } else {
+        resize(state.get_inner_mut());
+    }
+    true
+}
+
+/// Linux: the EGL context a (non-threaded) WebGL context renders with.
+#[cfg(target_os = "linux")]
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_get_egl_context(
+    state: *const WebGLState,
+) -> *mut std::ffi::c_void {
+    if state.is_null() || unsafe { &*state }.is_threaded() {
+        return std::ptr::null_mut();
+    }
+    unsafe { &*state }.get_inner().gl_context().egl_context()
+}
+
 /// Ends a frame: presents it where the context is on screen (Windows panels), else flushes.
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_present(state: *mut WebGLState) -> bool {

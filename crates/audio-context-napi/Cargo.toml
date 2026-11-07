@@ -3,7 +3,7 @@ name = "audio-context-napi"
 version = "0.1.0"
 edition = "2021"
 publish = false
-description = "Node-API binding for @nativescript/audio-context: a Web Audio graph rendered by the web-audio-api crate and played through WASAPI (cpal), for Node-API hosts (NativeScript Windows, Node)."
+description = "Node-API binding for @nativescript/audio-context: a Web Audio graph rendered by the web-audio-api crate and played through cpal (WASAPI on Windows, ALSA on Linux), for Node-API hosts (NativeScript Windows and Linux, Node)."
 
 [lib]
 crate-type = ["cdylib"]

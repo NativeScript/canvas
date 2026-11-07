@@ -840,12 +840,6 @@ impl g_p_u_device {
     Ok(unsafe { g_p_u_texture::from_raw(texture) })
   }
 
-  #[cfg(target_os = "windows")]
-  #[napi(js_name = "__getAdapterLuid")]
-  pub fn get_adapter_luid(&self) -> f64 {
-    unsafe { canvas_c::webgpu::gpu_shared_frame::canvas_native_webgpu_device_get_adapter_luid(self.ptr()) as f64 }
-  }
-
   /// `importExternalTexture({ nativeTexture, width, height, label? })`: packages/canvas resolves
   /// the video to a platform texture; undefined where the backend cannot import it.
   #[napi(
@@ -869,5 +863,17 @@ impl g_p_u_device {
     (!texture.is_null()).then(|| g_p_u_external_texture {
       texture: unsafe { Arc::from_raw(texture) },
     })
+  }
+}
+
+#[cfg(target_os = "windows")]
+#[napi]
+impl g_p_u_device {
+  #[napi(js_name = "__getAdapterLuid")]
+  pub fn get_adapter_luid(&self) -> f64 {
+    unsafe {
+      canvas_c::webgpu::gpu_shared_frame::canvas_native_webgpu_device_get_adapter_luid(self.ptr())
+        as f64
+    }
   }
 }

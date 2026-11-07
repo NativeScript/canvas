@@ -170,19 +170,53 @@ fn usages(usage: wgt::TextureUsages) -> (vk::ImageUsageFlags, wgt::TextureUses) 
 /// A dedicated, exportable allocation behind a 2D image, wrapped as a wgpu texture.
 unsafe fn create_image(data: &SurfaceData, usage: wgt::TextureUsages) -> Option<Image> {
     let t = data.texture_data;
-    let format = vk_format(t.format)?;
-    let device = &data.device.device;
+    let (texture, fd, allocation_size) = unsafe {
+        create_exportable_texture(
+            &data.device.device,
+            t.size,
+            t.format,
+            usage,
+            data.previous_configuration.view_formats.clone(),
+            wgt::TextureUses::UNINITIALIZED,
+            "LinuxCanvasFrame",
+        )
+    }?;
+    Some(Image {
+        id: NEXT_IMAGE.fetch_add(1, Ordering::Relaxed),
+        texture,
+        width: t.size.width,
+        height: t.size.height,
+        format: t.format,
+        usage,
+        allocation_size,
+        fd: Some(fd),
+        busy: Arc::new(AtomicBool::new(false)),
+    })
+}
+
+/// A 2D image on a dedicated allocation exported as an OPAQUE_FD (the caller owns the fd), as a
+/// wgpu texture in the `initial` state. Wrapped images have no clear mode: they count as
+/// initialized.
+pub(crate) unsafe fn create_exportable_texture(
+    device: &Arc<wgpu_core::device::Device>,
+    size: wgt::Extent3d,
+    format: wgt::TextureFormat,
+    usage: wgt::TextureUsages,
+    view_formats: Vec<wgt::TextureFormat>,
+    initial: wgt::TextureUses,
+    label: &'static str,
+) -> Option<(Arc<wgpu_core::resource::Texture>, i32, u64)> {
+    let vk_format = vk_format(format)?;
     let hal = unsafe { Arc::clone(device).as_hal::<wgpu_hal::api::Vulkan>() }?;
     if !hal
         .enabled_device_extensions()
         .contains(&ash::khr::external_memory_fd::NAME)
     {
-        log::error!("canvas: WebGPU canvases need VK_KHR_external_memory_fd to be shown");
+        log::error!("canvas: sharing WebGPU images needs VK_KHR_external_memory_fd");
         return None;
     }
     let raw = hal.raw_device().clone();
     let instance = hal.shared_instance().raw_instance();
-    let view_formats = data.previous_configuration.view_formats.clone();
     let (vk_usage, uses) = usages(usage);
     let mut external = vk::ExternalMemoryImageCreateInfo::default()
         .handle_types(vk::ExternalMemoryHandleTypeFlags::OPAQUE_FD);
@@ -194,10 +228,10 @@ unsafe fn create_image(data: &SurfaceData, usage: wgt::TextureUsages) -> Option<
             vk::ImageCreateFlags::MUTABLE_FORMAT
         })
         .image_type(vk::ImageType::TYPE_2D)
-        .format(format)
+        .format(vk_format)
         .extent(vk::Extent3D {
-            width: t.size.width,
-            height: t.size.height,
+            width: size.width,
+            height: size.height,
             depth: 1,
         })
         .mip_levels(1)
@@ -266,12 +300,12 @@ unsafe fn create_image(data: &SurfaceData, usage: wgt::TextureUsages) -> Option<
         }
     };
     let hal_desc = wgpu_hal::TextureDescriptor {
-        label: Some("LinuxCanvasFrame"),
-        size: t.size,
+        label: Some(label),
+        size,
         mip_level_count: 1,
         sample_count: 1,
         dimension: wgt::TextureDimension::D2,
-        format: t.format,
+        format,
         usage: uses,
         memory_flags: wgpu_hal::MemoryFlags::empty(),
         view_formats: view_formats.clone(),
@@ -286,40 +320,23 @@ unsafe fn create_image(data: &SurfaceData, usage: wgt::TextureUsages) -> Option<
     };
     drop(hal);
     let desc = wgpu_core::resource::TextureDescriptor {
-        label: Some(Cow::Borrowed("LinuxCanvasFrame")),
-        size: t.size,
+        label: Some(Cow::Borrowed(label)),
+        size,
         mip_level_count: 1,
         sample_count: 1,
         dimension: wgt::TextureDimension::D2,
-        format: t.format,
+        format,
         usage,
         view_formats,
     };
-    // Wrapped images have no clear mode: treat them as initialized (a frame loads with `clear`).
-    let (texture, error) = unsafe {
-        device.create_texture_from_hal(
-            Box::new(hal_texture),
-            &desc,
-            wgt::TextureUses::UNINITIALIZED,
-            true,
-        )
-    };
+    let (texture, error) =
+        unsafe { device.create_texture_from_hal(Box::new(hal_texture), &desc, initial, true) };
     if let Some(error) = error {
-        log::error!("canvas: could not wrap a WebGPU frame image: {error:?}");
+        log::error!("canvas: could not wrap an exportable image: {error:?}");
         unsafe { libc::close(fd) };
         return None;
     }
-    Some(Image {
-        id: NEXT_IMAGE.fetch_add(1, Ordering::Relaxed),
-        texture,
-        width: t.size.width,
-        height: t.size.height,
-        format: t.format,
-        usage,
-        allocation_size: requirements.size,
-        fd: Some(fd),
-        busy: Arc::new(AtomicBool::new(false)),
-    })
+    Some((texture, fd, requirements.size))
 }
 
 /// UI thread: shows the context's frames through `sink` (Linux hosts).

@@ -72,5 +72,7 @@ pub mod gpu_texture;
 pub mod gpu_texture_view;
 #[cfg(target_os = "linux")]
 pub mod linux_frames;
+#[cfg(target_os = "linux")]
+pub mod linux_video_frame;
 pub mod prelude;
 pub mod structs;

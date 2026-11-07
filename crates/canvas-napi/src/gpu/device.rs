@@ -866,6 +866,18 @@ impl g_p_u_device {
   }
 }
 
+/// Linux: 53 bits of the device UUID, which canvas-media matches with its GL device's.
+#[cfg(target_os = "linux")]
+#[napi]
+impl g_p_u_device {
+  #[napi(js_name = "__getAdapterLuid")]
+  pub fn get_adapter_luid(&self) -> f64 {
+    unsafe {
+      canvas_c::webgpu::linux_video_frame::canvas_native_webgpu_device_get_uuid_key(self.ptr()) as f64
+    }
+  }
+}
+
 #[cfg(target_os = "windows")]
 #[napi]
 impl g_p_u_device {

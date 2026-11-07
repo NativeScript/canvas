@@ -34,6 +34,9 @@ pub struct CanvasGPUQueue {
     #[cfg(target_os = "windows")]
     pub(crate) shared_frames:
         Arc<parking_lot::Mutex<crate::webgpu::gpu_shared_frame::SharedFrameCache>>,
+    #[cfg(target_os = "linux")]
+    pub(crate) linux_frames:
+        Arc<parking_lot::Mutex<crate::webgpu::linux_video_frame::LinuxFrameCache>>,
 }
 
 unsafe impl Send for CanvasGPUQueue {}

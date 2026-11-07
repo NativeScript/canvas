@@ -340,7 +340,7 @@ pub(crate) unsafe fn import_platform_texture(
     target_os = "tvos",
     target_os = "android"
 )))]
-#[allow(dead_code)] // Windows imports through gpu_shared_frame.
+#[allow(dead_code)] // Windows and Linux import through gpu_shared_frame / linux_video_frame.
 pub(crate) unsafe fn import_platform_texture(
     _device: &Arc<wgpu_core::device::Device>,
     _handle: *mut c_void,
@@ -367,9 +367,21 @@ unsafe fn blit_frame_into_texture(
 ) -> bool {
     let device = &queue.device_id;
 
+    // Checked before importing: a staged frame must be read by the very next submit.
+    if !(*destination.texture)
+        .texture
+        .descriptor()
+        .usage
+        .contains(wgt::TextureUsages::RENDER_ATTACHMENT)
+    {
+        return false;
+    }
+
     #[cfg(target_os = "windows")]
     let source_texture = super::gpu_shared_frame::import_and_stage(queue, handle, frame_width, frame_height);
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(target_os = "linux")]
+    let source_texture = super::linux_video_frame::import_and_stage(queue, handle, frame_width, frame_height);
+    #[cfg(not(any(target_os = "windows", target_os = "linux")))]
     let source_texture = import_platform_texture(device, handle, frame_width, frame_height);
     let Some(source_texture) = source_texture else {
         return false;

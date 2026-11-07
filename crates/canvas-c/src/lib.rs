@@ -38,6 +38,8 @@ mod webgl;
 pub use webgl::*;
 pub mod offscreen;
 pub mod impl_test;
+#[cfg(target_os = "linux")]
+pub mod linux_video_frame;
 /* Raf */
 #[cfg(any(target_os = "android", target_os = "ios", target_os = "visionos", target_os = "tvos"))]
 #[derive(Clone)]

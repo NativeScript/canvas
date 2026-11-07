@@ -1169,6 +1169,35 @@ macro_rules! impl_webgl_context {
     }
 
 
+    /// Linux: `texImage2D/3D` (or `texSubImage*` with `sub`) from a canvas-media `NSCVideoFrame`
+    /// address, on the GPU when the frame is a GL texture. `false`: use the frame's pixels.
+    #[napi(js_name = "__texImageVideoFrame")]
+    pub fn tex_image_video_frame(
+        &self,
+        frame: f64,
+        target: u32,
+        level: i32,
+        internalformat: i32,
+        three_d: bool,
+        sub: bool,
+        xoffset: i32,
+        yoffset: i32,
+        zoffset: i32,
+    ) -> bool {
+        #[cfg(target_os = "linux")]
+        return unsafe {
+            canvas_c::linux_video_frame::canvas_native_webgl_tex_image_video_frame(
+                frame as usize as *mut std::ffi::c_void,
+                target, level, internalformat, three_d, sub, xoffset, yoffset, zoffset, self.state,
+            )
+        };
+        #[cfg(not(target_os = "linux"))]
+        {
+            let _ = (frame, target, level, internalformat, three_d, sub, xoffset, yoffset, zoffset);
+            false
+        }
+    }
+
     #[napi]
     pub fn tex_parameterf(&self, target: u32, pname: u32, param: f64) {
         canvas_c::canvas_native_webgl_tex_parameterf(target, pname, param as f32, self.state);

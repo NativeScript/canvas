@@ -1,11 +1,11 @@
 # CI for pushes and pull requests.
 #
-# All native artifacts (Android AARs + iOS/visionOS xcframeworks for canvas,
-# canvas-svg and audio-context; the Windows x64/arm64 Node-API modules for
-# canvas and canvas-svg) are built by the reusable build-native.yml
-# workflow. On pushes to master (and manual dispatch) the npm job then packages
-# everything with those freshly built artifacts and publishes a `pr`-tagged
-# prerelease of each package.
+# All native artifacts (Android AARs + iOS/visionOS/tvOS xcframeworks for
+# canvas, canvas-svg and audio-context; the Windows and Linux x64/arm64
+# Node-API modules) are built by the reusable build-native.yml workflow. On
+# pushes to master (and manual dispatch) the npm job then packages everything
+# with those freshly built artifacts and publishes a `pr`-tagged prerelease of
+# each package.
 name: Canvas Native
 
 permissions:
@@ -81,27 +81,7 @@ jobs:
           path: native-artifacts
 
       - name: Place native artifacts
-        run: |
-          set -e
-          cp native-artifacts/canvas-android/canvas-release.aar packages/canvas/platforms/android/
-          cp native-artifacts/canvas-svg-android/canvassvg-release.aar packages/canvas-svg/platforms/android/
-          cp native-artifacts/audio-context-android/audiocontext-release.aar packages/audio-context/platforms/android/
-          # xcframeworks are tarred to preserve file permissions; replace the
-          # committed ones so stale slices can't linger
-          rm -rf packages/canvas/platforms/ios/CanvasNative.xcframework
-          tar -xzf native-artifacts/canvas-ios/canvas-ios.tar.gz -C packages/canvas/platforms/ios
-          rm -rf packages/canvas-svg/platforms/ios/CanvasSVG.xcframework
-          tar -xzf native-artifacts/canvas-svg-ios/canvas-svg-ios.tar.gz -C packages/canvas-svg/platforms/ios
-          rm -rf packages/audio-context/platforms/ios/AudioContextNative.xcframework
-          tar -xzf native-artifacts/audio-context-ios/audio-context-ios.tar.gz -C packages/audio-context/platforms/ios
-          # Node-API modules (+ ANGLE DLLs) per Windows arch
-          for arch in x64 arm64; do
-            for pkg in canvas canvas-svg audio-context canvas-media; do
-              rm -rf "packages/$pkg/platforms/windows/$arch"
-              mkdir -p "packages/$pkg/platforms/windows/$arch"
-              cp native-artifacts/$pkg-windows-$arch/* "packages/$pkg/platforms/windows/$arch/"
-            done
-          done
+        run: ./tools/scripts/place-native-artifacts.sh native-artifacts
 
       - name: Install dependencies
         run: npm install

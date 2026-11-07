@@ -10,12 +10,15 @@
 #   audio-context-ios      AudioContextNative.xcframework        packages/audio-context/platforms/ios/
 #                          (tar.gz)
 #   canvas-windows-<arch>  canvasnative.node + ANGLE DLLs        packages/canvas/platforms/windows/<arch>/
-#   canvas-svg-windows-    canvassvg.node                        packages/canvas-svg/platforms/windows/<arch>/
-#     <arch>
-#   audio-context-windows- audiocontext.node                     packages/audio-context/platforms/windows/<arch>/
-#     <arch>
-#   canvas-media-windows-  canvasmedia.node                      packages/canvas-media/platforms/windows/<arch>/
-#     <arch>
+#   <module>-windows-      canvassvg.node, audiocontext.node,    packages/<module>/platforms/windows/<arch>/
+#     <arch>               canvasmedia.node, canvasgamepad.node
+#   linux-<arch>           every package's .node                 packages/<package>/platforms/linux/lib/<arch>/
+#                          (tree rooted at packages/)
+#
+# tools/scripts/place-native-artifacts.sh copies a download of all of them into the tree.
+#
+# Not built here (no sources in this repo, so the committed ones ship): canvas-media's and
+# canvas-gamepad's Android AARs and canvas-polyfill's AARs.
 #
 # xcframeworks are tarred before upload because upload-artifact does not
 # preserve file permissions.
@@ -24,6 +27,9 @@
 #   iOS:     make ios && make visionos && make tvos, then tools/scripts/canvas-build.sh
 #            (what `npm run build.canvas.ios.framework.release` runs, minus nx)
 #   Android: make android, then gradle :canvas:assembleRelease and copy the aar
+#
+#   Linux:   tools/scripts/build-linux.sh on Ubuntu 22.04 (glibc 2.35, GTK 4.6), natively on
+#            x64 and arm64 runners, then the Node-API tests on Mesa (surfaceless EGL, lavapipe).
 #
 #   Windows: tools/scripts/build-napi.sh <triple> release-napi [<crate>] (`make windows`,
 #            `make windows-svg`, `make windows-audio`, `make windows-media`); the modules other
@@ -35,7 +41,8 @@
 #
 # The napi-windows modules and the canvas-svg / audio-context mobile builds change rarely, so
 # their jobs cache the final artifact keyed on a hash of their sources and skip the whole build
-# on a hit.
+# on a hit. Builds of an explicit ref (npm Release) and manual runs never restore a cache, so
+# what gets published is always built from that ref's sources.
 name: Build Native
 
 permissions:
@@ -45,7 +52,7 @@ on:
   workflow_call:
     inputs:
       ref:
-        description: Git ref to build. Empty means the ref that triggered the caller.
+        description: Git ref to build. Empty means the ref that triggered the caller; set, no cache is restored.
         required: false
         type: string
         default: ''
@@ -61,7 +68,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.repository.default_branch || inputs.ref }}
+          ref: ${{ inputs.ref }}
       - uses: ./.github/actions/setup-android-native
       - name: Fetch V8 + NativeScript runtime headers
         run: ./tools/scripts/download-v8.sh
@@ -86,7 +93,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.repository.default_branch || inputs.ref }}
+          ref: ${{ inputs.ref }}
       - uses: ./.github/actions/setup-apple-native
       - name: Fetch V8 + NativeScript runtime headers
         run: ./tools/scripts/download-v8.sh
@@ -116,8 +123,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref }}
+          ref: ${{ inputs.ref }}
       - name: Restore cached AAR
+        if: github.event_name != 'workflow_dispatch' && inputs.ref == ''
         id: svg-aar
         uses: actions/cache@v4
         with:
@@ -159,6 +167,7 @@ jobs:
         with:
           ref: ${{ inputs.ref }}
       - name: Restore cached xcframework
+        if: github.event_name != 'workflow_dispatch' && inputs.ref == ''
         id: svg-xcframework
         uses: actions/cache@v4
         with:
@@ -193,6 +202,7 @@ jobs:
           # Oboe
           submodules: true
       - name: Restore cached AAR
+        if: github.event_name != 'workflow_dispatch' && inputs.ref == ''
         id: audio-aar
         uses: actions/cache@v4
         with:
@@ -285,7 +295,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.repository.default_branch || inputs.ref }}
+          ref: ${{ inputs.ref }}
       - uses: ./.github/actions/setup-windows-native
         with:
           target: ${{ matrix.target }}
@@ -307,7 +317,7 @@ jobs:
           path: packages/canvas/platforms/windows/${{ matrix.arch }}/
           if-no-files-found: error
 
-  # The Node-API modules other than canvasnative.node (no Skia, no ANGLE): one entry per module.
+  # The Node-API modules other than canvasnative.node: one entry per module.
   napi-windows:
     name: ${{ matrix.module.name }} Windows (${{ matrix.arch }})
     runs-on: windows-2025
@@ -332,6 +342,11 @@ jobs:
             file: canvasmedia.node
             addon-env: CANVAS_MEDIA_NAPI_ADDON
             sources: crates/canvas-media-napi
+          # no Node-API test suite
+          - name: canvas-gamepad
+            crate: canvas-gamepad-napi
+            file: canvasgamepad.node
+            sources: crates/canvas-gamepad-napi
         arch: [x64, arm64]
         include:
           - arch: x64
@@ -346,16 +361,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.repository.default_branch || inputs.ref }}
+          ref: ${{ inputs.ref }}
       # The tree hashes of what the module is built from: equal hashes, equal module.
       - name: Source key
         id: sources
         run: |
           key=$(for path in ${{ matrix.module.sources }} crates/vendor/napi-sys Cargo.toml tools/scripts/build-napi.sh; do git rev-parse "HEAD:$path" || exit 1; done | sha256sum | cut -c1-32)
           echo "key=$key" >> "$GITHUB_OUTPUT"
-      # Not on manual runs (CodeQL: cache poisoning via untrusted files); those always build.
       - name: Restore cached module
-        if: github.event_name != 'workflow_dispatch'
+        if: github.event_name != 'workflow_dispatch' && inputs.ref == ''
         id: cache
         uses: actions/cache@v4
         with:
@@ -367,7 +381,7 @@ jobs:
         with:
           target: ${{ matrix.target }}
       - uses: actions/setup-node@v4
-        if: steps.cache.outputs.cache-hit != 'true' && matrix.arch == 'x64'
+        if: steps.cache.outputs.cache-hit != 'true' && matrix.arch == 'x64' && matrix.module.addon-env
         with:
           node-version: '22'
       - name: Build ${{ matrix.module.file }}
@@ -376,7 +390,7 @@ jobs:
       # arm64 is cross-compiled, so only x64 runs them. The timeout bounds a test process that
       # hangs on exit (an addon releasing Media Foundation / D3D objects during process shutdown).
       - name: Node-API tests
-        if: steps.cache.outputs.cache-hit != 'true' && matrix.arch == 'x64'
+        if: steps.cache.outputs.cache-hit != 'true' && matrix.arch == 'x64' && matrix.module.addon-env
         timeout-minutes: 5
         run: |
           export ${{ matrix.module.addon-env }}="$(cygpath -w "$PWD/$MODULE_DIR/${{ matrix.module.file }}")"
@@ -385,4 +399,45 @@ jobs:
         with:
           name: ${{ matrix.module.name }}-windows-${{ matrix.arch }}
           path: ${{ env.MODULE_DIR }}/
+          if-no-files-found: error
+
+  # Every package's Linux Node-API module in one job: canvasnative.node and canvassvg.node share
+  # the Skia build. Natively on each arch (no cross sysroot).
+  linux:
+    name: Linux (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            runner: ubuntu-22.04
+          - arch: arm64
+            runner: ubuntu-22.04-arm
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: ./.github/actions/setup-linux-native
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build the Node-API modules
+        run: ./tools/scripts/build-linux.sh
+      # Mesa's surfaceless EGL (llvmpipe) for 2D / WebGL and lavapipe for WebGPU: no GPU here.
+      # canvas-media's suite drives Media Foundation, so it is Windows only.
+      - name: Node-API tests
+        env:
+          CANVAS_NAPI_ADDON: ${{ github.workspace }}/packages/canvas/platforms/linux/lib/${{ matrix.arch }}/canvasnative.node
+          CANVAS_SVG_NAPI_ADDON: ${{ github.workspace }}/packages/canvas-svg/platforms/linux/lib/${{ matrix.arch }}/canvassvg.node
+          AUDIO_CONTEXT_NAPI_ADDON: ${{ github.workspace }}/packages/audio-context/platforms/linux/lib/${{ matrix.arch }}/audiocontext.node
+        timeout-minutes: 10
+        run: |
+          node --expose-gc --test "crates/canvas-napi/__test__/*.test.mjs"
+          node --expose-gc --test "crates/canvas-svg-napi/__test__/*.test.mjs"
+          node --expose-gc --test "crates/audio-context-napi/__test__/*.test.mjs"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-${{ matrix.arch }}
+          path: packages/*/platforms/linux/lib/${{ matrix.arch }}/
           if-no-files-found: error

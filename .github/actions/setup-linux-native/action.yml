@@ -1,0 +1,45 @@
+name: Setup Linux native build environment
+description: >
+  Installs what tools/scripts/build-linux.sh needs on Ubuntu 22.04 (glibc 2.35, GTK 4.6, the
+  baseline the shipped modules target): the GTK 4 / EGL / GLES / ALSA / GStreamer / udev
+  development files, clang 18 for Skia (22.04's clang is 14), ninja, Rust stable and a cargo
+  cache. Mesa's EGL and lavapipe let the Node-API tests run on the GPU-less runners.
+
+runs:
+  using: composite
+  steps:
+    - name: Install packages
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends \
+          libgtk-4-dev libegl-dev libgles-dev libasound2-dev libfontconfig-dev libfreetype-dev \
+          libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libudev-dev \
+          ninja-build pkg-config \
+          libegl-mesa0 mesa-vulkan-drivers
+
+    - name: Install clang 18
+      shell: bash
+      run: |
+        wget -qO /tmp/llvm.sh https://apt.llvm.org/llvm.sh
+        sudo bash /tmp/llvm.sh 18
+        sudo apt-get install -y --no-install-recommends libclang-18-dev
+        echo "CANVAS_CLANG_DIR=/usr/lib/llvm-18/bin" >> "$GITHUB_ENV"
+        /usr/lib/llvm-18/bin/clang --version
+
+    - name: Install Rust stable
+      shell: bash
+      run: |
+        rustup toolchain install stable --profile minimal
+        rustup default stable
+        rustc --version
+
+    - name: Cache cargo
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+        key: ${{ runner.os }}-${{ runner.arch }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-${{ runner.arch }}-cargo-

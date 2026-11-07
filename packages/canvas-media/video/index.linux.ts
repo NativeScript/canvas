@@ -15,10 +15,6 @@ function rgbaInternalFormat(internalformat: number) {
 	return internalformat === GL_RGBA8 || internalformat === GL_SRGB8_ALPHA8 ? internalformat : GL_RGBA;
 }
 
-/**
- * The stock MediaPlayerElement template (Windows App SDK 1.6) with its presenter kept for layout (the
- * element measures itself from it) but invisible: in frame-server mode it only paints black.
- */
 interface Frame {
 	id: number;
 	pixels: Uint8Array;
@@ -109,9 +105,29 @@ export class Video extends VideoBase {
 		return this._asset;
 	}
 
+	/** Natively: a GPU copy for GL frames, one upload for memory ones. `false` if it could not. */
+	private _texImageNative(native: any, target: number, level: number, internalformat: number, threeD: boolean, sub: boolean, x = 0, y = 0, z = 0): boolean {
+		const bridge = this._bridge;
+		if (typeof native?.__texImageVideoFrame !== 'function' || !bridge.frameId) {
+			return false;
+		}
+		const frame = bridge.gpuFrame();
+		if (!frame) {
+			return false;
+		}
+		try {
+			return native.__texImageVideoFrame(frame.address, target, level, internalformat, threeD, sub, x, y, z);
+		} finally {
+			frame.close();
+		}
+	}
+
 	/** WebGL `texImage2D` / `texSubImage2D` with this video: `(native, context, target, level, internalformat, ...)`. */
 	getCurrentFrame(context?: any) {
 		const native = arguments[0];
+		if (this._texImageNative(native, arguments[2], arguments[3], arguments[4], false, false)) {
+			return;
+		}
 		const frame = this._currentFrame();
 		if (!frame || typeof native?.texImage2D !== 'function') {
 			return;
@@ -120,17 +136,23 @@ export class Video extends VideoBase {
 	}
 
 	getFrameForTexImage3D(nativeCtx: any, ctx: any, target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type: number) {
-		const frame = this._currentFrame();
 		// One frame is one slice.
-		if (!frame || depth !== 1) {
+		if (depth !== 1 || this._texImageNative(nativeCtx, target, level, internalformat, true, false)) {
+			return;
+		}
+		const frame = this._currentFrame();
+		if (!frame) {
 			return;
 		}
 		nativeCtx.texImage3D(target, level, rgbaInternalFormat(internalformat), frame.width, frame.height, 1, border, GL_RGBA, GL_UNSIGNED_BYTE, frame.pixels);
 	}
 
 	getFrameForTexSubImage3D(nativeCtx: any, ctx: any, target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type: number) {
+		if (depth !== 1 || this._texImageNative(nativeCtx, target, level, format, true, true, xoffset, yoffset, zoffset)) {
+			return;
+		}
 		const frame = this._currentFrame();
-		if (!frame || depth !== 1) {
+		if (!frame) {
 			return;
 		}
 		nativeCtx.texSubImage3D(target, level, xoffset, yoffset, zoffset, frame.width, frame.height, 1, GL_RGBA, GL_UNSIGNED_BYTE, frame.pixels);
@@ -163,13 +185,36 @@ export class Video extends VideoBase {
 		return this._currentAsset();
 	}
 
-	/** No GPU frame sharing on Linux yet: WebGPU uploads go through the pixels. */
+	private _gpuFrameId = 0;
+
+	/**
+	 * `device`: the WebGPU device's UUID key (`__frameDevice`). Every frame goes to WebGPU natively:
+	 * GL frames on the GPU when on the same device, else as mapped memory (one upload).
+	 */
 	supportsGPUFrames(device: number): boolean {
-		return false;
+		return !!device;
 	}
 
+	/** null when no frame was decoded since the last one handed out; `close()` it once the upload is issued. */
 	getGPUFrameTexture(device: number): any {
-		return null;
+		const bridge = this._bridge;
+		const id = bridge.frameId;
+		if (!id || id === this._gpuFrameId || !device) {
+			return null;
+		}
+		const frame = bridge.gpuFrame(bridge.gpuFrames && bridge.deviceKey === device);
+		if (!frame) {
+			return null;
+		}
+		this._gpuFrameId = id;
+		return {
+			texturePointer: frame.address,
+			width: frame.width,
+			height: frame.height,
+			// importExternalTexture draws it into a plane of its own.
+			copiedOnImport: true,
+			close: () => frame.close(),
+		};
 	}
 
 	get readyState() {

@@ -17,7 +17,22 @@ export interface NativeMediaPlayer {
 	setSource(source: string): void;
 	play(): boolean;
 	pause(): void;
+	/** GL frames are textures (`NS_CANVAS_MEDIA_CPU` or no GDK EGL: memory). */
+	readonly gpuFrames: boolean;
+	/** 53 bits of the GL device UUID, matched against WebGPU's `__frameDevice`; 0 if unknown. */
+	readonly deviceKey: number;
 	readPixelsInto(out: Uint8Array): boolean;
+	/** The latest frame for canvas: a GL texture unless `gpu` is false, else mapped RGBA rows. */
+	gpuFrame(gpu?: boolean): NativeVideoFrame | null;
+	close(): void;
+}
+
+/** A `CanvasLinuxVideoFrame` for canvas (`nativeTexture`, `__texImageVideoFrame`); close it after the call. */
+export interface NativeVideoFrame {
+	readonly address: number;
+	readonly width: number;
+	readonly height: number;
+	readonly gpu: boolean;
 	close(): void;
 }
 

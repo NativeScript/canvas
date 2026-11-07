@@ -300,6 +300,8 @@ export class Video extends VideoBase {
 			texturePointer: frame.address,
 			width: frame.width,
 			height: frame.height,
+			// importExternalTexture draws it into a plane of its own.
+			copiedOnImport: true,
 			close: () => frame.close(),
 		};
 	}

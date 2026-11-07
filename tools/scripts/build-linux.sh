@@ -7,7 +7,8 @@
 # Needs the GTK 4 (>= 4.6), EGL/GLES, fontconfig, freetype and ALSA development files, or
 # NS_SYSROOT pointing at a sysroot made by NativeScript/linux's
 # metadata-generator/linux/fetch-sysroot.sh (headers and .pc files only; add libasound2-dev,
-# libgstreamer1.0-dev, libgstreamer-plugins-base1.0-dev and libudev-dev).
+# libgstreamer1.0-dev, libgstreamer-plugins-base1.0-dev and libudev-dev, and for gstreamer-gl's
+# pkg-config the .pc files of libgl-dev, libx11-xcb-dev, libgudev-1.0-dev, libdrm-dev and libgbm-dev).
 # Skia is built from source: ninja must be on PATH (or SKIA_NINJA_COMMAND set).
 #
 # Usage: tools/scripts/build-linux.sh [--debug] [crate...]

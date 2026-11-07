@@ -46,6 +46,9 @@ windows = { workspace = true, features = [
 gst = { package = "gstreamer", version = "0.25" }
 gst-app = { package = "gstreamer-app", version = "0.25" }
 gst-video = { package = "gstreamer-video", version = "0.25" }
+gst-gl = { package = "gstreamer-gl", version = "0.25" }
+gst-gl-egl = { package = "gstreamer-gl-egl", version = "0.25" }
+libloading = "0.8"
 gtk = { package = "gtk4", version = "0.11", features = ["v4_6"] }
 
 [build-dependencies]

@@ -1,14 +1,22 @@
 //! Linux: the player behind @nativescript/canvas-media's Video and Audio views, on GStreamer.
 //!
-//! `playbin` picks the decoders (VA-API on Intel/AMD when gstreamer-vaapi is installed) and the
-//! audio sink. Video is converted to RGBA in system memory (`videoconvert`, one copy out of a
-//! hardware decoder's surfaces) and shown by a GtkPicture as a GdkMemoryTexture that wraps the
-//! decoded buffer itself; GTK uploads it. Canvas reads (`readPixels`) copy the latest frame.
+//! `playbin` picks the decoders (VA-API on Intel/AMD with gstreamer-vaapi) and the audio sink.
+//! Video takes the GL path when GDK is on EGL (`gl`): `glupload ! glcolorconvert` to RGBA
+//! textures in a context sharing GDK's, shown as GdkGLTextures and handed to canvas on the GPU
+//! (`frame`). Otherwise (`NS_CANVAS_MEDIA_CPU=1`, GLX, missing GL elements, a GL error before the
+//! first frame) `videoconvert` makes RGBA in memory, shown as GdkMemoryTextures.
+//!
+//! Decoders offering DMABuf (GStreamer >= 1.24 `va`) are imported by `glupload` without a copy.
+//! TODO: GdkDmabufTexture (GTK >= 4.14) display and NV12 DMABuf import into Vulkan.
 
-use std::cell::RefCell;
+mod frame;
+mod gl;
+
+use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
+use std::rc::Rc;
 use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, OnceLock};
 
 use gst::prelude::*;
 use gst_video::prelude::*;
@@ -19,6 +27,8 @@ use napi::threadsafe_function::{
 };
 use napi::{Env, Error, Result};
 use napi_derive::napi;
+
+pub use frame::NSCVideoFrame;
 
 type EventCallback<'a> = Function<'a, FnArgs<(String, Option<String>)>, UnknownReturnValue>;
 type Emitter = ThreadsafeFunction<
@@ -45,9 +55,24 @@ struct Frames {
   queued: AtomicBool,
   /// The video size changed since the last present.
   resized: AtomicBool,
+  /// Samples GL consumers read, with their EGL fences.
+  retiring: Mutex<Vec<(gst::Sample, usize)>>,
+  imports: Mutex<Vec<frame::Import>>,
+  /// Framebuffers reading frames, by EGL context.
+  source_framebuffer: Mutex<Vec<(usize, u32)>>,
+  caps: OnceLock<frame::Caps>,
 }
 
 static NEXT_PLAYER: AtomicU64 = AtomicU64::new(1);
+
+/// `GST_DEBUG=canvasmedia:4` logs the frame path.
+static CAT: std::sync::LazyLock<gst::DebugCategory> = std::sync::LazyLock::new(|| {
+  gst::DebugCategory::new(
+    "canvasmedia",
+    gst::DebugColorFlags::empty(),
+    Some("canvas-media"),
+  )
+});
 
 thread_local! {
   /// Pictures by player (UI thread): frames arrive from the streaming thread by id.
@@ -79,20 +104,9 @@ fn present(id: u64, frames: &Frames) {
   else {
     return;
   };
-  let Some(buffer) = sample.buffer_owned() else {
+  let Some(texture) = gl_texture(&sample, &info).or_else(|| memory_texture(sample, &info)) else {
     return;
   };
-  let Ok(mapped) = buffer.into_mapped_buffer_readable() else {
-    return;
-  };
-  let bytes = glib::Bytes::from_owned(mapped);
-  let texture = gdk::MemoryTexture::new(
-    info.width() as i32,
-    info.height() as i32,
-    gdk::MemoryFormat::R8g8b8a8,
-    &bytes,
-    info.stride()[0] as usize,
-  );
   PICTURES.with(|pictures| {
     if let Some((picture, emit)) = pictures.borrow().get(&id) {
       if let Some(picture) = picture.upgrade() {
@@ -112,43 +126,127 @@ fn present(id: u64, frames: &Frames) {
   });
 }
 
-/// `videoconvert ! RGBA appsink`: the latest frame, dropping late ones.
-fn video_sink(id: u64, frames: &Arc<Frames>) -> Result<gst::Element> {
-  let bin = gst::parse::bin_from_description(
-    "videoconvert ! video/x-raw,format=RGBA ! appsink name=sink sync=true max-buffers=1 drop=true",
-    true,
+/// A GL frame as a texture of GDK's, holding the sample until GDK lets go.
+fn gl_texture(sample: &gst::Sample, info: &gst_video::VideoInfo) -> Option<gdk::Texture> {
+  let memory = sample
+    .buffer()?
+    .peek_memory(0)
+    .downcast_memory_ref::<gst_gl::GLMemory>()?;
+  let context = gl::gdk_context()?;
+  let texture = memory.texture_id();
+  let sample = sample.clone();
+  let texture = unsafe {
+    gdk::GLTexture::with_release_func(
+      &context,
+      texture,
+      info.width() as i32,
+      info.height() as i32,
+      move || drop(sample),
+    )
+  };
+  Some(texture.upcast())
+}
+
+/// A system-memory frame, wrapped without a copy (GDK uploads it).
+fn memory_texture(sample: gst::Sample, info: &gst_video::VideoInfo) -> Option<gdk::Texture> {
+  let mapped = sample.buffer_owned()?.into_mapped_buffer_readable().ok()?;
+  let bytes = glib::Bytes::from_owned(mapped);
+  Some(
+    gdk::MemoryTexture::new(
+      info.width() as i32,
+      info.height() as i32,
+      gdk::MemoryFormat::R8g8b8a8,
+      &bytes,
+      info.stride()[0] as usize,
+    )
+    .upcast(),
   )
-  .map_err(|e| Error::from_reason(e.to_string()))?;
+}
+
+/// GL: RGBA textures; system memory and DMABuf inputs (VA-API's GL texture upload meta fails here).
+const GL_SINK: &str = "capsfilter caps=\"video/x-raw(memory:GLMemory);video/x-raw(memory:DMABuf);video/x-raw\" ! glupload ! glcolorconvert ! video/x-raw(memory:GLMemory),format=RGBA,texture-target=2D ! appsink name=sink sync=true max-buffers=1 drop=true enable-last-sample=false";
+const CPU_SINK: &str = "videoconvert ! video/x-raw,format=RGBA ! appsink name=sink sync=true max-buffers=1 drop=true enable-last-sample=false";
+
+/// The video sink bin: the latest frame, dropping late ones.
+fn video_sink(id: u64, frames: &Arc<Frames>, gpu: bool) -> Result<gst::Element> {
+  let bin = gst::parse::bin_from_description(if gpu { GL_SINK } else { CPU_SINK }, true)
+    .map_err(|e| Error::from_reason(e.to_string()))?;
   let sink = bin
     .by_name("sink")
     .and_then(|sink| sink.downcast::<gst_app::AppSink>().ok())
     .ok_or_else(|| Error::from_reason("no appsink"))?;
   let frames = Arc::clone(frames);
+  let take = Arc::new(move |sample: gst::Sample| {
+    // Consumers (GDK, canvas) read it in other contexts: it must be complete.
+    if let Some(meta) = sample
+      .buffer()
+      .and_then(|buffer| buffer.meta::<gst_gl::GLSyncMeta>())
+    {
+      meta.wait_cpu(meta.context());
+    }
+    if let Some(info) = sample
+      .caps()
+      .and_then(|caps| gst_video::VideoInfo::from_caps(caps).ok())
+    {
+      let width = frames.width.swap(info.width(), Ordering::Relaxed);
+      let height = frames.height.swap(info.height(), Ordering::Relaxed);
+      if (width, height) != (info.width(), info.height()) {
+        frames.resized.store(true, Ordering::Release);
+      }
+    }
+    *frames.sample.lock().unwrap_or_else(|e| e.into_inner()) = Some(sample.clone());
+    if frames.id.fetch_add(1, Ordering::AcqRel) == 0 {
+      gst::info!(
+        CAT,
+        "player {id}: {} frames, {:?}",
+        if sample
+          .buffer()
+          .is_some_and(|b| b.peek_memory(0).is_memory_type::<gst_gl::GLMemory>())
+        {
+          "GL texture"
+        } else {
+          "system memory"
+        },
+        sample.caps()
+      );
+    }
+    frames.reap();
+    if !frames.queued.swap(true, Ordering::AcqRel) {
+      let frames = Arc::clone(&frames);
+      glib::MainContext::default().invoke(move || present(id, &frames));
+    }
+  });
+  let preroll = Arc::clone(&take);
   sink.set_callbacks(
     gst_app::AppSinkCallbacks::builder()
+      // The first frame shows (and is readable) before playing.
+      .new_preroll(move |sink| {
+        preroll(sink.pull_preroll().map_err(|_| gst::FlowError::Eos)?);
+        Ok(gst::FlowSuccess::Ok)
+      })
       .new_sample(move |sink| {
-        let sample = sink.pull_sample().map_err(|_| gst::FlowError::Eos)?;
-        if let Some(info) = sample
-          .caps()
-          .and_then(|caps| gst_video::VideoInfo::from_caps(caps).ok())
-        {
-          let width = frames.width.swap(info.width(), Ordering::Relaxed);
-          let height = frames.height.swap(info.height(), Ordering::Relaxed);
-          if (width, height) != (info.width(), info.height()) {
-            frames.resized.store(true, Ordering::Release);
-          }
-        }
-        *frames.sample.lock().unwrap_or_else(|e| e.into_inner()) = Some(sample);
-        frames.id.fetch_add(1, Ordering::AcqRel);
-        if !frames.queued.swap(true, Ordering::AcqRel) {
-          let frames = Arc::clone(&frames);
-          glib::MainContext::default().invoke(move || present(id, &frames));
-        }
+        take(sink.pull_sample().map_err(|_| gst::FlowError::Eos)?);
         Ok(gst::FlowSuccess::Ok)
       })
       .build(),
   );
   Ok(bin.upcast())
+}
+
+/// After a GL error before any frame: the same source again, with the system-memory sink.
+fn fall_back_to_memory(playbin: &gst::Element, id: u64, frames: &Arc<Frames>) {
+  let (_, current, pending) = playbin.state(gst::ClockTime::ZERO);
+  let target = if pending == gst::State::VoidPending {
+    current
+  } else {
+    pending
+  };
+  let _ = playbin.set_state(gst::State::Null);
+  let Ok(sink) = video_sink(id, frames, false) else {
+    return;
+  };
+  playbin.set_property("video-sink", sink);
+  let _ = playbin.set_state(target.max(gst::State::Paused));
 }
 
 /// `CanvasModule`-free media player: a `playbin`, its events on the JS thread and, for video, a
@@ -160,6 +258,8 @@ pub struct NSCMediaPlayer {
   picture: Option<gtk::Picture>,
   frames: Arc<Frames>,
   looping: Arc<AtomicBool>,
+  /// Video frames are GL textures.
+  gpu: Rc<Cell<bool>>,
   _bus: Option<gst::bus::BusWatchGuard>,
 }
 
@@ -183,6 +283,18 @@ impl NSCMediaPlayer {
     let playbin = gst::ElementFactory::make("playbin").build().map_err(|_| {
       Error::from_reason("GStreamer's playbin is missing (gstreamer1.0-plugins-base)")
     })?;
+    // gstreamer-vaapi's postprocessor hands out NV12 that cannot be mapped (iHD): decode only.
+    playbin.connect("element-setup", false, |values| {
+      if let Some(element) = values.get(1).and_then(|v| v.get::<gst::Element>().ok()) {
+        if element
+          .factory()
+          .is_some_and(|factory| factory.name() == "vaapidecodebin")
+        {
+          element.set_property("disable-vpp", true);
+        }
+      }
+      None
+    });
     let emit: Arc<Emitter> = Arc::new(
       on_event
         .build_threadsafe_function::<(String, Option<String>)>()
@@ -192,8 +304,16 @@ impl NSCMediaPlayer {
     let id = NEXT_PLAYER.fetch_add(1, Ordering::Relaxed);
     let frames = Arc::new(Frames::default());
     let video = video.unwrap_or(false) && gtk_ready();
+    let gpu = Rc::new(Cell::new(video && gl::share().is_some()));
     let picture = if video {
-      playbin.set_property("video-sink", video_sink(id, &frames)?);
+      let sink = video_sink(id, &frames, gpu.get()).or_else(|error| {
+        if !gpu.replace(false) {
+          return Err(error);
+        }
+        eprintln!("canvas-media: no GStreamer GL elements ({error}); video frames stay in memory");
+        video_sink(id, &frames, false)
+      })?;
+      playbin.set_property("video-sink", sink);
       let picture = gtk::Picture::new();
       picture.set_can_shrink(true);
       PICTURES.with(|pictures| {
@@ -211,9 +331,22 @@ impl NSCMediaPlayer {
       None
     };
     let looping = Arc::new(AtomicBool::new(false));
+    if gpu.get() {
+      if let Some(bus) = playbin.bus() {
+        // Synchronous: GL elements wait for the answer.
+        bus.set_sync_handler(|_, message| {
+          if let Some(share) = gl::share_ready() {
+            gl::answer_need_context(share, message);
+          }
+          gst::BusSyncReply::Pass
+        });
+      }
+    }
     let bus = playbin.bus().and_then(|bus| {
       let weak = playbin.downgrade();
       let looping = Arc::clone(&looping);
+      let gpu = Rc::clone(&gpu);
+      let frames = Arc::clone(&frames);
       let mut opened = false;
       bus
         .add_watch_local(move |_, message| {
@@ -238,7 +371,24 @@ impl NSCMediaPlayer {
                 send("ended", None);
               }
             }
-            MessageView::Error(error) => send("error", Some(error.error().to_string())),
+            MessageView::Error(error) => {
+              let in_sink = playbin
+                .property::<Option<gst::Element>>("video-sink")
+                .zip(error.src())
+                .is_some_and(|(sink, src)| {
+                  src == sink.upcast_ref::<gst::Object>() || src.has_as_ancestor(&sink)
+                });
+              if gpu.get() && in_sink && frames.id.load(Ordering::Acquire) == 0 {
+                eprintln!(
+                  "canvas-media: GL video failed ({}); video frames stay in memory",
+                  error.error()
+                );
+                gpu.set(false);
+                fall_back_to_memory(&playbin, id, &frames);
+              } else {
+                send("error", Some(error.error().to_string()))
+              }
+            }
             MessageView::StateChanged(change) if change.src() == Some(playbin.upcast_ref()) => {
               match change.current() {
                 gst::State::Playing => send("state", Some(STATE_PLAYING.into())),
@@ -270,8 +420,55 @@ impl NSCMediaPlayer {
       picture,
       frames,
       looping,
+      gpu,
       _bus: bus,
     })
+  }
+
+  /// The latest frame for canvas (`NSCVideoFrame`): a GL texture when `gpu` (default true) and
+  /// the frame is one, else mapped RGBA rows. Null before the first frame.
+  #[napi(ts_return_type = "NSCVideoFrame | null")]
+  pub fn gpu_frame(&self, gpu: Option<bool>) -> Option<NSCVideoFrame> {
+    NSCVideoFrame::latest(self.id, &self.frames, gpu.unwrap_or(true) && self.gpu.get())
+  }
+
+  /// Frames are GL textures.
+  #[napi(getter)]
+  pub fn gpu_frames(&self) -> bool {
+    self.gpu.get()
+  }
+
+  /// 53 bits of the GL device UUID GL frames are on (`supportsGPUFrames`); 0 if unknown.
+  #[napi(getter)]
+  pub fn device_key(&self) -> f64 {
+    if !self.gpu.get() {
+      return 0.;
+    }
+    let caps = match self.frames.caps.get() {
+      Some(caps) => *caps,
+      None => {
+        let sample = self
+          .frames
+          .sample
+          .lock()
+          .unwrap_or_else(|e| e.into_inner())
+          .clone();
+        let Some(context) = sample.as_ref().and_then(|sample| {
+          Some(
+            sample
+              .buffer()?
+              .peek_memory(0)
+              .downcast_memory_ref::<gst_gl::GLMemory>()?
+              .context()
+              .clone(),
+          )
+        }) else {
+          return 0.;
+        };
+        frame::caps(&self.frames, &context)
+      }
+    };
+    caps.uuid.as_ref().map_or(0., frame::device_key)
   }
 
   /// The GtkPicture's address (video players), for `new interop.Pointer(widget)`.
@@ -437,6 +634,13 @@ impl NSCMediaPlayer {
   pub fn close(&mut self) {
     let _ = self.playbin.set_state(gst::State::Null);
     self._bus = None;
+    self.frames.drop_imports();
+    self
+      .frames
+      .retiring
+      .lock()
+      .unwrap_or_else(|e| e.into_inner())
+      .clear();
     PICTURES.with(|pictures| pictures.borrow_mut().remove(&self.id));
     self.picture = None;
   }

@@ -1,10 +1,11 @@
 # Publishes the @nativescript/canvas suite to npm from an existing release tag.
 #
-# Native artifacts (Android AARs + iOS/visionOS xcframeworks for canvas,
-# canvas-svg and audio-context) are NOT rebuilt here — the release publishes the
-# native artifacts committed to packages/*/platforms as-is. Rebuild them ahead of
-# tagging (e.g. via the build-native.yml workflow or `make`) and commit the
-# result so the tag already carries the artifacts that will ship.
+# Every native artifact build-native.yml produces (Android AARs, iOS/visionOS/tvOS
+# xcframeworks, Windows and Linux Node-API modules) is rebuilt from the tag, with no
+# cache, and replaces the committed copy before packaging, so npm ships what CI built
+# from the tagged sources. The binaries committed under packages/*/platforms are only
+# what local development uses. The few with no sources in this repo (canvas-media's
+# and canvas-gamepad's Android AARs, canvas-polyfill's AARs) ship as committed.
 #
 # iOS SwiftPM distribution: canvas and audio-context each ship the header-only
 # NativeScriptV8 SwiftPM shim (repo-root nativescript-v8/) INSIDE the npm
@@ -45,6 +46,9 @@ concurrency:
   group: npm-release
   cancel-in-progress: false
 
+permissions:
+  contents: read
+
 jobs:
   version:
     runs-on: ubuntu-latest
@@ -68,9 +72,16 @@ jobs:
           fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
+  build-native:
+    name: Build Native
+    needs: [version]
+    uses: ./.github/workflows/build-native.yml
+    with:
+      ref: refs/tags/${{ needs.version.outputs.version }}
+
   publish:
     runs-on: ubuntu-latest
-    needs: [version]
+    needs: [version, build-native]
     environment: npm-publish # must match the npm Trusted Publisher environment
     permissions:
       contents: read
@@ -96,6 +107,14 @@ jobs:
           corepack enable npm
           corepack install -g npm@11.5.1
           test "$(npm --version)" = "11.5.1"
+
+      - name: Download native artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: native-artifacts
+
+      - name: Place native artifacts
+        run: ./tools/scripts/place-native-artifacts.sh native-artifacts
 
       # canvas commits no lockfile, so `npm install` (not `npm ci`).
       - name: Install dependencies
@@ -146,10 +165,30 @@ jobs:
             fi
             echo "ok: $pkg ships the NativeScriptV8 shim with a local-path config"
           done
-          if [ ! -d dist/packages/canvas/platforms/ios/CanvasNative.xcframework ]; then
-            echo "error: CanvasNative.xcframework missing from dist/packages/canvas" >&2
-            exit 1
-          fi
+
+      # place-native-artifacts.sh put the CI-built binaries in packages/; check nx copied them.
+      - name: Verify native artifacts in built packages
+        run: |
+          set -euo pipefail
+          for f in \
+            canvas/platforms/android/canvas-release.aar \
+            canvas/platforms/ios/CanvasNative.xcframework/Info.plist \
+            canvas-svg/platforms/android/canvassvg-release.aar \
+            canvas-svg/platforms/ios/CanvasSVG.xcframework/Info.plist \
+            audio-context/platforms/android/audiocontext-release.aar \
+            audio-context/platforms/ios/AudioContextNative.xcframework/Info.plist; do
+            [ -f "dist/packages/$f" ] || { echo "error: dist/packages/$f missing" >&2; exit 1; }
+          done
+          for arch in x64 arm64; do
+            for module in canvas/canvasnative canvas-svg/canvassvg audio-context/audiocontext canvas-media/canvasmedia; do
+              pkg=${module%%/*}
+              name=${module##*/}
+              for f in "$pkg/platforms/windows/$arch/$name.node" "$pkg/platforms/linux/lib/$arch/$name.node"; do
+                [ -f "dist/packages/$f" ] || { echo "error: dist/packages/$f missing" >&2; exit 1; }
+              done
+            done
+          done
+          echo "ok: every package ships its native artifacts"
 
       # Publish each package at its committed version via OIDC. The setup-node
       # .npmrc and NODE_AUTH_TOKEN are cleared so npm performs the Trusted

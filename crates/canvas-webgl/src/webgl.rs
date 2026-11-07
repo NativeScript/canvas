@@ -1075,6 +1075,19 @@ pub fn canvas_native_webgl_get_extension(
 
     state.make_current();
     let version = state.get_webgl_version();
+
+    #[cfg(target_os = "linux")]
+    if version == WebGLVersion::V1 && es3_core() {
+        match name {
+            "ANGLE_instanced_arrays" => return Some(Box::new(ANGLE_instanced_arrays::new(state))),
+            "OES_vertex_array_object" => {
+                return Some(Box::new(OES_vertex_array_object::new(state)))
+            }
+            "WEBGL_draw_buffers" => return Some(Box::new(WEBGL_draw_buffers::new(state))),
+            _ => {}
+        }
+    }
+
     let extensions = unsafe { gl_bindings::GetString(gl_bindings::EXTENSIONS) };
 
     if extensions.is_null() {
@@ -1703,8 +1716,30 @@ pub fn canvas_native_webgl_get_supported_extensions(state: &mut WebGLState) -> V
         let version =
             unsafe { String::from_utf8(CStr::from_ptr(ext).to_bytes().to_vec()).unwrap() };
 
-        version.split(" ").map(|f| f.into()).collect()
+        #[allow(unused_mut)]
+        let mut supported: Vec<String> = version.split(" ").map(|f| f.into()).collect();
+        #[cfg(target_os = "linux")]
+        if state.get_webgl_version() == WebGLVersion::V1 && es3_core() {
+            supported.extend(
+                [
+                    "ANGLE_instanced_arrays",
+                    "OES_vertex_array_object",
+                    "WEBGL_draw_buffers",
+                ]
+                .map(String::from),
+            );
+        }
+        supported
     }
+}
+
+/// Linux (Mesa): a WebGL 1 context is still an ES 3 context, whose core has instancing, vertex
+/// array objects and draw buffers.
+#[cfg(target_os = "linux")]
+fn es3_core() -> bool {
+    let mut major = 0;
+    unsafe { gl_bindings::GetIntegerv(gl_bindings::MAJOR_VERSION, &mut major) };
+    major >= 3
 }
 
 pub fn canvas_native_webgl_get_tex_parameter(

@@ -94,6 +94,33 @@ export function registerLifecycleSpec() {
 			unmount(canvas);
 		});
 
+		// Metal takes a new drawable on a frame's first draw, so contents must carry across presents
+		// and survive frames that draw nothing.
+		for (const threaded of [true, false]) {
+			test(`a 2d context keeps earlier frames' drawing (${threaded ? 'threaded' : 'direct'})`, async () => {
+				const canvas = await mount();
+				const ctx = canvas.getContext('2d', { threaded }) as any;
+				ok(ctx, 'no 2d context');
+				ctx.fillStyle = '#ff0000';
+				ctx.fillRect(0, 0, 8, 8);
+				await frames(3);
+				ctx.fillStyle = '#0000ff';
+				ctx.fillRect(16, 16, 8, 8);
+				await frames(3);
+				pixelEqual(ctx, 4, 4, [255, 0, 0, 255], 2, 'first frame lost');
+				pixelEqual(ctx, 20, 20, [0, 0, 255, 255], 2, 'second frame lost');
+				await frames(3);
+				pixelEqual(ctx, 4, 4, [255, 0, 0, 255], 2, 'lost over frames with no draws');
+				ctx.fillStyle = '#00ff00';
+				ctx.fillRect(16, 0, 8, 8);
+				await frames(3);
+				pixelEqual(ctx, 4, 4, [255, 0, 0, 255], 2, 'lost after drawing again');
+				pixelEqual(ctx, 20, 20, [0, 0, 255, 255], 2, 'lost after drawing again');
+				pixelEqual(ctx, 20, 4, [0, 255, 0, 255], 2, 'third frame lost');
+				unmount(canvas);
+			});
+		}
+
 		for (const type of ['webgl', 'webgl2'] as const) {
 			test(`a ${type} context draws as soon as its canvas is added`, async () => {
 				const canvas = add();

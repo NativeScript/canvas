@@ -247,12 +247,32 @@ impl EAGLContext {
     }
 
     /// Stores the bound renderbuffer in `layer` (a `CAEAGLLayer`), at the layer's size in pixels.
+    /// This sets the layer's `contents`, so see [`change_view_layer`].
     pub fn renderbuffer_storage_from_drawable(&self, layer: &NSObject) -> bool {
-        let result: BOOL = unsafe {
+        let result: BOOL = change_view_layer(|| unsafe {
             msg_send![&self.0, renderbufferStorage: 0x8d41 as NSUInteger, fromDrawable: layer]
-        };
+        });
         result.into()
     }
+}
+
+/// Modifies a UIView's backing layer from any thread. Off main, UIKit rejects the layer's action
+/// lookup; disabling actions skips it, and the explicit commit applies the change.
+pub fn change_view_layer<R>(change: impl FnOnce() -> R) -> R {
+    let is_main: bool = unsafe { msg_send![class!(NSThread), isMainThread] };
+    if is_main {
+        return change();
+    }
+    let transaction = class!(CATransaction);
+    unsafe {
+        let _: () = msg_send![transaction, begin];
+        let _: () = msg_send![transaction, setDisableActions: true];
+    }
+    let result = change();
+    unsafe {
+        let _: () = msg_send![transaction, commit];
+    }
+    result
 }
 
 type DiscardFramebuffer = unsafe extern "C" fn(target: u32, count: i32, attachments: *const u32);

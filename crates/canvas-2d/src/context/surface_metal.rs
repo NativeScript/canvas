@@ -423,19 +423,17 @@ impl Context {
         }
     }
 
+    /// The next drawable is taken on the next draw (`bind_surface`), not here: holding one
+    /// between frames starves the layer's pool. `replace_backend_texture` keeps the contents.
     pub fn present(context: &mut Context) {
         let _ = MetalContext::new_release_pool();
 
         if let Some(context) = context.metal_context.as_mut() {
             context.present_drawable();
         }
-
-        #[cfg(not(target_os = "tvos"))]
-        Self::acquire_drawable(context);
     }
 
     pub(crate) fn acquire_drawable(context: &mut Context) {
-        #[cfg(target_os = "tvos")]
         let _pool = MetalContext::new_release_pool();
         let mut info: Option<TextureInfo> = None;
         let mut width = 0;

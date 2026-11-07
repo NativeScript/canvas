@@ -3,7 +3,7 @@ name = "canvas-napi"
 version = "0.1.0"
 edition = "2021"
 publish = false
-description = "Node-API binding for the canvas plugins: provides the same global.CanvasModule the V8 bindings install, for Node-API hosts (NativeScript Windows, Node)."
+description = "Node-API binding for the canvas plugins: provides the same global.CanvasModule the V8 bindings install, for Node-API hosts (NativeScript Windows and Linux, Node)."
 
 [lib]
 crate-type = ["cdylib"]
@@ -30,6 +30,11 @@ log.workspace = true
 canvas-core = { workspace = true, features = ["2d", "gl", "d3d"] }
 canvas-c = { workspace = true, features = ["2d", "webgl", "gl", "d3d"] }
 windows-core = "0.62"
+
+# Linux shows frames in a GTK 4 (>= 4.6) widget, shared with GDK's GL context as EGLImages.
+[target.'cfg(target_os = "linux")'.dependencies]
+gtk = { package = "gtk4", version = "0.11", features = ["v4_6"] }
+libloading = "0.8"
 
 [build-dependencies]
 napi-build = "2.5.0"

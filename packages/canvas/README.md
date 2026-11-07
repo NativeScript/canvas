@@ -148,6 +148,15 @@ const canvas = OffscreenCanvas._fromHandle(data.canvas);
 - `2d`, `bitmaprenderer`, `webgl`, `webgl2` and `webgpu` all work there, as does `new OffscreenCanvas(w, h)` made in the Worker, which can be transferred back.
 - Resizing it in the Worker resizes the view on the UI thread a moment later.
 
+## Linux
+
+On NativeScript Linux the canvas is a GTK 4 (>= 4.6) widget and `canvasnative.node` (a Node-API
+module) renders 2D (Skia) and WebGL / WebGL 2 on GLES through the system EGL (Mesa). Frames are
+shared with GTK as EGLImages, so they stay on the GPU; where GDK does not use EGL they are read
+back into memory textures. WebGPU runs on Vulkan; its frames reach GTK through GL memory objects
+(`GL_EXT_memory_object_fd`), also without a copy through the CPU. Build the module with
+`tools/scripts/build-linux.sh`.
+
 ## WebGPU
 
 _Note_ min ios support 11 | min android support 27

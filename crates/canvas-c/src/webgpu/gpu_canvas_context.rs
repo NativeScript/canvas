@@ -482,10 +482,6 @@ fn round_up_to_256(value: u32) -> u32 {
     (value + 255) & !255
 }
 
-fn round_up_to_256_u64(value: u64) -> u64 {
-    (value + 255) & !255
-}
-
 
 fn to_data_url_with_texture(
     context: &CanvasGPUCanvasContext,
@@ -497,33 +493,99 @@ fn to_data_url_with_texture(
     quality: u32,
     is_bgra: bool,
 ) -> Option<String> {
+    let _ = context;
+    with_mapped_texture(device, texture, width, height, |bytes, row_bytes| {
+        #[cfg(feature = "2d")]
+        let encoded = Some(canvas_2d::bytes_to_data_rgba8_url(
+            width as i32,
+            height as i32,
+            bytes,
+            row_bytes,
+            is_bgra,
+            format,
+            quality,
+        ));
+
+        #[cfg(not(feature = "2d"))]
+        let encoded = {
+            let image_data: Vec<u8> = if is_bgra {
+                let mut data = bytes.to_vec();
+                canvas_core::image_asset::ImageAsset::bgra_to_rgba_in_place(&mut data);
+                data
+            } else {
+                bytes.to_vec()
+            };
+
+            match image::ImageBuffer::<image::Rgba<u8>, Vec<u8>>::from_raw(
+                width,
+                height,
+                image_data,
+            ) {
+                None => None,
+                Some(img) => {
+                    let dyn_image = image::DynamicImage::ImageRgba8(img);
+                    let mut output = std::io::Cursor::new(Vec::new());
+                    let mime = match format {
+                        "image/jpg" | "image/jpeg" => {
+                            let _ = dyn_image
+                                .write_to(&mut output, image::ImageFormat::Jpeg);
+                            "image/jpeg"
+                        }
+                        "image/webp" => {
+                            let _ = dyn_image
+                                .write_to(&mut output, image::ImageFormat::WebP);
+                            "image/webp"
+                        }
+                        "image/gif" => {
+                            let _ = dyn_image
+                                .write_to(&mut output, image::ImageFormat::Gif);
+                            "image/gif"
+                        }
+                        "image/heif"
+                        | "image/heif-sequence"
+                        | "image/heic"
+                        | "image/heic-sequence" => {
+                            let _ = dyn_image
+                                .write_to(&mut output, image::ImageFormat::Avif);
+                            "image/heif"
+                        }
+                        _ => {
+                            let _ = dyn_image
+                                .write_to(&mut output, image::ImageFormat::Png);
+                            "image/png"
+                        }
+                    };
+                    let encoded = base64::engine::general_purpose::STANDARD
+                        .encode(output.get_ref());
+                    Some(format!("data:{};base64,{}", mime, encoded))
+                }
+            }
+        };
+
+        encoded
+    })
+    .flatten()
+}
+
+/// Copies a 4-byte-per-pixel `texture` into a buffer and hands `f` the mapped bytes and their
+/// row stride (rows are padded to 256 bytes).
+fn with_mapped_texture<R>(
+    device: &CanvasGPUDevice,
+    texture: Arc<wgpu_core::resource::Texture>,
+    width: u32,
+    height: u32,
+    f: impl FnOnce(&[u8], usize) -> R,
+) -> Option<R> {
     let queue = &device.queue;
+    let row_bytes = round_up_to_256(4 * width);
 
     unsafe {
-        let output_buffer_size = round_up_to_256_u64((width as u64) * 4) * (height as u64);
-        let label = Cow::Borrowed("ToDataURL:Buffer");
-        let output_buffer = device.device.create_buffer(
-            &wgt::BufferDescriptor {
-                label: wgpu_core::Label::from(label),
-                size: output_buffer_size,
-                usage: wgt::BufferUsages::COPY_DST | wgt::BufferUsages::MAP_READ,
-                mapped_at_creation: false,
-            },
-        );
-
-
-        macro_rules! bail {
-            () => {{
-                output_buffer.destroy();
-                return None;
-            }};
-        }
-
-        let texture_extent = wgt::Extent3d {
-            width,
-            height,
-            depth_or_array_layers: 1,
-        };
+        let output_buffer = device.device.create_buffer(&wgt::BufferDescriptor {
+            label: wgpu_core::Label::from(Cow::Borrowed("ReadBack:Buffer")),
+            size: row_bytes as u64 * height as u64,
+            usage: wgt::BufferUsages::COPY_DST | wgt::BufferUsages::MAP_READ,
+            mapped_at_creation: false,
+        });
 
         let texture_copy = wgt::TexelCopyTextureInfo {
             texture,
@@ -531,121 +593,44 @@ fn to_data_url_with_texture(
             origin: wgt::Origin3d::ZERO,
             aspect: wgt::TextureAspect::All,
         };
-
         let buffer_copy = wgt::TexelCopyBufferInfo {
             buffer: Arc::clone(&output_buffer),
             layout: wgt::TexelCopyBufferLayout {
                 offset: 0,
-                bytes_per_row: Some(round_up_to_256(4 * width)),
+                bytes_per_row: Some(row_bytes),
                 rows_per_image: Some(height),
             },
         };
+        let encoder = device.device.create_command_encoder(&wgt::CommandEncoderDescriptor {
+            label: wgpu_core::Label::from(Cow::Borrowed("ReadBack:Encoder")),
+        });
+        encoder.copy_texture_to_buffer(
+            &texture_copy,
+            &buffer_copy,
+            &wgt::Extent3d { width, height, depth_or_array_layers: 1 },
+        );
+        let id = encoder.finish(&wgt::CommandBufferDescriptor { label: None });
+        queue.queue.id.submit(&[id]);
 
-        let label = Cow::Borrowed("ToDataURL:Encoder");
-
-        let encoder = device.device.create_command_encoder(
-            &wgt::CommandEncoderDescriptor {
-                label: wgpu_core::Label::from(label),
+        output_buffer.map_async(
+            0,
+            None,
+            wgpu_core::resource::BufferMapOperation {
+                host: wgpu_core::device::HostMap::Read,
+                callback: None,
             },
         );
 
-        encoder.copy_texture_to_buffer(&texture_copy, &buffer_copy, &texture_extent);
-
-        let desc = wgt::CommandBufferDescriptor { label: None };
-
-        let id = encoder.finish(&desc);
-
-        queue.queue.id.submit(&[id]);
-
-        let op = wgpu_core::resource::BufferMapOperation {
-            host: wgpu_core::device::HostMap::Read,
-            callback: None,
-        };
-
-        output_buffer.map_async(0, None, op);
-
-        if device
-            .device
-            .poll(wgt::PollType::wait_indefinitely())
-            .is_err()
-        {
-            bail!();
+        if device.device.poll(wgt::PollType::wait_indefinitely()).is_err() {
+            output_buffer.destroy();
+            return None;
         }
 
         let result = match output_buffer.get_mapped_range(0, None) {
-            Ok((ptr, size)) => {
-                let bytes = std::slice::from_raw_parts(ptr.as_ptr(), size as usize);
-                let row_bytes = round_up_to_256_u64((4 * width) as u64) as usize;
-
-                #[cfg(feature = "2d")]
-                let encoded = Some(canvas_2d::bytes_to_data_rgba8_url(
-                    width as i32,
-                    height as i32,
-                    bytes,
-                    row_bytes,
-                    is_bgra,
-                    format,
-                    quality,
-                ));
-
-                #[cfg(not(feature = "2d"))]
-                let encoded = {
-                    let image_data: Vec<u8> = if is_bgra {
-                        let mut data = bytes.to_vec();
-                        canvas_core::image_asset::ImageAsset::bgra_to_rgba_in_place(&mut data);
-                        data
-                    } else {
-                        bytes.to_vec()
-                    };
-
-                    match image::ImageBuffer::<image::Rgba<u8>, Vec<u8>>::from_raw(
-                        width,
-                        height,
-                        image_data,
-                    ) {
-                        None => None,
-                        Some(img) => {
-                            let dyn_image = image::DynamicImage::ImageRgba8(img);
-                            let mut output = std::io::Cursor::new(Vec::new());
-                            let mime = match format {
-                                "image/jpg" | "image/jpeg" => {
-                                    let _ = dyn_image
-                                        .write_to(&mut output, image::ImageFormat::Jpeg);
-                                    "image/jpeg"
-                                }
-                                "image/webp" => {
-                                    let _ = dyn_image
-                                        .write_to(&mut output, image::ImageFormat::WebP);
-                                    "image/webp"
-                                }
-                                "image/gif" => {
-                                    let _ = dyn_image
-                                        .write_to(&mut output, image::ImageFormat::Gif);
-                                    "image/gif"
-                                }
-                                "image/heif"
-                                | "image/heif-sequence"
-                                | "image/heic"
-                                | "image/heic-sequence" => {
-                                    let _ = dyn_image
-                                        .write_to(&mut output, image::ImageFormat::Avif);
-                                    "image/heif"
-                                }
-                                _ => {
-                                    let _ = dyn_image
-                                        .write_to(&mut output, image::ImageFormat::Png);
-                                    "image/png"
-                                }
-                            };
-                            let encoded = base64::engine::general_purpose::STANDARD
-                                .encode(output.get_ref());
-                            Some(format!("data:{};base64,{}", mime, encoded))
-                        }
-                    }
-                };
-
-                encoded
-            }
+            Ok((ptr, size)) => Some(f(
+                std::slice::from_raw_parts(ptr.as_ptr(), size as usize),
+                row_bytes as usize,
+            )),
             Err(_) => None,
         };
 
@@ -653,6 +638,56 @@ fn to_data_url_with_texture(
 
         result
     }
+}
+
+/// The canvas's frame as tightly packed, unpremultiplied RGBA8: the current texture if one is
+/// out, else the last presented frame. `None` before `configure` or for a non-8-bit format.
+pub(crate) fn read_rgba8(context: &CanvasGPUCanvasContext) -> Option<(u32, u32, Vec<u8>)> {
+    let (device, format, premultiplied) = {
+        let data = context.data.lock();
+        let data = data.as_ref()?;
+        (
+            Arc::clone(&data.device),
+            data.texture_data.format,
+            data.previous_configuration.alpha_mode == wgt::CompositeAlphaMode::PreMultiplied,
+        )
+    };
+    let is_bgra = match format {
+        TextureFormat::Bgra8Unorm | TextureFormat::Bgra8UnormSrgb => true,
+        TextureFormat::Rgba8Unorm | TextureFormat::Rgba8UnormSrgb => false,
+        _ => return None,
+    };
+
+    let current = context.current_texture.lock().as_ref().map(Arc::clone);
+    let (texture, width, height) = match current {
+        Some(current) => (Arc::clone(&current.texture), current.width, current.height),
+        None => {
+            let read_back = context.read_back_texture.lock();
+            let read_back = read_back.as_ref()?;
+            (Arc::clone(&read_back.texture), read_back.data.size.width, read_back.data.size.height)
+        }
+    };
+
+    let pixels = with_mapped_texture(&device, texture, width, height, |bytes, row_bytes| {
+        let row = width as usize * 4;
+        let mut pixels = Vec::with_capacity(row * height as usize);
+        for y in 0..height as usize {
+            pixels.extend_from_slice(&bytes[y * row_bytes..y * row_bytes + row]);
+        }
+        for px in pixels.chunks_exact_mut(4) {
+            if is_bgra {
+                px.swap(0, 2);
+            }
+            if premultiplied && px[3] != 0 && px[3] != 255 {
+                let a = px[3] as u32;
+                for c in &mut px[..3] {
+                    *c = ((*c as u32 * 255 + a / 2) / a).min(255) as u8;
+                }
+            }
+        }
+        pixels
+    })?;
+    Some((width, height, pixels))
 }
 
 /// No surface: getCurrentTexture hands out an offscreen texture.

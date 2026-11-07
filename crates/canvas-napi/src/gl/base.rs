@@ -1160,8 +1160,12 @@ macro_rules! impl_webgl_context {
                 Either4::C(gl2) => canvas_c::canvas_native_webgl_tex_image2d_webgl(
                     target, level, internalformat, format_or_width, type_or_height, gl2.state, self.state,
                 ),
-                Either4::D(_) => {
-                    return Err(Error::from_reason("texImage2D from a WebGPU canvas is not supported"));
+                Either4::D(gpu) => {
+                    if !canvas_c::canvas_native_webgl_tex_image2d_webgpu(
+                        target, level, internalformat, format_or_width, type_or_height, gpu.context, self.state,
+                    ) {
+                        return Err(Error::from_reason("texImage2D: the WebGPU canvas has no 8-bit frame to read"));
+                    }
                 }
             },
         }
@@ -1360,11 +1364,19 @@ macro_rules! impl_webgl_context {
                 self.state,
                 )
             }
-            Either4::D(_) => {
-                // Same as texImage2D: a WebGPU canvas is not a WebGL texture source
-                // here. This was a todo!(), so the call panicked inside the Node-API
-                // callback (crashing the host) instead of throwing.
-                return Err(Error::from_reason("texSubImage2D from a WebGPU canvas is not supported"));
+            Either4::D(gpu) => {
+                if !canvas_c::canvas_native_webgl_tex_sub_image2d_webgpu(
+                target,
+                level,
+                xoffset,
+                yoffset,
+                format_or_width as u32,
+                type_or_height,
+                gpu.context,
+                self.state,
+                ) {
+                    return Err(Error::from_reason("texSubImage2D: the WebGPU canvas has no 8-bit frame to read"));
+                }
             }
         }
       }

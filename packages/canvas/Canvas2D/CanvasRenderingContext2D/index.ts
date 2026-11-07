@@ -469,6 +469,9 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 	}
 
 	set globalAlpha(alpha: number) {
+		if (!isFinite(alpha) || alpha < 0 || alpha > 1) {
+			return;
+		}
 		this.context.globalAlpha = alpha;
 	}
 
@@ -493,6 +496,10 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 	}
 
 	set lineDashOffset(offset: number) {
+		// Non-finite values (and undefined) are ignored, as on the web.
+		if (!isFinite(offset)) {
+			return;
+		}
 		this.context.lineDashOffset = offset;
 	}
 
@@ -529,6 +536,9 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 	}
 
 	set miterLimit(limit: number) {
+		if (!isFinite(limit) || limit <= 0) {
+			return;
+		}
 		this.context.miterLimit = limit;
 	}
 
@@ -648,6 +658,9 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 	}
 
 	set lineWidth(width: number) {
+		if (!isFinite(width) || width <= 0) {
+			return;
+		}
 		this.context.lineWidth = width;
 	}
 
@@ -789,7 +802,7 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 			return null;
 		} else if (image instanceof ImageAsset) {
 			img = image.native;
-		} else if ((isCanvasView(image) || isOffscreenCanvas(image))) {
+		} else if (isCanvasView(image) || isOffscreenCanvas(image)) {
 			img = (image as any).native;
 		} else if (image && typeof image.tagName === 'string' && (image.tagName === 'IMG' || image.tagName === 'IMAGE')) {
 			if (__ANDROID__ && image._image instanceof android.graphics.Bitmap) {
@@ -907,7 +920,7 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 		} else if (__APPLE__ && image instanceof UIImage) {
 			drawNativeImage(args, image, this);
 			return;
-		} else if ((isCanvasView(image) || isOffscreenCanvas(image))) {
+		} else if (isCanvasView(image) || isOffscreenCanvas(image)) {
 			image = (image as any).native;
 		} else if (image && typeof image.tagName === 'string' && (image.tagName === 'IMG' || image.tagName === 'IMAGE')) {
 			if (image._imageSource instanceof ImageSource && !NAPI_HOST) {
@@ -1032,7 +1045,7 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 			isNativeSource = true;
 		} else if (__APPLE__ && image instanceof UIImage) {
 			isNativeSource = true;
-		} else if ((isCanvasView(image) || isOffscreenCanvas(image))) {
+		} else if (isCanvasView(image) || isOffscreenCanvas(image)) {
 			if (__APPLE__ && isCanvasView(image)) {
 				image = _canvasToImageAssetIOS(image as Canvas);
 			} else {

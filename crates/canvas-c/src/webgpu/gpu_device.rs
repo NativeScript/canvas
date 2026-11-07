@@ -1015,8 +1015,21 @@ pub extern "C" fn canvas_native_webgpu_device_create_shader_module(
     let module = device.device.create_shader_module(&desc, source);
 
     // Messages hang off the module now instead of arriving with an error.
-    let msgs: Vec<crate::webgpu::gpu_shader_module::CanvasGPUCompilationMessage> = module
-        .compilation_info()
+    let info = module.compilation_info();
+    // As browsers do: the reason a module is invalid, in the console.
+    for message in info
+        .messages
+        .iter()
+        .filter(|m| m.message_type == wgt::CompilationMessageType::Error)
+    {
+        let line = message.location.map_or(0, |location| location.line_number);
+        log::error!(
+            "WGSL error in shader module '{}' (line {line}): {}",
+            desc.label.as_deref().unwrap_or(""),
+            message.message
+        );
+    }
+    let msgs: Vec<crate::webgpu::gpu_shader_module::CanvasGPUCompilationMessage> = info
         .messages
         .iter()
         .map(|message| {

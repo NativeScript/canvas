@@ -100,24 +100,20 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		this.native.blitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
 	}
 
-	clearBufferfi(buffer: WebGLBuffer, drawbuffer: number, depth: number, stencil: number): void {
-		const value = buffer.native;
-		this.native.clearBufferfi(value, drawbuffer, depth, stencil);
+	clearBufferfi(buffer: number, drawbuffer: number, depth: number, stencil: number): void {
+		this.native.clearBufferfi(buffer, drawbuffer, depth, stencil);
 	}
 
-	clearBufferfv(buffer: WebGLBuffer, drawbuffer: number, values: number[] | Float32Array): void {
-		const value = buffer.native;
-		this.native.clearBufferfv(value, drawbuffer, values);
+	clearBufferfv(buffer: number, drawbuffer: number, values: number[] | Float32Array): void {
+		this.native.clearBufferfv(buffer, drawbuffer, values);
 	}
 
-	clearBufferiv(buffer: WebGLBuffer, drawbuffer: number, values: number[] | Int32Array): void {
-		const value = buffer ? buffer.native : 0;
-		this.native.clearBufferiv(value, drawbuffer, values);
+	clearBufferiv(buffer: number, drawbuffer: number, values: number[] | Int32Array): void {
+		this.native.clearBufferiv(buffer, drawbuffer, values);
 	}
 
-	clearBufferuiv(buffer: WebGLBuffer, drawbuffer: number, values: number[] | Uint32Array): void {
-		const value = buffer ? buffer.native : 0;
-		this.native.clearBufferuiv(value, drawbuffer, values);
+	clearBufferuiv(buffer: number, drawbuffer: number, values: number[] | Uint32Array): void {
+		this.native.clearBufferuiv(buffer, drawbuffer, values);
 	}
 
 	clientWaitSync(sync: WebGLSync, flags: number, timeout: number): number {
@@ -422,7 +418,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 			this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, NAPI_HOST ? imageAssetFor(source)?.native : source.android);
 		} else if (source instanceof ImageAsset) {
 			this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, source.native);
-		} else if ((isCanvasView(source) || isOffscreenCanvas(source))) {
+		} else if (isCanvasView(source) || isOffscreenCanvas(source)) {
 			this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, source.native);
 		} else if (source instanceof ImageBitmap) {
 			this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, source.native);
@@ -475,7 +471,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 			this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, NAPI_HOST ? imageAssetFor(srcData)?.native : srcData.android);
 		} else if (srcData instanceof ImageAsset) {
 			this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData.native);
-		} else if ((isCanvasView(srcData) || isOffscreenCanvas(srcData))) {
+		} else if (isCanvasView(srcData) || isOffscreenCanvas(srcData)) {
 			this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData.native);
 		} else if (srcData instanceof ImageBitmap) {
 			this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData.native);

@@ -31,6 +31,8 @@ mod module;
 pub fn install_global(exports: napi::bindgen_prelude::Object, env: napi::Env) -> napi::Result<()> {
   use napi::bindgen_prelude::JsObjectValue;
   logger::install(env.raw())?;
+  #[cfg(target_os = "linux")]
+  host::linux::init();
   frame::install_microtask_scheduler(env.raw())?;
   fast::install(env.raw(), napi::JsValue::raw(&exports))?;
   install_canvases_behind(env.raw(), napi::JsValue::raw(&exports));

@@ -1,5 +1,7 @@
 //! `GPUDevice.importExternalTexture`. The decoder already outputs RGB, so the frame is one
-//! RGBA plane with identity conversion. Null where the backend lacks `EXTERNAL_TEXTURE`.
+//! RGBA plane with identity conversion. Where the backend lacks `EXTERNAL_TEXTURE` (Vulkan) the
+//! plane binds as a `texture_2d<f32>`, which shader modules use in place of `texture_external`
+//! (`lower_external_textures`).
 
 use std::borrow::Cow;
 use std::os::raw::{c_char, c_void};
@@ -11,7 +13,84 @@ use super::gpu_device::CanvasGPUDevice;
 
 pub struct CanvasGPUExternalTexture {
     pub(crate) label: Option<Cow<'static, str>>,
-    pub(crate) external_texture: Arc<wgpu_core::resource::ExternalTexture>,
+    /// None when emulated.
+    pub(crate) external_texture: Option<Arc<wgpu_core::resource::ExternalTexture>>,
+    pub(crate) plane: Arc<wgpu_core::resource::TextureView>,
+}
+
+impl CanvasGPUExternalTexture {
+    pub(crate) fn binding_resource(&self) -> wgpu_core::binding_model::BindingResource<'static> {
+        match &self.external_texture {
+            Some(texture) => {
+                wgpu_core::binding_model::BindingResource::ExternalTexture(Arc::clone(texture))
+            }
+            None => wgpu_core::binding_model::BindingResource::TextureView(Arc::clone(&self.plane)),
+        }
+    }
+}
+
+/// Without `EXTERNAL_TEXTURE`: `texture_external` becomes `texture_2d<f32>` and its 2-argument
+/// `textureLoad`s get level 0 (sampling and `textureDimensions` read the same on both). None
+/// when there is nothing to change.
+pub(crate) fn lower_external_textures(source: &str) -> Option<String> {
+    const EXTERNAL: &str = "texture_external";
+    if !source.contains(EXTERNAL) {
+        return None;
+    }
+    let is_ident = |c: char| c.is_ascii_alphanumeric() || c == '_';
+    // Names declared `name: texture_external` (globals and parameters).
+    let mut names = Vec::new();
+    let mut search = 0;
+    while let Some(found) = source[search..].find(EXTERNAL) {
+        let at = search + found;
+        search = at + EXTERNAL.len();
+        let before = source[..at].trim_end();
+        if let Some(before) = before.strip_suffix(':') {
+            let before = before.trim_end();
+            let start = before
+                .char_indices()
+                .rev()
+                .find(|(_, c)| !is_ident(*c))
+                .map_or(0, |(i, c)| i + c.len_utf8());
+            if start < before.len() {
+                names.push(&before[start..]);
+            }
+        }
+    }
+    let mut out = source.replace(EXTERNAL, "texture_2d<f32>");
+    const LOAD: &str = "textureLoad(";
+    let mut search = 0;
+    while let Some(found) = out[search..].find(LOAD) {
+        let open = search + found + LOAD.len();
+        search = open;
+        let first = out[open..]
+            .trim_start()
+            .split(|c: char| !is_ident(c))
+            .next()
+            .unwrap_or("");
+        if !names.contains(&first) {
+            continue;
+        }
+        let (mut depth, mut commas, mut close) = (1, 0, None);
+        for (i, c) in out[open..].char_indices() {
+            match c {
+                '(' | '[' => depth += 1,
+                ')' | ']' => {
+                    depth -= 1;
+                    if depth == 0 {
+                        close = Some(open + i);
+                        break;
+                    }
+                }
+                ',' if depth == 1 => commas += 1,
+                _ => {}
+            }
+        }
+        if let (Some(close), 1) = (close, commas) {
+            out.insert_str(close, ", 0");
+        }
+    }
+    Some(out)
 }
 
 /// Identity affine transform in wgpu's column-major 3x2 layout.
@@ -48,17 +127,16 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_import_external_texture(
 
     let device = &*device;
 
-    if !device
+    let emulated = !device
         .device
         .features()
-        .contains(wgt::Features::EXTERNAL_TEXTURE)
-    {
-        return std::ptr::null();
-    }
+        .contains(wgt::Features::EXTERNAL_TEXTURE);
 
     #[cfg(target_os = "windows")]
     let plane = super::gpu_shared_frame::import_external_plane(device, native_texture, width, height);
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(target_os = "linux")]
+    let plane = super::linux_video_frame::import_external_plane(device, native_texture, width, height);
+    #[cfg(not(any(target_os = "windows", target_os = "linux")))]
     let plane = super::gpu_native_texture::import_platform_texture(&device.device, native_texture, width, height);
     let Some(plane) = plane else {
         return std::ptr::null();
@@ -84,13 +162,13 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_import_external_texture(
         load_transform: IDENTITY_TRANSFORM,
     };
 
-    let external_texture = device
-        .device
-        .create_external_texture(&descriptor, &[plane_view]);
+    let external_texture =
+        (!emulated).then(|| device.device.create_external_texture(&descriptor, &[Arc::clone(&plane_view)]));
 
     Arc::into_raw(Arc::new(CanvasGPUExternalTexture {
         label,
         external_texture,
+        plane: plane_view,
     }))
 }
 

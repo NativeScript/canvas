@@ -107,7 +107,7 @@ class Accelerometer {
 
 			const nativeDelay = Accelerometer.getNativeDelay(options);
 			Accelerometer.sensorManager.registerListener(Accelerometer.sensorListener, Accelerometer.accelerometerSensor, nativeDelay);
-		} else {
+		} else if (__APPLE__) {
 			if (Accelerometer.isListeningForUpdates) {
 				console.log(startButNotStopped);
 				Accelerometer.stopAccelerometerUpdates();

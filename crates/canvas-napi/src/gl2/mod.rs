@@ -175,15 +175,9 @@ impl web_g_l_2_rendering_context {
   }
 
   #[napi]
-  pub fn clear_bufferfi(
-    &self,
-    buffer: ClassInstance<WebGLBuffer>,
-    drawbuffer: i32,
-    depth: f64,
-    stencil: i32,
-  ) {
+  pub fn clear_bufferfi(&self, buffer: u32, drawbuffer: i32, depth: f64, stencil: i32) {
     canvas_c::canvas_native_webgl2_clear_bufferfi(
-      buffer.0,
+      buffer,
       drawbuffer,
       depth as f32,
       stencil,
@@ -194,7 +188,7 @@ impl web_g_l_2_rendering_context {
   #[napi]
   pub fn clear_bufferfv(
     &self,
-    buffer: ClassInstance<WebGLBuffer>,
+    buffer: u32,
     drawbuffer: i32,
     values: Either<Vec<f64>, Float32Array>,
   ) {
@@ -202,7 +196,7 @@ impl web_g_l_2_rendering_context {
       Either::A(array) => {
         let array = array.into_iter().map(|v| v as f32).collect::<Vec<_>>();
         canvas_c::canvas_native_webgl2_clear_bufferfv(
-          buffer.0,
+          buffer,
           drawbuffer,
           array.as_ptr(),
           array.len(),
@@ -210,7 +204,7 @@ impl web_g_l_2_rendering_context {
         )
       }
       Either::B(value) => canvas_c::canvas_native_webgl2_clear_bufferfv(
-        buffer.0,
+        buffer,
         drawbuffer,
         value.as_ptr(),
         value.len(),
@@ -220,22 +214,17 @@ impl web_g_l_2_rendering_context {
   }
 
   #[napi]
-  pub fn clear_bufferiv(
-    &self,
-    buffer: ClassInstance<WebGLBuffer>,
-    drawbuffer: i32,
-    values: Either<Vec<i32>, Int32Array>,
-  ) {
+  pub fn clear_bufferiv(&self, buffer: u32, drawbuffer: i32, values: Either<Vec<i32>, Int32Array>) {
     match values {
       Either::A(array) => canvas_c::canvas_native_webgl2_clear_bufferiv(
-        buffer.0,
+        buffer,
         drawbuffer,
         array.as_ptr(),
         array.len(),
         self.state,
       ),
       Either::B(value) => canvas_c::canvas_native_webgl2_clear_bufferiv(
-        buffer.0,
+        buffer,
         drawbuffer,
         value.as_ptr(),
         value.len(),
@@ -247,20 +236,20 @@ impl web_g_l_2_rendering_context {
   #[napi]
   pub fn clear_bufferuiv(
     &self,
-    buffer: ClassInstance<WebGLBuffer>,
+    buffer: u32,
     drawbuffer: i32,
     values: Either<Vec<u32>, Uint32Array>,
   ) {
     match values {
       Either::A(array) => canvas_c::canvas_native_webgl2_clear_bufferuiv(
-        buffer.0,
+        buffer,
         drawbuffer,
         array.as_ptr(),
         array.len(),
         self.state,
       ),
       Either::B(value) => canvas_c::canvas_native_webgl2_clear_bufferuiv(
-        buffer.0,
+        buffer,
         drawbuffer,
         value.as_ptr(),
         value.len(),

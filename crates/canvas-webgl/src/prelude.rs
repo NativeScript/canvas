@@ -311,7 +311,7 @@ impl WebGLState {
         }
     }
 
-    #[cfg(target_os = "android")]
+    #[cfg(any(target_os = "android", target_os = "linux"))]
     pub fn resize_pbuffer(&mut self, width: i32, height: i32) {
         // A new pbuffer starts blank; layout calls this without a size change.
         if self.context.is_pbuffer() && self.context.get_surface_dimensions() == (width, height) {
@@ -681,6 +681,10 @@ impl WebGLState {
     #[cfg(target_os = "windows")]
     pub fn resize_texture_surface(&mut self, width: i32, height: i32) -> bool {
         self.context.resize_texture_surface(width, height)
+    }
+
+    pub fn gl_context(&self) -> &canvas_core::gpu::gl::GLContext {
+        &self.context
     }
 
     pub fn make_current_and_swap_buffers(&self) -> bool {

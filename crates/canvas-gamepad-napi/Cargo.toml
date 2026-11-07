@@ -3,7 +3,7 @@ name = "canvas-gamepad-napi"
 version = "0.1.0"
 edition = "2021"
 publish = false
-description = "Node-API binding for @nativescript/canvas-gamepad on Windows: Windows.Gaming.Input readings for navigator.getGamepads()."
+description = "Node-API binding for @nativescript/canvas-gamepad: Windows.Gaming.Input on Windows, gilrs (evdev) on Linux, for navigator.getGamepads()."
 
 [lib]
 crate-type = ["cdylib"]
@@ -24,6 +24,11 @@ windows = { workspace = true, features = [
   "Foundation_Collections",
   "Gaming_Input",
 ] }
+
+# evdev pads through gilrs (SDL mappings to the standard layout); hot-plug checked on the main loop.
+[target.'cfg(target_os = "linux")'.dependencies]
+gilrs = "0.11"
+glib = "0.22"
 
 [build-dependencies]
 napi-build = "2.5.0"

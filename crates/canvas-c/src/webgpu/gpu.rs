@@ -102,6 +102,9 @@ pub extern "C" fn canvas_native_webgpu_instance_create() -> *const CanvasWebGPUI
     #[cfg(target_os = "windows")]
     let backends = wgt::Backends::DX12;
 
+    #[cfg(target_os = "linux")]
+    let backends = wgt::Backends::VULKAN;
+
     let instance = Instance::new(
         "webgpu",
         wgt::InstanceDescriptor {
@@ -200,6 +203,11 @@ pub unsafe extern "C" fn canvas_native_webgpu_request_adapter(
             #[cfg(target_os = "windows")]
             {
                 inner.request_adapter(&opts, wgt::Backends::DX12)
+            }
+
+            #[cfg(target_os = "linux")]
+            {
+                inner.request_adapter(&opts, wgt::Backends::VULKAN)
             }
         };
 

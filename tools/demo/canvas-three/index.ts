@@ -914,14 +914,13 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 			window.addEventListener('resize', onWindowResize);
 
-			// gui
+			// gui: needs the Inspector, which needs a DOM (see above)
 
-			const gui = renderer.inspector.createParameters('Settings');
-
-			gui.add(gravity, 'value', -0.0098, 0, 0.0001).name('gravity');
-			gui.add(bounce, 'value', 0.1, 1, 0.01).name('bounce');
-			gui.add(friction, 'value', 0.96, 0.99, 0.01).name('friction');
-			gui.add(size, 'value', 0.12, 0.5, 0.01).name('size');
+			// const gui = renderer.inspector.createParameters('Settings');
+			// gui.add(gravity, 'value', -0.0098, 0, 0.0001).name('gravity');
+			// gui.add(bounce, 'value', 0.1, 1, 0.01).name('bounce');
+			// gui.add(friction, 'value', 0.96, 0.99, 0.01).name('friction');
+			// gui.add(size, 'value', 0.12, 0.5, 0.01).name('size');
 		}
 
 		function onWindowResize() {

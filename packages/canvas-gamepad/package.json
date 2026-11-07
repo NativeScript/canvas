@@ -8,7 +8,8 @@
 		"platforms": {
 			"ios": "6.0.0",
 			"android": "6.0.0",
-			"windows": "9.1.0"
+			"windows": "9.1.0",
+			"linux": "0.1.0-alpha.5"
 		}
 	},
 	"repository": {
@@ -22,6 +23,7 @@
 		"iOS",
 		"Android",
 		"Windows",
+		"Linux",
 		"Gamepad"
 	],
 	"author": {

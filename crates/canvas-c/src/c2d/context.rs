@@ -132,9 +132,9 @@ pub fn resize_gl(context: &mut CanvasRenderingContext2D, width: f32, height: f32
     }
 
     // A pbuffer keeps its size.
-    #[cfg(target_os = "android")]
+    #[cfg(any(target_os = "android", target_os = "linux"))]
     let color_space = context.surface_data().color_space();
-    #[cfg(target_os = "android")]
+    #[cfg(any(target_os = "android", target_os = "linux"))]
     if let Some(gl) = context.gl_context.as_mut() {
         if gl.is_pbuffer() {
             let mut attr = canvas_core::context_attributes::ContextAttributes::new(
@@ -464,6 +464,14 @@ impl CanvasRenderingContext2D {
             }
         }
 
+        // Linux: ends the frame, so a transferred canvas's view gets it.
+        #[cfg(all(feature = "gl", target_os = "linux"))]
+        if self.engine == Engine::GL {
+            if let Some(context) = self.context.gl_context.as_ref() {
+                context.swap_buffers();
+            }
+        }
+
         #[cfg(feature = "metal")]
         if let Some(context) = self.context.metal_context.as_mut() {
             if context.is_offscreen() {
@@ -787,6 +795,26 @@ pub extern "C" fn canvas_native_d3d_simulate_device_removal() -> bool {
         canvas_core::gpu::d3d::D3D12Context::simulate_shared_removal()
     });
     here || render_thread.unwrap_or(false)
+}
+
+/// Linux: the EGL context a GL 2D context renders with (null for CPU or threaded contexts).
+#[cfg(all(feature = "gl", target_os = "linux"))]
+#[no_mangle]
+pub extern "C" fn canvas_native_context_get_egl_context(
+    context: *const CanvasRenderingContext2D,
+) -> *mut c_void {
+    if context.is_null() {
+        return std::ptr::null_mut();
+    }
+    let context = unsafe { &*context };
+    if context.threaded.is_some() {
+        return std::ptr::null_mut();
+    }
+    context
+        .context
+        .gl_context
+        .as_ref()
+        .map_or(std::ptr::null_mut(), |gl| gl.egl_context())
 }
 
 #[no_mangle]

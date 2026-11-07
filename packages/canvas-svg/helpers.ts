@@ -1,5 +1,6 @@
 declare var __non_webpack_require__, CanvasSVGModule;
 declare const __WINDOWS__: boolean;
+declare const __LINUX__: boolean;
 
 export class Helpers {
 	static _initialized = false;
@@ -23,7 +24,7 @@ export class Helpers {
 			this._initialized = true;
 		}
 
-		if (typeof __WINDOWS__ !== 'undefined' && __WINDOWS__) {
+		if ((typeof __WINDOWS__ !== 'undefined' && __WINDOWS__) || (typeof __LINUX__ !== 'undefined' && __LINUX__)) {
 			// The Node-API module (crates/canvas-svg-napi) installs global.SVGModule itself.
 			__non_webpack_require__('system_lib://canvassvg.node');
 			this._initialized = true;

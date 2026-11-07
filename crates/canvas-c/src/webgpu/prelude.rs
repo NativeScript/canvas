@@ -71,9 +71,8 @@ pub fn build_features(features: wgt::Features) -> Vec<&'static str> {
         return_features.push("float32-blendable");
     }
 
-    if features.contains(wgt::Features::SUBGROUP) {
-        return_features.push("subgroups");
-    }
+    // Not "subgroups": shaders that use it start with `enable subgroups;`, which naga does not
+    // parse yet (gfx-rs/wgpu#5555), so advertising it breaks them (three.js's compute shaders).
 
     if features.contains(wgt::Features::TEXTURE_COMPRESSION_ASTC_SLICED_3D) {
         return_features.push("texture-compression-astc-sliced-3d");

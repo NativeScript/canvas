@@ -379,9 +379,6 @@ impl Context {
         self.surface_data.scale
     }
 
-    // Acquiring the next drawable during presentation can block the display-link
-    // callback on tvOS. Keep the previous surface until the next operation needs
-    // to draw, then retain its contents when swapping the backing texture.
     #[inline]
     /// Runs before every draw. Skia uploads a raster image the moment a draw records it (a pattern
     /// fill, say), so another canvas's GL context being current puts the texture in the wrong one.
@@ -397,8 +394,13 @@ impl Context {
         if let Some(ref context) = self.gl_context {
             context.make_current();
         }
-        #[cfg(all(feature = "metal", target_os = "tvos"))]
-        if self.metal_context.as_ref().is_some_and(|c| !c.has_current_drawable()) {
+        // A drawable is taken only when the frame first draws; see `Context::present`.
+        #[cfg(feature = "metal")]
+        if self
+            .metal_context
+            .as_ref()
+            .is_some_and(|c| !c.is_offscreen() && !c.has_current_drawable())
+        {
             Self::acquire_drawable(self);
         }
     }

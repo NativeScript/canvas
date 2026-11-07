@@ -9,6 +9,10 @@ inputs:
     description: Xcode version spec passed to setup-xcode
     required: false
     default: '^16.0'
+  rust-toolchain:
+    description: Dated nightly the Rust builds use (exported as CANVAS_RUST_TOOLCHAIN), as setup-android-native pins it.
+    required: false
+    default: 'nightly-2026-01-25'
   install-rust:
     description: Install Rust nightly + cargo cache (set 'false' for xcodebuild-only projects)
     required: false
@@ -34,10 +38,11 @@ runs:
       if: ${{ inputs.install-rust == 'true' }}
       shell: bash
       # rust-src is required: iOS and visionOS release builds go through
-      # `cargo +nightly build -Z build-std` (see Makefile).
+      # `cargo +$CANVAS_RUST_TOOLCHAIN build -Z build-std` (see Makefile).
       run: |
-        rustup toolchain install nightly --profile minimal --component rust-src
-        rustup default nightly
+        rustup toolchain install ${{ inputs.rust-toolchain }} --profile minimal --component rust-src
+        rustup default ${{ inputs.rust-toolchain }}
+        echo "CANVAS_RUST_TOOLCHAIN=${{ inputs.rust-toolchain }}" >> "$GITHUB_ENV"
         rustc --version
 
     # The Xcode pre-build phases regenerate the C headers with it. No macOS release binaries.

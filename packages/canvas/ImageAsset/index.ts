@@ -149,6 +149,8 @@ export class ImageAsset extends Observable {
 	}
 
 	private emitComplete(success: boolean, error) {
+		// Not on the Node-API host.
+		this.native.__syncExternalMemory?.();
 		this.notify({ eventName: 'complete', object: this, complete: success, error });
 	}
 

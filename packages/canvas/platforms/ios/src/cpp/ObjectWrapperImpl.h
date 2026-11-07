@@ -10,6 +10,7 @@
 
 #include "Common.h"
 #include "NativeType.h"
+#include "include/v8-external-memory-accounter.h"
 
 class ObjectWrapperImpl {
 public:
@@ -26,7 +27,18 @@ public:
     static void Finalizer(const v8::WeakCallbackInfo<ObjectWrapperImpl> &data) {
         auto *pThis = data.GetParameter();
         pThis->weakHandle_.Reset();
+        pThis->SetExternalMemory(data.GetIsolate(), 0);
         delete pThis;
+    }
+
+    // Native bytes V8 should count against this wrapper.
+    void SetExternalMemory(v8::Isolate *isolate, int64_t bytes) {
+        auto delta = bytes - externalBytes_;
+        if (delta == 0) {
+            return;
+        }
+        externalMemory_.Update(isolate, delta);
+        externalBytes_ = bytes;
     }
 
     void BindFinalizer(v8::Isolate *isolate, const v8::Local<v8::Object> &object) {
@@ -85,6 +97,8 @@ public:
 
 private:
     v8::Global<v8::Object> weakHandle_;
+    v8::ExternalMemoryAccounter externalMemory_;
+    int64_t externalBytes_ = 0;
 
 };
 

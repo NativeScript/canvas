@@ -41,6 +41,10 @@ public:
 
         impl->BindFinalizer(isolate, object);
 
+        auto bitmap = static_cast<ImageBitmapImpl *>(impl)->GetImageAsset();
+        impl->SetExternalMemory(isolate, (int64_t) canvas_native_image_asset_width(bitmap) *
+                                         (int64_t) canvas_native_image_asset_height(bitmap) * 4);
+
         return scope.Escape(object);
     }
 

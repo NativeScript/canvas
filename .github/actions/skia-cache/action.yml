@@ -12,7 +12,8 @@ description: >
   phases call cargo directly.
 
   Save (save: 'true', as the job's last step): only on pushes to master, so pull requests and
-  releases read master's entries and never write the ones master restores.
+  releases read master's entries and never write the ones master restores. Also saves the cargo
+  registry the setup-*-native actions restored, under the same rule.
 
 inputs:
   name:
@@ -72,3 +73,12 @@ runs:
       with:
         path: ${{ env.SKIA_CACHE_DIR }}
         key: ${{ env.SKIA_CACHE_KEY }}
+
+    - name: Save cargo registry
+      if: inputs.save == 'true' && env.CARGO_REGISTRY_CACHE_KEY != '' && env.CARGO_REGISTRY_CACHE_HIT != 'true' && github.event_name == 'push' && github.ref == 'refs/heads/master'
+      uses: actions/cache/save@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+        key: ${{ env.CARGO_REGISTRY_CACHE_KEY }}

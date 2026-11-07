@@ -84,6 +84,7 @@ struct JSIReadFileCallback {
     ~JSIReadFileCallback() {
         ALooper_removeFd(looper_, fd_[0]);
         close(fd_[0]);
+        close(fd_[1]);
         ALooper_release(looper_);
         callback_.Reset();
         canvas_native_u8_buffer_release(data_);

@@ -77,6 +77,7 @@ struct JSICallback {
     ~JSICallback() {
         ALooper_removeFd(looper_, fd_[0]);
         close(fd_[0]);
+        close(fd_[1]);
         ALooper_release(looper_);
         auto callback = callback_.get();
         if(callback != nullptr){

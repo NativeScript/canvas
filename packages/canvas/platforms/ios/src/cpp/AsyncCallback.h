@@ -132,6 +132,7 @@ struct AsyncCallback {
             if (isPrepared_) {
                 ALooper_removeFd(looper_, fd_[0]);
                 close(fd_[0]);
+                close(fd_[1]);
                 fd_[0] = -1;
                 fd_[1] = -1;
                 ALooper_release(looper_);
@@ -160,6 +161,7 @@ struct AsyncCallback {
             }
             ALooper_removeFd(looper_, fd_[0]);
             close(fd_[0]);
+            close(fd_[1]);
             ALooper_release(looper_);
             callback_.Reset();
         }

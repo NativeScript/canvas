@@ -1360,8 +1360,11 @@ macro_rules! impl_webgl_context {
                 self.state,
                 )
             }
-            Either4::D(gpu) => {
-                todo!("Implement drawImage for GPUContext")
+            Either4::D(_) => {
+                // Same as texImage2D: a WebGPU canvas is not a WebGL texture source
+                // here. This was a todo!(), so the call panicked inside the Node-API
+                // callback (crashing the host) instead of throwing.
+                return Err(Error::from_reason("texSubImage2D from a WebGPU canvas is not supported"));
             }
         }
       }

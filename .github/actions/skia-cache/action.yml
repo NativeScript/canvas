@@ -68,7 +68,7 @@ runs:
         } >> "$GITHUB_ENV"
 
     - name: Save
-      if: inputs.save == 'true' && env.SKIA_CACHE_KEY != '' && env.SKIA_CACHE_HIT != 'true' && ((github.event_name == 'push' && github.ref == 'refs/heads/master') || github.ref == 'refs/pull/183/merge')
+      if: inputs.save == 'true' && env.SKIA_CACHE_KEY != '' && env.SKIA_CACHE_HIT != 'true' && github.event_name == 'push' && github.ref == 'refs/heads/master'
       uses: actions/cache/save@v4
       with:
         path: ${{ env.SKIA_CACHE_DIR }}

@@ -12,6 +12,8 @@ runs:
       shell: bash
       run: |
         sudo apt-get update
+        # gstreamer's -dev needs libunwind-dev, which conflicts with the image's LLVM 14 libunwind
+        sudo apt-get remove -y libunwind-14-dev || true
         sudo apt-get install -y --no-install-recommends \
           libgtk-4-dev libegl-dev libgles-dev libasound2-dev libfontconfig-dev libfreetype-dev \
           libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libudev-dev \

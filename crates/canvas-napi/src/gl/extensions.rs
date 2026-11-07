@@ -385,10 +385,11 @@ impl OES_vertex_array_object {
     canvas_c::canvas_native_webgl_oes_vertex_array_object_is_vertex_array_oes(array_object, self.0)
   }
 
+  /// `null` unbinds.
   #[napi(js_name = "bindVertexArrayOES")]
-  pub fn bind_vertex_array_oes(&self, array_object: u32) {
+  pub fn bind_vertex_array_oes(&self, array_object: Option<u32>) {
     canvas_c::canvas_native_webgl_oes_vertex_array_object_bind_vertex_array_oes(
-      array_object,
+      array_object.unwrap_or(0),
       self.0,
     )
   }

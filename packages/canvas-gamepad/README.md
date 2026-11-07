@@ -47,6 +47,7 @@ Monitoring starts on the first `getGamepads()` call or gamepad listener.
 | iOS, tvOS, visionOS | GameController `GCExtendedGamepad` | The Siri Remote stays mapped to keyboard events. `valueChangedHandler` on each controller is taken over. |
 | Android | `KeyEvent` / `MotionEvent` from gamepad and joystick sources | Events from connected controllers are consumed at the activity window, so B no longer triggers Back while the API is in use. |
 | Windows | `Windows.Gaming.Input.Gamepad` | Build the native module with `make windows-gamepad`. |
+| Linux | evdev through [gilrs](https://gitlab.com/gilrs-project/gilrs), mapped with SDL's controller database | Needs read access to `/dev/input/event*`: desktop sessions grant it to gamepads via `uaccess`; otherwise add the user to the `input` group or a udev rule. Hot-plug is watched on the GLib main loop. Build with `tools/scripts/build-linux.sh canvas-gamepad-napi`. |
 
 ## License
 

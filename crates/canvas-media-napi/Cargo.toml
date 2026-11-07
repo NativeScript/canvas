@@ -3,7 +3,7 @@ name = "canvas-media-napi"
 version = "0.1.0"
 edition = "2021"
 publish = false
-description = "Node-API binding for @nativescript/canvas-media on Windows: MediaPlayer events and frame-server frames for the Video and Audio views."
+description = "Node-API binding for @nativescript/canvas-media: MediaPlayer events and frame-server frames on Windows, a GStreamer player shown by GTK 4 on Linux, for the Video and Audio views."
 
 [lib]
 crate-type = ["cdylib"]
@@ -40,6 +40,13 @@ windows = { workspace = true, features = [
   "Win32_Security",
   "Win32_System_WinRT_Direct3D11",
 ] }
+
+# GStreamer playbin; frames shown by a GTK 4 (>= 4.6) picture.
+[target.'cfg(target_os = "linux")'.dependencies]
+gst = { package = "gstreamer", version = "0.25" }
+gst-app = { package = "gstreamer-app", version = "0.25" }
+gst-video = { package = "gstreamer-video", version = "0.25" }
+gtk = { package = "gtk4", version = "0.11", features = ["v4_6"] }
 
 [build-dependencies]
 napi-build = "2.5.0"

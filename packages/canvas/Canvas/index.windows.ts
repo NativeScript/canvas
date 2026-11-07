@@ -294,7 +294,11 @@ export class Canvas extends NapiCanvas {
 				this._handleEvents({ event: 'down', ptrId, x, y, isPrimary });
 				break;
 			case 'Moved':
-				this._handleEvents({ event: 'move', pointers: [{ ptrId, x, y, isPrimary }] });
+				// A mouse or touchpad hovering is not a touch: moves are reported between down and
+				// up only, as on iOS and Android.
+				if (this._down.has(ptrId)) {
+					this._handleEvents({ event: 'move', pointers: [{ ptrId, x, y, isPrimary }] });
+				}
 				break;
 			case 'Released':
 				if (this._down.delete(ptrId)) {

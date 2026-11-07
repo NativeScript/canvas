@@ -461,10 +461,12 @@ struct ImageBitmapDecode {
 };
 
 struct ImageBitmapData {
-	char *error_;
-	const ImageAsset *asset_;
-	bool done_;
-	v8::Isolate *isolate_;
+	// zero-initialised. error_ was left indeterminate, and the
+	// destructor frees it when non-null.
+	char *error_ = nullptr;
+	const ImageAsset *asset_ = nullptr;
+	bool done_ = false;
+	v8::Isolate *isolate_ = nullptr;
 	std::shared_ptr<v8::Persistent<v8::ArrayBufferView>> data_;
 	
 	~ImageBitmapData() {
@@ -582,7 +584,24 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
 						v8::Local<v8::Context> context = callback->GetCreationContextChecked();
 						v8::Context::Scope context_scope(context);
 						
-						if (func->data != nullptr) {
+						if (func->data != nullptr && !done) {
+							// the decode failed. This resolved an
+							// empty (0x0) bitmap, which uploads as nothing: a
+							// blank card that never retries. Reject instead, so
+							// the renderer's retry gets it back.
+							auto asset_data = static_cast<ImageBitmapData *>(func->data);
+							if (asset_data->asset_ != nullptr) {
+								canvas_native_image_asset_release(asset_data->asset_);
+								asset_data->asset_ = nullptr;
+							}
+							delete asset_data;
+							func->data = nullptr;
+							v8::Local<v8::Value> args[2] = {
+								ConvertToV8String(isolate,
+												  "Failed to execute 'createImageBitmap' : The provided source could not be decoded"),
+								v8::Null(isolate)};
+							callback->Call(context, context->Global(), 2, args);
+						} else if (func->data != nullptr) {
 							auto asset_data = static_cast<ImageBitmapData *>(func->data);
 							
 							auto bitmap = new ImageBitmapImpl(asset_data->asset_);
@@ -630,7 +649,11 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
 					auto size = store->ByteLength();
 
 					auto asset = canvas_native_image_asset_create();
-					bool done;
+					// a decode that throws used to leave the task
+					// without calling back (the pool swallows the exception), so
+					// the JS promise never settled. Fail it instead.
+					bool done = false;
+					try {
 					if (rect.has_value()) {
 						done = canvas_native_image_bitmap_create_from_encoded_bytes_src_rect_with_output(
 								data, size,
@@ -653,6 +676,9 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
 								options.resizeQuality,
 								options.resizeWidth,
 								options.resizeHeight, asset);
+					}
+					} catch (...) {
+						done = false;
 					}
 					if (callback != nullptr) {
 						image_bitmap_async_data->asset_ = asset;

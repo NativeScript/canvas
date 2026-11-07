@@ -19,6 +19,10 @@ public class NativeFinalizer {
 					ResourceDescriptor d = refs.remove(pr);
 					if (d != null) {
 						try {
+							if (d.cleanup != null) {
+								d.cleanup.run();
+								continue;
+							}
 							switch (d.kind) {
 								case BUFFER:
 									AudioContext.getInstance().releaseBuffer(d.id);
@@ -54,16 +58,37 @@ public class NativeFinalizer {
 	public static void register(Object wrapper, ResourceKind kind, String id) {
 		if (wrapper == null || id == null) return;
 		PhantomReference<Object> pr = new PhantomReference<>(wrapper, queue);
-		refs.put(pr, new ResourceDescriptor(kind, id));
+		refs.put(pr, new ResourceDescriptor(kind, id, null));
+	}
+
+	/**
+	 * Runs {@code cleanup} once {@code wrapper} is unreachable. The cleanup must
+	 * not reference the wrapper. Returns a handle for {@link #unregister}.
+	 */
+	public static Object register(Object wrapper, Runnable cleanup) {
+		if (wrapper == null || cleanup == null) return null;
+		PhantomReference<Object> pr = new PhantomReference<>(wrapper, queue);
+		refs.put(pr, new ResourceDescriptor(null, null, cleanup));
+		return pr;
+	}
+
+	/** Cancels a cleanup registered with {@link #register(Object, Runnable)}, e.g. once it has run explicitly. */
+	public static void unregister(Object handle) {
+		if (handle instanceof PhantomReference) {
+			refs.remove(handle);
+			((PhantomReference<?>) handle).clear();
+		}
 	}
 
 	private static class ResourceDescriptor {
 		final ResourceKind kind;
 		final String id;
+		final Runnable cleanup;
 
-		ResourceDescriptor(ResourceKind k, String id) {
+		ResourceDescriptor(ResourceKind k, String id, Runnable cleanup) {
 			this.kind = k;
 			this.id = id;
+			this.cleanup = cleanup;
 		}
 	}
 }

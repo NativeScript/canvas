@@ -281,3 +281,28 @@ if (__APPLE__) {
 		return filePath;
 	};
 }
+
+// Node-API hosts (Windows, Linux): a blob URL's bytes, written once to a file a Worker can load.
+if (!__ANDROID__ && !__APPLE__ && typeof URL !== 'undefined' && typeof (<any>URL).InternalAccessor?.getPath !== 'function') {
+	(<any>URL).InternalAccessor.getPath = (url: string) => {
+		const blob = (<any>URL).InternalAccessor.getData(url);
+		if (!blob) {
+			return '';
+		}
+		if (blob.path) {
+			return blob.path;
+		}
+		const bytes = (Blob as any).InternalAccessor.getBuffer(blob.blob);
+		let fileName = url.substring(url.lastIndexOf('/') + 1).replace(/[^A-Za-z0-9_-]/g, '');
+		const ext = blob?.ext ?? (/javascript/.test(blob?.type ?? blob?.blob?.type ?? '') ? 'js' : undefined);
+		if (ext) {
+			fileName = `${fileName}.${ext}`;
+		}
+		const folder = Folder.fromPath(path.join(storageFolderPath(), BLOB_DIR));
+		const filePath = path.join(folder.path, fileName);
+		NSFile.fromPath(filePath).writeSync(bytes);
+		blob.path = filePath;
+		BLOB_STORE.set(url, blob);
+		return filePath;
+	};
+}

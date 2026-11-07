@@ -78,6 +78,10 @@ public:
 
     void freeBuffer(const std::string &id);
 
+    // Frees the buffer once no playing voice reads it (a source the app no longer
+    // references may still be playing: a one-shot, or a loop).
+    void freeBufferWhenIdle(const std::string &id);
+
     std::string createExternalPcmSource(int sampleRate, int channels);
     void configureExternalPcmSource(const std::string &id, int sampleRate, int channels);
     void pushPcmFrames(const std::string &id, const float *interleaved, size_t sampleCount);
@@ -185,6 +189,13 @@ private:
 
     std::unordered_map<std::string, BufferData> audioBuffers_;
     std::unordered_map<std::string, Voice> audioVoices_;
+    // Buffers to free once no playing voice reads them; render thread only.
+    std::vector<std::string> idleFrees_;
+
+    void releaseBufferData(const std::string &id,
+                           const std::shared_ptr<std::promise<void>> &completion = nullptr);
+
+    bool bufferInUse(const std::string &id) const;
     std::unordered_set<std::string> debugLoggedVoices_;
 public:
     enum CommandType {
@@ -196,6 +207,7 @@ public:
         CMD_CREATE_BUFFER_COPY,
         CMD_START_BUFFER,
         CMD_FREE_BUFFER,
+        CMD_FREE_BUFFER_WHEN_IDLE,
         CMD_CREATE_GAIN,
         CMD_CREATE_DYNAMICS_COMPRESSOR,
         CMD_SET_GAIN,

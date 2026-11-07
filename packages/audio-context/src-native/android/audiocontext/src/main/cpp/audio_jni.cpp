@@ -6,6 +6,7 @@
 #include <jni.h>
 #include <string>
 #include <vector>
+#include <cstdlib>
 #include <cstring>
 #include <cmath>
 #include <algorithm>
@@ -1515,6 +1516,51 @@ Java_org_nativescript_audiocontext_AudioContext_nativeReleaseBuffer(JNIEnv *env,
         NativeEngine::getInstance().freeBuffer(id);
         env->ReleaseStringUTFChars(jid, id);
     }
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_org_nativescript_audiocontext_AudioContext_nativeReleaseBufferWhenIdle(JNIEnv *env,
+                                                                            jobject thiz,
+                                                                            jstring jid) {
+    const char *id = env->GetStringUTFChars(jid, nullptr);
+    if (id) {
+        NativeEngine::getInstance().freeBufferWhenIdle(id);
+        env->ReleaseStringUTFChars(jid, id);
+    }
+}
+
+// NativePcm: float PCM in malloc'd memory, which (unlike allocateDirect) doesn't
+// count against the Java heap. Java frees it explicitly; see NativePcm.java.
+extern "C" JNIEXPORT jobject JNICALL
+Java_org_nativescript_audiocontext_NativePcm_nativeAlloc(JNIEnv *env, jclass clazz, jlong bytes) {
+    (void) clazz;
+    if (bytes <= 0) return nullptr;
+    void *data = std::calloc(1, static_cast<size_t>(bytes));
+    if (!data) return nullptr;
+    jobject buffer = env->NewDirectByteBuffer(data, bytes);
+    if (!buffer) std::free(data);
+    return buffer;
+}
+
+extern "C" JNIEXPORT jobject JNICALL
+Java_org_nativescript_audiocontext_NativePcm_nativeRealloc(JNIEnv *env, jclass clazz,
+                                                           jobject buffer, jlong bytes) {
+    (void) clazz;
+    if (buffer == nullptr || bytes <= 0) return nullptr;
+    void *old = env->GetDirectBufferAddress(buffer);
+    if (!old) return nullptr;
+    // On failure the old memory is untouched and still owned by `buffer`.
+    void *data = std::realloc(old, static_cast<size_t>(bytes));
+    if (!data) return nullptr;
+    return env->NewDirectByteBuffer(data, bytes);
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_org_nativescript_audiocontext_NativePcm_nativeFree(JNIEnv *env, jclass clazz,
+                                                        jobject buffer) {
+    (void) clazz;
+    if (buffer == nullptr) return;
+    std::free(env->GetDirectBufferAddress(buffer));
 }
 
 extern "C" JNIEXPORT jlong JNICALL

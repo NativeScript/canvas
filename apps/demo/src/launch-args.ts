@@ -16,13 +16,15 @@
  *
  *   echo {"demo":"canvas-spec","suite":"2d"} > %LOCALAPPDATA%\Packages\<package family>\LocalState\launch-args.json
  *
+ * Linux: after the app folder, e.g. `platforms/linux/demo/bin/demo app --demo=canvas-spec`.
+ *
  * Captured at launch rather than read in the page, because the first page
  * navigates during bootstrap -- before Application.android.foregroundActivity
  * is assigned.
  */
 import { getFileAccess, knownFolders, path } from '@nativescript/core';
 
-declare const __WINDOWS__: boolean, NSWinRT: any, Windows: any;
+declare const __WINDOWS__: boolean, __LINUX__: boolean, NSWinRT: any, Windows: any;
 
 export const launchArgs: { demo?: string; profile?: string; frames?: number; suite?: string; surface?: string } = {};
 
@@ -40,7 +42,10 @@ export function captureLaunchArgs(androidIntent?: any) {
 		if (__ANDROID__) {
 			captureFromIntent(androidIntent);
 		} else if (__APPLE__) {
-			captureFromProcessArguments();
+			const args = NSProcessInfo.processInfo.arguments;
+			captureFromArguments(args ? Array.from({ length: args.count }, (_, i) => String(args.objectAtIndex(i))) : []);
+		} else if (typeof __LINUX__ !== 'undefined' && __LINUX__) {
+			captureFromArguments((global as any).process?.argv ?? []);
 		} else if (typeof __WINDOWS__ !== 'undefined' && __WINDOWS__) {
 			captureFromLaunchFile();
 		}
@@ -69,13 +74,8 @@ function captureFromIntent(intent: any) {
 }
 
 /** `--demo=canvas-spec`, as simctl and Xcode's scheme arguments pass them. */
-function captureFromProcessArguments() {
-	const args = NSProcessInfo.processInfo.arguments;
-	if (!args) {
-		return;
-	}
-	for (let i = 0; i < args.count; i++) {
-		const arg = String(args.objectAtIndex(i));
+function captureFromArguments(args: string[]) {
+	for (const arg of args) {
 		const eq = arg.indexOf('=');
 		if (arg.indexOf('--') !== 0 || eq === -1) {
 			continue;

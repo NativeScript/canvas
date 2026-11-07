@@ -133,6 +133,18 @@ export class HTMLImageElement extends HTMLElement {
 		}
 	}
 
+	/** A decode finished: `load`, or `error` when the bytes were not an image. */
+	private _settle(done: boolean) {
+		this._loading = false;
+		if (done) {
+			this.complete = true;
+		} else {
+			this.dispatchEvent({ type: 'error', target: this });
+			this._onerror?.();
+		}
+		this._dispatchDecode(done);
+	}
+
 	private _dispatchDecode(success = false) {
 		for (const promise of this._decodingQueue) {
 			if (success) {
@@ -221,9 +233,7 @@ export class HTMLImageElement extends HTMLElement {
 								return this._asset.loadSvg(res).then((done: boolean) => {
 									this.width = this._asset.width;
 									this.height = this._asset.height;
-									this.complete = done;
-									this._loading = false;
-									this._dispatchDecode(done);
+									this._settle(done);
 								});
 							}
 						})
@@ -233,9 +243,7 @@ export class HTMLImageElement extends HTMLElement {
 								.then((done: boolean) => {
 									this.width = this._asset.width;
 									this.height = this._asset.height;
-									this.complete = done;
-									this._loading = false;
-									this._dispatchDecode(done);
+									this._settle(done);
 								})
 								.catch((e) => {
 									this.dispatchEvent({ type: 'error', target: this, error: e, e });
@@ -313,9 +321,7 @@ export class HTMLImageElement extends HTMLElement {
 							.then((done: boolean) => {
 								this.width = this._asset.width;
 								this.height = this._asset.height;
-								this.complete = done;
-								this._loading = false;
-								this._dispatchDecode(done);
+								this._settle(done);
 							})
 							.catch((error) => {
 								this.dispatchEvent({ type: 'error', target: this, error });
@@ -433,9 +439,7 @@ export class HTMLImageElement extends HTMLElement {
 								.then((done: boolean) => {
 									this.width = this._asset.width;
 									this.height = this._asset.height;
-									this.complete = done;
-									this._loading = false;
-									this._dispatchDecode(done);
+									this._settle(done);
 								})
 								.catch((_) => {
 									this.dispatchEvent({ type: 'error', target: this, error: e });
@@ -495,9 +499,7 @@ export class HTMLImageElement extends HTMLElement {
 								.then((done: boolean) => {
 									this.width = this._asset.width;
 									this.height = this._asset.height;
-									this.complete = done;
-									this._loading = false;
-									this._dispatchDecode(done);
+									this._settle(done);
 								})
 								.catch((_) => {
 									this.dispatchEvent({ type: 'error', target: this, e });

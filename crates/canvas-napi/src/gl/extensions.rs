@@ -73,6 +73,12 @@ constant_extension!(
 constant_extension!(EXT_shader_texture_lod, "EXT_shader_texture_lod");
 
 constant_extension!(
+  KHR_parallel_shader_compile,
+  "KHR_parallel_shader_compile",
+  "COMPLETION_STATUS_KHR" completion_status_khr = 0x91B1,
+);
+
+constant_extension!(
   EXT_texture_filter_anisotropic,
   "EXT_texture_filter_anisotropic",
   "TEXTURE_MAX_ANISOTROPY_EXT" texture_max_anisotropy_ext = 0x84FE,
@@ -379,10 +385,11 @@ impl OES_vertex_array_object {
     canvas_c::canvas_native_webgl_oes_vertex_array_object_is_vertex_array_oes(array_object, self.0)
   }
 
+  /// `null` unbinds.
   #[napi(js_name = "bindVertexArrayOES")]
-  pub fn bind_vertex_array_oes(&self, array_object: u32) {
+  pub fn bind_vertex_array_oes(&self, array_object: Option<u32>) {
     canvas_c::canvas_native_webgl_oes_vertex_array_object_bind_vertex_array_oes(
-      array_object,
+      array_object.unwrap_or(0),
       self.0,
     )
   }

@@ -3,7 +3,8 @@
  * passes read back through a buffer. Every test is async and needs a device.
  */
 
-import { suite, test, ok, equal, notEqual, arrayEqual, rejects, makeCanvas, getPageCanvas } from './harness';
+import { ImageAsset } from '@nativescript/canvas';
+import { suite, test, ok, equal, notEqual, arrayEqual, rejects, makeCanvas, getPageCanvas, make2D, pixelAt } from './harness';
 
 declare const navigator: any;
 
@@ -121,6 +122,32 @@ export function registerWebGPUSpec() {
 			equal(texture.width, (canvas as any).width, 'width');
 			equal(texture.height, (canvas as any).height, 'height');
 			ok(texture.createView(), 'createView');
+		});
+
+		test('toDataURL reads back the current frame', async () => {
+			const { device } = await getDevice();
+			const canvas = surfaceCanvas() as any;
+			const ctx = canvas.getContext('webgpu') as any;
+			ctx.configure({ device, format: navigator.gpu.getPreferredCanvasFormat(), alphaMode: 'opaque' });
+			const encoder = device.createCommandEncoder();
+			const pass = encoder.beginRenderPass({
+				colorAttachments: [{ view: ctx.getCurrentTexture().createView(), clearValue: { r: 0, g: 0, b: 1, a: 1 }, loadOp: 'clear', storeOp: 'store' }],
+			});
+			pass.end();
+			device.queue.submit([encoder.finish()]);
+
+			const url: string = canvas.toDataURL('image/png');
+			const comma = url.indexOf(',');
+			ok(url.startsWith('data:image/png') && comma > 0 && comma < url.length - 1, `not a png: ${url.substring(0, 32)}`);
+			const [, buffer] = (global as any).CanvasModule.__base64Decode(url.substring(comma + 1));
+			const asset = new ImageAsset();
+			ok(asset.loadFromEncodedBytesSync(new Uint8Array(buffer)), 'the data URL did not decode');
+			equal(asset.width, canvas.width, 'width');
+			equal(asset.height, canvas.height, 'height');
+			const { ctx: c2d } = make2D(canvas.width, canvas.height);
+			c2d.drawImage(asset, 0, 0);
+			const [r, g, b, a] = pixelAt(c2d, canvas.width >> 1, canvas.height >> 1);
+			ok(r < 8 && g < 8 && b > 247 && a > 247, `expected blue, got [${r}, ${g}, ${b}, ${a}]`);
 		});
 	});
 

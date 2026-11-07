@@ -17,6 +17,12 @@ const RED: [number, number, number, number] = [255, 0, 0, 255];
 /** Opaque green, used for WebGL clears so the two sources cannot be confused. */
 const GREEN: [number, number, number, number] = [0, 255, 0, 255];
 
+/** Opaque blue, used for WebGPU clears. */
+const BLUE: [number, number, number, number] = [0, 0, 255, 255];
+
+declare const __WINDOWS__: boolean;
+const WINDOWS = typeof __WINDOWS__ !== 'undefined' && __WINDOWS__;
+
 /** A canvas whose 2d context has been filled with a solid colour. */
 function make2DSource(size = 32, colour = 'red') {
 	const { canvas, ctx } = make2D(size, size);
@@ -122,7 +128,7 @@ export function registerCanvasSourceSpec() {
 
 	suite('canvassource.webgl', () => {
 		/** Upload `source` as a texture and read back the pixel it renders to. */
-		function uploadAndReadBack(source: any, size = 32) {
+		function uploadAndReadBack(source: any, size = 32, upload?: (gl: any) => void) {
 			const canvas = makeCanvas(size, size);
 			const gl = canvas.getContext('webgl') as any;
 			if (!gl) {
@@ -135,7 +141,11 @@ export function registerCanvasSourceSpec() {
 			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
 			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
+			if (upload) {
+				upload(gl);
+			} else {
+				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
+			}
 
 			const error = gl.getError();
 			if (error !== gl.NO_ERROR) {
@@ -204,6 +214,49 @@ void main() { gl_FragColor = texture2D(tex, uv); }`,
 			ok(!result.error, `texImage2D raised GL error ${result.error}`);
 			ok(pixelNear(result.pixels, GREEN), `expected green, got ${describePixel(result.pixels)}`);
 		});
+
+		// Node-API hosts only so far; the iOS and Android bindings do not take a WebGPU source yet.
+		if (WINDOWS) {
+			/** A canvas whose WebGPU context has been cleared to opaque blue. */
+			async function makeWebGPUSource(size = 32) {
+				const adapter = await navigator.gpu?.requestAdapter();
+				const device = await adapter?.requestDevice();
+				if (!device) {
+					return null;
+				}
+				const canvas = makeCanvas(size, size);
+				const ctx = canvas.getContext('webgpu') as any;
+				ctx.configure({ device, format: navigator.gpu.getPreferredCanvasFormat(), alphaMode: 'opaque' });
+				const encoder = device.createCommandEncoder();
+				const pass = encoder.beginRenderPass({
+					colorAttachments: [{ view: ctx.getCurrentTexture().createView(), clearValue: { r: 0, g: 0, b: 1, a: 1 }, loadOp: 'clear', storeOp: 'store' }],
+				});
+				pass.end();
+				device.queue.submit([encoder.finish()]);
+				return canvas;
+			}
+
+			test('texImage2D accepts a webgpu canvas', async () => {
+				const source = await makeWebGPUSource(32);
+				ok(source, 'no webgpu device');
+				const result = uploadAndReadBack(source);
+				ok(result, 'could not create a webgl context');
+				ok(!result.error, `texImage2D raised GL error ${result.error}`);
+				ok(pixelNear(result.pixels, BLUE), `expected blue, got ${describePixel(result.pixels)}`);
+			});
+
+			test('texSubImage2D accepts a webgpu canvas', async () => {
+				const source = await makeWebGPUSource(32);
+				ok(source, 'no webgpu device');
+				const result = uploadAndReadBack(source, 32, (gl) => {
+					gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 32, 32, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+					gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, gl.RGBA, gl.UNSIGNED_BYTE, source);
+				});
+				ok(result, 'could not create a webgl context');
+				ok(!result.error, `texSubImage2D raised GL error ${result.error}`);
+				ok(pixelNear(result.pixels, BLUE), `expected blue, got ${describePixel(result.pixels)}`);
+			});
+		}
 	});
 
 	suite('canvassource.webgpu', () => {

@@ -926,6 +926,13 @@ void NativeEngine::freeBuffer(const std::string &id) {
     enqueueCommand(std::move(cmd));
 }
 
+void NativeEngine::freeBufferWhenIdle(const std::string &id) {
+    NativeEngine::Command cmd;
+    cmd.type = NativeEngine::CMD_FREE_BUFFER_WHEN_IDLE;
+    cmd.id = id;
+    enqueueCommand(std::move(cmd));
+}
+
 std::string NativeEngine::createExternalPcmSource(int sampleRate, int channels) {
     if (channels <= 0) channels = 2;
     if (sampleRate <= 0) sampleRate = 48000;

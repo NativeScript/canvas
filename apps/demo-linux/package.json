@@ -1,0 +1,21 @@
+{
+	"name": "demo-linux",
+	"main": "./src/app.ts",
+	"description": "Canvas 2D, WebGL and Web Audio on NativeScript Linux",
+	"private": true,
+	"dependencies": {
+		"@nativescript/audio-context": "file:../../packages/audio-context",
+		"@nativescript/canvas": "file:../../packages/canvas",
+		"@nativescript/core": "https://pkg.pr.new/@nativescript/core@11620",
+		"@nativescript/font-manager": "file:../../node_modules/@nativescript/font-manager"
+	},
+	"devDependencies": {
+		"@nativescript/linux": "file:../../tools/linux/nativescript-linux-0.1.0-alpha.5.tgz",
+		"@nativescript/webpack": "https://pkg.pr.new/@nativescript/webpack@11620",
+		"nativescript": "9.1.2-dev.2026-11-07-42333414597",
+		"typescript": "~5.9.0"
+	},
+	"scripts": {
+		"start": "ns run linux --no-hmr"
+	}
+}

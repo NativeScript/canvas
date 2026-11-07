@@ -18,7 +18,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -119,6 +118,9 @@ public class AudioContext {
 	private final ConcurrentHashMap<String, java.nio.ByteBuffer> directBuffers = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<String, java.nio.ByteBuffer[]> planarBuffers = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<String, AtomicInteger> directRefCounts = new ConcurrentHashMap<>();
+	// Native-memory PCM by buffer id: a decoded or created buffer's own id, and each
+	// native buffer a source plays it through. Each entry holds one reference.
+	private final ConcurrentHashMap<String, NativePcm> pcmBuffers = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<String, Integer> bufferChannels = new ConcurrentHashMap<>();
 
 	private final ConcurrentHashMap<String, Double> gains = new ConcurrentHashMap<>();
@@ -193,6 +195,10 @@ public class AudioContext {
 	public static synchronized AudioContext getInstance() {
 		if (sInstance == null) sInstance = new AudioContext();
 		return sInstance;
+	}
+
+	static boolean isNativeAvailable() {
+		return nativeAvailable;
 	}
 
 	static {
@@ -607,14 +613,51 @@ public class AudioContext {
 				planarBuffers.remove(id);
 				sampleRates.remove(id);
 				bufferChannels.remove(id);
+				dropPcm(id);
 			}
 		} else {
 			directBuffers.remove(id);
 			planarBuffers.remove(id);
 			sampleRates.remove(id);
 			bufferChannels.remove(id);
+			dropPcm(id);
 		}
 	}
+
+	/** {@code id} holds a reference to {@code pcm} until it's released. */
+	void holdPcm(String id, @Nullable NativePcm pcm) {
+		if (id == null || pcm == null || !pcm.retain()) return;
+		NativePcm previous = pcmBuffers.put(id, pcm);
+		if (previous != null) previous.release();
+	}
+
+	private void dropPcm(String id) {
+		NativePcm pcm = pcmBuffers.remove(id);
+		if (pcm != null) pcm.release();
+	}
+
+	void registerPcm(String id, NativePcm pcm, int sampleRate) {
+		holdPcm(id, pcm);
+		sampleRates.put(id, sampleRate);
+		bufferChannels.put(id, pcm.channels.length);
+	}
+
+	/**
+	 * Releases a source's own native buffer once it stops playing: a source the
+	 * app has let go of may still be sounding (a one-shot, or a loop).
+	 */
+	void releaseSourceWhenIdle(String id) {
+		if (id == null) return;
+		AtomicInteger ai = directRefCounts.get(id);
+		if (ai != null && ai.decrementAndGet() > 0) return;
+		if (nativeAvailable) {
+			nativeReleaseBufferWhenIdle(id);
+		} else {
+			releaseBuffer(id);
+		}
+	}
+
+	private native void nativeReleaseBufferWhenIdle(String id);
 
 	private native void nativeConfigureStream(int sampleRate, double latencyHintSec);
 
@@ -1093,10 +1136,24 @@ public class AudioContext {
 		void set(MediaExtractor e) throws Exception;
 	}
 
+	/**
+	 * Decodes the first audio track straight into planar float PCM in native
+	 * memory (see NativePcm).
+	 *
+	 * Decoded chunks are converted to float and split into channels as they come
+	 * out of the codec, into buffers presized from the track's duration, so the
+	 * PCM is held once and never on the Java heap. (Collecting it in a
+	 * ByteArrayOutputStream and copying it to byte[], short[] and float[] peaked
+	 * at 5-6x the 16-bit PCM on the heap: a two-minute stereo track threw
+	 * OutOfMemoryError.) The sample rate, channel count and PCM encoding come
+	 * from the decoder's output format, which can differ from the container's
+	 * (HE-AAC reports half its rate).
+	 */
 	private AudioBuffer decodeUsingExtractor(ExtractorSetter setter) {
 		MediaExtractor extractor = null;
 		MediaCodec codec = null;
-		ByteArrayOutputStream baos = null;
+		// Freed here unless it's handed over.
+		NativePcm pcm = null;
 		try {
 			extractor = new MediaExtractor();
 			setter.set(extractor);
@@ -1118,7 +1175,17 @@ public class AudioContext {
 			codec = MediaCodec.createDecoderByType(mime);
 			codec.configure(trackFormat, null, null, 0);
 			codec.start();
-			baos = new ByteArrayOutputStream();
+
+			int sampleRate = trackFormat.containsKey(MediaFormat.KEY_SAMPLE_RATE) ? trackFormat.getInteger(MediaFormat.KEY_SAMPLE_RATE) : 48000;
+			int numChannels = trackFormat.containsKey(MediaFormat.KEY_CHANNEL_COUNT) ? trackFormat.getInteger(MediaFormat.KEY_CHANNEL_COUNT) : 1;
+			boolean floatOutput = false;
+
+			// Presized from the duration (plus a little) once the output format is
+			// known, so most tracks never grow.
+			long durationUs = trackFormat.containsKey(MediaFormat.KEY_DURATION) ? trackFormat.getLong(MediaFormat.KEY_DURATION) : 0;
+			ByteBuffer[] channelOut = null;
+			int frames = 0;
+
 			final MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
 			boolean sawInputEOS = false;
 			boolean sawOutputEOS = false;
@@ -1151,45 +1218,67 @@ public class AudioContext {
 				if (outIndex >= 0) {
 					ByteBuffer outBuf = codec.getOutputBuffer(outIndex);
 					if (outBuf != null && info.size > 0) {
-						byte[] chunk = new byte[info.size];
 						outBuf.position(info.offset);
 						outBuf.limit(info.offset + info.size);
-						outBuf.get(chunk);
-						baos.write(chunk);
+						ByteBuffer chunk = outBuf.slice().order(ByteOrder.LITTLE_ENDIAN);
+						if (pcm == null) {
+							long estimate = durationUs > 0 ? (long) (durationUs / 1e6 * sampleRate * 1.02) + 4096 : (long) sampleRate * 10;
+							pcm = NativePcm.allocate(numChannels, (int) Math.min(Integer.MAX_VALUE / 4 - 8, estimate));
+							if (pcm == null) return null;
+							channelOut = pcm.channels;
+						}
+						int channelCount = channelOut.length;
+						int chunkFrames = (floatOutput ? info.size / 4 : info.size / 2) / channelCount;
+						if (frames + chunkFrames > pcm.frames()) {
+							// Grow by half again (or to fit).
+							long grown = Math.max((long) frames + chunkFrames, (long) pcm.frames() * 3 / 2);
+							if (grown > Integer.MAX_VALUE / 4 - 8 || !pcm.resize((int) grown)) return null;
+							channelOut = pcm.channels;
+						}
+						if (floatOutput) {
+							java.nio.FloatBuffer floats = chunk.asFloatBuffer();
+							for (int f = 0; f < chunkFrames; f++) {
+								int at = (frames + f) * 4;
+								for (int c = 0; c < channelCount; c++) {
+									channelOut[c].putFloat(at, floats.get(f * channelCount + c));
+								}
+							}
+						} else {
+							java.nio.ShortBuffer shorts = chunk.asShortBuffer();
+							for (int f = 0; f < chunkFrames; f++) {
+								int at = (frames + f) * 4;
+								for (int c = 0; c < channelCount; c++) {
+									channelOut[c].putFloat(at, shorts.get(f * channelCount + c) / 32768.0f);
+								}
+							}
+						}
+						frames += chunkFrames;
 					}
 					codec.releaseOutputBuffer(outIndex, false);
 					if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) sawOutputEOS = true;
 				} else if (outIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
-					// format changed
-				} else {
-					// try again
+					// What the decoder actually produces.
+					MediaFormat out = codec.getOutputFormat();
+					if (out.containsKey(MediaFormat.KEY_SAMPLE_RATE)) sampleRate = out.getInteger(MediaFormat.KEY_SAMPLE_RATE);
+					if (out.containsKey(MediaFormat.KEY_CHANNEL_COUNT)) numChannels = out.getInteger(MediaFormat.KEY_CHANNEL_COUNT);
+					if (Build.VERSION.SDK_INT >= 24 && out.containsKey(MediaFormat.KEY_PCM_ENCODING)) {
+						floatOutput = out.getInteger(MediaFormat.KEY_PCM_ENCODING) == android.media.AudioFormat.ENCODING_PCM_FLOAT;
+					}
 				}
 			}
-			byte[] pcmBytes = baos.toByteArray();
-			if (pcmBytes.length == 0) return null;
-			short[] tmp = new short[pcmBytes.length / 2];
-			ByteBuffer.wrap(pcmBytes).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().get(tmp);
-			float[] pcm = new float[tmp.length];
-			for (int i = 0; i < tmp.length; i++) pcm[i] = (float) tmp[i] / 32768.0f;
+			if (pcm == null) return null;
+			// The length is the buffers' size: trim them to what was decoded.
+			if (frames == 0 || !pcm.resize(frames)) return null;
 			String id = UUID.randomUUID().toString();
-			java.nio.ByteBuffer bb = java.nio.ByteBuffer.allocateDirect(pcm.length * 4).order(java.nio.ByteOrder.LITTLE_ENDIAN);
-			for (float f : pcm) bb.putFloat(f);
-			bb.position(0);
-			directBuffers.put(id, bb);
+			registerPcm(id, pcm, sampleRate);
 			getOrCreate(id).incrementAndGet();
-			int sampleRate = 48000;
-			if (trackFormat != null && trackFormat.containsKey(MediaFormat.KEY_SAMPLE_RATE))
-				sampleRate = trackFormat.getInteger(MediaFormat.KEY_SAMPLE_RATE);
-			sampleRates.put(id, sampleRate);
-			int numChannels = 1;
-			if (trackFormat != null && trackFormat.containsKey(MediaFormat.KEY_CHANNEL_COUNT))
-				numChannels = trackFormat.getInteger(MediaFormat.KEY_CHANNEL_COUNT);
-			bufferChannels.put(id, numChannels);
+			// The id and the AudioBuffer hold it now.
 			return makeAudioBufferFromId(id);
 		} catch (Throwable t) {
 			Log.w("AudioContext", "MediaExtractor decode failed: " + t);
 			return null;
 		} finally {
+			if (pcm != null) pcm.release();
 			try {
 				if (codec != null) {
 					codec.stop();
@@ -1199,10 +1288,6 @@ public class AudioContext {
 			}
 			try {
 				if (extractor != null) extractor.release();
-			} catch (Throwable ignored) {
-			}
-			try {
-				if (baos != null) baos.close();
 			} catch (Throwable ignored) {
 			}
 		}
@@ -1325,7 +1410,7 @@ public class AudioContext {
 
 	public AudioBuffer getAudioBuffer(final String id) {
 		if (id == null) return null;
-		if (!directBuffers.containsKey(id)) return null;
+		if (!directBuffers.containsKey(id) && !pcmBuffers.containsKey(id)) return null;
 		return makeAudioBufferFromId(id);
 	}
 
@@ -1341,7 +1426,7 @@ public class AudioContext {
 		java.nio.ByteBuffer bb = directBuffers.get(id);
 		Integer sr = sampleRates.get(id);
 		Integer ch = bufferChannels.get(id);
-		return new AudioBuffer(id, bb, sr, ch);
+		return new AudioBuffer(id, bb, sr, ch, pcmBuffers.get(id));
 	}
 
 	public int getSampleRate(String id) {
@@ -1368,6 +1453,8 @@ public class AudioContext {
 		if (id == null) return 0;
 		Integer ch = bufferChannels.get(id);
 		int channels = ch != null ? ch : 1;
+		NativePcm pcm = pcmBuffers.get(id);
+		if (pcm != null) return pcm.frames();
 		java.nio.ByteBuffer bb = directBuffers.get(id);
 		if (bb != null) {
 			int byteLen = bb.capacity();
@@ -1394,6 +1481,8 @@ public class AudioContext {
 		if (id == null) return null;
 		int channels = getNumberOfChannels(id);
 		if (channel < 0 || channel >= channels) return null;
+		NativePcm pcm = pcmBuffers.get(id);
+		if (pcm != null) return pcm.view(channel);
 		java.nio.ByteBuffer bb = directBuffers.get(id);
 		if (bb != null) {
 			return bb.duplicate().order(ByteOrder.LITTLE_ENDIAN);
@@ -1582,6 +1671,7 @@ public class AudioContext {
 		planarBuffers.remove(id);
 		sampleRates.remove(id);
 		bufferChannels.remove(id);
+		dropPcm(id);
 	}
 
 	public void resume() {
@@ -2729,7 +2819,9 @@ public class AudioContext {
 		String id = createBufferSource(context.getId(), buffer);
 		GainNode pr = createGain(context);
 		attachPlaybackRateToVoice(id, pr.getId());
-		return new AudioBufferSourceNode(id, buffer, pr.getId());
+		AudioBufferSourceNode node = new AudioBufferSourceNode(id, buffer, pr.getId());
+		if (ownsSourceBuffer(id, buffer)) node.ownBuffer(id);
+		return node;
 	}
 
 	public ExternalPcmSourceNode createExternalPcmSource(AudioContextInstance context, int sampleRate, int channels) {
@@ -2860,6 +2952,11 @@ public class AudioContext {
 		return buildMonoBufferFromInterleaved(src, channels);
 	}
 
+	/** Whether {@code id} is a native buffer made for one source, rather than the buffer's own. */
+	boolean ownsSourceBuffer(@Nullable String id, @Nullable AudioBuffer buffer) {
+		return nativeAvailable && id != null && buffer != null && !id.equals(buffer.id);
+	}
+
 	@Nullable
 	String switchBufferSource(String trackId, @Nullable AudioBuffer buffer) {
 		if (trackId == null) return null;
@@ -2886,6 +2983,7 @@ public class AudioContext {
 							java.nio.ByteBuffer src = directBuffers.get(buffer.id);
 							if (src != null) directBuffers.put(newId, src);
 							planarBuffers.put(newId, channelData);
+							holdPcm(newId, buffer.pcm());
 							getOrCreate(newId).incrementAndGet();
 							sampleRates.put(newId, sampleRate);
 							bufferChannels.put(newId, resolvedChannels);
@@ -2949,6 +3047,7 @@ public class AudioContext {
 						if (id != null) {
 							if (src != null) directBuffers.put(id, src);
 							planarBuffers.put(id, channelData);
+							holdPcm(id, buffer.pcm());
 							getOrCreate(id).incrementAndGet();
 							sampleRates.put(id, sampleRate);
 							bufferChannels.put(id, resolvedChannels);

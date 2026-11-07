@@ -48,6 +48,7 @@ pub enum WebGLExtensionType {
     WebGLExtensionTypeWEBGL_draw_buffers,
     WebGLExtensionTypeOES_fbo_render_mipmap,
     WebGLExtensionTypeNone,
+    WebGLExtensionTypeKHR_parallel_shader_compile,
 }
 
 impl Into<WebGLExtensionType> for canvas_webgl::prelude::WebGLExtensionType {
@@ -67,6 +68,9 @@ impl Into<WebGLExtensionType> for canvas_webgl::prelude::WebGLExtensionType {
             }
             canvas_webgl::prelude::WebGLExtensionType::EXT_shader_texture_lod => {
                 WebGLExtensionType::WebGLExtensionTypeEXT_shader_texture_lod
+            }
+            canvas_webgl::prelude::WebGLExtensionType::KHR_parallel_shader_compile => {
+                WebGLExtensionType::WebGLExtensionTypeKHR_parallel_shader_compile
             }
             canvas_webgl::prelude::WebGLExtensionType::EXT_texture_filter_anisotropic => {
                 WebGLExtensionType::WebGLExtensionTypeEXT_texture_filter_anisotropic
@@ -2377,6 +2381,42 @@ pub extern "C" fn canvas_native_webgl_resize_d3d(state: *mut WebGLState, width: 
     true
 }
 
+/// Linux: resizes (and clears) the pbuffer drawing buffer.
+#[cfg(target_os = "linux")]
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_resize_pbuffer(
+    state: *mut WebGLState,
+    width: i32,
+    height: i32,
+) -> bool {
+    if state.is_null() {
+        return false;
+    }
+    let state = unsafe { &mut *state };
+    let resize = move |inner: &mut canvas_webgl::prelude::WebGLState| {
+        inner.make_current();
+        inner.resize_pbuffer(width, height);
+    };
+    if state.is_threaded() {
+        state.post(resize);
+    } else {
+        resize(state.get_inner_mut());
+    }
+    true
+}
+
+/// Linux: the EGL context a (non-threaded) WebGL context renders with.
+#[cfg(target_os = "linux")]
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_get_egl_context(
+    state: *const WebGLState,
+) -> *mut std::ffi::c_void {
+    if state.is_null() || unsafe { &*state }.is_threaded() {
+        return std::ptr::null_mut();
+    }
+    unsafe { &*state }.get_inner().gl_context().egl_context()
+}
+
 /// Ends a frame: presents it where the context is on screen (Windows panels), else flushes.
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_present(state: *mut WebGLState) -> bool {
@@ -4060,6 +4100,42 @@ pub extern "C" fn canvas_native_webgl_tex_image2d_canvas2d(
     });
 }
 
+/// `false` when the WebGPU canvas has no frame to read (not configured, or not an 8-bit format).
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_tex_image2d_webgpu(
+    target: i32,
+    level: i32,
+    internalformat: i32,
+    format: i32,
+    image_type: i32,
+    webgpu: *const crate::webgpu::gpu_canvas_context::CanvasGPUCanvasContext,
+    state: *mut WebGLState,
+) -> bool {
+    assert!(!state.is_null());
+    assert!(!webgpu.is_null());
+    let state = unsafe { &*state };
+    let Some((width, height, pixels)) =
+        crate::webgpu::gpu_canvas_context::read_rgba8(unsafe { &*webgpu })
+    else {
+        return false;
+    };
+    state.post(move |state| {
+        canvas_webgl::webgl::canvas_native_webgl_tex_image2d(
+            target,
+            level,
+            internalformat,
+            width as i32,
+            height as i32,
+            0,
+            format,
+            image_type,
+            pixels.as_slice(),
+            state,
+        )
+    });
+    true
+}
+
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_tex_image2d_webgl(
     target: i32,
@@ -4267,6 +4343,43 @@ pub extern "C" fn canvas_native_webgl_tex_sub_image2d_canvas2d(
             state,
         )
     });
+}
+
+/// `false` when the WebGPU canvas has no frame to read; see `canvas_native_webgl_tex_image2d_webgpu`.
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_tex_sub_image2d_webgpu(
+    target: u32,
+    level: i32,
+    xoffset: i32,
+    yoffset: i32,
+    format: u32,
+    image_type: i32,
+    webgpu: *const crate::webgpu::gpu_canvas_context::CanvasGPUCanvasContext,
+    state: *mut WebGLState,
+) -> bool {
+    assert!(!state.is_null());
+    assert!(!webgpu.is_null());
+    let state = unsafe { &*state };
+    let Some((width, height, pixels)) =
+        crate::webgpu::gpu_canvas_context::read_rgba8(unsafe { &*webgpu })
+    else {
+        return false;
+    };
+    state.post(move |state| {
+        canvas_webgl::webgl::canvas_native_webgl_tex_sub_image2d(
+            target,
+            level,
+            xoffset,
+            yoffset,
+            width as i32,
+            height as i32,
+            format,
+            image_type,
+            pixels.as_slice(),
+            state,
+        )
+    });
+    true
 }
 
 #[no_mangle]

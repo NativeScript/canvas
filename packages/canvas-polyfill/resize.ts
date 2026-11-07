@@ -5,6 +5,7 @@ import { Application } from '@nativescript/core';
 */
 
 declare const __WINDOWS__: boolean;
+declare const __LINUX__: boolean;
 
 /**
  * A window metric read from the screen when asked, as on the web (it follows the monitor and the
@@ -26,7 +27,7 @@ function liveMetric(name: string, read: () => number) {
 	}
 }
 
-// On Windows the scale and size come from the app window, which does not exist yet when this
+// On Windows and Linux the scale and size come from the app window, which does not exist yet when this
 // module loads (the screen reports 1x, 1920x1080 until then).
 liveMetric('devicePixelRatio', () => Screen.mainScreen.scale || 1);
 
@@ -34,7 +35,7 @@ liveMetric('devicePixelRatio', () => Screen.mainScreen.scale || 1);
 // const screenHeight = Screen.mainScreen.heightPixels;
 const screenWidth = Screen.mainScreen.widthDIPs;
 const screenHeight = Screen.mainScreen.heightDIPs;
-if (typeof __WINDOWS__ !== 'undefined' && __WINDOWS__) {
+if ((typeof __WINDOWS__ !== 'undefined' && __WINDOWS__) || (typeof __LINUX__ !== 'undefined' && __LINUX__)) {
 	for (const name of ['innerWidth', 'clientWidth']) {
 		liveMetric(name, () => Screen.mainScreen.widthDIPs);
 	}

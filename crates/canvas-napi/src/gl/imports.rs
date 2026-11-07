@@ -21,7 +21,7 @@ macro_rules! webgl_context_imports {
     use crate::gl::extensions::{
       w_e_b_g_l_lose_context, ANGLE_instanced_arrays, EXT_blend_minmax, EXT_color_buffer_float,
       EXT_color_buffer_half_float, EXT_disjoint_timer_query, EXT_sRGB, EXT_shader_texture_lod,
-      EXT_texture_filter_anisotropic, OES_element_index_uint, OES_fbo_render_mipmap,
+      EXT_texture_filter_anisotropic, KHR_parallel_shader_compile, OES_element_index_uint, OES_fbo_render_mipmap,
       OES_standard_derivatives, OES_texture_float, OES_texture_float_linear,
       OES_texture_half_float, OES_texture_half_float_linear, OES_vertex_array_object,
       WEBGL_color_buffer_float, WEBGL_compressed_texture_atc, WEBGL_compressed_texture_etc,

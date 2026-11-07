@@ -4,16 +4,23 @@ import androidx.annotation.Nullable;
 
 import java.nio.ByteBuffer;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AudioBuffer implements NativeObject {
 	final String id;
 	private ByteBuffer directBuffer = null;
+	// Planar PCM in native memory, or null for an interleaved buffer.
+	@Nullable
+	private NativePcm pcm = null;
 	private int sampleRate = 48000;
 	private int channels = 1;
 	private final java.util.concurrent.ConcurrentHashMap<Integer, ByteBuffer> channelBufferCache = new java.util.concurrent.ConcurrentHashMap<>();
 	private final java.util.concurrent.ConcurrentHashMap<Integer, Boolean> dirtyChannels = new java.util.concurrent.ConcurrentHashMap<>();
+	private final AtomicBoolean released = new AtomicBoolean(false);
+	private Runnable cleanup;
+	private Object cleanupHandle;
 
-	AudioBuffer(String id, ByteBuffer buffer, @Nullable Integer sampleRate, @Nullable Integer channels) {
+	AudioBuffer(String id, ByteBuffer buffer, @Nullable Integer sampleRate, @Nullable Integer channels, @Nullable NativePcm pcm) {
 		this.id = id;
 		this.directBuffer = buffer;
 		if (sampleRate != null) {
@@ -22,8 +29,8 @@ public class AudioBuffer implements NativeObject {
 		if (channels != null) {
 			this.channels = channels;
 		}
-
-		NativeFinalizer.register(this, NativeFinalizer.ResourceKind.BUFFER, id);
+		if (pcm != null && pcm.retain()) adopt(pcm);
+		track();
 	}
 
 	@Override
@@ -37,16 +44,57 @@ public class AudioBuffer implements NativeObject {
 		this.channels = Math.max(1, numberOfChannels);
 		this.sampleRate = sampleRate > 0 ? sampleRate : 48000;
 		int frames = Math.max(0, length);
-		this.directBuffer = ByteBuffer.allocateDirect(frames * this.channels * 4).order(java.nio.ByteOrder.LITTLE_ENDIAN);
-		for (int i = 0; i < frames * this.channels; i++) this.directBuffer.putFloat(0.0f);
-		this.directBuffer.position(0);
-		NativeFinalizer.register(this, NativeFinalizer.ResourceKind.BUFFER, nid);
-		AudioContext.getInstance().registerBuffer(nid, this.directBuffer, this.sampleRate, this.channels);
+		NativePcm created = frames > 0 ? NativePcm.allocate(this.channels, frames) : null;
+		if (created != null) {
+			AudioContext.getInstance().registerPcm(nid, created, this.sampleRate);
+			// The creator's reference becomes this wrapper's.
+			adopt(created);
+		} else {
+			this.directBuffer = ByteBuffer.allocateDirect(frames * this.channels * 4).order(java.nio.ByteOrder.LITTLE_ENDIAN);
+			AudioContext.getInstance().registerBuffer(nid, this.directBuffer, this.sampleRate, this.channels);
+		}
+		track();
 	}
 
+	/** Takes a reference to {@code pcm} (already retained) and reads and writes its channels in place. */
+	private void adopt(NativePcm pcm) {
+		this.pcm = pcm;
+		this.channels = pcm.channels.length;
+		for (int i = 0; i < pcm.channels.length; i++) channelBufferCache.put(i, pcm.channels[i]);
+	}
+
+	private void track() {
+		cleanup = releaser(id, pcm);
+		cleanupHandle = NativeFinalizer.register(this, cleanup);
+	}
+
+	// Static, so the cleanup doesn't hold the buffer it's waiting on.
+	private static Runnable releaser(String id, @Nullable NativePcm pcm) {
+		return () -> {
+			AudioContext.getInstance().releaseBuffer(id);
+			if (pcm != null) pcm.release();
+		};
+	}
+
+	@Nullable
+	NativePcm pcm() {
+		return pcm;
+	}
+
+	/**
+	 * Lets the samples go now rather than when the GC finds this buffer, and
+	 * empties it. Sources still playing it, and channel data still held from
+	 * getChannelData, keep their samples until they're done.
+	 */
 	@Override
 	public void release() {
-		AudioContext.getInstance().releaseBuffer(id);
+		if (!released.compareAndSet(false, true)) return;
+		NativeFinalizer.unregister(cleanupHandle);
+		channelBufferCache.clear();
+		dirtyChannels.clear();
+		directBuffer = null;
+		pcm = null;
+		cleanup.run();
 	}
 
 	public int getSampleRate() {
@@ -54,6 +102,7 @@ public class AudioBuffer implements NativeObject {
 	}
 
 	public int getLength() {
+		if (pcm != null) return pcm.frames();
 		if (directBuffer != null) {
 			int byteLen = directBuffer.capacity();
 			int bytesPerSample = (byteLen % 4 == 0) ? 4 : 2;
@@ -74,6 +123,9 @@ public class AudioBuffer implements NativeObject {
 
 	public java.nio.ByteBuffer getChannelDataRaw(int channel) {
 		if (channel < 0 || channel >= channels) return null;
+		NativePcm pcm = this.pcm;
+		// Handed to JS: the view keeps the samples alive for as long as it's held.
+		if (pcm != null) return pcm.retainedView(channel);
 		if (directBuffer == null) return null;
 
 		ByteBuffer channelBuffer = channelBufferCache.get(channel);
@@ -244,6 +296,10 @@ public class AudioBuffer implements NativeObject {
 	public void copyToChannel(float[] source, int channel, int startInChannel) {
 		if (source == null) return;
 		int start = Math.max(0, startInChannel);
+		if (directBuffer == null) {
+			copyToCachedChannel(java.nio.FloatBuffer.wrap(source), channel, start);
+			return;
+		}
 		if (directBuffer != null && !directBuffer.isReadOnly()) {
 			ByteBuffer dup = directBuffer.duplicate().order(java.nio.ByteOrder.LITTLE_ENDIAN);
 			int byteLen = directBuffer.capacity();
@@ -277,6 +333,10 @@ public class AudioBuffer implements NativeObject {
 	public void copyToChannel(java.nio.FloatBuffer source, int channel, int startInChannel) {
 		if (source == null) return;
 		int start = Math.max(0, startInChannel);
+		if (directBuffer == null) {
+			copyToCachedChannel(source, channel, start);
+			return;
+		}
 		int srcLen = source.capacity();
 		if (directBuffer != null && !directBuffer.isReadOnly()) {
 			java.nio.ByteBuffer dup = directBuffer.duplicate().order(java.nio.ByteOrder.LITTLE_ENDIAN);
@@ -305,6 +365,18 @@ public class AudioBuffer implements NativeObject {
 				}
 			}
 			dirtyChannels.remove(channel);
+		}
+	}
+
+	/** A planar buffer (no interleaved copy) is written in place. */
+	private void copyToCachedChannel(java.nio.FloatBuffer source, int channel, int start) {
+		ByteBuffer cached = channelBufferCache.get(channel);
+		if (cached == null) return;
+		ByteBuffer dst = cached.duplicate().order(java.nio.ByteOrder.LITTLE_ENDIAN);
+		int frames = dst.capacity() / 4;
+		int n = Math.min(source.capacity(), Math.max(0, frames - start));
+		for (int i = 0; i < n; i++) {
+			dst.putFloat((start + i) * 4, source.get(i));
 		}
 	}
 

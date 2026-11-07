@@ -7,6 +7,9 @@
 //! Surfaces are pbuffers. Presenting to the screen goes through a D3D11 texture shared with
 //! ANGLE (see `create_texture_context`) that is copied into a composition swapchain; window
 //! surfaces are not used because the app's native view is a WinUI `SwapChainPanel`, not an HWND.
+//!
+//! On Linux it is the system's (Mesa) EGL, on the host's display (GDK's, see `set_host_display`)
+//! so the host can hand frames to GTK as EGLImages, else on a surfaceless display.
 
 use std::cell::Cell;
 use std::ffi::c_void;
@@ -161,6 +164,10 @@ fn load() -> Option<Egl> {
         extensions,
         _gles: gles,
     };
+    if egl.has_extension("EGL_ANDROID_blob_cache") {
+        let set_funcs = egl.instance.get_proc_address("eglSetBlobCacheFuncsANDROID");
+        super::program_cache::install(set_funcs.map_or(std::ptr::null(), |f| f as *const c_void), display.as_ptr());
+    }
     #[cfg(target_os = "windows")]
     protect_immediate_context(&egl);
     Some(egl)
@@ -270,7 +277,72 @@ fn platform_display(instance: &EglInstance) -> Option<egl::Display> {
     }
 }
 
-#[cfg(not(target_os = "windows"))]
+/// Linux: a frame-end callback, `(width, height)` of the drawing buffer.
+#[cfg(target_os = "linux")]
+pub type PresentHook = Arc<dyn Fn(i32, i32) + Send + Sync>;
+
+#[cfg(target_os = "linux")]
+static HOST_DISPLAY: AtomicUsize = AtomicUsize::new(0);
+
+#[cfg(target_os = "linux")]
+static BEFORE_BIND: OnceLock<fn()> = OnceLock::new();
+
+/// Linux: the EGL display to render on (the toolkit's), set before the first context is made.
+/// `false` once EGL is already up on another display.
+#[cfg(target_os = "linux")]
+pub fn set_host_display(display: *mut c_void) -> bool {
+    HOST_DISPLAY.store(display as usize, Ordering::Relaxed);
+    match EGL.get() {
+        None => true,
+        Some(egl) => egl
+            .as_ref()
+            .is_some_and(|egl| egl.display.as_ptr() == display),
+    }
+}
+
+/// Linux: runs before a canvas context is bound, so a toolkit that caches its own current
+/// context (GDK) can forget it.
+#[cfg(target_os = "linux")]
+pub fn set_before_bind(hook: fn()) {
+    let _ = BEFORE_BIND.set(hook);
+}
+
+/// The display canvases render on, null before the first context.
+pub fn egl_display() -> *mut c_void {
+    EGL.get()
+        .and_then(Option::as_ref)
+        .map_or(std::ptr::null_mut(), |egl| egl.display.as_ptr())
+}
+
+#[cfg(target_os = "linux")]
+fn platform_display(instance: &EglInstance) -> Option<egl::Display> {
+    const EGL_PLATFORM_SURFACELESS_MESA: egl::Enum = 0x31DD;
+    let host = HOST_DISPLAY.load(Ordering::Relaxed);
+    if host != 0 {
+        return Some(unsafe { egl::Display::from_ptr(host as *mut c_void) });
+    }
+    let client = instance
+        .query_string(None, egl::EXTENSIONS)
+        .map(|s| s.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    if client
+        .split(' ')
+        .any(|e| e == "EGL_MESA_platform_surfaceless")
+    {
+        if let Ok(display) = unsafe {
+            instance.get_platform_display(
+                EGL_PLATFORM_SURFACELESS_MESA,
+                egl::DEFAULT_DISPLAY,
+                &[egl::ATTRIB_NONE],
+            )
+        } {
+            return Some(display);
+        }
+    }
+    unsafe { instance.get_display(egl::DEFAULT_DISPLAY) }
+}
+
+#[cfg(not(any(target_os = "windows", target_os = "linux")))]
 fn platform_display(instance: &EglInstance) -> Option<egl::Display> {
     unsafe { instance.get_display(egl::DEFAULT_DISPLAY) }
 }
@@ -352,10 +424,23 @@ fn invalidate_surface_bindings() {
 
 fn bind(context: egl::Context, surface: egl::Surface) -> bool {
     let target = binding(context, surface);
+    // Linux: GTK binds its own contexts on this thread, so only EGL knows what is current.
+    #[cfg(not(target_os = "linux"))]
     if CURRENT_EGL_BINDING.with(|c| c.get()) == target {
         return true;
     }
     let Some(egl) = shared() else { return false };
+    #[cfg(target_os = "linux")]
+    {
+        if egl.instance.get_current_context() == Some(context)
+            && egl.instance.get_current_surface(egl::DRAW) == Some(surface)
+        {
+            return true;
+        }
+        if let Some(hook) = BEFORE_BIND.get() {
+            hook();
+        }
+    }
     let bound = egl
         .instance
         .make_current(egl.display, Some(surface), Some(surface), Some(context))
@@ -415,6 +500,9 @@ pub(crate) struct GLContextInner {
     #[cfg(target_os = "windows")]
     xaml: Option<crate::gpu::dxgi::XamlSurface>,
     dimensions: Arc<RwLock<Dimensions>>,
+    /// Linux: shows each finished frame (`swap_buffers`), with the context current.
+    #[cfg(target_os = "linux")]
+    present_hook: parking_lot::Mutex<Option<PresentHook>>,
     /// Set once the context reports a reset: a lost context stays lost.
     #[cfg(target_os = "windows")]
     lost: std::sync::atomic::AtomicBool,
@@ -666,6 +754,8 @@ impl GLContext {
             })),
             #[cfg(target_os = "windows")]
             lost: Default::default(),
+            #[cfg(target_os = "linux")]
+            present_hook: Default::default(),
         }))
     }
 
@@ -974,6 +1064,19 @@ impl GLContext {
         }
     }
 
+    /// Linux surfaces are always pbuffers.
+    #[cfg(target_os = "linux")]
+    pub fn is_pbuffer(&self) -> bool {
+        true
+    }
+
+    /// The EGL context handle (Linux hosts share its textures with the toolkit).
+    pub fn egl_context(&self) -> *mut c_void {
+        self.0
+            .context
+            .map_or(std::ptr::null_mut(), |context| context.as_ptr())
+    }
+
     pub fn set_vsync(&self, sync: bool) -> bool {
         // Pbuffers are never presented through EGL; pacing comes from the swapchain.
         let Some(egl) = shared() else { return false };
@@ -998,7 +1101,18 @@ impl GLContext {
             return false;
         }
         unsafe { gl_bindings::Flush() };
+        #[cfg(target_os = "linux")]
+        if let Some(hook) = self.0.present_hook.lock().clone() {
+            let (width, height) = self.get_surface_dimensions();
+            hook(width, height);
+        }
         true
+    }
+
+    /// Linux: `hook(width, height)` runs after each frame, on the context's thread.
+    #[cfg(target_os = "linux")]
+    pub fn set_present_hook(&self, hook: Option<PresentHook>) {
+        *self.0.present_hook.lock() = hook;
     }
 
     pub fn get_surface_width(&self) -> i32 {

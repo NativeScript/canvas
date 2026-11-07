@@ -111,6 +111,7 @@ defineGlobalIfAbsent('TextEncoder', TextEncoder, true);
 defineGlobalIfAbsent('TextEncoder', TextEncoder, true);
 
 import './urlBlobPatch';
+import './localFetch';
 
 try {
 	// @ts-ignore

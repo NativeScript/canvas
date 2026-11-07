@@ -549,6 +549,11 @@ macro_rules! impl_webgl_context {
                         EXT_texture_filter_anisotropic
                             .to_js(env)
                     }
+                    "KHR_parallel_shader_compile" => {
+                        canvas_c::canvas_native_webgl_extension_destroy(ext);
+                        KHR_parallel_shader_compile
+                            .to_js(env)
+                    }
                     "OES_element_index_uint" => {
                         canvas_c::canvas_native_webgl_extension_destroy(ext);
                         OES_element_index_uint
@@ -687,7 +692,8 @@ macro_rules! impl_webgl_context {
         match pname {
             gl_bindings::DELETE_STATUS |
             gl_bindings::LINK_STATUS |
-            gl_bindings::VALIDATE_STATUS => {
+            gl_bindings::VALIDATE_STATUS |
+            canvas_webgl::webgl::COMPLETION_STATUS_KHR => {
                 let ret = canvas_c::canvas_native_webgl_result_get_bool(result);
                 canvas_c::canvas_native_webgl_WebGLResult_destroy(result);
                 (ret).to_js(env)
@@ -716,7 +722,7 @@ macro_rules! impl_webgl_context {
     pub fn get_shader_parameter<'env>(&self, env: &'env Env, shader: ClassInstance<WebGLShader>, pname: u32) -> Result<Unknown<'env>> {
         let result = canvas_c::canvas_native_webgl_get_shader_parameter(shader.0, pname, self.state);
         match pname {
-            gl_bindings::DELETE_STATUS | gl_bindings::COMPILE_STATUS => {
+            gl_bindings::DELETE_STATUS | gl_bindings::COMPILE_STATUS | canvas_webgl::webgl::COMPLETION_STATUS_KHR => {
                 let ret = canvas_c::canvas_native_webgl_result_get_bool(result);
                 canvas_c::canvas_native_webgl_WebGLResult_destroy(result);
                 (ret).to_js(env)
@@ -1154,14 +1160,47 @@ macro_rules! impl_webgl_context {
                 Either4::C(gl2) => canvas_c::canvas_native_webgl_tex_image2d_webgl(
                     target, level, internalformat, format_or_width, type_or_height, gl2.state, self.state,
                 ),
-                Either4::D(_) => {
-                    return Err(Error::from_reason("texImage2D from a WebGPU canvas is not supported"));
+                Either4::D(gpu) => {
+                    if !canvas_c::canvas_native_webgl_tex_image2d_webgpu(
+                        target, level, internalformat, format_or_width, type_or_height, gpu.context, self.state,
+                    ) {
+                        return Err(Error::from_reason("texImage2D: the WebGPU canvas has no 8-bit frame to read"));
+                    }
                 }
             },
         }
         Ok(())
     }
 
+
+    /// Linux: `texImage2D/3D` (or `texSubImage*` with `sub`) from a canvas-media `NSCVideoFrame`
+    /// address, on the GPU when the frame is a GL texture. `false`: use the frame's pixels.
+    #[napi(js_name = "__texImageVideoFrame")]
+    pub fn tex_image_video_frame(
+        &self,
+        frame: f64,
+        target: u32,
+        level: i32,
+        internalformat: i32,
+        three_d: bool,
+        sub: bool,
+        xoffset: i32,
+        yoffset: i32,
+        zoffset: i32,
+    ) -> bool {
+        #[cfg(target_os = "linux")]
+        return unsafe {
+            canvas_c::linux_video_frame::canvas_native_webgl_tex_image_video_frame(
+                frame as usize as *mut std::ffi::c_void,
+                target, level, internalformat, three_d, sub, xoffset, yoffset, zoffset, self.state,
+            )
+        };
+        #[cfg(not(target_os = "linux"))]
+        {
+            let _ = (frame, target, level, internalformat, three_d, sub, xoffset, yoffset, zoffset);
+            false
+        }
+    }
 
     #[napi]
     pub fn tex_parameterf(&self, target: u32, pname: u32, param: f64) {
@@ -1355,7 +1394,18 @@ macro_rules! impl_webgl_context {
                 )
             }
             Either4::D(gpu) => {
-                todo!("Implement drawImage for GPUContext")
+                if !canvas_c::canvas_native_webgl_tex_sub_image2d_webgpu(
+                target,
+                level,
+                xoffset,
+                yoffset,
+                format_or_width as u32,
+                type_or_height,
+                gpu.context,
+                self.state,
+                ) {
+                    return Err(Error::from_reason("texSubImage2D: the WebGPU canvas has no 8-bit frame to read"));
+                }
             }
         }
       }

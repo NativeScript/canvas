@@ -12,6 +12,11 @@ module.exports = (env) => {
 
 		// shared demo code
 		config.resolve.alias.set('@demo/shared', resolve(__dirname, '..', '..', 'tools', 'demo'));
+
+		if (webpack.Utils.platform.getPlatformName() === 'linux') {
+			// The plugins are linked from packages/: keep one @nativescript/core, the app's.
+			config.resolve.alias.set('@nativescript/core', resolve(__dirname, 'node_modules', '@nativescript', 'core'));
+		}
 		//config.resolve.alias.set('three', 'three/webgpu');
 		//	config.resolve.alias.set('three/tsl', 'three/tsl');
 

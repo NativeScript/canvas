@@ -71,8 +71,12 @@ opt-level = "z"
 
 # Node-API hosts that export napi_* from a DLL rather than the executable (NativeScript Windows)
 # need the patched symbol lookup (the `[canvas patch]` hunks in crates/vendor/napi-sys/src/functions.rs).
+# WASAPI output in low-latency shared mode (IAudioClient3), so an `interactive` AudioContext on
+# Windows gets a ~5 ms engine period instead of 10 ms plus a full ring buffer (the `[canvas patch]`
+# hunks in crates/vendor/cpal/src/host/wasapi/device.rs).
 [patch.crates-io]
 napi-sys = { path = "crates/vendor/napi-sys" }
+cpal = { path = "crates/vendor/cpal" }
 
 [workspace.dependencies.wgt]
 package = "wgpu-types"

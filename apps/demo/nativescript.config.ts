@@ -8,6 +8,10 @@ export default {
 		markingMode: 'none',
 		discardUncaughtJsExceptions: false,
 	},
+	// Light like the Android app theme (Theme.AppCompat.Light), whatever the desktop uses
+	linux: {
+		appearance: 'light',
+	},
 	appPath: 'src',
 	ios: {
 		discardUncaughtJsExceptions: false,

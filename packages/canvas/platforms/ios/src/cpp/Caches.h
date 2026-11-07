@@ -132,6 +132,9 @@ public:
     std::unique_ptr<v8::Persistent<v8::FunctionTemplate>> EXT_texture_filter_anisotropicTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
             nullptr);
 
+    std::unique_ptr<v8::Persistent<v8::FunctionTemplate>> KHR_parallel_shader_compileTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
     std::unique_ptr<v8::Persistent<v8::FunctionTemplate>> OES_element_index_uintTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
             nullptr);
 

@@ -15,10 +15,13 @@ mod android;
 #[cfg(target_os = "android")]
 pub use android::*;
 
-#[cfg(target_os = "windows")]
+#[cfg(any(target_os = "windows", target_os = "linux"))]
 mod egl;
 
-#[cfg(target_os = "windows")]
+#[cfg(any(target_os = "windows", target_os = "linux"))]
+mod program_cache;
+
+#[cfg(any(target_os = "windows", target_os = "linux"))]
 pub use egl::*;
 
 pub fn get_shader_info_log(shader: u32) -> String {

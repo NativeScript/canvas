@@ -11,6 +11,13 @@ public class AudioBufferSourceNode extends AudioScheduledSourceNode {
 	@Nullable
 	private String playbackRateId;
 
+	// The native buffer made for this source, released once the source is
+	// unreachable and has stopped playing.
+	@Nullable
+	private String ownedId;
+	@Nullable
+	private Object ownedBufferHandle;
+
 	public AudioBufferSourceNode(String id, @Nullable AudioBuffer buffer) {
 		super(id);
 		mBuffer = buffer;
@@ -51,7 +58,23 @@ public class AudioBufferSourceNode extends AudioScheduledSourceNode {
 				ctx.attachPlaybackRateToVoice(newId, playbackRateId);
 			}
 			id = newId;
+			if (ctx.ownsSourceBuffer(newId, buffer)) ownBuffer(newId);
 		}
+	}
+
+	void ownBuffer(String bufferId) {
+		// The previous one was stopped by switchBufferSource.
+		if (ownedBufferHandle != null) {
+			NativeFinalizer.unregister(ownedBufferHandle);
+			AudioContext.getInstance().releaseSourceWhenIdle(ownedId);
+		}
+		ownedId = bufferId;
+		ownedBufferHandle = NativeFinalizer.register(this, idleReleaser(bufferId));
+	}
+
+	// Static, so the cleanup doesn't hold the node it's waiting on.
+	private static Runnable idleReleaser(String bufferId) {
+		return () -> AudioContext.getInstance().releaseSourceWhenIdle(bufferId);
 	}
 
 	@Override

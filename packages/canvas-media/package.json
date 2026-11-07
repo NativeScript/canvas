@@ -1,6 +1,6 @@
 {
 	"name": "@nativescript/canvas-media",
-	"version": "3.0.0-beta.4",
+	"version": "3.0.0-beta.6",
 	"description": "Canvas media",
 	"main": "index",
 	"typings": "index.d.ts",
@@ -8,7 +8,8 @@
 		"platforms": {
 			"ios": "6.0.0",
 			"android": "6.0.0",
-			"windows": "9.1.0"
+			"windows": "9.1.0",
+			"linux": "0.1.0-alpha.5"
 		}
 	},
 	"repository": {

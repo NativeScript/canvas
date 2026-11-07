@@ -7,14 +7,14 @@ use skia_safe::{gpu, surfaces, AlphaType, Color, ColorType, ISize, ImageInfo, Pi
 use std::ffi::c_void;
 use std::ptr::NonNull;
 
-/// Skia's GL entry points. On Windows GL is ANGLE, so they come from its `eglGetProcAddress`;
-/// `new_native` would bind WGL (desktop GL), which is not the context that is current.
+/// Skia's GL entry points. On Windows (ANGLE) and Linux (Mesa) GL is EGL's GLES, so they come
+/// from its `eglGetProcAddress`; `new_native` would bind WGL / GLX desktop GL.
 fn gl_interface() -> Option<Interface> {
-    #[cfg(target_os = "windows")]
+    #[cfg(any(target_os = "windows", target_os = "linux"))]
     {
         Interface::new_load_with(|name| canvas_core::gpu::gl::get_proc_address(name))
     }
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(not(any(target_os = "windows", target_os = "linux")))]
     {
         Interface::new_native()
     }
@@ -186,11 +186,14 @@ impl Context {
             Some(&surface_props),
         )?;
 
-        let (surface, window_surface) = if draws_to_window(&gl_context) {
+        let (mut surface, window_surface) = if draws_to_window(&gl_context) {
             with_offscreen(&mut ctx, surface, alpha, color_space.into())
         } else {
             (surface, None)
         };
+        // Linux: a new pbuffer holds whatever was in its memory; a canvas starts transparent.
+        #[cfg(target_os = "linux")]
+        surface.canvas().clear(Color::TRANSPARENT);
 
         let direct_context = Some(ctx);
 
@@ -393,7 +396,9 @@ impl Context {
             surface
         };
 
-        if let Some(surface) = surface {
+        if let Some(mut surface) = surface {
+            #[cfg(target_os = "linux")]
+            surface.canvas().clear(Color::TRANSPARENT);
             context.window_surface = window_surface;
             context.direct_context = direct_context;
             context.surface_state = SurfaceState::None;

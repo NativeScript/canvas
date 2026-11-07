@@ -1387,41 +1387,12 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                 break;
             }
             case NativeEngine::CMD_FREE_BUFFER: {
-                auto it = audioBuffers_.find(c.id);
-                if (it != audioBuffers_.end()) {
-                    if (it->second.nativeOwned) {
-                        it->second.pcm.clear();
-                        it->second.pcm.shrink_to_fit();
-                    }
-                    it->second.planarPtrs.clear();
-                    it->second.planarFrames = 0;
-                    it->second.directPtr = nullptr;
-                    it->second.byteLength = 0;
-                    it->second.javaBufferId.clear();
-                    audioBuffers_.erase(it);
-                }
-
-                if (c.completion) {
-                    try {
-                        c.completion->set_value();
-                    } catch (...) {}
-                }
-
-                if (jvm_ && audioContextClassGlobalRef && onNativeBufferReleasedMethod) {
-                    JNIEnv *env = nullptr;
-                    bool attached = false;
-                    if (jvm_->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6) != JNI_OK) {
-                        if (jvm_->AttachCurrentThread(&env, nullptr) == JNI_OK) attached = true;
-                        else env = nullptr;
-                    }
-                    if (env) {
-                        jstring js = env->NewStringUTF(c.id.c_str());
-                        env->CallStaticVoidMethod(audioContextClassGlobalRef,
-                                                  onNativeBufferReleasedMethod, js);
-                        env->DeleteLocalRef(js);
-                        if (attached) jvm_->DetachCurrentThread();
-                    }
-                }
+                releaseBufferData(c.id, c.completion);
+                break;
+            }
+            case NativeEngine::CMD_FREE_BUFFER_WHEN_IDLE: {
+                if (bufferInUse(c.id)) idleFrees_.push_back(c.id);
+                else releaseBufferData(c.id);
                 break;
             }
             case NativeEngine::CMD_RESUME: {
@@ -1628,6 +1599,20 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
             }
             default:
                 break;
+        }
+    }
+
+    // Voices that stopped since the last callback let their buffers go.
+    if (!idleFrees_.empty()) {
+        for (size_t i = 0; i < idleFrees_.size();) {
+            if (bufferInUse(idleFrees_[i])) {
+                ++i;
+                continue;
+            }
+            std::string id = std::move(idleFrees_[i]);
+            idleFrees_[i] = std::move(idleFrees_.back());
+            idleFrees_.pop_back();
+            releaseBufferData(id);
         }
     }
 
@@ -3027,3 +3012,51 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
 }
 
 #endif
+
+bool NativeEngine::bufferInUse(const std::string &id) const {
+    for (const auto &kv: audioVoices_) {
+        const Voice &v = kv.second;
+        if (v.playing && v.voiceType == Voice::BufferSource && v.bufferId == id) return true;
+    }
+    return false;
+}
+
+void NativeEngine::releaseBufferData(const std::string &id,
+                                     const std::shared_ptr<std::promise<void>> &completion) {
+    auto it = audioBuffers_.find(id);
+    if (it != audioBuffers_.end()) {
+        if (it->second.nativeOwned) {
+            it->second.pcm.clear();
+            it->second.pcm.shrink_to_fit();
+        }
+        it->second.planarPtrs.clear();
+        it->second.planarFrames = 0;
+        it->second.directPtr = nullptr;
+        it->second.byteLength = 0;
+        it->second.javaBufferId.clear();
+        audioBuffers_.erase(it);
+    }
+
+    if (completion) {
+        try {
+            completion->set_value();
+        } catch (...) {}
+    }
+
+    // Java frees the memory it lent once nothing here reads it.
+    if (jvm_ && audioContextClassGlobalRef && onNativeBufferReleasedMethod) {
+        JNIEnv *env = nullptr;
+        bool attached = false;
+        if (jvm_->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6) != JNI_OK) {
+            if (jvm_->AttachCurrentThread(&env, nullptr) == JNI_OK) attached = true;
+            else env = nullptr;
+        }
+        if (env) {
+            jstring js = env->NewStringUTF(id.c_str());
+            env->CallStaticVoidMethod(audioContextClassGlobalRef,
+                                      onNativeBufferReleasedMethod, js);
+            env->DeleteLocalRef(js);
+            if (attached) jvm_->DetachCurrentThread();
+        }
+    }
+}

@@ -696,6 +696,7 @@ typedef enum WebGLExtensionType {
   WebGLExtensionTypeWebGLExtensionTypeWEBGL_draw_buffers,
   WebGLExtensionTypeWebGLExtensionTypeOES_fbo_render_mipmap,
   WebGLExtensionTypeWebGLExtensionTypeNone,
+  WebGLExtensionTypeWebGLExtensionTypeKHR_parallel_shader_compile,
 } WebGLExtensionType;
 
 typedef enum WebGLResultType {
@@ -5215,6 +5216,17 @@ void canvas_native_webgl_tex_image2d_canvas2d(int32_t target,
                                               struct CanvasRenderingContext2D *canvas,
                                               struct WebGLState *state);
 
+/**
+ * `false` when the WebGPU canvas has no frame to read (not configured, or not an 8-bit format).
+ */
+bool canvas_native_webgl_tex_image2d_webgpu(int32_t target,
+                                            int32_t level,
+                                            int32_t internalformat,
+                                            int32_t format,
+                                            int32_t image_type,
+                                            const struct CanvasGPUCanvasContext *webgpu,
+                                            struct WebGLState *state);
+
 void canvas_native_webgl_tex_image2d_webgl(int32_t target,
                                            int32_t level,
                                            int32_t internalformat,
@@ -5280,6 +5292,18 @@ void canvas_native_webgl_tex_sub_image2d_canvas2d(uint32_t target,
                                                   int32_t image_type,
                                                   struct CanvasRenderingContext2D *canvas,
                                                   struct WebGLState *state);
+
+/**
+ * `false` when the WebGPU canvas has no frame to read; see `canvas_native_webgl_tex_image2d_webgpu`.
+ */
+bool canvas_native_webgl_tex_sub_image2d_webgpu(uint32_t target,
+                                                int32_t level,
+                                                int32_t xoffset,
+                                                int32_t yoffset,
+                                                uint32_t format,
+                                                int32_t image_type,
+                                                const struct CanvasGPUCanvasContext *webgpu,
+                                                struct WebGLState *state);
 
 void canvas_native_webgl_tex_sub_image2d_webgl(uint32_t target,
                                                int32_t level,

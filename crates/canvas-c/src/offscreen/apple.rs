@@ -96,7 +96,9 @@ fn set_drawable_properties(layer: &ObjRef, retained: bool) {
             forKeys: keys.as_ptr(),
             count: 2usize
         ];
-        let _: () = msg_send![&*layer.0, setDrawableProperties: properties];
+        canvas_core::gpu::gl::change_view_layer(|| {
+            let _: () = msg_send![&*layer.0, setDrawableProperties: properties];
+        });
     });
 }
 

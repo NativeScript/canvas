@@ -1,0 +1,19 @@
+{
+	"compilerOptions": {
+		"strict": false,
+		"target": "ES2020",
+		"module": "ESNext",
+		"moduleResolution": "bundler",
+		"lib": ["ESNext", "DOM"],
+		"baseUrl": ".",
+		"paths": {
+			"~/*": ["src/*"]
+		},
+		"noEmit": true,
+		"skipLibCheck": true,
+		"experimentalDecorators": true,
+		"allowSyntheticDefaultImports": true,
+		"esModuleInterop": true
+	},
+	"include": ["src/**/*.ts", "references.d.ts"]
+}

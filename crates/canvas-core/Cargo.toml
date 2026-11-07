@@ -55,6 +55,11 @@ windows = { workspace = true, optional = true, features = [
     "Win32_UI_WindowsAndMessaging",
 ] }
 
+# Linux: GLES on the system EGL (Mesa), sharing frames with GTK through EGLImages.
+[target.'cfg(target_os = "linux")'.dependencies]
+khronos-egl = { version = "6.0", features = ["dynamic"], optional = true }
+libloading = { version = "0.8", optional = true }
+
 [[example]]
 name = "d3d_offscreen"
 required-features = ["d3d"]

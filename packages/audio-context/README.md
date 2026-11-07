@@ -1,6 +1,6 @@
 # @nativescript/audio-context
 
-Web Audio API style audio graph support for NativeScript (iOS, Android and Windows).
+Web Audio API style audio graph support for NativeScript (iOS, Android, Windows and Linux).
 
 This package provides a native-backed `AudioContext`/`OfflineAudioContext` with common Web Audio nodes so you can keep a familiar Web Audio programming model in NativeScript apps.
 
@@ -134,6 +134,22 @@ Context lifecycle and routing:
 - `state`, `onstatechange`
 - `sinkId`, `setSinkId(deviceId)`
 
+## Android memory
+
+Decoded audio is held in native memory, not on the Java heap, so long tracks can't throw
+`OutOfMemoryError`. The samples are freed when the `AudioBuffer` is garbage collected. Neither
+V8 nor ART sees that memory, so while a lot of native audio is live the plugin asks Java to
+collect. For V8 to follow, enable the runtime's GC bridge in `nativescript.config.ts`:
+
+```ts
+android: {
+  v8Flags: '--expose_gc',
+  gcThrottleTime: 1000,
+}
+```
+
+Without it the memory is still freed, but only when V8 happens to collect.
+
 ## Windows
 
 On Windows the graph is rendered by the [web-audio-api](https://github.com/orottier/web-audio-api-rs)
@@ -144,6 +160,11 @@ reads wav, mp3, ogg/vorbis, flac and aac. Differences from iOS and Android:
   returns `null`: `@nativescript/canvas-media` has no Windows backend yet.
 - A `WaveShaperNode` takes one curve; assigning a second one throws `InvalidStateError`.
 - `sinkId` is `''` for the default device; `'none'` renders without a device.
+
+## Linux
+
+Linux uses the same engine and module as Windows (`audiocontext.node`), playing through ALSA
+(PulseAudio and PipeWire through their ALSA plugins). The differences listed for Windows apply.
 
 ## Optional: Global Polyfill Integration
 

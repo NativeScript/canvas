@@ -61,7 +61,7 @@ function invalidSource(source: any) {
 /** `undefined` for an unrecognised source, so the caller rejects instead of hanging. */
 function resolveSource(source: any): any {
 	source = fromSvgSource(source);
-	if ((isCanvasView(source) || isOffscreenCanvas(source))) {
+	if (isCanvasView(source) || isOffscreenCanvas(source)) {
 		return (source as any).native;
 	}
 	if (source instanceof ImageBitmap) {
@@ -172,6 +172,12 @@ export class ImageBitmap {
 				const error: any = new Error(`Failed to execute 'createImageBitmap' : The image source is detached.`);
 				error.name = 'InvalidStateError';
 				reject(error);
+				return;
+			}
+
+			// A Blob from another implementation (a runtime's own fetch): read its bytes.
+			if (!(typeof Blob !== 'undefined' && source instanceof Blob) && typeof source?.arrayBuffer === 'function' && typeof source?.size === 'number') {
+				source.arrayBuffer().then((buffer: ArrayBuffer) => ImageBitmap._create(new Uint8Array(buffer), rect, options).then(resolve, reject), reject);
 				return;
 			}
 

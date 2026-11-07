@@ -54,6 +54,8 @@ impl ObjectFinalize for CanvasRenderingContext2D {
 
 unsafe fn render_2d(context: *mut c_void) {
   canvas_c::canvas_native_context_render(context as *mut CCanvasRenderingContext2D);
+  #[cfg(target_os = "linux")]
+  crate::host::linux::presented(context);
   #[cfg(target_os = "windows")]
   if canvas_c::canvas_native_context_is_lost(context as *const CCanvasRenderingContext2D) {
     crate::frame::report_lost();
@@ -116,47 +118,6 @@ impl CanvasRenderingContext2D {
   #[napi]
   pub fn render(&self) {
     canvas_c::canvas_native_context_render(self.context);
-  }
-
-  /// `drawImage(video, ...)` with a frame the video shares on the GPU (canvas-media's
-  /// `gpuFrame().address`), in video pixels. `false`: not drawn and not consumed (another
-  /// adapter, or no D3D context); draw it some other way.
-  #[cfg(target_os = "windows")]
-  #[napi(js_name = "__drawD3DSharedFrame")]
-  pub fn draw_d3d_shared_frame(
-    &self,
-    frame: f64,
-    width: i32,
-    height: i32,
-    sx: f64,
-    sy: f64,
-    sw: f64,
-    sh: f64,
-    dx: f64,
-    dy: f64,
-    dw: f64,
-    dh: f64,
-  ) -> bool {
-    let drawn = unsafe {
-      canvas_c::d3d::canvas_native_context_draw_d3d_shared_frame(
-        self.context,
-        frame as usize as *mut c_void,
-        width,
-        height,
-        sx as f32,
-        sy as f32,
-        sw as f32,
-        sh as f32,
-        dx as f32,
-        dy as f32,
-        dw as f32,
-        dh as f32,
-      )
-    };
-    if drawn {
-      self.dirty();
-    }
-    drawn
   }
 
   #[napi]
@@ -1498,4 +1459,48 @@ pub fn create_2d_context_with_pointer(
   }
   canvas_c::canvas_native_context_reference(context);
   Some(CanvasRenderingContext2D::from_raw(context))
+}
+
+#[cfg(target_os = "windows")]
+#[napi]
+impl CanvasRenderingContext2D {
+  /// `drawImage(video, ...)` with a frame the video shares on the GPU (canvas-media's
+  /// `gpuFrame().address`), in video pixels. `false`: not drawn and not consumed (another
+  /// adapter, or no D3D context); draw it some other way.
+  #[napi(js_name = "__drawD3DSharedFrame")]
+  pub fn draw_d3d_shared_frame(
+    &self,
+    frame: f64,
+    width: i32,
+    height: i32,
+    sx: f64,
+    sy: f64,
+    sw: f64,
+    sh: f64,
+    dx: f64,
+    dy: f64,
+    dw: f64,
+    dh: f64,
+  ) -> bool {
+    let drawn = unsafe {
+      canvas_c::d3d::canvas_native_context_draw_d3d_shared_frame(
+        self.context,
+        frame as usize as *mut c_void,
+        width,
+        height,
+        sx as f32,
+        sy as f32,
+        sw as f32,
+        sh as f32,
+        dx as f32,
+        dy as f32,
+        dw as f32,
+        dh as f32,
+      )
+    };
+    if drawn {
+      self.dirty();
+    }
+    drawn
+  }
 }

@@ -298,3 +298,8 @@ if (typeof global.AbortSignal === 'undefined') {
 	//@ts-ignore
 	global.AbortSignal = global.window.AbortSignal = AbortSignal;
 }
+
+// window.name, which some libraries read as a bare global (babylon's WaterMaterial).
+if (typeof (global as any).name === 'undefined') {
+	(global as any).name = '';
+}

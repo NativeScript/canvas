@@ -1,6 +1,6 @@
 # @nativescript/audio-context
 
-Web Audio API style audio graph support for NativeScript (iOS, Android and Windows).
+Web Audio API style audio graph support for NativeScript (iOS, Android, Windows and Linux).
 
 This package provides a native-backed `AudioContext`/`OfflineAudioContext` with common Web Audio nodes so you can keep a familiar Web Audio programming model in NativeScript apps.
 
@@ -160,6 +160,11 @@ reads wav, mp3, ogg/vorbis, flac and aac. Differences from iOS and Android:
   returns `null`: `@nativescript/canvas-media` has no Windows backend yet.
 - A `WaveShaperNode` takes one curve; assigning a second one throws `InvalidStateError`.
 - `sinkId` is `''` for the default device; `'none'` renders without a device.
+
+## Linux
+
+Linux uses the same engine and module as Windows (`audiocontext.node`), playing through ALSA
+(PulseAudio and PipeWire through their ALSA plugins). The differences listed for Windows apply.
 
 ## Optional: Global Polyfill Integration
 

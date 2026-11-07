@@ -3,9 +3,12 @@ import { suite, test, ok, equal, closeTo, rejects, make2D, makeCanvas, pixelAt }
 
 declare const document: any, navigator: any, GPUTextureUsage: any, GPUBufferUsage: any, GPUMapMode: any;
 
-// ms-appx: the packaged app's own files, whatever `~/` resolves to.
-const CLIP = 'ms-appx:///app/assets/file-assets/webgpu/pano.mp4';
-const TONE = 'ms-appx:///app/assets/file-assets/audio/gs-16b-1c-44100hz.wav';
+declare const __WINDOWS__: boolean;
+
+// Windows: ms-appx:, the packaged app's own files, whatever `~/` resolves to.
+const ASSETS = typeof __WINDOWS__ !== 'undefined' && __WINDOWS__ ? 'ms-appx:///app/assets' : '~/assets';
+const CLIP = `${ASSETS}/file-assets/webgpu/pano.mp4`;
+const TONE = `${ASSETS}/file-assets/audio/gs-16b-1c-44100hz.wav`;
 const MAGENTA = [255, 0, 255, 255];
 
 function once(target: any, type: string, timeoutMs = 10000): Promise<void> {
@@ -220,7 +223,7 @@ export function registerMediaSpec() {
 		test('a missing source fires error and rejects play()', async () => {
 			const video = document.createElement('video');
 			const failed = once(video, 'error');
-			video.src = 'ms-appx:///app/assets/missing.mp4';
+			video.src = `${ASSETS}/missing.mp4`;
 			const played = video.play();
 			await failed;
 			await rejects(played, 'play() on a missing source');

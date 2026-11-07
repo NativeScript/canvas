@@ -87,3 +87,6 @@ crates/canvas-napi/bench/results/
 # Internal notes (local only)
 crates/canvas-napi/PORTING.md
 crates/vendor/napi-sys/PATCHED.md
+
+# The packed @nativescript/linux runtime apps/demo-linux installs (copied in, not committed)
+tools/linux/*.tgz

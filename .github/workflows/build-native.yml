@@ -17,8 +17,9 @@
 #
 # tools/scripts/place-native-artifacts.sh copies a download of all of them into the tree.
 #
-# Not built here (no sources in this repo, so the committed ones ship): canvas-media's and
-# canvas-gamepad's Android AARs and canvas-polyfill's AARs.
+# Not built here: the <plugin>.aar files under platforms/android (canvas_gamepad.aar,
+# canvas_media.aar, canvas_polyfill.aar) are gitignored. The NativeScript CLI builds them from
+# platforms/android/java during the app build. canvas-polyfill's async-release.aar ships as committed.
 #
 # xcframeworks are tarred before upload because upload-artifact does not
 # preserve file permissions.
@@ -41,8 +42,8 @@
 #
 # The napi-windows modules and the canvas-svg / audio-context mobile builds change rarely, so
 # their jobs cache the final artifact keyed on a hash of their sources and skip the whole build
-# on a hit. Builds of an explicit ref (npm Release) and manual runs never restore a cache, so
-# what gets published is always built from that ref's sources.
+# on a hit. The other jobs that build Skia keep its built libraries per target in
+# .github/actions/skia-cache, saved only by pushes to master.
 name: Build Native
 
 permissions:
@@ -50,12 +51,6 @@ permissions:
 
 on:
   workflow_call:
-    inputs:
-      ref:
-        description: Git ref to build. Empty means the ref that triggered the caller; set, no cache is restored.
-        required: false
-        type: string
-        default: ''
 
 env:
   # bump to invalidate the canvas-svg / audio-context / canvas-media artifact caches
@@ -67,9 +62,10 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.ref }}
       - uses: ./.github/actions/setup-android-native
+      - uses: ./.github/actions/skia-cache
+        with:
+          name: canvas-android
       - name: Fetch V8 + NativeScript runtime headers
         run: ./tools/scripts/download-v8.sh
       - name: Build libNativeScript.so stub for linking
@@ -81,6 +77,10 @@ jobs:
         run: ./gradlew :canvas:assembleRelease
       - name: Copy AAR into platforms/android
         run: cp packages/canvas/src-native/canvas-android/canvas/build/outputs/aar/canvas-release.aar packages/canvas/platforms/android/canvas-release.aar
+      - uses: ./.github/actions/skia-cache
+        with:
+          name: canvas-android
+          save: 'true'
       - uses: actions/upload-artifact@v4
         with:
           name: canvas-android
@@ -92,9 +92,10 @@ jobs:
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.ref }}
       - uses: ./.github/actions/setup-apple-native
+      - uses: ./.github/actions/skia-cache
+        with:
+          name: canvas-ios
       - name: Fetch V8 + NativeScript runtime headers
         run: ./tools/scripts/download-v8.sh
       - name: Build Rust libraries (iOS)
@@ -111,6 +112,10 @@ jobs:
         run: sh canvas-build.sh
       - name: Pack xcframework
         run: tar -czf canvas-ios.tar.gz -C packages/canvas/platforms/ios CanvasNative.xcframework
+      - uses: ./.github/actions/skia-cache
+        with:
+          name: canvas-ios
+          save: 'true'
       - uses: actions/upload-artifact@v4
         with:
           name: canvas-ios
@@ -122,10 +127,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.ref }}
       - name: Restore cached AAR
-        if: github.event_name != 'workflow_dispatch' && inputs.ref == ''
         id: svg-aar
         uses: actions/cache@v4
         with:
@@ -133,6 +135,10 @@ jobs:
           key: ${{ env.NATIVE_CACHE_VERSION }}-canvas-svg-android-${{ hashFiles('crates/canvas-svg/**', 'crates/canvas-svg-android/**', 'packages/canvas-svg/src-native/android/**', '!packages/canvas-svg/src-native/android/**/build/**', '!packages/canvas-svg/src-native/android/**/jniLibs/**', 'Cargo.lock', 'tools/scripts/build-svg-android.sh', 'tools/scripts/copy-svg-android.sh', 'Makefile') }}
       - uses: ./.github/actions/setup-android-native
         if: steps.svg-aar.outputs.cache-hit != 'true'
+      - uses: ./.github/actions/skia-cache
+        if: steps.svg-aar.outputs.cache-hit != 'true'
+        with:
+          name: canvas-svg-android
       # canvassvg's CMake borrows both from packages/canvas (see its CMakeLists.txt)
       - name: Fetch V8 + NativeScript runtime headers
         if: steps.svg-aar.outputs.cache-hit != 'true'
@@ -153,6 +159,11 @@ jobs:
       - name: Copy AAR into platforms/android
         if: steps.svg-aar.outputs.cache-hit != 'true'
         run: cp packages/canvas-svg/src-native/android/canvassvg/build/outputs/aar/canvassvg-release.aar packages/canvas-svg/platforms/android/canvassvg-release.aar
+      - uses: ./.github/actions/skia-cache
+        if: steps.svg-aar.outputs.cache-hit != 'true'
+        with:
+          name: canvas-svg-android
+          save: 'true'
       - uses: actions/upload-artifact@v4
         with:
           name: canvas-svg-android
@@ -164,10 +175,7 @@ jobs:
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.ref }}
       - name: Restore cached xcframework
-        if: github.event_name != 'workflow_dispatch' && inputs.ref == ''
         id: svg-xcframework
         uses: actions/cache@v4
         with:
@@ -175,6 +183,10 @@ jobs:
           key: ${{ env.NATIVE_CACHE_VERSION }}-canvas-svg-ios-${{ hashFiles('crates/canvas-svg/**', 'crates/canvas-svg-ios/**', 'packages/canvas-svg/src-native/ios/**', '!packages/canvas-svg/src-native/ios/dist/**', 'Cargo.lock', 'tools/scripts/canvas-svg-build.sh', 'Makefile') }}
       - uses: ./.github/actions/setup-apple-native
         if: steps.svg-xcframework.outputs.cache-hit != 'true'
+      - uses: ./.github/actions/skia-cache
+        if: steps.svg-xcframework.outputs.cache-hit != 'true'
+        with:
+          name: canvas-svg-ios
       - name: Build Rust libraries (iOS + visionOS + tvOS)
         if: steps.svg-xcframework.outputs.cache-hit != 'true'
         run: make svg
@@ -186,6 +198,11 @@ jobs:
       - name: Pack xcframework
         if: steps.svg-xcframework.outputs.cache-hit != 'true'
         run: tar -czf canvas-svg-ios.tar.gz -C packages/canvas-svg/platforms/ios CanvasSVG.xcframework
+      - uses: ./.github/actions/skia-cache
+        if: steps.svg-xcframework.outputs.cache-hit != 'true'
+        with:
+          name: canvas-svg-ios
+          save: 'true'
       - uses: actions/upload-artifact@v4
         with:
           name: canvas-svg-ios
@@ -198,11 +215,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.ref }}
           # Oboe
           submodules: true
       - name: Restore cached AAR
-        if: github.event_name != 'workflow_dispatch' && inputs.ref == ''
         id: audio-aar
         uses: actions/cache@v4
         with:
@@ -235,10 +250,7 @@ jobs:
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.ref }}
       - name: Restore cached xcframework
-        if: github.event_name != 'workflow_dispatch' && inputs.ref == ''
         id: audio-xcframework
         uses: actions/cache@v4
         with:
@@ -251,7 +263,7 @@ jobs:
       # libogg / libvorbis / libopus / libopusfile static libs per slice: gitignored, built from
       # the xiph release tarballs.
       - name: Restore cached opus deps
-        if: github.event_name != 'workflow_dispatch' && inputs.ref == '' && steps.audio-xcframework.outputs.cache-hit != 'true'
+        if: steps.audio-xcframework.outputs.cache-hit != 'true'
         id: opus-deps
         uses: actions/cache@v4
         with:
@@ -294,11 +306,12 @@ jobs:
         shell: bash
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.ref }}
       - uses: ./.github/actions/setup-windows-native
         with:
           target: ${{ matrix.target }}
+      - uses: ./.github/actions/skia-cache
+        with:
+          name: canvas-windows-${{ matrix.arch }}
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -311,6 +324,10 @@ jobs:
         env:
           CANVAS_NAPI_ADDON: ${{ github.workspace }}\packages\canvas\platforms\windows\x64\canvasnative.node
         run: node --expose-gc --test "crates/canvas-napi/__test__/*.test.mjs"
+      - uses: ./.github/actions/skia-cache
+        with:
+          name: canvas-windows-${{ matrix.arch }}
+          save: 'true'
       - uses: actions/upload-artifact@v4
         with:
           name: canvas-windows-${{ matrix.arch }}
@@ -331,6 +348,7 @@ jobs:
             file: canvassvg.node
             addon-env: CANVAS_SVG_NAPI_ADDON
             sources: crates/canvas-svg crates/canvas-svg-c crates/canvas-svg-napi crates/canvas-2d crates/canvas-core
+            skia: true
           # Runners have no audio device: its suite renders offline and on the 'none' sink.
           - name: audio-context
             crate: audio-context-napi
@@ -360,8 +378,6 @@ jobs:
       MODULE_DIR: packages/${{ matrix.module.name }}/platforms/windows/${{ matrix.arch }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.ref }}
       # The tree hashes of what the module is built from: equal hashes, equal module.
       - name: Source key
         id: sources
@@ -369,17 +385,19 @@ jobs:
           key=$(for path in ${{ matrix.module.sources }} crates/vendor/napi-sys Cargo.toml tools/scripts/build-napi.sh; do git rev-parse "HEAD:$path" || exit 1; done | sha256sum | cut -c1-32)
           echo "key=$key" >> "$GITHUB_OUTPUT"
       - name: Restore cached module
-        if: github.event_name != 'workflow_dispatch' && inputs.ref == ''
         id: cache
         uses: actions/cache@v4
         with:
           path: ${{ env.MODULE_DIR }}/${{ matrix.module.file }}
           key: ${{ env.NATIVE_CACHE_VERSION }}-${{ matrix.module.name }}-windows-${{ matrix.arch }}-${{ steps.sources.outputs.key }}
-      # No Skia here; the action's Rust toolchain and cargo cache are what these need.
       - uses: ./.github/actions/setup-windows-native
         if: steps.cache.outputs.cache-hit != 'true'
         with:
           target: ${{ matrix.target }}
+      - uses: ./.github/actions/skia-cache
+        if: steps.cache.outputs.cache-hit != 'true' && matrix.module.skia
+        with:
+          name: ${{ matrix.module.name }}-windows-${{ matrix.arch }}
       - uses: actions/setup-node@v4
         if: steps.cache.outputs.cache-hit != 'true' && matrix.arch == 'x64' && matrix.module.addon-env
         with:
@@ -395,6 +413,11 @@ jobs:
         run: |
           export ${{ matrix.module.addon-env }}="$(cygpath -w "$PWD/$MODULE_DIR/${{ matrix.module.file }}")"
           node --expose-gc --test "crates/${{ matrix.module.crate }}/__test__/*.test.mjs"
+      - uses: ./.github/actions/skia-cache
+        if: steps.cache.outputs.cache-hit != 'true' && matrix.module.skia
+        with:
+          name: ${{ matrix.module.name }}-windows-${{ matrix.arch }}
+          save: 'true'
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.module.name }}-windows-${{ matrix.arch }}
@@ -416,9 +439,10 @@ jobs:
             runner: ubuntu-22.04-arm
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.ref }}
       - uses: ./.github/actions/setup-linux-native
+      - uses: ./.github/actions/skia-cache
+        with:
+          name: linux-${{ matrix.arch }}
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -436,6 +460,10 @@ jobs:
           node --expose-gc --test "crates/canvas-napi/__test__/*.test.mjs"
           node --expose-gc --test "crates/canvas-svg-napi/__test__/*.test.mjs"
           node --expose-gc --test "crates/audio-context-napi/__test__/*.test.mjs"
+      - uses: ./.github/actions/skia-cache
+        with:
+          name: linux-${{ matrix.arch }}
+          save: 'true'
       - uses: actions/upload-artifact@v4
         with:
           name: linux-${{ matrix.arch }}

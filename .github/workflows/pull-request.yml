@@ -35,7 +35,9 @@ jobs:
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/cache@v4
+      # ~1.8 GB per entry: only master saves one, so pull requests don't crowd the 10 GB cache.
+      - uses: actions/cache/restore@v4
+        id: test-cache
         with:
           path: |
             ~/.cargo/registry
@@ -53,6 +55,14 @@ jobs:
         env:
           RUSTFLAGS: '-C link-arg=-undefined -C link-arg=dynamic_lookup'
         run: cargo test -p canvas-c --features 2d,webgl,gl
+      - uses: actions/cache/save@v4
+        if: steps.test-cache.outputs.cache-hit != 'true' && github.event_name == 'push' && github.ref == 'refs/heads/master'
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ steps.test-cache.outputs.cache-primary-key }}
 
   build-native:
     name: Build Native
@@ -66,7 +76,7 @@ jobs:
     env:
       NPM_TAG: pr
       # Space separated; must match the packages/<name> directories.
-      NPM_PACKAGES: audio-context canvas canvas-babylon canvas-chartjs canvas-media canvas-phaser canvas-phaser-ce canvas-pixi canvas-polyfill canvas-svg canvas-three
+      NPM_PACKAGES: audio-context canvas canvas-babylon canvas-chartjs canvas-gamepad canvas-media canvas-phaser canvas-phaser-ce canvas-pixi canvas-polyfill canvas-svg canvas-three
     steps:
       - uses: actions/checkout@v4
 

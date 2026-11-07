@@ -1,11 +1,18 @@
-# Publishes the @nativescript/canvas suite to npm from an existing release tag.
+# Publishes the @nativescript/canvas suite to npm. Run it on the release tag:
+#
+#   gh workflow run npm_release.yml -R NativeScript/canvas --ref 3.0.0-beta.7
+#
+# (or pick the tag under "Use workflow from"). The tag must match packages/canvas/package.json.
 #
 # Every native artifact build-native.yml produces (Android AARs, iOS/visionOS/tvOS
-# xcframeworks, Windows and Linux Node-API modules) is rebuilt from the tag, with no
-# cache, and replaces the committed copy before packaging, so npm ships what CI built
-# from the tagged sources. The binaries committed under packages/*/platforms are only
-# what local development uses. The few with no sources in this repo (canvas-media's
-# and canvas-gamepad's Android AARs, canvas-polyfill's AARs) ship as committed.
+# xcframeworks, Windows and Linux Node-API modules) is built from the tag and replaces the
+# committed copy before packaging, so npm ships what CI built from the tagged sources.
+# The committed binaries are only what local development uses. canvas-polyfill's
+# async-release.aar is the one native artifact that still ships as committed.
+#
+# Running on the tag also keeps the build's caches safe: a run can restore master's cache
+# entries but saves only into its own ref's scope, so nothing a release executes can
+# replace an entry that master's builds restore.
 #
 # iOS SwiftPM distribution: canvas and audio-context each ship the header-only
 # NativeScriptV8 SwiftPM shim (repo-root nativescript-v8/) INSIDE the npm
@@ -36,11 +43,6 @@ name: npm Release
 
 on:
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'Release tag to publish from (e.g. 2.1.2). Must be an existing git tag. Defaults to packages/canvas/package.json version.'
-        required: false
-        type: string
 
 concurrency:
   group: npm-release
@@ -56,18 +58,18 @@ jobs:
       version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Resolve version
         id: version
         run: |
-          VERSION="${{ github.event.inputs.version }}"
-          if [ -z "$VERSION" ]; then
-            VERSION="$(node -p "require('./packages/canvas/package.json').version")"
+          if [ "$GITHUB_REF_TYPE" != tag ]; then
+            echo "error: run this on the release tag (gh workflow run npm_release.yml --ref <tag>), not $GITHUB_REF" >&2
+            exit 1
           fi
-          if ! git rev-parse -q --verify "refs/tags/$VERSION^{commit}" > /dev/null; then
-            echo "error: tag $VERSION not found — create and push the release tag first" >&2
+          VERSION="$GITHUB_REF_NAME"
+          PACKAGE_VERSION="$(node -p "require('./packages/canvas/package.json').version")"
+          if [ "$VERSION" != "$PACKAGE_VERSION" ]; then
+            echo "error: tag $VERSION does not match packages/canvas/package.json ($PACKAGE_VERSION)" >&2
             exit 1
           fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
@@ -76,8 +78,6 @@ jobs:
     name: Build Native
     needs: [version]
     uses: ./.github/workflows/build-native.yml
-    with:
-      ref: refs/tags/${{ needs.version.outputs.version }}
 
   publish:
     runs-on: ubuntu-latest
@@ -88,14 +88,9 @@ jobs:
       id-token: write # required for npm Trusted Publishing (OIDC) + provenance
     env:
       # Single source of truth for the packages to publish (space separated).
-      PACKAGES: 'audio-context canvas canvas-babylon canvas-chartjs canvas-media canvas-phaser canvas-phaser-ce canvas-pixi canvas-polyfill canvas-svg canvas-three'
+      PACKAGES: 'audio-context canvas canvas-babylon canvas-chartjs canvas-gamepad canvas-media canvas-phaser canvas-phaser-ce canvas-pixi canvas-polyfill canvas-svg canvas-three'
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Checkout release tag
-        run: git checkout "refs/tags/${{ needs.version.outputs.version }}"
 
       - uses: actions/setup-node@v4
         with:
@@ -180,7 +175,7 @@ jobs:
             [ -f "dist/packages/$f" ] || { echo "error: dist/packages/$f missing" >&2; exit 1; }
           done
           for arch in x64 arm64; do
-            for module in canvas/canvasnative canvas-svg/canvassvg audio-context/audiocontext canvas-media/canvasmedia; do
+            for module in canvas/canvasnative canvas-svg/canvassvg audio-context/audiocontext canvas-media/canvasmedia canvas-gamepad/canvasgamepad; do
               pkg=${module%%/*}
               name=${module##*/}
               for f in "$pkg/platforms/windows/$arch/$name.node" "$pkg/platforms/linux/lib/$arch/$name.node"; do

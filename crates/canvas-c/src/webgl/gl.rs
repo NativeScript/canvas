@@ -4064,6 +4064,42 @@ pub extern "C" fn canvas_native_webgl_tex_image2d_canvas2d(
     });
 }
 
+/// `false` when the WebGPU canvas has no frame to read (not configured, or not an 8-bit format).
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_tex_image2d_webgpu(
+    target: i32,
+    level: i32,
+    internalformat: i32,
+    format: i32,
+    image_type: i32,
+    webgpu: *const crate::webgpu::gpu_canvas_context::CanvasGPUCanvasContext,
+    state: *mut WebGLState,
+) -> bool {
+    assert!(!state.is_null());
+    assert!(!webgpu.is_null());
+    let state = unsafe { &*state };
+    let Some((width, height, pixels)) =
+        crate::webgpu::gpu_canvas_context::read_rgba8(unsafe { &*webgpu })
+    else {
+        return false;
+    };
+    state.post(move |state| {
+        canvas_webgl::webgl::canvas_native_webgl_tex_image2d(
+            target,
+            level,
+            internalformat,
+            width as i32,
+            height as i32,
+            0,
+            format,
+            image_type,
+            pixels.as_slice(),
+            state,
+        )
+    });
+    true
+}
+
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_tex_image2d_webgl(
     target: i32,
@@ -4271,6 +4307,43 @@ pub extern "C" fn canvas_native_webgl_tex_sub_image2d_canvas2d(
             state,
         )
     });
+}
+
+/// `false` when the WebGPU canvas has no frame to read; see `canvas_native_webgl_tex_image2d_webgpu`.
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_tex_sub_image2d_webgpu(
+    target: u32,
+    level: i32,
+    xoffset: i32,
+    yoffset: i32,
+    format: u32,
+    image_type: i32,
+    webgpu: *const crate::webgpu::gpu_canvas_context::CanvasGPUCanvasContext,
+    state: *mut WebGLState,
+) -> bool {
+    assert!(!state.is_null());
+    assert!(!webgpu.is_null());
+    let state = unsafe { &*state };
+    let Some((width, height, pixels)) =
+        crate::webgpu::gpu_canvas_context::read_rgba8(unsafe { &*webgpu })
+    else {
+        return false;
+    };
+    state.post(move |state| {
+        canvas_webgl::webgl::canvas_native_webgl_tex_sub_image2d(
+            target,
+            level,
+            xoffset,
+            yoffset,
+            width as i32,
+            height as i32,
+            format,
+            image_type,
+            pixels.as_slice(),
+            state,
+        )
+    });
+    true
 }
 
 #[no_mangle]

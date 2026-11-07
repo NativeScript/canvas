@@ -32,11 +32,13 @@ runs:
       run: |
         tmp="$RUNNER_TEMP"
         command -v cygpath > /dev/null && tmp="$(cygpath -m "$RUNNER_TEMP")"
+        real_cargo="$(command -v cargo)" || { echo "skia-cache: no cargo on PATH; run it after the toolchain setup" >&2; exit 1; }
         mkdir -p "$tmp/skia-cache" "$tmp/skia-export" "$tmp/skia-cache-bin"
         cp "$GITHUB_ACTION_PATH/cargo-shim.sh" "$tmp/skia-cache-bin/cargo"
         chmod +x "$tmp/skia-cache-bin/cargo"
         echo "$tmp/skia-cache-bin" >> "$GITHUB_PATH"
         {
+          echo "SKIA_CACHE_REAL_CARGO=$real_cargo"
           echo "SKIA_CACHE_DIR=$tmp/skia-cache"
           echo "BUILD_ARTIFACTSTAGINGDIRECTORY=$tmp/skia-export"
           # bump to drop every Skia cache entry

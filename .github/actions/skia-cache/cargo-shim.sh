@@ -2,9 +2,7 @@
 # CI only (installed by the skia-cache action as `cargo`, first on PATH). Runs the real cargo,
 # then files the Skia binaries skia-bindings exported during that run under their rust-skia key,
 # where SKIA_BINARIES_URL finds them on the next run.
-home="${CARGO_HOME:-$HOME/.cargo}"
-command -v cygpath > /dev/null && home="$(cygpath -u "$home")"
-"$home/bin/cargo" "$@"
+"$SKIA_CACHE_REAL_CARGO" "$@"
 status=$?
 
 staging="$BUILD_ARTIFACTSTAGINGDIRECTORY"

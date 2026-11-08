@@ -232,6 +232,7 @@ impl Context {
             state_stack: vec![],
             font_color: Color::new(font_color as u32),
             recording: None,
+            snapshot: None,
             surface_state: SurfaceState::None,
         })
     }

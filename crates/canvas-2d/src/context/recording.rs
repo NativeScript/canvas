@@ -6,10 +6,14 @@ use skia_safe::{
     Rect, M44,
 };
 
+use std::sync::atomic::{AtomicU64, Ordering};
+
 use crate::context::{Context, State};
 
 /// Recordings open with a save of their own: a bottom-level clip can't be undone, and `reset()` must.
 pub(crate) const RECORDING_BASE: usize = 2;
+
+static REVISIONS: AtomicU64 = AtomicU64::new(1);
 
 pub(crate) struct Recording {
     recorder: PictureRecorder,
@@ -17,6 +21,9 @@ pub(crate) struct Recording {
     ops: Vec<FrameOp>,
     /// Began with a full-canvas clear, so no earlier frame shows through.
     cleared: bool,
+    /// Changes whenever something may have been drawn
+    revision: u64,
+    touched: bool,
 }
 
 impl Recording {
@@ -28,15 +35,30 @@ impl Recording {
             bounds,
             ops: Vec::new(),
             cleared: false,
+            revision: REVISIONS.fetch_add(1, Ordering::Relaxed),
+            touched: false,
         }
     }
 
     #[inline]
     pub(crate) fn canvas(&mut self) -> &Canvas {
+        self.touched = true;
+        self.recording_canvas()
+    }
+
+    #[inline]
+    fn recording_canvas(&mut self) -> &Canvas {
         // `restart` begins the next recording before returning.
         self.recorder
             .recording_canvas()
             .expect("recording canvas is always live")
+    }
+
+    fn revision(&mut self) -> u64 {
+        if std::mem::take(&mut self.touched) {
+            self.revision = REVISIONS.fetch_add(1, Ordering::Relaxed);
+        }
+        self.revision
     }
 
     fn cut(&mut self, stack: &[State], current: &State) {
@@ -52,7 +74,7 @@ impl Recording {
     }
 
     fn restart(&mut self, stack: &[State], current: &State) -> Option<Picture> {
-        let matrix = self.canvas().local_to_device();
+        let matrix = self.recording_canvas().local_to_device();
         let picture = self.recorder.finish_recording_as_picture(Some(&self.bounds));
         self.recorder.begin_recording(self.bounds, false).save();
         let canvas = self.recorder.recording_canvas().expect("just begun");
@@ -210,6 +232,11 @@ impl Context {
         self.recording = Some(Recording::new(self.surface_data.bounds));
     }
 
+    /// Unchanged while nothing is drawn.
+    pub fn revision(&mut self) -> Option<u64> {
+        self.recording.as_mut().map(Recording::revision)
+    }
+
     /// Frames must be replayed in order.
     pub fn take_frame(&mut self) -> Frame {
         let Some(recording) = self.recording.as_mut() else {
@@ -249,6 +276,7 @@ impl Context {
             return false;
         };
         recording.cut(&self.state_stack, &self.state);
+        recording.touched = true;
         let len = (row_bytes * info.height().max(0) as usize).min(bytes.len());
         recording.ops.push(FrameOp::Pixels(PixelWrite {
             width: info.width(),
@@ -301,6 +329,7 @@ impl Context {
         };
         let matrix = recording.canvas().local_to_device();
         recording.cut(&self.state_stack, &self.state);
+        recording.touched = true;
         recording.ops.push(FrameOp::External(ExternalDraw {
             state: StateSnapshot::take(&self.state_stack, &self.state, matrix),
             src,

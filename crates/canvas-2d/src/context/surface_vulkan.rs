@@ -143,6 +143,7 @@ impl Context {
             state_stack: vec![],
             font_color: skia_safe::Color::new(font_color as u32),
             recording: None,
+            snapshot: None,
             #[cfg(feature = "gl")]
             window_surface: None,
             #[cfg(any(feature = "gl", feature = "vulkan", feature = "metal"))]

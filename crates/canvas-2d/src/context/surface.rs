@@ -77,6 +77,8 @@ impl Context {
             recording: None,
             #[cfg(feature = "gl")]
             window_surface: None,
+            #[cfg(feature = "gl")]
+            last_gpu_trim: None,
             surface_state: SurfaceState::None,
         }
     }

@@ -222,6 +222,8 @@ pub struct Context {
     /// Must drop before `direct_context`.
     #[cfg(feature = "gl")]
     pub(crate) window_surface: Option<Surface>,
+    #[cfg(feature = "gl")]
+    pub(crate) last_gpu_trim: Option<std::time::Instant>,
     pub(crate) surface_state: SurfaceState,
     #[cfg(any(feature = "gl", feature = "vulkan", feature = "metal", feature = "d3d"))]
     pub(crate) direct_context: Option<skia_safe::gpu::DirectContext>,
@@ -319,6 +321,8 @@ impl Context {
             }
             _ => {}
         }
+        #[cfg(feature = "gl")]
+        self.trim_gpu_cache();
 
         if let Some(ctx) = self.cpu_context.as_ref() {
             ctx.render();
@@ -333,6 +337,8 @@ impl Context {
             }
             _ => {}
         }
+        #[cfg(feature = "gl")]
+        self.trim_gpu_cache();
 
         if let Some(ctx) = self.cpu_context.as_ref() {
             ctx.render();

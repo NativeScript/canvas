@@ -203,6 +203,7 @@ impl Context {
 
         Some(Context {
             window_surface,
+            last_gpu_trim: None,
             direct_context,
             #[cfg(feature = "metal")]
             metal_context: None,
@@ -301,6 +302,23 @@ impl Context {
         if let Some(ctx) = self.direct_context.as_mut() {
             ctx.flush_and_submit_surface(window, None);
         }
+        self.trim_gpu_cache();
+    }
+
+    /// Call after a flush, while the context is current.
+    pub(crate) fn trim_gpu_cache(&mut self) {
+        if self.gl_context.is_none() {
+            return;
+        }
+        let now = std::time::Instant::now();
+        if self.last_gpu_trim.is_some_and(|at| now - at < std::time::Duration::from_secs(1)) {
+            return;
+        }
+        let Some(ctx) = self.direct_context.as_mut() else {
+            return;
+        };
+        self.last_gpu_trim = Some(now);
+        ctx.perform_deferred_cleanup(std::time::Duration::from_secs(5), None);
     }
 
     pub fn resize_gl(

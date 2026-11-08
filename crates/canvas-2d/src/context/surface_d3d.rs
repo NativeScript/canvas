@@ -349,6 +349,8 @@ impl Context {
             recording: None,
             #[cfg(feature = "gl")]
             window_surface: None,
+            #[cfg(any(feature = "gl", feature = "vulkan", feature = "metal"))]
+            last_gpu_trim: None,
         })
     }
 

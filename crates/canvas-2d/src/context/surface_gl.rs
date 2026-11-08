@@ -203,6 +203,7 @@ impl Context {
 
         Some(Context {
             window_surface,
+            last_gpu_trim: None,
             direct_context,
             #[cfg(feature = "metal")]
             metal_context: None,
@@ -301,6 +302,7 @@ impl Context {
         if let Some(ctx) = self.direct_context.as_mut() {
             ctx.flush_and_submit_surface(window, None);
         }
+        self.trim_gpu_cache();
     }
 
     pub fn resize_gl(

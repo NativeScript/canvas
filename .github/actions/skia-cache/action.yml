@@ -43,7 +43,7 @@ runs:
           echo "SKIA_CACHE_DIR=$tmp/skia-cache"
           echo "BUILD_ARTIFACTSTAGINGDIRECTORY=$tmp/skia-export"
           # bump to drop every Skia cache entry
-          echo "SKIA_CACHE_KEY=skia-v1-${{ inputs.name }}-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('Cargo.lock', 'Cargo.toml', 'crates/*/Cargo.toml', '.cargo/config.toml', 'Makefile', 'tools/scripts/*.sh', 'packages/*/src-native/**/pre-build.sh', '.github/actions/**') }}"
+          echo "SKIA_CACHE_KEY=skia-v1-${{ inputs.name }}-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('Cargo.lock', 'Cargo.toml', 'crates/*/Cargo.toml', '.cargo/config.toml', 'Makefile', 'tools/scripts/*.sh', 'packages/*/src-native/**/pre-build.sh', '.github/actions/setup-*/action.yml') }}"
         } >> "$GITHUB_ENV"
 
     # Exact keys only: a partial match could lack a target, and a forced install that finds no

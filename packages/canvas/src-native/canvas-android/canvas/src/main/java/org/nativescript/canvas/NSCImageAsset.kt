@@ -22,6 +22,10 @@ class NSCImageAsset @JvmOverloads constructor(asset: Long, private val owned: Bo
 		fun onComplete(done: Boolean)
 	}
 
+	interface BitmapCallback {
+		fun onComplete(bitmap: Bitmap?)
+	}
+
 	@Synchronized
 	@Throws(Throwable::class)
 	protected fun finalize() {
@@ -320,6 +324,33 @@ class NSCImageAsset @JvmOverloads constructor(asset: Long, private val owned: Bo
 		}
 
 		@JvmStatic
+		fun toBitmap(asset: Long): Bitmap? {
+			val dimensions = getDimensions(asset)
+			if (dimensions[0] <= 0 || dimensions[1] <= 0) {
+				return null
+			}
+			val bitmap = Bitmap.createBitmap(dimensions[0], dimensions[1], Bitmap.Config.ARGB_8888)
+			if (nativeWriteToBitmap(asset, bitmap)) {
+				return bitmap
+			}
+			bitmap.recycle()
+			return null
+		}
+
+		@JvmStatic
+		fun toBitmapAsync(asset: Long, callback: BitmapCallback) {
+			val looper = Looper.myLooper()
+			executorService.execute {
+				val bitmap = toBitmap(asset)
+				if (looper != null) {
+					Handler(looper).post { callback.onComplete(bitmap) }
+				} else {
+					callback.onComplete(bitmap)
+				}
+			}
+		}
+
+		@JvmStatic
 		fun getDimensions(asset: Long): IntArray {
 			val ret = intArrayOf(0, 0)
 			nativeGetDimensions(asset, ret)
@@ -362,6 +393,9 @@ class NSCImageAsset @JvmOverloads constructor(asset: Long, private val owned: Bo
 
 		@JvmStatic
 		private external fun nativeGetDimensions(asset: Long, dimensions: IntArray)
+
+		@JvmStatic
+		private external fun nativeWriteToBitmap(asset: Long, bitmap: Bitmap): Boolean
 
 		@JvmStatic
 		private external fun nativeGetError(asset: Long): String?

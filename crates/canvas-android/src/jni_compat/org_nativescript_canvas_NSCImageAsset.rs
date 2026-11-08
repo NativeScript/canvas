@@ -277,6 +277,30 @@ pub extern "system" fn nativeLoadFromEncodedBuffer(
 }
 
 #[no_mangle]
+pub extern "system" fn nativeWriteToBitmap(env: JNIEnv, _: JClass, asset: jlong, bitmap: JObject) -> jboolean {
+    if asset == 0 {
+        return JNI_FALSE;
+    }
+    let asset = unsafe { &*(asset as *const ImageAsset) };
+    let native_bitmap = unsafe { ndk::bitmap::AndroidBitmap::from_jni(env.get_native_interface(), bitmap.as_raw()) };
+    let Ok(info) = native_bitmap.get_info() else {
+        return JNI_FALSE;
+    };
+    if info.format() != ndk::bitmap::BitmapFormat::RGBA_8888 || (info.width(), info.height()) != asset.dimensions() {
+        return JNI_FALSE;
+    }
+    let Ok(pixels) = native_bitmap.lock_pixels() else {
+        return JNI_FALSE;
+    };
+    let stride = info.stride() as usize;
+    let dst = unsafe { std::slice::from_raw_parts_mut(pixels as *mut u8, stride * info.height() as usize) };
+    // ARGB_8888 is RGBA bytes, premultiplied.
+    let written = asset.read_pixels_8888_into(false, true, dst, stride);
+    let _ = native_bitmap.unlock_pixels();
+    if written { JNI_TRUE } else { JNI_FALSE }
+}
+
+#[no_mangle]
 pub extern "system" fn nativeGetDimensions(
     env: JNIEnv,
     _: JClass,

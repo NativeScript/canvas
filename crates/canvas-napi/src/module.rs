@@ -232,6 +232,14 @@ impl<'env> JsBytes<'env> {
     }
   }
 
+  pub(crate) fn as_mut_slice(&mut self) -> &mut [u8] {
+    if self.data.is_null() || self.len == 0 {
+      &mut []
+    } else {
+      unsafe { std::slice::from_raw_parts_mut(self.data as *mut u8, self.len) }
+    }
+  }
+
   /// Keeps the buffer alive so another thread can read it; `release` it on the JS thread.
   pub(crate) fn pin(&self) -> Result<PinnedBytes> {
     let mut reference = ptr::null_mut();

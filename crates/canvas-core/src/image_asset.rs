@@ -499,6 +499,35 @@ impl ImageAsset {
     }
 
     #[cfg(feature = "2d")]
+    pub fn read_pixels_into(&self, info: &skia_safe::ImageInfo, dst: &mut [u8], row_bytes: usize) -> bool {
+        if dst.len() < row_bytes * info.height().max(0) as usize {
+            return false;
+        }
+        let lock = self.0.lock();
+        match lock.image.as_ref() {
+            None => false,
+            Some(CanvasImage::Skia(bitmap, _)) => unsafe {
+                bitmap.read_pixels(info, dst.as_mut_ptr() as *mut c_void, row_bytes, 0, 0)
+            },
+            Some(CanvasImage::Encoded(image)) => {
+                image.read_pixels(info, dst, row_bytes, (0, 0), skia_safe::image::CachingHint::Disallow)
+            }
+        }
+    }
+
+    #[cfg(feature = "2d")]
+    pub fn read_pixels_8888_into(&self, bgra: bool, premultiplied: bool, dst: &mut [u8], row_bytes: usize) -> bool {
+        let (width, height) = self.dimensions();
+        let info = skia_safe::ImageInfo::new(
+            (width as i32, height as i32),
+            if bgra { skia_safe::ColorType::BGRA8888 } else { skia_safe::ColorType::RGBA8888 },
+            if premultiplied { skia_safe::AlphaType::Premul } else { skia_safe::AlphaType::Unpremul },
+            None,
+        );
+        self.read_pixels_into(&info, dst, row_bytes)
+    }
+
+    #[cfg(feature = "2d")]
     fn skia_image_of(image: &CanvasImage) -> Option<skia_safe::Image> {
         match image {
             CanvasImage::Skia(bitmap, _) => skia_safe::images::raster_from_bitmap(bitmap),

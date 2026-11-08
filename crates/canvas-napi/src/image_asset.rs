@@ -2,7 +2,7 @@ use canvas_c::{
   canvas_native_image_asset_load_from_path, canvas_native_image_asset_load_from_url,
   ImageAsset as CImageAsset,
 };
-use napi::bindgen_prelude::{AsyncTask, FnArgs, Function};
+use napi::bindgen_prelude::{AsyncTask, Buffer, FnArgs, Function};
 use napi::threadsafe_function::{ThreadsafeFunctionCallMode, UnknownReturnValue};
 use napi::{Env, Error, JsString, Result, Task};
 use napi_derive::napi;
@@ -140,6 +140,51 @@ impl Task for AsyncFileTask {
   }
 }
 
+pub struct ReadPixelsTask {
+  asset: Arc<CImageAsset>,
+  bgra: bool,
+  premultiplied: bool,
+}
+
+impl Task for ReadPixelsTask {
+  type Output = Option<Vec<u8>>;
+  type JsValue = Option<Buffer>;
+
+  fn compute(&mut self) -> Result<Self::Output> {
+    let (width, height) = self.asset.dimensions();
+    let row_bytes = width as usize * 4;
+    let mut pixels = vec![0u8; row_bytes * height as usize];
+    Ok((width > 0 && self.asset.read_pixels_8888_into(self.bgra, self.premultiplied, &mut pixels, row_bytes)).then_some(pixels))
+  }
+
+  fn resolve(&mut self, _: Env, pixels: Self::Output) -> Result<Self::JsValue> {
+    Ok(pixels.map(Buffer::from))
+  }
+}
+
+/// The texture is made in `resolve`, on the GTK thread.
+#[cfg(target_os = "linux")]
+pub struct GdkTextureTask {
+  asset: Arc<CImageAsset>,
+}
+
+#[cfg(target_os = "linux")]
+impl Task for GdkTextureTask {
+  type Output = Option<(u32, u32, Vec<u8>)>;
+  type JsValue = f64;
+
+  fn compute(&mut self) -> Result<Self::Output> {
+    let (width, height) = self.asset.dimensions();
+    let row_bytes = width as usize * 4;
+    let mut pixels = vec![0u8; row_bytes * height as usize];
+    Ok((width > 0 && self.asset.read_pixels_8888_into(false, true, &mut pixels, row_bytes)).then_some((width, height, pixels)))
+  }
+
+  fn resolve(&mut self, _: Env, pixels: Self::Output) -> Result<Self::JsValue> {
+    Ok(pixels.map_or(0., |(width, height, pixels)| crate::host::linux::texture_from_pixels(width, height, pixels) as f64))
+  }
+}
+
 pub struct AsyncBase64Task {
   base64: String,
   asset: Arc<CImageAsset>,
@@ -240,6 +285,25 @@ impl ImageAsset {
   }
 
   /// Encodes the image to `path`; `format` is `ImageAssetSaveFormat` (0 JPG, 1 PNG).
+  #[napi(
+    js_name = "readPixels8888Into",
+    ts_args_type = "bgra: boolean, premultiplied: boolean, dst: ArrayBuffer | ArrayBufferView, rowBytes: number"
+  )]
+  pub fn read_pixels_8888_into(&self, bgra: bool, premultiplied: bool, mut dst: JsBytes, row_bytes: u32) -> bool {
+    self
+      .asset
+      .read_pixels_8888_into(bgra, premultiplied, dst.as_mut_slice(), row_bytes as usize)
+  }
+
+  #[napi(js_name = "readPixels8888", ts_return_type = "Promise<Buffer | null>")]
+  pub fn read_pixels_8888(&self, bgra: bool, premultiplied: bool) -> AsyncTask<ReadPixelsTask> {
+    AsyncTask::new(ReadPixelsTask {
+      asset: Arc::clone(&self.asset),
+      bgra,
+      premultiplied,
+    })
+  }
+
   #[napi]
   pub fn save_sync(&self, path: String, format: u32) -> bool {
     save(&self.asset, &path, format)
@@ -417,5 +481,22 @@ impl ImageAsset {
   pub fn from_gdk_texture_sync(&self, texture: f64) -> bool {
     crate::host::linux::texture_pixels(texture as usize)
       .is_some_and(|(width, height, pixels)| load_raw(&self.asset, width, height, &pixels, true))
+  }
+
+  /// The caller owns the returned texture's reference.
+  #[napi]
+  pub fn to_gdk_texture_sync(&self) -> f64 {
+    let (width, height) = self.asset.dimensions();
+    let row_bytes = width as usize * 4;
+    let mut pixels = vec![0u8; row_bytes * height as usize];
+    if width == 0 || !self.asset.read_pixels_8888_into(false, true, &mut pixels, row_bytes) {
+      return 0.;
+    }
+    crate::host::linux::texture_from_pixels(width, height, pixels) as f64
+  }
+
+  #[napi(ts_return_type = "Promise<number>")]
+  pub fn to_gdk_texture(&self) -> AsyncTask<GdkTextureTask> {
+    AsyncTask::new(GdkTextureTask { asset: Arc::clone(&self.asset) })
   }
 }

@@ -1295,6 +1295,10 @@ declare class NSCImageAsset extends NSObject {
 	static loadImageFromPathSync(asset: number, path: string): boolean;
 
 	static new(): NSCImageAsset; // inherited from NSObject
+
+	static toUIImage(asset: number): UIImage;
+
+	static toUIImageAsync(asset: number, callback: (p1: UIImage) => void): void;
 }
 
 declare class NSCImageBitmap extends NSObject {

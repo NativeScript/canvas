@@ -43,12 +43,21 @@ runs:
         ninja --version
         python --version
 
-    - name: Cache cargo
-      uses: actions/cache@v4
+    # Restore only: .github/actions/skia-cache saves it, from master only. No Cargo.lock is
+    # committed, so the key hashes the manifests.
+    - name: Restore cargo registry
+      id: cargo-registry
+      uses: actions/cache/restore@v4
       with:
         path: |
           ~/.cargo/registry
           ~/.cargo/git
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        key: ${{ runner.os }}-${{ runner.arch }}-cargo-v2-${{ hashFiles('Cargo.toml', 'crates/*/Cargo.toml') }}
         restore-keys: |
-          ${{ runner.os }}-cargo-
+          ${{ runner.os }}-${{ runner.arch }}-cargo-v2-
+
+    - name: Remember the cargo registry key
+      shell: bash
+      run: |
+        echo "CARGO_REGISTRY_CACHE_KEY=${{ steps.cargo-registry.outputs.cache-primary-key }}" >> "$GITHUB_ENV"
+        echo "CARGO_REGISTRY_CACHE_HIT=${{ steps.cargo-registry.outputs.cache-hit }}" >> "$GITHUB_ENV"

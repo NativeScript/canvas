@@ -1,0 +1,84 @@
+name: Skia binary cache
+description: >
+  Caches the Skia libraries skia-bindings builds, per target and feature set, in rust-skia's own
+  prebuilt-binaries format, so a job only builds Skia from source when its inputs change.
+
+  Restore (default): with an exact hit, skia-bindings installs Skia from the cache instead of
+  building it (FORCE_SKIA_BINARIES_DOWNLOAD + a file:// SKIA_BINARIES_URL). Either way it exports
+  what it used into BUILD_ARTIFACTSTAGINGDIRECTORY, and a cargo shim put first on PATH files each
+  export under rust-skia's key (fork commit, target, features) after every cargo run. The export
+  directory has a fixed name, so it has to be collected per build. These variables stay the same
+  for the whole job: skia-bindings rebuilds Skia when one of them changes, and the Xcode pre-build
+  phases call cargo directly.
+
+  Save (save: 'true', as the job's last step): only on pushes to master, so pull requests and
+  releases read master's entries and never write the ones master restores. Also saves the cargo
+  registry the setup-*-native actions restored, under the same rule.
+
+inputs:
+  name:
+    description: Cache slot; one per job (and matrix arch)
+    required: true
+  save:
+    description: "'true' to save the cache instead of restoring it"
+    required: false
+    default: 'false'
+
+runs:
+  using: composite
+  steps:
+    - name: Prepare
+      if: inputs.save != 'true'
+      shell: bash
+      run: |
+        tmp="$RUNNER_TEMP"
+        command -v cygpath > /dev/null && tmp="$(cygpath -m "$RUNNER_TEMP")"
+        real_cargo="$(command -v cargo)" || { echo "skia-cache: no cargo on PATH; run it after the toolchain setup" >&2; exit 1; }
+        mkdir -p "$tmp/skia-cache" "$tmp/skia-export" "$tmp/skia-cache-bin"
+        cp "$GITHUB_ACTION_PATH/cargo-shim.sh" "$tmp/skia-cache-bin/cargo"
+        chmod +x "$tmp/skia-cache-bin/cargo"
+        echo "$tmp/skia-cache-bin" >> "$GITHUB_PATH"
+        {
+          echo "SKIA_CACHE_REAL_CARGO=$real_cargo"
+          echo "SKIA_CACHE_DIR=$tmp/skia-cache"
+          echo "BUILD_ARTIFACTSTAGINGDIRECTORY=$tmp/skia-export"
+          # bump to drop every Skia cache entry
+          echo "SKIA_CACHE_KEY=skia-v1-${{ inputs.name }}-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('Cargo.lock', 'Cargo.toml', 'crates/*/Cargo.toml', '.cargo/config.toml', 'Makefile', 'tools/scripts/*.sh', 'packages/*/src-native/**/pre-build.sh', '.github/actions/setup-*/action.yml') }}"
+        } >> "$GITHUB_ENV"
+
+    # Exact keys only: a partial match could lack a target, and a forced install that finds no
+    # archive fails the build.
+    - name: Restore
+      if: inputs.save != 'true'
+      id: restore
+      uses: actions/cache/restore@v4
+      with:
+        path: ${{ env.SKIA_CACHE_DIR }}
+        key: ${{ env.SKIA_CACHE_KEY }}
+
+    - name: Use cached Skia
+      if: inputs.save != 'true' && steps.restore.outputs.cache-hit == 'true'
+      shell: bash
+      run: |
+        ls "$SKIA_CACHE_DIR"
+        {
+          echo "SKIA_CACHE_HIT=true"
+          echo "FORCE_SKIA_BINARIES_DOWNLOAD=1"
+          echo "SKIA_BINARIES_URL=file://$SKIA_CACHE_DIR/skia-binaries-{key}.tar.gz"
+        } >> "$GITHUB_ENV"
+
+    - name: Save
+      if: inputs.save == 'true' && env.SKIA_CACHE_KEY != '' && env.SKIA_CACHE_HIT != 'true' && github.event_name == 'push' && github.ref == 'refs/heads/master'
+      uses: actions/cache/save@v4
+      with:
+        path: ${{ env.SKIA_CACHE_DIR }}
+        key: ${{ env.SKIA_CACHE_KEY }}
+
+    - name: Save cargo registry
+      if: inputs.save == 'true' && env.CARGO_REGISTRY_CACHE_KEY != '' && env.CARGO_REGISTRY_CACHE_HIT != 'true' && github.event_name == 'push' && github.ref == 'refs/heads/master'
+      uses: actions/cache/save@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+        key: ${{ env.CARGO_REGISTRY_CACHE_KEY }}

@@ -2,13 +2,17 @@ name: Setup Apple native build environment
 description: >
   Selects Xcode, installs the visionOS platform (SDK + simulator runtime, not
   preinstalled on GitHub macOS runners), and optionally installs the Rust
-  nightly toolchain (with rust-src for -Z build-std) plus a cargo cache.
+  nightly toolchain (with rust-src for -Z build-std), cbindgen and a cargo cache.
 
 inputs:
   xcode-version:
     description: Xcode version spec passed to setup-xcode
     required: false
     default: '^16.0'
+  rust-toolchain:
+    description: Dated nightly the Rust builds use (exported as CANVAS_RUST_TOOLCHAIN), as setup-android-native pins it.
+    required: false
+    default: 'nightly-2026-01-25'
   install-rust:
     description: Install Rust nightly + cargo cache (set 'false' for xcodebuild-only projects)
     required: false
@@ -34,19 +38,36 @@ runs:
       if: ${{ inputs.install-rust == 'true' }}
       shell: bash
       # rust-src is required: iOS and visionOS release builds go through
-      # `cargo +nightly build -Z build-std` (see Makefile).
+      # `cargo +$CANVAS_RUST_TOOLCHAIN build -Z build-std` (see Makefile).
       run: |
-        rustup toolchain install nightly --profile minimal --component rust-src
-        rustup default nightly
+        rustup toolchain install ${{ inputs.rust-toolchain }} --profile minimal --component rust-src
+        rustup default ${{ inputs.rust-toolchain }}
+        echo "CANVAS_RUST_TOOLCHAIN=${{ inputs.rust-toolchain }}" >> "$GITHUB_ENV"
         rustc --version
 
-    - name: Cache cargo
+    # The Xcode pre-build phases regenerate the C headers with it. No macOS release binaries.
+    - name: Install cbindgen
       if: ${{ inputs.install-rust == 'true' }}
-      uses: actions/cache@v4
+      shell: bash
+      run: cargo install cbindgen@0.29.0 --locked
+
+    # Restore only: .github/actions/skia-cache saves it, from master only. No Cargo.lock is
+    # committed, so the key hashes the manifests.
+    - name: Restore cargo registry
+      id: cargo-registry
+      if: ${{ inputs.install-rust == 'true' }}
+      uses: actions/cache/restore@v4
       with:
         path: |
           ~/.cargo/registry
           ~/.cargo/git
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        key: ${{ runner.os }}-${{ runner.arch }}-cargo-v2-${{ hashFiles('Cargo.toml', 'crates/*/Cargo.toml') }}
         restore-keys: |
-          ${{ runner.os }}-cargo-
+          ${{ runner.os }}-${{ runner.arch }}-cargo-v2-
+
+    - name: Remember the cargo registry key
+      if: ${{ inputs.install-rust == 'true' }}
+      shell: bash
+      run: |
+        echo "CARGO_REGISTRY_CACHE_KEY=${{ steps.cargo-registry.outputs.cache-primary-key }}" >> "$GITHUB_ENV"
+        echo "CARGO_REGISTRY_CACHE_HIT=${{ steps.cargo-registry.outputs.cache-hit }}" >> "$GITHUB_ENV"

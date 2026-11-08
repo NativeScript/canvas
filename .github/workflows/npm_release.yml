@@ -88,7 +88,7 @@ jobs:
       id-token: write # required for npm Trusted Publishing (OIDC) + provenance
     env:
       # Single source of truth for the packages to publish (space separated).
-      PACKAGES: 'audio-context canvas canvas-babylon canvas-chartjs canvas-gamepad canvas-media canvas-phaser canvas-phaser-ce canvas-pixi canvas-polyfill canvas-svg canvas-three'
+      PACKAGES: 'audio-context canvas canvas-babylon canvas-chartjs canvas-media canvas-phaser canvas-phaser-ce canvas-pixi canvas-polyfill canvas-svg canvas-three canvas-gamepad'
     steps:
       - uses: actions/checkout@v4
 

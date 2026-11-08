@@ -38,6 +38,11 @@ impl ImageAsset {
         self.0.dimensions()
     }
 
+    #[cfg(feature = "2d")]
+    pub fn read_pixels_8888_into(&self, bgra: bool, premultiplied: bool, dst: &mut [u8], row_bytes: usize) -> bool {
+        self.0.read_pixels_8888_into(bgra, premultiplied, dst, row_bytes)
+    }
+
     pub fn width(&self) -> c_uint {
         self.0.width()
     }
@@ -242,6 +247,24 @@ pub extern "C" fn canvas_native_image_asset_load_from_path(
     let path = unsafe { CStr::from_ptr(path) };
     let path = path.to_string_lossy();
     asset.load_from_path(path.as_ref())
+}
+
+#[cfg(feature = "2d")]
+#[no_mangle]
+pub extern "C" fn canvas_native_image_asset_read_pixels_8888(
+    asset: *const ImageAsset,
+    bgra: bool,
+    premultiplied: bool,
+    dst: *mut u8,
+    size: usize,
+    row_bytes: usize,
+) -> bool {
+    if asset.is_null() || dst.is_null() {
+        return false;
+    }
+    let asset = unsafe { &*asset };
+    let dst = unsafe { std::slice::from_raw_parts_mut(dst, size) };
+    asset.read_pixels_8888_into(bgra, premultiplied, dst, row_bytes)
 }
 
 /// Encodes the image to `path`; `format` 0 JPG, 1 PNG (`ImageAssetSaveFormat`).

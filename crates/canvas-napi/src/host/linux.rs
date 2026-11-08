@@ -1239,6 +1239,23 @@ pub(crate) fn texture_pixels(texture: usize) -> Option<(u32, u32, Vec<u8>)> {
   Some((width as u32, height as u32, pixels))
 }
 
+/// The caller owns the returned reference.
+pub(crate) fn texture_from_pixels(width: u32, height: u32, pixels: Vec<u8>) -> usize {
+  if width == 0 || height == 0 || !gtk_ready() {
+    return 0;
+  }
+  let texture = gdk::MemoryTexture::new(
+    width as i32,
+    height as i32,
+    gdk::MemoryFormat::R8g8b8a8Premultiplied,
+    &glib::Bytes::from_owned(pixels),
+    width as usize * 4,
+  );
+  use glib::translate::IntoGlibPtr;
+  let texture: *mut gdk::ffi::GdkTexture = unsafe { texture.upcast::<gdk::Texture>().into_glib_ptr() };
+  texture as usize
+}
+
 /// A frame texture an OffscreenCanvas's rendering thread fills and GDK shows.
 struct SharedSlot {
   texture: u32,

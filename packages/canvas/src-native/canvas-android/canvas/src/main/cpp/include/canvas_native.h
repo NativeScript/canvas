@@ -4319,6 +4319,13 @@ bool canvas_native_image_asset_load_from_url(const struct ImageAsset *asset, con
 
 int64_t canvas_native_image_asset_addr(const struct ImageAsset *asset);
 
+bool canvas_native_image_asset_read_pixels_8888(const struct ImageAsset *asset,
+                                                bool bgra,
+                                                bool premultiplied,
+                                                uint8_t *dst,
+                                                uintptr_t size,
+                                                uintptr_t row_bytes);
+
 uint32_t canvas_native_image_asset_width(const struct ImageAsset *asset);
 
 uint32_t canvas_native_image_asset_height(const struct ImageAsset *asset);

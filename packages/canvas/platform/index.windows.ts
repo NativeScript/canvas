@@ -7,7 +7,7 @@
 import { FontFaceSet } from '@nativescript/font-manager';
 import { ImageAsset } from '../ImageAsset';
 
-declare const Windows: any, Microsoft: any;
+declare const Windows: any, Microsoft: any, NSWinRT: any;
 
 const assets = new WeakMap<object, ImageAsset>();
 
@@ -37,6 +37,32 @@ function fileFromUri(uri: string | undefined): string | null {
 		return decodeURIComponent(uri.substring('file:///'.length)).replace(/\//g, '\\');
 	}
 	return null;
+}
+
+function writeableBitmap(width: number, height: number, fill: (pixels: Uint8Array) => boolean): any {
+	if (!width || !height) {
+		return null;
+	}
+	const bitmap = new Microsoft.UI.Xaml.Media.Imaging.WriteableBitmap(width, height);
+	if (!fill(new Uint8Array(NSWinRT.interop.arrayBufferFromBuffer(bitmap.PixelBuffer)))) {
+		return null;
+	}
+	bitmap.Invalidate();
+	return bitmap;
+}
+
+export function nativeImageOf(asset: any): any {
+	return writeableBitmap(asset.width, asset.height, (pixels) => !!asset.readPixels8888Into(true, true, pixels, asset.width * 4));
+}
+
+export async function nativeImageOfAsync(asset: any): Promise<any> {
+	const decoded: Uint8Array | null = await asset.readPixels8888(true, true);
+	return decoded
+		? writeableBitmap(asset.width, asset.height, (pixels) => {
+				pixels.set(decoded);
+				return true;
+			})
+		: null;
 }
 
 export function loadNativeImage(asset: any, image: any): boolean {

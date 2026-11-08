@@ -21,6 +21,7 @@ use crate::jni_compat::org_nativescript_canvas_NSCCanvas::{nativeCreate2dContext
 use crate::jni_compat::org_nativescript_canvas_NSCCanvas::{nativeContext2DPathTest, nativeContext2DPathTestNormal, nativeContext2DRender, nativeContext2DTest, nativeContext2DTestNormal, nativeCreate2DContext, nativeCreate2DContextThreaded, nativeCustomWithBitmapFlush, nativeInitWebGL, nativeInitWebGLNoSurface, nativeInitWebGPU, nativeMakeWebGLCurrent, nativeMakeWebGLCurrentNormal, nativeRelease2DContext, nativeRelease2DContextNormal, nativeReleaseWebGL, nativeReleaseWebGLNormal, nativeReleaseWebGPU, nativeDetachWebGPUSurface, nativeDetach2DSurface, nativeResizeWebGPU, nativeUpdate2DSurface, nativeUpdate2DSurfaceNoSurface, nativeUpdate2DSurfaceNoSurfaceNormal, nativeUpdateGLNoSurface, nativeUpdateWebGLNoSurfaceNormal, nativeUpdateWebGLSurface, nativeWebGLC2DRender, nativeWriteCurrentWebGLContextToBitmap, nativeContext2DConicTest};
 use crate::jni_compat::org_nativescript_canvas_NSCCanvasRenderingContext2D::{nativeCreatePattern, nativeDrawAtlasWithBitmap, nativeDrawImageDxDyDwDhWithAsset, nativeDrawImageDxDyDwDhWithBitmap, nativeDrawImageDxDyWithAsset, nativeDrawImageDxDyWithBitmap, nativeDrawImageWithAsset, nativeDrawImageWithBitmap, nativeScale};
 use crate::jni_compat::org_nativescript_canvas_NSCImageAsset::{nativeCreateImageAsset, nativeDestroyImageAsset, nativeGetDimensions, nativeGetError, nativeLoadFromBitmap, nativeLoadFromBuffer, nativeLoadFromBytes, nativeLoadFromEncodedBuffer, nativeLoadFromEncodedBytes, nativeLoadFromPath, nativeLoadFromUrl};
+use crate::jni_compat::org_nativescript_canvas_NSCImageAsset::nativeWriteToBitmap;
 use crate::jni_compat::org_nativescript_canvas_NSCImageBitmap::{nativeLoadBitmapFromBuffer, nativeLoadBitmapFromBufferOptions, nativeLoadBitmapFromBufferRectOptions, nativeLoadBitmapFromBytes, nativeLoadBitmapFromBytesOptions, nativeLoadBitmapFromBytesRectOptions};
 use crate::jni_compat::org_nativescript_canvas_NSCWebGLRenderingContext::{
     nativeTexImage2D, nativeTexSubImage2D,
@@ -394,6 +395,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                 "nativeLoadFromBuffer",
                 "nativeLoadFromEncodedBytes",
                 "nativeLoadFromEncodedBuffer",
+                "nativeWriteToBitmap",
             ];
 
             let image_asset_signatures = if ret >= ANDROID_O {
@@ -409,6 +411,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                     "(JIILjava/nio/ByteBuffer;)Z",
                     "(J[B)Z",
                     "(JLjava/nio/ByteBuffer;)Z",
+                    "(JLandroid/graphics/Bitmap;)Z",
                 ]
             } else {
                 [
@@ -423,6 +426,8 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                     "!(JIILjava/nio/ByteBuffer;)Z",
                     "!(J[B)Z",
                     "!(JLjava/nio/ByteBuffer;)Z",
+                    // Not a fast native: decoding can take a while.
+                    "(JLandroid/graphics/Bitmap;)Z",
                 ]
             };
 
@@ -438,6 +443,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                 nativeLoadFromBuffer as *mut c_void,
                 nativeLoadFromEncodedBytes as *mut c_void,
                 nativeLoadFromEncodedBuffer as *mut c_void,
+                nativeWriteToBitmap as *mut c_void,
             ];
 
             let image_asset_native_methods: Vec<NativeMethod> = izip!(

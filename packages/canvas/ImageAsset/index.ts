@@ -1,7 +1,7 @@
-import { File, knownFolders, path as filePath, Utils, Observable, EventData } from '@nativescript/core';
+import { File, knownFolders, path as filePath, Utils, Observable, EventData, ImageSource } from '@nativescript/core';
 import { Helpers } from '../helpers';
 import { NAPI_HOST } from '../platform';
-import { loadNativeImage } from '../platform/index';
+import { loadNativeImage, nativeImageOf, nativeImageOfAsync } from '../platform/index';
 
 let ctor;
 
@@ -89,19 +89,26 @@ export function fromSvgSource<T>(value: T): T | ImageAsset {
 	return svg ? (svgToImageAsset(svg) ?? value) : value;
 }
 
-let nextAndroidLoad = 0;
-const androidLoads = new Map<number, (success: boolean) => void>();
+// Assets whose pixels native code is reading off the main thread.
+const converting = new Set<ImageAsset>();
 
-function androidLoadCallback(complete: (success: boolean) => void) {
+let nextAndroidLoad = 0;
+const androidLoads = new Map<number, (result: any) => void>();
+
+function androidCallback<T>(type: 'Callback' | 'BitmapCallback', complete: (result: T) => void) {
 	const id = nextAndroidLoad++;
 	androidLoads.set(id, complete);
-	return new (<any>org).nativescript.canvas.NSCImageAsset.Callback({
-		onComplete(success: boolean) {
+	return new (<any>org).nativescript.canvas.NSCImageAsset[type]({
+		onComplete(result: T) {
 			const done = androidLoads.get(id);
 			androidLoads.delete(id);
-			done?.(success);
+			done?.(result);
 		},
 	});
+}
+
+function androidLoadCallback(complete: (success: boolean) => void) {
+	return androidCallback('Callback', complete);
 }
 
 export class ImageAsset extends Observable {
@@ -138,6 +145,57 @@ export class ImageAsset extends Observable {
 
 	fromUrlSync(url: string): boolean {
 		return this.native.fromUrlSync(url);
+	}
+
+	/** A `Bitmap` (Android), `UIImage` (iOS), `WriteableBitmap` (Windows) or `GdkTexture` (Linux); null without pixels. */
+	toNativeImageSync(): any {
+		if (NAPI_HOST) {
+			return nativeImageOf(this.native);
+		}
+		if (__ANDROID__) {
+			return (<any>org).nativescript.canvas.NSCImageAsset.toBitmap(this._android.getAsset());
+		}
+		if (__APPLE__) {
+			return NSCImageAsset.toUIImage(NSString.stringWithString(this.native.__getRef()).longLongValue);
+		}
+		return null;
+	}
+
+	toNativeImage(): Promise<any> {
+		if (NAPI_HOST) {
+			return nativeImageOfAsync(this.native);
+		}
+		if (__ANDROID__) {
+			converting.add(this);
+			return new Promise((resolve) => {
+				(<any>org).nativescript.canvas.NSCImageAsset.toBitmapAsync(
+					this._android.getAsset(),
+					androidCallback('BitmapCallback', (bitmap) => {
+						converting.delete(this);
+						resolve(bitmap);
+					}),
+				);
+			});
+		}
+		if (__APPLE__) {
+			converting.add(this);
+			return new Promise((resolve) => {
+				NSCImageAsset.toUIImageAsync(NSString.stringWithString(this.native.__getRef()).longLongValue, (image) => {
+					converting.delete(this);
+					resolve(image);
+				});
+			});
+		}
+		return Promise.resolve(this.toNativeImageSync());
+	}
+
+	toImageSourceSync(): ImageSource | null {
+		const image = this.toNativeImageSync();
+		return image ? new ImageSource(image) : null;
+	}
+
+	toImageSource(): Promise<ImageSource | null> {
+		return this.toNativeImage().then((image) => (image ? new ImageSource(image) : null));
 	}
 
 	private _androidCallback(asset: number, resolve: (value: boolean) => void, reject: (reason?: any) => void, fallbackError?: string) {

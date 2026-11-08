@@ -89,6 +89,40 @@ public class NSCImageAsset: NSObject {
 		}
 	}
 	
+	public static func toUIImage(_ asset: Int64) -> UIImage? {
+		let ptr = OpaquePointer(bitPattern: UInt(asset))
+		let width = Int(canvas_native_image_asset_width(ptr))
+		let height = Int(canvas_native_image_asset_height(ptr))
+		if width <= 0 || height <= 0 {
+			return nil
+		}
+		let rowBytes = width * 4
+		var data = Data(count: rowBytes * height)
+		let written = data.withUnsafeMutableBytes { (buffer: UnsafeMutableRawBufferPointer) -> Bool in
+			canvas_native_image_asset_read_pixels_8888(ptr, false, true, buffer.baseAddress?.assumingMemoryBound(to: UInt8.self), UInt(buffer.count), UInt(rowBytes))
+		}
+		guard written, let provider = CGDataProvider(data: data as CFData),
+			let space = CGColorSpace(name: CGColorSpace.sRGB),
+			let image = CGImage(
+				width: width, height: height, bitsPerComponent: 8, bitsPerPixel: 32, bytesPerRow: rowBytes,
+				space: space, bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue),
+				provider: provider, decode: nil, shouldInterpolate: true, intent: .defaultIntent)
+		else {
+			return nil
+		}
+		return UIImage(cgImage: image)
+	}
+
+	public static func toUIImageAsync(_ asset: Int64, _ callback: @escaping (UIImage?) -> ()) {
+		let runloop = CFRunLoopGetCurrent()
+		NSCImageAsset.queue.async {
+			let image = NSCImageAsset.toUIImage(asset)
+			executeInLoop(runloop) {
+				callback(image)
+			}
+		}
+	}
+
 	public static func loadImageFromPathSync(_ asset: Int64, _ path: String) -> Bool {
 		return CanvasHelpers.loadImageAssetWithPath(asset, path)
 	}

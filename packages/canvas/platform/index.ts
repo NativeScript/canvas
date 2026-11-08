@@ -14,6 +14,14 @@ export function loadNativeImage(asset: any, image: any): boolean {
 	return false;
 }
 
+export function nativeImageOf(asset: any): any {
+	return null;
+}
+
+export function nativeImageOfAsync(asset: any): Promise<any> {
+	return Promise.resolve(null);
+}
+
 /** Calls `registered(path, family)` for every font file the font manager finishes loading. */
 export function onFontLoaded(registered: (path: string, family: string) => void): void {}
 

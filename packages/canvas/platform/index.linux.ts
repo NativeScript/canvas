@@ -5,6 +5,27 @@
 import { ImageAsset } from '../ImageAsset';
 
 const assets = new WeakMap<object, ImageAsset>();
+declare const interop: any, g_object_unref: (object: any) => void;
+
+// Drops the reference each texture made here owns.
+const textures = new FinalizationRegistry<number>((address) => g_object_unref(new interop.Pointer(address)));
+
+function texturePointer(address: number): any {
+	if (!address) {
+		return null;
+	}
+	const texture = new interop.Pointer(address);
+	textures.register(texture, address);
+	return texture;
+}
+
+export function nativeImageOf(asset: any): any {
+	return texturePointer(asset.toGdkTextureSync());
+}
+
+export async function nativeImageOfAsync(asset: any): Promise<any> {
+	return texturePointer(await asset.toGdkTexture());
+}
 
 /** The address of a GdkTexture: an ImageSource's, or a texture pointer itself. */
 function textureAddress(image: any): number {

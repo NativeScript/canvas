@@ -46,6 +46,8 @@ pub struct CanvasRenderingContext2D {
     refs: AtomicUsize,
     /// `context` only records; the real one lives on the render thread.
     threaded: Option<crate::c2d::render_thread::RenderTarget>,
+    /// Threaded: last image and the revision it shows
+    snapshot: Option<(u64, canvas_2d::context::Image)>,
 }
 
 impl CanvasRenderingContext2D {
@@ -245,6 +247,7 @@ impl CanvasRenderingContext2D {
             engine: Engine::CPU,
             refs: AtomicUsize::new(1),
             threaded: None,
+            snapshot: None,
         }
     }
 
@@ -256,6 +259,7 @@ impl CanvasRenderingContext2D {
             engine: Engine::GL,
             refs: AtomicUsize::new(1),
             threaded: None,
+            snapshot: None,
         }
     }
 
@@ -267,6 +271,7 @@ impl CanvasRenderingContext2D {
             engine: Engine::Vulkan,
             refs: AtomicUsize::new(1),
             threaded: None,
+            snapshot: None,
         }
     }
 
@@ -278,6 +283,7 @@ impl CanvasRenderingContext2D {
             engine: Engine::Metal,
             refs: AtomicUsize::new(1),
             threaded: None,
+            snapshot: None,
         }
     }
 
@@ -289,6 +295,7 @@ impl CanvasRenderingContext2D {
             engine: Engine::D3D,
             refs: AtomicUsize::new(1),
             threaded: None,
+            snapshot: None,
         }
     }
 
@@ -323,6 +330,7 @@ impl CanvasRenderingContext2D {
             engine: Engine::CPU,
             refs: AtomicUsize::new(1),
             threaded: Some(target),
+            snapshot: None,
         }
     }
 
@@ -373,7 +381,16 @@ impl CanvasRenderingContext2D {
     }
 
     pub fn image(&mut self) -> Option<canvas_2d::context::Image> {
-        self.with_pixels_source(|context| context.get_image()).flatten()
+        // skip the render thread if nothing was drawn
+        let revision = self.context.revision().filter(|_| !self.gpu_lost());
+        if let (Some(revision), Some((cached, image))) = (revision, &self.snapshot) {
+            if *cached == revision {
+                return Some(image.clone());
+            }
+        }
+        let image = self.with_pixels_source(|context| context.get_image()).flatten();
+        self.snapshot = revision.zip(image.clone());
+        image
     }
 
     pub fn image_data(
@@ -843,6 +860,7 @@ pub extern "C" fn canvas_native_context_create(
         engine: Engine::CPU,
         refs: AtomicUsize::new(1),
         threaded: None,
+        snapshot: None,
     }))
 }
 
@@ -878,6 +896,7 @@ pub extern "C" fn canvas_native_context_create_gl(
         engine: Engine::GL,
         refs: AtomicUsize::new(1),
         threaded: None,
+        snapshot: None,
     }))
 }
 
@@ -924,6 +943,7 @@ pub extern "C" fn canvas_native_context_create_gl_no_window(
         engine: Engine::GL,
         refs: AtomicUsize::new(1),
         threaded: None,
+        snapshot: None,
     }))
 }
 

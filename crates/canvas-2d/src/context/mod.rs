@@ -246,6 +246,8 @@ pub struct Context {
     pub(crate) state_stack: Vec<State>,
     pub(crate) font_color: Color,
     pub(crate) recording: Option<recording::Recording>,
+    /// GPU readback of the surface, with the generation it was read at
+    pub(crate) snapshot: Option<(u32, Image)>,
 }
 
 impl Drop for Context {
@@ -520,6 +522,10 @@ impl Context {
     }
 
     pub fn get_image(&mut self) -> Option<Image> {
+        if let Some(image) = self.cached_snapshot() {
+            return Some(image);
+        }
+
         #[cfg(feature = "gl")]
         {
             if let Some(ref context) = self.gl_context {
@@ -529,16 +535,28 @@ impl Context {
 
         self.flush();
 
+        if self.surface_data.engine == SurfaceEngine::CPU {
+            return Some(self.surface.image_snapshot());
+        }
+
+        // read back once per change
+        let generation = self.surface.generation_id();
         let snapshot = self.surface.image_snapshot();
+        let image = snapshot.make_raster_image(self.direct_context.as_mut(), CachingHint::Allow)?;
+        self.snapshot = Some((generation, image.clone()));
+        Some(image)
+    }
 
-        // A GPU snapshot is only readable through its context: copy it to the CPU.
-        let ret = if self.surface_data.engine != SurfaceEngine::CPU {
-            snapshot.make_raster_image(self.direct_context.as_mut(), CachingHint::Allow)
-        } else {
-            Some(snapshot)
-        };
-
-        ret
+    /// The last readback, if nothing was drawn since.
+    fn cached_snapshot(&mut self) -> Option<Image> {
+        if self.recording.is_some() {
+            return None;
+        }
+        let generation = self.surface.generation_id();
+        match &self.snapshot {
+            Some((cached, image)) if *cached == generation => Some(image.clone()),
+            _ => None,
+        }
     }
 
     pub fn draw_pixels(&mut self, image: &Image) {

@@ -44,6 +44,10 @@ public:
 
     static void GetReference(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void SyncExternalMemory(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    void UpdateExternalMemory(v8::Isolate *isolate);
+
     static void GetError(v8::Local<v8::Name> name,
                          const v8::PropertyCallbackInfo<v8::Value> &info);
 

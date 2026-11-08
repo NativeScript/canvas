@@ -70,6 +70,10 @@ v8::Local<v8::FunctionTemplate> ImageAssetImpl::GetCtor(v8::Isolate *isolate) {
     tmpl->Set(
               ConvertToV8String(isolate, "__getRef"),
               v8::FunctionTemplate::New(isolate, GetReference));
+
+    tmpl->Set(
+              ConvertToV8String(isolate, "__syncExternalMemory"),
+              v8::FunctionTemplate::New(isolate, SyncExternalMemory));
     
     
     
@@ -199,6 +203,20 @@ ImageAssetImpl::GetReference(const v8::FunctionCallbackInfo<v8::Value> &args) {
     args.GetReturnValue().SetEmptyString();
 }
 
+void ImageAssetImpl::UpdateExternalMemory(v8::Isolate *isolate) {
+    auto asset = this->GetImageAsset();
+    auto bytes = (int64_t) canvas_native_image_asset_width(asset) *
+                 (int64_t) canvas_native_image_asset_height(asset) * 4;
+    SetExternalMemory(isolate, bytes);
+}
+
+void ImageAssetImpl::SyncExternalMemory(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto ptr = GetPointer(args.This());
+    if (ptr != nullptr) {
+        ptr->UpdateExternalMemory(args.GetIsolate());
+    }
+}
+
 void
 ImageAssetImpl::GetError(v8::Local<v8::Name> name,
                          const v8::PropertyCallbackInfo<v8::Value> &info) {
@@ -223,6 +241,7 @@ void ImageAssetImpl::FromUrlSync(const v8::FunctionCallbackInfo<v8::Value> &args
     auto url = ConvertFromV8String(isolate, args[0]);
     
     auto done = canvas_native_image_asset_load_from_url(ptr->GetImageAsset(), url.c_str());
+    ptr->UpdateExternalMemory(isolate);
     
     args.GetReturnValue().Set(done);
 }
@@ -393,6 +412,7 @@ void ImageAssetImpl::FromFileSync(const v8::FunctionCallbackInfo<v8::Value> &arg
     auto path = ConvertFromV8String(isolate, args[0]);
     
     auto done = canvas_native_image_asset_load_from_path(ptr->GetImageAsset(), path.c_str());
+    ptr->UpdateExternalMemory(isolate);
     
     args.GetReturnValue().Set(done);
 }
@@ -526,6 +546,7 @@ void ImageAssetImpl::FromBytesSync(const v8::FunctionCallbackInfo<v8::Value> &ar
                 done = canvas_native_image_asset_load_from_raw(ptr->GetImageAsset(), width, height, bytes.data, bytes.size);
             }
         }
+        ptr->UpdateExternalMemory(args.GetIsolate());
 
         args.GetReturnValue().Set(done);
         return;
@@ -664,6 +685,7 @@ void ImageAssetImpl::FromEncodedBytesSync(const v8::FunctionCallbackInfo<v8::Val
     if (bytes) {
         auto done = canvas_native_image_asset_load_from_raw_encoded(ptr->GetImageAsset(), bytes.data,
                                                                     bytes.size);
+        ptr->UpdateExternalMemory(args.GetIsolate());
         
         args.GetReturnValue().Set(done);
         return;

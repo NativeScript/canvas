@@ -4,8 +4,6 @@ import { NAPI_HOST } from '../platform';
 import { loadNativeImage } from '../platform/index';
 
 let ctor;
-// store ref if loading
-const loaders = new Map<ImageAsset, number>();
 
 export interface SvgLoadOptions {
 	/** CSS pixels; one alone keeps the aspect ratio. Defaults to the SVG's size. */
@@ -91,6 +89,21 @@ export function fromSvgSource<T>(value: T): T | ImageAsset {
 	return svg ? (svgToImageAsset(svg) ?? value) : value;
 }
 
+let nextAndroidLoad = 0;
+const androidLoads = new Map<number, (success: boolean) => void>();
+
+function androidLoadCallback(complete: (success: boolean) => void) {
+	const id = nextAndroidLoad++;
+	androidLoads.set(id, complete);
+	return new (<any>org).nativescript.canvas.NSCImageAsset.Callback({
+		onComplete(success: boolean) {
+			const done = androidLoads.get(id);
+			androidLoads.delete(id);
+			done?.(success);
+		},
+	});
+}
+
 export class ImageAsset extends Observable {
 	static {
 		Helpers.initialize();
@@ -127,28 +140,22 @@ export class ImageAsset extends Observable {
 		return this.native.fromUrlSync(url);
 	}
 
-	private _incrementStrongRef() {
-		let count = 0;
-		if (loaders.has(this)) {
-			count = loaders.get(this);
-		}
-		count++;
-		loaders.set(this, count);
-	}
-
-	private _decrementStrongRefAndRemove() {
-		// Parenthesised: `??` binds looser than `-`, so the old form returned the
-		// count undecremented and never released the strong ref.
-		const count = (loaders.get(this) ?? 0) - 1;
-
-		if (count <= 0) {
-			loaders.delete(this);
-		} else {
-			loaders.set(this, count);
-		}
+	private _androidCallback(asset: number, resolve: (value: boolean) => void, reject: (reason?: any) => void, fallbackError?: string) {
+		return androidLoadCallback((success) => {
+			if (success) {
+				this.emitComplete(success, undefined);
+				resolve(success);
+			} else {
+				const error = (<any>org).nativescript.canvas.NSCImageAsset.getError(asset) || fallbackError;
+				this.emitComplete(success, error);
+				reject(error);
+			}
+		});
 	}
 
 	private emitComplete(success: boolean, error) {
+		// Not on the Node-API host.
+		this.native.__syncExternalMemory?.();
 		this.notify({ eventName: 'complete', object: this, complete: success, error });
 	}
 
@@ -156,32 +163,10 @@ export class ImageAsset extends Observable {
 		return new Promise((resolve, reject) => {
 			if (__ANDROID__) {
 				const asset = this._android.getAsset();
-				const ref = new WeakRef(this);
-				(<any>org).nativescript.canvas.NSCImageAsset.loadImageFromUrlAsync(
-					asset,
-					url,
-					new (<any>org).nativescript.canvas.NSCImageAsset.Callback({
-						onComplete(success: boolean) {
-							const owner = ref.get();
-							if (!success) {
-								const error = (<any>org).nativescript.canvas.NSCImageAsset.getError(asset);
-								if (owner) {
-									owner.emitComplete(success, error);
-								}
-								reject(error);
-							} else {
-								if (owner) {
-									owner.emitComplete(success, undefined);
-								}
-								resolve(success);
-							}
-						},
-					}),
-				);
+				(<any>org).nativescript.canvas.NSCImageAsset.loadImageFromUrlAsync(asset, url, this._androidCallback(asset, resolve, reject));
 				return;
 			}
 
-			this._incrementStrongRef();
 			this.native.fromUrlCb(url, (success, error) => {
 				this.emitComplete(success, error);
 				if (error) {
@@ -189,7 +174,6 @@ export class ImageAsset extends Observable {
 				} else {
 					resolve(success);
 				}
-				this._decrementStrongRefAndRemove();
 			});
 		});
 	}
@@ -217,56 +201,13 @@ export class ImageAsset extends Observable {
 
 			if (__ANDROID__) {
 				const asset = this._android.getAsset();
-				const ref = new WeakRef(this);
 				if (typeof path === 'string' && path.indexOf('.webp') > -1) {
-					(<any>org).nativescript.canvas.NSCImageAsset.loadWebPAsync(
-						asset,
-						path,
-						new (<any>org).nativescript.canvas.NSCImageAsset.Callback({
-							onComplete(success) {
-								const owner = ref.get();
-								if (!success) {
-									const error = (<any>org).nativescript.canvas.NSCImageAsset.getError(asset);
-									if (owner) {
-										owner.emitComplete(success, error);
-									}
-									reject(error);
-								} else {
-									if (owner) {
-										owner.emitComplete(success, undefined);
-									}
-									resolve(success);
-								}
-							},
-						}),
-					);
+					(<any>org).nativescript.canvas.NSCImageAsset.loadWebPAsync(asset, path, this._androidCallback(asset, resolve, reject));
 				} else {
-					(<any>org).nativescript.canvas.NSCImageAsset.loadImageFromPathAsync(
-						asset,
-						path,
-						new (<any>org).nativescript.canvas.NSCImageAsset.Callback({
-							onComplete(success) {
-								const owner = ref.get();
-								if (!success) {
-									const error = (<any>org).nativescript.canvas.NSCImageAsset.getError(asset);
-									if (owner) {
-										owner.emitComplete(success, error);
-									}
-									reject(error);
-								} else {
-									if (owner) {
-										owner.emitComplete(success, undefined);
-									}
-									resolve(success);
-								}
-							},
-						}),
-					);
+					(<any>org).nativescript.canvas.NSCImageAsset.loadImageFromPathAsync(asset, path, this._androidCallback(asset, resolve, reject));
 				}
 				return;
 			}
-
-			this._incrementStrongRef();
 
 			this.native.fromFileCb(path.toString(), (success, error) => {
 				this.emitComplete(success, error);
@@ -275,8 +216,6 @@ export class ImageAsset extends Observable {
 				} else {
 					resolve(success);
 				}
-
-				this._decrementStrongRefAndRemove();
 			});
 		});
 	}
@@ -315,30 +254,9 @@ export class ImageAsset extends Observable {
 				return;
 			}
 			if (__ANDROID__) {
-				const ref = new WeakRef(this);
 				const asset = long(this.native.__getRef());
 				try {
-					(<any>org).nativescript.canvas.NSCImageAsset.loadImageFromBitmapAsync(
-						asset,
-						image,
-						new (<any>org).nativescript.canvas.NSCImageAsset.Callback({
-							onComplete(success) {
-								const owner = ref.get();
-								if (!success) {
-									const error = (<any>org).nativescript.canvas.NSCImageAsset.getError(asset) || 'Failed to load image from native source';
-									if (owner) {
-										owner.emitComplete(success, error);
-									}
-									reject(error);
-								} else {
-									if (owner) {
-										owner.emitComplete(success, undefined);
-									}
-									resolve(success);
-								}
-							},
-						}),
-					);
+					(<any>org).nativescript.canvas.NSCImageAsset.loadImageFromBitmapAsync(asset, image, this._androidCallback(asset, resolve, reject, 'Failed to load image from native source'));
 				} catch (e) {
 					reject(e);
 				}
@@ -346,23 +264,19 @@ export class ImageAsset extends Observable {
 			}
 
 			if (__IOS__) {
-				this._incrementStrongRef();
 				const asset = NSString.stringWithString(this.native.__getRef());
 				try {
 					NSCImageAsset.loadImageFromImage(asset.longLongValue, image, (done) => {
 						if (!done) {
 							const error = this.error || 'Failed to load image from native source';
 							this.emitComplete(done, error);
-							this._decrementStrongRefAndRemove();
 							reject(error);
 						} else {
 							this.emitComplete(done, undefined);
-							this._decrementStrongRefAndRemove();
 							resolve(done);
 						}
 					});
 				} catch (e) {
-					this._decrementStrongRefAndRemove();
 					reject(e);
 				}
 				return;
@@ -379,58 +293,16 @@ export class ImageAsset extends Observable {
 	loadFromEncodedBytes(bytes: Uint8Array | Uint8ClampedArray) {
 		return new Promise<boolean>((resolve, reject) => {
 			if (__ANDROID__) {
-				const ref = new WeakRef(this);
 				const asset = this._android.getAsset();
 
 				if (!ArrayBuffer.isView(bytes)) {
-					(<any>org).nativescript.canvas.NSCImageAsset.loadImageFromEncodedBytesAsync(
-						asset,
-						bytes,
-						new (<any>org).nativescript.canvas.NSCImageAsset.Callback({
-							onComplete(success) {
-								const owner = ref.get();
-								if (!success) {
-									const error = (<any>org).nativescript.canvas.NSCImageAsset.getError(asset);
-									if (owner) {
-										owner.emitComplete(success, error);
-									}
-									reject(error);
-								} else {
-									if (owner) {
-										owner.emitComplete(success, undefined);
-									}
-									resolve(success);
-								}
-							},
-						}),
-					);
+					(<any>org).nativescript.canvas.NSCImageAsset.loadImageFromEncodedBytesAsync(asset, bytes, this._androidCallback(asset, resolve, reject));
 				} else {
-					(<any>org).nativescript.canvas.NSCImageAsset.loadImageFromEncodedBufferAsync(
-						asset,
-						bytes,
-						new (<any>org).nativescript.canvas.NSCImageAsset.Callback({
-							onComplete(success) {
-								const owner = ref.get();
-								if (!success) {
-									const error = (<any>org).nativescript.canvas.NSCImageAsset.getError(asset);
-									if (owner) {
-										owner.emitComplete(success, error);
-									}
-									reject(error);
-								} else {
-									if (owner) {
-										owner.emitComplete(success, undefined);
-									}
-									resolve(success);
-								}
-							},
-						}),
-					);
+					(<any>org).nativescript.canvas.NSCImageAsset.loadImageFromEncodedBufferAsync(asset, bytes, this._androidCallback(asset, resolve, reject));
 				}
 				return;
 			}
 
-			this._incrementStrongRef();
 			this.native.fromEncodedBytesCb(bytes, (success, error) => {
 				this.emitComplete(success, error);
 				if (error) {
@@ -438,8 +310,6 @@ export class ImageAsset extends Observable {
 				} else {
 					resolve(success);
 				}
-
-				this._decrementStrongRefAndRemove();
 			});
 		});
 	}
@@ -462,52 +332,25 @@ export class ImageAsset extends Observable {
 		} catch (error) {
 			return Promise.reject(error);
 		}
-		this._incrementStrongRef();
-		return provider
-			.load(source, this, options)
-			.then(
-				(success) => {
-					this.emitComplete(success, success ? undefined : this.error);
-					return success;
-				},
-				(error) => {
-					this.emitComplete(false, error);
-					throw error;
-				},
-			)
-			.finally(() => this._decrementStrongRefAndRemove());
+		return provider.load(source, this, options).then(
+			(success) => {
+				this.emitComplete(success, success ? undefined : this.error);
+				return success;
+			},
+			(error) => {
+				this.emitComplete(false, error);
+				throw error;
+			},
+		);
 	}
 
 	loadFromBytes(width: number, height: number, bytes: Uint8Array | Uint8ClampedArray) {
 		return new Promise((resolve, reject) => {
 			if (__ANDROID__) {
-				const ref = new WeakRef(this);
 				const asset = this._android.getAsset();
 
 				if (Array.isArray(bytes)) {
-					(<any>org).nativescript.canvas.NSCImageAsset.loadImageFromBytesAsync(
-						asset,
-						width,
-						height,
-						bytes,
-						new (<any>org).nativescript.canvas.NSCImageAsset.Callback({
-							onComplete(success) {
-								const owner = ref.get();
-								if (!success) {
-									const error = (<any>org).nativescript.canvas.NSCImageAsset.getError(asset);
-									if (owner) {
-										owner.emitComplete(success, error);
-									}
-									reject(error);
-								} else {
-									if (owner) {
-										owner.emitComplete(success, undefined);
-									}
-									resolve(success);
-								}
-							},
-						}),
-					);
+					(<any>org).nativescript.canvas.NSCImageAsset.loadImageFromBytesAsync(asset, width, height, bytes, this._androidCallback(asset, resolve, reject));
 				} else {
 					let buffer: ArrayBuffer = bytes as never;
 					if (ArrayBuffer.isView(bytes)) {
@@ -516,34 +359,11 @@ export class ImageAsset extends Observable {
 						buffer = buffer.nativeObject as never;
 					}
 
-					(<any>org).nativescript.canvas.NSCImageAsset.loadImageFromBufferAsync(
-						asset,
-						width,
-						height,
-						buffer,
-						new (<any>org).nativescript.canvas.NSCImageAsset.Callback({
-							onComplete(success) {
-								const owner = ref.get();
-								if (!success) {
-									const error = (<any>org).nativescript.canvas.NSCImageAsset.getError(asset);
-									if (owner) {
-										owner.emitComplete(success, error);
-									}
-									reject(error);
-								} else {
-									if (owner) {
-										owner.emitComplete(success, undefined);
-									}
-									resolve(success);
-								}
-							},
-						}),
-					);
+					(<any>org).nativescript.canvas.NSCImageAsset.loadImageFromBufferAsync(asset, width, height, buffer, this._androidCallback(asset, resolve, reject));
 				}
 				return;
 			}
 
-			this._incrementStrongRef();
 			this.native.fromBytesCb(width, height, bytes, (success, error) => {
 				this.emitComplete(success, error);
 				if (error) {
@@ -551,8 +371,6 @@ export class ImageAsset extends Observable {
 				} else {
 					resolve(success);
 				}
-
-				this._decrementStrongRefAndRemove();
 			});
 		});
 	}
@@ -567,16 +385,12 @@ export class ImageAsset extends Observable {
 
 	save(path: string, format: ImageAssetSaveFormat): Promise<boolean> {
 		return new Promise((resolve, reject) => {
-			this._incrementStrongRef();
-
 			this.native.saveCb(path, format, (success, error) => {
 				if (error) {
 					reject(error);
 				} else {
 					resolve(success);
 				}
-
-				this._decrementStrongRefAndRemove();
 			});
 		});
 	}

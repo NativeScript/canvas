@@ -43,6 +43,11 @@ name: npm Release
 
 on:
   workflow_dispatch:
+    inputs:
+      native_run_id:
+        description: 'Reuse native artifacts from this earlier run of the same tag instead of rebuilding'
+        required: false
+        default: ''
 
 concurrency:
   group: npm-release
@@ -77,14 +82,17 @@ jobs:
   build-native:
     name: Build Native
     needs: [version]
+    if: inputs.native_run_id == ''
     uses: ./.github/workflows/build-native.yml
 
   publish:
     runs-on: ubuntu-latest
     needs: [version, build-native]
+    if: ${{ !cancelled() && needs.version.result == 'success' && contains(fromJSON('["success","skipped"]'), needs.build-native.result) }}
     environment: npm-publish # must match the npm Trusted Publisher environment
     permissions:
       contents: read
+      actions: read # download artifacts from native_run_id
       id-token: write # required for npm Trusted Publishing (OIDC) + provenance
     env:
       # Single source of truth for the packages to publish (space separated).
@@ -107,6 +115,8 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: native-artifacts
+          run-id: ${{ inputs.native_run_id || github.run_id }}
+          github-token: ${{ inputs.native_run_id != '' && github.token || '' }}
 
       - name: Place native artifacts
         run: ./tools/scripts/place-native-artifacts.sh native-artifacts

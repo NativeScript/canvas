@@ -222,7 +222,7 @@ pub struct Context {
     /// Must drop before `direct_context`.
     #[cfg(feature = "gl")]
     pub(crate) window_surface: Option<Surface>,
-    #[cfg(feature = "gl")]
+    #[cfg(any(feature = "gl", feature = "vulkan", feature = "metal"))]
     pub(crate) last_gpu_trim: Option<std::time::Instant>,
     pub(crate) surface_state: SurfaceState,
     #[cfg(any(feature = "gl", feature = "vulkan", feature = "metal", feature = "d3d"))]
@@ -313,6 +313,24 @@ impl Context {
         self.flush();
     }
 
+    /// Call after a flush (GL: while current). D3D canvases trim in `present_d3d`.
+    #[cfg(any(feature = "gl", feature = "vulkan", feature = "metal"))]
+    pub(crate) fn trim_gpu_cache(&mut self) {
+        #[cfg(all(feature = "d3d", target_os = "windows"))]
+        if self.d3d.is_some() {
+            return;
+        }
+        let now = std::time::Instant::now();
+        if self.last_gpu_trim.is_some_and(|at| now - at < std::time::Duration::from_secs(1)) {
+            return;
+        }
+        let Some(ctx) = self.direct_context.as_mut() else {
+            return;
+        };
+        self.last_gpu_trim = Some(now);
+        ctx.perform_deferred_cleanup(std::time::Duration::from_secs(5), None);
+    }
+
     pub fn flush_surface(&mut self) {
         #[cfg(any(feature = "gl", feature = "vulkan", feature = "metal", feature = "d3d"))]
         match self.direct_context.as_mut() {
@@ -321,7 +339,7 @@ impl Context {
             }
             _ => {}
         }
-        #[cfg(feature = "gl")]
+        #[cfg(any(feature = "gl", feature = "vulkan", feature = "metal"))]
         self.trim_gpu_cache();
 
         if let Some(ctx) = self.cpu_context.as_ref() {
@@ -337,7 +355,7 @@ impl Context {
             }
             _ => {}
         }
-        #[cfg(feature = "gl")]
+        #[cfg(any(feature = "gl", feature = "vulkan", feature = "metal"))]
         self.trim_gpu_cache();
 
         if let Some(ctx) = self.cpu_context.as_ref() {

@@ -174,28 +174,26 @@ pub unsafe extern "C" fn canvas_native_webgpu_request_adapter(
                 inner.request_adapter(&opts, wgt::Backends::METAL)
             }
 
+            // Compatibility requests may get a core adapter: hardware Vulkan first, GL
+            // only without it.
             #[cfg(target_os = "android")]
             {
-                if options.feature_level == CanvasGPUFeatureLevel::Compatibility {
-                    inner.request_adapter(&opts, wgt::Backends::GL)
+                let vulkan_adapter = inner.request_adapter(&opts, wgt::Backends::VULKAN);
+
+                let is_hardware_vulkan = vulkan_adapter.as_ref().map_or(false, |adapter| {
+                    adapter.get_info().device_type != wgt::DeviceType::Cpu
+                });
+
+                if is_hardware_vulkan {
+                    vulkan_adapter
                 } else {
-                    let vulkan_adapter = inner.request_adapter(&opts, wgt::Backends::VULKAN);
-
-                    let is_hardware_vulkan = vulkan_adapter.as_ref().map_or(false, |adapter| {
-                        adapter.get_info().device_type != wgt::DeviceType::Cpu
-                    });
-
-                    if is_hardware_vulkan {
-                        vulkan_adapter
+                    let gl_adapter = inner.request_adapter(&opts, wgt::Backends::GL);
+                    if gl_adapter.is_ok() {
+                        // dropping the Arc releases it; there is no adapter_drop any more
+                        drop(vulkan_adapter);
+                        gl_adapter
                     } else {
-                        let gl_adapter = inner.request_adapter(&opts, wgt::Backends::GL);
-                        if gl_adapter.is_ok() {
-                            // dropping the Arc releases it; there is no adapter_drop any more
-                            drop(vulkan_adapter);
-                            gl_adapter
-                        } else {
-                            vulkan_adapter
-                        }
+                        vulkan_adapter
                     }
                 }
             }
@@ -213,7 +211,13 @@ pub unsafe extern "C" fn canvas_native_webgpu_request_adapter(
 
         let adapter = adapter_id.map(|adapter| {
             let mut features = build_features(adapter.features());
-            if options.feature_level != CanvasGPUFeatureLevel::Compatibility {
+            // Only the GL backend is limited to compatibility.
+            let feature_level = if adapter.get_info().backend == wgt::Backend::Gl {
+                options.feature_level
+            } else {
+                CanvasGPUFeatureLevel::Core
+            };
+            if feature_level != CanvasGPUFeatureLevel::Compatibility {
                 features.push("core-features-and-limits");
             }
             let limits = adapter.limits();
@@ -221,7 +225,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_request_adapter(
                 instance,
                 adapter,
                 is_fallback_adapter: options.force_fallback_adapter,
-                feature_level: options.feature_level.into(),
+                feature_level: feature_level.into(),
                 features,
                 limits,
             };

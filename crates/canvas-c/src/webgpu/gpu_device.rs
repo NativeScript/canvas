@@ -149,6 +149,51 @@ pub struct ErrorSinkRaw {
     scopes: Vec<ErrorScope>,
     uncaptured_handler: UncapturedErrorCallback,
     device_lost_handler: DeviceLostCallback,
+    pub(crate) timeline: Arc<super::queue_thread::Timeline>,
+    /// Mirrors the JS thread's error scopes for work that runs on the queue thread.
+    open_scopes: Vec<Arc<super::queue_thread::ScopeSlot>>,
+}
+
+/// The device timeline every object of a device queues work on.
+pub(crate) fn timeline_of(sink: &ErrorSink) -> Arc<super::queue_thread::Timeline> {
+    Arc::clone(&sink.lock().timeline)
+}
+
+/// The error scopes open now, for work queued now.
+pub(crate) fn scopes_of(sink: &ErrorSink) -> super::queue_thread::ScopeSnapshot {
+    super::queue_thread::ScopeSnapshot(sink.lock().open_scopes.clone())
+}
+
+/// Routes wgpu errors raised on the queue thread to the scope that was open when
+/// the work was queued, or to `handler` on the JS thread.
+pub(crate) fn install_uncaptured_handler(
+    device: &Arc<wgpu_core::device::Device>,
+    sink: &ErrorSink,
+    handler: GPUErrorCallback,
+    userdata: *mut c_void,
+) {
+    let timeline = timeline_of(sink);
+    let userdata = userdata as usize;
+    device.on_uncaptured_error(Arc::new(move |error: wgt::error::Error| {
+        let Err(error) = super::queue_thread::capture(error) else {
+            return;
+        };
+        let typ = match error {
+            wgt::error::Error::OutOfMemory { .. } => CanvasGPUErrorType::OutOfMemory,
+            wgt::error::Error::Validation { .. } => CanvasGPUErrorType::Validation,
+            _ => CanvasGPUErrorType::Internal,
+        };
+        let msg = error.to_string().replace('\0', "<NUL>");
+        timeline.get().post_to_js(Box::new(move || {
+            let msg = CString::new(msg).unwrap_or_else(|_| CString::new("webgpu error").unwrap());
+            match handler {
+                Some(callback) => unsafe { callback(typ, msg.into_raw(), userdata as *mut c_void) },
+                None => unsafe {
+                    default_uncaptured_error_handler(typ, msg.into_raw(), std::ptr::null_mut())
+                },
+            }
+        }));
+    }));
 }
 
 impl PartialEq for CanvasGPUError {
@@ -169,6 +214,8 @@ impl ErrorSinkRaw {
             scopes: Vec::new(),
             uncaptured_handler: DEFAULT_UNCAPTURED_ERROR_HANDLER,
             device_lost_handler,
+            timeline: Arc::default(),
+            open_scopes: Vec::new(),
         }
     }
 
@@ -225,11 +272,13 @@ impl ErrorSinkRaw {
             }
             None => {
                 if let Some(callback) = self.uncaptured_handler.callback {
-                    let userdata = self.uncaptured_handler.userdata;
+                    let userdata = self.uncaptured_handler.userdata as usize;
                     let err_str = err.to_string().replace('\0', "<NUL>");
-                    let msg = CString::new(err_str)
-                        .unwrap_or_else(|_| CString::new("uncaptured error").unwrap());
-                    unsafe { callback(typ, msg.into_raw(), userdata) };
+                    self.timeline.get().post_to_js(Box::new(move || {
+                        let msg = CString::new(err_str)
+                            .unwrap_or_else(|_| CString::new("uncaptured error").unwrap());
+                        unsafe { callback(typ, msg.into_raw(), userdata as *mut c_void) };
+                    }));
                 }
             }
         }
@@ -274,6 +323,7 @@ impl CanvasGPUDevice {
     }
 
     pub fn destroy(&self) {
+        timeline_of(&self.error_sink).drain();
         self.device.destroy();
     }
 
@@ -516,9 +566,14 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_pop_error_scope(
         }
     };
 
+    // Errors from work queued inside the scope have to have been reported.
+    let timeline = timeline_of(&device.error_sink);
+    timeline.drain();
+    let slot = device.error_sink.lock().open_scopes.pop();
+
     // An empty stack is a JS-visible OperationError; wgpu signals it as Err.
     let popped = match device.device.pop_error_scope() {
-        Ok(scope) => scope,
+        Ok(scope) => scope.or_else(|| slot.and_then(|slot| slot.take())),
         Err(_) => return report(CanvasGPUErrorType::None, std::ptr::null_mut()),
     };
 
@@ -544,10 +599,14 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_push_error_scope(
     filter: CanvasGPUErrorFilter,
 ) {
     let device = &*device;
-    // wgpu-core owns the WebGPU error-scope stack now, and every infallible
-    // create_* reports into it, so this delegates rather than keeping a second
-    // stack that those calls would never reach.
+    // wgpu-core keeps a stack per thread: this one catches calls made on the JS
+    // thread, the mirror catches work run on the queue thread.
     device.device.push_error_scope(filter.into());
+    device
+        .error_sink
+        .lock()
+        .open_scopes
+        .push(super::queue_thread::ScopeSlot::new(filter.into()));
 }
 
 #[no_mangle]
@@ -565,18 +624,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_set_uncaptured_error_callba
         error_sink.uncaptured_handler = UncapturedErrorCallback { callback, userdata };
     }
 
-    let userdata = userdata as usize;
-    device.device.on_uncaptured_error(Arc::new(move |error: wgt::error::Error| {
-        let Some(callback) = callback else { return };
-        let typ = match error {
-            wgt::error::Error::OutOfMemory { .. } => CanvasGPUErrorType::OutOfMemory,
-            wgt::error::Error::Validation { .. } => CanvasGPUErrorType::Validation,
-            _ => CanvasGPUErrorType::Internal,
-        };
-        let msg = error.to_string().replace('\0', "<NUL>");
-        let msg = CString::new(msg).unwrap_or_else(|_| CString::new("webgpu error").unwrap());
-        unsafe { callback(typ, msg.into_raw(), userdata as *mut c_void) };
-    }));
+    install_uncaptured_handler(&device.device, &device.error_sink, callback, userdata);
 }
 
 #[no_mangle]

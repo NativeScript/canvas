@@ -420,6 +420,8 @@ pub(crate) unsafe fn blit_texture(
     destination_origin: (u32, u32),
     size: wgt::Extent3d,
 ) -> bool {
+    // Runs here, not queued: wait for the queued work it must follow.
+    super::gpu_device::timeline_of(&queue.error_sink).drain();
     let device = &queue.device_id;
     let destination_descriptor = destination_texture.descriptor();
     let destination_format = destination_descriptor.format;

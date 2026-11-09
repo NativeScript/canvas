@@ -246,5 +246,7 @@ pub extern "C" fn canvas_native_webgpu_texture_destroy(texture: *const CanvasGPU
     }
     let texture = unsafe { &*texture };
 
+    // After the queued work that may still use it.
+    super::gpu_device::timeline_of(&texture.error_sink).drain();
     texture.texture.destroy();
 }

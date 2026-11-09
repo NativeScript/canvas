@@ -78,6 +78,8 @@ impl CanvasGPUBuffer {
     }
 
     pub fn destroy(&self) {
+        // After the queued work that may still use it.
+        super::gpu_device::timeline_of(&self.error_sink).drain();
         self.buffer.destroy();
     }
 
@@ -211,6 +213,8 @@ pub extern "C" fn canvas_native_webgpu_buffer_map_async(
         return;
     }
     let buffer = unsafe { &*buffer };
+    // Mapping must follow the queued submits that use the buffer.
+    super::gpu_device::timeline_of(&buffer.error_sink).drain();
     let offset: u64 = offset.try_into().ok().unwrap_or_default();
     let size: Option<u64> = size.try_into().ok();
 

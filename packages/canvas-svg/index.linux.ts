@@ -117,16 +117,13 @@ function svgData(source: string): SvgData | null {
 }
 
 export class Svg extends SVGBase {
-	private _area: any;
+	private _area: any = null;
 	private _id = nextView++;
 	private _raster: Raster | null = null;
 	private _scale = 1;
 
 	constructor() {
 		super();
-		this._area = gtk_drawing_area_new();
-		views.set(this._id, new WeakRef(this));
-		gtk_drawing_area_set_draw_func(this._area, sharedDrawFunc(), new interop.Pointer(this._id), null);
 		this.on('layoutChanged', () => {
 			// A percentage root size is relative to the view, so a new layout can change it.
 			this.__rootSizeValid = false;
@@ -135,7 +132,12 @@ export class Svg extends SVGBase {
 	}
 
 	createNativeView() {
-		return this._area;
+		// a new widget each time: disposing the native view frees the previous one
+		const area = gtk_drawing_area_new();
+		views.set(this._id, new WeakRef(this));
+		gtk_drawing_area_set_draw_func(area, sharedDrawFunc(), new interop.Pointer(this._id), null);
+		this._area = area;
+		return area;
 	}
 
 	get native() {
@@ -227,6 +229,7 @@ export class Svg extends SVGBase {
 	disposeNativeView() {
 		views.delete(this._id);
 		this._freeRaster();
+		this._area = null;
 		super.disposeNativeView();
 	}
 

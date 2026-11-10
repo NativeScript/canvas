@@ -196,6 +196,13 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
                 let error_sink = Arc::new(parking_lot::Mutex::new(ErrorSinkRaw::new(
                     DEFAULT_DEVICE_LOST_HANDLER,
                 )));
+                // wgpu's own default panics; errors from the queue thread must be routed.
+                super::gpu_device::install_uncaptured_handler(
+                    &device,
+                    &error_sink,
+                    None,
+                    std::ptr::null_mut(),
+                );
 
                 let queue = Arc::new(CanvasGPUQueue {
                     label: descriptor.label,

@@ -522,16 +522,15 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_finish(
 
     let label = ptr_into_label(label);
 
-    let desc = wgt::CommandBufferDescriptor {
-        label: label.clone(),
-    };
-
-    let id = command_encoder.encoder.finish(&desc);
-
     Arc::into_raw(Arc::new(CanvasGPUCommandBuffer {
-        label,
+        label: label.clone(),
         instance: command_encoder.instance.clone(),
-        command_buffer: id,
+        pending: parking_lot::Mutex::new(Some(super::gpu_command_buffer::PendingFinish {
+            encoder: Arc::clone(&command_encoder.encoder),
+            label,
+            scopes: super::gpu_device::scopes_of(&command_encoder.error_sink),
+        })),
+        finished: std::sync::OnceLock::new(),
         open: std::sync::atomic::AtomicBool::new(true),
     }))
 }

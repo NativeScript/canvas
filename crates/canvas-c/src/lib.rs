@@ -31,6 +31,7 @@ pub use image_asset::*;
 #[cfg(any(target_os = "android", target_os = "ios", target_os = "visionos", target_os = "tvos"))]
 mod raf;
 mod text_decoder;
+mod thread_poster;
 pub use text_decoder::*;
 mod text_encoder;
 pub use text_encoder::*;

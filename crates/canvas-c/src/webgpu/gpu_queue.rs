@@ -434,6 +434,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_external_image_to_textu
     }
 
     let queue = &*queue;
+    // Runs here, not queued: wait for the queued work it must follow.
+    super::gpu_device::timeline_of(&queue.error_sink).drain();
 
     let source = &*source;
 
@@ -541,12 +543,16 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_gpu_context_to_texture(
     let mut texture = None;
     if let Some(current_texture) = context.current_texture.lock().as_ref() {
         texture = Some(Arc::clone(&current_texture.texture));
+    } else if let Some(drawing) = context.drawing.lock().as_ref() {
+        texture = Some(Arc::clone(&drawing.texture));
     } else if let Some(read_back_texture) = context.read_back_texture.lock().as_ref() {
         texture = Some(Arc::clone(&read_back_texture.texture));
     }
 
     if let Some(texture) = texture {
         let queue = &*queue;
+        // Runs here, not queued: wait for the queued work it must follow.
+        super::gpu_device::timeline_of(&queue.error_sink).drain();
 
         if let Some(data) = context.data.lock().as_ref() {
             let label = Cow::Borrowed("copyExternalImageToTexture:Encoder");
@@ -610,10 +616,16 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_on_submitted_work_done(
         callback(std::ptr::null_mut(), callback_data);
     });
 
-    queue.queue.id.on_submitted_work_done(done);
-    // The closure only runs when the device is polled; without a frame loop (compute-only,
-    // headless) nothing else would.
-    super::gpu_buffer::poll_mappings(Arc::clone(&queue.queue.instance));
+    // Registered on the queue thread, after the submits queued before it.
+    let target = Arc::clone(&queue.queue);
+    super::gpu_device::timeline_of(&queue.error_sink)
+        .get()
+        .enqueue(Box::new(move || {
+            target.id.on_submitted_work_done(done);
+            // The closure only runs when the device is polled; without a frame loop
+            // (compute-only, headless) nothing else would.
+            super::gpu_buffer::poll_mappings(Arc::clone(&target.instance));
+        }));
 }
 
 #[no_mangle]
@@ -628,22 +640,28 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_submit(
 
     let queue = &*queue;
 
-    let command_buffer_ids = std::slice::from_raw_parts(command_buffers, command_buffers_size)
+    let buffers = std::slice::from_raw_parts(command_buffers, command_buffers_size)
         .iter()
-        .map(|buffer| {
-            let buffer = &**buffer;
-            buffer
+        .map(|&buffer| {
+            (*buffer)
                 .open
                 .store(false, std::sync::atomic::Ordering::SeqCst);
-            // let mut id = buffer.command_buffer.lock();
-            // id.take()
-            Arc::clone(&buffer.command_buffer)
+            Arc::increment_strong_count(buffer);
+            Arc::from_raw(buffer)
         })
         .collect::<Vec<_>>();
 
-    queue.queue.id.submit(&command_buffer_ids);
-
-    // command buffers are released by dropping the Vec
+    let target = Arc::clone(&queue.queue);
+    let scopes = super::gpu_device::scopes_of(&queue.error_sink);
+    super::gpu_device::timeline_of(&queue.error_sink)
+        .get()
+        .enqueue(Box::new(move || {
+            let command_buffers = buffers
+                .iter()
+                .map(|buffer| buffer.command_buffer())
+                .collect::<Vec<_>>();
+            super::queue_thread::with_scopes(&scopes, || target.id.submit(&command_buffers));
+        }));
 }
 
 unsafe fn write_buffer_size(
@@ -671,15 +689,22 @@ unsafe fn write_buffer_size(
         None => &data[data_offset..],
     };
 
+    // The page may reuse `data` once this returns, so the queue thread gets a copy.
     const ALIGNMENT: usize = wgt::COPY_BUFFER_ALIGNMENT as usize;
     let aligned_len = (data.len() + ALIGNMENT - 1) & !(ALIGNMENT - 1);
-    if aligned_len != data.len() {
-        let mut buf = vec![0u8; aligned_len];
-        buf[..data.len()].copy_from_slice(data);
-        queue.queue.id.write_buffer(buffer_id, buffer_offset, &buf);
-    } else {
-        queue.queue.id.write_buffer(buffer_id, buffer_offset, data);
-    }
+    let mut bytes = Vec::with_capacity(aligned_len);
+    bytes.extend_from_slice(data);
+    bytes.resize(aligned_len, 0);
+
+    let target = Arc::clone(&queue.queue);
+    let scopes = super::gpu_device::scopes_of(&queue.error_sink);
+    super::gpu_device::timeline_of(&queue.error_sink)
+        .get()
+        .record(Box::new(move || {
+            super::queue_thread::with_scopes(&scopes, || {
+                target.id.write_buffer(buffer_id, buffer_offset, &bytes)
+            });
+        }));
 }
 
 #[no_mangle]
@@ -760,7 +785,17 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_write_texture(
 
     let size: wgt::Extent3d = size.into();
 
-    queue.queue.id.write_texture(destination, data, &data_layout, &size);}
+    let bytes = data.to_vec();
+    let target = Arc::clone(&queue.queue);
+    let scopes = super::gpu_device::scopes_of(&queue.error_sink);
+    super::gpu_device::timeline_of(&queue.error_sink)
+        .get()
+        .record(Box::new(move || {
+            super::queue_thread::with_scopes(&scopes, || {
+                target.id.write_texture(destination, &bytes, &data_layout, &size)
+            });
+        }));
+}
 
 #[cfg(test)]
 mod tests {

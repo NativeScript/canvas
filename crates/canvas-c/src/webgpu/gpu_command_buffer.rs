@@ -7,11 +7,38 @@ use crate::webgpu::prelude::label_to_ptr;
 //use wgpu_core::gfx_select;
 use super::gpu::CanvasWebGPUInstance;
 
+/// An encoder whose `finish` runs when the command buffer is first needed.
+pub(crate) struct PendingFinish {
+    pub(crate) encoder: Arc<wgpu_core::command::CommandEncoder>,
+    pub(crate) label: Option<Cow<'static, str>>,
+    pub(crate) scopes: super::queue_thread::ScopeSnapshot,
+}
+
 pub struct CanvasGPUCommandBuffer {
     pub(crate) label: Option<Cow<'static, str>>,
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
-    pub(crate) command_buffer: Arc<wgpu_core::command::CommandBuffer>,
+    pub(crate) pending: parking_lot::Mutex<Option<PendingFinish>>,
+    pub(crate) finished: std::sync::OnceLock<Arc<wgpu_core::command::CommandBuffer>>,
     pub(crate) open: std::sync::atomic::AtomicBool,
+}
+
+impl CanvasGPUCommandBuffer {
+    /// Encoding the commands is the expensive part of `finish`; it runs here, on the
+    /// queue thread for a submit, reporting into the scopes open at `finish()`.
+    pub(crate) fn command_buffer(&self) -> Arc<wgpu_core::command::CommandBuffer> {
+        Arc::clone(self.finished.get_or_init(|| {
+            let pending = self
+                .pending
+                .lock()
+                .take()
+                .expect("a command buffer is finished once");
+            super::queue_thread::with_scopes(&pending.scopes, || {
+                pending.encoder.finish(&wgt::CommandBufferDescriptor {
+                    label: pending.label.clone(),
+                })
+            })
+        }))
+    }
 }
 
 #[no_mangle]

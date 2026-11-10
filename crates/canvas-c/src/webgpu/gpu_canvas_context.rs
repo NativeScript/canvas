@@ -62,6 +62,11 @@ pub struct CanvasGPUCanvasContext {
     pub(crate) view_data: parking_lot::Mutex<ViewData>,
     pub(crate) current_texture: parking_lot::Mutex<Option<Arc<CanvasGPUTexture>>>,
     pub(crate) offscreen_texture: parking_lot::Mutex<Option<ReadBackTexture>>,
+    /// The texture the page draws into. Present copies it to the swapchain on the
+    /// queue thread, so the page never waits on the swapchain.
+    pub(crate) drawing: parking_lot::Mutex<Option<ReadBackTexture>>,
+    /// Presents queued and not yet done; the page may run at most one frame ahead.
+    pub(crate) presents_queued: Arc<std::sync::atomic::AtomicUsize>,
     pub(crate) last_capabilities: parking_lot::Mutex<Option<SurfaceCapabilities>>,
     /// Windows: the SwapChainPanel stand-in wgpu binds its swapchain through (keeps the
     /// swapchain's DPI / fit transform ours).
@@ -77,6 +82,18 @@ impl Drop for CanvasGPUCanvasContext {
         if !std::thread::panicking() {
             discard_current_texture(self, "CanvasGPUCanvasContext::drop");
         }
+    }
+}
+
+/// Waits for the device's queued work; surface and readback calls must follow it.
+fn drain_queue(context: &CanvasGPUCanvasContext) {
+    let timeline = context
+        .data
+        .lock()
+        .as_ref()
+        .map(|data| super::gpu_device::timeline_of(&data.error_sink));
+    if let Some(timeline) = timeline {
+        timeline.drain();
     }
 }
 
@@ -348,6 +365,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_detach_surface(
         return;
     }
     let context = &*context;
+    drain_queue(context);
     let mut surface = context.surface.lock();
     discard_current_texture(context, "canvas_native_webgpu_context_detach_surface");
     *surface = None;
@@ -362,6 +380,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_to_data_url_with_fallback(
     if context.is_null() {
         return CString::new("data:,").unwrap().into_raw();
     }
+    drain_queue(&*context);
 
     let format = if format.is_null() {
         unsafe { CStr::from_bytes_with_nul_unchecked(b"image/png\0") }
@@ -485,8 +504,9 @@ fn to_data_url(
     is_bgra: bool,
 ) -> Option<String> {
     let (texture_id, width, height) = {
+        let drawing = context.drawing.lock();
         let read_back_texture_lock = context.read_back_texture.lock();
-        let texture = read_back_texture_lock.as_ref()?;
+        let texture = drawing.as_ref().or(read_back_texture_lock.as_ref())?;
         (Arc::clone(&texture.texture), texture.data.size.width, texture.data.size.height)
     };
     to_data_url_with_texture(context, device, texture_id, width, height, format, quality, is_bgra)
@@ -657,6 +677,7 @@ fn with_mapped_texture<R>(
 /// The canvas's frame as tightly packed, unpremultiplied RGBA8: the current texture if one is
 /// out, else the last presented frame. `None` before `configure` or for a non-8-bit format.
 pub(crate) fn read_rgba8(context: &CanvasGPUCanvasContext) -> Option<(u32, u32, Vec<u8>)> {
+    drain_queue(context);
     let (device, format, premultiplied) = {
         let data = context.data.lock();
         let data = data.as_ref()?;
@@ -676,8 +697,9 @@ pub(crate) fn read_rgba8(context: &CanvasGPUCanvasContext) -> Option<(u32, u32, 
     let (texture, width, height) = match current {
         Some(current) => (Arc::clone(&current.texture), current.width, current.height),
         None => {
+            let drawing = context.drawing.lock();
             let read_back = context.read_back_texture.lock();
-            let read_back = read_back.as_ref()?;
+            let read_back = drawing.as_ref().or(read_back.as_ref())?;
             (Arc::clone(&read_back.texture), read_back.data.size.width, read_back.data.size.height)
         }
     };
@@ -723,6 +745,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create_offscreen(
         data: Mutex::default(),
         view_data: Mutex::new(ViewData { width, height }),
         read_back_texture: Mutex::default(),
+        drawing: Default::default(),
+        presents_queued: Default::default(),
         current_texture: Mutex::default(),
         offscreen_texture: Mutex::default(),
         last_capabilities: Mutex::default(),
@@ -743,6 +767,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize_offscreen(
         return;
     }
     let context = &*context;
+    drain_queue(context);
     discard_current_texture(context, "canvas_native_webgpu_context_resize_offscreen");
     {
         let mut view_data = context.view_data.lock();
@@ -829,6 +854,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create(
                 data: Default::default(),
                 view_data: Mutex::new(ViewData { width, height }),
                 read_back_texture: Mutex::default(),
+                drawing: Default::default(),
+                presents_queued: Default::default(),
                 current_texture: Mutex::default(),
                 offscreen_texture: Mutex::default(),
                 last_capabilities: Mutex::default(),
@@ -858,6 +885,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize(
     }
 
     let context = &*context;
+
+    drain_queue(context);
 
     let display_handle = RawDisplayHandle::Android(raw_window_handle::AndroidDisplayHandle::new());
 
@@ -997,6 +1026,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create(
                 has_surface_presented: Arc::default(),
                 view_data: Mutex::new(ViewData { width, height }),
                 read_back_texture: Mutex::default(),
+                drawing: Default::default(),
+                presents_queued: Default::default(),
                 current_texture: Mutex::default(),
                 offscreen_texture: Mutex::default(),
                 last_capabilities: Mutex::default(),
@@ -1051,6 +1082,8 @@ pub(crate) unsafe fn create_swap_chain_panel(
             instance,
             surface: Mutex::new(Some(surface)),
             read_back_texture: Default::default(),
+            drawing: Default::default(),
+            presents_queued: Default::default(),
             has_surface_presented: Arc::default(),
             data: Mutex::default(),
             view_data: Mutex::new(ViewData { width, height }),
@@ -1101,6 +1134,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize_swap_chain_panel(
         return;
     }
     let context = &*context;
+    drain_queue(context);
     let surface = context.surface.lock();
     discard_current_texture(context, "canvas_native_webgpu_context_resize_swap_chain_panel");
     {
@@ -1178,6 +1212,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create_uiview(
                 instance,
                 surface: Mutex::new(Some(surface_id)),
                 read_back_texture: Default::default(),
+                drawing: Default::default(),
+                presents_queued: Default::default(),
                 has_surface_presented: Arc::default(),
                 data: Mutex::default(),
                 view_data: Mutex::new(ViewData { width, height }),
@@ -1209,6 +1245,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize_uiview(
         return;
     }
     let context = &*context;
+    drain_queue(context);
 
     let mut surface = context.surface.lock();
 
@@ -1336,6 +1373,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create_nsview(
                 data: Mutex::default(),
                 view_data: Mutex::new(ViewData { width, height }),
                 read_back_texture: Mutex::default(),
+                drawing: Default::default(),
+                presents_queued: Default::default(),
                 current_texture: Mutex::default(),
                 offscreen_texture: Mutex::default(),
                 last_capabilities: Mutex::default(),
@@ -1364,6 +1403,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize_nsview(
         return;
     }
     let context = &*context;
+    drain_queue(context);
 
     let display_handle = RawDisplayHandle::AppKit(AppKitDisplayHandle::new());
 
@@ -1473,6 +1513,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize_layer(
         return;
     }
     let context = &*context;
+    drain_queue(context);
 
     let mut surface = context.surface.lock();
 
@@ -1703,6 +1744,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_configure(
     }
     Arc::increment_strong_count(context);
     let context = Arc::from_raw(context);
+    drain_queue(&context);
+    super::gpu_device::timeline_of(&(*device).error_sink).drain();
     let surface_id = context.surface.lock();
     let device_ref = unsafe { &*device };
     let device_id = Arc::clone(&device_ref.device);
@@ -1882,6 +1925,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_unconfigure(
         return;
     }
     let context = &*context;
+    drain_queue(context);
 
     let mut lock = context.data.lock();
     *lock = None;
@@ -1932,6 +1976,14 @@ pub extern "C" fn canvas_native_webgpu_context_get_current_texture(
             return Arc::into_raw(Arc::clone(current_texture));
         }
     }
+
+    #[cfg(not(target_os = "linux"))]
+    if let Some(texture) = drawing_current_texture(context) {
+        return texture;
+    }
+
+    // One image can be acquired at a time: the queued present of the last one goes first.
+    drain_queue(context);
 
     let surface_guard = context.surface.lock();
     let Some(surface_id) = surface_guard.as_ref() else {
@@ -2033,68 +2085,239 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_present_surface(
         return;
     }
 
-    let context = unsafe { &*context };
+    Arc::increment_strong_count(context);
+    let context = Arc::from_raw(context);
+    // Takes over the caller's reference.
+    let texture = Arc::from_raw(texture);
 
+    // Presented as far as the page can tell; the GPU work follows the frame's submits.
+    context
+        .has_surface_presented
+        .store(true, std::sync::atomic::Ordering::SeqCst);
+    {
+        let mut current_texture = context.current_texture.lock();
+        if current_texture
+            .as_ref()
+            .is_some_and(|current| Arc::ptr_eq(&current.texture, &texture.texture))
+        {
+            *current_texture = None;
+        }
+    }
+
+    let timeline = context
+        .data
+        .lock()
+        .as_ref()
+        .map(|data| super::gpu_device::timeline_of(&data.error_sink));
+    let drawing = is_drawing_buffer(&context, &texture);
+    if drawing {
+        context
+            .presents_queued
+            .fetch_add(1, std::sync::atomic::Ordering::AcqRel);
+    }
+    let present = move || {
+        if drawing {
+            present_drawing_buffer(&context, &texture);
+            context
+                .presents_queued
+                .fetch_sub(1, std::sync::atomic::Ordering::AcqRel);
+        } else {
+            present_now(&context, &texture);
+        }
+    };
+    match timeline {
+        Some(timeline) => timeline.get().enqueue(Box::new(present)),
+        None => present(),
+    }
+}
+
+/// The drawing buffer as the frame's texture, when a surface is configured.
+#[cfg(not(target_os = "linux"))]
+fn drawing_current_texture(context: &CanvasGPUCanvasContext) -> Option<*const CanvasGPUTexture> {
+    if context.surface.lock().is_none() {
+        return None;
+    }
+    let (texture, data, error_sink) = {
+        let data_guard = context.data.lock();
+        let surface_data = data_guard.as_ref()?;
+        let data = surface_data.texture_data;
+        let usage = data.usage | wgt::TextureUsages::COPY_SRC;
+        let mut drawing = context.drawing.lock();
+        let texture = match drawing.as_ref() {
+            Some(drawing)
+                if drawing.data.size == data.size
+                    && drawing.data.format == data.format
+                    && drawing.data.usage == usage =>
+            {
+                Arc::clone(&drawing.texture)
+            }
+            _ => {
+                let desc = wgt::TextureDescriptor {
+                    label: Some(Cow::Borrowed("CanvasDrawingBuffer")),
+                    size: data.size,
+                    mip_level_count: 1,
+                    sample_count: 1,
+                    dimension: wgt::TextureDimension::D2,
+                    format: data.format,
+                    usage,
+                    view_formats: surface_data.previous_configuration.view_formats.clone(),
+                };
+                let texture = surface_data.device.device.create_texture(&desc);
+                *drawing = Some(ReadBackTexture {
+                    texture: Arc::clone(&texture),
+                    data: TextureData { usage, ..data },
+                });
+                texture
+            }
+        };
+        (texture, TextureData { usage, ..data }, surface_data.error_sink.clone())
+    };
+
+    let timeline = super::gpu_device::timeline_of(&error_sink);
+    // At most one frame ahead of the queue thread.
+    if context
+        .presents_queued
+        .load(std::sync::atomic::Ordering::Acquire)
+        > 1
+    {
+        timeline.drain();
+    }
+    // A new frame starts transparent black: after the last frame's work, in order.
+    let discard = Arc::clone(&texture);
+    timeline.get().record(Box::new(move || discard.discard_contents()));
+
+    context
+        .has_surface_presented
+        .store(false, std::sync::atomic::Ordering::SeqCst);
+    let texture = Arc::new(CanvasGPUTexture {
+        label: None,
+        instance: context.instance.clone(),
+        texture,
+        surface_id: None,
+        owned: false,
+        depth_or_array_layers: 1,
+        dimension: super::enums::CanvasTextureDimension::D2,
+        format: data.format.into(),
+        mipLevelCount: 1,
+        sampleCount: 1,
+        width: data.size.width,
+        height: data.size.height,
+        usage: data.usage.bits(),
+        error_sink,
+        suboptimal: false,
+        status: SurfaceGetCurrentTextureStatus::Success,
+        has_surface_presented: context.has_surface_presented.clone(),
+    });
+    let ret = Arc::into_raw(Arc::clone(&texture));
+    *context.current_texture.lock() = Some(texture);
+    Some(ret)
+}
+
+fn is_drawing_buffer(context: &CanvasGPUCanvasContext, texture: &CanvasGPUTexture) -> bool {
+    context
+        .drawing
+        .lock()
+        .as_ref()
+        .is_some_and(|drawing| Arc::ptr_eq(&drawing.texture, &texture.texture))
+}
+
+/// Queue thread: copies the drawing buffer into the next swapchain image and presents it.
+fn present_drawing_buffer(context: &CanvasGPUCanvasContext, texture: &CanvasGPUTexture) {
+    let surface_guard = context.surface.lock();
+    let Some(surface) = surface_guard.as_ref() else {
+        return;
+    };
+    if !apply_pending_configuration(context, surface, "canvas_native_webgpu_context_present_surface") {
+        return;
+    }
+    let output = match surface.get_current_texture() {
+        Ok(output) => output,
+        Err(cause) => {
+            handle_error_fatal(cause, "canvas_native_webgpu_context_present_surface");
+            return;
+        }
+    };
+    let target = match (output.status, output.texture) {
+        (SurfaceStatus::Good | SurfaceStatus::Suboptimal, Some(target)) => target,
+        (status, target) => {
+            if target.is_some() {
+                let _ = surface.discard();
+            }
+            if matches!(status, SurfaceStatus::Lost | SurfaceStatus::Outdated) {
+                if let Some(data) = context.data.lock().as_mut() {
+                    if data.pending_configuration.is_none() {
+                        data.pending_configuration = Some(data.previous_configuration.clone());
+                    }
+                }
+            }
+            return;
+        }
+    };
+
+    {
+        let mut data_guard = context.data.lock();
+        let Some(data) = data_guard.as_mut() else {
+            let _ = surface.discard();
+            return;
+        };
+        let copy = |texture| wgt::TexelCopyTextureInfo {
+            texture,
+            mip_level: 0,
+            origin: wgt::Origin3d::ZERO,
+            aspect: wgt::TextureAspect::All,
+        };
+        let size = wgt::Extent3d {
+            width: texture.width.min(data.texture_data.size.width),
+            height: texture.height.min(data.texture_data.size.height),
+            depth_or_array_layers: 1,
+        };
+        let device = &data.device.device;
+        let encoder = device.create_command_encoder(&wgt::CommandEncoderDescriptor {
+            label: wgpu_core::Label::from(Cow::Borrowed("PresentDrawingBuffer")),
+        });
+        encoder.copy_texture_to_texture(&copy(Arc::clone(&texture.texture)), &copy(target), &size);
+        let id = encoder.finish(&wgt::CommandBufferDescriptor { label: None });
+        data.presented_submission = Some(data.device.queue.queue.id.submit(&[id]));
+    }
+
+    if let Err(cause) = surface.present() {
+        handle_error_fatal(cause, "canvas_native_webgpu_context_present_surface");
+    }
+}
+
+fn present_now(context: &CanvasGPUCanvasContext, texture: &CanvasGPUTexture) {
     let surface_id = context.surface.lock();
-    let texture = unsafe { &*texture };
 
     {
         let lock = context.read_back_texture.lock();
         let mut surface_lock = context.data.lock();
         if let (Some(dst_texture), Some(data)) = (lock.as_ref(), surface_lock.as_mut()) {
-            unsafe {
-                let texture_extent = wgt::Extent3d {
-                    width: dst_texture.data.size.width,
-                    height: dst_texture.data.size.height,
-                    depth_or_array_layers: 1,
-                };
-
-                let texture_src_copy = wgt::TexelCopyTextureInfo {
-                    texture: Arc::clone(&texture.texture),
-                    mip_level: 0,
-                    origin: wgt::Origin3d::ZERO,
-                    aspect: wgt::TextureAspect::All,
-                };
-
-                let texture_dst_copy = wgt::TexelCopyTextureInfo {
-                    texture: Arc::clone(&dst_texture.texture),
-                    mip_level: 0,
-                    origin: wgt::Origin3d::ZERO,
-                    aspect: wgt::TextureAspect::All,
-                };
-
-                let device = &data.device.device;
-
-                let label = Cow::Borrowed("PresentSurface:Encoder");
-
-                let encoder = device.create_command_encoder(
-                    &wgt::CommandEncoderDescriptor {
-                        label: wgpu_core::Label::from(label),
-                    },
-                );
-
-                {
-                    {
-                        {
-                            encoder.copy_texture_to_texture(
-                                &texture_src_copy,
-                                &texture_dst_copy,
-                                &texture_extent,
-                            );
-
-                            let desc = wgt::CommandBufferDescriptor { label: None };
-
-                            let id = encoder.finish(&desc);
-
-                            let index = data.device.queue.queue.id.submit(&[id]);
-                            if texture.surface_id.is_some() {
-                                data.presented_submission = Some(index);
-                            }
-                        }
-                    }
-                }
+            let texture_extent = wgt::Extent3d {
+                width: dst_texture.data.size.width,
+                height: dst_texture.data.size.height,
+                depth_or_array_layers: 1,
+            };
+            let copy = |texture| wgt::TexelCopyTextureInfo {
+                texture,
+                mip_level: 0,
+                origin: wgt::Origin3d::ZERO,
+                aspect: wgt::TextureAspect::All,
+            };
+            let device = &data.device.device;
+            let encoder = device.create_command_encoder(&wgt::CommandEncoderDescriptor {
+                label: wgpu_core::Label::from(Cow::Borrowed("PresentSurface:Encoder")),
+            });
+            encoder.copy_texture_to_texture(
+                &copy(Arc::clone(&texture.texture)),
+                &copy(Arc::clone(&dst_texture.texture)),
+                &texture_extent,
+            );
+            let id = encoder.finish(&wgt::CommandBufferDescriptor { label: None });
+            let index = data.device.queue.queue.id.submit(&[id]);
+            if texture.surface_id.is_some() {
+                data.presented_submission = Some(index);
             }
-        };
+        }
     }
 
     #[cfg(target_os = "linux")]
@@ -2111,43 +2334,14 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_present_surface(
     };
 
     if let Err(cause) = presented {
-        context
-            .has_surface_presented
-            .store(true, std::sync::atomic::Ordering::SeqCst);
-        {
-            let mut current_texture = context.current_texture.lock();
-            if let Some(current_texture_ref) = current_texture.as_ref() {
-                if Arc::ptr_eq(&current_texture_ref.texture, &texture.texture) {
-                    *current_texture = None;
-                }
-            }
-        }
-        unsafe { Arc::decrement_strong_count(texture) };
         match cause {
             SurfaceError::AlreadyAcquired => {
                 log::warn!("present_surface: no acquired texture in wgpu (cache was stale), skipping");
             }
             _ => {
-                handle_error_fatal(cause,
-                    "canvas_native_webgpu_context_present_surface",
-                );
+                handle_error_fatal(cause, "canvas_native_webgpu_context_present_surface");
             }
         }
-    } else {
-        context
-            .has_surface_presented
-            .store(true, std::sync::atomic::Ordering::SeqCst);
-
-        {
-            let mut current_texture = context.current_texture.lock();
-            if let Some(current_texture_ref) = current_texture.as_ref() {
-                if Arc::ptr_eq(&current_texture_ref.texture, &texture.texture) {
-                    *current_texture = None;
-                }
-            }
-        }
-
-        unsafe { Arc::decrement_strong_count(texture) };
     }
 }
 

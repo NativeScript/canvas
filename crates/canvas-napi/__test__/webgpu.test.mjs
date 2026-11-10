@@ -241,8 +241,10 @@ test('requestAdapter options: power preference (string or int) and feature level
 		assert.ok(found, JSON.stringify(options));
 		assert.ok(found.features.has('core-features-and-limits'));
 	}
+	// Only GL is limited to compatibility; desktop backends hand back a core adapter.
 	const compatibility = await requestAdapter({ featureLevel: 'compatibility' });
-	if (compatibility) assert.equal(compatibility.features.has('core-features-and-limits'), false);
+	assert.ok(compatibility);
+	assert.ok(compatibility.features.has('core-features-and-limits'));
 });
 
 test('GPUSupportedLimits is constructible with settable limits', () => {

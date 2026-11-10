@@ -45,6 +45,38 @@ const NSC_CANVAS_CLASS: &str = "org/nativescript/canvas/NSCCanvas";
 const NSC_CANVAS_RENDERING_CONTEXT2D_CLASS: &str =
     "org/nativescript/canvas/NSCCanvasRenderingContext2D";
 const ANDROID_O: i32 = 26;
+
+/// The app's cache directory, where WebGPU keeps compiled pipelines.
+fn app_cache_dir(env: &mut jni::JNIEnv) -> Option<String> {
+    let path = (|| -> jni::errors::Result<Option<String>> {
+        let app = env
+            .call_static_method(
+                "android/app/ActivityThread",
+                "currentApplication",
+                "()Landroid/app/Application;",
+                &[],
+            )?
+            .l()?;
+        if app.is_null() {
+            return Ok(None);
+        }
+        let dir = env
+            .call_method(&app, "getCacheDir", "()Ljava/io/File;", &[])?
+            .l()?;
+        if dir.is_null() {
+            return Ok(None);
+        }
+        let path = env
+            .call_method(&dir, "getAbsolutePath", "()Ljava/lang/String;", &[])?
+            .l()?;
+        Ok(Some(env.get_string(&path.into())?.into()))
+    })();
+    if env.exception_check().unwrap_or(false) {
+        let _ = env.exception_clear();
+    }
+    path.ok().flatten()
+}
+
 #[no_mangle]
 pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint {
     android_logger::init_once(
@@ -56,6 +88,10 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
     );
 
     if let Ok(mut env) = vm.get_env() {
+        if let Some(dir) = app_cache_dir(&mut env) {
+            canvas_c::webgpu::pipeline_cache::set_dir(std::path::PathBuf::from(dir).join("webgpu"));
+        }
+
         API_LEVEL.get_or_init(|| {
             let clazz = env.find_class(BUILD_VERSION_CLASS).unwrap();
 

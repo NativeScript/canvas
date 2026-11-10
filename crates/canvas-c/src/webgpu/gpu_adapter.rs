@@ -141,6 +141,8 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
 
     // importExternalTexture is core WebGPU, so enable it wherever the backend can.
     features |= adapter.adapter.features() & wgt::Features::EXTERNAL_TEXTURE;
+    // Not a WebGPU feature: never listed to pages, only used for the disk cache.
+    features |= adapter.adapter.features() & wgt::Features::PIPELINE_CACHE;
 
     let limits = if required_limits.is_null() {
         adapter.limits.clone()
@@ -219,6 +221,11 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
                     linux_frames: Default::default(),
                 });
 
+                let pipeline_cache = super::pipeline_cache::PipelineCache::create(
+                    &device,
+                    &adapter_inner.get_info(),
+                );
+
                 let ret = Arc::into_raw(Arc::new(CanvasGPUDevice {
                     label,
                     device,
@@ -228,6 +235,7 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
                     instance,
                     error_sink,
                     feature_level,
+                    pipeline_cache,
                 }));
                 callback(std::ptr::null_mut(), ret, callback_data);
             }

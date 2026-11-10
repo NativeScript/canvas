@@ -1,3 +1,6 @@
+#[cfg(any(target_os = "android", target_os = "ios", target_os = "visionos", target_os = "tvos"))]
+mod after_frame;
+
 #[cfg(target_os = "android")]
 mod android;
 

@@ -94,6 +94,9 @@ public:
 
 	static void GetContinuousRenderMode(v8::Local<v8::Name> property,
 																			const v8::PropertyCallbackInfo<v8::Value> &info);
+
+	static void GetHasCurrentTexture(v8::Local<v8::Name> property,
+																	 const v8::PropertyCallbackInfo<v8::Value> &info);
 	
 	void SetRaf(std::shared_ptr<RafImpl> raf);
 	

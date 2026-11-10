@@ -1788,7 +1788,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_configure(
     };
 
     let config = wgt::SurfaceConfiguration::<Vec<TextureFormat>> {
-        desired_maximum_frame_latency: 3,
+        desired_maximum_frame_latency: 2,
         usage,
         format,
         width,

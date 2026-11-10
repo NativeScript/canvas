@@ -13,11 +13,12 @@
 edition = "2021"
 rust-version = "1.88"
 name = "napi-sys"
-version = "3.3.2"
+version = "3.4.1"
 authors = ["LongYinan <lynweklm@gmail.com>"]
-build = false
+build = "build.rs"
 include = [
     "src/**/*",
+    "build.rs",
     "Cargo.toml",
 ]
 autolib = false

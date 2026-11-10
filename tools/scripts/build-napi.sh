@@ -52,6 +52,22 @@ if [ -f "$ROOT/.tools/env.sh" ]; then
 fi
 
 cd "$ROOT"
+
+# The NativeScript Windows runtime exports Node-API from nativescript.dll, which only the vendored
+# napi-sys (crates/vendor/napi-sys, the `[canvas patch]` hunks) looks in. When `napi` needs a newer
+# napi-sys than the vendored copy, Cargo drops the [patch.crates-io] entry with only a warning,
+# and the module aborts on load in a NativeScript app. Fail the build instead.
+NAPI_SYS=$(cargo tree -p "$CRATE" -i napi-sys --target "$TARGET" --depth 0)
+case "$NAPI_SYS" in
+  *vendor?napi-sys*) ;;
+  *)
+    echo "error: $CRATE resolves napi-sys from crates.io, not crates/vendor/napi-sys:"
+    echo "  $NAPI_SYS"
+    echo "Re-vendor napi-sys at that version and re-apply the [canvas patch] hunks in src/functions.rs."
+    exit 1
+    ;;
+esac
+
 # Cargo names the dev profile's output directory "debug".
 OUT_PROFILE=$PROFILE
 [ "$PROFILE" = "dev" ] && OUT_PROFILE=debug

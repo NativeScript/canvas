@@ -958,7 +958,7 @@ fn find_loaded_napi_module() -> Result<libloading::Library, libloading::Error> {
     }
     modules.truncate(needed as usize / std::mem::size_of::<Hmodule>());
     for module in modules {
-      if GetProcAddress(module, b"napi_create_int32 ".as_ptr()).is_null() {
+      if GetProcAddress(module, b"napi_create_int32\0".as_ptr()).is_null() {
         continue;
       }
       let mut path = vec![0u16; 32768];

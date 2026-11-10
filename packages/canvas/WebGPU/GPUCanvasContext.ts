@@ -80,8 +80,10 @@ export class GPUCanvasContext implements CanvasRenderingContext {
 			const adapter = (options as any)?.device?.[adapter_];
 			const capabilities = this.getCapabilities(adapter);
 
+			// The spec has no present mode: a browser shows every frame at the display's pace, which
+			// is fifo. The first listed mode can be mailbox (Adreno), which drops frames.
 			if (!options.presentMode) {
-				opts.presentMode = capabilities.presentModes[0];
+				opts.presentMode = capabilities.presentModes.includes('fifo') ? 'fifo' : capabilities.presentModes[0];
 			}
 
 			if (!options.alphaMode) {

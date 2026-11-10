@@ -85,6 +85,8 @@ pub struct Raf {
     active: Arc<AtomicUsize>,
     callback: Arc<Mutex<RafCallback>>,
     inner: Arc<Inner>,
+    /// A `request_after_frame` call is queued and has not run yet.
+    after_frame_pending: Arc<AtomicBool>,
 }
 
 // The closure is not required to be Send/Sync (matches raf/ios.rs).
@@ -121,7 +123,37 @@ impl Raf {
                 display_link,
                 _target: target,
             }),
+            after_frame_pending: Arc::new(AtomicBool::new(false)),
         }
+    }
+
+    /// Calls back once, when the run loop callout running now returns: from a page's
+    /// requestAnimationFrame callback, that is after the frame's callbacks, where a browser
+    /// presents. The timestamp passed is 0. False if the Raf is stopped or the thread has no
+    /// run loop.
+    pub fn request_after_frame(&self) -> bool {
+        if !self.started() {
+            return false;
+        }
+        if self.after_frame_pending.swap(true, Ordering::SeqCst) {
+            return true;
+        }
+        let raf = self.clone();
+        let posted = super::after_frame::post(Box::new(move || {
+            raf.after_frame_pending.store(false, Ordering::SeqCst);
+            if !raf.started() {
+                return;
+            }
+            raf.active.fetch_add(1, Ordering::SeqCst);
+            if let Some(callback) = raf.callback.lock().as_ref() {
+                callback(0);
+            }
+            raf.active.fetch_sub(1, Ordering::SeqCst);
+        }));
+        if posted.is_err() {
+            self.after_frame_pending.store(false, Ordering::SeqCst);
+        }
+        posted.is_ok()
     }
 
     pub fn start(&self) {

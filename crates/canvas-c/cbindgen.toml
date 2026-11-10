@@ -14,7 +14,7 @@ crates = ["wgpu_types"]
 
 [export]
 include = ["GLConstants", "InvalidateState","CanvasGPUTextureFormat"]
-exclude = ["AChoreographer", "AChoreographer_frameCallback", "AChoreographer_frameCallback64", "AChoreographer_getInstance", "AChoreographer_postFrameCallback", "AChoreographer_postFrameCallbackDelayed", "AChoreographer_postFrameCallback64", "AChoreographer_postFrameCallbackDelayed64"]
+exclude = ["AChoreographer", "AChoreographer_frameCallback", "AChoreographer_frameCallback64", "AChoreographer_getInstance", "AChoreographer_postFrameCallback", "AChoreographer_postFrameCallbackDelayed", "AChoreographer_postFrameCallback64", "AChoreographer_postFrameCallbackDelayed64", "ALooper_forThread", "ALooper_removeFd", "CFRunLoopSourceContext", "kCFRunLoopCommonModes", "CFRunLoopGetCurrent", "CFRunLoopSourceCreate", "CFRunLoopAddSource", "CFRunLoopSourceInvalidate", "CFRunLoopSourceSignal", "CFRunLoopWakeUp", "CFRelease"]
 mangle.remove_underscores = true
 
 [defines]

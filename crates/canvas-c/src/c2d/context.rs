@@ -569,6 +569,18 @@ pub extern "C" fn canvas_native_raf_create(
     ))))))
 }
 
+/// Calls the Raf's callback once, when the task running now returns (see
+/// `Raf::request_after_frame`). False if it cannot, and the vsync callback is the only one.
+#[cfg(any(target_os = "android", target_os = "ios", target_os = "visionos", target_os = "tvos"))]
+#[no_mangle]
+pub extern "C" fn canvas_native_raf_request_after_frame(raf: *const crate::Raf) -> bool {
+    if raf.is_null() {
+        return false;
+    }
+    let raf = unsafe { &*raf };
+    raf.0.request_after_frame()
+}
+
 #[cfg(any(target_os = "android", target_os = "ios", target_os = "visionos", target_os = "tvos"))]
 #[no_mangle]
 pub extern "C" fn canvas_native_raf_release(value: *mut crate::Raf) {

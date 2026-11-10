@@ -149,6 +149,102 @@ export function registerWebGPUSpec() {
 			const [r, g, b, a] = pixelAt(c2d, canvas.width >> 1, canvas.height >> 1);
 			ok(r < 8 && g < 8 && b > 247 && a > 247, `expected blue, got [${r}, ${g}, ${b}, ${a}]`);
 		});
+
+		function clearTo(device: any, ctx: any, color: { r: number; g: number; b: number; a: number }) {
+			const encoder = device.createCommandEncoder();
+			const pass = encoder.beginRenderPass({
+				colorAttachments: [{ view: ctx.getCurrentTexture().createView(), clearValue: color, loadOp: 'clear', storeOp: 'store' }],
+			});
+			pass.end();
+			device.queue.submit([encoder.finish()]);
+		}
+
+		/**
+		 * Runs `draw` in `frames` consecutive animation frames, each requested from inside the last as
+		 * a game loop does (a request from outside a frame runs straight away, not at the next vsync).
+		 */
+		function animate(frames: number, draw: (frame: number) => void): Promise<void> {
+			return new Promise((resolve) => {
+				let frame = 0;
+				const tick = () => {
+					draw(frame);
+					frame++;
+					requestAnimationFrame(frame < frames ? tick : () => setTimeout(resolve, 0));
+				};
+				requestAnimationFrame(() => requestAnimationFrame(tick));
+			});
+		}
+
+		const nextTask = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+		test('a frame drawn in requestAnimationFrame is presented within the same frame', async () => {
+			const { device } = await getDevice();
+			const ctx = surfaceCanvas().getContext('webgpu') as any;
+			ctx.configure({ device, format: navigator.gpu.getPreferredCanvasFormat(), alphaMode: 'opaque' });
+			const frameTimes: number[] = [];
+			const delays: number[] = [];
+			await new Promise<void>((resolve) => {
+				let frame = 0;
+				const tick = (time: number) => {
+					frameTimes.push(time);
+					clearTo(device, ctx, { r: 0, g: 1, b: 0, a: 1 });
+					const drawn = performance.now();
+					// The first two frames are left out: the display link is still starting.
+					if (frame >= 2) {
+						const poll = () => {
+							const waited = performance.now() - drawn;
+							if (ctx.native.hasCurrentTexture === false) {
+								delays.push(waited);
+							} else if (waited < 100) {
+								setTimeout(poll, 0);
+							} else {
+								delays.push(Infinity);
+							}
+						};
+						setTimeout(poll, 0);
+					}
+					frame++;
+					requestAnimationFrame(frame < 12 ? tick : () => setTimeout(resolve, 150));
+				};
+				requestAnimationFrame(() => requestAnimationFrame(tick));
+			});
+			const intervals = frameTimes
+				.slice(1)
+				.map((time, i) => time - frameTimes[i])
+				.sort((a, b) => a - b);
+			const interval = intervals[intervals.length >> 1];
+			// A browser presents right after the frame's callbacks; a present at the next vsync is a frame late.
+			const late = delays.filter((delay) => !(delay < interval / 2));
+			equal(late.length, 0, `presents later than half a frame (${interval.toFixed(1)} ms) after drawing: ${delays.map((d) => d.toFixed(1)).join(', ')}`);
+		});
+
+		test('per-frame texture wrappers are released once the frame is presented', async () => {
+			const { device } = await getDevice();
+			const ctx = surfaceCanvas().getContext('webgpu') as any;
+			ctx.configure({ device, format: navigator.gpu.getPreferredCanvasFormat(), alphaMode: 'opaque' });
+			await animate(30, () => clearTo(device, ctx, { r: 0, g: 1, b: 0, a: 1 }));
+			ok(ctx._swapchainTextures.length <= 1, `${ctx._swapchainTextures.length} textures retained`);
+			ok(ctx._swapchainViews.length <= 1, `${ctx._swapchainViews.length} views retained`);
+		});
+
+		test('toDataURL after the frame is presented still reads it', async () => {
+			const { device } = await getDevice();
+			const canvas = surfaceCanvas() as any;
+			const ctx = canvas.getContext('webgpu') as any;
+			ctx.configure({ device, format: navigator.gpu.getPreferredCanvasFormat(), alphaMode: 'opaque' });
+			await animate(1, () => clearTo(device, ctx, { r: 1, g: 0, b: 0, a: 1 }));
+			await nextTask();
+			const url: string = canvas.toDataURL('image/png');
+			const comma = url.indexOf(',');
+			ok(url.startsWith('data:image/png') && comma > 0, `not a png: ${url.substring(0, 32)}`);
+			const [, buffer] = (global as any).CanvasModule.__base64Decode(url.substring(comma + 1));
+			const asset = new ImageAsset();
+			ok(asset.loadFromEncodedBytesSync(new Uint8Array(buffer)), 'the data URL did not decode');
+			const { ctx: c2d } = make2D(canvas.width, canvas.height);
+			c2d.drawImage(asset, 0, 0);
+			const [r, g, b, a] = pixelAt(c2d, canvas.width >> 1, canvas.height >> 1);
+			ok(r > 247 && g < 8 && b < 8 && a > 247, `expected red, got [${r}, ${g}, ${b}, ${a}]`);
+		});
 	});
 
 	suite('webgpu.device', () => {

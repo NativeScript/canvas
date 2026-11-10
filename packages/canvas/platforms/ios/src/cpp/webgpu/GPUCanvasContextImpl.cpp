@@ -115,6 +115,20 @@ void GPUCanvasContextImpl::GetContinuousRenderMode(v8::Local<v8::Name> property,
 	info.GetReturnValue().Set(ptr->continuousRender_);
 }
 
+void GPUCanvasContextImpl::GetHasCurrentTexture(v8::Local<v8::Name> property,
+																								const v8::PropertyCallbackInfo<v8::Value> &info) {
+	GPUCanvasContextImpl *ptr = GetPointer(info.Holder());
+	if (ptr == nullptr) {
+		info.GetReturnValue().Set(false);
+		return;
+	}
+	auto texture = canvas_native_webgpu_context_has_current_texture(ptr->GetContext());
+	if (texture != nullptr) {
+		canvas_native_webgpu_texture_release(texture);
+	}
+	info.GetReturnValue().Set(texture != nullptr);
+}
+
 void GPUCanvasContextImpl::SetContinuousRenderMode(v8::Local<v8::Name> property,
 																									 v8::Local<v8::Value> value,
 																									 const v8::PropertyCallbackInfo<void> &info) {
@@ -184,6 +198,9 @@ v8::Local<v8::FunctionTemplate> GPUCanvasContextImpl::GetCtor(v8::Isolate *isola
 	
 	tmpl->SetNativeDataProperty(ConvertToV8String(isolate, "continuousRenderMode"), GetContinuousRenderMode,
 										SetContinuousRenderMode);
+
+	// False once the frame is presented: the page's per-frame texture wrappers can go.
+	tmpl->SetNativeDataProperty(ConvertToV8String(isolate, "hasCurrentTexture"), GetHasCurrentTexture);
 	
 	cache->GPUCanvasContextTmpl =
 	std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
@@ -367,6 +384,12 @@ void GPUCanvasContextImpl::GetCurrentTexture(const v8::FunctionCallbackInfo<v8::
 	if (texture != nullptr) {
 		auto status = canvas_native_webgpu_texture_get_status(texture);
 		if (status == SurfaceGetCurrentTextureStatusSuccess) {
+			// Present once the page's frame callback returns, as a browser does. The vsync Raf runs
+			// ahead of the page's, so on its own it shows the frame a vsync late.
+			auto raf = ptr->GetRaf();
+			if (raf != nullptr) {
+				canvas_native_raf_request_after_frame(raf->GetRaf());
+			}
 			auto textureImpl = new GPUTextureImpl(texture);
 			auto ret = GPUTextureImpl::NewInstance(isolate, textureImpl);
 			args.GetReturnValue().Set(ret);

@@ -21,6 +21,8 @@ struct RafInner {
     // re-posting, so a stop()/start() pair can never spawn duplicate chains.
     generation: u64,
     thread_id: Option<std::thread::ThreadId>,
+    /// A `request_after_frame` call is queued and has not run yet.
+    after_frame_pending: bool,
 }
 
 pub struct Raf(
@@ -88,6 +90,44 @@ impl Raf {
         // else: `chain` drops here, ending this frame chain.
     }
 
+    /// Calls back once, when the task running now returns: from a page's requestAnimationFrame
+    /// callback, that is after the frame's callbacks, where a browser presents. The vsync callback
+    /// runs ahead of the page's (callbacks run in post order and it re-posts first), so it would
+    /// show the frame a vsync late. The timestamp passed is 0. False if the Raf is stopped or the
+    /// thread has no looper.
+    pub fn request_after_frame(&self) -> bool {
+        let generation = {
+            let mut lock = self.0.lock();
+            if !lock.started {
+                return false;
+            }
+            if lock.after_frame_pending {
+                return true;
+            }
+            lock.after_frame_pending = true;
+            lock.generation
+        };
+        let raf = self.clone();
+        let posted = super::after_frame::post(Box::new(move || {
+            raf.1.fetch_add(1, Ordering::SeqCst);
+            {
+                let mut lock = raf.0.lock();
+                lock.after_frame_pending = false;
+                if lock.started && lock.generation == generation {
+                    if let Some(callback) = lock.callback.as_ref() {
+                        callback(0);
+                    }
+                }
+            }
+            raf.1.fetch_sub(1, Ordering::SeqCst);
+            raf.2.notify_all();
+        }));
+        if posted.is_err() {
+            self.0.lock().after_frame_pending = false;
+        }
+        posted.is_ok()
+    }
+
     pub fn new(callback: RafCallback) -> Self {
         Self(
             Arc::new(parking_lot::Mutex::new(RafInner {
@@ -97,6 +137,7 @@ impl Raf {
                 use_deprecated: true, //*crate::API_LEVEL.get().unwrap_or(&-1) < 24,
                 generation: 0,
                 thread_id: None,
+                after_frame_pending: false,
             })),
             Arc::new(AtomicUsize::new(0)),
             Arc::new(parking_lot::Condvar::new()),

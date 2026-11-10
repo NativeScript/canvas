@@ -2145,6 +2145,14 @@ struct Raf *canvas_native_raf_create(intptr_t callback, void (*on_frame_callback
 #endif
 
 #if (defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS) || defined(TARGET_OS_VISION))
+/**
+ * Calls the Raf's callback once, when the task running now returns (see
+ * `Raf::request_after_frame`). False if it cannot, and the vsync callback is the only one.
+ */
+bool canvas_native_raf_request_after_frame(const struct Raf *raf);
+#endif
+
+#if (defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS) || defined(TARGET_OS_VISION))
 void canvas_native_raf_release(struct Raf *value);
 #endif
 

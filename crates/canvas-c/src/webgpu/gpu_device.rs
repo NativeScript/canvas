@@ -297,6 +297,7 @@ pub struct CanvasGPUDevice {
     pub(crate) user_data: *mut c_void,
     pub(crate) error_sink: ErrorSink,
     pub(crate) feature_level: wgt::FeatureLevel,
+    pub(crate) pipeline_cache: Option<super::pipeline_cache::PipelineCache>,
 }
 
 unsafe impl Sync for CanvasGPUDevice {}
@@ -780,7 +781,7 @@ unsafe fn parse_compute_pipeline_descriptor(
 
 unsafe fn create_compute_pipeline(
     device: *const CanvasGPUDevice,
-    descriptor: wgpu_core::pipeline::ComputePipelineDescriptor,
+    mut descriptor: wgpu_core::pipeline::ComputePipelineDescriptor,
 ) -> CanvasGPUComputePipeline {
     assert!(!device.is_null());
 
@@ -791,7 +792,11 @@ unsafe fn create_compute_pipeline(
         .as_ref()
         .map(|label| Cow::Owned(label.to_string()));
 
+    descriptor.cache = device.pipeline_cache.as_ref().map(|cache| cache.get());
     let pipeline = device.device.create_compute_pipeline(descriptor);
+    if let Some(cache) = device.pipeline_cache.as_ref() {
+        cache.pipeline_created();
+    }
 
     let pipeline = CanvasGPUComputePipeline {
         label,
@@ -1457,11 +1462,16 @@ unsafe fn parse_render_pipeline_descriptor<'a>(
 
 unsafe fn create_render_pipeline(
     device: &CanvasGPUDevice,
-    descriptor: RenderPipelineDescriptor,
+    mut descriptor: RenderPipelineDescriptor,
 ) -> Arc<wgpu_core::pipeline::RenderPipeline> {
+    descriptor.cache = device.pipeline_cache.as_ref().map(|cache| cache.get());
     // wgpu takes the general (mesh-or-vertex) form now; RenderPipelineDescriptor
     // converts into it.
-    device.device.create_render_pipeline(descriptor.into())
+    let pipeline = device.device.create_render_pipeline(descriptor.into());
+    if let Some(cache) = device.pipeline_cache.as_ref() {
+        cache.pipeline_created();
+    }
+    pipeline
 }
 
 #[no_mangle]

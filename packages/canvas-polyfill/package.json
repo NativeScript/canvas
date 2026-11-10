@@ -1,6 +1,6 @@
 {
 	"name": "@nativescript/canvas-polyfill",
-	"version": "3.0.2",
+	"version": "3.0.3",
 	"description": "Polyfill for making NativeScript compatible with web libs like pixi.js, three.js, phaser.js, babylon.js, etc....",
 	"main": "index",
 	"typings": "global.d.ts",
@@ -8,7 +8,7 @@
 		"platforms": {
 			"ios": "7.0.0",
 			"android": "7.0.0",
-			"linux": "0.1.0-alpha.5"
+			"linux": "0.1.0-alpha.2"
 		}
 	},
 	"repository": {

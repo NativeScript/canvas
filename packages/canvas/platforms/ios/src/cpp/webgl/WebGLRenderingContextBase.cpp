@@ -81,30 +81,51 @@ void WebGLRenderingContextBase::StopRaf() {
 
 
 void WebGLRenderingContextBase::UpdateInvalidateState() {
-    auto raf = this->GetRaf();
-//    if (raf != nullptr) {
-//        if (!canvas_native_raf_get_started(raf->GetRaf())) {
-//            canvas_native_raf_start(raf->GetRaf());
-//        }
-//    }
     auto state = this->GetInvalidateState();
+    if ((state & (int) InvalidateState::InvalidateStatePending) != 0) {
+        return;
+    }
     this->SetInvalidateState(state | (int) InvalidateState::InvalidateStatePending);
+    // Present when this task returns, as a browser does; the vsync callback alone is a
+    // frame late on Android. At most once per vsync.
+    if (!this->presentedAfterFrame_) {
+        auto raf = this->GetRaf();
+        if (raf != nullptr) {
+            canvas_native_raf_request_after_frame(raf->GetRaf());
+        }
+    }
 }
 
-void WebGLRenderingContextBase::Flush() {
+void WebGLRenderingContextBase::Flush(bool afterFrame) {
+    if (!afterFrame) {
+        this->presentedAfterFrame_ = false;
+    }
     auto state = this->GetInvalidateState() & (int) InvalidateState::InvalidateStatePending;
     if (state == (int) InvalidateState::InvalidateStatePending) {
+        if (afterFrame) {
+            this->presentedAfterFrame_ = true;
+        }
         this->SetInvalidateState((int) InvalidateState::InvalidateStateInvalidating);
         canvas_native_webgl_make_current_and_swap_buffers(this->GetState());
         this->SetInvalidateState((int) InvalidateState::InvalidateStateNone);
     }
 }
 
-void WebGLRenderingContextBase::Flush(intptr_t context) {
+void WebGLRenderingContextBase::Flush(intptr_t context, bool afterFrame) {
     auto ctx = reinterpret_cast<WebGLRenderingContextBase *>(reinterpret_cast<intptr_t *>(context));
     if (ctx != nullptr) {
-        ctx->Flush();
+        ctx->Flush(afterFrame);
     }
+}
+
+void WebGLRenderingContextBase::GetPresentPending(v8::Local<v8::Name> property,
+                                                  const v8::PropertyCallbackInfo<v8::Value> &info) {
+    WebGLRenderingContextBase *ptr = GetPointer(info.Holder());
+    if (ptr == nullptr) {
+        info.GetReturnValue().Set(false);
+        return;
+    }
+    info.GetReturnValue().Set((ptr->GetInvalidateState() & (int) InvalidateState::InvalidateStatePending) != 0);
 }
 
 WebGLState* WebGLRenderingContextBase::GetState() {

@@ -50,9 +50,12 @@ public:
 
     void SetInvalidateState(InvalidateState state);
 
-    void Flush();
+    void Flush(bool afterFrame = false);
 
-    static void Flush(intptr_t context);
+    static void Flush(intptr_t context, bool afterFrame = false);
+
+    static void GetPresentPending(v8::Local<v8::Name> property,
+                                  const v8::PropertyCallbackInfo<v8::Value> &info);
 
     WebGLState* GetState();
 
@@ -72,6 +75,9 @@ private:
     WebGLRenderingVersion version_;
 
     int invalidateState_ = static_cast<int>(InvalidateState::InvalidateStateNone);
+
+    // An after-frame present happened since the last vsync.
+    bool presentedAfterFrame_ = false;
 
     std::shared_ptr<RafImpl> raf_;
 

@@ -2,6 +2,8 @@ import { Canvas } from '@nativescript/canvas';
 import { GridLayout, Utils } from '@nativescript/core';
 import { suite, test, skip, ok, equal, getPageCanvas, pixelEqual } from './harness';
 
+declare const __WINDOWS__: boolean, __LINUX__: boolean;
+
 function wait(ms: number) {
 	return new Promise<void>((resolve) => setTimeout(resolve, ms));
 }
@@ -240,6 +242,77 @@ export function registerLifecycleSpec() {
 			await frames(1);
 			unmount(canvas);
 		});
+
+		// A browser presents right after the frame's callbacks, not at the next vsync.
+		async function presentedWithinFrame(wrapper: any, draw: () => void) {
+			const ctx = wrapper.native ?? wrapper;
+			ok(typeof ctx.__presentPending === 'boolean', 'no __presentPending getter');
+			const frameTimes: number[] = [];
+			const delays: number[] = [];
+			await new Promise<void>((resolve) => {
+				let frame = 0;
+				const tick = (time: number) => {
+					frameTimes.push(time);
+					draw();
+					const drawn = performance.now();
+					// The display link is still starting during the first two frames.
+					if (frame >= 2) {
+						const poll = () => {
+							const waited = performance.now() - drawn;
+							if (ctx.__presentPending === false) {
+								delays.push(waited);
+							} else if (waited < 100) {
+								setTimeout(poll, 0);
+							} else {
+								delays.push(Infinity);
+							}
+						};
+						setTimeout(poll, 0);
+					}
+					frame++;
+					requestAnimationFrame(frame < 12 ? tick : () => setTimeout(resolve, 150));
+				};
+				requestAnimationFrame(() => requestAnimationFrame(tick));
+			});
+			const intervals = frameTimes
+				.slice(1)
+				.map((time, i) => time - frameTimes[i])
+				.sort((a, b) => a - b);
+			const interval = intervals[intervals.length >> 1];
+			const late = delays.filter((delay) => !(delay < interval / 2));
+			equal(late.length, 0, `presents later than half a frame (${interval.toFixed(1)} ms) after drawing: ${delays.map((d) => d.toFixed(1)).join(', ')}`);
+		}
+
+		const v8Host = !((typeof __WINDOWS__ !== 'undefined' && __WINDOWS__) || (typeof __LINUX__ !== 'undefined' && __LINUX__));
+
+		for (const type of ['2d', 'webgl', 'webgl2'] as const) {
+			const name = `a ${type} frame drawn in requestAnimationFrame is presented within the same frame`;
+			if (!v8Host) {
+				skip(name, 'Node-API hosts do not expose the present state');
+				continue;
+			}
+			test(name, async () => {
+				const canvas = await mount();
+				const ctx = canvas.getContext(type) as any;
+				ok(ctx, `no ${type} context`);
+				let frame = 0;
+				const draw =
+					type === '2d'
+						? () => {
+								ctx.fillStyle = frame++ & 1 ? '#ff0000' : '#00ff00';
+								ctx.fillRect(0, 0, 32, 32);
+							}
+						: () => {
+								ctx.clearColor(frame++ & 1, 0, 0, 1);
+								ctx.clear(ctx.COLOR_BUFFER_BIT);
+							};
+				try {
+					await presentedWithinFrame(ctx, draw);
+				} finally {
+					unmount(canvas);
+				}
+			});
+		}
 
 		test('contexts dropped with their canvas are collected safely', async () => {
 			for (const type of ['2d', 'webgl', 'webgl2']) {

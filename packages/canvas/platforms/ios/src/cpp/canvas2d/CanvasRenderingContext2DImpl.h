@@ -1533,9 +1533,12 @@ public:
 
     void SetInvalidateState(int state);
 
-    void Flush();
+    void Flush(bool afterFrame = false);
 
-    static void Flush(intptr_t context);
+    static void Flush(intptr_t context, bool afterFrame = false);
+
+    static void GetPresentPending(v8::Local<v8::Name> property,
+                                  const v8::PropertyCallbackInfo<v8::Value> &info);
 
     void SetRaf(std::shared_ptr<RafImpl> raf);
 
@@ -1549,6 +1552,9 @@ private:
     bool ownsContext_ = true;
 
     int invalidateState_ = static_cast<int>(InvalidateState::InvalidateStateNone);
+
+    // An after-frame present happened since the last vsync.
+    bool presentedAfterFrame_ = false;
 
     std::shared_ptr<RafImpl> raf_;
 

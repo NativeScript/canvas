@@ -11,12 +11,14 @@ OnRafCallback::OnRafCallback(intptr_t context, uint32_t version) : context_(cont
 version_(version) {}
 
 void OnRafCallback::OnFrame(int64_t ts) const {
+	// A zero timestamp is the after-frame callback.
+	auto afterFrame = ts == 0;
 	if (this->version_ == 0) {
-		CanvasRenderingContext2DImpl::Flush(this->context_);
+		CanvasRenderingContext2DImpl::Flush(this->context_, afterFrame);
 	}
 	
 	if (this->version_ == 1 || this->version_ == 2) {
-		WebGLRenderingContextBase::Flush(this->context_);
+		WebGLRenderingContextBase::Flush(this->context_, afterFrame);
 	}
 	
 	if(this->version_ == 3){

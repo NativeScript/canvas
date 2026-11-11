@@ -6236,6 +6236,8 @@ WebGLRenderingContext::SetMethods(v8::Isolate *isolate, const v8::Local<v8::Obje
 
     tmpl->SetNativeDataProperty(ConvertToV8String(isolate, "continuousRenderMode"), GetContinuousRenderMode,
                       SetContinuousRenderMode);
+    // True from the first draw of a frame until it is presented.
+    tmpl->SetNativeDataProperty(ConvertToV8String(isolate, "__presentPending"), GetPresentPending);
 
 
     // todo

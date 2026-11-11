@@ -718,6 +718,8 @@ v8::Local<v8::FunctionTemplate> CanvasRenderingContext2DImpl::GetCtor(v8::Isolat
     tmpl->SetNativeDataProperty(ConvertToV8String(isolate, "continuousRenderMode"), GetContinuousRenderMode,
                       SetContinuousRenderMode,
                       v8::Local<v8::Value>(), v8::PropertyAttribute::DontDelete);
+    // True from the first draw of a frame until it is presented.
+    tmpl->SetNativeDataProperty(ConvertToV8String(isolate, "__presentPending"), GetPresentPending);
 
     tmpl->SetNativeDataProperty(ConvertToV8String(isolate, "filter"), GetFilter, SetFilter,
                       v8::Local<v8::Value>(), v8::PropertyAttribute::DontDelete);
@@ -3741,15 +3743,19 @@ CanvasRenderingContext2DImpl::~CanvasRenderingContext2DImpl() {
 }
 
 void CanvasRenderingContext2DImpl::UpdateInvalidateState() {
-//    auto raf = this->GetRaf();
-//    if (raf != nullptr) {
-//        if (!canvas_native_raf_get_started(raf->GetRaf())) {
-//            canvas_native_raf_start(raf->GetRaf());
-//        }
-//    }
-
-    auto state = this->GetInvalidateState();
-    this->SetInvalidateState((int) state | (int) InvalidateState::InvalidateStatePending);
+    auto state = (int) this->GetInvalidateState();
+    if ((state & (int) InvalidateState::InvalidateStatePending) != 0) {
+        return;
+    }
+    this->SetInvalidateState(state | (int) InvalidateState::InvalidateStatePending);
+    // Present when this task returns, as a browser does; the vsync callback alone is a
+    // frame late on Android. At most once per vsync.
+    if (!this->presentedAfterFrame_) {
+        auto raf = this->GetRaf();
+        if (raf != nullptr) {
+            canvas_native_raf_request_after_frame(raf->GetRaf());
+        }
+    }
 }
 
 InvalidateState CanvasRenderingContext2DImpl::GetInvalidateState() const {
@@ -3766,20 +3772,36 @@ void CanvasRenderingContext2DImpl::SetInvalidateState(int state) {
 }
 
 
-void CanvasRenderingContext2DImpl::Flush() {
+void CanvasRenderingContext2DImpl::Flush(bool afterFrame) {
+    if (!afterFrame) {
+        this->presentedAfterFrame_ = false;
+    }
     auto state = (int) this->GetInvalidateState() & (int) InvalidateState::InvalidateStatePending;
     if (state == (int) InvalidateState::InvalidateStatePending) {
+        if (afterFrame) {
+            this->presentedAfterFrame_ = true;
+        }
         this->SetInvalidateState(InvalidateState::InvalidateStateInvalidating);
         canvas_native_context_render(this->GetContext());
         this->SetInvalidateState(InvalidateState::InvalidateStateNone);
     }
 }
 
-void CanvasRenderingContext2DImpl::Flush(intptr_t context) {
+void CanvasRenderingContext2DImpl::Flush(intptr_t context, bool afterFrame) {
     auto ctx = reinterpret_cast<CanvasRenderingContext2DImpl *>(reinterpret_cast<intptr_t *>(context));
     if (ctx != nullptr) {
-        ctx->Flush();
+        ctx->Flush(afterFrame);
     }
+}
+
+void CanvasRenderingContext2DImpl::GetPresentPending(v8::Local<v8::Name> property,
+                                                     const v8::PropertyCallbackInfo<v8::Value> &info) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(info.Holder());
+    if (ptr == nullptr) {
+        info.GetReturnValue().Set(false);
+        return;
+    }
+    info.GetReturnValue().Set(((int) ptr->GetInvalidateState() & (int) InvalidateState::InvalidateStatePending) != 0);
 }
 
 

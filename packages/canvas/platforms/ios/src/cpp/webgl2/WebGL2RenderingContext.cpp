@@ -1168,7 +1168,16 @@ WebGL2RenderingContext::FramebufferTextureLayer(const v8::FunctionCallbackInfo<v
 
     auto textureValue = args[2];
     auto type = GetNativeType(textureValue);
-    if (type == NativeType::WebGLTexture) {
+    if (IsDetach(textureValue)) {
+        // null detaches.
+        canvas_native_webgl2_framebuffer_texture_layer(
+                args[0]->Uint32Value(context).ToChecked(),
+                args[1]->Uint32Value(context).ToChecked(),
+                0,
+                args[3]->Int32Value(context).ToChecked(),
+                args[4]->Int32Value(context).ToChecked(),
+                ptr->GetState());
+    } else if (type == NativeType::WebGLTexture) {
         auto target = args[0]->Uint32Value(context).ToChecked();
         auto attachment = args[1]->Uint32Value(context).ToChecked();
         auto texture = WebGLTexture::GetPointer(textureValue.As<v8::Object>());

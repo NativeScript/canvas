@@ -553,22 +553,31 @@ pub fn canvas_native_webgl2_get_active_uniform_block_name(
             &mut max_name_length,
         )
     }
-    let mut name = vec![0; max_name_length as usize];
+    // Some drivers report no max length; fall back to the block's own.
+    if max_name_length <= 0 {
+        unsafe {
+            gl_bindings::GetActiveUniformBlockiv(
+                program,
+                uniform_block_index,
+                gl_bindings::UNIFORM_BLOCK_NAME_LENGTH,
+                &mut max_name_length,
+            )
+        }
+    }
+    let mut name = crate::webgl::gl_name_buffer(max_name_length);
     let mut length = 0i32;
 
     unsafe {
         gl_bindings::GetActiveUniformBlockName(
             program,
             uniform_block_index,
-            max_name_length,
+            name.len() as i32,
             &mut length,
             name.as_mut_ptr() as *mut c_char,
         )
     }
 
-    name.shrink_to(length as usize);
-    let c_str = unsafe { CStr::from_ptr(name.as_ptr()) };
-    c_str.to_string_lossy().to_string()
+    crate::webgl::gl_written_string(&name, length)
 }
 
 pub fn canvas_native_webgl2_get_active_uniform_block_parameter(

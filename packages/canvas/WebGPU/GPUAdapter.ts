@@ -12,6 +12,55 @@ export class GPUSupportedFeatures extends Set<GPUFeatureName> {
 	}
 }
 
+/** Lowered to the adapter's value when over it */
+const MAX_LIMIT_KEYS = [
+	'maxTextureDimension1d',
+	'maxTextureDimension2d',
+	'maxTextureDimension3d',
+	'maxTextureArrayLayers',
+	'maxBindGroups',
+	'maxBindingsPerBindGroup',
+	'maxDynamicUniformBuffersPerPipelineLayout',
+	'maxDynamicStorageBuffersPerPipelineLayout',
+	'maxSampledTexturesPerShaderStage',
+	'maxSamplersPerShaderStage',
+	'maxStorageBuffersPerShaderStage',
+	'maxStorageTexturesPerShaderStage',
+	'maxUniformBuffersPerShaderStage',
+	'maxUniformBufferBindingSize',
+	'maxStorageBufferBindingSize',
+	'maxVertexBuffers',
+	'maxBufferSize',
+	'maxVertexAttributes',
+	'maxVertexBufferArrayStride',
+	'maxInterStageShaderVariables',
+	'maxColorAttachments',
+	'maxColorAttachmentBytesPerSample',
+	'maxComputeWorkgroupStorageSize',
+	'maxComputeInvocationsPerWorkgroup',
+	'maxComputeWorkgroupSizeX',
+	'maxComputeWorkgroupSizeY',
+	'maxComputeWorkgroupSizeZ',
+	'maxComputeWorkgroupsPerDimension',
+	'maxNonSamplerBindings',
+];
+/** Raised to the adapter's value when under it */
+const MIN_LIMIT_KEYS = ['minUniformBufferOffsetAlignment', 'minStorageBufferOffsetAlignment'];
+
+/** Keeps `required` within what `adapter` supports */
+function clampToAdapter(required: Record<string, number>, adapter: Record<string, any>): void {
+	for (const key of MAX_LIMIT_KEYS) {
+		const have = adapter[key];
+
+		if (typeof have === 'number' && typeof required[key] === 'number' && required[key] > have) required[key] = have;
+	}
+	for (const key of MIN_LIMIT_KEYS) {
+		const have = adapter[key];
+
+		if (typeof have === 'number' && typeof required[key] === 'number' && required[key] < have) required[key] = have;
+	}
+}
+
 export class GPUAdapter {
 	[native_]: GPUAdapterImpl;
 
@@ -74,54 +123,7 @@ export class GPUAdapter {
 					const requiredLimits = new global.CanvasModule.GPUSupportedLimits();
 					const limits = this[native_].limits;
 
-					const MAX_LIMIT_KEYS = [
-						'maxTextureDimension1d',
-						'maxTextureDimension2d',
-						'maxTextureDimension3d',
-						'maxTextureArrayLayers',
-						'maxBindGroups',
-						'maxBindingsPerBindGroup',
-						'maxDynamicUniformBuffersPerPipelineLayout',
-						'maxDynamicStorageBuffersPerPipelineLayout',
-						'maxSampledTexturesPerShaderStage',
-						'maxSamplersPerShaderStage',
-						'maxStorageBuffersPerShaderStage',
-						'maxStorageTexturesPerShaderStage',
-						'maxUniformBuffersPerShaderStage',
-						'maxUniformBufferBindingSize',
-						'maxStorageBufferBindingSize',
-						'maxVertexBuffers',
-						'maxBufferSize',
-						'maxVertexAttributes',
-						'maxVertexBufferArrayStride',
-						'maxInterStageShaderVariables',
-						'maxColorAttachments',
-						'maxColorAttachmentBytesPerSample',
-						'maxComputeWorkgroupStorageSize',
-						'maxComputeInvocationsPerWorkgroup',
-						'maxComputeWorkgroupSizeX',
-						'maxComputeWorkgroupSizeY',
-						'maxComputeWorkgroupSizeZ',
-						'maxComputeWorkgroupsPerDimension',
-						'maxNonSamplerBindings',
-					];
-					const MIN_LIMIT_KEYS = ['minUniformBufferOffsetAlignment', 'minStorageBufferOffsetAlignment'];
-					for (const key of MAX_LIMIT_KEYS) {
-						const adapterVal = (limits as any)[key];
-						if (typeof adapterVal === 'number' && typeof requiredLimits[key] === 'number') {
-							if (requiredLimits[key] > adapterVal) {
-								requiredLimits[key] = adapterVal;
-							}
-						}
-					}
-					for (const key of MIN_LIMIT_KEYS) {
-						const adapterVal = (limits as any)[key];
-						if (typeof adapterVal === 'number' && typeof requiredLimits[key] === 'number') {
-							if (requiredLimits[key] < adapterVal) {
-								requiredLimits[key] = adapterVal;
-							}
-						}
-					}
+					clampToAdapter(requiredLimits, limits);
 
 					if (limits.maxSampledTexturesPerShaderStage >= 128) {
 						requiredLimits.maxSampledTexturesPerShaderStage = 128;
@@ -144,17 +146,8 @@ export class GPUAdapter {
 						for (const key of keys) {
 							requiredLimits[key] = options.requiredLimits[key];
 						}
-						const adapterLimits = this[native_].limits;
-						for (const key of keys) {
-							const adapterVal = (adapterLimits as any)[key];
-							if (typeof adapterVal === 'number' && typeof requiredLimits[key] === 'number') {
-								if (!key.startsWith('min') && requiredLimits[key] > adapterVal) {
-									requiredLimits[key] = adapterVal;
-								} else if (key.startsWith('min') && requiredLimits[key] < adapterVal) {
-									requiredLimits[key] = adapterVal;
-								}
-							}
-						}
+						// Clamp every limit: unnamed ones default to WebGPU's, which some adapters can't meet.
+						clampToAdapter(requiredLimits, this[native_].limits);
 						options.requiredLimits = requiredLimits;
 					}
 				}

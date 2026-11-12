@@ -74,6 +74,11 @@ public:
         return NativeType::None;
     }
 
+    /// A null (or 0) framebuffer attachment, meaning detach.
+    inline static bool IsDetach(const v8::Local<v8::Value> &value) {
+        return value.IsEmpty() || value->IsNullOrUndefined() || (value->IsNumber() && value.As<v8::Number>()->Value() == 0);
+    }
+
     static void SetNativeType(ObjectWrapperImpl *obj, NativeType type) {
         if (obj != nullptr) {
             obj->type_ = type;

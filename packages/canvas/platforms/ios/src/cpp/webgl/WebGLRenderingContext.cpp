@@ -2012,6 +2012,9 @@ WebGLRenderingContext::FramebufferRenderbuffer(const v8::FunctionCallbackInfo<v8
                     ptr->GetState()
             );
         }
+    } else if (IsDetach(renderbufferValue)) {
+        // null detaches.
+        canvas_native_webgl_framebuffer_renderbuffer(target, attachment, renderbuffertarget, 0, ptr->GetState());
     }
 }
 
@@ -2042,6 +2045,9 @@ void WebGLRenderingContext::FramebufferTexture2D(const v8::FunctionCallbackInfo<
                     ptr->GetState()
             );
         }
+    } else if (IsDetach(textureValue)) {
+        // null detaches.
+        canvas_native_webgl_framebuffer_texture2d(target, attachment, textarget, 0, level, ptr->GetState());
     }
 }
 

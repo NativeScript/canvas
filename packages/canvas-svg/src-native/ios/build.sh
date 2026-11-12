@@ -129,8 +129,8 @@ xcodebuild \
     -debug-symbols $(PWD)/dist/Release-appletvsimulator/CanvasSVG.framework.dSYM \
     -output $(PWD)/dist/CanvasSVG.xcframework
 
-echo "Publishing XCFramework to packages/canvas-svg/platforms/ios"
-DEST="$(PWD)/../../platforms/ios"
+echo "Publishing XCFramework to packages/canvas-svg/platforms/ios/CanvasSVGBinary"
+DEST="$(PWD)/../../platforms/ios/CanvasSVGBinary"
 mkdir -p "$DEST"
 # Replace (don't merge into) any existing framework so stale slices can't linger.
 rm -rf "$DEST/CanvasSVG.xcframework"

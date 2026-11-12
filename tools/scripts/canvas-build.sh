@@ -50,15 +50,15 @@ cd packages/canvas/src-native/canvas-ios
 
 
 # Replace (don't merge into) the existing framework so stale slices can't linger.
-rm -rf ../../platforms/ios/CanvasNative.xcframework || true
-mkdir -p ../../platforms/ios
+rm -rf ../../platforms/ios/CanvasNativeBinary/CanvasNative.xcframework || true
+mkdir -p ../../platforms/ios/CanvasNativeBinary
 
 echo "Build iOS"
 ./build.sh
 #cd ..
-echo "Copy /dist/*.xcframework platforms/ios"
+echo "Copy dist/CanvasNative.xcframework to platforms/ios/CanvasNativeBinary"
 
-cp -R dist/CanvasNative.xcframework ../../platforms/ios
+cp -R dist/CanvasNative.xcframework ../../platforms/ios/CanvasNativeBinary
 
 
 # DEV_TEAM=${DEVELOPMENT_TEAM:-}

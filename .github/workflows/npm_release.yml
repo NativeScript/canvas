@@ -5,26 +5,25 @@
 # (or pick the tag under "Use workflow from"). The tag must match packages/canvas/package.json.
 #
 # Every native artifact build-native.yml produces (Android AARs, iOS/visionOS/tvOS
-# xcframeworks, Windows and Linux Node-API modules) is built from the tag and replaces the
-# committed copy before packaging, so npm ships what CI built from the tagged sources.
-# The committed binaries are only what local development uses. canvas-polyfill's
-# async-release.aar is the one native artifact that still ships as committed.
+# xcframeworks, Windows and Linux Node-API modules) is built from the tag and placed before
+# packaging, replacing any committed copy, so npm ships what CI built from the tagged
+# sources. The committed binaries are only what local development uses; the xcframeworks
+# are not committed at all. canvas-polyfill's async-release.aar is the one native artifact
+# that still ships as committed.
 #
 # Running on the tag also keeps the build's caches safe: a run can restore master's cache
 # entries but saves only into its own ref's scope, so nothing a release executes can
 # replace an entry that master's builds restore.
 #
-# iOS SwiftPM distribution: canvas and audio-context each ship the header-only
-# NativeScriptV8 SwiftPM shim (repo-root nativescript-v8/) INSIDE the npm
-# package at platforms/ios/NativeScriptV8, referenced by their
-# nativescript.config.ts as a local `path` package. Unlike font-manager, there
-# is no GitHub-release binaryTarget to stamp: SwiftPM clones a repository's
-# entire git history just to read Package.swift, and this repo's history is
-# several GB — so ANY repositoryURL reference (source or binary target) stalls
-# first builds for 20+ minutes. The shim is tiny (V8 headers + empty stub) and
-# the heavy CanvasNative.xcframework already ships in the npm package, so
-# nothing needs a release asset. The verify step below guards that the shim
-# actually made it into the built packages.
+# iOS SwiftPM distribution: canvas, canvas-svg and audio-context reference two local
+# `path` SwiftPM packages shipped inside the npm package (see their nativescript.config.ts):
+#   * platforms/ios/NativeScriptV8: the header-only V8 shim (repo-root nativescript-v8/).
+#   * platforms/ios/<Framework>Binary: a binaryTarget for the plugin's xcframework. The
+#     frameworks are too large for npm, so tools/scripts/release-ios-binaries.sh uploads
+#     them to the GitHub release for the tag and stamps the zip's url + checksum into
+#     Package.swift. SwiftPM then downloads just the zip.
+# Never a repositoryURL: SwiftPM clones a repository's entire git history just to read
+# Package.swift, and this repo's history is several GB, so first builds stall for 20+ min.
 #
 # Authentication uses npm Trusted Publishing (OIDC) — no NPM_TOKEN required.
 # This mirrors the proven publish flow in the @nativescript/ios and
@@ -91,7 +90,7 @@ jobs:
     if: ${{ !cancelled() && needs.version.result == 'success' && contains(fromJSON('["success","skipped"]'), needs.build-native.result) }}
     environment: npm-publish # must match the npm Trusted Publisher environment
     permissions:
-      contents: read
+      contents: write # upload the iOS xcframeworks to the GitHub release
       actions: read # download artifacts from native_run_id
       id-token: write # required for npm Trusted Publishing (OIDC) + provenance
     env:
@@ -145,7 +144,7 @@ jobs:
       - name: Verify iOS SwiftPM shim in built packages
         run: |
           set -euo pipefail
-          for pkg in canvas audio-context; do
+          for pkg in canvas canvas-svg audio-context; do
             dir="dist/packages/$pkg/platforms/ios/NativeScriptV8"
             # Check real files, not just the directories: Headers/ also holds
             # the committed inspector/ + libffi trees, so an `-e Headers` test
@@ -177,11 +176,11 @@ jobs:
           set -euo pipefail
           for f in \
             canvas/platforms/android/canvas-release.aar \
-            canvas/platforms/ios/CanvasNative.xcframework/Info.plist \
+            canvas/platforms/ios/CanvasNativeBinary/CanvasNative.xcframework/Info.plist \
             canvas-svg/platforms/android/canvassvg-release.aar \
-            canvas-svg/platforms/ios/CanvasSVG.xcframework/Info.plist \
+            canvas-svg/platforms/ios/CanvasSVGBinary/CanvasSVG.xcframework/Info.plist \
             audio-context/platforms/android/audiocontext-release.aar \
-            audio-context/platforms/ios/AudioContextNative.xcframework/Info.plist; do
+            audio-context/platforms/ios/AudioContextNativeBinary/AudioContextNative.xcframework/Info.plist; do
             [ -f "dist/packages/$f" ] || { echo "error: dist/packages/$f missing" >&2; exit 1; }
           done
           for arch in x64 arm64; do
@@ -194,6 +193,12 @@ jobs:
             done
           done
           echo "ok: every package ships its native artifacts"
+
+      # Before publishing, so a published package never points at a missing asset.
+      - name: Move iOS xcframeworks to the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: ./tools/scripts/release-ios-binaries.sh "${{ needs.version.outputs.version }}"
 
       # Publish each package at its committed version via OIDC. The setup-node
       # .npmrc and NODE_AUTH_TOKEN are cleared so npm performs the Trusted

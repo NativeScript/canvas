@@ -155,7 +155,7 @@ done
 
 xcodebuild -create-xcframework "${cf_args[@]}" -output "$DIST/AudioContextNative.xcframework"
 
-DEST="$REPO_ROOT/packages/audio-context/platforms/ios"
+DEST="$REPO_ROOT/packages/audio-context/platforms/ios/AudioContextNativeBinary"
 mkdir -p "$DEST"
 # Replace (don't merge into) any existing framework so stale slices can't linger.
 rm -rf "$DEST/AudioContextNative.xcframework"

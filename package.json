@@ -21,7 +21,8 @@
 		"build.canvas.ios.framework.debug": "nx run canvas:build.native.ios.framework.debug",
 		"build.canvas.svg.ios.framework.release": "nx run canvas-svg:build.native.ios.framework.release",
 		"build.canvas.svg.ios.framework.debug": "nx run canvas-svg:build.native.ios.framework.debug",
-		"build.audiocontext.ios.framework.release": "nx run audio-context:build.native.ios.framework.release"
+		"build.audiocontext.ios.framework.release": "nx run audio-context:build.native.ios.framework.release",
+		"download.ios.frameworks": "./tools/scripts/download-ios-frameworks.sh"
 	},
 	"private": true,
 	"devDependencies": {

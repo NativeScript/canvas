@@ -4,12 +4,12 @@ set -e
 
 
 # Replace (don't merge into) the existing framework so stale slices can't linger.
-rm -rf ../../platforms/ios/CanvasSVG.xcframework || true
-mkdir -p ../../platforms/ios
+rm -rf ../../platforms/ios/CanvasSVGBinary/CanvasSVG.xcframework || true
+mkdir -p ../../platforms/ios/CanvasSVGBinary
 
 echo "Build iOS"
 ./build.sh
 #cd ..
-echo "Copy /dist/*.xcframework platforms/ios"
+echo "Copy dist/CanvasSVG.xcframework to platforms/ios/CanvasSVGBinary"
 
-cp -R dist/CanvasSVG.xcframework ../../platforms/ios
+cp -R dist/CanvasSVG.xcframework ../../platforms/ios/CanvasSVGBinary

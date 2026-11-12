@@ -137,8 +137,8 @@ xcodebuild \
     -debug-symbols $(PWD)/dist/Release-appletvsimulator/AudioContextNative.framework.dSYM \
     -output $(PWD)/dist/AudioContextNative.xcframework
 
-echo "Publishing XCFramework to packages/audio-context/platforms/ios"
-DEST="$(PWD)/../../../platforms/ios"
+echo "Publishing XCFramework to packages/audio-context/platforms/ios/AudioContextNativeBinary"
+DEST="$(PWD)/../../../platforms/ios/AudioContextNativeBinary"
 mkdir -p "$DEST"
 # Replace (don't merge into) any existing framework so stale slices can't linger.
 rm -rf "$DEST/AudioContextNative.xcframework"

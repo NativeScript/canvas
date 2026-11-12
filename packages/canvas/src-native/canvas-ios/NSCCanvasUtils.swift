@@ -6,7 +6,7 @@
 //
 
 import Foundation
-#if !os(visionOS)
+#if !os(visionOS) && !targetEnvironment(macCatalyst)
 import OpenGLES
 #endif
 import CoreVideo
@@ -17,7 +17,7 @@ public class NSCCanvasUtils: NSObject {
     private static let BYTES_PER_TEXEL = 4
 
     
-	#if !os(visionOS)
+	#if !os(visionOS) && !targetEnvironment(macCatalyst)
 	public static func setupRender() -> NSCRender{
         return NSCRender()
     }

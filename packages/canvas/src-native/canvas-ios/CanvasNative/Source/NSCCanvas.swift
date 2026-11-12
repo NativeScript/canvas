@@ -7,7 +7,7 @@
 
 import Foundation
 import UIKit
-#if !os(visionOS)
+#if !os(visionOS) && !targetEnvironment(macCatalyst)
 import OpenGLES
 #endif
 #if canImport(WebKit)
@@ -320,7 +320,7 @@ public class NSCCanvas: UIView {
 		}
 		let density = autoScale ? Float(nscNativeScale()) : 1
 		let direction: UInt32 = UIView.userInterfaceLayoutDirection(for: semanticContentAttribute) == .rightToLeft ? 1 : 0
-		#if os(visionOS)
+		#if os(visionOS) || targetEnvironment(macCatalyst)
 		let glLayer: UnsafeMutableRawPointer? = nil
 		#else
 		let glLayer: UnsafeMutableRawPointer? = Unmanaged.passUnretained(glView.layer).toOpaque()
@@ -443,10 +443,10 @@ public class NSCCanvas: UIView {
 			engine = .CPU
 			cpuView.isHidden = false
 		}else if((is2D && NSCCanvas.forceGL) || version == 1 || version == 2){
-			// visionOS has no OpenGL ES — GL-backed 2D and WebGL are unavailable there.
+			// visionOS and Mac Catalyst have no OpenGL ES, so GL-backed 2D and WebGL are unavailable.
 			// This branch compiles out; 2D falls through to the Metal path below, and a WebGL
 			// request leaves nativeContext == 0 (gracefully unsupported).
-			#if !os(visionOS)
+			#if !os(visionOS) && !targetEnvironment(macCatalyst)
 			var properties: [String: Any] = [:]
 			let useWebGL = !isCanvas
 			if(useWebGL && preserveDrawingBuffer){
@@ -571,7 +571,7 @@ public class NSCCanvas: UIView {
 	}
 	
 	
-	#if !os(visionOS)
+	#if !os(visionOS) && !targetEnvironment(macCatalyst)
 	var renderer: NSCRender? = nil
 	#endif
 	@discardableResult public func render() -> Bool{

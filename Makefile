@@ -1,6 +1,7 @@
 ARCHS_IOS = x86_64-apple-ios aarch64-apple-ios aarch64-apple-ios-sim
 ARCHS_VISIONOS = aarch64-apple-visionos aarch64-apple-visionos-sim
 ARCHS_TVOS = aarch64-apple-tvos aarch64-apple-tvos-sim
+ARCHS_CATALYST = aarch64-apple-ios-macabi x86_64-apple-ios-macabi
 ARCHS_ANDROID = i686-linux-android x86_64-linux-android aarch64-linux-android armv7-linux-androideabi
 # Node-API hosts (crates/canvas-napi).
 ARCHS_WINDOWS = x86_64-pc-windows-msvc aarch64-pc-windows-msvc
@@ -17,6 +18,8 @@ ios: $(XCFRAMEWORK)
 visionos: $(ARCHS_VISIONOS)
 
 tvos: $(ARCHS_TVOS)
+
+catalyst: $(ARCHS_CATALYST)
 
 android: GENERATE_ANDROID
 
@@ -36,11 +39,13 @@ visionos-svg: GENERATE_VISIONOS_SVG
 
 tvos-svg: GENERATE_TVOS_SVG
 
-svg: GENERATE_IOS_SVG GENERATE_VISIONOS_SVG GENERATE_TVOS_SVG
+catalyst-svg: GENERATE_CATALYST_SVG
+
+svg: GENERATE_IOS_SVG GENERATE_VISIONOS_SVG GENERATE_TVOS_SVG GENERATE_CATALYST_SVG
 
 android-svg: GENERATE_ANDROID_SVG
 
-apple: ios visionos tvos
+apple: ios visionos tvos catalyst
 
 # Host-side tests. The workspace pins `-C panic=abort` for the Apple host
 # targets in .cargo/config.toml (needed by the macOS dylib build) and libtest
@@ -65,8 +70,10 @@ GENERATE_ANDROID_V8_STUB:
 
 # Match Xcode's pre-build env: cargo tracks SDKROOT and the deployment targets, so a mismatch
 # rebuilds the whole tree (std too) on every switch. tvOS also needs it because cc has no default.
-apple_sdk = $(if $(findstring visionos-sim,$1),xrsimulator,$(if $(findstring visionos,$1),xros,$(if $(findstring tvos-sim,$1),appletvsimulator,$(if $(findstring tvos,$1),appletvos,$(if $(or $(findstring ios-sim,$1),$(findstring x86_64-apple-ios,$1)),iphonesimulator,iphoneos)))))
-apple_env = SDKROOT="$$(xcrun --sdk $(call apple_sdk,$1) --show-sdk-path)" IPHONEOS_DEPLOYMENT_TARGET=12.0 TVOS_DEPLOYMENT_TARGET=12.0 XROS_DEPLOYMENT_TARGET=1.0
+apple_sdk = $(if $(findstring macabi,$1),macosx,$(if $(findstring visionos-sim,$1),xrsimulator,$(if $(findstring visionos,$1),xros,$(if $(findstring tvos-sim,$1),appletvsimulator,$(if $(findstring tvos,$1),appletvos,$(if $(or $(findstring ios-sim,$1),$(findstring x86_64-apple-ios,$1)),iphonesimulator,iphoneos))))))
+# Catalyst's floor is iOS 14 (rust-skia); 14.2 is what the Xcode project sets for it.
+apple_ios_min = $(if $(findstring macabi,$1),14.2,12.0)
+apple_env = SDKROOT="$$(xcrun --sdk $(call apple_sdk,$1) --show-sdk-path)" IPHONEOS_DEPLOYMENT_TARGET=$(call apple_ios_min,$1) TVOS_DEPLOYMENT_TARGET=12.0 XROS_DEPLOYMENT_TARGET=1.0
 
 .PHONY: $(ARCHS_IOS)
 $(ARCHS_IOS): %:
@@ -78,6 +85,12 @@ $(XCFRAMEWORK): $(ARCHS_IOS)
 
 .PHONY: $(ARCHS_VISIONOS)
 $(ARCHS_VISIONOS): %:
+	$(call apple_env,$@) RUSTFLAGS="-Zlocation-detail=none -Zunstable-options -Cpanic=immediate-abort" \
+	cargo +$(CANVAS_RUST_TOOLCHAIN) build -Z build-std='std,panic_abort' \
+	    --target $@ --release -p canvas-ios
+
+.PHONY: $(ARCHS_CATALYST)
+$(ARCHS_CATALYST): %:
 	$(call apple_env,$@) RUSTFLAGS="-Zlocation-detail=none -Zunstable-options -Cpanic=immediate-abort" \
 	cargo +$(CANVAS_RUST_TOOLCHAIN) build -Z build-std='std,panic_abort' \
 	    --target $@ --release -p canvas-ios
@@ -142,7 +155,16 @@ $(addsuffix _svg,$(ARCHS_TVOS)): %_svg:
 .PHONY: GENERATE_TVOS_SVG
 GENERATE_TVOS_SVG: $(addsuffix _svg,$(ARCHS_TVOS))
 
-.PHONY: ios-svg visionos-svg tvos-svg svg
+.PHONY: $(addsuffix _svg,$(ARCHS_CATALYST))
+$(addsuffix _svg,$(ARCHS_CATALYST)): %_svg:
+	$(call apple_env,$*) RUSTFLAGS="-Zlocation-detail=none -Zunstable-options -Cpanic=immediate-abort" \
+	cargo +$(CANVAS_RUST_TOOLCHAIN) build -Z build-std='std,panic_abort' \
+	    --target $* --release -p canvas-svg-ios
+
+.PHONY: GENERATE_CATALYST_SVG
+GENERATE_CATALYST_SVG: $(addsuffix _svg,$(ARCHS_CATALYST))
+
+.PHONY: ios-svg visionos-svg tvos-svg catalyst-svg svg
 
 .PHONY: $(addsuffix _svg,$(ARCHS_ANDROID))
 $(addsuffix _svg,$(ARCHS_ANDROID)): %_svg:

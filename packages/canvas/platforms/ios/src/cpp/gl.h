@@ -12,13 +12,24 @@
 #endif
 
 #ifdef __APPLE__
+#include <TargetConditionals.h>
+#endif
+
+#if defined(__APPLE__) && TARGET_OS_MACCATALYST
+// Catalyst has no OpenGL ES, so WebGL is unavailable; only the GL types and enums are needed.
+#include <OpenGL/gl3.h>
+#include <OpenGL/gl3ext.h>
+#include "gl_catalyst.h"
+#elif defined(__APPLE__)
 #include <OpenGLES/ES1/gl.h>
 #include <OpenGLES/ES1/glext.h>
 #include <OpenGLES/ES2/gl.h>
 #include <OpenGLES/ES2/glext.h>
 #include <OpenGLES/ES3/gl.h>
 #include <OpenGLES/ES3/glext.h>
+#endif
 
+#ifdef __APPLE__
 #define GL_COMPRESSED_RGB_S3TC_DXT1_EXT 0x83F0
 #define GL_COMPRESSED_RGBA_S3TC_DXT1_EXT 0x83F1
 #define GL_COMPRESSED_RGBA_S3TC_DXT3_EXT 0x83F2

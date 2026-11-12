@@ -637,6 +637,26 @@
 					"-framework",
 					Metal,
 				);
+				"OTHER_LDFLAGS[sdk=macosx*][arch=arm64]" = (
+					"$(inherited)",
+					"-L\"$(SRCROOT)/../../../../target/aarch64-apple-ios-macabi/debug\"",
+					"-Wl,-no_compact_unwind",
+					"-lcanvasnative",
+					"-lc++",
+					"-ObjC",
+					"-framework",
+					Metal,
+				);
+				"OTHER_LDFLAGS[sdk=macosx*][arch=x86_64]" = (
+					"$(inherited)",
+					"-L\"$(SRCROOT)/../../../../target/x86_64-apple-ios-macabi/debug\"",
+					"-Wl,-no_compact_unwind",
+					"-lcanvasnative",
+					"-lc++",
+					"-ObjC",
+					"-framework",
+					Metal,
+				);
 				OTHER_SWIFT_FLAGS = "-Xcc -Wno-error=non-modular-include-in-framework-module";
 				PRODUCT_BUNDLE_IDENTIFIER = com.github.triniwiz.CanvasNative;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
@@ -646,7 +666,7 @@
 				STRIP_INSTALLED_PRODUCT = YES;
 				STRIP_SWIFT_SYMBOLS = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator xros xrsimulator appletvos appletvsimulator";
-				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MACCATALYST = YES;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -768,6 +788,26 @@
 					"-framework",
 					Metal,
 				);
+				"OTHER_LDFLAGS[sdk=macosx*][arch=arm64]" = (
+					"$(inherited)",
+					"-L\"$(SRCROOT)/../../../../target/aarch64-apple-ios-macabi/release\"",
+					"-Wl,-no_compact_unwind",
+					"-lcanvasnative",
+					"-lc++",
+					"-ObjC",
+					"-framework",
+					Metal,
+				);
+				"OTHER_LDFLAGS[sdk=macosx*][arch=x86_64]" = (
+					"$(inherited)",
+					"-L\"$(SRCROOT)/../../../../target/x86_64-apple-ios-macabi/release\"",
+					"-Wl,-no_compact_unwind",
+					"-lcanvasnative",
+					"-lc++",
+					"-ObjC",
+					"-framework",
+					Metal,
+				);
 				OTHER_SWIFT_FLAGS = "-Xcc -Wno-error=non-modular-include-in-framework-module";
 				PRODUCT_BUNDLE_IDENTIFIER = com.github.triniwiz.CanvasNative;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
@@ -777,7 +817,7 @@
 				STRIP_INSTALLED_PRODUCT = YES;
 				STRIP_SWIFT_SYMBOLS = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator xros xrsimulator appletvos appletvsimulator";
-				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MACCATALYST = YES;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_VERSION = 5.0;

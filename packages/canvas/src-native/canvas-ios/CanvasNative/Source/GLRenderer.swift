@@ -6,12 +6,12 @@
 //
 
 import Foundation
-#if !os(visionOS)
+#if !os(visionOS) && !targetEnvironment(macCatalyst)
 import OpenGLES
 #endif
 import UIKit
 
-#if !os(visionOS)
+#if !os(visionOS) && !targetEnvironment(macCatalyst)
 /// Shows a GL context's drawing buffer. The context stores its color buffer in this view's layer
 /// and presents it there itself, from whichever thread it runs on.
 @objcMembers
@@ -28,8 +28,8 @@ public class CanvasGLView: UIView {
     }
 }
 #else
-// visionOS has no OpenGL ES. CanvasGLView is a no-op UIView stand-in so NSCCanvas's
-// layout/lifecycle code compiles; the GL engine is never selected on visionOS.
+// visionOS and Mac Catalyst have no OpenGL ES. CanvasGLView is a no-op UIView stand-in so NSCCanvas's
+// layout/lifecycle code compiles; the GL engine is never selected there.
 @objcMembers
 @objc(CanvasGLView)
 public class CanvasGLView: UIView {

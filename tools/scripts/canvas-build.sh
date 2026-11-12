@@ -27,7 +27,9 @@ for entry in \
   "aarch64-apple-ios:ios" \
   "aarch64-apple-ios-sim:ios" \
   "aarch64-apple-visionos:visionos" \
-  "aarch64-apple-visionos-sim:visionos"; do
+  "aarch64-apple-visionos-sim:visionos" \
+  "aarch64-apple-ios-macabi:catalyst" \
+  "x86_64-apple-ios-macabi:catalyst"; do
   triple="${entry%%:*}"
   target="${entry##*:}"
   if [ ! -f "$REPO_ROOT/target/$triple/release/libcanvasnative.a" ]; then
@@ -40,7 +42,7 @@ if [ -n "$missing" ]; then
   printf "%b\n" "$missing" >&2
   echo "" >&2
   echo "Build them first, as .github/workflows/build-native.yml does:" >&2
-  echo "  make ios && make visionos && make tvos" >&2
+  echo "  make ios && make visionos && make tvos && make catalyst" >&2
   exit 1
 fi
 

@@ -33,6 +33,22 @@ xcodebuild \
     SKIP_INSTALL=NO \
     BUILD_LIBRARY_FOR_DISTRIBUTION=YES
 
+echo "Build for Mac Catalyst"
+# Xcode runs pre-build.sh once, for arm64: build x86_64-apple-ios-macabi first (make catalyst).
+xcodebuild \
+    -project CanvasNative.xcodeproj \
+    -scheme CanvasNative \
+    -destination "generic/platform=macOS,variant=Mac Catalyst" \
+    -configuration Release \
+    -quiet \
+    clean build \
+    BUILD_DIR=$(PWD)/dist \
+    ONLY_ACTIVE_ARCH=NO \
+    CODE_SIGN_IDENTITY="" \
+    CODE_SIGNING_REQUIRED=NO \
+    SKIP_INSTALL=NO \
+    BUILD_LIBRARY_FOR_DISTRIBUTION=YES
+
 echo "Build for xrsimulator (visionOS Simulator)"
 # visionOS is Apple-Silicon only — the simulator is arm64 (there is no x86_64-apple-visionos-sim
 # Rust target). Pin ARCHS=arm64 so Xcode doesn't try to build an x86_64 slice it has no Rust lib for.
@@ -138,6 +154,8 @@ xcodebuild \
     -debug-symbols $(PWD)/dist/Release-iphoneos/CanvasNative.framework.dSYM \
     -framework $(PWD)/dist/Release-iphonesimulator/CanvasNative.framework \
     -debug-symbols $(PWD)/dist/Release-iphonesimulator/CanvasNative.framework.dSYM \
+    -framework $(PWD)/dist/Release-maccatalyst/CanvasNative.framework \
+    -debug-symbols $(PWD)/dist/Release-maccatalyst/CanvasNative.framework.dSYM \
     -framework $(PWD)/dist/Release-xros/CanvasNative.framework \
     -debug-symbols $(PWD)/dist/Release-xros/CanvasNative.framework.dSYM \
     -framework $(PWD)/dist/Release-xrsimulator/CanvasNative.framework \

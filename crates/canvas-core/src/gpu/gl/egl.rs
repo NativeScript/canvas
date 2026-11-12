@@ -307,6 +307,11 @@ pub fn set_before_bind(hook: fn()) {
     let _ = BEFORE_BIND.set(hook);
 }
 
+/// Brings EGL up and returns the display canvases render on (null if EGL is unavailable).
+pub fn init_egl_display() -> *mut c_void {
+    shared().map_or(std::ptr::null_mut(), |egl| egl.display.as_ptr())
+}
+
 /// The display canvases render on, null before the first context.
 pub fn egl_display() -> *mut c_void {
     EGL.get()
@@ -319,7 +324,18 @@ fn platform_display(instance: &EglInstance) -> Option<egl::Display> {
     const EGL_PLATFORM_SURFACELESS_MESA: egl::Enum = 0x31DD;
     let host = HOST_DISPLAY.load(Ordering::Relaxed);
     if host != 0 {
-        return Some(unsafe { egl::Display::from_ptr(host as *mut c_void) });
+        let display = unsafe { egl::Display::from_ptr(host as *mut c_void) };
+        // Mesa's Wayland displays have no pbuffer configs, and every canvas surface is one.
+        let has_pbuffers = instance.initialize(display).is_ok()
+            && instance
+                .choose_first_config(display, &[egl::SURFACE_TYPE, egl::PBUFFER_BIT, egl::NONE])
+                .ok()
+                .flatten()
+                .is_some();
+        if has_pbuffers {
+            return Some(display);
+        }
+        log::warn!("canvas: the toolkit's EGL display has no pbuffer configs; canvases render on a surfaceless display");
     }
     let client = instance
         .query_string(None, egl::EXTENSIONS)

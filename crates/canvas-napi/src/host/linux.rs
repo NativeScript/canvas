@@ -243,9 +243,11 @@ fn init_gdk() -> Gdk {
   context.make_current();
   let display = current_egl_display();
   clear_gdk_current();
-  let images = (!display.is_null() && canvas_core::gpu::gl::set_host_display(display))
-    .then(|| load_images(display))
-    .flatten();
+  // EGL may still settle elsewhere (e.g. Wayland, which has no pbuffers).
+  let shared = !display.is_null()
+    && canvas_core::gpu::gl::set_host_display(display)
+    && canvas_core::gpu::gl::init_egl_display() == display;
+  let images = shared.then(|| load_images(display)).flatten();
   if images.is_none() {
     log::warn!(
       "canvas: GDK's EGL display is not shareable; canvases are read back into memory textures"

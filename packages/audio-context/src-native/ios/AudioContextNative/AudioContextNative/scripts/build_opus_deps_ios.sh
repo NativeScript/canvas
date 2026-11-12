@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Cross-compile libogg, libopus and libopusfile for iOS, visionOS and tvOS
-# (device + simulator)
+# (device + simulator) and Mac Catalyst
 # Produces universal static libraries under third_party/build/universal/lib
 # and headers under third_party/build/universal/include
 
@@ -22,6 +22,7 @@ MIN_IOS_VERSION="${MIN_IOS_VERSION:-11.0}"
 # Targets: SDK ARCH HOST_TRIPLE
 MIN_XROS_VERSION="${MIN_XROS_VERSION:-1.0}"
 MIN_TVOS_VERSION="${MIN_TVOS_VERSION:-12.0}"
+MIN_CATALYST_VERSION="${MIN_CATALYST_VERSION:-14.0}"
 
 # Targets: SDK ARCH HOST_TRIPLE. visionOS is Apple-Silicon only (arm64 device +
 # arm64 simulator). tvOS is built arm64-only to match the scope canvas uses in
@@ -35,6 +36,8 @@ TARGETS=(
   "xrsimulator arm64 arm-apple-darwin"
   "appletvos arm64 arm-apple-darwin"
   "appletvsimulator arm64 arm-apple-darwin"
+  "macosx arm64 arm-apple-darwin"
+  "macosx x86_64 x86_64-apple-darwin"
 )
 
 LIBS=(libogg libvorbis libopus libopusfile)
@@ -65,6 +68,10 @@ build_for_target() {
     BITCODE=""
   elif [ "$SDK" = "appletvsimulator" ]; then
     MINFLAG="-target ${ARCH}-apple-tvos${MIN_TVOS_VERSION}-simulator"
+    BITCODE=""
+  elif [ "$SDK" = "macosx" ]; then
+    # Mac Catalyst; the prefix name matches $(PLATFORM_NAME)-$(CURRENT_ARCH) in the project.
+    MINFLAG="-target ${ARCH}-apple-ios${MIN_CATALYST_VERSION}-macabi"
     BITCODE=""
   fi
   export CFLAGS="-isysroot $SYSROOT -arch $ARCH $MINFLAG $BITCODE"

@@ -1,0 +1,4 @@
+# Not committed: tools/scripts/download-ios-frameworks.sh fetches it from a GitHub release,
+# or the native build puts it here. Nested rather than in the root .gitignore, which Nx's
+# asset copy applies, so the release build still copies the framework into dist.
+*.xcframework/

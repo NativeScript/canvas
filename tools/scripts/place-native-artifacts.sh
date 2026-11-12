@@ -1,6 +1,6 @@
 #!/bin/bash
-# Replaces the committed native binaries under packages/*/platforms with the ones
-# .github/workflows/build-native.yml built, so npm ships what CI built from the same commit.
+# Puts the native binaries .github/workflows/build-native.yml built under packages/*/platforms,
+# replacing any committed or locally built copy, so npm ships what CI built from the same commit.
 #
 # Usage: tools/scripts/place-native-artifacts.sh <dir>
 #   <dir>: an actions/download-artifact download of every build-native artifact
@@ -24,15 +24,16 @@ for pair in canvas-android/canvas-release.aar:canvas \
     cp "$ARTIFACTS/$src" "${pair##*:}/platforms/android/"
 done
 
-# xcframeworks come tarred (upload-artifact drops file modes). Remove the committed one first
+# xcframeworks come tarred (upload-artifact drops file modes). Remove any local one first
 # so a slice CI no longer builds can't linger.
 for triple in canvas-ios:canvas:CanvasNative \
               canvas-svg-ios:canvas-svg:CanvasSVG \
               audio-context-ios:audio-context:AudioContextNative; do
     IFS=: read -r artifact pkg framework <<< "$triple"
     need "$artifact/$artifact.tar.gz"
-    rm -rf "$pkg/platforms/ios/$framework.xcframework"
-    tar -xzf "$ARTIFACTS/$artifact/$artifact.tar.gz" -C "$pkg/platforms/ios"
+    dest="$pkg/platforms/ios/${framework}Binary"
+    rm -rf "$dest/$framework.xcframework"
+    tar -xzf "$ARTIFACTS/$artifact/$artifact.tar.gz" -C "$dest"
 done
 
 MODULES="canvas/canvasnative canvas-svg/canvassvg audio-context/audiocontext canvas-media/canvasmedia canvas-gamepad/canvasgamepad"

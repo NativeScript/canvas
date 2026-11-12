@@ -30,6 +30,24 @@ If building only `localize`, type: `npm start` > `localize` (this will narrow do
 
 In general, when in doubt with what to do, just `npm start`.
 
+## iOS native frameworks
+
+The plugins' iOS frameworks (`CanvasNative`, `CanvasSVG`, `AudioContextNative`) are not committed. Each plugin references its framework through a local SwiftPM package at `packages/<plugin>/platforms/ios/<Framework>Binary`, so after cloning, put the frameworks there before building an iOS app:
+
+```bash
+# prebuilt, from the latest GitHub release (or pass a tag: npm run download.ios.frameworks -- 3.0.6)
+npm run download.ios.frameworks
+
+# or build them from source, when working on the native code
+npm run build.canvas.ios.framework.release
+npm run build.canvas.svg.ios.framework.release
+npm run build.audiocontext.ios.framework.release
+```
+
+A downloaded framework matches its release, not necessarily the plugin sources on your branch. If the app fails to link or crashes on a missing native method, build the framework from source.
+
+Published packages do not include the frameworks either: the npm Release workflow uploads them to the GitHub release for the tag, and SwiftPM downloads them on the app's first build.
+
 ## How to add a new package to workspace?
 
 ```bash

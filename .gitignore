@@ -93,3 +93,10 @@ tools/linux/*.tgz
 
 # The NativeScript CLI builds a plugin's <plugin>.aar from its platforms/android sources at app build time
 packages/*/platforms/android/canvas_*.aar
+
+# iOS native build output (xcframeworks + per-platform slices). Not committed; see the README's
+# "iOS native frameworks" section.
+/packages/canvas/src-native/canvas-ios/dist/
+/packages/canvas-svg/src-native/ios/dist/
+/packages/audio-context/src-native/ios/dist/
+/packages/audio-context/src-native/ios/AudioContextNative/dist/

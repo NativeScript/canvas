@@ -28,8 +28,7 @@ GLES_SILENCE_DEPRECATION = 1
 // Podfile post_install can't carry it either — CocoaPods saves the user
 // project before post_install runs, so those edits never persist — which is
 // why this package ships no Podfile at all: everything native arrives via the
-// NativeScriptV8 SwiftPM package in nativescript.config.ts plus the vendored
-// CanvasNative.xcframework.
+// NativeScriptV8 and CanvasNativeBinary SwiftPM packages in nativescript.config.ts.
 // Two roots because the shim lives in a different place depending on who is
 // building. $(SRCROOT) is always <app>/platforms/<platform>:
 //   * installed plugin  -> <app>/node_modules/@nativescript/canvas/platforms/ios/

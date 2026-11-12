@@ -3,11 +3,11 @@
 #   artifact name          contents                              destination in the repo
 #   ---------------------  ------------------------------------  ---------------------------------------------
 #   canvas-android         canvas-release.aar                    packages/canvas/platforms/android/
-#   canvas-ios             CanvasNative.xcframework (tar.gz)     packages/canvas/platforms/ios/
+#   canvas-ios             CanvasNative.xcframework (tar.gz)     packages/canvas/platforms/ios/CanvasNativeBinary/
 #   canvas-svg-android     canvassvg-release.aar                 packages/canvas-svg/platforms/android/
-#   canvas-svg-ios         CanvasSVG.xcframework (tar.gz)        packages/canvas-svg/platforms/ios/
+#   canvas-svg-ios         CanvasSVG.xcframework (tar.gz)        packages/canvas-svg/platforms/ios/CanvasSVGBinary/
 #   audio-context-android  audiocontext-release.aar              packages/audio-context/platforms/android/
-#   audio-context-ios      AudioContextNative.xcframework        packages/audio-context/platforms/ios/
+#   audio-context-ios      AudioContextNative.xcframework        packages/audio-context/platforms/ios/AudioContextNativeBinary/
 #                          (tar.gz)
 #   canvas-windows-<arch>  canvasnative.node + ANGLE DLLs        packages/canvas/platforms/windows/<arch>/
 #   <module>-windows-      canvassvg.node, audiocontext.node,    packages/<module>/platforms/windows/<arch>/
@@ -113,7 +113,7 @@ jobs:
         working-directory: tools/scripts
         run: sh canvas-build.sh
       - name: Pack xcframework
-        run: tar -czf canvas-ios.tar.gz -C packages/canvas/platforms/ios CanvasNative.xcframework
+        run: tar -czf canvas-ios.tar.gz -C packages/canvas/platforms/ios/CanvasNativeBinary CanvasNative.xcframework
       - uses: ./.github/actions/skia-cache
         with:
           name: canvas-ios
@@ -199,7 +199,7 @@ jobs:
         run: sh canvas-svg-build.sh
       - name: Pack xcframework
         if: steps.svg-xcframework.outputs.cache-hit != 'true'
-        run: tar -czf canvas-svg-ios.tar.gz -C packages/canvas-svg/platforms/ios CanvasSVG.xcframework
+        run: tar -czf canvas-svg-ios.tar.gz -C packages/canvas-svg/platforms/ios/CanvasSVGBinary CanvasSVG.xcframework
       - uses: ./.github/actions/skia-cache
         if: steps.svg-xcframework.outputs.cache-hit != 'true'
         with:
@@ -285,7 +285,7 @@ jobs:
         run: sh audio-context-build.sh
       - name: Pack xcframework
         if: steps.audio-xcframework.outputs.cache-hit != 'true'
-        run: tar -czf audio-context-ios.tar.gz -C packages/audio-context/platforms/ios AudioContextNative.xcframework
+        run: tar -czf audio-context-ios.tar.gz -C packages/audio-context/platforms/ios/AudioContextNativeBinary AudioContextNative.xcframework
       - uses: actions/upload-artifact@v4
         with:
           name: audio-context-ios

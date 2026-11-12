@@ -76,7 +76,13 @@ if [ -z "$CURRENT_ARCH" ] || [ "$CURRENT_ARCH" == "undefined_arch" ]; then
 fi
 
 
-if $IS_VISIONOS; then
+if $(to_bool "${IS_MACCATALYST:-NO}"); then
+  if [[ $CURRENT_ARCH == x86_64 ]]; then
+    RUST_BUILD_TARGET="x86_64-apple-ios-macabi"
+  else
+    RUST_BUILD_TARGET="aarch64-apple-ios-macabi"
+  fi
+elif $IS_VISIONOS; then
   # visionOS is Apple-Silicon only (arm64 device + arm64 simulator).
   if [[ $IS_SIMULATOR == true ]] || [[ "$PLATFORM_NAME" == *"simulator"* ]]; then
     RUST_BUILD_TARGET="aarch64-apple-visionos-sim"

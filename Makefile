@@ -39,7 +39,9 @@ visionos-svg: GENERATE_VISIONOS_SVG
 
 tvos-svg: GENERATE_TVOS_SVG
 
-svg: GENERATE_IOS_SVG GENERATE_VISIONOS_SVG GENERATE_TVOS_SVG
+catalyst-svg: GENERATE_CATALYST_SVG
+
+svg: GENERATE_IOS_SVG GENERATE_VISIONOS_SVG GENERATE_TVOS_SVG GENERATE_CATALYST_SVG
 
 android-svg: GENERATE_ANDROID_SVG
 
@@ -153,7 +155,16 @@ $(addsuffix _svg,$(ARCHS_TVOS)): %_svg:
 .PHONY: GENERATE_TVOS_SVG
 GENERATE_TVOS_SVG: $(addsuffix _svg,$(ARCHS_TVOS))
 
-.PHONY: ios-svg visionos-svg tvos-svg svg
+.PHONY: $(addsuffix _svg,$(ARCHS_CATALYST))
+$(addsuffix _svg,$(ARCHS_CATALYST)): %_svg:
+	$(call apple_env,$*) RUSTFLAGS="-Zlocation-detail=none -Zunstable-options -Cpanic=immediate-abort" \
+	cargo +$(CANVAS_RUST_TOOLCHAIN) build -Z build-std='std,panic_abort' \
+	    --target $* --release -p canvas-svg-ios
+
+.PHONY: GENERATE_CATALYST_SVG
+GENERATE_CATALYST_SVG: $(addsuffix _svg,$(ARCHS_CATALYST))
+
+.PHONY: ios-svg visionos-svg tvos-svg catalyst-svg svg
 
 .PHONY: $(addsuffix _svg,$(ARCHS_ANDROID))
 $(addsuffix _svg,$(ARCHS_ANDROID)): %_svg:

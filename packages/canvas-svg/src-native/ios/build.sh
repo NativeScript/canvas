@@ -94,6 +94,22 @@ xcodebuild \
     SKIP_INSTALL=NO \
     BUILD_LIBRARY_FOR_DISTRIBUTION=YES
 
+echo "Build for Mac Catalyst"
+# Xcode runs pre-build.sh once, for arm64: build x86_64-apple-ios-macabi first (make catalyst-svg).
+xcodebuild \
+    -project CanvasSVG.xcodeproj \
+    -scheme CanvasSVG \
+    -destination "generic/platform=macOS,variant=Mac Catalyst" \
+    -configuration Release \
+    -quiet \
+    clean build \
+    BUILD_DIR=$(PWD)/dist \
+    ONLY_ACTIVE_ARCH=NO \
+    CODE_SIGN_IDENTITY="" \
+    CODE_SIGNING_REQUIRED=NO \
+    SKIP_INSTALL=NO \
+    BUILD_LIBRARY_FOR_DISTRIBUTION=YES
+
 echo "Creating XCFramework"
 xcodebuild \
     -create-xcframework \
@@ -101,6 +117,8 @@ xcodebuild \
     -debug-symbols $(PWD)/dist/Release-iphoneos/CanvasSVG.framework.dSYM \
     -framework $(PWD)/dist/Release-iphonesimulator/CanvasSVG.framework \
     -debug-symbols $(PWD)/dist/Release-iphonesimulator/CanvasSVG.framework.dSYM \
+    -framework $(PWD)/dist/Release-maccatalyst/CanvasSVG.framework \
+    -debug-symbols $(PWD)/dist/Release-maccatalyst/CanvasSVG.framework.dSYM \
     -framework $(PWD)/dist/Release-xros/CanvasSVG.framework \
     -debug-symbols $(PWD)/dist/Release-xros/CanvasSVG.framework.dSYM \
     -framework $(PWD)/dist/Release-xrsimulator/CanvasSVG.framework \

@@ -103,6 +103,21 @@ xcodebuild \
     SKIP_INSTALL=NO \
     BUILD_LIBRARY_FOR_DISTRIBUTION=YES
 
+echo "Build for Mac Catalyst"
+xcodebuild \
+    -project AudioContextNative.xcodeproj \
+    -scheme AudioContextNative \
+    -destination "generic/platform=macOS,variant=Mac Catalyst" \
+    -configuration Release \
+    -quiet \
+    clean build \
+    BUILD_DIR=$(PWD)/dist \
+    ONLY_ACTIVE_ARCH=NO \
+    CODE_SIGN_IDENTITY="" \
+    CODE_SIGNING_REQUIRED=NO \
+    SKIP_INSTALL=NO \
+    BUILD_LIBRARY_FOR_DISTRIBUTION=YES
+
 echo "Creating XCFramework"
 xcodebuild \
     -create-xcframework \
@@ -110,6 +125,8 @@ xcodebuild \
     -debug-symbols $(PWD)/dist/Release-iphoneos/AudioContextNative.framework.dSYM \
     -framework $(PWD)/dist/Release-iphonesimulator/AudioContextNative.framework \
     -debug-symbols $(PWD)/dist/Release-iphonesimulator/AudioContextNative.framework.dSYM \
+    -framework $(PWD)/dist/Release-maccatalyst/AudioContextNative.framework \
+    -debug-symbols $(PWD)/dist/Release-maccatalyst/AudioContextNative.framework.dSYM \
     -framework $(PWD)/dist/Release-xros/AudioContextNative.framework \
     -debug-symbols $(PWD)/dist/Release-xros/AudioContextNative.framework.dSYM \
     -framework $(PWD)/dist/Release-xrsimulator/AudioContextNative.framework \

@@ -421,6 +421,7 @@
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
+				"IPHONEOS_DEPLOYMENT_TARGET[sdk=macosx*]" = 14.2;
 				XROS_DEPLOYMENT_TARGET = 1.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"@executable_path/Frameworks",
@@ -490,6 +491,22 @@
 					"-ObjC",
 					"-lc++",
 				);
+				"OTHER_LDFLAGS[sdk=macosx*][arch=arm64]" = (
+					"$(inherited)",
+					"-L\"$(SRCROOT)/../../../../target/aarch64-apple-ios-macabi/debug\"",
+					"-Wl,-no_compact_unwind",
+					"-lcanvassvg",
+					"-ObjC",
+					"-lc++",
+				);
+				"OTHER_LDFLAGS[sdk=macosx*][arch=x86_64]" = (
+					"$(inherited)",
+					"-L\"$(SRCROOT)/../../../../target/x86_64-apple-ios-macabi/debug\"",
+					"-Wl,-no_compact_unwind",
+					"-lcanvassvg",
+					"-ObjC",
+					"-lc++",
+				);
 				OTHER_SWIFT_FLAGS = "-Xcc -Wno-error=non-modular-include-in-framework-module";
 				PRODUCT_BUNDLE_IDENTIFIER = org.nativescript.canvas.svg.CanvasSVG;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
@@ -497,7 +514,7 @@
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator xros xrsimulator appletvos appletvsimulator";
 				TVOS_DEPLOYMENT_TARGET = 12.0;
-				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MACCATALYST = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_INSTALL_OBJC_HEADER = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -533,6 +550,7 @@
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
+				"IPHONEOS_DEPLOYMENT_TARGET[sdk=macosx*]" = 14.2;
 				XROS_DEPLOYMENT_TARGET = 1.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"@executable_path/Frameworks",
@@ -602,6 +620,22 @@
 					"-ObjC",
 					"-lc++",
 				);
+				"OTHER_LDFLAGS[sdk=macosx*][arch=arm64]" = (
+					"$(inherited)",
+					"-L\"$(SRCROOT)/../../../../target/aarch64-apple-ios-macabi/release\"",
+					"-Wl,-no_compact_unwind",
+					"-lcanvassvg",
+					"-ObjC",
+					"-lc++",
+				);
+				"OTHER_LDFLAGS[sdk=macosx*][arch=x86_64]" = (
+					"$(inherited)",
+					"-L\"$(SRCROOT)/../../../../target/x86_64-apple-ios-macabi/release\"",
+					"-Wl,-no_compact_unwind",
+					"-lcanvassvg",
+					"-ObjC",
+					"-lc++",
+				);
 				OTHER_SWIFT_FLAGS = "-Xcc -Wno-error=non-modular-include-in-framework-module";
 				PRODUCT_BUNDLE_IDENTIFIER = org.nativescript.canvas.svg.CanvasSVG;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
@@ -609,7 +643,7 @@
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator xros xrsimulator appletvos appletvsimulator";
 				TVOS_DEPLOYMENT_TARGET = 12.0;
-				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MACCATALYST = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_INSTALL_OBJC_HEADER = YES;
 				SWIFT_VERSION = 5.0;

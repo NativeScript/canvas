@@ -173,7 +173,7 @@ jobs:
           if-no-files-found: error
 
   canvas-svg-ios:
-    name: Canvas SVG iOS + visionOS + tvOS
+    name: Canvas SVG iOS + visionOS + tvOS + Catalyst
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
@@ -189,7 +189,7 @@ jobs:
         if: steps.svg-xcframework.outputs.cache-hit != 'true'
         with:
           name: canvas-svg-ios
-      - name: Build Rust libraries (iOS + visionOS + tvOS)
+      - name: Build Rust libraries (iOS + visionOS + tvOS + Catalyst)
         if: steps.svg-xcframework.outputs.cache-hit != 'true'
         run: make svg
       # same as `npm run build.canvas.svg.ios.framework.release`
@@ -248,7 +248,7 @@ jobs:
           if-no-files-found: error
 
   audio-context-ios:
-    name: AudioContext iOS + visionOS + tvOS
+    name: AudioContext iOS + visionOS + tvOS + Catalyst
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4

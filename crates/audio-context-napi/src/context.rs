@@ -139,7 +139,8 @@ impl AudioContext {
     }
   }
 
-  /// `callback` runs on the JS thread after each state change; `null` clears it.
+  /// `callback` runs on the JS thread after each state change; `null` clears it. It is not ordered
+  /// with the state promises, so it may run after one settles and see a later `state`.
   #[napi(ts_args_type = "callback: (() => void) | null")]
   pub fn set_onstatechange(&self, callback: Option<StateChangeCallback>) -> Result<()> {
     match callback {

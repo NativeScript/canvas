@@ -203,18 +203,20 @@ test('decodes wav, mp3 and ogg, resampled to the context rate', async () => {
 	await assert.rejects(context.decodeAudioFile(path.join(assets, 'missing.wav')), /NotFoundError/);
 });
 
-// Known race, seen on the Linux arm64 runner: statechange (a threadsafe function) and the
-// suspend()/resume()/close() promise (an AsyncTask) reach JS through separate libuv queues, so the
-// handlers can run after the promise and read a later state. Chrome fires statechange first.
-// To be fixed in its own PR; until then the test still runs but cannot fail the suite there.
-const stateRace = process.platform === 'linux' && 'statechange can land after the state promise resolves';
-
-test('runs a realtime context without a device and reports its state', { todo: stateRace }, async () => {
+// The binding's statechange is a "re-read state" signal on its own libuv queue, so it can land
+// after the suspend()/resume()/close() promise and see a later state. Chrome's ordering is done
+// by the wrapper (napi.ts _changeState), so only the final state is checked here.
+test('runs a realtime context without a device and reports its state', async () => {
 	const context = new Audio.AudioContext({ sinkId: 'none', latencyHint: 'playback', sampleRate: 44100 });
 	assert.equal(context.sampleRate, 44100);
 	assert.equal(context.sinkId, 'none');
 	const states = [];
-	context.setOnstatechange(() => states.push(context.state));
+	let sawClosed;
+	const closedEvent = new Promise((resolve) => (sawClosed = resolve));
+	context.setOnstatechange(() => {
+		states.push(context.state);
+		if (context.state === 'closed') sawClosed();
+	});
 	await context.suspend();
 	assert.equal(context.state, 'suspended');
 	await context.resume();
@@ -223,7 +225,8 @@ test('runs a realtime context without a device and reports its state', { todo: s
 	assert.ok(context.currentTime > start, `${context.currentTime} > ${start}`);
 	await context.close();
 	assert.equal(context.state, 'closed');
-	await new Promise((resolve) => setTimeout(resolve, 50));
-	assert.ok(states.includes('suspended') && states.at(-1) === 'closed', states.join());
+	await closedEvent;
+	// One per change (suspend, resume, close); startup's may or may not be among them.
+	assert.ok(states.length >= 3 && states.at(-1) === 'closed', states.join());
 	assert.throws(() => context.startRendering(), /InvalidStateError/);
 });

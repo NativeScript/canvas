@@ -72,15 +72,16 @@ jobs:
         run: ./tools/scripts/build-android-v8-stub.sh
       - name: Build Rust libraries
         run: make android
+      # Saved right after the Rust build, so a later failing step cannot drop the cache.
+      - uses: ./.github/actions/skia-cache
+        with:
+          name: canvas-android
+          save: 'true'
       - name: Build canvas AAR
         working-directory: packages/canvas/src-native/canvas-android
         run: ./gradlew :canvas:assembleRelease
       - name: Copy AAR into platforms/android
         run: cp packages/canvas/src-native/canvas-android/canvas/build/outputs/aar/canvas-release.aar packages/canvas/platforms/android/canvas-release.aar
-      - uses: ./.github/actions/skia-cache
-        with:
-          name: canvas-android
-          save: 'true'
       - uses: actions/upload-artifact@v4
         with:
           name: canvas-android
@@ -109,15 +110,16 @@ jobs:
       - name: Build Rust libraries (Mac Catalyst)
         run: make catalyst
       # same as `npm run build.canvas.ios.framework.release`, without needing node_modules
+      # Saved right after the Rust build, so a later failing step cannot drop the cache.
+      - uses: ./.github/actions/skia-cache
+        with:
+          name: canvas-ios
+          save: 'true'
       - name: Build CanvasNative.xcframework
         working-directory: tools/scripts
         run: sh canvas-build.sh
       - name: Pack xcframework
         run: tar -czf canvas-ios.tar.gz -C packages/canvas/platforms/ios/CanvasNativeBinary CanvasNative.xcframework
-      - uses: ./.github/actions/skia-cache
-        with:
-          name: canvas-ios
-          save: 'true'
       - uses: actions/upload-artifact@v4
         with:
           name: canvas-ios
@@ -151,6 +153,12 @@ jobs:
       - name: Build Rust libraries
         if: steps.svg-aar.outputs.cache-hit != 'true'
         run: make android-svg
+      # Saved right after the Rust build, so a later failing step cannot drop the cache.
+      - uses: ./.github/actions/skia-cache
+        if: steps.svg-aar.outputs.cache-hit != 'true'
+        with:
+          name: canvas-svg-android
+          save: 'true'
       - name: Copy .so files into jniLibs
         if: steps.svg-aar.outputs.cache-hit != 'true'
         run: sh tools/scripts/copy-svg-android.sh
@@ -161,11 +169,6 @@ jobs:
       - name: Copy AAR into platforms/android
         if: steps.svg-aar.outputs.cache-hit != 'true'
         run: cp packages/canvas-svg/src-native/android/canvassvg/build/outputs/aar/canvassvg-release.aar packages/canvas-svg/platforms/android/canvassvg-release.aar
-      - uses: ./.github/actions/skia-cache
-        if: steps.svg-aar.outputs.cache-hit != 'true'
-        with:
-          name: canvas-svg-android
-          save: 'true'
       - uses: actions/upload-artifact@v4
         with:
           name: canvas-svg-android
@@ -193,6 +196,12 @@ jobs:
         if: steps.svg-xcframework.outputs.cache-hit != 'true'
         run: make svg
       # same as `npm run build.canvas.svg.ios.framework.release`
+      # Saved right after the Rust build, so a later failing step cannot drop the cache.
+      - uses: ./.github/actions/skia-cache
+        if: steps.svg-xcframework.outputs.cache-hit != 'true'
+        with:
+          name: canvas-svg-ios
+          save: 'true'
       - name: Build CanvasSVG.xcframework
         if: steps.svg-xcframework.outputs.cache-hit != 'true'
         working-directory: tools/scripts
@@ -200,11 +209,6 @@ jobs:
       - name: Pack xcframework
         if: steps.svg-xcframework.outputs.cache-hit != 'true'
         run: tar -czf canvas-svg-ios.tar.gz -C packages/canvas-svg/platforms/ios/CanvasSVGBinary CanvasSVG.xcframework
-      - uses: ./.github/actions/skia-cache
-        if: steps.svg-xcframework.outputs.cache-hit != 'true'
-        with:
-          name: canvas-svg-ios
-          save: 'true'
       - uses: actions/upload-artifact@v4
         with:
           name: canvas-svg-ios
@@ -321,15 +325,16 @@ jobs:
         run: ./tools/scripts/build-napi.sh ${{ matrix.target }} release-napi
       # arm64 is cross-compiled, so only x64 runs them. The runners have no GPU: D3D12 and ANGLE
       # fall back to WARP, and the WebGPU suites skip without an adapter.
+      # Saved right after the Rust build, so a later failing step cannot drop the cache.
+      - uses: ./.github/actions/skia-cache
+        with:
+          name: canvas-windows-${{ matrix.arch }}
+          save: 'true'
       - name: Node-API tests
         if: matrix.arch == 'x64'
         env:
           CANVAS_NAPI_ADDON: ${{ github.workspace }}\packages\canvas\platforms\windows\x64\canvasnative.node
         run: node --expose-gc --test "crates/canvas-napi/__test__/*.test.mjs"
-      - uses: ./.github/actions/skia-cache
-        with:
-          name: canvas-windows-${{ matrix.arch }}
-          save: 'true'
       - uses: actions/upload-artifact@v4
         with:
           name: canvas-windows-${{ matrix.arch }}
@@ -409,17 +414,18 @@ jobs:
         run: ./tools/scripts/build-napi.sh ${{ matrix.target }} release-napi ${{ matrix.module.crate }}
       # arm64 is cross-compiled, so only x64 runs them. The timeout bounds a test process that
       # hangs on exit (an addon releasing Media Foundation / D3D objects during process shutdown).
+      # Saved right after the Rust build, so a later failing step cannot drop the cache.
+      - uses: ./.github/actions/skia-cache
+        if: steps.cache.outputs.cache-hit != 'true' && matrix.module.skia
+        with:
+          name: ${{ matrix.module.name }}-windows-${{ matrix.arch }}
+          save: 'true'
       - name: Node-API tests
         if: steps.cache.outputs.cache-hit != 'true' && matrix.arch == 'x64' && matrix.module.addon-env
         timeout-minutes: 5
         run: |
           export ${{ matrix.module.addon-env }}="$(cygpath -w "$PWD/$MODULE_DIR/${{ matrix.module.file }}")"
           node --expose-gc --test "crates/${{ matrix.module.crate }}/__test__/*.test.mjs"
-      - uses: ./.github/actions/skia-cache
-        if: steps.cache.outputs.cache-hit != 'true' && matrix.module.skia
-        with:
-          name: ${{ matrix.module.name }}-windows-${{ matrix.arch }}
-          save: 'true'
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.module.name }}-windows-${{ matrix.arch }}
@@ -452,6 +458,11 @@ jobs:
         run: ./tools/scripts/build-linux.sh
       # Mesa's surfaceless EGL (llvmpipe) for 2D / WebGL and lavapipe for WebGPU: no GPU here.
       # canvas-media's suite drives Media Foundation, so it is Windows only.
+      # Saved right after the Rust build, so a later failing step cannot drop the cache.
+      - uses: ./.github/actions/skia-cache
+        with:
+          name: linux-${{ matrix.arch }}
+          save: 'true'
       - name: Node-API tests
         env:
           CANVAS_NAPI_ADDON: ${{ github.workspace }}/packages/canvas/platforms/linux/lib/${{ matrix.arch }}/canvasnative.node
@@ -462,10 +473,6 @@ jobs:
           node --expose-gc --test "crates/canvas-napi/__test__/*.test.mjs"
           node --expose-gc --test "crates/canvas-svg-napi/__test__/*.test.mjs"
           node --expose-gc --test "crates/audio-context-napi/__test__/*.test.mjs"
-      - uses: ./.github/actions/skia-cache
-        with:
-          name: linux-${{ matrix.arch }}
-          save: 'true'
       - uses: actions/upload-artifact@v4
         with:
           name: linux-${{ matrix.arch }}

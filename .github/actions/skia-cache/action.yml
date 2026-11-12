@@ -11,7 +11,7 @@ description: >
   for the whole job: skia-bindings rebuilds Skia when one of them changes, and the Xcode pre-build
   phases call cargo directly.
 
-  Save (save: 'true', as the job's last step): only on pushes to master, so pull requests and
+  Save (save: 'true', right after the job's Rust build): only on pushes to master, so pull requests and
   releases read master's entries and never write the ones master restores. Also saves the cargo
   registry the setup-*-native actions restored, under the same rule.
 
@@ -38,12 +38,30 @@ runs:
         cp "$GITHUB_ACTION_PATH/cargo-shim.sh" "$tmp/skia-cache-bin/cargo"
         chmod +x "$tmp/skia-cache-bin/cargo"
         echo "$tmp/skia-cache-bin" >> "$GITHUB_PATH"
+        # Key on what the Skia build depends on: the rust-skia rev and features (every Cargo.toml
+        # line naming skia, plus the [features] chains that reach skia-safe), the env the build
+        # scripts and Makefile give cargo, and the toolchain setup. Unrelated dependency or
+        # script changes keep the entries.
+        sha() { if command -v sha256sum > /dev/null; then sha256sum; else shasum -a 256; fi; }
+        inputs_hash="$(
+          for f in $(git ls-files Cargo.toml 'crates/*/Cargo.toml'); do
+            echo "## $f"
+            tr -d '\r' < "$f" | awk '/^\[/ { in_features = ($0 == "[features]") } in_features'
+            tr -d '\r' < "$f" | grep -i skia || true
+          done | sha | cut -c1-40
+        )"
+        files_hash="$(
+          git ls-files .cargo/config.toml Makefile 'packages/*/src-native/**/pre-build.sh' \
+            '.github/actions/setup-*/action.yml' tools/scripts/build-napi.sh tools/scripts/build-linux.sh \
+            tools/scripts/build-android.sh tools/scripts/build-svg-android.sh tools/scripts/android-build.sh \
+            tools/scripts/build-ios.sh | xargs cat | sha | cut -c1-40
+        )"
         {
           echo "SKIA_CACHE_REAL_CARGO=$real_cargo"
           echo "SKIA_CACHE_DIR=$tmp/skia-cache"
           echo "BUILD_ARTIFACTSTAGINGDIRECTORY=$tmp/skia-export"
           # bump to drop every Skia cache entry
-          echo "SKIA_CACHE_KEY=skia-v1-${{ inputs.name }}-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('Cargo.lock', 'Cargo.toml', 'crates/*/Cargo.toml', '.cargo/config.toml', 'Makefile', 'tools/scripts/*.sh', 'packages/*/src-native/**/pre-build.sh', '.github/actions/setup-*/action.yml') }}"
+          echo "SKIA_CACHE_KEY=skia-v2-${{ inputs.name }}-${{ runner.os }}-${{ runner.arch }}-$inputs_hash-$files_hash"
         } >> "$GITHUB_ENV"
 
     # Exact keys only: a partial match could lack a target, and a forced install that finds no

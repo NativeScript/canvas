@@ -92,6 +92,24 @@ export class TNSXMLHttpRequestUpload {
 }
 
 export class TNSXMLHttpRequest {
+	/** The response body as an ArrayBuffer, whatever form the native layer returned */
+	static _contentBytes(content: any): ArrayBuffer {
+		if (content instanceof ArrayBuffer) {
+			return content;
+		}
+		if (__APPLE__ && content instanceof NSData) {
+			return interop.bufferFromData(content);
+		}
+		if (__ANDROID__ && content instanceof java.nio.ByteBuffer) {
+			return (ArrayBuffer as any).from(content);
+		}
+		if (ArrayBuffer.isView(content)) {
+			return content.buffer.slice(content.byteOffset, content.byteOffset + content.byteLength) as ArrayBuffer;
+		}
+		const text = typeof content === 'string' ? content : content === null || content === undefined ? '' : JSON.stringify(content);
+		return new TextEncoder().encode(text).buffer as ArrayBuffer;
+	}
+
 	public UNSENT = 0;
 	public OPENED = 1;
 	public HEADERS_RECEIVED = 2;
@@ -958,47 +976,10 @@ export class TNSXMLHttpRequest {
 						}
 					}
 				} else if (this.responseType === XMLHttpRequestResponseType.arraybuffer) {
-					if (res.content instanceof ArrayBuffer) {
-						this._response = res.content;
-					} else if (__APPLE__) {
-						this._response = interop.bufferFromData(res.content);
-					} else {
-						this._response = (ArrayBuffer as any).from(res.content);
-					}
+					this._response = TNSXMLHttpRequest._contentBytes(res.content);
 				} else if (this.responseType === XMLHttpRequestResponseType.blob) {
 					const header = this.getResponseHeader('Content-Type') || this.getResponseHeader('content-type');
-					const type = { type: header ?? 'application/octet-stream' };
-					if (res.content instanceof ArrayBuffer) {
-						this._response = new Blob([res.content], type);
-					} else if (__APPLE__) {
-						if (typeof res.content === 'string') {
-							const encoder = new TextEncoder();
-							const buffer = encoder.encode(res.content);
-							this._response = new Blob([buffer], type);
-						} else if (res.content !== null && res.content !== undefined && res.content instanceof NSData) {
-							const buffer = interop.bufferFromData(res.content);
-							this._response = new Blob([buffer], type);
-						} else {
-							const encoder = new TextEncoder();
-							const buffer = encoder.encode(res.content.toString());
-							this._response = new Blob([buffer], type);
-						}
-					} else {
-						if (typeof res.content === 'string') {
-							const encoder = new TextEncoder();
-							const buffer = encoder.encode(res.content);
-							this._response = new Blob([buffer], type);
-						} else {
-							if (res.content !== null && res.content !== undefined && res.content instanceof NSData) {
-								const buffer = (ArrayBuffer as any).from(res.content);
-								this._response = new Blob([buffer], type);
-							} else {
-								const encoder = new TextEncoder();
-								const buffer = encoder.encode(res.content.toString());
-								this._response = new Blob([buffer], type);
-							}
-						}
-					}
+					this._response = new Blob([TNSXMLHttpRequest._contentBytes(res.content)], { type: header ?? 'application/octet-stream' });
 				}
 
 				this._addToStringOnResponse();
@@ -1027,7 +1008,11 @@ export class TNSXMLHttpRequest {
 				this._updateReadyStateChange(this.DONE);
 			})
 			.catch((error) => {
-				const type: HttpError = error.type;
+				// Untyped errors (an exception reading the response) are network errors, so the request still settles.
+				const type: HttpError = error?.type ?? HttpError.Error;
+				if (error?.type === undefined) {
+					error = { type, message: error?.message ?? String(error) };
+				}
 				const method = this._request.method.toLowerCase();
 				switch (type) {
 					case HttpError.Cancelled:

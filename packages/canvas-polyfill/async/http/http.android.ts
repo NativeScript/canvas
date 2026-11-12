@@ -1,6 +1,6 @@
-import { fileNameFromPath, Headers, HttpDownloadRequestOptions, HttpError, HttpRequestOptions, isImageUrl, SaveImageStorageKey, TNSHttpSettings } from './http-request-common';
+import { Headers, HttpDownloadRequestOptions, HttpError, HttpRequestOptions, TNSHttpSettings } from './http-request-common';
 import { NetworkAgent } from '@nativescript/core/debugger';
-import { File, Folder, knownFolders, path, Utils, Application, ApplicationSettings } from '@nativescript/core';
+import { Folder, knownFolders, path, Utils } from '@nativescript/core';
 import { FileManager } from '../file/file';
 
 export type CancellablePromise = Promise<any> & { cancel: () => void };
@@ -347,64 +347,7 @@ export class Http {
 					requestCallbacks.set(id, callback);
 				};
 
-				if (TNSHttpSettings.saveImage && isImageUrl(options.url)) {
-					// handle saved images to disk
-					if (!TNSHttpSettings.currentlySavedImages) {
-						const stored = ApplicationSettings.getString(SaveImageStorageKey);
-						if (stored) {
-							try {
-								TNSHttpSettings.currentlySavedImages = JSON.parse(stored);
-							} catch (err) {
-								TNSHttpSettings.currentlySavedImages = {};
-							}
-						} else {
-							TNSHttpSettings.currentlySavedImages = {};
-						}
-					}
-
-					const imageSetting = TNSHttpSettings.currentlySavedImages[options.url];
-					const requests = imageSetting ? imageSetting.requests : 0;
-					let localPath: string;
-					if (imageSetting && imageSetting.localPath && File.exists(imageSetting.localPath)) {
-						// previously saved to disk
-						FileManager.readFile(imageSetting.localPath, null, (error, file) => {
-							if (error) {
-								if (TNSHttpSettings.debug) {
-									console.log('http image load error:', error);
-								}
-							}
-							resolve({
-								url: options.url,
-								responseText: '',
-								statusCode: 200,
-								content: file,
-								headers: {
-									'Content-Type': 'arraybuffer',
-								},
-							});
-						});
-					} else if (requests >= TNSHttpSettings.saveImage.numberOfRequests) {
-						// setup to write to disk when response finishes
-						let filename = fileNameFromPath(options.url);
-						if (filename.indexOf('?')) {
-							// strip any params if were any
-							filename = filename.split('?')[0];
-						}
-						localPath = path.join(knownFolders.documents().path, filename);
-						makeRemoteRequest();
-					}
-
-					// save settings
-					TNSHttpSettings.currentlySavedImages[options.url] = {
-						...(imageSetting || {}),
-						date: Date.now(),
-						requests: requests + 1,
-						localPath,
-					};
-					ApplicationSettings.setString(SaveImageStorageKey, JSON.stringify(TNSHttpSettings.currentlySavedImages));
-				} else {
-					makeRemoteRequest();
-				}
+				makeRemoteRequest();
 
 				requestIdCounter++;
 			} catch (ex) {
@@ -515,7 +458,7 @@ export class Http {
 											responseAsString: Utils.isString(result.contentText) ? result.contentText : result.content?.toString() || '',
 											responseAsImage: null, // TODO needs base64 Image
 										} as any,
-										headers
+										headers,
 									);
 								}
 							}

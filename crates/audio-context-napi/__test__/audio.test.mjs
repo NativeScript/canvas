@@ -39,7 +39,9 @@ test('renders an oscillator through a gain offline', async () => {
 	assert.equal(rendered.length, 4800);
 	assert.equal(rendered.numberOfChannels, 1);
 	const samples = rendered.channelData(0);
-	assert.ok(Math.abs(rms(samples.subarray(480)) - 0.5) < 0.02, `rms ${rms(samples)}`);
+	// The square is the spec's normalized PeriodicWave (peak 1, RMS about 0.83), as in Chrome.
+	const level = rms(samples.subarray(480));
+	assert.ok(Math.abs(level - 0.415) < 0.01, `rms ${level}`);
 	assert.equal(context.state, 'closed');
 	await assert.rejects(async () => context.startRendering(), /InvalidStateError/);
 });

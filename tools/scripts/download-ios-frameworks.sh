@@ -4,7 +4,7 @@
 # not committed. To work on the native code, build them instead (see README).
 #
 # Usage: tools/scripts/download-ios-frameworks.sh [tag]
-#   tag: a release tag such as 3.0.6. Defaults to the latest release.
+#   tag: a release tag such as 3.0.7. Defaults to the latest release.
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 TAG="${1:-}"

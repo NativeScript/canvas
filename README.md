@@ -35,7 +35,7 @@ In general, when in doubt with what to do, just `npm start`.
 The plugins' iOS frameworks (`CanvasNative`, `CanvasSVG`, `AudioContextNative`) are not committed. Each plugin references its framework through a local SwiftPM package at `packages/<plugin>/platforms/ios/<Framework>Binary`, so after cloning, put the frameworks there before building an iOS app:
 
 ```bash
-# prebuilt, from the latest GitHub release (or pass a tag: npm run download.ios.frameworks -- 3.0.6)
+# prebuilt, from the latest GitHub release (or pass a tag: npm run download.ios.frameworks -- 3.0.7)
 npm run download.ios.frameworks
 
 # or build them from source, when working on the native code

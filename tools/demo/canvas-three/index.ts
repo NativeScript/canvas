@@ -51,6 +51,7 @@ import { SimplexNoise } from 'three/examples/jsm/math/SimplexNoise';
 // import { RGBELoader, GLTFLoader, OrbitControls, SimplexNoise, DRACOLoader } from 'three-stdlib';
 import { tiny_poly_world } from './games/tiny_poly_world';
 import { tiny_poly_world_webgpu } from './games/tiny_poly_world_webgpu';
+import { webgpu_batched_mesh, DrawMode } from './examples/webgpu_batched_mesh';
 import { device } from '@nativescript/core/platform';
 import { ghost_card } from './examples/ghost_card';
 
@@ -85,6 +86,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.webgpu_backdrop(this.canvas);
 		this.webgpu_1m_particles(this.canvas);
 		//this.webgpu_cube(args.object);
+		//this.webgpu_batched_mesh(this.canvas);
 		//this.webGPUGtlfLoader(this.canvas);
 		//this.webgpu_tsl_galaxy(this.canvas);
 		//webgl_materials_lightmap(this.canvas);
@@ -352,6 +354,18 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		} catch (error) {
 			console.error('Error initializing WebGL orientation demo:', error);
 		}
+	}
+
+	/** The same parts drawn as Meshes, a BatchedMesh and InstancedMeshes, 10 s each, with the draw count logged. */
+	async webgpu_batched_mesh(canvas: Canvas) {
+		const demo = await webgpu_batched_mesh(canvas, {
+			count: 2048,
+			mode: 'meshes',
+			onStats: (stats) => console.log(`${stats.mode}: ${stats.count} parts, ${stats.draws} draws, ${stats.fps.toFixed(1)} fps, render ${stats.renderMs.toFixed(1)} ms`),
+		});
+		const modes: DrawMode[] = ['meshes', 'batched', 'instanced'];
+		let next = 1;
+		setInterval(() => demo.setMode(modes[next++ % modes.length]), 10000);
 	}
 
 	async webgpu_cube(canvas: Canvas) {

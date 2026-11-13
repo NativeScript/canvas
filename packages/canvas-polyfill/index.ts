@@ -65,6 +65,20 @@ if (typeof (global as any).Intl === 'undefined') {
 	(global as any).window.Intl = (global as any).Intl;
 }
 
+// Linux V8 ships Intl.Segmenter without ICU data and segment() crashes, so hide it.
+{
+	const intl = (global as any).Intl;
+	if (typeof intl?.Segmenter === 'function') {
+		let usable = false;
+		try {
+			usable = intl.Segmenter.supportedLocalesOf(['en']).length > 0;
+		} catch (e) {}
+		if (!usable) {
+			delete intl.Segmenter;
+		}
+	}
+}
+
 import { MutationObserver } from './MutationObserver';
 
 if (!global.MutationObserver) {

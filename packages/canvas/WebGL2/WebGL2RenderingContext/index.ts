@@ -577,6 +577,10 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		this.native.uniformMatrix4x3fv(value, transpose, data);
 	}
 
+	vertexAttribIPointer(index: number, size: number, type: number, stride: number, offset: number): void {
+		this.native.vertexAttribIPointer(index, size, type, stride, offset);
+	}
+
 	vertexAttribDivisor(index: number, divisor: number): void {
 		this.native.vertexAttribDivisor(index, divisor);
 	}

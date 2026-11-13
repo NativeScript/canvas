@@ -115,6 +115,9 @@ v8::CFunction WebGL2RenderingContext::fast_uniform_matrix_4x3fv_(
 v8::CFunction WebGL2RenderingContext::fast_vertex_attrib_divisor_(
                                                                   v8::CFunction::Make(WebGL2RenderingContext::FastVertexAttribDivisor));
 
+v8::CFunction WebGL2RenderingContext::fast_vertex_attrib_i_pointer_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastVertexAttribIPointer));
+
 
 v8::CFunction WebGL2RenderingContext::fast_vertex_attrib_i_4i_(
                                                                v8::CFunction::Make(WebGL2RenderingContext::FastVertexAttribI4i));
@@ -3684,6 +3687,23 @@ void WebGL2RenderingContext::UniformMatrix4x3fv(const v8::FunctionCallbackInfo<v
 
 }
 
+void WebGL2RenderingContext::VertexAttribIPointer(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGL2RenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto index = args[0]->Uint32Value(context).ToChecked();
+    auto size = args[1]->Int32Value(context).ToChecked();
+    auto type = args[2]->Uint32Value(context).ToChecked();
+    auto stride = args[3]->Int32Value(context).ToChecked();
+    auto offset = static_cast<ssize_t>(args[4]->NumberValue(context).ToChecked());
+    canvas_native_webgl2_vertex_attrib_i_pointer(index, size, type, stride, offset, ptr->GetState());
+}
+
 void WebGL2RenderingContext::VertexAttribDivisor(const v8::FunctionCallbackInfo<v8::Value> &args) {
     WebGL2RenderingContext *ptr = GetPointer(args.This());
     if (ptr == nullptr) {
@@ -4484,6 +4504,9 @@ void WebGL2RenderingContext::SetMethods(v8::Isolate *isolate,
 
     SetFastMethod(isolate, tmpl, "vertexAttribDivisor", VertexAttribDivisor,
                   &fast_vertex_attrib_divisor_, v8::Local<v8::Value>());
+
+    SetFastMethod(isolate, tmpl, "vertexAttribIPointer", VertexAttribIPointer,
+                  &fast_vertex_attrib_i_pointer_, v8::Local<v8::Value>());
 
 
     SetFastMethod(isolate, tmpl, "vertexAttribI4i", VertexAttribI4i, &fast_vertex_attrib_i_4i_,

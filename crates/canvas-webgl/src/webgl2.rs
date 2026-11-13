@@ -2223,6 +2223,21 @@ pub fn canvas_native_webgl2_vertex_attrib_divisor(
     }
 }
 
+/// Integer attributes: values reach the shader as `ivec`/`uvec`, not floats
+pub fn canvas_native_webgl2_vertex_attrib_i_pointer(
+    index: u32,
+    size: i32,
+    d_type: u32,
+    stride: i32,
+    offset: isize,
+    state: &mut WebGLState,
+) {
+    state.make_current();
+    unsafe {
+        gl_bindings::VertexAttribIPointer(index, size, d_type, stride, offset as *const c_void);
+    }
+}
+
 pub fn canvas_native_webgl2_vertex_attrib_i4i(
     index: u32,
     x: i32,

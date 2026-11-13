@@ -1580,6 +1580,11 @@ impl web_g_l_2_rendering_context {
     )
   }
 
+  #[napi(js_name = "vertexAttribIPointer", ts_args_type = "index: number, size: number, type: number, stride: number, offset: number")]
+  pub fn vertex_attrib_i_pointer(&self, index: u32, size: i32, type_: u32, stride: i32, offset: i64) {
+    canvas_c::canvas_native_webgl2_vertex_attrib_i_pointer(index, size, type_, stride, offset as isize, self.state)
+  }
+
   #[napi]
   pub fn vertex_attrib_divisor(&self, index: u32, divisor: u32) {
     canvas_c::canvas_native_webgl2_vertex_attrib_divisor(index, divisor, self.state)

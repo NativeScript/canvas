@@ -68,6 +68,7 @@ Assets.setPreferences({ preferWorkers: false });
 // PixiJS may have picked Intl.Segmenter before the polyfill hid it.
 if (typeof (Intl as any).Segmenter !== 'function') {
 	(CanvasTextMetrics as any).graphemeSegmenter = (text: string) => [...text];
+}
 
 // Pixi listens for pointermove/up on document and globalThis, which a native canvas never raises: listen on it too.
 const events = EventSystem.prototype as any;

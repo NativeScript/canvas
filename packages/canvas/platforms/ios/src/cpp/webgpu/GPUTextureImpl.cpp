@@ -305,6 +305,7 @@ void GPUTextureImpl::CreateView(const v8::FunctionCallbackInfo<v8::Value> &args)
             } else if (aspectStr == "depth-only") {
                 aspect = CanvasTextureAspectDepthOnly;
             }
+            range.aspect = aspect;
         }
 
 

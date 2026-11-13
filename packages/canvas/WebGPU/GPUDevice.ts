@@ -277,6 +277,11 @@ export class GPUDevice extends EventTarget {
 	}
 
 	createRenderBundleEncoder(descriptor: { colorFormats: (null | GPUTextureFormat)[]; depthReadOnly?: boolean; depthStencilFormat?: GPUTextureFormat; label?: string; sampleCount?: number; stencilReadOnly?: boolean }) {
+		if (__ANDROID__ && Array.isArray(descriptor?.colorFormats)) {
+			// Same bgra -> rgba fallback as createTexture and the pipelines, or a bundle can't match the pass it runs in.
+			const colorFormats = descriptor.colorFormats.map((format) => (format === 'bgra8unorm' ? 'rgba8unorm' : format === 'bgra8unorm-srgb' ? 'rgba8unorm-srgb' : format));
+			descriptor = { ...descriptor, colorFormats };
+		}
 		return GPURenderBundleEncoder.fromNative(this.native.createRenderBundleEncoder(descriptor));
 	}
 

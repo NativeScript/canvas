@@ -231,7 +231,8 @@ v8::Local<v8::FunctionTemplate> WebGL2RenderingContext::GetCtor(v8::Isolate *iso
     WebGLRenderingContext::SetConstants(isolate, tmpl);
     SetConstants(isolate, tmpl);
 
-    WebGLRenderingContext::SetMethods(isolate, tmpl);
+    // WebGL1 methods on the prototype so WebGL2's overrides (getParameter…) on the instance shadow them.
+    WebGLRenderingContext::SetMethods(isolate, ctorTmpl->PrototypeTemplate());
     SetMethods(isolate, tmpl);
 
     WebGLRenderingContext::SetProps(isolate, tmpl);

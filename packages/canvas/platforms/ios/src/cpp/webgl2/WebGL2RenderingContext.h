@@ -63,6 +63,8 @@ public:
     static v8::CFunction fast_uniform_matrix_4x2fv_;
     static v8::CFunction fast_uniform_matrix_4x3fv_;
     static v8::CFunction fast_vertex_attrib_divisor_;
+
+    static v8::CFunction fast_vertex_attrib_i_pointer_;
     static v8::CFunction fast_vertex_attrib_i_4i_;
     static v8::CFunction fast_vertex_attrib_i_4iv_;
     static v8::CFunction fast_vertex_attrib_i_4ui_;
@@ -1678,6 +1680,21 @@ public:
 
     }
 
+
+    static void VertexAttribIPointer(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void
+    FastVertexAttribIPointer(v8::Local<v8::Object> receiver_obj, uint32_t index, int32_t size,
+                             uint32_t type, int32_t stride, int32_t offset) {
+        WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        canvas_native_webgl2_vertex_attrib_i_pointer(
+                index, size, type, stride, static_cast<ssize_t>(offset),
+                ptr->GetState());
+    }
 
     static void VertexAttribDivisor(const v8::FunctionCallbackInfo<v8::Value> &args);
 

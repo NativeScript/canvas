@@ -938,6 +938,28 @@ pub fn canvas_native_webgl_generate_mipmap(target: u32, state: &mut WebGLState) 
     unsafe { gl_bindings::GenerateMipmap(target) }
 }
 
+/// The string GL wrote: its reported length, not a NUL scan, so an empty buffer gives "" safely.
+pub(crate) fn gl_written_string(buffer: &[u8], written: i32) -> String {
+    let written = (written.max(0) as usize).min(buffer.len());
+    let bytes = &buffer[..written];
+    let end = bytes.iter().position(|&b| b == 0).unwrap_or(bytes.len());
+
+    String::from_utf8_lossy(&bytes[..end]).into_owned()
+}
+
+/// A name buffer for `GetActive*`, with a fallback size when the driver reports none
+pub(crate) fn gl_name_buffer(max_length: i32) -> Vec<u8> {
+    const FALLBACK: usize = 256;
+
+    let size = if max_length > 0 {
+        max_length as usize
+    } else {
+        FALLBACK
+    };
+
+    vec![0u8; size]
+}
+
 pub fn canvas_native_webgl_get_active_attrib(
     program: u32,
     index: u32,
@@ -955,13 +977,13 @@ pub fn canvas_native_webgl_get_active_attrib(
             &mut length,
         )
     }
-    let mut name_buffer = vec![0; length as usize];
+    let mut name_buffer = gl_name_buffer(length);
 
     unsafe {
         gl_bindings::GetActiveAttrib(
             program,
             index,
-            length,
+            name_buffer.len() as i32,
             &mut name_length,
             &mut size,
             &mut info_type,
@@ -969,11 +991,11 @@ pub fn canvas_native_webgl_get_active_attrib(
         )
     }
 
-    name_buffer.shrink_to(name_length as usize);
-
-    let c_str = unsafe { CStr::from_ptr(name_buffer.as_ptr()) };
-
-    WebGLActiveInfo::new(c_str.to_string_lossy().to_string(), size, info_type)
+    WebGLActiveInfo::new(
+        gl_written_string(&name_buffer, name_length),
+        size,
+        info_type,
+    )
 }
 
 pub fn canvas_native_webgl_get_active_uniform(
@@ -989,25 +1011,25 @@ pub fn canvas_native_webgl_get_active_uniform(
     unsafe {
         gl_bindings::GetProgramiv(program, gl_bindings::ACTIVE_UNIFORM_MAX_LENGTH, &mut length)
     }
-    let mut name_buffer = vec![0; length as usize];
+    let mut name_buffer = gl_name_buffer(length);
 
     unsafe {
         gl_bindings::GetActiveUniform(
             program,
             index,
-            length,
+            name_buffer.len() as i32,
             &mut name_length,
             &mut size,
             &mut info_type,
             name_buffer.as_mut_ptr() as *mut c_char,
         )
-    };
+    }
 
-    name_buffer.shrink_to(name_length as usize);
-
-    let c_str = unsafe { CStr::from_ptr(name_buffer.as_ptr()) };
-
-    WebGLActiveInfo::new(c_str.to_string_lossy().to_string(), size, info_type)
+    WebGLActiveInfo::new(
+        gl_written_string(&name_buffer, name_length),
+        size,
+        info_type,
+    )
 }
 
 pub fn canvas_native_webgl_get_attached_shaders(program: u32, state: &mut WebGLState) -> Vec<u32> {
@@ -1158,7 +1180,13 @@ pub fn canvas_native_webgl_get_extension(
         } else {
             None
         };
-    } else if (name.eq("WEBGL_color_buffer_float") || name.eq("EXT_color_buffer_float"))
+    } else if name.eq("EXT_color_buffer_float")
+        && version == WebGLVersion::V2
+        && (extensions.contains("GL_EXT_color_buffer_float") || es_version_at_least(3, 2))
+    {
+        // Core in GLES 3.2.
+        return Some(Box::new(WEBGL_color_buffer_float::new()));
+    } else if name.eq("WEBGL_color_buffer_float")
         && extensions.contains("GL_OES_packed_depth_stencil")
     {
         return Some(Box::new(WEBGL_color_buffer_float::new()));
@@ -1587,6 +1615,14 @@ pub fn canvas_native_webgl_get_program_parameter(
         | gl_bindings::ACTIVE_UNIFORMS => {
             return WebGLResult::I32(param);
         }
+        // WebGL2 program queries.
+        gl_bindings::ACTIVE_UNIFORM_BLOCKS
+        | gl_bindings::TRANSFORM_FEEDBACK_VARYINGS
+        | gl_bindings::TRANSFORM_FEEDBACK_BUFFER_MODE
+            if state.get_version() == WebGLVersion::V2 =>
+        {
+            return WebGLResult::I32(param);
+        }
         _ => WebGLResult::None,
     }
 }
@@ -1731,6 +1767,19 @@ pub fn canvas_native_webgl_get_supported_extensions(state: &mut WebGLState) -> V
         }
         supported
     }
+}
+
+/// Whether the context is at least GLES `major`.`minor`; ES 3 contexts only.
+#[cfg(not(any(target_os = "ios", target_os = "macos", target_os = "visionos", target_os = "tvos", target_os = "windows")))]
+fn es_version_at_least(major: i32, minor: i32) -> bool {
+    let (mut have_major, mut have_minor) = (0, 0);
+
+    unsafe {
+        gl_bindings::GetIntegerv(gl_bindings::MAJOR_VERSION, &mut have_major);
+        gl_bindings::GetIntegerv(gl_bindings::MINOR_VERSION, &mut have_minor);
+    }
+
+    (have_major, have_minor) >= (major, minor)
 }
 
 /// Linux (Mesa): a WebGL 1 context is still an ES 3 context, whose core has instancing, vertex

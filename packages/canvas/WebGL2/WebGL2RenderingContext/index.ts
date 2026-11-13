@@ -22,6 +22,7 @@ import { Helpers } from '../../helpers';
 import { NAPI_HOST, POINTER_CONTEXT_HOST } from '../../platform';
 import { imageAssetFor } from '../../platform/index';
 import { isCanvasView, isOffscreenCanvas } from '../../Canvas/utils';
+import { installSourceOffsets } from './source-offsets';
 
 export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 	static {
@@ -208,8 +209,9 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		return new WebGLSync(this.native.fenceSync(condition, flags));
 	}
 
-	framebufferTextureLayer(target: number, attachment: number, texture: WebGLTexture, level: number, layer: number): void {
-		const value = texture.native;
+	framebufferTextureLayer(target: number, attachment: number, texture: WebGLTexture | null, level: number, layer: number): void {
+		// null detaches.
+		const value = texture ? texture.native : 0;
 		this.native.framebufferTextureLayer(target, attachment, value, level, layer);
 	}
 
@@ -575,6 +577,10 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		this.native.uniformMatrix4x3fv(value, transpose, data);
 	}
 
+	vertexAttribIPointer(index: number, size: number, type: number, stride: number, offset: number): void {
+		this.native.vertexAttribIPointer(index, size, type, stride, offset);
+	}
+
 	vertexAttribDivisor(index: number, divisor: number): void {
 		this.native.vertexAttribDivisor(index, divisor);
 	}
@@ -597,3 +603,6 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 
 	/* Miscellaneous constants */
 }
+
+// WebGL2-only overloads.
+installSourceOffsets(WebGL2RenderingContext.prototype);

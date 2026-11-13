@@ -6060,6 +6060,13 @@ void canvas_native_webgl2_uniform_matrix4x3fv(int32_t location,
                                               uintptr_t size,
                                               struct WebGLState *state);
 
+void canvas_native_webgl2_vertex_attrib_i_pointer(uint32_t index,
+                                                  int32_t size,
+                                                  uint32_t d_type,
+                                                  int32_t stride,
+                                                  intptr_t offset,
+                                                  struct WebGLState *state);
+
 void canvas_native_webgl2_vertex_attrib_divisor(uint32_t index,
                                                 uint32_t divisor,
                                                 struct WebGLState *state);

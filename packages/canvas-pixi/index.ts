@@ -1,7 +1,7 @@
 import '@nativescript/canvas-polyfill';
 import { Canvas } from '@nativescript/canvas';
 import { knownFolders } from '@nativescript/core';
-import { Adapter, Assets, CanvasSource, CanvasTextMetrics, DOMAdapter } from 'pixi.js';
+import { Adapter, Assets, CanvasSource, CanvasTextMetrics, DOMAdapter, EventSystem } from 'pixi.js';
 
 const NSCAdapter: Adapter = {
 	createCanvas(width?: number, height?: number) {
@@ -68,4 +68,31 @@ Assets.setPreferences({ preferWorkers: false });
 // PixiJS may have picked Intl.Segmenter before the polyfill hid it.
 if (typeof (Intl as any).Segmenter !== 'function') {
 	(CanvasTextMetrics as any).graphemeSegmenter = (text: string) => [...text];
+
+// Pixi listens for pointermove/up on document and globalThis, which a native canvas never raises: listen on it too.
+const events = EventSystem.prototype as any;
+const addEvents = events._addEvents;
+const removeEvents = events._removeEvents;
+
+if (typeof addEvents === 'function' && typeof removeEvents === 'function' && !events.__nativeCanvasPointerBridge) {
+	// Lets app-side shims of the same gap detect this one.
+	events.__nativeCanvasPointerBridge = true;
+	events._addEvents = function (this: any) {
+		const added = this._eventsAdded;
+
+		addEvents.call(this);
+		if (!added && this.domElement instanceof Canvas && this.supportsPointerEvents) {
+			this.domElement.addEventListener('pointermove', this._onPointerMove, true);
+			this.domElement.addEventListener('pointerup', this._onPointerUp, true);
+			this.domElement.addEventListener('pointercancel', this._onPointerUp, true);
+		}
+	};
+	events._removeEvents = function (this: any) {
+		if (this._eventsAdded && this.domElement instanceof Canvas && this.supportsPointerEvents) {
+			this.domElement.removeEventListener('pointermove', this._onPointerMove, true);
+			this.domElement.removeEventListener('pointerup', this._onPointerUp, true);
+			this.domElement.removeEventListener('pointercancel', this._onPointerUp, true);
+		}
+		removeEvents.call(this);
+	};
 }

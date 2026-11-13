@@ -1194,10 +1194,23 @@ void GPUDeviceImpl::CreateRenderBundleEncoder(const v8::FunctionCallbackInfo<v8:
     }
 
     uint32_t sampleCount = 1;
+    v8::Local<v8::Value> sampleCountVal;
+    if (options->Get(context, ConvertToV8String(isolate, "sampleCount")).ToLocal(&sampleCountVal) &&
+        sampleCountVal->IsUint32()) {
+        sampleCount = sampleCountVal->Uint32Value(context).FromJust();
+    }
 
     bool depthReadOnly = false;
+    v8::Local<v8::Value> depthReadOnlyVal;
+    if (options->Get(context, ConvertToV8String(isolate, "depthReadOnly")).ToLocal(&depthReadOnlyVal)) {
+        depthReadOnly = depthReadOnlyVal->BooleanValue(isolate);
+    }
 
     bool stencilReadOnly = false;
+    v8::Local<v8::Value> stencilReadOnlyVal;
+    if (options->Get(context, ConvertToV8String(isolate, "stencilReadOnly")).ToLocal(&stencilReadOnlyVal)) {
+        stencilReadOnly = stencilReadOnlyVal->BooleanValue(isolate);
+    }
 
     CanvasCreateRenderBundleEncoderDescriptor descriptor{
             *label,

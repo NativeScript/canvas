@@ -14,10 +14,24 @@ function localPath(url: string): string | null {
 	return url.startsWith('/') ? url : null;
 }
 
+/** The Blob an object URL names, or null when it isn't one or was revoked */
+function objectUrlBlob(url: string): Blob | null {
+	if (!url.startsWith('blob:')) {
+		return null;
+	}
+	const entry = (URL as any).InternalAccessor?.getData?.(url);
+	return entry?.blob ?? null;
+}
+
+/** Served here rather than by the runtime's fetch */
+function isLocal(url: string): boolean {
+	return !!localPath(url) || url.startsWith('blob:');
+}
+
 const LOCAL = Symbol('localUrl');
 
 // Linux: the runtime's fetch (and Request) speak http(s) only. Local files are read by the native
-// module off the JS thread, straight into the response's ArrayBuffer.
+// module off the JS thread, straight into the response's ArrayBuffer. `blob:` URLs are served here too.
 if (typeof __LINUX__ !== 'undefined' && __LINUX__ && typeof global.fetch === 'function' && typeof Response === 'function') {
 	if (typeof global.Request === 'function') {
 		const RemoteRequest = global.Request;
@@ -25,7 +39,7 @@ if (typeof __LINUX__ !== 'undefined' && __LINUX__ && typeof global.fetch === 'fu
 		global.Request = class Request extends RemoteRequest {
 			constructor(input: any, init?: any) {
 				const url = typeof input === 'string' ? input : (input?.[LOCAL] ?? null);
-				const local = typeof url === 'string' && localPath(url) ? url : null;
+				const local = typeof url === 'string' && isLocal(url) ? url : null;
 				super(local ? 'http://localhost/' : input, init);
 				if (local) {
 					Object.defineProperty(this, LOCAL, { value: local });
@@ -37,6 +51,17 @@ if (typeof __LINUX__ !== 'undefined' && __LINUX__ && typeof global.fetch === 'fu
 	const fetchRemote = global.fetch;
 	global.fetch = function (input: any, init?: any) {
 		const url = typeof input === 'string' ? input : (input?.[LOCAL] ?? input?.url);
+		if (typeof url === 'string' && url.startsWith('blob:')) {
+			const blob = objectUrlBlob(url);
+			if (!blob) {
+				return Promise.reject(new TypeError(`Failed to fetch ${url}: no such object URL`));
+			}
+			// Bytes, not the Blob: the runtime's Response would stringify the polyfill's Blob.
+			return blob.arrayBuffer().then((data: ArrayBuffer | ArrayBufferView) => {
+				const bytes = ArrayBuffer.isView(data) ? new Uint8Array(data.buffer, data.byteOffset, data.byteLength) : new Uint8Array(data);
+				return new Response(bytes, { status: 200, headers: blob.type ? { 'Content-Type': blob.type } : undefined });
+			});
+		}
 		const path = typeof url === 'string' ? localPath(url) : null;
 		if (!path) {
 			return fetchRemote(input, init);

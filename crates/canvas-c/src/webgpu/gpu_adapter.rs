@@ -176,7 +176,8 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
             label: label.clone(),
             required_features: features,
             required_limits: limits,
-            memory_hints: Default::default(),
+            // The default hints reserve 128-256 MiB blocks, which count as graphics memory in full.
+            memory_hints: wgt::MemoryHints::MemoryUsage,
             default_queue: wgt::QueueDescriptor { label: None },
             trace: Default::default(),
             experimental_features: Default::default(),

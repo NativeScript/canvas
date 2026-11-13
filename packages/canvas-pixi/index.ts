@@ -1,7 +1,7 @@
 import '@nativescript/canvas-polyfill';
 import { Canvas } from '@nativescript/canvas';
 import { knownFolders } from '@nativescript/core';
-import { Adapter, Assets, CanvasSource, DOMAdapter, EventSystem } from 'pixi.js';
+import { Adapter, Assets, CanvasSource, CanvasTextMetrics, DOMAdapter, EventSystem } from 'pixi.js';
 
 const NSCAdapter: Adapter = {
 	createCanvas(width?: number, height?: number) {
@@ -64,6 +64,10 @@ if (typeof resizeCanvas === 'function') {
 }
 
 Assets.setPreferences({ preferWorkers: false });
+
+// PixiJS may have picked Intl.Segmenter before the polyfill hid it.
+if (typeof (Intl as any).Segmenter !== 'function') {
+	(CanvasTextMetrics as any).graphemeSegmenter = (text: string) => [...text];
 
 // Pixi listens for pointermove/up on document and globalThis, which a native canvas never raises: listen on it too.
 const events = EventSystem.prototype as any;

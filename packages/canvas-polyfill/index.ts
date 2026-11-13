@@ -65,6 +65,50 @@ if (typeof (global as any).Intl === 'undefined') {
 	(global as any).window.Intl = (global as any).Intl;
 }
 
+// Linux V8 ships Intl.Segmenter without ICU data and segment() crashes, so hide it.
+{
+	const intl = (global as any).Intl;
+	if (typeof intl?.Segmenter === 'function') {
+		let usable = false;
+		try {
+			usable = intl.Segmenter.supportedLocalesOf(['en']).length > 0;
+		} catch (e) {}
+		if (!usable) {
+			delete intl.Segmenter;
+		}
+	}
+}
+
+// Without ICU data toLocaleString throws; fall back to en-US formatting.
+{
+	let icu = true;
+	try {
+		(1234.5).toLocaleString();
+	} catch (e) {
+		icu = false;
+	}
+	if (!icu) {
+		Number.prototype.toLocaleString = function (this: number, _locales?: unknown, options?: Intl.NumberFormatOptions) {
+			let value = Number(this);
+			if (!Number.isFinite(value)) {
+				return Number.isNaN(value) ? 'NaN' : value > 0 ? '∞' : '-∞';
+			}
+			const percent = options?.style === 'percent';
+			if (percent) {
+				value *= 100;
+			}
+			const min = options?.minimumFractionDigits ?? 0;
+			const max = Math.max(min, options?.maximumFractionDigits ?? (percent ? 0 : 3));
+			let [whole, fraction = ''] = Math.abs(value).toFixed(max).split('.');
+			fraction = fraction.replace(/0+$/, '').padEnd(min, '0');
+			if (options?.useGrouping !== false) {
+				whole = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+			}
+			return `${value < 0 ? '-' : ''}${whole}${fraction ? `.${fraction}` : ''}${percent ? '%' : ''}`;
+		};
+	}
+}
+
 import { MutationObserver } from './MutationObserver';
 
 if (!global.MutationObserver) {

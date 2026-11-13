@@ -1368,7 +1368,8 @@ WebGLRenderingContext::CompressedTexSubImage2D(const v8::FunctionCallbackInfo<v8
         auto buf = pixels.As<v8::ArrayBufferView>();
         auto array = buf->Buffer();
         auto offset = buf->ByteOffset();
-        auto size = array->ByteLength();
+        // The view's length; the buffer's would read past the end.
+        auto size = buf->ByteLength();
         auto data = static_cast<const uint8_t *>(array->GetBackingStore()->Data()) + offset;
 
         canvas_native_webgl_compressed_tex_sub_image2d(
@@ -3661,7 +3662,8 @@ WebGLRenderingContext::ReadPixels(const v8::FunctionCallbackInfo<v8::Value> &arg
 
         auto array = buf->Buffer();
         auto offset = buf->ByteOffset();
-        auto size = array->ByteLength();
+        // The view's length; the buffer's would read past the end.
+        auto size = buf->ByteLength();
         auto data_ptr = static_cast<uint8_t *>(array->GetBackingStore()->Data()) + offset;
         auto data = static_cast<uint8_t *>((void *) data_ptr);
 
@@ -4512,7 +4514,8 @@ WebGLRenderingContext::TexSubImage2D(const v8::FunctionCallbackInfo<v8::Value> &
 
             auto array = buf->Buffer();
             auto offset = buf->ByteOffset();
-            auto size = array->ByteLength();
+            // The view's length; the buffer's would read past the end.
+            auto size = buf->ByteLength();
             auto data = static_cast<const uint8_t *>(array->GetBackingStore()->Data()) + offset;
 
 

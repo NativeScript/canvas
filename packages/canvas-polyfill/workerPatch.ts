@@ -12,8 +12,6 @@ if (typeof Worker !== 'undefined') {
 		}
 	};
 
-	// Node-API hosts' runtimes take paths only: blob URLs go through the file they are written to.
-	if (typeof (global as any).Worker === 'undefined' || (!__ANDROID__ && !__APPLE__)) {
-		(global as any).Worker = WorkerImpl;
-	}
+	// On every host: Android's runtime and the Node-API ones only take paths.
+	(global as any).Worker = WorkerImpl;
 }

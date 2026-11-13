@@ -451,14 +451,16 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 	}
 
 	@profile
-	framebufferRenderbuffer(target: number, attachment: number, renderbuffertarget: number, renderbuffer: WebGLRenderbuffer): void {
-		const value = renderbuffer.native;
+	framebufferRenderbuffer(target: number, attachment: number, renderbuffertarget: number, renderbuffer: WebGLRenderbuffer | null): void {
+		// null detaches.
+		const value = renderbuffer ? renderbuffer.native : 0;
 		this.native.framebufferRenderbuffer(target, attachment, renderbuffertarget, value);
 	}
 
 	@profile
-	framebufferTexture2D(target: number, attachment: number, textarget: number, texture: WebGLTexture, level: number): void {
-		const value = texture.native;
+	framebufferTexture2D(target: number, attachment: number, textarget: number, texture: WebGLTexture | null, level: number): void {
+		// null detaches.
+		const value = texture ? texture.native : 0;
 		this.native.framebufferTexture2D(target, attachment, textarget, value, level);
 	}
 

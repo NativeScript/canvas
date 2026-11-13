@@ -23,15 +23,42 @@ function objectUrlBlob(url: string): Blob | null {
 	return entry?.blob ?? null;
 }
 
+const DATA_URL = /^data:([^,]*?)(;base64)?,(.*)$/s;
+
+/** A `data:` URL's bytes and media type, or null if it isn't one or is malformed */
+function dataUrl(url: string): { bytes: Uint8Array; type: string } | null {
+	const match = url.startsWith('data:') ? DATA_URL.exec(url) : null;
+	if (!match) {
+		return null;
+	}
+	const [, mediaType, base64, body] = match;
+	let bytes: Uint8Array;
+	try {
+		if (base64) {
+			const binary = atob(decodeURIComponent(body).replace(/\s+/g, ''));
+			bytes = new Uint8Array(binary.length);
+			for (let i = 0; i < binary.length; i++) {
+				bytes[i] = binary.charCodeAt(i);
+			}
+		} else {
+			bytes = new TextEncoder().encode(decodeURIComponent(body));
+		}
+	} catch (e) {
+		return null;
+	}
+	const type = !mediaType ? 'text/plain;charset=US-ASCII' : mediaType.startsWith(';') ? `text/plain${mediaType}` : mediaType;
+	return { bytes, type };
+}
+
 /** Served here rather than by the runtime's fetch */
 function isLocal(url: string): boolean {
-	return !!localPath(url) || url.startsWith('blob:');
+	return !!localPath(url) || url.startsWith('blob:') || url.startsWith('data:');
 }
 
 const LOCAL = Symbol('localUrl');
 
 // Linux: the runtime's fetch (and Request) speak http(s) only. Local files are read by the native
-// module off the JS thread, straight into the response's ArrayBuffer. `blob:` URLs are served here too.
+// module off the JS thread, straight into the response's ArrayBuffer. `blob:` and `data:` URLs are served here too.
 if (typeof __LINUX__ !== 'undefined' && __LINUX__ && typeof global.fetch === 'function' && typeof Response === 'function') {
 	if (typeof global.Request === 'function') {
 		const RemoteRequest = global.Request;
@@ -51,6 +78,10 @@ if (typeof __LINUX__ !== 'undefined' && __LINUX__ && typeof global.fetch === 'fu
 	const fetchRemote = global.fetch;
 	global.fetch = function (input: any, init?: any) {
 		const url = typeof input === 'string' ? input : (input?.[LOCAL] ?? input?.url);
+		if (typeof url === 'string' && url.startsWith('data:')) {
+			const data = dataUrl(url);
+			return data ? Promise.resolve(new Response(data.bytes, { status: 200, headers: { 'Content-Type': data.type } })) : Promise.reject(new TypeError('Failed to fetch: malformed data URL'));
+		}
 		if (typeof url === 'string' && url.startsWith('blob:')) {
 			const blob = objectUrlBlob(url);
 			if (!blob) {

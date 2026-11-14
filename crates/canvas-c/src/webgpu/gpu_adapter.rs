@@ -176,7 +176,10 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
             label: label.clone(),
             required_features: features,
             required_limits: limits,
-            memory_hints: Default::default(),
+            // Exact-size allocations for large resources, as Dawn makes. The default hints
+            // sub-allocate from 128-256 MiB blocks that count as graphics memory in full: a fresh
+            // device reserved 192 MiB, and a 4K texture with mips about 128 MiB.
+            memory_hints: wgt::MemoryHints::MemoryUsage,
             default_queue: wgt::QueueDescriptor { label: None },
             trace: Default::default(),
             experimental_features: Default::default(),

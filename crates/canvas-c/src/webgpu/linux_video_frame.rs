@@ -289,6 +289,7 @@ unsafe fn upload(
                             usage: wgt::TextureUsages::TEXTURE_BINDING
                                 | wgt::TextureUsages::COPY_DST,
                             view_formats: vec![],
+                            texture_binding_view_dimension: None,
                         });
                 cache.uploads.retain(|texture| fits(texture));
                 cache.uploads.push(Arc::clone(&texture));
@@ -366,6 +367,7 @@ pub(crate) unsafe fn import_external_plane(
             format: wgt::TextureFormat::Rgba8Unorm,
             usage: wgt::TextureUsages::TEXTURE_BINDING | wgt::TextureUsages::RENDER_ATTACHMENT,
             view_formats: vec![],
+            texture_binding_view_dimension: None,
         });
     let source = unsafe { import_and_stage(queue, handle, width, height) }?;
     unsafe {

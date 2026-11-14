@@ -10,9 +10,9 @@
 		"@nativescript/font-manager": "file:../../node_modules/@nativescript/font-manager"
 	},
 	"devDependencies": {
-		"@nativescript/linux": "0.1.0-alpha.2",
+		"@nativescript/linux": "0.1.0-alpha.3",
 		"@nativescript/webpack": "https://pkg.pr.new/@nativescript/webpack@11620",
-		"nativescript": "9.1.2-dev.2026-11-07-42333414597",
+		"nativescript": "9.1.2-dev.2026-11-11-42975970828",
 		"typescript": "~5.9.0"
 	},
 	"scripts": {

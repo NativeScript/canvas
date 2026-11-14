@@ -37,11 +37,11 @@
 		"@nativescript/android": "9.1.1",
 		"@nativescript/devtools": "~0.0.1",
 		"@nativescript/ios": "9.0.4-next.2026-08-13-31742124335",
-		"@nativescript/linux": "0.1.0-alpha.2",
+		"@nativescript/linux": "0.1.0-alpha.3",
 		"@nativescript/visionos": "~9.0.1",
 		"@nativescript/webpack": "https://pkg.pr.new/@nativescript/webpack@11620",
 		"@nativescript/windows": "beta",
-		"nativescript": "9.1.2-dev.2026-11-07-42333414597",
+		"nativescript": "9.1.2-dev.2026-11-11-42975970828",
 		"typescript": "~5.6.0"
 	}
 }

@@ -6,7 +6,7 @@ use std::{
     os::raw::{c_char, c_void},
 };
 use wgpu_core::binding_model::BufferBinding;
-use wgpu_core::pipeline::{CreateRenderPipelineError, RenderPipelineDescriptor};
+use wgpu_core::pipeline::{CreatePipelineError as CreateRenderPipelineError, RenderPipelineDescriptor};
 use wgpu_core::resource::CreateBufferError;
 use wgt::{Features, PrimitiveTopology};
 
@@ -424,12 +424,12 @@ Arc::into_raw(Arc::new(CanvasGPUBindGroupLayout {
     ) -> *const CanvasGPUBuffer {
         let label = ptr_into_label(label);
 
-        match wgt::BufferUsages::from_bits(usage) {
-            Some(usage) => {
+        match wgt::BufferUsagesWebGPU::from_bits(usage).map(wgt::BufferUsages::from) {
+            Some(flags) => {
                 let desc = wgt::BufferDescriptor {
                     label: label.clone(),
                     size,
-                    usage,
+                    usage: flags,
                     mapped_at_creation,
                 };
 
@@ -438,14 +438,16 @@ Arc::into_raw(Arc::new(CanvasGPUBuffer {
                     instance: self.instance.clone(),
                     label,
                     buffer,
-                    usage: usage.bits(),
+                    usage,
                     size,
                     error_sink: self.error_sink.clone(),
                 }))
             }
             None => {
                 let err =
-                    CreateBufferError::InvalidUsage(wgt::BufferUsages::from_bits_truncate(usage));
+                    CreateBufferError::InvalidUsage(wgt::BufferUsages::from(
+                        wgt::BufferUsagesWebGPU::from_bits_truncate(usage),
+                    ));
 
                 handle_error(
 self.error_sink.as_ref(),
@@ -1630,6 +1632,7 @@ pub extern "C" fn canvas_native_webgpu_device_create_texture(
         dimension: descriptor.dimension.into(),
         usage: wgt::TextureUsages::from_bits_truncate(descriptor.usage),
         view_formats,
+        texture_binding_view_dimension: None,
     };
 
     let texture_id = device.device.create_texture(&desc);

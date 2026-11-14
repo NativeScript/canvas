@@ -1439,6 +1439,7 @@ pub enum CanvasVertexFormat {
     Float64x4 = 42,
     Unorm10_10_10_2 = 43,
     Unorm8x4Bgra = 44,
+    Snorm10_10_10_2 = 45,
 }
 
 impl CanvasVertexFormat {
@@ -1467,6 +1468,7 @@ impl CanvasVertexFormat {
             | Self::Uint32
             | Self::Sint32
             | Self::Unorm10_10_10_2
+            | Self::Snorm10_10_10_2
             | Self::Unorm8x4Bgra => 4,
             Self::Uint16x4
             | Self::Sint16x4
@@ -1523,6 +1525,7 @@ impl From<wgt::VertexFormat> for CanvasVertexFormat {
             wgt::VertexFormat::Float64x3 => Self::Float64x3,
             wgt::VertexFormat::Float64x4 => Self::Float64x4,
             wgt::VertexFormat::Unorm10_10_10_2 => Self::Unorm10_10_10_2,
+            wgt::VertexFormat::Snorm10_10_10_2 => Self::Snorm10_10_10_2,
             VertexFormat::Uint8 => Self::Uint8,
             VertexFormat::Sint8 => Self::Sint8,
             VertexFormat::Unorm8 => Self::Unorm8,
@@ -1575,6 +1578,7 @@ impl Into<wgt::VertexFormat> for CanvasVertexFormat {
             Self::Float64x3 => wgt::VertexFormat::Float64x3,
             Self::Float64x4 => wgt::VertexFormat::Float64x4,
             Self::Unorm10_10_10_2 => wgt::VertexFormat::Unorm10_10_10_2,
+            Self::Snorm10_10_10_2 => wgt::VertexFormat::Snorm10_10_10_2,
             Self::Uint8 => VertexFormat::Uint8,
             Self::Sint8 => VertexFormat::Sint8,
             Self::Unorm8 => VertexFormat::Unorm8,
@@ -2262,7 +2266,9 @@ impl Into<BindGroupLayoutEntry> for CanvasBindGroupLayoutEntry {
         use std::num::NonZeroU64;
         BindGroupLayoutEntry {
             binding: self.binding,
-            visibility: wgt::ShaderStages::from_bits(self.visibility).unwrap(),
+            visibility: wgt::ShaderStages::from(
+                wgt::ShaderStagesWebGPU::from_bits(self.visibility).unwrap(),
+            ),
             ty: match self.binding_type {
                 CanvasBindingType::Buffer(buffer) => wgt::BindingType::Buffer {
                     ty: buffer.type_.into(),

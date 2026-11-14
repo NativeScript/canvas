@@ -309,6 +309,7 @@ pub(crate) unsafe fn create_exportable_texture(
         usage: uses,
         memory_flags: wgpu_hal::MemoryFlags::empty(),
         view_formats: view_formats.clone(),
+        texture_binding_view_dimension: None,
     };
     let hal_texture = unsafe {
         hal.texture_from_raw(
@@ -328,6 +329,7 @@ pub(crate) unsafe fn create_exportable_texture(
         format,
         usage,
         view_formats,
+        texture_binding_view_dimension: None,
     };
     let (texture, error) =
         unsafe { device.create_texture_from_hal(Box::new(hal_texture), &desc, initial, true) };

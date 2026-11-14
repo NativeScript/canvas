@@ -37,20 +37,20 @@ pub enum GPUMapMode {
     Write,
 }
 
-impl Into<wgpu_core::device::HostMap> for GPUMapMode {
-    fn into(self) -> wgpu_core::device::HostMap {
+impl Into<wgt::MapMode> for GPUMapMode {
+    fn into(self) -> wgt::MapMode {
         match self {
-            Self::Read => wgpu_core::device::HostMap::Read,
-            Self::Write => wgpu_core::device::HostMap::Write,
+            Self::Read => wgt::MapMode::Read,
+            Self::Write => wgt::MapMode::Write,
         }
     }
 }
 
-impl From<wgpu_core::device::HostMap> for GPUMapMode {
-    fn from(value: wgpu_core::device::HostMap) -> Self {
+impl From<wgt::MapMode> for GPUMapMode {
+    fn from(value: wgt::MapMode) -> Self {
         match value {
-            wgpu_core::device::HostMap::Read => Self::Read,
-            wgpu_core::device::HostMap::Write => Self::Write,
+            wgt::MapMode::Read => Self::Read,
+            wgt::MapMode::Write => Self::Write,
         }
     }
 }
@@ -151,7 +151,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_buffer_get_mapped_range(
     let range = buffer.buffer.get_mapped_range(offset, size);
 
     match range {
-        Ok((buf, _)) => buf.as_ptr() as *mut c_void,
+        Ok(mapping) => mapping.ptr().as_ptr() as *mut c_void,
         Err(err) => {
             handle_error_fatal(err, "canvas_native_webgpu_buffer_get_mapped_range");
             std::ptr::null_mut()
@@ -174,7 +174,7 @@ pub unsafe fn canvas_native_webgpu_buffer_get_mapped_range_size(
     let range = buffer.buffer.get_mapped_range(offset, size);
 
     match range {
-        Ok((buf, size)) => (buf.as_ptr() as *mut c_void, size),
+        Ok(mapping) => (mapping.ptr().as_ptr() as *mut c_void, mapping.len()),
         Err(err) => {
             handle_error_fatal(err, "canvas_native_webgpu_buffer_get_mapped_range");
             (std::ptr::null_mut(), 0)
@@ -221,47 +221,46 @@ pub extern "C" fn canvas_native_webgpu_buffer_map_async(
     let callback = callback as i64;
     let callback_data = callback_data as i64;
 
-    let op = wgpu_core::resource::BufferMapOperation {
-        host: mode.into(),
-        callback: Some(
-            (Box::new(move |result| {
-                let callback = unsafe {
-                    std::mem::transmute::<
-                        *const i64,
-                        fn(CanvasGPUErrorType, *mut c_char, *mut c_void),
-                    >(callback as _)
-                };
-                let callback_data = callback_data as *mut c_void;
-                if let Err(error) = result {
-                    let error: CanvasGPUError = error.into();
-                    let (typ, msg) = match error {
-                        CanvasGPUError::None => (CanvasGPUErrorType::None, None),
-                        CanvasGPUError::Lost => (CanvasGPUErrorType::Lost, None),
-                        CanvasGPUError::OutOfMemory => (CanvasGPUErrorType::OutOfMemory, None),
-                        CanvasGPUError::Validation(value) => (
-                            CanvasGPUErrorType::Validation,
-                            Some(CString::new(value).unwrap()),
-                        ),
-                        CanvasGPUError::Internal => (CanvasGPUErrorType::Internal, None),
-                    };
+    let mode: wgt::MapMode = mode.into();
+    let callback: wgpu_core::resource::BufferMapCallback = Box::new(move |result| {
+        let callback = unsafe {
+            std::mem::transmute::<*const i64, fn(CanvasGPUErrorType, *mut c_char, *mut c_void)>(
+                callback as _,
+            )
+        };
+        let callback_data = callback_data as *mut c_void;
+        if let Err(error) = result {
+            let error: CanvasGPUError = error.into();
+            let (typ, msg) = match error {
+                CanvasGPUError::None => (CanvasGPUErrorType::None, None),
+                CanvasGPUError::Lost => (CanvasGPUErrorType::Lost, None),
+                CanvasGPUError::OutOfMemory => (CanvasGPUErrorType::OutOfMemory, None),
+                CanvasGPUError::Validation(value) => (
+                    CanvasGPUErrorType::Validation,
+                    Some(CString::new(value).unwrap()),
+                ),
+                CanvasGPUError::Internal => (CanvasGPUErrorType::Internal, None),
+            };
 
-                    let msg = msg
-                        .map(|value| value.into_raw())
-                        .unwrap_or(std::ptr::null_mut());
+            let msg = msg
+                .map(|value| value.into_raw())
+                .unwrap_or(std::ptr::null_mut());
 
-                    callback(typ, msg, callback_data);
-                } else {
-                    callback(
-                        CanvasGPUErrorType::None,
-                        std::ptr::null_mut(),
-                        callback_data,
-                    );
-                }
-            })),
-        ),
-    };
+            callback(typ, msg, callback_data);
+        } else {
+            callback(
+                CanvasGPUErrorType::None,
+                std::ptr::null_mut(),
+                callback_data,
+            );
+        }
+    });
 
-    if buffer.buffer.map_async(offset, size, op).is_some() {
+    if buffer
+        .buffer
+        .map_async(mode, offset, size, Some(callback))
+        .is_some()
+    {
         poll_mappings(Arc::clone(&buffer.instance));
     }
 }

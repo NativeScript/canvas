@@ -108,6 +108,7 @@ pub(crate) unsafe fn import_and_stage(
                 size,
                 1,
                 1,
+                None,
             );
             let descriptor = wgpu_core::resource::TextureDescriptor {
                 label: Some(Cow::Borrowed("videoBlit:SharedFrame")),
@@ -118,6 +119,7 @@ pub(crate) unsafe fn import_and_stage(
                 format: wgt::TextureFormat::Bgra8Unorm,
                 usage: wgt::TextureUsages::TEXTURE_BINDING,
                 view_formats: vec![],
+                texture_binding_view_dimension: None,
             };
             let (texture, error) =
                 device.create_texture_from_hal(Box::new(hal_texture), &descriptor, wgt::TextureUses::RESOURCE, true);
@@ -164,6 +166,7 @@ pub(crate) unsafe fn import_external_plane(
         format: wgt::TextureFormat::Bgra8Unorm,
         usage: wgt::TextureUsages::TEXTURE_BINDING | wgt::TextureUsages::RENDER_ATTACHMENT,
         view_formats: vec![],
+        texture_binding_view_dimension: None,
     });
     let source = import_and_stage(queue, handle, width, height)?;
     super::gpu_native_texture::blit_texture(queue, &source, width, height, 0, 0, false, &plane, 0, 0, (0, 0), size)

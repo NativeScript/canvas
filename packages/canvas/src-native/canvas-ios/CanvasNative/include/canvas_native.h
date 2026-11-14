@@ -599,6 +599,7 @@ typedef enum CanvasVertexFormat {
   CanvasVertexFormatFloat64x4 = 42,
   CanvasVertexFormatUnorm10_10_10_2 = 43,
   CanvasVertexFormatUnorm8x4Bgra = 44,
+  CanvasVertexFormatSnorm10_10_10_2 = 45,
 } CanvasVertexFormat;
 
 typedef enum CanvasVertexStepMode {

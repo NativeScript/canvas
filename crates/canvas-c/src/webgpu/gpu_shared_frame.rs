@@ -108,6 +108,7 @@ pub(crate) unsafe fn import_and_stage(
                 size,
                 1,
                 1,
+                None,
             );
             let descriptor = wgpu_core::resource::TextureDescriptor {
                 label: Some(Cow::Borrowed("videoBlit:SharedFrame")),

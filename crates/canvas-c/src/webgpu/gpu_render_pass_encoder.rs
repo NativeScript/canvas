@@ -56,8 +56,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_begin_occlusio
     }
 
     let render_pass = &*render_pass;
-    let label = render_pass.label.clone();
-    let error_sink = render_pass.error_sink.as_ref();
 
     let mut pass = render_pass.pass.lock();
 
@@ -78,8 +76,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_draw(
     }
 
     let render_pass = &*render_pass;
-    let label = render_pass.label.clone();
-    let error_sink = render_pass.error_sink.as_ref();
 
     let mut pass = render_pass.pass.lock();
 
@@ -105,8 +101,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_draw_indexed(
     }
 
     let render_pass = &*render_pass;
-    let label = render_pass.label.clone();
-    let error_sink = render_pass.error_sink.as_ref();
 
     let mut pass = render_pass.pass.lock();
 
@@ -130,8 +124,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_draw_indexed_i
     }
 
     let render_pass = &*render_pass;
-    let label = render_pass.label.clone();
-    let error_sink = render_pass.error_sink.as_ref();
 
     let indirect_buffer = &*indirect_buffer;
 
@@ -155,8 +147,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_multi_draw_ind
     }
 
     let render_pass = &*render_pass;
-    let label = render_pass.label.clone();
-    let error_sink = render_pass.error_sink.as_ref();
 
     let indirect_buffer = &*indirect_buffer;
 
@@ -179,8 +169,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_draw_indirect(
     }
 
     let render_pass = &*render_pass;
-    let label = render_pass.label.clone();
-    let error_sink = render_pass.error_sink.as_ref();
 
     let indirect_buffer = &*indirect_buffer;
 
@@ -203,8 +191,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_multi_draw_ind
     }
 
     let render_pass = &*render_pass;
-    let label = render_pass.label.clone();
-    let error_sink = render_pass.error_sink.as_ref();
 
     let indirect_buffer = &*indirect_buffer;
 
@@ -224,8 +210,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_end(
     }
 
     let render_pass = &*render_pass;
-    let label = render_pass.label.clone();
-    let error_sink = render_pass.error_sink.as_ref();
 
     let mut lock = render_pass.pass.lock();
 
@@ -247,8 +231,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_end_occlusion_
     }
 
     let render_pass = &*render_pass;
-    let label = render_pass.label.clone();
-    let error_sink = render_pass.error_sink.as_ref();
     let mut pass = render_pass.pass.lock();
 
     if let Some(pass) = pass.as_mut() {
@@ -267,8 +249,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_execute_bundle
     }
 
     let render_pass = &*render_pass;
-    let label = render_pass.label.clone();
-    let error_sink = render_pass.error_sink.as_ref();
     let mut pass = render_pass.pass.lock();
 
     if let Some(pass) = pass.as_mut() {
@@ -290,8 +270,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_insert_debug_m
     }
 
     let render_pass = &*render_pass;
-    let label = render_pass.label.clone();
-    let error_sink = render_pass.error_sink.as_ref();
     let mut pass = render_pass.pass.lock();
 
     if let Some(pass) = pass.as_mut() {
@@ -310,8 +288,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_pop_debug_grou
     }
 
     let render_pass = &*render_pass;
-    let label = render_pass.label.clone();
-    let error_sink = render_pass.error_sink.as_ref();
     let mut pass = render_pass.pass.lock();
 
     if let Some(pass) = pass.as_mut() {
@@ -328,8 +304,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_push_debug_gro
     }
 
     let render_pass = &*render_pass;
-    let label = render_pass.label.clone();
-    let error_sink = render_pass.error_sink.as_ref();
     let mut pass = render_pass.pass.lock();
 
     if let Some(pass) = pass.as_mut() {
@@ -354,8 +328,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_set_bind_group
     }
 
     let render_pass = &*render_pass;
-    let label = render_pass.label.clone();
-    let error_sink = render_pass.error_sink.as_ref();
     let mut pass = render_pass.pass.lock();
 
     if let Some(pass) = pass.as_mut() {
@@ -394,8 +366,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_set_blend_cons
     }
 
     let render_pass = &*render_pass;
-    let label = render_pass.label.clone();
-    let error_sink = render_pass.error_sink.as_ref();
     let mut pass = render_pass.pass.lock();
 
     if let Some(pass) = pass.as_mut() {
@@ -417,8 +387,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_set_index_buff
     }
 
     let render_pass = &*render_pass;
-    let label = render_pass.label.clone();
-    let error_sink = render_pass.error_sink.as_ref();
     let mut pass = render_pass.pass.lock();
 
     if let Some(pass) = pass.as_mut() {
@@ -426,19 +394,10 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_set_index_buff
         let buffer_id = Arc::clone(&buffer.buffer);
 
         let offset: u64 = offset.try_into().unwrap_or_default();
+        // <= 0: the rest of the buffer.
+        let size = u64::try_from(size).ok().filter(|v| *v > 0);
 
-        let size: Option<u64> = size.try_into().ok();
-
-        // wgpu takes Option<BufferAddress> now; zero means "no explicit size",
-        // which is what NonZero used to encode.
-        let sizeValue = size.filter(|value| *value > 0);
-
-        pass.set_index_buffer(
-            Arc::clone(&buffer_id),
-            index_format.into(),
-            offset,
-            sizeValue,
-        );
+        pass.set_index_buffer(buffer_id, index_format.into(), offset, size);
     }
 }
 
@@ -452,8 +411,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_set_pipeline(
     }
 
     let render_pass = &*render_pass;
-    let label = render_pass.label.clone();
-    let error_sink = render_pass.error_sink.as_ref();
     let mut pass = render_pass.pass.lock();
 
     if let Some(pass) = pass.as_mut() {
@@ -476,8 +433,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_set_scissor_re
     }
 
     let render_pass = &*render_pass;
-    let label = render_pass.label.clone();
-    let error_sink = render_pass.error_sink.as_ref();
     let mut pass = render_pass.pass.lock();
 
     if let Some(pass) = pass.as_mut() {
@@ -494,8 +449,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_set_stencil_re
     }
 
     let render_pass = &*render_pass;
-    let label = render_pass.label.clone();
-    let error_sink = render_pass.error_sink.as_ref();
     let mut pass = render_pass.pass.lock();
 
     if let Some(pass) = pass.as_mut() {
@@ -515,8 +468,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_set_vertex_buf
     }
 
     let render_pass = &*render_pass;
-    let label = render_pass.label.clone();
-    let error_sink = render_pass.error_sink.as_ref();
     let mut pass = render_pass.pass.lock();
 
     if let Some(pass) = pass.as_mut() {
@@ -529,21 +480,11 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_set_vertex_buf
             }
         };
 
-        let size: Option<u64> = size.try_into().ok();
+        // <= 0: the rest of the buffer.
+        let size = u64::try_from(size).ok().filter(|v| *v > 0);
 
-        let sizeValue = if let Some(value) = size {
-            Some(value).filter(|v| *v > 0)
-        } else if !buffer.is_null() {
-            let buffer = &*buffer;
-            Some(buffer.size).filter(|v| *v > 0)
-        } else {
-            None
-        };
-
-        pass.set_vertex_buffer(slot,
-            buffer_id,
-            offset.try_into().unwrap_or_default(),
-            sizeValue);}
+        pass.set_vertex_buffer(slot, buffer_id, offset.try_into().unwrap_or_default(), size);
+    }
 }
 
 #[no_mangle]
@@ -561,8 +502,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_set_viewport(
     }
 
     let render_pass = &*pass;
-    let label = render_pass.label.clone();
-    let error_sink = render_pass.error_sink.as_ref();
     let mut pass = render_pass.pass.lock();
 
     if let Some(pass) = pass.as_mut() {

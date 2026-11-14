@@ -1,5 +1,5 @@
 import { EventData, Observable, Page } from '@nativescript/core';
-import { runCanvasPerf, runWebGLPerf, runImageBitmapPerf, profileDemo, swarm, touchParticles, runBoundsProbe, runCallBound, runWebGPUSample } from '@demo/shared';
+import { runCanvasPerf, runWebGLPerf, runWebGPUPerf, runImageBitmapPerf, profileDemo, swarm, touchParticles, runBoundsProbe, runCallBound, runWebGPUSample } from '@demo/shared';
 import { launchArgs } from '../launch-args';
 
 export function navigatingTo(args: EventData) {
@@ -70,6 +70,8 @@ class PerfModel extends Observable {
 					profileDemo(canvas, start, profile, launchArgs.frames ?? 180, () => {
 						this.set('status', `${profile} profiled — see logcat (PROF|…)`);
 					});
+				} else if (suite === 'webgpu') {
+					runWebGPUPerf(canvas).then(() => this.set('status', 'webgpu perf done — see log (PERF|…)'));
 				} else if (suite?.startsWith('webgpu:')) {
 					const sample = suite.substring('webgpu:'.length);
 					const started = runWebGPUSample(sample, canvas);

@@ -326,43 +326,13 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_bundle_encoder_set_index_bu
     let buffer_id = Arc::clone(&buffer.buffer);
 
     let offset: u64 = offset.try_into().unwrap_or_default();
+    // <= 0: the rest of the buffer.
+    let size = u64::try_from(size).ok().filter(|v| *v > 0);
 
-    let size: Option<u64> = size.try_into().ok();
-
-    let mut sizeValue: Option<std::num::NonZero<u64>> = None;
-
-    if let Some(value) = size {
-        sizeValue = std::num::NonZero::new(value);
-    }
-
-    if size.is_some() {
-        if let Some(size) = sizeValue {
-            if let Some(encoder) = render_bundle.encoder.as_mut() {
-                if let Some(encoder) = encoder {
-                    if let Some(encoder) = encoder.as_mut() {
-                        encoder.set_index_buffer(
-                            buffer_id,
-                            index_format.into(),
-                            offset,
-                            Some(size.get()),
-                        );
-                    }
-                }
-            }
-        } else {
-            // todo error ??
-        }
-    } else {
-        if let Some(encoder) = render_bundle.encoder.as_mut() {
-            if let Some(encoder) = encoder {
-                if let Some(encoder) = encoder.as_mut() {
-                    encoder.set_index_buffer(
-                        buffer_id,
-                        index_format.into(),
-                        offset,
-                        None,
-                    );
-                }
+    if let Some(encoder) = render_bundle.encoder.as_mut() {
+        if let Some(encoder) = encoder {
+            if let Some(encoder) = encoder.as_mut() {
+                encoder.set_index_buffer(buffer_id, index_format.into(), offset, size);
             }
         }
     }
@@ -424,16 +394,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_bundle_encoder_set_vertex_b
         }
     };
 
-    let size: Option<u64> = size.try_into().ok();
-
-    let sizeValue = if let Some(value) = size {
-        std::num::NonZero::new(value)
-    } else if !buffer.is_null() {
-        let buffer = &*buffer;
-        std::num::NonZero::new(buffer.size)
-    } else {
-        None
-    };
+    // <= 0: the rest of the buffer.
+    let size = u64::try_from(size).ok().filter(|v| *v > 0);
 
     if let Some(encoder) = render_bundle.encoder.as_mut() {
         if let Some(encoder) = encoder {
@@ -442,7 +404,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_bundle_encoder_set_vertex_b
                     slot,
                     buffer_id,
                     offset.try_into().unwrap_or_default(),
-                    sizeValue.map(|v| v.get()),
+                    size,
                 );
             }
         }

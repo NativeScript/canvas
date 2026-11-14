@@ -61,7 +61,8 @@ export class GPURenderBundleEncoder {
 
 	setIndexBuffer(buffer: GPUBuffer, indexFormat: 'uint16' | 'uint32', offset?: number, size?: number) {
 		// 0 = uint16, 1 = uint32: an int keeps the call on the fast path.
-		this[native_].setIndexBuffer(buffer[native_], indexFormat === 'uint16' ? 0 : 1, offset ?? 0, size ?? buffer.size - (offset ?? 0));
+		// -1: the rest of the buffer.
+		this[native_].setIndexBuffer(buffer[native_], indexFormat === 'uint16' ? 0 : 1, offset ?? 0, size ?? -1);
 	}
 
 	setPipeline(renderPipeline: GPURenderPipeline) {
@@ -69,7 +70,7 @@ export class GPURenderBundleEncoder {
 	}
 
 	setVertexBuffer(slot: number, buffer: GPUBuffer, offset?: number, size?: number) {
-		this[native_].setVertexBuffer(Number(slot), buffer[native_], offset ?? 0, size ?? buffer.size - (offset ?? 0));
+		this[native_].setVertexBuffer(Number(slot), buffer[native_], offset ?? 0, size ?? -1);
 	}
 
 	static fromNative(encoder) {

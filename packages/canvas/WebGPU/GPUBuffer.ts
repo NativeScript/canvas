@@ -1,5 +1,8 @@
 import { native_, mapState_ } from './Constants';
 
+const size_ = Symbol('[[size]]');
+const usage_ = Symbol('[[usage]]');
+
 export class GPUBuffer {
 	[native_];
 	[mapState_]: 'unmapped' | 'mapped' | 'pending' = 'unmapped';
@@ -8,12 +11,15 @@ export class GPUBuffer {
 		return this[native_]?.label ?? '';
 	}
 
+	[size_] = 0;
+	[usage_] = 0;
+
 	get size() {
-		return this[native_]?.size ?? 0;
+		return this[size_];
 	}
 
 	get usage() {
-		return this[native_]?.usage ?? 0;
+		return this[usage_];
 	}
 
 	get native() {
@@ -63,6 +69,8 @@ export class GPUBuffer {
 		if (buffer) {
 			const ret = new GPUBuffer();
 			ret[native_] = buffer;
+			ret[size_] = buffer.size ?? 0;
+			ret[usage_] = buffer.usage ?? 0;
 			if (mappedAtCreation) {
 				ret[mapState_] = 'mapped';
 			}

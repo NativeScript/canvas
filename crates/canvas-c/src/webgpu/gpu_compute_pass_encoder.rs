@@ -73,7 +73,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_dispatch_work
     }
 
     let compute_pass = &*compute_pass;
-    let error_sink = compute_pass.error_sink.as_ref();
 
     let mut lock = compute_pass.pass.lock();
     if let Some(compute_pass) = lock.as_mut() {
@@ -93,7 +92,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_dispatch_work
     }
 
     let compute_pass = &*compute_pass;
-    let error_sink = compute_pass.error_sink.as_ref();
     let mut lock = compute_pass.pass.lock();
     if let Some(compute_pass) = lock.as_mut() {
         let indirect_buffer = &*indirect_buffer;
@@ -113,8 +111,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_end(
     }
 
     let compute_pass = &*compute_pass;
-    let label = compute_pass.label.clone();
-    let error_sink = compute_pass.error_sink.as_ref();
 
     let mut lock = compute_pass.pass.lock();
 
@@ -135,7 +131,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_insert_debug_
     }
 
     let compute_pass = &*compute_pass;
-    let error_sink = compute_pass.error_sink.as_ref();
 
     let label = CStr::from_ptr(label);
     let label = label.to_str().unwrap();
@@ -154,7 +149,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_pop_debug_gro
     }
 
     let compute_pass = &*compute_pass;
-    let error_sink = compute_pass.error_sink.as_ref();
 
     let mut lock = compute_pass.pass.lock();
     if let Some(compute_pass) = lock.as_mut() {
@@ -171,7 +165,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_push_debug_gr
     }
 
     let compute_pass = &*compute_pass;
-    let error_sink = compute_pass.error_sink.as_ref();
 
     let mut lock = compute_pass.pass.lock();
     if let Some(compute_pass) = lock.as_mut() {
@@ -197,7 +190,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_set_bind_grou
     
 
     let compute_pass = &*compute_pass;
-    let error_sink = compute_pass.error_sink.as_ref();
 
     let mut lock = compute_pass.pass.lock();
     if let Some(compute_pass) = lock.as_mut() {
@@ -237,7 +229,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_set_pipeline(
     }
 
     let compute_pass = &*compute_pass;
-    let error_sink = compute_pass.error_sink.as_ref();
 
     let mut lock = compute_pass.pass.lock();
     if let Some(compute_pass) = lock.as_mut() {

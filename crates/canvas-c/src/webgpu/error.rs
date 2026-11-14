@@ -177,10 +177,10 @@ impl From<wgpu_core::device::DeviceError> for CanvasGPUError {
     }
 }
 
-impl From<wgpu_core::pipeline::CreateRenderPipelineError> for CanvasGPUError {
-    fn from(value: wgpu_core::pipeline::CreateRenderPipelineError) -> Self {
+impl From<wgpu_core::pipeline::CreatePipelineError> for CanvasGPUError {
+    fn from(value: wgpu_core::pipeline::CreatePipelineError) -> Self {
         match value {
-            wgpu_core::pipeline::CreateRenderPipelineError::Device(err) => err.into(),
+            wgpu_core::pipeline::CreatePipelineError::Device(err) => err.into(),
             err => CanvasGPUError::Validation(fmt_err(&err)),
         }
     }
@@ -251,15 +251,6 @@ impl From<wgpu_core::command::QueryError> for CanvasGPUError {
 impl From<wgpu_core::command::ComputePassError> for CanvasGPUError {
     fn from(err: wgpu_core::command::ComputePassError) -> Self {
         CanvasGPUError::Validation(fmt_err(&err))
-    }
-}
-
-impl From<wgpu_core::pipeline::CreateComputePipelineError> for CanvasGPUError {
-    fn from(err: wgpu_core::pipeline::CreateComputePipelineError) -> Self {
-        match err {
-            wgpu_core::pipeline::CreateComputePipelineError::Device(err) => err.into(),
-            err => CanvasGPUError::Validation(fmt_err(&err)),
-        }
     }
 }
 

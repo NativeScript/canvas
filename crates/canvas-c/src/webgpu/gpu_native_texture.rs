@@ -240,6 +240,7 @@ pub(crate) unsafe fn import_platform_texture(
         format: FRAME_FORMAT,
         usage: wgt::TextureUsages::TEXTURE_BINDING,
         view_formats: vec![],
+        texture_binding_view_dimension: None,
     };
 
     let (texture, error) = device.create_texture_from_hal(
@@ -287,6 +288,7 @@ pub(crate) unsafe fn import_platform_texture(
         usage: wgt::TextureUses::RESOURCE,
         memory_flags: wgpu_hal::MemoryFlags::empty(),
         view_formats: vec![],
+        texture_binding_view_dimension: None,
     };
 
     let hal_texture = {
@@ -310,6 +312,7 @@ pub(crate) unsafe fn import_platform_texture(
         format: FRAME_FORMAT,
         usage: wgt::TextureUsages::TEXTURE_BINDING,
         view_formats: vec![],
+        texture_binding_view_dimension: None,
     };
 
     let (texture, error) = device.create_texture_from_hal(

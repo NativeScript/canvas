@@ -101,6 +101,8 @@ export function parseVertexFormat(value: string) {
 			return 43;
 		case 'unorm8x4-bgra':
 			return 44;
+		case 'snorm10-10-10-2':
+			return 45;
 	}
 }
 

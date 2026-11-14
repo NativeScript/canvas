@@ -81,7 +81,7 @@ cpal = { path = "crates/vendor/cpal" }
 [workspace.dependencies.wgt]
 package = "wgpu-types"
 git = "https://github.com/triniwiz/wgpu"
-rev = "04e9fef72"
+rev = "1151a7c07"
 
 
 
@@ -103,8 +103,8 @@ quick-xml = "0.34"
 skia-safe = { git = "https://github.com/triniwiz/rust-skia", rev = "ab0e73f003ad675277ce2e7fdc1c57fd276ed04c", features = ["textlayout"] }
 itertools = "0.14.0"
 ustr = "1.1.0"
-wgpu-core = { git = "https://github.com/triniwiz/wgpu", rev = "04e9fef72", features = ["wgsl"] }
-wgpu-hal = { git = "https://github.com/triniwiz/wgpu", rev = "04e9fef72" }
+wgpu-core = { git = "https://github.com/triniwiz/wgpu", rev = "1151a7c07", features = ["wgsl"] }
+wgpu-hal = { git = "https://github.com/triniwiz/wgpu", rev = "1151a7c07" }
 ureq = "2.10.1"
 jni = "0.21.1"
 regex-lite = "0.1.9"

@@ -94,7 +94,7 @@ pub(crate) fn with_compute_pipeline<R>(
   Ok(f(c_str(&label), layout(descriptor), &programmable))
 }
 
-const VERTEX_FORMATS: [(&str, CanvasVertexFormat); 45] = [
+const VERTEX_FORMATS: [(&str, CanvasVertexFormat); 46] = [
   ("uint8", CanvasVertexFormat::Uint8),
   ("uint8x2", CanvasVertexFormat::Uint8x2),
   ("uint8x4", CanvasVertexFormat::Uint8x4),
@@ -140,6 +140,7 @@ const VERTEX_FORMATS: [(&str, CanvasVertexFormat); 45] = [
   ("float64x4", CanvasVertexFormat::Float64x4),
   ("unorm10-10-10-2", CanvasVertexFormat::Unorm10_10_10_2),
   ("unorm8x4-bgra", CanvasVertexFormat::Unorm8x4Bgra),
+  ("snorm10-10-10-2", CanvasVertexFormat::Snorm10_10_10_2),
 ];
 
 /// A vertex attribute `format`: `parseVertexFormat`'s index (its order is canvas-c's

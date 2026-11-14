@@ -413,6 +413,8 @@ pub enum GPUVertexFormat {
   unorm1010102,
   #[napi(value = "unorm8x4-bgra")]
   unorm8x4Bgra,
+  #[napi(value = "snorm10-10-10-2")]
+  snorm1010102,
 }
 
 impl From<CanvasVertexFormat> for GPUVertexFormat {
@@ -453,6 +455,7 @@ impl From<CanvasVertexFormat> for GPUVertexFormat {
       CanvasVertexFormat::Float64x3 => GPUVertexFormat::float64x3,
       CanvasVertexFormat::Float64x4 => GPUVertexFormat::float64x4,
       CanvasVertexFormat::Unorm10_10_10_2 => GPUVertexFormat::unorm1010102,
+      CanvasVertexFormat::Snorm10_10_10_2 => GPUVertexFormat::snorm1010102,
       CanvasVertexFormat::Uint8 => GPUVertexFormat::uint8,
       CanvasVertexFormat::Sint8 => GPUVertexFormat::sint8,
       CanvasVertexFormat::Unorm8 => GPUVertexFormat::unorm8,
@@ -505,6 +508,7 @@ impl Into<CanvasVertexFormat> for GPUVertexFormat {
       GPUVertexFormat::float64x3 => CanvasVertexFormat::Float64x3,
       GPUVertexFormat::float64x4 => CanvasVertexFormat::Float64x4,
       GPUVertexFormat::unorm1010102 => CanvasVertexFormat::Unorm10_10_10_2,
+      GPUVertexFormat::snorm1010102 => CanvasVertexFormat::Snorm10_10_10_2,
       GPUVertexFormat::uint8 => CanvasVertexFormat::Uint8,
       GPUVertexFormat::sint8 => CanvasVertexFormat::Sint8,
       GPUVertexFormat::unorm8 => CanvasVertexFormat::Unorm8,

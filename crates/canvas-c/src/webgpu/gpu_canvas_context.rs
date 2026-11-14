@@ -981,7 +981,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize(
                     new_config.usage |= wgt::TextureUsages::COPY_DST;
                 }
 
-                if let Some(cause) =
+                if let Err(cause) =
                     surface_id.configure(&surface_data.device.device, &new_config)
                 {
                     handle_error_fatal(cause, "canvas_native_webgpu_context_resize");
@@ -1327,7 +1327,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize_uiview(
                     });
                 }
 
-                if let Some(cause) =
+                if let Err(cause) =
                     surface_id.configure(&surface_data.device.device, &new_config)
                 {
                     handle_error_fatal(cause, "canvas_native_webgpu_context_resize_uiview");

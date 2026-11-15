@@ -67,6 +67,8 @@ const FRAMEBUFFER_BINDING = 0x8ca6;
 const READ_FRAMEBUFFER_BINDING = 0x8caa;
 const PIXEL_PACK_BUFFER = 0x88eb;
 const PIXEL_PACK_BUFFER_BINDING = 0x88ed;
+const ARRAY_BUFFER = 0x8892;
+const ELEMENT_ARRAY_BUFFER = 0x8893;
 
 export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 	/**
@@ -77,9 +79,17 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 	protected _drawFramebuffer: WebGLFramebuffer | null = null;
 	protected _readFramebuffer: WebGLFramebuffer | null = null;
 	protected _pixelPackBuffer: WebGLBuffer | null = null;
+	protected _arrayBuffer: WebGLBuffer | null = null;
+	protected _renderbuffer: WebGLRenderbuffer | null = null;
+	protected _program: WebGLProgram | null = null;
+	protected _activeTexture = 0;
+	protected _textures: Record<number, WebGLTexture | null>[] = [];
+	// ELEMENT_ARRAY_BUFFER is vertex array state, so it is kept on the bound vertex array.
+	_vertexArray: any = null;
+	protected _defaultVertexArray: { _elementArrayBuffer?: WebGLBuffer | null } = {};
 
 	/** A binding getParameter answers from what was bound; `undefined` for any other pname. */
-	protected _trackedBinding(pname: number): WebGLFramebuffer | WebGLBuffer | null | undefined {
+	protected _trackedBinding(pname: number): WebGLFramebuffer | WebGLRenderbuffer | WebGLBuffer | WebGLProgram | WebGLTexture | null | undefined {
 		switch (pname) {
 			case FRAMEBUFFER_BINDING:
 				return this._drawFramebuffer;
@@ -87,6 +97,18 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 				return this._type === 'webgl2' ? this._readFramebuffer : undefined;
 			case PIXEL_PACK_BUFFER_BINDING:
 				return this._type === 'webgl2' ? this._pixelPackBuffer : undefined;
+			case this.ARRAY_BUFFER_BINDING:
+				return this._arrayBuffer;
+			case this.ELEMENT_ARRAY_BUFFER_BINDING:
+				return (this._vertexArray ?? this._defaultVertexArray)._elementArrayBuffer ?? null;
+			case this.RENDERBUFFER_BINDING:
+				return this._renderbuffer;
+			case this.CURRENT_PROGRAM:
+				return this._program;
+			case this.TEXTURE_BINDING_2D:
+				return this._textures[this._activeTexture]?.[this.TEXTURE_2D] ?? null;
+			case this.TEXTURE_BINDING_CUBE_MAP:
+				return this._textures[this._activeTexture]?.[this.TEXTURE_CUBE_MAP] ?? null;
 			default:
 				return undefined;
 		}
@@ -155,6 +177,7 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 	@profile
 	activeTexture(texture: number): void {
 		this.native.activeTexture(texture);
+		this._activeTexture = texture - this.TEXTURE0;
 	}
 
 	@profile
@@ -176,6 +199,10 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 		this.native.bindBuffer(target, value);
 		if (target === PIXEL_PACK_BUFFER) {
 			this._pixelPackBuffer = buffer ?? null;
+		} else if (target === ARRAY_BUFFER) {
+			this._arrayBuffer = buffer ?? null;
+		} else if (target === ELEMENT_ARRAY_BUFFER) {
+			(this._vertexArray ?? this._defaultVertexArray)._elementArrayBuffer = buffer ?? null;
 		}
 	}
 
@@ -195,12 +222,14 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 	bindRenderbuffer(target: number, renderbuffer: WebGLRenderbuffer): void {
 		const value = renderbuffer ? renderbuffer.native : 0;
 		this.native.bindRenderbuffer(target, value);
+		this._renderbuffer = renderbuffer ?? null;
 	}
 
 	@profile
 	bindTexture(target: number, texture: WebGLTexture): void {
 		const value = texture ? texture.native : 0;
 		this.native.bindTexture(target, value);
+		(this._textures[this._activeTexture] ??= {})[target] = texture ?? null;
 	}
 
 	@profile
@@ -347,6 +376,13 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 		if (this._pixelPackBuffer === buffer) {
 			this._pixelPackBuffer = null;
 		}
+		if (this._arrayBuffer === buffer) {
+			this._arrayBuffer = null;
+		}
+		const vertexArray = this._vertexArray ?? this._defaultVertexArray;
+		if (vertexArray._elementArrayBuffer === buffer) {
+			vertexArray._elementArrayBuffer = null;
+		}
 	}
 
 	@profile
@@ -372,6 +408,9 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 	deleteRenderbuffer(renderBuffer: WebGLRenderbuffer): void {
 		const value = renderBuffer.native;
 		this.native.deleteRenderbuffer(value);
+		if (this._renderbuffer === renderBuffer) {
+			this._renderbuffer = null;
+		}
 	}
 
 	@profile
@@ -386,6 +425,14 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 	deleteTexture(texture: WebGLTexture): void {
 		const value = texture.native;
 		this.native.deleteTexture(value);
+		// Deleting a texture unbinds it from every unit.
+		for (const unit of this._textures) {
+			for (const target in unit) {
+				if (unit[target] === texture) {
+					unit[target] = null;
+				}
+			}
+		}
 	}
 
 	@profile
@@ -553,7 +600,7 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 				case 'OES_texture_half_float_linear':
 					return new OES_texture_half_float_linear(ext);
 				case 'OES_vertex_array_object':
-					return new OES_vertex_array_object(ext);
+					return new OES_vertex_array_object(ext, this);
 				case 'WEBGL_color_buffer_float':
 					return new WEBGL_color_buffer_float(ext);
 				case 'EXT_color_buffer_float':
@@ -601,24 +648,8 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 			case this.ALIASED_POINT_SIZE_RANGE:
 			case this.DEPTH_RANGE:
 				return value;
-			case this.ARRAY_BUFFER_BINDING:
-			case this.ELEMENT_ARRAY_BUFFER_BINDING:
-				if (value) {
-					new WebGLBuffer(value);
-				}
-				return null;
-			case this.CURRENT_PROGRAM:
-				if (value) {
-					return new WebGLProgram(value);
-				}
-				return null;
 			case this.COMPRESSED_TEXTURE_FORMATS:
 				return value;
-			case this.RENDERBUFFER_BINDING:
-				if (value) {
-					return new WebGLRenderbuffer(value);
-				}
-				return null;
 			case this.FRAMEBUFFER_BINDING:
 				if (value) {
 					return new WebGLFramebuffer(value);
@@ -628,12 +659,6 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 			case this.SCISSOR_BOX:
 			case this.MAX_VIEWPORT_DIMS:
 				return value;
-			case this.TEXTURE_BINDING_CUBE_MAP:
-			case this.TEXTURE_BINDING_2D:
-				if (value) {
-					return new WebGLTexture(value);
-				}
-				return null;
 			case this.VERSION:
 				if (this._type === 'webgl2') {
 					return 'WebGL 2.0 (OpenGL ES 3.0 NativeScript)';
@@ -1207,6 +1232,7 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 	useProgram(program: WebGLProgram): void {
 		const value = program ? program.native : 0;
 		this.native.useProgram(value);
+		this._program = program ?? null;
 	}
 
 	@profile

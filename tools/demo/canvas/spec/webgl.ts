@@ -245,6 +245,72 @@ function registerCommon(version: 1 | 2) {
 			equal(gl.getParameter(gl.FRAMEBUFFER_BINDING), null);
 		});
 
+		test('getParameter(CURRENT_PROGRAM) returns a usable program', () => {
+			const { gl } = makeGL(version);
+			equal(gl.getParameter(gl.CURRENT_PROGRAM), null, 'nothing in use yet');
+			const program = buildProgram(gl);
+			gl.useProgram(program);
+			const current = gl.getParameter(gl.CURRENT_PROGRAM);
+			equal(current, program);
+			equal(gl.getProgramParameter(current, gl.LINK_STATUS), true, 'LINK_STATUS on the read back program');
+			equal(gl.getAttachedShaders(current).length, 2, 'attached shaders on the read back program');
+			gl.useProgram(null);
+			equal(gl.getParameter(gl.CURRENT_PROGRAM), null, 'after useProgram(null)');
+			gl.useProgram(current);
+			equal(gl.getParameter(gl.CURRENT_PROGRAM), program, 'the read back program binds again');
+			// A deleted program stays current until something else is used.
+			gl.deleteProgram(program);
+			equal(gl.getParameter(gl.CURRENT_PROGRAM), program, 'after deleteProgram');
+			equal(gl.getError(), gl.NO_ERROR);
+		});
+
+		test('getParameter returns the bound buffers', () => {
+			const { gl } = makeGL(version);
+			equal(gl.getParameter(gl.ARRAY_BUFFER_BINDING), null, 'no array buffer yet');
+			equal(gl.getParameter(gl.ELEMENT_ARRAY_BUFFER_BINDING), null, 'no element buffer yet');
+			const vertices = gl.createBuffer();
+			const indices = gl.createBuffer();
+			gl.bindBuffer(gl.ARRAY_BUFFER, vertices);
+			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indices);
+			equal(gl.getParameter(gl.ARRAY_BUFFER_BINDING), vertices);
+			equal(gl.getParameter(gl.ELEMENT_ARRAY_BUFFER_BINDING), indices);
+			gl.bindBuffer(gl.ARRAY_BUFFER, null);
+			equal(gl.getParameter(gl.ARRAY_BUFFER_BINDING), null, 'after unbinding');
+			gl.deleteBuffer(indices);
+			equal(gl.getParameter(gl.ELEMENT_ARRAY_BUFFER_BINDING), null, 'deleting unbinds');
+		});
+
+		test('getParameter returns the texture bound to the active unit', () => {
+			const { gl } = makeGL(version);
+			const a = gl.createTexture();
+			const b = gl.createTexture();
+			const cube = gl.createTexture();
+			gl.activeTexture(gl.TEXTURE0);
+			gl.bindTexture(gl.TEXTURE_2D, a);
+			gl.bindTexture(gl.TEXTURE_CUBE_MAP, cube);
+			gl.activeTexture(gl.TEXTURE1);
+			equal(gl.getParameter(gl.TEXTURE_BINDING_2D), null, 'unit 1 starts empty');
+			gl.bindTexture(gl.TEXTURE_2D, b);
+			equal(gl.getParameter(gl.TEXTURE_BINDING_2D), b, 'unit 1');
+			gl.activeTexture(gl.TEXTURE0);
+			equal(gl.getParameter(gl.TEXTURE_BINDING_2D), a, 'unit 0');
+			equal(gl.getParameter(gl.TEXTURE_BINDING_CUBE_MAP), cube, 'unit 0 cube map');
+			gl.deleteTexture(b);
+			gl.activeTexture(gl.TEXTURE1);
+			equal(gl.getParameter(gl.TEXTURE_BINDING_2D), null, 'deleting unbinds from every unit');
+			gl.activeTexture(gl.TEXTURE0);
+		});
+
+		test('getParameter(RENDERBUFFER_BINDING) returns the bound renderbuffer', () => {
+			const { gl } = makeGL(version);
+			equal(gl.getParameter(gl.RENDERBUFFER_BINDING), null, 'nothing bound yet');
+			const renderbuffer = gl.createRenderbuffer();
+			gl.bindRenderbuffer(gl.RENDERBUFFER, renderbuffer);
+			equal(gl.getParameter(gl.RENDERBUFFER_BINDING), renderbuffer);
+			gl.deleteRenderbuffer(renderbuffer);
+			equal(gl.getParameter(gl.RENDERBUFFER_BINDING), null, 'deleting unbinds');
+		});
+
 		test('createBuffer / isBuffer / deleteBuffer', () => {
 			const { gl } = makeGL(version);
 			const buffer = gl.createBuffer();
@@ -548,6 +614,23 @@ export function registerWebGLSpec() {
 			gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 			equal(gl.getParameter(gl.READ_FRAMEBUFFER_BINDING), null, 'FRAMEBUFFER sets both');
 			equal(gl.getParameter(gl.DRAW_FRAMEBUFFER_BINDING), null, 'FRAMEBUFFER sets both');
+		});
+
+		test('the element array buffer belongs to the vertex array', () => {
+			const { gl } = makeGL(2);
+			const outside = gl.createBuffer();
+			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, outside);
+			const vao = gl.createVertexArray();
+			gl.bindVertexArray(vao);
+			equal(gl.getParameter(gl.ELEMENT_ARRAY_BUFFER_BINDING), null, 'a new vertex array has none');
+			const inside = gl.createBuffer();
+			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, inside);
+			gl.bindVertexArray(null);
+			equal(gl.getParameter(gl.ELEMENT_ARRAY_BUFFER_BINDING), outside, 'the default vertex array kept its own');
+			gl.bindVertexArray(vao);
+			equal(gl.getParameter(gl.ELEMENT_ARRAY_BUFFER_BINDING), inside, 'back on the vertex array');
+			gl.deleteVertexArray(vao);
+			equal(gl.getParameter(gl.ELEMENT_ARRAY_BUFFER_BINDING), outside, 'deleting the bound vertex array reverts to the default');
 		});
 
 		test('WebGL2 reports a WebGL 2.0 version string', () => {

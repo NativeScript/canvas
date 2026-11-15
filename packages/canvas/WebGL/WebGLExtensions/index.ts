@@ -160,9 +160,11 @@ export class OES_texture_half_float_linear {
 export class OES_vertex_array_object {
 	VERTEX_ARRAY_BINDING_OES;
 	private nativeInstance;
+	private context;
 
-	constructor(nativeInstance) {
+	constructor(nativeInstance, context?) {
 		this.nativeInstance = nativeInstance;
+		this.context = context;
 		this.VERTEX_ARRAY_BINDING_OES = nativeInstance.VERTEX_ARRAY_BINDING_OES;
 	}
 
@@ -173,6 +175,9 @@ export class OES_vertex_array_object {
 	deleteVertexArrayOES(arrayObject: WebGLVertexArrayObject) {
 		const value = arrayObject ? arrayObject.native : 0;
 		this.nativeInstance.deleteVertexArrayOES(value);
+		if (this.context && this.context._vertexArray === arrayObject) {
+			this.context._vertexArray = null;
+		}
 	}
 
 	isVertexArrayOES(arrayObject: WebGLVertexArrayObject) {
@@ -183,6 +188,9 @@ export class OES_vertex_array_object {
 	bindVertexArrayOES(arrayObject: WebGLVertexArrayObject) {
 		const value = arrayObject ? arrayObject.native : 0;
 		this.nativeInstance.bindVertexArrayOES(value);
+		if (this.context) {
+			this.context._vertexArray = arrayObject ?? null;
+		}
 	}
 }
 

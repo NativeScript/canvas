@@ -95,6 +95,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 	bindVertexArray(vertexArray: WebGLVertexArrayObject): void {
 		const value = vertexArray ? vertexArray.native : null;
 		this.native.bindVertexArray(value);
+		this._vertexArray = vertexArray ?? null;
 	}
 
 	blitFramebuffer(srcX0: number, srcY0: number, srcX1: number, srcY1: number, dstX0: number, dstY0: number, dstX1: number, dstY1: number, mask: number, filter: number): void {
@@ -179,6 +180,9 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 	deleteVertexArray(vertexArray: WebGLVertexArrayObject): void {
 		const value = vertexArray.native;
 		this.native.deleteVertexArray(value);
+		if (this._vertexArray === vertexArray) {
+			this._vertexArray = null;
+		}
 	}
 
 	drawArraysInstanced(mode: number, first: number, count: number, instanceCount: number): void {

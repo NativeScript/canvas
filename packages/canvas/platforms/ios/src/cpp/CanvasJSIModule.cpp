@@ -549,6 +549,13 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
 					options = ImageBitmapImpl::HandleOptions(isolate, args[5]);
 				}
 				
+				if (len == 5 || len == 6) {
+					rect = Rect{(float) sx_or_options->NumberValue(context).ToChecked(),
+								(float) sy->NumberValue(context).ToChecked(),
+								(float) sw->NumberValue(context).ToChecked(),
+								(float) sh->NumberValue(context).ToChecked()};
+				}
+
 				auto cbFunc = args[count - 1].As<v8::Function>();
 				
 				if (isArrayBuffer) {

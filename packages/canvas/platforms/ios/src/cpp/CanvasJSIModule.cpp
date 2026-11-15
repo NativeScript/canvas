@@ -636,17 +636,19 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
 				callback->prepare();
 				auto store = ta->Buffer()->GetBackingStore();
 				auto offset = ta->ByteOffset();
+				// The view's own length: the store can be a much larger buffer (a GLB, a bundle).
+				auto size = ta->ByteLength();
 				
 				WorkerPool::Instance().Enqueue([
 					callback,
 					image_bitmap_async_data,
 					offset,
+					size,
 					options,
 					rect,
 					store = std::move(store)
 				]() mutable {
 					auto data = static_cast<uint8_t *>(store->Data()) + offset;
-					auto size = store->ByteLength();
 
 					auto asset = canvas_native_image_asset_create();
 					// a decode that throws used to leave the task

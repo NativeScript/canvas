@@ -68,6 +68,15 @@ export function registerImageBitmapSpec() {
 			equal(bitmap.height, 2, 'height');
 		});
 
+		test('createImageBitmap(encoded bytes) reads only the view', async () => {
+			// The view is the PNG signature and header only; the pixels follow it in the buffer.
+			const cut = 33;
+			await rejects(createImageBitmap(PNG_4x2.slice(0, cut) as any), 'a cut-off image on its own');
+			const buffer = new Uint8Array(PNG_4x2.length + 64);
+			buffer.set(PNG_4x2, 32);
+			await rejects(createImageBitmap(buffer.subarray(32, 32 + cut) as any), 'a cut-off view into a buffer holding the rest');
+		});
+
 		test('createImageBitmap(Blob) decodes', async () => {
 			const blob = new Blob([PNG_4x2.slice(0)], { type: 'image/png' });
 			const bitmap = await createImageBitmap(blob as any);

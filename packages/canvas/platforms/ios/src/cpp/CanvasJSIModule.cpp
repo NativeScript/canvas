@@ -279,23 +279,17 @@ void CanvasJSIModule::AddFontData(const v8::FunctionCallbackInfo<v8::Value> &arg
 																							 store->ByteLength());
 		}
 		
-	} else if (dataValue->IsTypedArray()) {
-		
+	} else if (dataValue->IsArrayBufferView()) {
+		// Only the view's bytes: it can sit inside a larger buffer.
+		auto view = dataValue.As<v8::ArrayBufferView>();
+		auto store = view->Buffer()->GetBackingStore();
+		auto data = static_cast<uint8_t *>(store->Data()) + view->ByteOffset();
 		if (aliasValue->IsString()) {
 			auto alias = ConvertFromV8String(isolate, aliasValue);
-			auto data = dataValue.As<v8::TypedArray>();
-			auto buffer = data->Buffer();
-			auto store = buffer->GetBackingStore();
-			canvas_native_font_add_family_with_bytes(alias.c_str(), (uint8_t *) store->Data(),
-																							 store->ByteLength());
+			canvas_native_font_add_family_with_bytes(alias.c_str(), data, view->ByteLength());
 		} else {
-			auto data = dataValue.As<v8::TypedArray>();
-			auto buffer = data->Buffer();
-			auto store = buffer->GetBackingStore();
-			canvas_native_font_add_family_with_bytes(nullptr, (uint8_t *) store->Data(),
-																							 store->ByteLength());
+			canvas_native_font_add_family_with_bytes(nullptr, data, view->ByteLength());
 		}
-		
 	}
 	
 }

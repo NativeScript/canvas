@@ -3,6 +3,7 @@
  * Where the spec leaves serialization open, these follow Chrome.
  */
 
+import { File, getFileAccess, knownFolders, path } from '@nativescript/core';
 import { suite, test, ok, equal, notEqual, closeTo, oneOf, arrayEqual, throws, makeCanvas, make2D, pixelAt, pixelEqual } from './harness';
 
 export function registerContext2DSpec() {
@@ -1156,6 +1157,27 @@ export function registerContext2DSpec() {
 			const m = ctx.measureText('Hello');
 			ok(m, 'no metrics');
 			ok(m.width > 0, `width was ${m.width}`);
+		});
+
+		test('__addFontData registers only the bytes in a view', () => {
+			const addFontData = (global as any).CanvasModule?.__addFontData;
+			const file = path.join(knownFolders.currentApp().path, 'fonts', 'Creepster-Regular.ttf');
+			if (typeof addFontData !== 'function' || !File.exists(file)) {
+				return;
+			}
+			const font = new Uint8Array(getFileAccess().readBufferSync(file));
+			addFontData('SpecFontPlain', font.slice().buffer);
+			// The font sits after 64 other bytes in a larger buffer.
+			const container = new Uint8Array(font.length + 128);
+			container.set(font, 64);
+			addFontData('SpecFontView', container.subarray(64, 64 + font.length));
+			const { ctx } = make2D();
+			const width = (family: string) => {
+				ctx.font = `40px ${family}`;
+				return ctx.measureText('Hello world').width;
+			};
+			notEqual(width('SpecFontPlain'), width('SpecFontMissing'), 'the font should change the width');
+			equal(width('SpecFontView'), width('SpecFontPlain'), 'the view should register the same font');
 		});
 
 		test('measureText("") has zero width', () => {

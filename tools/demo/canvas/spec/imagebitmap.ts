@@ -77,6 +77,16 @@ export function registerImageBitmapSpec() {
 			await rejects(createImageBitmap(buffer.subarray(32, 32 + cut) as any), 'a cut-off view into a buffer holding the rest');
 		});
 
+		test('createImageBitmap(encoded bytes) with a crop rect crops', async () => {
+			// PNG_4x2: columns 0-1 red, 2-3 blue.
+			const bitmap = await createImageBitmap(PNG_4x2.slice(0) as any, 2, 0, 2, 2);
+			equal(bitmap.width, 2, 'width');
+			equal(bitmap.height, 2, 'height');
+			const dest = make2D(2, 2);
+			dest.ctx.drawImage(bitmap, 0, 0);
+			pixelEqual(dest.ctx, 0, 0, [0, 0, 255, 255], 4, 'the crop should be the blue half');
+		});
+
 		test('createImageBitmap(Blob) decodes', async () => {
 			const blob = new Blob([PNG_4x2.slice(0)], { type: 'image/png' });
 			const bitmap = await createImageBitmap(blob as any);

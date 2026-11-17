@@ -22,16 +22,24 @@ has placed rebuilds every output rather than none:
     and its rust-version: Cargo.lock is not committed, so cargo resolves one set of versions for the
     whole workspace, and a requirement in any member can move what every build links. An artifact
     without crates reads none of these;
-  * workflows: the blocks of its jobs (one, but for the xcframeworks, which also have a lookup job
-    and the jobs that build their parts) and their workflows' settings above `jobs:` (comment lines
-    dropped, `run: |` text kept as written), so editing one job rebuilds only what it builds; no
-    workflow file;
+  * workflows: the blocks of its jobs (build-native.yml's job of the artifact's name, or those its
+    ARTIFACTS entry lists: the xcframeworks' lookup job and part jobs, for instance) and their
+    workflows' settings above `jobs:` (comment lines dropped, `run: |` text kept as written), so
+    editing one job rebuilds only what it builds; no workflow file;
   * actions: the dirs of the local actions its jobs use (`uses: ./dir`; naming one any other way is
     refused), those they use, and the native-cache action; no other action;
   * every other file whose last matching rule in OWNERS names the artifact, or that no rule matches.
 
 OWNERS and ARTIFACTS are claims about what each job reads. tools/tests/check-native-inputs.py, which
 Static Checks runs, holds them to what the jobs are seen to read and checks how the jobs are wired.
+
+To add a native output, wire its job to .github/actions/native-cache as the check's docstring says,
+give it an entry in ARTIFACTS (its crates, and its jobs unless it is build-native.yml's job of its
+name), its package dirs in PACKAGE_DIRS, the tools/scripts it runs in SCRIPTS, and add it to the
+platform tuples below that hold it. A new crate needs no entry: the closure finds it. A new file
+outside the crates is in every key until an OWNERS rule places it. Then run the check: when it
+reports a path a file names but its job does not read there (one a script writes, say), add that
+to NOT_READ in tools/tests/native_check/paths.py with the reason.
 
 Crates.io versions float within the declared ranges, and toolchains float within their pins. Neither
 is part of the key. The cache action adds the week to the key so nothing reused is more than a week
@@ -432,7 +440,7 @@ def patched(rev):
         if header:
             table = header.group(1)
         elif re.match(r"^(patch\.|replace$)", table):
-            found.update(norm(p) for p in re.findall(r"\bpath\s*=\s*\"([^\"]+)\"", line))
+            found.update(norm(p) for _, p in re.findall(r"\bpath\s*=\s*([\"'])(.+?)\1", line))
     return found
 
 

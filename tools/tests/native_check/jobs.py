@@ -39,7 +39,11 @@ PACKAGE_RUNNERS = {"npm", "npx", "yarn", "pnpm", "nx", "bun", "just"}
 CARGO_BUILDS = {"build", "b", "test", "t", "check", "c", "run", "r", "bench", "clippy", "doc", "d", "rustc"}
 # cargo's subcommands that build no crate of the workspace; any other (a plugin too) may.
 CARGO_NO_BUILD = {"install", "uninstall", "metadata", "fetch", "fmt", "version", "help", "search", "tree", "update",
-                  "locate-project", "pkgid", "generate-lockfile", "vendor", "new", "init", "login", "logout", "owner"}
+                  "locate-project", "pkgid", "generate-lockfile", "vendor", "new", "init", "login", "logout", "owner",
+                  "clean"}
+# The options that take a value before cargo's subcommand and before the command xcrun runs.
+CARGO_VALUE_OPTIONS = {"--color", "--config", "-C", "-Z", "--explain"}
+XCRUN_VALUE_OPTIONS = {"-sdk", "--sdk", "-toolchain", "--toolchain"}
 WORKSPACE_PREFIX = re.compile(r"\$\{\{\s*github\.workspace\s*\}\}/|\$\{?(?:GITHUB_WORKSPACE|ROOT|REPO_ROOT|PWD)\}?/")
 
 
@@ -59,6 +63,9 @@ def field(step, name):
             return "\n".join(body)
         following = next((l for l in step[i + 1:] if l.strip()), "")
         if following and ni.indent(following) > ni.key_indent(line):
+            if following.lstrip().startswith("- "):
+                raise ni.Failure(f"`{name}:` lists its items on the next lines; write them on one line, "
+                                 f"`{name}: [a, b]`, so they can be read")
             raise ni.Failure(f"`{name}:` continues on the next lines; write it as `{name}: |` so it can be read")
         value = re.sub(r"\s+#.*$", "", value).strip()
         if len(value) > 1 and value[0] == value[-1] and value[0] in "'\"":
@@ -123,7 +130,8 @@ def mentions(text, bases, tree, script_dir=None):
 def shell_commands(script, where):
     """The commands in shell text, each a list of its words with quotes removed. Commands end at
     ; & | ( ) ` $( and newlines outside quotes; text inside quotes stays in its word, so a word that
-    ran something computed keeps its `$`. A backslash escapes a quote, `$`, a space or another
+    ran something computed keeps its `$`, and the commands of a `$(...)` or backtick substitution in
+    double quotes are read as commands too. A backslash escapes a quote, `$`, a space or another
     backslash, and otherwise reads as `/` (the Windows jobs' paths). Heredoc bodies and redirection
     targets are dropped. An unclosed quote is an error rather than a script swallowed whole."""
     commands, words, word, quote, i = [], [], None, None, 0
@@ -151,6 +159,13 @@ def shell_commands(script, where):
         if quote:
             if c == quote:
                 quote = None
+            elif quote == '"' and (c == "`" or script.startswith("$(", i)):
+                # A command substitution in double quotes runs its commands; the word keeps its text.
+                end = backtick_end(script, i + 1, where) if c == "`" else substitution_end(script, i + 2, where)
+                commands.extend(shell_commands(script[i + (1 if c == "`" else 2):end], where))
+                word += script[i:end + 1]
+                i = end + 1
+                continue
             elif c == "\\" and quote == '"' and nxt in '"$`\\':
                 word += nxt
                 i += 1
@@ -212,6 +227,52 @@ def shell_commands(script, where):
         raise ni.Failure(f"{where}: the heredoc ending `{heredocs[0]}` is not closed")
     end_command()
     return commands
+
+
+def substitution_end(script, i, where):
+    """The index of the `)` that closes the `$(` whose text starts at i, past nested quotes and
+    substitutions."""
+    depth = 1
+    while i < len(script):
+        c = script[i]
+        if c == "\\":
+            i += 2
+            continue
+        if c == "'":
+            i = script.find("'", i + 1)
+            if i < 0:
+                break
+        elif c == '"':
+            i += 1
+            while i < len(script) and script[i] != '"':
+                if script[i] == "\\":
+                    i += 1
+                elif script.startswith("$(", i):
+                    i = substitution_end(script, i + 2, where)
+                elif script[i] == "`":
+                    i = backtick_end(script, i + 1, where)
+                i += 1
+        elif c == "`":
+            i = backtick_end(script, i + 1, where)
+        elif c == "(":
+            depth += 1
+        elif c == ")":
+            depth -= 1
+            if depth == 0:
+                return i
+        i += 1
+    raise ni.Failure(f"{where}: a `$(` is never closed, so what runs in it cannot be read")
+
+
+def backtick_end(script, i, where):
+    """The index of the backtick that closes the one before i."""
+    while i < len(script):
+        if script[i] == "\\":
+            i += 1
+        elif script[i] == "`":
+            return i
+        i += 1
+    raise ni.Failure(f"{where}: a backtick is never closed, so what runs in it cannot be read")
 
 
 def is_absolute(token):
@@ -348,7 +409,6 @@ def walk(script, wd, where, files, guesses, makes, after_cd, followed=False):
             continue
         name, args = tokens[0], tokens[1:]
         base = posixpath.basename(name)
-        first = next((a for a in args if not a.startswith(("-", "+"))), "")
         # A make that a wrapper this does not know starts (`chrt 10 make`) would read as an argument.
         if base not in ("make", "gmake") and base not in NAMES_ONLY and any(
                 posixpath.basename(a) in ("make", "gmake") for a in args):
@@ -357,16 +417,11 @@ def walk(script, wd, where, files, guesses, makes, after_cd, followed=False):
             raise ni.Failure(f"{where}: `{command}` runs what a package manifest says; run the script itself")
         # Without -p, cargo builds the crate of the dir it runs in, or every member from a dir that
         # is no crate's; --workspace builds every member wherever it runs. So each build names its
-        # crates, also behind a launcher (rustup run, xcrun, cross) or a plugin (zigbuild, ndk).
-        at = next((i for i, t in enumerate(tokens) if posixpath.basename(t) in ("cargo", "cross")), None)
-        if at is None and is_dynamic(name) and first in CARGO_BUILDS:
-            at = 0
-        if at is not None and base not in NAMES_ONLY:
-            cargo = tokens[at + 1:]
-            words = {a for a in cargo if not a.startswith(("-", "+"))}
-            crates = packages(cargo)
-            if words and not words & CARGO_NO_BUILD and (
-                    {"--workspace", "--all"} & set(cargo) or not crates or any(re.search(r"[*?\[]", c) for c in crates)):
+        # crates.
+        build = None if base in NAMES_ONLY or base in ("[", "[[", "test") else cargo_build(tokens)
+        if build is not None:
+            crates = packages(build)
+            if {"--workspace", "--all"} & set(build) or not crates or any(re.search(r"[*?\[]", c) for c in crates):
                 raise ni.Failure(f"{where}: `{command}` builds crates it does not name; name each with -p")
         if name in ("cd", "pushd"):
             after_cd = True
@@ -409,6 +464,33 @@ def walk(script, wd, where, files, guesses, makes, after_cd, followed=False):
                 raise ni.Failure(f"{where}: runs `{name}` after `cd`; give the step a working-directory instead")
             files.add(ni.norm(posixpath.join(wd, name)))
     return after_cd
+
+
+def cargo_build(tokens):
+    """The arguments of the cargo command the words run, when it may build a crate: cargo or cross
+    with a subcommand that builds (any but CARGO_NO_BUILD, a plugin's too), a plugin run by its own
+    name (cargo-ndk), a variable named for cargo or given a build subcommand (`"$CARGO" ndk`,
+    `$X build`), behind rustup run or xcrun, or cargo later in the command (`docker run img cargo
+    build`). None for anything else."""
+    name, args = tokens[0], tokens[1:]
+    base = posixpath.basename(name)
+    if base == "rustup":
+        return cargo_build(args[2:]) if len(args) > 2 and args[0] == "run" else None
+    if base == "xcrun":
+        while args and args[0].startswith("-"):
+            args = args[2:] if args[0] in XCRUN_VALUE_OPTIONS else args[1:]
+        return cargo_build(args) if args else None
+    if re.match(r"^(?:cargo|cross)-\w", base):
+        return None if set(args) <= {"--version", "-V", "--help", "-h"} else args
+    first = next((a for a in args if not a.startswith(("-", "+"))), "")
+    if not (re.match(r"^(?:cargo|cross)(?:\.exe)?$", base)
+            or is_dynamic(name) and ("cargo" in name.lower() or first in CARGO_BUILDS)):
+        at = next((i for i, t in enumerate(args) if posixpath.basename(t) == "cargo"), None)
+        return None if at is None else cargo_build(args[at:])
+    i = 0
+    while i < len(args) and args[i].startswith(("-", "+")):
+        i += 2 if args[i] in CARGO_VALUE_OPTIONS else 1
+    return None if i >= len(args) or args[i] in CARGO_NO_BUILD else args[i:]
 
 
 def make_command(args, moved, command, where):
@@ -513,8 +595,9 @@ def discover(artifact, rev):
         wd, files, step_guesses, make = commands(step, step_where, values)
         text = "\n".join(step)
         corpus.append(text)
-        # What a cache key hashes is not read by the build.
-        text = re.sub(r"hashFiles\([^)]*\)", "", text)
+        # What a cache step's key hashes is not read by the build.
+        if moves_cache(step):
+            text = re.sub(r"hashFiles\([^)]*\)", "", text)
         actions.extend(ni.norm(m.group(1)) for m in map(ni.LOCAL_USE.match, step) if m)
         for p in files:
             if p not in tree:
@@ -619,6 +702,10 @@ def discover(artifact, rev):
 
 # Text the job pass read: where it is, its working-directory, and the values its job's matrix lists.
 Read = collections.namedtuple("Read", "where text wd values")
+
+
+def moves_cache(step):
+    return re.match(r"^actions/cache(/(restore|save))?@", field(step, "uses")) is not None
 
 
 def native_cache(steps):

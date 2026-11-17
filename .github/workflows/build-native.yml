@@ -42,14 +42,16 @@
 #            run the Node-API test suites on the shipped modules (on WARP: runners have no GPU;
 #            audio renders offline and on the 'none' sink: they have no audio device either).
 #
-# Every job first restores its finished output from .github/actions/native-cache, keyed on what it
-# is built from (tools/scripts/native-inputs.py says what that covers). On a hit it skips its build
-# and uploads the restored output, so a change rebuilds only the jobs that depend on it: a crate
-# change rebuilds every platform that links the crate, a Windows script change only the Windows
-# jobs, and a TypeScript change nothing. An output built by several jobs (the Apple xcframeworks) is
-# restored by a job of its own, which on a hit uploads it and skips the jobs that build it. A job
-# that builds Skia also keeps Skia's built libraries per target in .github/actions/skia-cache, saved
-# only by pushes to master.
+# Every output is first restored from .github/actions/native-cache, keyed on what it is built from
+# (tools/scripts/native-inputs.py says what that covers). On a hit its job skips the build and
+# uploads the restored output, so a change rebuilds only the jobs that depend on it: a crate change
+# rebuilds every platform that links the crate, a Windows script change only the Windows jobs, and
+# a TypeScript change nothing. An output built by several jobs (the Apple xcframeworks) is restored
+# by a job of its own on Linux, which on a hit uploads it and skips the jobs that build it: the four
+# per-platform jobs and the one that joins their slices. Only that last job saves it, so an
+# xcframework is reused only once all five of its macOS jobs have run in one run. A job that builds
+# Skia also keeps Skia's built libraries per target in .github/actions/skia-cache, saved only by
+# pushes to master.
 name: Build Native
 
 permissions:

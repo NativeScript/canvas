@@ -2,10 +2,10 @@
 #
 # All native artifacts (Android AARs + iOS/visionOS/tvOS xcframeworks for
 # canvas, canvas-svg and audio-context; the Windows and Linux x64/arm64
-# Node-API modules) are built by the reusable build-native.yml workflow. On
+# Node-API modules) are built by the reusable build-native.yml workflow, or
+# restored from its cache when nothing they are built from has changed. On
 # pushes to master (and manual dispatch) the npm job then packages everything
-# with those freshly built artifacts and publishes a `pr`-tagged prerelease of
-# each package.
+# with those artifacts and publishes a `pr`-tagged prerelease of each package.
 name: Canvas Native
 
 permissions:
@@ -19,7 +19,7 @@ on:
   workflow_dispatch:
     inputs:
       fresh:
-        description: Build every native output instead of restoring it, to check a cached one. Saves no cache entry; publishes the prerelease as any dispatch does
+        description: Build every native output instead of restoring it, to check a cached one. Saves no native-cache entry; publishes the prerelease as any dispatch does
         type: boolean
         default: false
 
@@ -28,10 +28,10 @@ env:
   NATIVE_CACHE_FRESH: ${{ inputs.fresh }}
 
 # A pull request push cancels the run it supersedes. On master a running build finishes (it
-# saves the caches pull requests read) and only the newest waiting push runs after it. A `fresh`
-# run, which saves nothing, waits in a group of its own, so it never replaces a waiting push.
+# saves the caches pull requests read) and only the newest waiting run starts after it, so runs
+# that publish the prerelease, a `fresh` one too, publish in order.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}${{ inputs.fresh && '-fresh' || '' }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:

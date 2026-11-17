@@ -20,7 +20,7 @@ inputs:
     description: The job's entry in tools/scripts/native-inputs.py
     required: true
   path:
-    description: The finished output, the same path the job uploads
+    description: The finished output, the path the job uploads (or, for a job that uploads nothing, a file it writes when it passes)
     required: true
   variant:
     description: In a matrix job, the matrix as JSON (toJSON of matrix), so every leg gets its own key

@@ -3,7 +3,7 @@ of one key. Part of tools/tests/check-native-inputs.py, whose docstring says wha
 import re
 
 from . import ni
-from .jobs import each_leg, field, matrix_values, native_cache, sections
+from .jobs import each_leg, field, matrix_values, moves_cache, native_cache, sections
 
 
 GUARD = "steps.native.outputs.hit != 'true'"
@@ -16,13 +16,33 @@ STEADY_CONTEXTS = {"matrix", "steps", "env", "strategy", "runner"}
 RUN_VARIABLE = re.compile(r"\bGITHUB_(SHA|REF|REF_NAME|REF_TYPE|REF_PROTECTED|HEAD_REF|BASE_REF|EVENT_NAME|"
                           r"EVENT_PATH|RUN_ID|RUN_NUMBER|RUN_ATTEMPT|ACTOR|ACTOR_ID|TRIGGERING_ACTOR|WORKFLOW|"
                           r"WORKFLOW_REF|WORKFLOW_SHA|RETENTION_DAYS)\b")
-# Git commands whose output is the commit, which differs between commits that share a key.
-READS_COMMIT = re.compile(r"\bgit\s+(?:(?:-[Cc]\s+\S+|--\S+)\s+)*"
-                          r"(?:describe|log|show|rev-list|rev-parse\s+(?:--\S+\s+)*(?:HEAD|@)\b)")
+# A git command: its global options, its subcommand and the rest of its command.
+GIT = re.compile(r"\bgit((?:[ \t]+(?:-[Cc]|--git-dir|--work-tree|--namespace)[ \t]+\S+|[ \t]+--?[\w-]+(?:=\S*)?)*)"
+                 r"[ \t]+([a-z][\w-]*)([^\n;&|)`]*)")
+# git subcommands that read commits or refs, which differ between commits that share a key.
+REF_READERS = {"describe", "log", "show", "shortlog", "rev-list", "ls-tree", "cat-file", "name-rev", "symbolic-ref",
+               "for-each-ref", "show-ref", "show-branch", "merge-base", "reflog", "branch", "tag", "whatchanged",
+               "blame", "archive", "cherry", "notes", "format-patch", "diff-tree", "diff-index", "bundle", "fast-export"}
+# An argument that names a commit.
+REVISION = re.compile(r"^(?:HEAD|@|FETCH_HEAD|ORIG_HEAD)(?![\w-])|\w[\^~]|^[0-9a-f]{7,40}$|^(?:origin|upstream|refs)/")
 
 
-def moves_cache(step):
-    return re.match(r"^actions/cache(/(restore|save))?@", field(step, "uses")) is not None
+def reads_commit(text):
+    """The first git command in the text that reads a commit or a ref (a revision given to
+    rev-parse or diff, or a subcommand in REF_READERS), or None."""
+    for m in GIT.finditer(text):
+        command, args, skip = m.group(2), [], False
+        for word in m.group(3).split():
+            if skip:
+                skip = False
+            elif re.match(r"^\d*[<>]", word):
+                skip = re.match(r"^\d*[<>]+$", word) is not None  # its target is the next word
+            elif not word.startswith("-"):
+                args.append(word.strip("'\""))
+        if (command in REF_READERS or command == "rev-parse" and args
+                or command == "diff" and any(REVISION.search(a) for a in args)):
+            return m.group(0).strip()
+    return None
 
 
 def expressions(lines, steps):

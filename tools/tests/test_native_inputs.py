@@ -13,6 +13,7 @@ it), so they are skipped without it; Static Checks has both.
 """
 import importlib.util
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -110,11 +111,17 @@ class Commands(unittest.TestCase):
                       ["run: cargo zigbuild --workspace -p a"], ["run: cargo ndk -t arm64-v8a build"],
                       ["run: cargo -Z unstable-options build"], ["run: rustup run nightly cargo build"],
                       ["run: xcrun cargo build"], ["run: cross build"], ['run: "$REAL_CARGO" build'],
-                      ["run: cargo build -p 'canvas-*'"]):
+                      ["run: cargo build -p 'canvas-*'"], ['run: OUT="$(cargo build --message-format=json)"'],
+                      ['run: echo "`cargo build`"'], ["run: cargo-zigbuild build --workspace"],
+                      ["run: cargo-ndk -t arm64-v8a build"], ['run: "$CARGO" ndk -t arm64 build --release'],
+                      ["run: cargo build --features new"], ["run: cargo run --release -- help"],
+                      ["run: cargo test --profile install"], ["run: docker run img cargo build"]):
             with self.subTest(lines=lines):
                 self.assertRaises(ni.Failure, ran, *lines)
         for line in ("run: cargo +nightly build -Z build-std=std --target x -p canvas-ios", "run: cargo build -p $CRATE",
-                     "run: cargo install cbindgen@0.29.0 --locked", "run: cargo --version"):
+                     "run: cargo install cbindgen@0.29.0 --locked", "run: cargo --version", "run: cargo clean",
+                     'run: [ "$MODE" = cross ] && echo cross', "run: cargo-ndk --version",
+                     'run: LIB="$(cargo build -p canvas-c --message-format=json)"'):
             with self.subTest(line=line):
                 ran(line)
 
@@ -163,6 +170,10 @@ class Yaml(unittest.TestCase):
     def test_no_steps_is_an_error(self):
         self.assertRaises(ni.Failure, ni.steps_of, "  j:\n    steps:\n    runs-on: x\n", 4, "test")
 
+    def test_a_list_over_lines_is_refused_with_the_form_that_reads(self):
+        with self.assertRaisesRegex(ni.Failure, re.escape("`needs: [a, b]`")):
+            jobs.field(["    needs:", "      - canvas-ios-cache", "      - canvas-apple"], "needs")
+
     def test_run_block_with_a_comment_keeps_its_body(self):
         self.assertEqual(jobs.field(["      - run: | # build", "          sh x.sh", "          #define A 1"], "run"),
                          "          sh x.sh\n          #define A 1")
@@ -208,6 +219,10 @@ def named(text, here="", shell=False):
 
 
 class Paths(unittest.TestCase):
+    def test_a_long_line(self):
+        self.assertEqual(len(paths.path_tokens(" ".join(f"$X{i}/a" for i in range(1200)), True)), 1)
+        self.assertEqual(paths.path_tokens("a" * 200_000, True), ())
+
     def test_relative_to_the_file_and_after_a_variable(self):
         cpp = "packages/canvas/platforms/ios/src/cpp"
         here = "packages/canvas/src-native/android"
@@ -326,10 +341,18 @@ class Contexts(unittest.TestCase):
         self.assertEqual(wiring.varying(["inputs.save == 'true'"], in_action=True), [])
 
     def test_git_commands_that_read_the_commit(self):
-        for line in ("git describe --tags", 'git -C "$ROOT" rev-parse --short HEAD', "git --no-pager log -1", "git rev-list -1 HEAD"):
+        for line in ("git describe --tags", 'git -C "$ROOT" rev-parse --short HEAD', "git --no-pager log -1",
+                     "git rev-list -1 HEAD", "git rev-parse @", "git rev-parse --short @", "git rev-parse origin/master",
+                     "git ls-tree HEAD", "git cat-file -p HEAD", "git diff HEAD~1 --stat", "git branch --show-current",
+                     'V=$(git rev-parse --short=8 "$REF")'):
             with self.subTest(line=line):
-                self.assertTrue(wiring.READS_COMMIT.search(line))
-        self.assertIsNone(wiring.READS_COMMIT.search("git rev-parse --show-toplevel"))
+                self.assertTrue(wiring.reads_commit(line))
+        for line in ("git rev-parse --show-toplevel", "if git rev-parse --show-toplevel >/dev/null 2>&1; then",
+                     "git rev-parse --show-toplevel 2> /dev/null", "R=$(git rev-parse --show-toplevel)",
+                     "git ls-files Cargo.toml", "git hash-object --stdin", "git diff --exit-code",
+                     "git config --system core.longpaths true", "# the git mode of each entry"):
+            with self.subTest(line=line):
+                self.assertIsNone(wiring.reads_commit(line))
 
 
 IDENTITY = {f"GIT_{who}_{what}": value for who in ("AUTHOR", "COMMITTER")
@@ -454,6 +477,30 @@ class Goals(unittest.TestCase):
         rev = self.commit(script, self.show(script) + '\ncd "$(dirname "$0")/../../packages/canvas-svg/src-native/ios"\n'
                           "cp ../../../canvas/src-native/canvas-ios/CanvasNative/include/canvas_ios.h x\n")
         self.assertTrue(any("canvas_ios.h" in p for p in self.problems("canvas-windows", rev)))
+
+    def test_check_fails_a_read_in_a_quoted_substitution(self):
+        script = "tools/scripts/build-napi.sh"
+        rev = self.commit(script, self.show(script) + '\nV8_TAG="$(cat "$REPO/V8_RELEASE")"\n')
+        self.assertTrue(any("V8_RELEASE" in p for p in self.problems("canvas-windows", rev)))
+
+    def test_a_large_fixture_of_a_crates_tests_is_not_scanned(self):
+        rev = self.commit("crates/canvas-svg/tests/big.svg", "<svg/>\n" * 300_000)
+        self.assertFalse(any("too large" in p for p in self.problems("canvas-svg-android", rev)))
+
+    def test_check_fails_a_file_a_build_step_hashes(self):
+        workflow = ".github/workflows/build-native.yml"
+        text = self.show(workflow)
+        build = "run: ./tools/scripts/build-napi.sh ${{ matrix.target }} release-napi\n"
+        self.assertEqual(text.count(build), 1)
+        rev = self.commit(workflow, text.replace(build, build.replace("run: ", "run: echo ${{ hashFiles('V8_RELEASE') }} && ")))
+        self.assertTrue(any("V8_RELEASE" in p for p in self.problems("canvas-windows", rev)))
+
+    def test_a_module_build_napi_writes_is_no_read(self):
+        script = "tools/scripts/build-napi.sh"
+        rev = self.commit(script, self.show(script).replace('echo "$DEST/$NAME.node"', 'ls -l "$DEST/$NAME.node"; du -sh "$DEST"'))
+        self.assertEqual(self.problems("canvas-windows", rev), [])
+        rev = self.commit(script, self.show(script) + '\ncp "$ROOT/packages/canvas/platforms/windows/THIRD_PARTY_NOTICES.txt" "$DEST/x"\n')
+        self.assertTrue(any("THIRD_PARTY_NOTICES" in p for p in self.problems("canvas-svg-windows", rev)))
 
     def test_check_fails_a_step_of_an_action_that_runs_after_a_failure(self):
         action = ".github/actions/setup-windows-native/action.yml"

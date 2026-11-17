@@ -19,6 +19,8 @@ NOT_READ = [
      "it writes the V8 headers it downloads there"),
     ("tools/scripts/download-v8.sh", "packages/canvas/src-native/canvas-ios/CanvasNative/include",
      "it writes the V8 headers it downloads there"),
+    *(("tools/scripts/build-napi.sh", f"packages/*/platforms/windows/{arch}{files}", "it writes the module it builds there")
+      for arch in ("x64", "arm64") for files in ("", "/*")),
     ("crates/canvas-napi/__test__", "packages/canvas", "the tests' titles name the package"),
     ("packages/canvas/src-native/canvas-ios/CanvasNative/.idea/workspace.xml", "packages/canvas/package.json",
      "it is the IDE's state, which no build reads"),
@@ -67,7 +69,14 @@ PREFIX = re.compile(r"[ \t]+(?![A-Za-z_]\w*=)[^\s;&|()]")
 # A shell's `cd`/`pushd` and where to, and a heredoc's delimiter.
 CD = re.compile(r"(?:^|[\s;&|(])(?:cd|pushd)\s+(" + WORD + ")")
 HEREDOC = re.compile(r"(?<!<)<<(?!<)-?\s*['\"]?([A-Za-z0-9_]+)['\"]?")
-TOKEN = re.compile(r"[^\s'\"`=;,(){}<>\[\]|&:!]*/[^\s'\"`=;,(){}<>\[\]|&:!]*")
+RUN = re.compile(r"[^\s'\"`=;,(){}<>\[\]|&:!]+")
+
+
+def slashed(text):
+    """The text's runs of path characters that hold a `/`."""
+    return [run for run in RUN.findall(text) if "/" in run]
+
+
 # A path given as its segments: path.join(root, 'apps', 'demo'), os.path.join(ROOT, "x").
 JOIN = re.compile(r"\b(?:join|resolve)\(([^()]*)\)")
 WILD = "\x01"
@@ -134,18 +143,21 @@ def code(text, p):
 
 def expand(text, values):
     """The text with each variable the file sets replaced by each of its values in turn, and any
-    other variable (a matrix value too) by WILD."""
-    m = VARIABLE.search(text)
-    if m is None:
-        return [text]
-    rests = expand(text[m.end():], values)
-    name = m.group(1) or m.group(2) or m.group(3) or m.group(4)
-    options = (values.get(name) if name else None) or [WILD]
-    if m.group(5):
-        options = list(dict.fromkeys(options + expand(unquote(m.group(5)), values)))
-    if len(options) * len(rests) > 64:
-        options = [WILD]
-    return [text[:m.start()] + option + rest for option in options for rest in rests]
+    other variable (a matrix value too) by WILD; from the last variable back, one stands for all its
+    values (WILD) once there would be more than 64 texts."""
+    found = list(VARIABLE.finditer(text))
+    rests = [text[found[-1].end():] if found else text]
+    for i in range(len(found) - 1, -1, -1):
+        m = found[i]
+        name = m.group(1) or m.group(2) or m.group(3) or m.group(4)
+        options = (values.get(name) if name else None) or [WILD]
+        if m.group(5):
+            options = list(dict.fromkeys(options + expand(unquote(m.group(5)), values)))
+        if len(options) * len(rests) > 64:
+            options = [WILD]
+        before = text[found[i - 1].end() if i else 0:m.start()]
+        rests = [before + option + rest for option in options for rest in rests]
+    return rests
 
 
 def resolve_token(token, here, entries, matched):
@@ -267,7 +279,7 @@ def path_tokens(text, shell=False):
         if heredoc is not None:
             # A heredoc's body is text a command is given (a config file, say), not commands.
             heredoc = None if line.strip() == heredoc else heredoc
-            found.update(t for expanded in expand(line, values) for t in TOKEN.findall(expanded))
+            found.update(t for expanded in expand(line, values) for t in slashed(expanded))
             continue
         if shell and HEREDOC.search(line):
             heredoc = HEREDOC.search(line).group(1)
@@ -288,10 +300,12 @@ def path_tokens(text, shell=False):
                 # As given and from the dir before it, since a popd or subshell may have left that one.
                 dirs += [to] + ([posixpath.join(before, to)] if before and not to.startswith(("/", WILD)) else [])
         # A value is read where it is exported or given to the command after it (`X=dir cmd`); one
-        # only set may be a dir the script goes on to name parts of.
-        rest = SHELL_SET.sub(lambda m: " " + (unquote(m.group(3) or "") if m.group(1) or PREFIX.match(line, m.end()) else ""), line)
+        # only set may be a dir the script goes on to name parts of, but the commands it runs
+        # (`X="$(cat f)"`) read.
+        rest = SHELL_SET.sub(lambda m: " " + (unquote(m.group(3) or "") if m.group(1) or PREFIX.match(line, m.end())
+                                              else ran_in(m.group(3) or "")), line)
         for expanded in expand(shell_reads(rest) if shell else rest, values):
-            tokens = TOKEN.findall(expanded)
+            tokens = slashed(expanded)
             found.update(tokens)
             found.update(posixpath.join(d, t) for d in dirs for t in tokens if not t.startswith(("/", WILD)))
     for m in JOIN.finditer(text):
@@ -303,6 +317,11 @@ def path_tokens(text, shell=False):
 def unquote(word):
     """A shell word without its quotes."""
     return re.sub(r"\"([^\"]*)\"|'([^']*)'", lambda m: m.group(1) if m.group(1) is not None else m.group(2), word)
+
+
+def ran_in(word):
+    """The commands a shell word runs, its `$(...)` and backtick substitutions, each after a `;`."""
+    return "".join(" ; " + (a or b) for a, b in re.findall(r"\$\((.*)\)|`([^`]*)`", unquote(word)))
 
 
 @functools.lru_cache(maxsize=None)
@@ -358,13 +377,16 @@ def scan(artifact, rev, wanted):
     in it too large to read that are not binaries. The job pass reads the workflows, actions and
     Makefile for what the job runs of them."""
     tested = set(ni.ARTIFACTS[artifact].get("crates", [])) if artifact in CARGO_TESTS else set()
-    problems = [f"{artifact}: {p} is in its key but too large to scan for paths" for p, (_, size) in sorted(blobs(rev).items())
-                if size > LIMIT and wanted(p) and textual(p)]
-    for p in sorted(texts(rev)):
-        if p.startswith(".github/workflows/") or re.match(r"^\.github/actions/[^/]+/action\.ya?ml$", p) or p == "Makefile" or not wanted(p):
-            continue
+
+    def scanned(p):
         crate = crate_of(rev, p)
-        if crate and p[len(crate) + 1:].split("/")[0] in ("tests", "benches", "examples") and crate not in tested:
+        return wanted(p) and not (crate and p[len(crate) + 1:].split("/")[0] in ("tests", "benches", "examples")
+                                  and crate not in tested)
+
+    problems = [f"{artifact}: {p} is in its key but too large to scan for paths" for p, (_, size) in sorted(blobs(rev).items())
+                if size > LIMIT and textual(p) and scanned(p)]
+    for p in sorted(texts(rev)):
+        if p.startswith(".github/workflows/") or re.match(r"^\.github/actions/[^/]+/action\.ya?ml$", p) or p == "Makefile" or not scanned(p):
             continue
         problems += crossings(artifact, rev, wanted, p, posixpath.dirname(p), named_paths(rev, p))
     return problems

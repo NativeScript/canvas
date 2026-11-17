@@ -68,6 +68,11 @@ pub struct CanvasGPUCanvasContext {
     /// Presents queued and not yet done; the page may run at most one frame ahead.
     pub(crate) presents_queued: Arc<std::sync::atomic::AtomicUsize>,
     pub(crate) last_capabilities: parking_lot::Mutex<Option<SurfaceCapabilities>>,
+    /// Android: the window `surface` was made for, held so its address can't pass to another window. Vulkan
+    /// connects a window when it makes a surface for it, so a second surface on the same window fails with
+    /// VK_ERROR_NATIVE_WINDOW_IN_USE_KHR; a resize reconfigures this surface instead.
+    #[cfg(target_os = "android")]
+    pub(crate) surface_window: parking_lot::Mutex<Option<HeldWindow>>,
     /// Windows: the SwapChainPanel stand-in wgpu binds its swapchain through (keeps the
     /// swapchain's DPI / fit transform ours).
     #[cfg(all(target_os = "windows", feature = "d3d"))]
@@ -76,6 +81,16 @@ pub struct CanvasGPUCanvasContext {
     #[cfg(target_os = "linux")]
     pub(crate) linux: parking_lot::Mutex<Option<Arc<super::linux_frames::LinuxPresenter>>>,
 }
+
+/// A counted reference to an Android window. ANativeWindow is reference counted and thread-safe.
+#[cfg(target_os = "android")]
+pub(crate) struct HeldWindow(ndk::native_window::NativeWindow);
+
+#[cfg(target_os = "android")]
+unsafe impl Send for HeldWindow {}
+
+#[cfg(target_os = "android")]
+unsafe impl Sync for HeldWindow {}
 
 impl Drop for CanvasGPUCanvasContext {
     fn drop(&mut self) {
@@ -370,6 +385,10 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_detach_surface(
     let mut surface = context.surface.lock();
     discard_current_texture(context, "canvas_native_webgpu_context_detach_surface");
     *surface = None;
+    #[cfg(target_os = "android")]
+    {
+        *context.surface_window.lock() = None;
+    }
 }
 
 #[no_mangle]
@@ -744,6 +763,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create_offscreen(
         current_texture: Mutex::default(),
         offscreen_texture: Mutex::default(),
         last_capabilities: Mutex::default(),
+        #[cfg(target_os = "android")]
+        surface_window: Mutex::new(None),
         #[cfg(target_os = "linux")]
         linux: Default::default(),
         #[cfg(all(target_os = "windows", feature = "d3d"))]
@@ -842,9 +863,18 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create(
 
     match surface {
         Ok(surface) => {
+            let surface_window = surface
+                .as_ref()
+                .and_then(|_| std::ptr::NonNull::new(window))
+                .map(|window| {
+                    HeldWindow(ndk::native_window::NativeWindow::clone_from_ptr(
+                        window.cast(),
+                    ))
+                });
             let ctx = CanvasGPUCanvasContext {
                 instance,
                 surface: Mutex::new(surface),
+                surface_window: Mutex::new(surface_window),
                 has_surface_presented: Arc::default(),
                 data: Default::default(),
                 view_data: Mutex::new(ViewData { width, height }),
@@ -898,9 +928,26 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize(
 
     let mut surface_data_lock = context.data.lock();
 
-    match context.instance.instance().create_surface(Some(display_handle), window_handle) {
+    let mut surface_window = context.surface_window.lock();
+    let same_window = surface_window
+        .as_ref()
+        .is_some_and(|held| held.0.ptr().as_ptr() as *mut c_void == window);
+    let surface_result = match surface.as_ref() {
+        Some(current) if same_window => Ok(Arc::clone(current)),
+        _ => context
+            .instance
+            .instance()
+            .create_surface(Some(display_handle), window_handle),
+    };
+
+    match surface_result {
         Ok(surface_id) => {
             *surface = Some(Arc::clone(&surface_id));
+            if !same_window {
+                *surface_window = Some(HeldWindow(
+                    ndk::native_window::NativeWindow::clone_from_ptr(window_handle_ptr.cast()),
+                ));
+            }
             let held_frame = context
                 .offscreen_texture
                 .lock()

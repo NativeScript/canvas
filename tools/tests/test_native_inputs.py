@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Tests for tools/scripts/native-inputs.py (the keys) and tools/tests/check-native-inputs.py (the
-check that holds them to what the jobs read).
+"""Tests for tools/scripts/native-inputs.py (the keys) and tools/tests/check-native-inputs.py with its
+parts in native_check (the check that holds the keys to what the jobs read).
 
 Owners: how OWNERS places a file. Commands, Yaml and Mentions: how the check reads workflow steps.
 Each case is a way of running a file or make that, read wrong, would hide a read from the check.
@@ -22,17 +22,10 @@ from unittest import mock
 
 sys.dont_write_bytecode = True  # no __pycache__ beside the scripts
 HERE = os.path.dirname(os.path.abspath(__file__))
-
-
-def load(name, path):
-    spec = importlib.util.spec_from_file_location(name, path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
-
-
-check = load("check_native_inputs", os.path.join(HERE, "check-native-inputs.py"))
-ni = check.ni
+spec = importlib.util.spec_from_file_location("check_native_inputs", os.path.join(HERE, "check-native-inputs.py"))
+check = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(check)
+from native_check import jobs, ni, paths, wiring  # noqa: E402 (beside this file; after no-bytecode is set)
 
 
 def step(*lines):
@@ -40,7 +33,7 @@ def step(*lines):
 
 
 def ran(*lines):
-    _, files, guesses, make = check.commands(step(*lines), "test")
+    _, files, guesses, make = jobs.commands(step(*lines), "test")
     return files, [path for _, path in guesses], make
 
 
@@ -124,23 +117,23 @@ class Commands(unittest.TestCase):
                 self.assertRaises(ni.Failure, ran, *lines)
 
     def test_a_make_target_from_the_matrix_counts_once_per_leg(self):
-        values = check.matrix_values(["    strategy:", "      matrix:", "        platform: [ios, 'tvos']"])
+        values = jobs.matrix_values(["    strategy:", "      matrix:", "        platform: [ios, 'tvos']"])
         self.assertEqual(values, {"platform": ["ios", "tvos"]})
-        self.assertEqual(check.commands(step("run: make ${{ matrix.platform }}-svg"), "t", values)[3], (["ios-svg", "tvos-svg"], []))
-        self.assertRaises(ni.Failure, check.commands, step("run: make ${{ matrix.target }}"), "t", values)
-        self.assertRaises(ni.Failure, check.matrix_values, ["    strategy:", "      matrix:", "        platform: [ios,", "          tvos]"])
+        self.assertEqual(jobs.commands(step("run: make ${{ matrix.platform }}-svg"), "t", values)[3], (["ios-svg", "tvos-svg"], []))
+        self.assertRaises(ni.Failure, jobs.commands, step("run: make ${{ matrix.target }}"), "t", values)
+        self.assertRaises(ni.Failure, jobs.matrix_values, ["    strategy:", "      matrix:", "        platform: [ios,", "          tvos]"])
 
     def test_what_the_environment_can_change_in_the_makefile(self):
-        self.assertEqual(check.make_environment("x:\n\t$(if $(CI),a.sh,b.sh)\n", []), ["CI"])
-        self.assertEqual(check.make_environment("S ?= a.sh\nx:\n\t./tools/$(S)\n", []), ["S"])
-        self.assertEqual(check.make_environment("x:\n\t./$(S)\n", ["S=a.sh"]), [])
-        self.assertEqual(check.make_environment(
+        self.assertEqual(jobs.make_environment("x:\n\t$(if $(CI),a.sh,b.sh)\n", []), ["CI"])
+        self.assertEqual(jobs.make_environment("S ?= a.sh\nx:\n\t./tools/$(S)\n", []), ["S"])
+        self.assertEqual(jobs.make_environment("x:\n\t./$(S)\n", ["S=a.sh"]), [])
+        self.assertEqual(jobs.make_environment(
             "T ?= nightly\nf = echo $(1)\nx:\n\tcargo +$(T) $(call f,a) $(foreach v,a b,$(v)) $$(HOME)\n", []), [])
         for makefile in ("t:\n\tS=x.sh cargo test\nx:\n\t./$(S)\n", "x:\n\t./$(S:.sh=-2.sh)\n", "x:\n\t./$S\n",
                          "S ?= a\nx:\n\tinclude $(S).mk\n"):
             with self.subTest(makefile=makefile):
-                self.assertEqual(check.make_environment(makefile, []), ["S"])
-        self.assertEqual(check.make_environment("x: S := a.sh\ndefine B\necho\nendef\nx:\n\t./$(S) $(B)\n", []), [])
+                self.assertEqual(jobs.make_environment(makefile, []), ["S"])
+        self.assertEqual(jobs.make_environment("x: S := a.sh\ndefine B\necho\nendef\nx:\n\t./$(S) $(B)\n", []), [])
 
 
 class Yaml(unittest.TestCase):
@@ -158,14 +151,14 @@ class Yaml(unittest.TestCase):
         self.assertRaises(ni.Failure, ni.steps_of, "  j:\n    steps:\n    runs-on: x\n", 4, "test")
 
     def test_run_block_with_a_comment_keeps_its_body(self):
-        self.assertEqual(check.field(["      - run: | # build", "          sh x.sh", "          #define A 1"], "run"),
+        self.assertEqual(jobs.field(["      - run: | # build", "          sh x.sh", "          #define A 1"], "run"),
                          "          sh x.sh\n          #define A 1")
 
     def test_a_value_continued_on_plain_lines_is_an_error(self):
         for first, name in (("      - run:", "run"), ("      - run: echo x &&", "run"),
                             ("        if: steps.native.outputs.hit != 'true' &&", "if")):
             with self.subTest(first=first):
-                self.assertRaises(ni.Failure, check.field, [first, "          make android"], name)
+                self.assertRaises(ni.Failure, jobs.field, [first, "          make android"], name)
 
     def test_scalar_text_is_kept_and_comments_are_not(self):
         lines = [l for l, _ in ni.yaml_lines("a: 1 \n# note\nb: |\n  #define X 1\n\n  y\nc: 2")]
@@ -176,16 +169,16 @@ class Mentions(unittest.TestCase):
     def test_files_with_prefixes_not_dirs(self):
         tree = {"tools/scripts/a.sh", "packages/canvas/index.ts", "V8_RELEASE"}
         text = 'x "$ROOT/tools/scripts/a.sh" ${{ github.workspace }}/V8_RELEASE packages/canvas ./tools/scripts/a.sh.'
-        self.assertEqual(check.mentions(text, [], tree), {"tools/scripts/a.sh", "V8_RELEASE"})
+        self.assertEqual(jobs.mentions(text, [], tree), {"tools/scripts/a.sh", "V8_RELEASE"})
 
     def test_workflow_files_are_left_to_their_job_blocks(self):
-        self.assertEqual(check.mentions("see .github/workflows/x.yml", [], {".github/workflows/x.yml"}), set())
+        self.assertEqual(jobs.mentions("see .github/workflows/x.yml", [], {".github/workflows/x.yml"}), set())
 
     def test_relative_to_a_base_or_the_script_dir(self):
         tree = {"tools/scripts/a.sh", "tools/scripts/lib/b.sh"}
-        self.assertEqual(check.mentions("sh a.sh", ["tools/scripts"], tree), {"tools/scripts/a.sh"})
-        self.assertEqual(check.mentions('source "$(dirname "$0")/lib/b.sh"', [], tree, "tools/scripts"), {"tools/scripts/lib/b.sh"})
-        self.assertEqual(check.mentions('. "$SCRIPT_DIR/lib/b.sh"', [], tree, "tools/scripts"), {"tools/scripts/lib/b.sh"})
+        self.assertEqual(jobs.mentions("sh a.sh", ["tools/scripts"], tree), {"tools/scripts/a.sh"})
+        self.assertEqual(jobs.mentions('source "$(dirname "$0")/lib/b.sh"', [], tree, "tools/scripts"), {"tools/scripts/lib/b.sh"})
+        self.assertEqual(jobs.mentions('. "$SCRIPT_DIR/lib/b.sh"', [], tree, "tools/scripts"), {"tools/scripts/lib/b.sh"})
 
 
 ENTRIES = {p: ("tree" if "." not in p.rsplit("/", 1)[-1] else "blob", "") for p in (
@@ -198,7 +191,7 @@ ENTRIES = {p: ("tree" if "." not in p.rsplit("/", 1)[-1] else "blob", "") for p 
 
 
 def named(text, here=""):
-    return check.names(text, here, ENTRIES)
+    return paths.names(text, here, ENTRIES)
 
 
 class Paths(unittest.TestCase):
@@ -231,33 +224,33 @@ class Paths(unittest.TestCase):
         self.assertEqual(named("const a = path.join(root, 'apps', 'demo', 'audio');"), {"apps/demo/audio"})
 
     def test_comments_by_the_kind_of_file(self):
-        self.assertEqual(named(check.code("x(); // mirrors tools/assets\n/* tools/assets */ y(\"tools/assets\");", "a.rs")),
+        self.assertEqual(named(paths.code("x(); // mirrors tools/assets\n/* tools/assets */ y(\"tools/assets\");", "a.rs")),
                          {"tools/assets"})
-        self.assertEqual(named(check.code("# tools/assets\necho x # tools/assets\nls ${#a}", "a.sh")), set())
-        self.assertIsNone(check.code("see tools/assets", "packages/x/platforms/README.md"))
+        self.assertEqual(named(paths.code("# tools/assets\necho x # tools/assets\nls ${#a}", "a.sh")), set())
+        self.assertIsNone(paths.code("see tools/assets", "packages/x/platforms/README.md"))
 
     def test_a_comment_marker_in_a_string_is_text(self):
         for text in ('g("x/*/y");\nread("tools/assets/icons/a.png");\n/* z */', 'f("a//b", read("tools/assets/icons/a.png"));'):
             with self.subTest(text=text):
-                self.assertEqual(named(check.code(text, "a.rs")), {"tools/assets/icons/a.png"})
-        self.assertEqual(named(check.code('s.source = "#{root}/tools/assets/icons/a.png"', "a.podspec")), {"tools/assets/icons/a.png"})
-        self.assertEqual(check.code("#include tools/assets", "a.unknown"), "#include tools/assets")
+                self.assertEqual(named(paths.code(text, "a.rs")), {"tools/assets/icons/a.png"})
+        self.assertEqual(named(paths.code('s.source = "#{root}/tools/assets/icons/a.png"', "a.podspec")), {"tools/assets/icons/a.png"})
+        self.assertEqual(paths.code("#include tools/assets", "a.unknown"), "#include tools/assets")
 
     def test_after_a_cd(self):
         self.assertEqual(named("cd packages/canvas/src-native/android\ncp ../../platforms/ios/src/cpp/Caches.cpp x"),
                          {"packages/canvas/src-native/android", "packages/canvas/platforms/ios/src/cpp/Caches.cpp"})
 
     def test_the_words_made_of_a_matrix_value(self):
-        self.assertEqual(check.apart("cp a/b x/${{ matrix.n }}/y z"), ("cp a/b   z", "x/${{ matrix.n }}/y"))
+        self.assertEqual(jobs.apart("cp a/b x/${{ matrix.n }}/y z"), ("cp a/b   z", "x/${{ matrix.n }}/y"))
 
     def test_a_matrix_value_is_one_segment_or_each_listed_value(self):
         self.assertEqual(named("cp packages/${{ matrix.name }}/platforms x"), {"packages/canvas/platforms"})
-        self.assertEqual(check.each_leg("cp packages/${{ matrix.m.name }}/x/${{ matrix.arch }}", {"m.name": ["a"], "arch": ["x64", "arm64"]}),
+        self.assertEqual(jobs.each_leg("cp packages/${{ matrix.m.name }}/x/${{ matrix.arch }}", {"m.name": ["a"], "arch": ["x64", "arm64"]}),
                          "cp packages/a/x/x64 packages/a/x/arm64")
         strategy = ["    strategy:", "      matrix:", "        module:", "          - name: canvas-svg", "            crate: svg",
                     "          - name: audio", "        arch: [x64, arm64]", "        include:", "          - arch: x64",
                     "            target: x86_64"]
-        self.assertEqual(check.matrix_values(strategy), {"module.name": ["canvas-svg", "audio"], "module.crate": ["svg"],
+        self.assertEqual(jobs.matrix_values(strategy), {"module.name": ["canvas-svg", "audio"], "module.crate": ["svg"],
                                                           "arch": ["x64", "arm64"], "target": ["x86_64"]})
 
 
@@ -265,12 +258,12 @@ class Contexts(unittest.TestCase):
     def test_contexts_that_change_between_runs(self):
         for expression in ("github.sha", "toJSON(github)", "github['run_id']", "GitHub.SHA", "vars.X", "inputs.fresh"):
             with self.subTest(expression=expression):
-                self.assertTrue(check.varying([expression]))
-        self.assertEqual(check.varying(["matrix.target", "steps.native.outputs.hit != 'true'", "runner.os",
+                self.assertTrue(wiring.varying([expression]))
+        self.assertEqual(wiring.varying(["matrix.target", "steps.native.outputs.hit != 'true'", "runner.os",
                                         "env.X", "github.workspace", "hashFiles('Cargo.toml')"]), [])
 
     def test_an_actions_inputs_are_its_jobs(self):
-        self.assertEqual(check.varying(["inputs.save == 'true'"], in_action=True), [])
+        self.assertEqual(wiring.varying(["inputs.save == 'true'"], in_action=True), [])
 
 
 IDENTITY = {f"GIT_{who}_{what}": value for who in ("AUTHOR", "COMMITTER")
@@ -411,20 +404,20 @@ class Goals(unittest.TestCase):
                           ("status function", guarded.replace("!= 'true'", "!= 'true' && !success()")),
                           ("run context", guarded.replace("run: make android", "run: echo ${{ github.sha }} && make android"))):
             with self.subTest(name=name):
-                self.assertRaises(ni.Failure, check.check_wiring, self.edit(ni.BUILD_NATIVE, guarded, new))
+                self.assertRaises(ni.Failure, wiring.check_wiring, self.edit(ni.BUILD_NATIVE, guarded, new))
         upload = "      - uses: actions/upload-artifact@v4\n        with:\n          name: canvas-android\n"
         for name, new in (("renamed upload", upload.replace("name: canvas-android", "name: android")), ("no upload", "")):
             with self.subTest(name=name):
-                self.assertRaises(ni.Failure, check.check_wiring, self.edit(
+                self.assertRaises(ni.Failure, wiring.check_wiring, self.edit(
                     ni.BUILD_NATIVE, upload + "          path: packages/canvas/platforms/android/canvas-release.aar\n"
                     "          if-no-files-found: error\n", new and new + "          path: packages/canvas/platforms/android/"
                     "canvas-release.aar\n          if-no-files-found: error\n"))
-        self.assertRaises(ni.Failure, check.check_wiring,
+        self.assertRaises(ni.Failure, wiring.check_wiring,
                           self.edit(ni.BUILD_NATIVE, "          variant: ${{ toJSON(matrix) }}\n", ""))
         # GitHub evaluates expressions in an action's input descriptions and fails to load it.
-        self.assertRaises(ni.Failure, check.check_wiring, self.edit(
+        self.assertRaises(ni.Failure, wiring.check_wiring, self.edit(
             f"{ni.CACHE_ACTION}/action.yml", "    description: The job's entry", "    description: ${{ inputs.x }} The job's entry"))
-        check.check_wiring(self.base)
+        wiring.check_wiring(self.base)
 
     def test_the_wiring_of_an_artifact_built_in_parts(self):
         gate = "    needs: canvas-ios-cache\n    if: needs.canvas-ios-cache.outputs.hit != 'true'\n"
@@ -442,7 +435,7 @@ class Goals(unittest.TestCase):
                                 combine.replace("'true'\n", "'true' && !cancelled()\n")),
                                ("last job not needing the parts", combine, combine.replace(", canvas-apple]", "]"))):
             with self.subTest(name=name):
-                self.assertRaises(ni.Failure, check.check_wiring, self.edit(ni.BUILD_NATIVE, old, new))
+                self.assertRaises(ni.Failure, wiring.check_wiring, self.edit(ni.BUILD_NATIVE, old, new))
         self.assertIn(f"{ni.BUILD_NATIVE}#canvas-apple", ni.key_inputs("canvas-ios", self.base))
 
     def test_check_fails_a_build_file_naming_a_crate_outside_the_closure(self):

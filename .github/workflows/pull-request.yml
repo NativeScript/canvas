@@ -18,6 +18,12 @@ on:
   pull_request:
   workflow_dispatch:
 
+# A pull request push cancels the run it supersedes. On master a running build finishes (it
+# saves the caches pull requests read) and only the newest waiting push runs after it.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   # Fast, dependency-free guards. These run first because they catch the class
   # of regression that merges introduce silently -- see

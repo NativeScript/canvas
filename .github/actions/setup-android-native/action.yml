@@ -33,7 +33,10 @@ runs:
       with:
         distribution: temurin
         java-version: '17'
-        cache: gradle
+
+    # Its cache is read-only off master: setup-java's saved 400-600 MB per pull request and
+    # evicted the Skia entries from the 10 GB budget.
+    - uses: gradle/actions/setup-gradle@v4
 
     - name: Setup Android SDK
       uses: android-actions/setup-android@v4

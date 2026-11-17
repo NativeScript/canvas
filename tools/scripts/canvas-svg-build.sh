@@ -1,15 +1,11 @@
 #!/bin/bash
-cd ../../packages/canvas-svg/src-native/ios
+# Builds CanvasSVG.xcframework into packages/canvas-svg/platforms/ios/CanvasSVGBinary.
+#
+#   canvas-svg-build.sh                 every platform (what the npm script runs)
+#   canvas-svg-build.sh ios tvos        only those platforms' slices, left in ios/dist
+#   canvas-svg-build.sh --xcframework   the xcframework from the slices already in ios/dist
+cd "$(dirname "$0")/../../packages/canvas-svg/src-native/ios"
 set -e
 
-
-# Replace (don't merge into) the existing framework so stale slices can't linger.
-rm -rf ../../platforms/ios/CanvasSVGBinary/CanvasSVG.xcframework || true
-mkdir -p ../../platforms/ios/CanvasSVGBinary
-
-echo "Build iOS"
-./build.sh
-#cd ..
-echo "Copy dist/CanvasSVG.xcframework to platforms/ios/CanvasSVGBinary"
-
-cp -R dist/CanvasSVG.xcframework ../../platforms/ios/CanvasSVGBinary
+# build.sh copies the xcframework into platforms/ios/CanvasSVGBinary.
+./build.sh "$@"

@@ -41,6 +41,16 @@ export function registerWebGPUSpec() {
 			ok(format === 'bgra8unorm' || format === 'rgba8unorm', `unexpected preferred format: ${format}`);
 		});
 
+		test('GPUColorWrite is a global with the spec flags', () => {
+			const flags = (global as any).GPUColorWrite;
+			ok(flags, 'GPUColorWrite is missing');
+			equal(flags.RED, 0x1, 'RED');
+			equal(flags.GREEN, 0x2, 'GREEN');
+			equal(flags.BLUE, 0x4, 'BLUE');
+			equal(flags.ALPHA, 0x8, 'ALPHA');
+			equal(flags.ALL, 0xf, 'ALL');
+		});
+
 		test('requestAdapter resolves to an adapter', async () => {
 			const { adapter } = await getDevice();
 			ok(adapter, 'no adapter');

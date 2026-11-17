@@ -464,6 +464,49 @@ impl Context {
         }
     }
 
+    /// Copies the canvas into `target` (an `MTLTexture` of its size and format) on its own queue,
+    /// then signals `event` (an `MTLEvent`) with `value`. It signals even when it cannot copy, so
+    /// a queue waiting on it never hangs.
+    pub fn copy_to_metal_texture(&mut self, target: *const c_void, event: *const c_void, value: u64) {
+        use objc2::runtime::ProtocolObject;
+        use objc2_metal::{
+            MTLBlitCommandEncoder, MTLCommandBuffer, MTLCommandEncoder, MTLCommandQueue, MTLEvent,
+        };
+
+        let _pool = MetalContext::new_release_pool();
+        self.flush();
+        if let Some(context) = self.direct_context.as_mut() {
+            context.flush_and_submit();
+        }
+        let Some(metal) = self.metal_context.as_ref() else {
+            return;
+        };
+        let Some(command_buffer) = metal.raw_queue().commandBuffer() else {
+            return;
+        };
+        let target = unsafe { &*(target as *const ProtocolObject<dyn MTLTexture>) };
+        let source = self
+            .metal_texture_info
+            .as_ref()
+            .map(|info| info.texture() as *const ProtocolObject<dyn MTLTexture>)
+            .filter(|texture| !texture.is_null())
+            .map(|texture| unsafe { &*texture })
+            .filter(|source| {
+                source.width() == target.width()
+                    && source.height() == target.height()
+                    && source.pixelFormat() == target.pixelFormat()
+            });
+        if let Some(source) = source {
+            if let Some(blit) = command_buffer.blitCommandEncoder() {
+                unsafe { blit.copyFromTexture_toTexture(source, target) };
+                blit.endEncoding();
+            }
+        }
+        let event = unsafe { &*(event as *const ProtocolObject<dyn MTLEvent>) };
+        command_buffer.encodeSignalEvent_value(event, value);
+        command_buffer.commit();
+    }
+
     pub(crate) fn acquire_drawable(context: &mut Context) {
         let _pool = MetalContext::new_release_pool();
         let mut info: Option<TextureInfo> = None;

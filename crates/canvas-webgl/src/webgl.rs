@@ -1545,7 +1545,7 @@ pub fn canvas_native_webgl_get_parameter(pname: u32, state: &mut WebGLState) -> 
             return WebGLResult::Boolean(param == 1);
         }
         WEBGL_UNPACK_PREMULTIPLY_ALPHA_WEBGL => {
-            return WebGLResult::Boolean(state.get_premultiplied_alpha());
+            return WebGLResult::Boolean(state.get_unpack_premultiply_alpha());
         }
         WEBGL_UNPACK_FLIP_Y_WEBGL => {
             return WebGLResult::Boolean(state.get_flip_y());
@@ -2104,11 +2104,7 @@ pub fn canvas_native_webgl_pixel_storei(pname: u32, param: i32, state: &mut WebG
             }
         }
         WEBGL_UNPACK_PREMULTIPLY_ALPHA_WEBGL => {
-            if param == 1 {
-                state.set_premultiplied_alpha(true);
-            } else {
-                state.set_premultiplied_alpha(false);
-            }
+            state.set_unpack_premultiply_alpha(param == 1);
         }
         WEBGL_UNPACK_COLORSPACE_CONVERSION_WEBGL => {
             state.set_unpack_colorspace_conversion_webgl(param);

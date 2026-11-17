@@ -117,6 +117,8 @@ async function makeSink(canvas: any, sink: 'webgl' | 'webgl2' | 'webgpu'): Promi
 	if (!gl) return null;
 	const texture = gl.createTexture();
 	gl.bindTexture(gl.TEXTURE_2D, texture);
+	// As PixiJS uploads text.
+	gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
 	return {
 		allocate(w, h) {
 			gl.bindTexture(gl.TEXTURE_2D, texture);

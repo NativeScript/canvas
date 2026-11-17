@@ -128,7 +128,8 @@ export function registerCanvasSourceSpec() {
 
 	suite('canvassource.webgl', () => {
 		/** Upload `source` as a texture and read back the pixel it renders to. */
-		function uploadAndReadBack(source: any, size = 32, upload?: (gl: any) => void) {
+		/** `at` is in readPixels coordinates: y counts up from texture row 0. */
+		function uploadAndReadBack(source: any, size = 32, upload?: (gl: any) => void, at: [number, number] = [size / 2, size / 2]) {
 			const canvas = makeCanvas(size, size);
 			const gl = canvas.getContext('webgl') as any;
 			if (!gl) {
@@ -193,8 +194,47 @@ void main() { gl_FragColor = texture2D(tex, uv); }`,
 			gl.finish();
 
 			const pixels = new Uint8Array(4);
-			gl.readPixels(size / 2, size / 2, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+			gl.readPixels(at[0], at[1], 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
 			return { pixels };
+		}
+
+		test('texImage2D honours UNPACK_PREMULTIPLY_ALPHA_WEBGL for a 2d canvas', () => {
+			const source = make2DSource(32, 'rgba(255, 0, 0, 0.5)');
+			const straight = uploadAndReadBack(source);
+			ok(straight && !straight.error, `texImage2D raised GL error ${straight?.error}`);
+			ok(pixelNear(straight.pixels, [255, 0, 0, 128]), `straight alpha, got ${describePixel(straight.pixels)}`);
+			const premultiplied = uploadAndReadBack(source, 32, (gl) => {
+				gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+				equal(gl.getParameter(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL), true, 'getParameter(UNPACK_PREMULTIPLY_ALPHA_WEBGL)');
+				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
+			});
+			ok(premultiplied && !premultiplied.error, `texImage2D raised GL error ${premultiplied?.error}`);
+			ok(pixelNear(premultiplied.pixels, [128, 0, 0, 128]), `premultiplied, got ${describePixel(premultiplied.pixels)}`);
+		});
+
+		for (const flipY of [false, true]) {
+			test(`texSubImage2D uploads a premultiplied 2d canvas${flipY ? ' with UNPACK_FLIP_Y_WEBGL' : ''}`, () => {
+				const { canvas, ctx } = make2D(32, 32);
+				ctx.fillStyle = 'red';
+				ctx.fillRect(0, 0, 32, 16);
+				ctx.fillStyle = 'blue';
+				ctx.fillRect(0, 16, 32, 16);
+				const result = uploadAndReadBack(
+					canvas,
+					32,
+					(gl) => {
+						gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+						gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, flipY);
+						gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 32, 32, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+						gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, gl.RGBA, gl.UNSIGNED_BYTE, canvas);
+					},
+					[16, 4],
+				);
+				ok(result && !result.error, `texSubImage2D raised GL error ${result?.error}`);
+				// Texture row 0 is the canvas's top row, or its bottom row when flipped.
+				const expected = flipY ? BLUE : RED;
+				ok(pixelNear(result.pixels, expected), `expected ${flipY ? 'blue' : 'red'} in row 4, got ${describePixel(result.pixels)}`);
+			});
 		}
 
 		test('texImage2D accepts a 2d canvas', () => {
@@ -266,15 +306,16 @@ void main() { gl_FragColor = texture2D(tex, uv); }`,
 			return device;
 		}
 
-		/** Copy `source` into a texture and read the centre pixel back. */
-		async function copyAndReadBack(device: any, source: any, size = 32) {
+		/** Copy `source` into a texture and read a pixel back (the centre by default). */
+		async function copyAndReadBack(device: any, source: any, size = 32, options: { flipY?: boolean; premultipliedAlpha?: boolean; at?: [number, number]; after?: () => void } = {}) {
 			const texture = device.createTexture({
 				size: [size, size, 1],
 				format: 'rgba8unorm',
 				usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.COPY_SRC | GPUTextureUsage.RENDER_ATTACHMENT,
 			});
 
-			device.queue.copyExternalImageToTexture({ source }, { texture }, [size, size, 1]);
+			device.queue.copyExternalImageToTexture({ source, flipY: options.flipY ?? false }, { texture, premultipliedAlpha: options.premultipliedAlpha ?? false }, [size, size, 1]);
+			options.after?.();
 
 			const bytesPerRow = 256;
 			const readback = device.createBuffer({
@@ -289,9 +330,50 @@ void main() { gl_FragColor = texture2D(tex, uv); }`,
 			const pixels = new Uint8Array(readback.getMappedRange().slice(0));
 			readback.unmap();
 
-			const centre = (size / 2) * bytesPerRow + (size / 2) * 4;
-			return pixels.subarray(centre, centre + 4);
+			const [x, y] = options.at ?? [size / 2, size / 2];
+			const offset = y * bytesPerRow + x * 4;
+			return pixels.subarray(offset, offset + 4);
 		}
+
+		test('copyExternalImageToTexture honours premultipliedAlpha for a 2d canvas', async () => {
+			const device = await getDevice();
+			ok(device, 'no webgpu device');
+
+			const source = make2DSource(32, 'rgba(255, 0, 0, 0.5)');
+			const straight = await copyAndReadBack(device, source, 32, { premultipliedAlpha: false });
+			ok(pixelNear(straight, [255, 0, 0, 128]), `premultipliedAlpha: false, got ${describePixel(straight)}`);
+			const premultiplied = await copyAndReadBack(device, source, 32, { premultipliedAlpha: true });
+			ok(pixelNear(premultiplied, [128, 0, 0, 128]), `premultipliedAlpha: true, got ${describePixel(premultiplied)}`);
+		});
+
+		test('copyExternalImageToTexture flips a 2d canvas with flipY', async () => {
+			const device = await getDevice();
+			ok(device, 'no webgpu device');
+
+			const { canvas, ctx } = make2D(32, 32);
+			ctx.fillStyle = 'red';
+			ctx.fillRect(0, 0, 32, 16);
+			ctx.fillStyle = 'blue';
+			ctx.fillRect(0, 16, 32, 16);
+			const top = await copyAndReadBack(device, canvas, 32, { flipY: true, at: [16, 4] });
+			ok(pixelNear(top, BLUE), `expected blue on top, got ${describePixel(top)}`);
+		});
+
+		test('copyExternalImageToTexture copies a 2d canvas as it was when called', async () => {
+			const device = await getDevice();
+			ok(device, 'no webgpu device');
+
+			const { canvas, ctx } = make2D(32, 32);
+			ctx.fillStyle = 'red';
+			ctx.fillRect(0, 0, 32, 32);
+			const pixel = await copyAndReadBack(device, canvas, 32, {
+				after: () => {
+					ctx.fillStyle = '#00ff00';
+					ctx.fillRect(0, 0, 32, 32);
+				},
+			});
+			ok(pixelNear(pixel, RED), `expected red, got ${describePixel(pixel)}`);
+		});
 
 		test('copyExternalImageToTexture accepts a 2d canvas', async () => {
 			const device = await getDevice();

@@ -109,6 +109,8 @@ impl TryFrom<i32> for WebGLVersion {
 pub(crate) struct WebGLStateInner {
     version: WebGLVersion,
     flip_y: bool,
+    /// `UNPACK_PREMULTIPLY_ALPHA_WEBGL`.
+    unpack_premultiply_alpha: bool,
     /// An error WebGL raised itself, reported by getError before the driver's.
     webgl_error: u32,
     clear_stencil: i32,
@@ -360,6 +362,7 @@ impl WebGLState {
                 stencil_func_mask_back: 0xFFFFFFFF,
                 depth_mask: true,
                 flip_y: false,
+                unpack_premultiply_alpha: false,
                 webgl_error: 0,
                 unpack_colorspace_conversion_webgl: WEBGL_BROWSER_DEFAULT_WEBGL as i32,
                 max_combined_texture_image_units: 0,
@@ -426,6 +429,7 @@ impl WebGLState {
                 stencil_func_mask_back: 0xFFFFFFFF,
                 depth_mask: true,
                 flip_y: false,
+                unpack_premultiply_alpha: false,
                 webgl_error: 0,
                 unpack_colorspace_conversion_webgl: WEBGL_BROWSER_DEFAULT_WEBGL as i32,
                 max_combined_texture_image_units: 0,
@@ -524,6 +528,14 @@ impl WebGLState {
 
     pub fn set_unpack_colorspace_conversion_webgl(&mut self, color_space: i32) {
         self.get_state_mut().unpack_colorspace_conversion_webgl = color_space;
+    }
+
+    pub fn set_unpack_premultiply_alpha(&mut self, premultiply: bool) {
+        self.get_state_mut().unpack_premultiply_alpha = premultiply;
+    }
+
+    pub fn get_unpack_premultiply_alpha(&self) -> bool {
+        self.get_state().unpack_premultiply_alpha
     }
 
     /// Records `error` for getError unless one is already pending, as GL keeps the first.

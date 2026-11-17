@@ -1078,6 +1078,7 @@ unsafe fn webgpu_blur(data: *mut Data, window: AppKitWindowHandle) {
         source: c2d,
         origin: CanvasOrigin2d { x: 0, y: 0 },
         flip_y: false,
+        premultiplied_alpha: false,
     };
 
     let destination = CanvasImageCopyTexture {
@@ -1639,6 +1640,7 @@ unsafe fn webgpu_render_2d(data: *mut Data, window: AppKitWindowHandle) {
         source: c2d,
         origin: CanvasOrigin2d { x: 0, y: 0 },
         flip_y: false,
+        premultiplied_alpha: false,
     };
 
     let destination = CanvasImageCopyTexture {

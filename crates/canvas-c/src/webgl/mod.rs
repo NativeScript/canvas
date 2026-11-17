@@ -5,6 +5,7 @@ pub use gl2::*;
 mod result;
 pub use result::*;
 pub(crate) mod thread;
+pub(crate) mod canvas_source;
 pub use thread::{canvas_native_canvases_behind, canvas_native_canvases_behind_address};
 
 #[allow(non_camel_case_types)]

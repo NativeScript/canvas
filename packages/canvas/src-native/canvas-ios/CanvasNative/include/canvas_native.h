@@ -1989,6 +1989,10 @@ typedef struct CanvasImageCopyCanvasRenderingContext2D {
    * true, `origin` is still relative to the top left.
    */
   bool flip_y;
+  /**
+   * The destination's `premultipliedAlpha`: whether its texels are premultiplied.
+   */
+  bool premultiplied_alpha;
 } CanvasImageCopyCanvasRenderingContext2D;
 
 typedef struct CanvasImageCopyImageAsset {

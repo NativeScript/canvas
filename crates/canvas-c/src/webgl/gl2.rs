@@ -2115,9 +2115,24 @@ pub extern "C" fn canvas_native_webgl2_tex_image2d_canvas2d(
     let canvas = unsafe { &mut *canvas };
     let state = unsafe { &*state };
 
-    // canvas.make_current();
-
     let (source_width, source_height) = canvas.context.dimensions();
+
+    if (width, height) == (source_width as u32, source_height as u32)
+        && border == 0
+        && crate::webgl::canvas_source::copy_on_gpu(
+            canvas,
+            state,
+            target as u32,
+            level,
+            Some(internalformat),
+            0,
+            0,
+            format as u32,
+            type_ as u32,
+        )
+    {
+        return;
+    }
 
     let mut bytes = vec![0u8; (source_width * source_height * 4.) as usize];
 
@@ -2129,6 +2144,9 @@ pub extern "C" fn canvas_native_webgl2_tex_image2d_canvas2d(
 
     state.sync(|state| {
         state.make_current();
+        if state.get_unpack_premultiply_alpha() {
+            crate::webgl::canvas_source::premultiply_in_place(&mut bytes);
+        }
 
         if format as u32 == gl_bindings::RGBA {
             unsafe {

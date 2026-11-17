@@ -414,6 +414,78 @@ fn d3d11_device(egl: &Egl) -> Option<windows::Win32::Graphics::Direct3D11::ID3D1
     unsafe { windows::Win32::Graphics::Direct3D11::ID3D11Device::from_raw_borrowed(&raw) }.cloned()
 }
 
+/// A texture of one context made readable by the other contexts on this display: an EGLImage,
+/// plus a fence the reader waits on (on the GPU) before sampling it.
+#[cfg(target_os = "linux")]
+pub struct SharedTexture {
+    image: egl::Image,
+    sync: Option<egl::Sync>,
+}
+
+#[cfg(target_os = "linux")]
+unsafe impl Send for SharedTexture {}
+
+#[cfg(target_os = "linux")]
+type ImageTargetTexture2D = unsafe extern "system" fn(u32, *mut c_void);
+
+#[cfg(target_os = "linux")]
+impl SharedTexture {
+    /// From a `TEXTURE_2D` of the current context, whose drawing so far it waits for.
+    pub fn new(texture: u32) -> Option<Self> {
+        let egl = shared()?;
+        if !egl.has_extension("EGL_KHR_gl_texture_2D_image") {
+            return None;
+        }
+        let context = egl.instance.get_current_context()?;
+        let buffer = unsafe { egl::ClientBuffer::from_ptr(texture as usize as *mut c_void) };
+        let image = egl
+            .instance
+            .create_image(egl.display, context, egl::GL_TEXTURE_2D as egl::Enum, buffer, &[egl::ATTRIB_NONE])
+            .ok()?;
+        let sync = unsafe { egl.instance.create_sync(egl.display, egl::SYNC_FENCE as egl::Enum, &[egl::ATTRIB_NONE]) }.ok();
+        unsafe { gl_bindings::Flush() };
+        Some(Self { image, sync })
+    }
+
+    /// Makes `texture` of the current context an alias of the image, once the writer finished.
+    /// The active unit's `TEXTURE_2D` binding is kept.
+    pub fn attach(&self, texture: u32) -> bool {
+        static TARGET: OnceLock<Option<ImageTargetTexture2D>> = OnceLock::new();
+        let Some(egl) = shared() else {
+            return false;
+        };
+        let Some(target) = *TARGET.get_or_init(|| {
+            let f = get_proc_address("glEGLImageTargetTexture2DOES");
+            (!f.is_null()).then(|| unsafe { std::mem::transmute::<*const c_void, ImageTargetTexture2D>(f) })
+        }) else {
+            return false;
+        };
+        if let Some(sync) = self.sync {
+            let _ = egl.instance.wait_sync(egl.display, sync, 0);
+        }
+        unsafe {
+            let mut bound = 0;
+            gl_bindings::GetIntegerv(gl_bindings::TEXTURE_BINDING_2D, &mut bound);
+            gl_bindings::BindTexture(gl_bindings::TEXTURE_2D, texture);
+            target(gl_bindings::TEXTURE_2D, self.image.as_ptr());
+            gl_bindings::BindTexture(gl_bindings::TEXTURE_2D, bound as u32);
+        }
+        true
+    }
+}
+
+#[cfg(target_os = "linux")]
+impl Drop for SharedTexture {
+    fn drop(&mut self) {
+        if let Some(egl) = shared() {
+            if let Some(sync) = self.sync.take() {
+                let _ = unsafe { egl.instance.destroy_sync(egl.display, sync) };
+            }
+            let _ = egl.instance.destroy_image(egl.display, self.image);
+        }
+    }
+}
+
 thread_local! {
     /// Mirrors what this thread last bound so `make_current` can skip the call. Keyed on the
     /// surface as well as the context, since a context is rebound on resize.

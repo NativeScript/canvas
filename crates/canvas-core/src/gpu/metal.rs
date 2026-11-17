@@ -274,6 +274,14 @@ impl MetalContext {
         Retained::as_ptr(&self.device) as _
     }
 
+    pub fn raw_queue(&self) -> &ProtocolObject<dyn MTLCommandQueue> {
+        &self.queue
+    }
+
+    pub fn raw_device(&self) -> &ProtocolObject<dyn MTLDevice> {
+        &self.device
+    }
+
     pub fn sample_count(&self) -> usize {
         match &self.view {
             None => 1,

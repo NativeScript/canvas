@@ -10,6 +10,7 @@ use super::gpu::CanvasWebGPUInstance;
 
 pub struct CanvasGPUQuerySet {
     pub(super) label: Option<Cow<'static, str>>,
+    #[allow(dead_code)]
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
     pub(crate) query: Arc<wgpu_core::resource::QuerySet>,
     pub(crate) type_: CanvasQueryType,

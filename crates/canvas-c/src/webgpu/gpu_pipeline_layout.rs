@@ -6,6 +6,7 @@ use super::gpu::CanvasWebGPUInstance;
 
 pub struct CanvasGPUPipelineLayout {
     pub(crate) label: Option<Cow<'static, str>>,
+    #[allow(dead_code)]
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
     pub(crate) layout: Arc<wgpu_core::binding_model::PipelineLayout>,
 }

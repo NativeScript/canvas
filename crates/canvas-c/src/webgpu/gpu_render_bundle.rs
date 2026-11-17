@@ -7,6 +7,7 @@ use super::gpu::CanvasWebGPUInstance;
 
 pub struct CanvasGPURenderBundle {
     pub(super) label: Option<Cow<'static, str>>,
+    #[allow(dead_code)]
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
     pub(crate) bundle: Arc<wgpu_core::command::RenderBundle>,
 }

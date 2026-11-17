@@ -3,7 +3,6 @@ use std::os::raw::c_char;
 use std::sync::Arc;
 
 //use wgpu_core::gfx_select;
-use crate::webgpu::error::handle_error;
 use crate::webgpu::gpu::CanvasWebGPUInstance;
 use crate::webgpu::gpu_bind_group_layout::CanvasGPUBindGroupLayout;
 use crate::webgpu::prelude::label_to_ptr;
@@ -12,6 +11,7 @@ pub struct CanvasGPUComputePipeline {
     pub(crate) label: Option<Cow<'static, str>>,
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
     pub(crate) pipeline: Arc<wgpu_core::pipeline::ComputePipeline>,
+    #[allow(dead_code)]
     pub(crate) error_sink: super::gpu_device::ErrorSink,
 }
 

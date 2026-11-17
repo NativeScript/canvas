@@ -169,11 +169,6 @@ pub(crate) fn init_font_regexp() -> Regex {
 
 // color(display-p3 0.5 0 0 / 0.75); || color(display-p3 0.5 0 0);
 
-pub(crate) fn init_color_p3_regexp()-> Regex {
-    Regex::new(
-        r"color\(display-p3\s+([0-9]*\.?[0-9]+)\s+([0-9]*\.?[0-9]+)\s+([0-9]*\.?[0-9]+)(?:\s*/\s*([0-9]*\.?[0-9]+))?\)"
-    ).unwrap()
-}
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum FontStyle {
     Normal,
@@ -182,13 +177,6 @@ pub enum FontStyle {
 }
 
 impl FontStyle {
-    pub fn as_str(&self) -> &str {
-        match *self {
-            Self::Italic => "italic",
-            Self::Normal => "normal",
-            Self::Oblique => "oblique",
-        }
-    }
 }
 
 impl FromStr for FontStyle {
@@ -274,19 +262,6 @@ impl From<i32> for FontStretch {
 }
 
 impl FontStretch {
-    pub fn as_str(&self) -> &str {
-        match *self {
-            FontStretch::UltraCondensed => "ultra-condensed",
-            FontStretch::ExtraCondensed => "extra-condensed",
-            FontStretch::Condensed => "condensed",
-            FontStretch::SemiCondensed => "semi-condensed",
-            FontStretch::Normal => "normal",
-            FontStretch::SemiExpanded => "semi-expanded",
-            FontStretch::Expanded => "expanded",
-            FontStretch::ExtraExpanded => "extra-expanded",
-            FontStretch::UltraExpanded => "ultra-expanded",
-        }
-    }
 }
 
 impl From<Width> for FontStretch {

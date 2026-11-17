@@ -6,13 +6,11 @@ use super::{
     structs::{CanvasExtent3d, CanvasImageCopyExternalImage, CanvasImageDataLayout},
 };
 use crate::webgpu::enums::CanvasGPUTextureFormat;
-use crate::webgpu::error::{handle_error, handle_error_fatal};
 use crate::webgpu::prelude::label_to_ptr;
 use crate::webgpu::structs::{
     CanvasImageCopyCanvasRenderingContext2D, CanvasImageCopyGPUContext, CanvasImageCopyImageAsset,
     CanvasImageCopyWebGL,
 };
-use canvas_webgl::utils::gl::bytes_per_pixel;
 use std::borrow::Cow;
 use std::os::raw::{c_char, c_void};
 use std::sync::{Arc, Mutex, OnceLock};
@@ -71,43 +69,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_release(queue: *const Canvas
     Arc::decrement_strong_count(queue);
 }
 
-fn get_offset_image(
-    buffer: &[u8],
-    img_width: usize,
-    img_height: usize,
-    x_offset: usize,
-    y_offset: usize,
-    width: usize,
-    height: usize,
-) -> Vec<u8> {
-    // todo pass bytes per pixel
-    let bytes_per_pixel = buffer.len() / (img_width * img_height);
-
-    let mut result = vec![0u8; width * height * bytes_per_pixel];
-
-    let src_bytes_per_row = img_width * bytes_per_pixel;
-
-    for row in 0..height {
-        let src_y = y_offset + row;
-        if src_y >= img_height {
-            break;
-        }
-
-        let src_start = (src_y * img_width + x_offset) * bytes_per_pixel;
-        let src_end = src_start + width * bytes_per_pixel;
-
-        let src_row_end = std::cmp::min(src_end, (src_y + 1) * src_bytes_per_row);
-        let src_row_data = &buffer[src_start..src_row_end];
-
-        let dst_start = row * width * bytes_per_pixel;
-        let copy_len = src_row_data.len().min(width * bytes_per_pixel);
-
-        result[dst_start..dst_start + copy_len].copy_from_slice(&src_row_data[0..copy_len]);
-    }
-
-    result
-}
-
+#[cfg(test)]
 fn prepare_external_image_upload(data: &[u8], width: u32, height: u32) -> (Vec<u8>, u32) {
     let mut bpp = 0usize;
     if width != 0 && height != 0 {

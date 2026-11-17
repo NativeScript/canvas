@@ -115,7 +115,7 @@ impl Context {
         );
 
         let bounds = skia_safe::Rect::from_wh(width, height);
-        let mut engine = SurfaceEngine::GL;
+        let engine = SurfaceEngine::GL;
         let mut zero_size = false;
         let mut width = width;
         if width <= 0. {
@@ -186,14 +186,18 @@ impl Context {
             Some(&surface_props),
         )?;
 
-        let (mut surface, window_surface) = if draws_to_window(&gl_context) {
+        let (surface, window_surface) = if draws_to_window(&gl_context) {
             with_offscreen(&mut ctx, surface, alpha, color_space.into())
         } else {
             (surface, None)
         };
         // Linux: a new pbuffer holds whatever was in its memory; a canvas starts transparent.
         #[cfg(target_os = "linux")]
-        surface.canvas().clear(Color::TRANSPARENT);
+        let surface = {
+            let mut surface = surface;
+            surface.canvas().clear(Color::TRANSPARENT);
+            surface
+        };
 
         let direct_context = Some(ctx);
 
@@ -467,9 +471,13 @@ impl Context {
             surface
         };
 
-        if let Some(mut surface) = surface {
+        if let Some(surface) = surface {
             #[cfg(target_os = "linux")]
-            surface.canvas().clear(Color::TRANSPARENT);
+            let surface = {
+                let mut surface = surface;
+                surface.canvas().clear(Color::TRANSPARENT);
+                surface
+            };
             context.window_surface = window_surface;
             context.direct_context = direct_context;
             context.surface_state = SurfaceState::None;

@@ -46,7 +46,7 @@ impl TextDecoder {
         }
     }
 
-    pub fn decode_as_cow(&self, data: *const u8, len: usize) -> Cow<str> {
+    pub fn decode_as_cow(&self, data: *const u8, len: usize) -> Cow<'_, str> {
         let txt = unsafe { std::slice::from_raw_parts(data, len) };
         let (res, _) = self.0.decode_with_bom_removal(txt);
         res

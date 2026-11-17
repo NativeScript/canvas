@@ -71,6 +71,7 @@ pub enum CanvasFontDisplay {
     Swap,
 }
 
+#[allow(dead_code)]
 pub struct FontDescriptors {
     weight: CanvasFontWeight,
     family: String,
@@ -131,21 +132,6 @@ impl FontLibrary {
         } else {
             self.fonts.push((font, alias));
         }
-    }
-
-    fn add_typeface(&mut self, font: Typeface, alias: Option<String>) {
-        self.add_typeface_no_rebuild(font, alias);
-        self.register_fonts();
-    }
-
-    fn remove_typeface(&mut self, font: &Typeface, alias: Option<&str>) {
-        self.fonts.retain(|(old_font, old_alias)| {
-            !(match alias.is_some() {
-                true => old_alias.as_deref() == alias,
-                false => old_font.family_name() == font.family_name()
-            } && old_font.font_style() == font.font_style())
-        });
-        self.register_fonts();
     }
 
     pub fn collect_fonts(&mut self, style: &TextStyle) -> FontCollection {

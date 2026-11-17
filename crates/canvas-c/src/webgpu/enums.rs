@@ -6,7 +6,7 @@ use std::{
 
 use wgpu_core::binding_model::{BindGroupEntry, BufferBinding};
 use wgt::{
-    AddressMode, BindGroupLayoutEntry, BufferBindingType, CompareFunction, Features, FilterMode,
+    AddressMode, BindGroupLayoutEntry, BufferBindingType, CompareFunction, FilterMode,
     QueryType, SamplerBindingType, StorageTextureAccess, TextureFormat, TextureSampleType,
     VertexFormat,
 };

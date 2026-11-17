@@ -9,6 +9,7 @@ use super::gpu::CanvasWebGPUInstance;
 
 pub struct CanvasGPUBindGroupLayout {
     pub(crate) label: Option<Cow<'static, str>>,
+    #[allow(dead_code)]
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
     pub(crate) group_layout: Arc<wgpu_core::binding_model::BindGroupLayout>,
 }

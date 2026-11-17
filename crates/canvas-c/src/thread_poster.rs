@@ -40,6 +40,7 @@ impl ThreadPoster {
         self.waker.wake();
     }
 
+    #[cfg(any(target_os = "android", target_os = "ios", target_os = "visionos", target_os = "tvos"))]
     fn run(&self) {
         loop {
             let tasks = std::mem::take(&mut *self.tasks.lock());

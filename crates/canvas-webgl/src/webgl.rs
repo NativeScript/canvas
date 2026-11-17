@@ -1765,11 +1765,10 @@ pub fn canvas_native_webgl_get_supported_extensions(state: &mut WebGLState) -> V
 pub fn canvas_native_webgl_get_supported_extensions(state: &mut WebGLState) -> Vec<String> {
     state.make_current();
 
-    let mut max_ext = -1;
-
-    unsafe {
+    {
         #[cfg(target_os = "macos")]
-        {
+        unsafe {
+            let mut max_ext = -1;
             gl_bindings::GetIntegerv(gl_bindings::NUM_EXTENSIONS, &mut max_ext);
 
             if max_ext > 0 {
@@ -2371,7 +2370,7 @@ pub fn canvas_native_webgl_tex_image2d_asset(
         return;
     }
 
-    if let Some(mut bytes) = bytes {
+    if let Some(bytes) = bytes {
         let dimension = asset.dimensions();
         state.make_current();
         unsafe {
@@ -2668,7 +2667,7 @@ pub fn canvas_native_webgl_tex_sub_image2d_asset(
         return;
     }
 
-    if let Some(mut bytes) = bytes {
+    if let Some(bytes) = bytes {
         let dimension = asset.dimensions();
         state.make_current();
         if state.get_flip_y() {

@@ -487,6 +487,7 @@ impl CanvasRenderingContext2D {
             context.make_current();
         }
 
+        #[allow(unused_mut)]
         let mut flush = true;
 
         

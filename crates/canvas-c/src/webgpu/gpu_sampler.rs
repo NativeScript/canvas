@@ -8,6 +8,7 @@ use crate::webgpu::prelude::label_to_ptr;
 
 #[derive(Debug)]
 pub struct CanvasGPUSampler {
+    #[allow(dead_code)]
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
     pub(crate) sampler: Arc<wgpu_core::resource::Sampler>,
     pub(crate) label: Option<Cow<'static, str>>,

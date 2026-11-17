@@ -1,6 +1,7 @@
 const GL_UNSIGNED_BYTE: u32 = 0x1401;
 const GL_FLOAT: u32 = 0x1406;
 const GL_HALF_FLOAT: u32 = 0x140B;
+const GL_HALF_FLOAT_OES: u32 = 0x8D61;
 const GL_UNSIGNED_SHORT_5_6_5: u32 = 0x8363;
 const GL_UNSIGNED_SHORT_4_4_4_4: u32 = 0x8033;
 const GL_UNSIGNED_SHORT_5_5_5_1: u32 = 0x8034;
@@ -8,9 +9,7 @@ const GL_LUMINANCE: u32 = 0x1909;
 const GL_ALPHA: u32 = 0x1906;
 const GL_LUMINANCE_ALPHA: u32 = 0x190A;
 const GL_RGB: u32 = 0x1907;
-const GL_RGB8: u32 = 0x8051;
 const GL_RGBA: u32 = 0x1908;
-const GL_RGBA8: u32 = 0x8058;
 
 pub enum GLImageAssetBytesType {
     RGB,
@@ -106,14 +105,17 @@ fn flip_pixels_integer(pixels: &'_ mut [u32], rows: usize) {
 
 pub fn bytes_per_pixel(pixel_type: u32, format: u32) -> u32 {
     let bytes_per_component = match pixel_type {
-        GL_UNSIGNED_BYTE => 1,
+        GL_UNSIGNED_BYTE | gl_bindings::BYTE => 1,
+        gl_bindings::SHORT | gl_bindings::UNSIGNED_SHORT => 2,
+        gl_bindings::INT | gl_bindings::UNSIGNED_INT => 4,
         GL_FLOAT => 4,
-        GL_HALF_FLOAT => 2,
+        GL_HALF_FLOAT | GL_HALF_FLOAT_OES => 2,
         GL_UNSIGNED_SHORT_5_6_5 | GL_UNSIGNED_SHORT_4_4_4_4 | GL_UNSIGNED_SHORT_5_5_5_1 => 2,
-        GL_UNSIGNED_INT_10F_11F_11F_REV => 4, // 32 bits for 10, 11, and 11 bits for RGB
-        GL_UNSIGNED_INT_2_10_10_10_REV => 4,  // 32 bits for 10, 10, 10, and 2 bits
-        GL_UNSIGNED_INT_24_8 => 4,            // 32 bits for depth and stencil
-        _ => 0,
+        // Packed: the whole pixel.
+        gl_bindings::UNSIGNED_INT_10F_11F_11F_REV
+        | gl_bindings::UNSIGNED_INT_2_10_10_10_REV
+        | gl_bindings::UNSIGNED_INT_24_8 => 4,
+        _ => 4,
     };
 
     match format {

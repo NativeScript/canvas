@@ -1,7 +1,6 @@
 use std::borrow::Cow;
 use std::ffi::CString;
 use std::os::raw::c_char;
-use std::sync::Arc;
 
 #[no_mangle]
 pub extern "C" fn canvas_native_string_destroy(value: *mut c_char) {

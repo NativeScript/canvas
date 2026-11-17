@@ -16,6 +16,7 @@ pub(crate) struct PendingFinish {
 
 pub struct CanvasGPUCommandBuffer {
     pub(crate) label: Option<Cow<'static, str>>,
+    #[allow(dead_code)]
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
     pub(crate) pending: parking_lot::Mutex<Option<PendingFinish>>,
     pub(crate) finished: std::sync::OnceLock<Arc<wgpu_core::command::CommandBuffer>>,

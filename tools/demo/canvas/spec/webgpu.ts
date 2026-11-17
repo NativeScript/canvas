@@ -142,6 +142,20 @@ export function registerWebGPUSpec() {
 			ok(texture.createView(), 'createView');
 		});
 
+		test('getCurrentTexture returns the same texture until the frame is presented or reconfigured', async () => {
+			const { device } = await getDevice();
+			const ctx = surfaceCanvas().getContext('webgpu') as any;
+			const config = { device, format: navigator.gpu.getPreferredCanvasFormat(), alphaMode: 'premultiplied' };
+			ctx.configure(config);
+			const first = ctx.getCurrentTexture();
+			equal(ctx.getCurrentTexture(), first, 'same texture within a frame');
+			ctx.presentSurface();
+			const second = ctx.getCurrentTexture();
+			notEqual(second, first, 'a new texture after present');
+			ctx.configure(config);
+			notEqual(ctx.getCurrentTexture(), second, 'a new texture after configure');
+		});
+
 		test('toDataURL reads back the current frame', async () => {
 			const { device } = await getDevice();
 			const canvas = surfaceCanvas() as any;

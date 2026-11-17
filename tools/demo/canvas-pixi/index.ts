@@ -9,6 +9,7 @@ import { device } from '@nativescript/core/platform';
 import { initDevtools } from '@pixi/devtools';
 import { Canvas, importFontsFromCSS, loadFontsFromCSS } from '@nativescript/canvas';
 import { runOnCanvas } from './perf-test';
+export { runTextUploadBench, runPixiTextBench } from './text-bench';
 
 // import { Viewport } from 'pixi-viewport';
 

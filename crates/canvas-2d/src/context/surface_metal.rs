@@ -434,11 +434,33 @@ impl Context {
 
     /// The next drawable is taken on the next draw (`bind_surface`), not here: holding one
     /// between frames starves the layer's pool. `replace_backend_texture` keeps the contents.
+    ///
+    /// A canvas outside a window keeps drawing into the drawable it holds: an off-screen layer
+    /// hands back about one drawable per vsync, so each frame would wait for the display.
     pub fn present(context: &mut Context) {
         let _ = MetalContext::new_release_pool();
 
         if let Some(context) = context.metal_context.as_mut() {
+            if !context.is_displayed() {
+                return;
+            }
             context.present_drawable();
+        }
+    }
+
+    /// When a canvas enters a window, what it drew while off screen is presented.
+    pub fn set_displayed(context: &mut Context, displayed: bool) {
+        let entered = match context.metal_context.as_mut() {
+            Some(metal) => {
+                let entered = displayed && !metal.is_displayed();
+                metal.set_displayed(displayed);
+                entered
+            }
+            None => false,
+        };
+        if entered {
+            context.flush();
+            Self::present(context);
         }
     }
 

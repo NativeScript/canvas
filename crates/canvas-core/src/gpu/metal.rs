@@ -70,6 +70,8 @@ pub struct MetalContext {
     is_offscreen: bool,
     /// Sets the layer's drawableSize itself, not the view's layout.
     sizes_drawable: bool,
+    /// The layer is in a window. Off screen, presenting only starves the layer's drawable pool.
+    displayed: bool,
 }
 
 impl MetalContext {
@@ -83,6 +85,14 @@ impl MetalContext {
 
     pub fn sizes_drawable(&self) -> bool {
         self.sizes_drawable
+    }
+
+    pub fn is_displayed(&self) -> bool {
+        self.displayed
+    }
+
+    pub fn set_displayed(&mut self, displayed: bool) {
+        self.displayed = displayed;
     }
     pub fn new(view: *mut c_void) -> Self {
         let _pool = unsafe { NSAutoreleasePool::new() };
@@ -128,6 +138,7 @@ impl MetalContext {
             current_drawable,
             is_offscreen: false,
             sizes_drawable: false,
+            displayed: true,
         }
     }
 
@@ -158,6 +169,7 @@ impl MetalContext {
             current_drawable,
             is_offscreen: true,
             sizes_drawable: false,
+            displayed: true,
         }
     }
 
@@ -184,6 +196,7 @@ impl MetalContext {
             current_drawable,
             is_offscreen: false,
             sizes_drawable: false,
+            displayed: true,
         }
     }
 
@@ -208,6 +221,7 @@ impl MetalContext {
             current_drawable,
             is_offscreen: false,
             sizes_drawable: false,
+            displayed: true,
         })
     }
 
@@ -237,6 +251,7 @@ impl MetalContext {
             current_drawable,
             is_offscreen: false,
             sizes_drawable: true,
+            displayed: true,
         })
     }
 

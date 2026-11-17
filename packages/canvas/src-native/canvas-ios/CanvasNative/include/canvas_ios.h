@@ -49,6 +49,11 @@ void canvas_native_ios_flush_2d_context(int64_t context);
 
 void canvas_native_ios_present_drawable(int64_t context);
 
+/**
+ * Whether the canvas's view is in a window. A Metal 2D canvas off screen does not present.
+ */
+void canvas_native_ios_context_set_displayed(int64_t context, bool displayed);
+
 void canvas_native_ios_flush_2d_context_and_sync_cpu(int64_t context);
 
 void canvas_native_ios_resize_context_2d(int64_t context, float width, float height);

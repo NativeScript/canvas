@@ -499,7 +499,7 @@ unsafe fn copy_context_on_gpu(
     let (keep_texture, keep_event) = (SendRetained(texture.clone()), SendRetained(event.clone()));
     context.post_to_pixels_source(move |context| {
         let (target, signal) = (target, signal);
-        context.copy_to_metal_texture(target.0, signal.0, value);
+        context.copy_to_metal_texture(target.0, signal.0, value, false);
         drop((keep_texture, keep_event));
     });
 

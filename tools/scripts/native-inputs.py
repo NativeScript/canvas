@@ -16,8 +16,9 @@ A key covers every tracked file except those the artifact is known not to read, 
 has placed rebuilds every output rather than none:
   * crates: those in its entry in ARTIFACTS and every workspace crate they reach through path
     dependencies, as `cargo metadata` reports them for the commit's manifests, with every crate dir
-    that is not a workspace member (the [patch] targets under crates/vendor), the root Cargo.toml,
-    .cargo/, rust-toolchain* and Cargo.lock. Of the other members, the dependencies each declares
+    that is not a workspace member and every dir the root Cargo.toml's [patch] and [replace] tables
+    point a dependency at (crates/vendor), the root Cargo.toml, .cargo/, rust-toolchain* and
+    Cargo.lock. Of the other members, the dependencies each declares
     and its rust-version: Cargo.lock is not committed, so cargo resolves one set of versions for the
     whole workspace, and a requirement in any member can move what every build links. An artifact
     without crates reads none of these;
@@ -50,6 +51,8 @@ import subprocess
 import sys
 import tarfile
 import tempfile
+
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 BUILD_NATIVE = ".github/workflows/build-native.yml"
 CACHE_ACTION = ".github/actions/native-cache"
@@ -186,7 +189,8 @@ class Failure(Exception):
 
 
 def git(*args, data=None, binary=False):
-    result = subprocess.run(["git", "-c", "core.quotepath=off", *args], input=data, capture_output=True)
+    # From the repo's root: ls-tree and archive take paths relative to the dir git runs in.
+    result = subprocess.run(["git", "-c", "core.quotepath=off", *args], input=data, capture_output=True, cwd=ROOT)
     if result.returncode != 0:
         raise Failure(f"git {' '.join(args[:2])}: {result.stderr.decode(errors='replace').strip()}")
     return result.stdout if binary else result.stdout.decode("utf-8")
@@ -401,8 +405,10 @@ def crate_meta(rev):
 
 
 def closure(rev, start):
-    """The crate dirs an artifact building start reads: start, the members they reach by path, and
-    every crate dir that is not a member. Nothing when start is empty."""
+    """The crate dirs an artifact building start reads: start, the members they reach by path, every
+    crate dir that is not a member, and the dirs the root manifest patches dependencies to (cargo
+    metadata reports a patched dependency as a registry one, with no path). Nothing when start is
+    empty."""
     if not start:
         return set()
     deps, _, dirs, _ = crate_meta(rev)
@@ -415,7 +421,19 @@ def closure(rev, start):
             raise Failure(f"{crate} is not a workspace member at {rev}")
         seen.add(crate)
         queue.extend(deps[crate])
-    return seen | {d for d in dirs if d not in deps}
+    return seen | {d for d in dirs if d not in deps} | patched(rev)
+
+
+def patched(rev):
+    """The dirs the root Cargo.toml's [patch.*] and [replace] tables point dependencies at."""
+    found, table = set(), ""
+    for line in show(rev, "Cargo.toml").split("\n"):
+        header = re.match(r"^\s*\[+\s*([^\]]+?)\s*\]", line)
+        if header:
+            table = header.group(1)
+        elif re.match(r"^(patch\.|replace$)", table):
+            found.update(norm(p) for p in re.findall(r"\bpath\s*=\s*\"([^\"]+)\"", line))
+    return found
 
 
 def used_actions(rev, text, where):

@@ -13,40 +13,44 @@ written in a form neither pass follows goes unseen. So OWNERS claims that leave 
 narrow, and a file no rule places is in every key.
 
 Reading the job: its steps and job-level keys, its actions' steps (with $GITHUB_ACTION_PATH as the
-action's dir), the files they run and the files those mention, what `make -n` prints for the
-targets it runs, and the scripts in the package dirs OWNERS gives the artifact, followed in turn.
-In a job whose legs build different artifacts, matrix values are this artifact's legs' (the item of
-a list of maps that names it in the native-cache `artifact:`). It fails when a file read that way
-is outside the key, a crate named that way (by package name or dir) is outside the closure, or the
-job cannot be read: a file run that is not tracked, a file a step runs after `cd`, a path above the
-repo, a script argument (`bash build`) that is no file, `python -m`, a package runner, cargo
-building crates it does not name (these four in followed shell scripts too), an unclosed quote or
-heredoc, a value continued on plain lines, `make` in any form but `make [-jN] [VAR=x] <targets>`
-from the repo root, a Makefile with conditionals, includes, $(shell) or paths of the dir it runs
-in, a Makefile that reads a variable it does not set (or a `?=` default in a path), which the
-environment would choose, a followed script that runs make (but the third-party builds in OWN_MAKE)
-or sources a computed path inside the repo, a matrix list over several lines, a local action
-without action.yml, a workflow key after `jobs:`, a YAML anchor or alias, or a workflow- or
-job-wide working-directory.
+action's dir), the files they run and the files those mention, what `make -n` prints for the targets
+it runs, and the scripts in the package dirs OWNERS gives the artifact, followed in turn. In a job
+whose legs build different artifacts, matrix values are this artifact's legs' (the item of a list of
+maps that names it in the native-cache `artifact:`). It fails when a file read that way is outside
+the key, a crate named that way (by package name or dir) is outside the closure, or the job cannot
+be read: a file run that is not tracked, a file a step runs after `cd`, a path above the repo, a
+script argument (`bash build`) that is no file, `python -m`, a package runner, cargo building crates
+it does not name (these four in followed shell scripts too: any cargo subcommand but those that
+build nothing, a plugin's or behind a launcher too, needs -p for each crate, without a glob, and no
+--workspace or --all, wherever it runs), an unclosed quote or heredoc, a value continued on plain
+lines, `make` in any form but `make [-jN] [VAR=x] <targets>` from the repo root, a Makefile with
+conditionals, includes, $(shell) or paths of the dir it runs in, a Makefile that reads a variable it
+does not set (or a `?=` default in a path), which the environment would choose, a followed script
+that runs make (but the third-party builds in OWN_MAKE) or sources a computed path inside the repo,
+a matrix list over several lines, a local action without action.yml, a workflow key after `jobs:`, a
+YAML anchor or alias, or a workflow- or job-wide working-directory.
 
 Scanning the key: every text file in the key but prose (docs, notices, git's own files), the
-workflows, action manifests and Makefile, and the step and job-key text the first pass reads (and
-a followed script from the dir a step runs it in), are searched for paths that lead out of the
-key. A path counts relative to the repo or to the file's dir, and when it goes up (`..`), from any
-dir above the file; from every dir the text has `cd` to; after a variable the file sets
-(`set(DIR ...)`, `DIR=...`), with each of its values; after any other variable
-(`${CMAKE_CURRENT_SOURCE_DIR}`, `env!("CARGO_MANIFEST_DIR")` with `"/../x"`), from any of those
-dirs, with or without the `..` after it; after a compiler flag (`-I`, `-L`, `-F`); with a glob or
-another variable (a matrix value too) standing for one path segment, or for the dir it is in when
-that matches nothing; given as the segments of a join() or resolve() call; in the values of a
-CMake set() list or an exported shell variable; and naming a dir, for every file under it, or a
-crate dir outside the closure (but in a Cargo.toml, which cargo metadata reads). In shell text, a
-bare word given to a reading command (`ls apps`) is a path, and what a line only writes (the
-arguments of mkdir, rm and touch, the destination of cp and the like, a redirection's target) or
-prints (echo without a redirection) is not. Comments, by each kind of file's syntax, are not
-paths. Crates' tests, benches and examples count only for the jobs in CARGO_TESTS, which run
-`cargo test`. A text file in the key over 2 MB fails, as it cannot be scanned. This pass holds the
-claims about build files, such as the C++ the Android CMake builds compile from the iOS package dir.
+workflows, action manifests and Makefile, and the step and job-key text the first pass reads (and a
+followed script from the dir a step runs it in), are searched for paths that lead out of the key. A
+path counts relative to the repo or to the file's dir, and when it goes up (`..`), from any dir
+above the file; from every dir the text has `cd` to, with each of its values; after a variable the
+file sets (`set(DIR ...)`, `DIR=...`, the default in `${DIR:-...}`), with each of its values; after
+any other variable or a dir named some other way (`${CMAKE_CURRENT_SOURCE_DIR}`,
+`env!("CARGO_MANIFEST_DIR")` with `"/../x"`, `format!("{}/x", root)`, `root + '/x'`), from any of
+those dirs, with or without the `..` after it; after a compiler flag (`-I`, `-L`, `-F`); with a glob
+or another variable (a matrix value too) standing for one path segment, or for the dir it is in when
+that matches nothing; given as the segments of a join() or resolve() call; in the values of a CMake
+set() list or a shell variable that is exported or given to a command (`DIR=x cmd`), and in a
+heredoc's body; and naming a dir, for every file under it, or a crate dir outside the closure (but
+in a Cargo.toml, which cargo metadata reads). In shell text, a shell word's quoted and bare parts
+are one word (`cd "$ROOT"/x`), the script's own dir (`$(dirname "$0")`) is its dir, a bare word
+given to a reading command (`ls apps`) is a path, and what a line only writes (the arguments of
+mkdir, rm and touch, the destination of cp and the like, a redirection's target) or prints (echo
+without a redirection) is not. Comments, by each kind of file's syntax, are not paths. Crates'
+tests, benches and examples count only for the jobs in CARGO_TESTS, which run `cargo test`. A text
+file in the key over 2 MB fails, as it cannot be scanned. This pass holds the claims about build
+files, such as the C++ the Android CMake builds compile from the iOS package dir.
 
 A path a file names but its job does not read there is listed in NOT_READ with the reason, for both
 passes.
@@ -60,13 +64,14 @@ read the commit, in the text the first pass reads.
 And the wiring: each job that uploads an artifact in build-native.yml is one of an artifact's, and
 each artifact's first job restores it: a native-cache step with `id: native` right after the
 checkout, for its own artifact and the upload's path, with `variant: ${{ toJSON(matrix) }}` in a
-matrix job, every later step but the upload skipped on a hit (its `if:` is
-`steps.native.outputs.hit != 'true'`, or that && more, with no ||), and one upload, under its
-artifact's name. An artifact built by several jobs (the xcframeworks) has a first job that restores
-it with `restore-only: 'true'`, only uploads it on a hit, and has the step's `hit` and `key` as
-outputs. Its other jobs need the first and have `if: needs.<first>.outputs.hit != 'true'` (or that
-&& more, with no ||), and the last of them needs every other and restores it as above, with `key:
-${{ needs.<first>.outputs.key }}`, and saves it. No job of an artifact has a status function in an
+matrix job, every later step but the upload skipped on a hit (its `if:` is `steps.native.outputs.hit
+!= 'true'`, or that && more, with no ||), and one upload, under its artifact's name. An artifact
+built by several jobs (the xcframeworks) has a first job that restores it with `restore-only:
+'true'`, only uploads it on a hit, and has the step's `hit` and `key` as outputs. Its other jobs
+need the first and have `if: needs.<first>.outputs.hit != 'true'` (or that && more, with no ||), and
+the last of them needs every other and restores it as above, with `key: ${{
+needs.<first>.outputs.key }}`, and saves it. In a matrix job, the `artifact:` of each leg is one of
+the job's entries. No job of an artifact, nor a step of its actions, has a status function in an
 `if:` or continue-on-error, which run on after a failure and save what is left. No local action's
 descriptions hold `${{ }}`, which stop the runner loading it. For the reader, a make target made of
 a matrix value counts once per value the strategy lists.
@@ -82,10 +87,9 @@ sys.dont_write_bytecode = True  # no __pycache__ beside the parts or the key mod
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # the parts, however this is loaded
 
 from native_check import ni  # noqa: E402
-from native_check.jobs import discover, each_leg, named_crates  # noqa: E402
+from native_check.jobs import discover, each_leg, field, named_crates  # noqa: E402
 from native_check.paths import CARGO_TESTS, MATCHED, code, crossings, names, not_read, scan  # noqa: E402
-from native_check.wiring import READS_COMMIT, RUN_VARIABLE, check_wiring, expressions, moves_cache, varying  # noqa: E402
-
+from native_check.wiring import READS_COMMIT, RUN_VARIABLE, STATUS, check_wiring, expressions, moves_cache, varying  # noqa: E402
 
 
 def check_reads(artifact, rev):
@@ -108,6 +112,12 @@ def check_reads(artifact, rev):
         problems.append(f"{artifact}: its job reads the commit ({READS_COMMIT.search(corpus).group(0)}), which can "
                         f"change between runs that share a key")
     for manifest, step in action_steps:
+        # As in the job: a step that runs after a failure lets the job pass and save what is left.
+        if STATUS.search(field(step, "if")):
+            problems.append(f"{artifact}: {manifest}: `if: {field(step, 'if').strip()}` holds a status function, which "
+                            f"runs it after what it follows failed")
+        if field(step, "continue-on-error"):
+            problems.append(f"{artifact}: {manifest}: continue-on-error runs it on after a failure, and the cache saves what is left")
         if not moves_cache(step):
             for context in varying(expressions([], [step]), in_action=True):
                 problems.append(f"{artifact}: {manifest} uses {context}, which can change between runs that share a key")

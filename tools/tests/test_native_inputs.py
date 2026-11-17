@@ -105,6 +105,19 @@ class Commands(unittest.TestCase):
                 self.assertRaises(ni.Failure, ran, *lines)
         self.assertEqual(ran("run: cargo test -p canvas-c --features 2d")[0], set())
 
+    def test_cargo_names_every_crate_it_builds(self):
+        for lines in (["working-directory: crates/canvas-c", "run: cargo build"], ["run: cargo build --manifest-path Cargo.toml"],
+                      ["run: cargo zigbuild --workspace -p a"], ["run: cargo ndk -t arm64-v8a build"],
+                      ["run: cargo -Z unstable-options build"], ["run: rustup run nightly cargo build"],
+                      ["run: xcrun cargo build"], ["run: cross build"], ['run: "$REAL_CARGO" build'],
+                      ["run: cargo build -p 'canvas-*'"]):
+            with self.subTest(lines=lines):
+                self.assertRaises(ni.Failure, ran, *lines)
+        for line in ("run: cargo +nightly build -Z build-std=std --target x -p canvas-ios", "run: cargo build -p $CRATE",
+                     "run: cargo install cbindgen@0.29.0 --locked", "run: cargo --version"):
+            with self.subTest(line=line):
+                ran(line)
+
     def test_make(self):
         self.assertEqual(ran("run: make android")[2], (["android"], []))
         self.assertEqual(ran("run: make -j 4 ios tvos")[2], (["ios", "tvos"], []))
@@ -263,6 +276,33 @@ class Paths(unittest.TestCase):
         self.assertEqual(named("OTHER_CFLAGS = -I$(SRCROOT)/../../platforms/ios/src/cpp", "packages/canvas/src-native/android"),
                          {"packages/canvas/platforms/ios/src/cpp"})
 
+    def test_quoted_words_and_the_scripts_own_dir(self):
+        caches = "packages/canvas/platforms/ios/src/cpp/Caches.cpp"
+        self.assertIn(caches, named('cd "$(dirname "$0")/../packages/canvas/src-native/android"\n'
+                                    'cp ../../platforms/ios/src/cpp/Caches.cpp x', "tools", shell=True))
+        self.assertIn(caches, named('cd "$ROOT"/packages/canvas/src-native/android\ncat ../../platforms/ios/src/cpp/Caches.cpp', shell=True))
+        self.assertIn("tools/assets", named('X="$ROOT"/tools/assets; cp -R "$X" out', shell=True))
+        self.assertIn("tools/assets/icons/a.png", named('case $X in a) D=packages/canvas ;; b) D=tools ;; esac\n'
+                                                        'cd "$D"\ncat assets/icons/a.png', shell=True))
+
+    def test_a_default_a_dir_named_some_other_way_and_segments_over_lines(self):
+        self.assertIn("tools/assets/icons/a.png", named('F="${F:-$ROOT/tools/assets/icons/a.png}"\ngrep x "$F"', shell=True))
+        self.assertEqual(named('let p = format!("{}/tools/assets/icons/a.png", root);'), {"tools/assets/icons/a.png"})
+        self.assertEqual(named("const a = root + '/apps/demo/audio';"), {"apps/demo/audio"})
+        self.assertEqual(named("const a = path.join(\n  root,\n  'apps', 'demo', 'audio');"), {"apps/demo/audio"})
+
+    def test_a_value_set_is_read_where_a_command_is_given_it(self):
+        self.assertEqual(named("cat > cfg <<EOF\nicons=tools/assets/icons\nEOF", shell=True), {"tools/assets/icons"})
+        self.assertEqual(named("ICONS=tools/assets/icons ./gen", shell=True), {"tools/assets/icons"})
+        # A dir the script goes on to name parts of is not read whole.
+        self.assertEqual(named("D=tools/assets\ncp $D/icons/a.png out", shell=True), {"tools/assets/icons/a.png"})
+
+    def test_cmake_dirs_by_mode(self):
+        cpp = "packages/canvas/platforms/ios/src/cpp"
+        here = "packages/canvas/src-native/android"
+        self.assertEqual(named('get_filename_component(P "../.." ABSOLUTE)\ninclude(${P}/platforms/ios/src/cpp)', here), {cpp})
+        self.assertEqual(named('get_filename_component(P "../../x" DIRECTORY)\ninclude(${P}/platforms/ios/src/cpp)', here), {cpp})
+
     def test_a_matrix_value_is_one_segment_or_each_listed_value(self):
         self.assertEqual(named("cp packages/${{ matrix.name }}/platforms x"), {"packages/canvas/platforms"})
         self.assertEqual(jobs.each_leg("cp packages/${{ matrix.m.name }}/x/${{ matrix.arch }}", {"m.name": ["a"], "arch": ["x64", "arm64"]}),
@@ -284,6 +324,12 @@ class Contexts(unittest.TestCase):
 
     def test_an_actions_inputs_are_its_jobs(self):
         self.assertEqual(wiring.varying(["inputs.save == 'true'"], in_action=True), [])
+
+    def test_git_commands_that_read_the_commit(self):
+        for line in ("git describe --tags", 'git -C "$ROOT" rev-parse --short HEAD', "git --no-pager log -1", "git rev-list -1 HEAD"):
+            with self.subTest(line=line):
+                self.assertTrue(wiring.READS_COMMIT.search(line))
+        self.assertIsNone(wiring.READS_COMMIT.search("git rev-parse --show-toplevel"))
 
 
 IDENTITY = {f"GIT_{who}_{what}": value for who in ("AUTHOR", "COMMITTER")
@@ -326,11 +372,12 @@ class Goals(unittest.TestCase):
     def show(self, path):
         return git("show", f"{self.base}:{path}")
 
-    def commit(self, path, text, mode="100644"):
-        git("read-tree", self.base, env=self.index)
+    def commit(self, path, text, mode="100644", base=None):
+        base = base or self.base
+        git("read-tree", base, env=self.index)
         blob = git("hash-object", "-w", "--stdin", data=text.encode())
         git("update-index", "--add", "--cacheinfo", f"{mode},{blob},{path}", env=self.index)
-        return git("commit-tree", git("write-tree", env=self.index), "-p", self.base, "-m", "probe", env=self.index)
+        return git("commit-tree", git("write-tree", env=self.index), "-p", base, "-m", "probe", env=self.index)
 
     def moved(self, rev):
         keys = self.all_keys(rev)
@@ -371,6 +418,19 @@ class Goals(unittest.TestCase):
         self.assertEqual(self.moved(pinned), {a for a in ni.ARTIFACTS if ni.ARTIFACTS[a].get("crates")})
         self.assertFalse({"canvas-ios", "unit-tests"} & self.moved_by(manifest))
 
+    def test_a_patched_crate_keys_every_build_with_crates_also_as_a_member(self):
+        member = self.edit("Cargo.toml", "members = [", 'members = [\n    "crates/vendor/cpal",')
+        device = "crates/vendor/cpal/src/host/wasapi/device.rs"
+        edited = self.commit(device, self.show(device) + "\n// probe\n", base=member)
+        for artifact in ("linux", "audio-context-windows"):
+            with self.subTest(artifact=artifact):
+                self.assertNotEqual(ni.key_inputs(artifact, member), ni.key_inputs(artifact, edited))
+
+    def test_a_key_from_another_dir(self):
+        script = os.path.join(HERE, "..", "scripts", "native-inputs.py")
+        out = subprocess.run([sys.executable, script, "audio-context-ios", self.base], cwd=HERE, capture_output=True, text=True)
+        self.assertEqual(out.returncode, 0, out.stderr)
+
     def test_a_local_action_named_another_way_is_refused(self):
         rev = self.edit(ni.BUILD_NATIVE, "      - uses: ./.github/actions/setup-android-native",
                         "      - { uses: ./.github/actions/setup-android-native }")
@@ -388,6 +448,21 @@ class Goals(unittest.TestCase):
         script = "tools/scripts/build-napi.sh"
         rev = self.commit(script, self.show(script) + '\ncp -R tools/assets/ "$DEST/"\n')
         self.assertTrue(any("tools/assets" in p for p in self.problems("canvas-windows", rev)))
+
+    def test_check_fails_a_read_after_a_quoted_cd(self):
+        script = "tools/scripts/build-napi.sh"
+        rev = self.commit(script, self.show(script) + '\ncd "$(dirname "$0")/../../packages/canvas-svg/src-native/ios"\n'
+                          "cp ../../../canvas/src-native/canvas-ios/CanvasNative/include/canvas_ios.h x\n")
+        self.assertTrue(any("canvas_ios.h" in p for p in self.problems("canvas-windows", rev)))
+
+    def test_check_fails_a_step_of_an_action_that_runs_after_a_failure(self):
+        action = ".github/actions/setup-windows-native/action.yml"
+        text = self.show(action)
+        at = text.index("    - name:", text.index("runs:"))
+        for key, needle in (("continue-on-error: true", "continue-on-error"), ("if: always()", "status function")):
+            with self.subTest(key=key):
+                rev = self.commit(action, text[:at] + f"    - name: probe\n      {key}\n      shell: bash\n      run: 'true'\n" + text[at:])
+                self.assertTrue(any(needle in p for p in self.problems("canvas-windows", rev)))
 
     def test_check_fails_a_value_of_the_run(self):
         script = "tools/scripts/build-napi.sh"
@@ -446,6 +521,8 @@ class Goals(unittest.TestCase):
                     "canvas-release.aar\n          if-no-files-found: error\n"))
         self.assertRaises(ni.Failure, wiring.check_wiring,
                           self.edit(ni.BUILD_NATIVE, "          variant: ${{ toJSON(matrix) }}\n", ""))
+        leg = "          - name: canvas-gamepad\n            crate: canvas-gamepad-napi\n            file: canvasgamepad.node\n"
+        self.assertRaises(ni.Failure, wiring.check_wiring, self.edit(ni.BUILD_NATIVE, leg, leg + leg.replace("canvas-gamepad\n", "canvas-foo\n")))
         # GitHub evaluates expressions in an action's input descriptions and fails to load it.
         self.assertRaises(ni.Failure, wiring.check_wiring, self.edit(
             f"{ni.CACHE_ACTION}/action.yml", "    description: The job's entry", "    description: ${{ inputs.x }} The job's entry"))

@@ -37,6 +37,9 @@ NAMES_ONLY = {"which", "type", "hash", "echo", "printf", "apt", "apt-get", "brew
               "pacman", "port", "apk", "winget", "zypper"}
 PACKAGE_RUNNERS = {"npm", "npx", "yarn", "pnpm", "nx", "bun", "just"}
 CARGO_BUILDS = {"build", "b", "test", "t", "check", "c", "run", "r", "bench", "clippy", "doc", "d", "rustc"}
+# cargo's subcommands that build no crate of the workspace; any other (a plugin too) may.
+CARGO_NO_BUILD = {"install", "uninstall", "metadata", "fetch", "fmt", "version", "help", "search", "tree", "update",
+                  "locate-project", "pkgid", "generate-lockfile", "vendor", "new", "init", "login", "logout", "owner"}
 WORKSPACE_PREFIX = re.compile(r"\$\{\{\s*github\.workspace\s*\}\}/|\$\{?(?:GITHUB_WORKSPACE|ROOT|REPO_ROOT|PWD)\}?/")
 
 
@@ -66,6 +69,19 @@ def field(step, name):
 
 def is_dynamic(token):
     return re.search(r"[$*?{}\[\]]", token) is not None
+
+
+def packages(args):
+    """The crates cargo's -p/--package arguments name."""
+    named = []
+    for i, a in enumerate(args):
+        if a in ("-p", "--package") and i + 1 < len(args):
+            named.append(args[i + 1])
+        elif a.startswith("--package="):
+            named.append(a.split("=", 1)[1])
+        elif a.startswith("-p") and not a.startswith("--") and len(a) > 2:
+            named.append(a[2:])
+    return named
 
 
 def looks_like_file(token):
@@ -339,13 +355,19 @@ def walk(script, wd, where, files, guesses, makes, after_cd, followed=False):
             raise ni.Failure(f"{where}: cannot follow the make in `{command}`; run `make <targets>` itself")
         if base in PACKAGE_RUNNERS:
             raise ni.Failure(f"{where}: `{command}` runs what a package manifest says; run the script itself")
-        # --workspace builds crates no one names wherever it runs; without -p, cargo builds the
-        # crate of the dir it runs in, which only a cd or working-directory can name.
-        if base == "cargo" and first in CARGO_BUILDS and ({"--workspace", "--all"} & set(args) or (
-                not (wd or after_cd) and not any(
-                    a in ("-p", "--package", "--manifest-path") or a.startswith(("--package=", "--manifest-path="))
-                    or (a.startswith("-p") and not a.startswith("--")) for a in args))):
-            raise ni.Failure(f"{where}: `{command}` builds crates it does not name; name each with -p")
+        # Without -p, cargo builds the crate of the dir it runs in, or every member from a dir that
+        # is no crate's; --workspace builds every member wherever it runs. So each build names its
+        # crates, also behind a launcher (rustup run, xcrun, cross) or a plugin (zigbuild, ndk).
+        at = next((i for i, t in enumerate(tokens) if posixpath.basename(t) in ("cargo", "cross")), None)
+        if at is None and is_dynamic(name) and first in CARGO_BUILDS:
+            at = 0
+        if at is not None and base not in NAMES_ONLY:
+            cargo = tokens[at + 1:]
+            words = {a for a in cargo if not a.startswith(("-", "+"))}
+            crates = packages(cargo)
+            if words and not words & CARGO_NO_BUILD and (
+                    {"--workspace", "--all"} & set(cargo) or not crates or any(re.search(r"[*?\[]", c) for c in crates)):
+                raise ni.Failure(f"{where}: `{command}` builds crates it does not name; name each with -p")
         if name in ("cd", "pushd"):
             after_cd = True
         elif followed:
@@ -487,7 +509,7 @@ def discover(artifact, rev):
             wd_of[p] = wd
             todo.append(p)
 
-    def take(step, step_where, scan, values=None, job=None):
+    def take(step, step_where, scan, values=None):
         wd, files, step_guesses, make = commands(step, step_where, values)
         text = "\n".join(step)
         corpus.append(text)
@@ -500,7 +522,7 @@ def discover(artifact, rev):
             executed.add(p)
             reach(p, step_where, wd)
         if scan:
-            texts_read.append(Read(step_where, job, text, wd, values or {}))
+            texts_read.append(Read(step_where, text, wd, values or {}))
             for p in mentions(text, [wd], tree):
                 reach(p, step_where, wd)
         guesses.extend(step_guesses)
@@ -518,13 +540,13 @@ def discover(artifact, rev):
         # A matrix names every leg's values, each leg reads its own, and its key has them (variant).
         # In a job whose legs build different artifacts, the values are this artifact's legs'.
         matrix = sections(outside, 4, {"strategy"})
-        cache = next((s for s in steps if re.search(r"uses:\s*\./\.github/actions/native-cache\b", "\n".join(s))), [])
+        cache = native_cache(steps) or []
         values = matrix_values(matrix, artifact, field(cache, "artifact"))
-        texts_read.append(Read(f"{where} job keys", (path, job_id), "\n".join(l for l in outside if l not in matrix), "", values))
+        texts_read.append(Read(f"{where} job keys", "\n".join(l for l in outside if l not in matrix), "", values))
         for p in mentions("\n".join(outside), [], tree):
             reach(p, f"{where} job keys")
         for step in steps:
-            take(step, where, True, values, (path, job_id))
+            take(step, where, True, values)
     for p in sorted(tree):
         if own(p) and p.endswith((".sh", ".bash")):
             reach(p, f"a script in {artifact}'s dirs")
@@ -591,13 +613,17 @@ def discover(artifact, rev):
             reach(found, p, wd_of.get(p, ""))
         # Run from another dir, its relative paths are read from there too.
         if wd_of.get(p, "") not in ("", here):
-            texts_read.append(Read(p, None, text, wd_of[p], {}))
+            texts_read.append(Read(p, text, wd_of[p], {}))
     return reads, "\n".join(corpus), action_steps, texts_read
 
 
-# Text the job pass read: where it is, its job (path, id) if it is a job's, its working-directory,
-# and the values its job's matrix lists.
-Read = collections.namedtuple("Read", "where job text wd values")
+# Text the job pass read: where it is, its working-directory, and the values its job's matrix lists.
+Read = collections.namedtuple("Read", "where text wd values")
+
+
+def native_cache(steps):
+    """A job's native-cache step, or None."""
+    return next((s for s in steps if re.search(r"uses:\s*\./\.github/actions/native-cache\b", "\n".join(s))), None)
 
 
 def sections(lines, column, keys):

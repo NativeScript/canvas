@@ -7,6 +7,7 @@ import posixpath
 import re
 
 from . import ni
+from .jobs import SCRIPT_DIR_REF
 
 
 # The artifacts whose job runs `cargo test` on its crates, which builds their tests and examples.
@@ -50,21 +51,29 @@ C_COMMENT = re.compile(STRING + r"|(/\*.*?\*/|//[^\n]*)", re.S)
 # `#` after a space or at a line's start, but not Ruby's `#{`.
 HASH_COMMENT = re.compile(STRING + r"|((?:^|(?<=\s))#(?!\{)[^\n]*)", re.M)
 XML_COMMENT = re.compile(r"(<!--.*?-->)", re.S)
+# A shell word: quoted and bare parts with nothing between them (`"$ROOT"/packages/x`).
+WORD = r"(?:\"[^\"]*\"|'[^']*'|[^\s;&|()'\"])+"
 # Where a file sets a variable to a path: a shell assignment anywhere on a line, CMake's set(), and
-# get_filename_component() with DIRECTORY, whose value is the dir above the path it is given.
-SHELL_SET = re.compile(r"(?:^|[\s;&|()])(export\s+|(?:local|readonly|declare)\s+(?=\w))?([A-Za-z_]\w*)="
-                       r"(\"[^\"]*\"|'[^']*'|[^\s;&|()]*)")
+# get_filename_component(), whose DIRECTORY or PATH is the dir above the path it is given.
+SHELL_SET = re.compile(r"(?:^|[\s;&|()])(export\s+|(?:local|readonly|declare)\s+(?=\w))?([A-Za-z_]\w*)=(" + WORD + ")?")
 CMAKE_SET = re.compile(r"^\s*(set|get_filename_component)\(\s*([A-Za-z_]\w*)\s+\"?([^\s\")]+)\"?([^)]*)", re.I)
-# A variable: ${{ }}, then the named forms (`${X}`, `$(X)`, `$X`), then any other (Ruby's #{x} too).
+# A variable: ${{ }}, then the named forms (`${X}`, `$(X)`, `$X`, `${X:-default}`), then any other
+# (Ruby's #{x} too).
 VARIABLE = re.compile(r"\$\{\{[^}]*\}\}|\$\{([A-Za-z_]\w*)\}|\$\(([A-Za-z_]\w*)\)|\$([A-Za-z_]\w*)"
+                      r"|\$\{([A-Za-z_]\w*):?[-=]([^}]*)\}"
                       r"|\$\{[^}]*\}|\$\([^)]*\)|#\{[^}]*\}|@[A-Za-z_]\w*@|%[A-Za-z_]\w*%")
-# A shell's `cd`/`pushd` and where to.
-CD = re.compile(r"(?:^|[\s;&|(])(?:cd|pushd)\s+(\"[^\"]*\"|'[^']*'|[^\s;&|)]+)")
+# What follows an assignment that a command is given: the command's word on the same line.
+PREFIX = re.compile(r"[ \t]+(?![A-Za-z_]\w*=)[^\s;&|()]")
+# A shell's `cd`/`pushd` and where to, and a heredoc's delimiter.
+CD = re.compile(r"(?:^|[\s;&|(])(?:cd|pushd)\s+(" + WORD + ")")
+HEREDOC = re.compile(r"(?<!<)<<(?!<)-?\s*['\"]?([A-Za-z0-9_]+)['\"]?")
 TOKEN = re.compile(r"[^\s'\"`=;,(){}<>\[\]|&:!]*/[^\s'\"`=;,(){}<>\[\]|&:!]*")
 # A path given as its segments: path.join(root, 'apps', 'demo'), os.path.join(ROOT, "x").
 JOIN = re.compile(r"\b(?:join|resolve)\(([^()]*)\)")
 WILD = "\x01"
 WILDS = r"[*?" + WILD + "]"
+# A value that is a path as written, not a command's output.
+PLAIN = re.compile(r"^[\w./@+" + WILD + "-]*$")
 
 
 @functools.lru_cache(maxsize=None)
@@ -130,8 +139,10 @@ def expand(text, values):
     if m is None:
         return [text]
     rests = expand(text[m.end():], values)
-    name = m.group(1) or m.group(2) or m.group(3)
+    name = m.group(1) or m.group(2) or m.group(3) or m.group(4)
     options = (values.get(name) if name else None) or [WILD]
+    if m.group(5):
+        options = list(dict.fromkeys(options + expand(unquote(m.group(5)), values)))
     if len(options) * len(rests) > 64:
         options = [WILD]
     return [text[:m.start()] + option + rest for option in options for rest in rests]
@@ -143,8 +154,10 @@ def resolve_token(token, here, entries, matched):
     does not name (an unknown variable, or `"/../x"` after env!("CARGO_MANIFEST_DIR") or the like),
     may start from any dir above the file, and after an unknown dir, the `..` may lead anywhere. A
     computed name that matches nothing names its dir."""
-    token = re.sub(r"^-(?:I|L|F|isystem|iquote|idirafter|include)(?=\S)", "", token)
-    if token.startswith("/.."):
+    token = re.sub(r"^(?:\./)+", "", re.sub(r"^-(?:I|L|F|isystem|iquote|idirafter|include)(?=\S)", "", token))
+    # `/x` is a path after a dir the text names some other way (format!("{}/x"), root + '/x') or
+    # outside the repo, where it matches no tracked entry.
+    if token.startswith("/") and not token.startswith("//"):
         token = WILD + token
     unknown = token.startswith(WILD + "/")
     token = re.sub(r"^(" + WILD + r"/)+", "", token).rstrip(".")
@@ -237,42 +250,59 @@ def shell_reads(line):
 def path_tokens(text, shell=False):
     """The paths the text names: its tokens with a `/` (and in shell text, the bare words a reading
     command is given, without what a line only writes or prints), with the variables it sets
-    expanded, the values of the ones it exports and of CMake's set() lists, and each relative path
-    also from every dir the text has `cd` to. The text is code: its comments already gone."""
+    expanded, the values it gives them and CMake's set() lists, join()'s segments, and each relative
+    path also from every dir the text has `cd` to. In shell text, the script's own dir is `.`. The
+    text is code: its comments already gone."""
     values, found, dirs = {}, set(), []
 
     def define(name, value):
         # A value that is not a plain path (a command's output, say) is unknown.
         values.setdefault(name, [])
-        values[name] += [v if re.match(r"^[\w./@+" + WILD + "-]*$", v) else WILD
-                         for v in expand(value.strip("'\""), values) if v not in values[name]]
+        values[name] += [v if PLAIN.match(v) else WILD for v in expand(unquote(value), values) if v not in values[name]]
 
-    lines = re.sub(r"\\\n", " ", text).split("\n") if shell else text.split("\n")
-    for line in lines:
+    if shell:
+        text = SCRIPT_DIR_REF.sub(".", re.sub(r"\\\n", " ", text))
+    heredoc = None
+    for line in text.split("\n"):
+        if heredoc is not None:
+            # A heredoc's body is text a command is given (a config file, say), not commands.
+            heredoc = None if line.strip() == heredoc else heredoc
+            found.update(t for expanded in expand(line, values) for t in TOKEN.findall(expanded))
+            continue
+        if shell and HEREDOC.search(line):
+            heredoc = HEREDOC.search(line).group(1)
         cmake = CMAKE_SET.match(line)
         if cmake:
-            define(cmake.group(2), cmake.group(3) + ("/.." if cmake.group(1).lower() != "set" else ""))
+            mode = (cmake.group(4).split() or [""])[0].upper()
+            define(cmake.group(2), cmake.group(3) + ("/.." if mode in ("DIRECTORY", "PATH") else ""))
             # A list's values are what is built from (sources); one value names a dir its uses extend.
             line = " ".join(cmake.group(3, 4)) if cmake.group(1).lower() == "set" and cmake.group(4).strip() else ""
         for m in SHELL_SET.finditer(line):
-            define(m.group(2), m.group(3))
-        exported = " ".join(m.group(3) for m in SHELL_SET.finditer(line) if m.group(1))
+            define(m.group(2), m.group(3) or "")
         for cd in CD.finditer(line):
-            if cd.group(1).strip("'\"") == "-":
+            target, before = unquote(cd.group(1)), dirs[-1] if dirs else None
+            if target == "-":
                 continue
-            to = expand(cd.group(1).strip("'\""), values)[0]
-            to = to if re.match(r"^[\w./@+" + WILD + "-]*$", to) else WILD
-            # As given and from the dir before it, since a popd or subshell may have left that one.
-            dirs += [to] + ([posixpath.join(dirs[-1], to)] if dirs and not to.startswith(("/", WILD)) else [])
-        rest = SHELL_SET.sub(" ", line) + " " + exported
+            for to in expand(target, values):
+                to = to if PLAIN.match(to) else WILD
+                # As given and from the dir before it, since a popd or subshell may have left that one.
+                dirs += [to] + ([posixpath.join(before, to)] if before and not to.startswith(("/", WILD)) else [])
+        # A value is read where it is exported or given to the command after it (`X=dir cmd`); one
+        # only set may be a dir the script goes on to name parts of.
+        rest = SHELL_SET.sub(lambda m: " " + (unquote(m.group(3) or "") if m.group(1) or PREFIX.match(line, m.end()) else ""), line)
         for expanded in expand(shell_reads(rest) if shell else rest, values):
             tokens = TOKEN.findall(expanded)
-            for m in JOIN.finditer(expanded):
-                args = [a.strip() for a in m.group(1).split(",")]
-                tokens.append("/".join(a[1:-1] if len(a) > 1 and a[0] == a[-1] and a[0] in "'\"" else WILD for a in args))
             found.update(tokens)
             found.update(posixpath.join(d, t) for d in dirs for t in tokens if not t.startswith(("/", WILD)))
+    for m in JOIN.finditer(text):
+        args = [a.strip() for a in m.group(1).split(",")]
+        found.update(expand("/".join(a[1:-1] if len(a) > 1 and a[0] == a[-1] and a[0] in "'\"" else WILD for a in args), values))
     return tuple(sorted(found))
+
+
+def unquote(word):
+    """A shell word without its quotes."""
+    return re.sub(r"\"([^\"]*)\"|'([^']*)'", lambda m: m.group(1) if m.group(1) is not None else m.group(2), word)
 
 
 @functools.lru_cache(maxsize=None)

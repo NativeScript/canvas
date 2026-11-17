@@ -3,7 +3,7 @@ of one key. Part of tools/tests/check-native-inputs.py, whose docstring says wha
 import re
 
 from . import ni
-from .jobs import field, sections
+from .jobs import each_leg, field, matrix_values, native_cache, sections
 
 
 GUARD = "steps.native.outputs.hit != 'true'"
@@ -17,7 +17,8 @@ RUN_VARIABLE = re.compile(r"\bGITHUB_(SHA|REF|REF_NAME|REF_TYPE|REF_PROTECTED|HE
                           r"EVENT_PATH|RUN_ID|RUN_NUMBER|RUN_ATTEMPT|ACTOR|ACTOR_ID|TRIGGERING_ACTOR|WORKFLOW|"
                           r"WORKFLOW_REF|WORKFLOW_SHA|RETENTION_DAYS)\b")
 # Git commands whose output is the commit, which differs between commits that share a key.
-READS_COMMIT = re.compile(r"\bgit\s+(?:describe|log|show|rev-parse\s+(?:--\S+\s+)*(?:HEAD|@)\b)")
+READS_COMMIT = re.compile(r"\bgit\s+(?:(?:-[Cc]\s+\S+|--\S+)\s+)*"
+                          r"(?:describe|log|show|rev-list|rev-parse\s+(?:--\S+\s+)*(?:HEAD|@)\b)")
 
 
 def moves_cache(step):
@@ -80,7 +81,7 @@ def check_wiring(rev):
                 if (path, job_id) in artifacts_of:
                     raise
                 continue
-            cache = next((s for s in steps if re.search(r"uses:\s*\./\.github/actions/native-cache\b", "\n".join(s))), None)
+            cache = native_cache(steps)
             uploads = [s for s in steps if re.match(r"^actions/upload-artifact@", field(s, "uses"))]
             if (path, job_id) not in artifacts_of:
                 if path == ni.BUILD_NATIVE and (uploads or cache):
@@ -105,8 +106,10 @@ def check_wiring(rev):
             if field(cache, "id") != "native":
                 problems.append(f"{where}: the native-cache step needs `id: native`")
             artifact = field(cache, "artifact")
-            if "${{" not in artifact and artifact not in artifacts_of[path, job_id]:
-                problems.append(f"{where}: native-cache artifact '{artifact}' is not one of this job's entries")
+            # In a matrix job, each leg's: an entry no leg names is never built, and a leg no entry
+            # lists has no key.
+            for leg in sorted(set(each_leg(artifact, matrix_values(outside)).split()) - set(artifacts_of[path, job_id])):
+                problems.append(f"{where}: native-cache artifact '{leg}' is not one of this job's entries")
             if any(not re.match(r"^actions/checkout@", field(s, "uses")) for s in steps[:steps.index(cache)]):
                 problems.append(f"{where}: only the checkout may come before the native-cache step")
             if any(re.match(r"^\s+matrix:", l) for l in outside) and re.sub(r"\s", "", field(cache, "variant")) != "${{toJSON(matrix)}}":

@@ -178,10 +178,12 @@ export class GPUCanvasContext implements CanvasRenderingContext {
 		if (opts.size) nativeOpts.size = opts.size;
 
 		this.native.configure(nativeOpts);
+		this._releaseSwapchainWrappers();
 	}
 
 	unconfigure() {
 		this.native.unconfigure();
+		this._releaseSwapchainWrappers();
 	}
 
 	getCurrentTexture() {
@@ -189,6 +191,11 @@ export class GPUCanvasContext implements CanvasRenderingContext {
 		// wrappers here; no current texture means that frame was presented.
 		if (this.native.hasCurrentTexture === false) {
 			this._releaseSwapchainWrappers();
+		}
+		// Until the frame is presented, every call returns the same texture, as the spec requires.
+		const held = this._swapchainTextures[this._swapchainTextures.length - 1];
+		if (held) {
+			return held;
 		}
 		const current = this.native.getCurrentTexture();
 		if (!current) {

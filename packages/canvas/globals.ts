@@ -9,7 +9,7 @@ import { CanvasPattern, CanvasGradient, Path2D, ImageData, DOMMatrix } from './C
 import { CanvasRenderingContext2D } from './Canvas2D/CanvasRenderingContext2D';
 import { WebGLRenderingContext } from './WebGL/WebGLRenderingContext';
 import { WebGL2RenderingContext } from './WebGL2/WebGL2RenderingContext';
-import { GPUBufferUsage, GPUMapMode, GPUShaderStage, GPUTextureUsage } from './WebGPU/Constants';
+import { GPUBufferUsage, GPUColorWrite, GPUMapMode, GPUShaderStage, GPUTextureUsage } from './WebGPU/Constants';
 
 export function installCanvasGlobals() {
 	const values = {
@@ -32,6 +32,7 @@ export function installCanvasGlobals() {
 		GPUTextureUsage,
 		GPUMapMode,
 		GPUShaderStage,
+		GPUColorWrite,
 	};
 	for (const name of Object.keys(values)) {
 		Object.defineProperty(global, name, {

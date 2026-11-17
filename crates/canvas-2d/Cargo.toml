@@ -13,6 +13,7 @@ default = ["gl"]
 
 [dependencies]
 canvas-core = { workspace = true, features = ["2d", "gl"] }
+canvas-utils = { workspace = true }
 parking_lot.workspace = true
 ustr.workspace = true
 base64 = "0.22.1"

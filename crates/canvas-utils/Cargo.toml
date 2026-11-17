@@ -1,0 +1,8 @@
+[package]
+name = "canvas-utils"
+version = "2.0.0"
+edition = "2021"
+
+[dependencies]
+skia-safe = { workspace = true }
+csscolorparser = { version = "0.7.1", features = ["named-colors"] }

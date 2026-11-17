@@ -4,6 +4,7 @@ resolver = "2"
 members = [
     "crates/gl-bindings",
     "crates/canvas-core",
+    "crates/canvas-utils",
     "crates/canvas-2d",
     "crates/canvas-webgl",
     "crates/canvas-android",
@@ -93,6 +94,7 @@ parking_lot = { version = "0.12.3" }
 raw-window-handle = "0.6.2"
 windows = "0.62.2"
 canvas-2d = { path = "./crates/canvas-2d" }
+canvas-utils = { path = "./crates/canvas-utils" }
 canvas-core = { path = "./crates/canvas-core" }
 canvas-webgl = { path = "./crates/canvas-webgl" }
 canvas-svg = { path = "./crates/canvas-svg" }

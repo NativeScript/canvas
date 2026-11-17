@@ -1,164 +1,118 @@
 #!/bin/sh
+# Builds CanvasNative.xcframework from the Rust static libs `make apple` produced.
+#
+#   ./build.sh                 every platform's slices, then the xcframework
+#   ./build.sh ios tvos        only those platforms' slices, into dist/
+#   ./build.sh --xcframework   only the xcframework, from the slices already in dist/
+#
+# Platforms: ios, catalyst, visionos, tvos. CI builds each platform on its own runner and
+# joins the slices with --xcframework.
 
-echo "Set exit on simple errors"
 set -e
 
-rm -rf $(PWD)/dist
+DIST="$(pwd)/dist"
+FRAMEWORK=CanvasNative
 
-echo "Build for iphonesimulator"
-xcodebuild \
-    -project CanvasNative.xcodeproj \
-    -scheme CanvasNative \
-    -sdk iphonesimulator \
-    -destination "generic/platform=iOS Simulator" \
+# tvOS needs its *platform* installed, not just the SDK: a generic tvOS destination fails
+# without it (Xcode > Settings > Components, or `xcodebuild -downloadPlatform tvOS`). The
+# destination is still listed when the platform is missing, with an "error:" note.
+tvos_installed() {
+  xcodebuild -showdestinations -project $FRAMEWORK.xcodeproj -scheme $FRAMEWORK 2>/dev/null \
+    | grep "platform:tvOS" | grep -qv "error:"
+}
+
+# build_slice <sdk, or "" for Catalyst> <destination> [build settings...]
+build_slice() {
+  sdk="$1"
+  destination="$2"
+  shift 2
+  echo "Build for $destination"
+  xcodebuild \
+    -project $FRAMEWORK.xcodeproj \
+    -scheme $FRAMEWORK \
+    ${sdk:+-sdk "$sdk"} \
+    -destination "$destination" \
     -configuration Release \
     -quiet \
     clean build \
-    BUILD_DIR=$(PWD)/dist \
+    BUILD_DIR="$DIST" \
     SKIP_INSTALL=NO \
-    BUILD_LIBRARY_FOR_DISTRIBUTION=YES 
+    BUILD_LIBRARY_FOR_DISTRIBUTION=YES \
+    "$@"
+}
 
-echo "Build for iphoneos"
-xcodebuild \
-    -project CanvasNative.xcodeproj \
-    -scheme CanvasNative \
-    -sdk iphoneos \
-    -destination "generic/platform=iOS" \
-    -configuration Release \
-    -quiet \
-    clean build \
-    BUILD_DIR=$(PWD)/dist \
-    CODE_SIGN_IDENTITY="" \
-    CODE_SIGNING_REQUIRED=NO \
-    SKIP_INSTALL=NO \
-    BUILD_LIBRARY_FOR_DISTRIBUTION=YES
+build_ios() {
+  build_slice iphonesimulator "generic/platform=iOS Simulator"
+  build_slice iphoneos "generic/platform=iOS" CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
+}
 
-echo "Build for Mac Catalyst"
 # Xcode runs pre-build.sh once, for arm64: build x86_64-apple-ios-macabi first (make catalyst).
-xcodebuild \
-    -project CanvasNative.xcodeproj \
-    -scheme CanvasNative \
-    -destination "generic/platform=macOS,variant=Mac Catalyst" \
-    -configuration Release \
-    -quiet \
-    clean build \
-    BUILD_DIR=$(PWD)/dist \
-    ONLY_ACTIVE_ARCH=NO \
-    CODE_SIGN_IDENTITY="" \
-    CODE_SIGNING_REQUIRED=NO \
-    SKIP_INSTALL=NO \
-    BUILD_LIBRARY_FOR_DISTRIBUTION=YES
+build_catalyst() {
+  build_slice "" "generic/platform=macOS,variant=Mac Catalyst" \
+    ONLY_ACTIVE_ARCH=NO CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
+}
 
-echo "Build for xrsimulator (visionOS Simulator)"
-# visionOS is Apple-Silicon only — the simulator is arm64 (there is no x86_64-apple-visionos-sim
-# Rust target). Pin ARCHS=arm64 so Xcode doesn't try to build an x86_64 slice it has no Rust lib for.
-xcodebuild \
-    -project CanvasNative.xcodeproj \
-    -scheme CanvasNative \
-    -sdk xrsimulator \
-    -destination "generic/platform=visionOS Simulator" \
-    -configuration Release \
-    -quiet \
-    clean build \
-    BUILD_DIR=$(PWD)/dist \
-    ARCHS=arm64 \
-    ONLY_ACTIVE_ARCH=NO \
-    SKIP_INSTALL=NO \
-    BUILD_LIBRARY_FOR_DISTRIBUTION=YES
+# visionOS is Apple Silicon only: there is no x86_64-apple-visionos-sim Rust target, so pin
+# ARCHS=arm64 or Xcode builds an x86_64 simulator slice it has no Rust lib for.
+build_visionos() {
+  build_slice xrsimulator "generic/platform=visionOS Simulator" ARCHS=arm64 ONLY_ACTIVE_ARCH=NO
+  build_slice xros "generic/platform=visionOS" ARCHS=arm64 ONLY_ACTIVE_ARCH=NO \
+    CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
+}
 
-echo "Build for xros (visionOS)"
-xcodebuild \
-    -project CanvasNative.xcodeproj \
-    -scheme CanvasNative \
-    -sdk xros \
-    -destination "generic/platform=visionOS" \
-    -configuration Release \
-    -quiet \
-    clean build \
-    BUILD_DIR=$(PWD)/dist \
-    ARCHS=arm64 \
-    ONLY_ACTIVE_ARCH=NO \
-    CODE_SIGN_IDENTITY="" \
-    CODE_SIGNING_REQUIRED=NO \
-    SKIP_INSTALL=NO \
-    BUILD_LIBRARY_FOR_DISTRIBUTION=YES
+build_tvos() {
+  build_slice appletvsimulator "generic/platform=tvOS Simulator" ARCHS=arm64 ONLY_ACTIVE_ARCH=NO
+  build_slice appletvos "generic/platform=tvOS" ARCHS=arm64 ONLY_ACTIVE_ARCH=NO \
+    CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
+}
 
+# Every slice but tvOS is required; tvOS joins when it was built.
+create_xcframework() {
+  set --
+  for sdk in iphoneos iphonesimulator maccatalyst xros xrsimulator appletvos appletvsimulator; do
+    fw="$DIST/Release-$sdk/$FRAMEWORK.framework"
+    if [ ! -d "$fw" ]; then
+      case $sdk in
+        appletv*) continue ;;
+        *) echo "error: missing slice $fw" >&2; exit 1 ;;
+      esac
+    fi
+    set -- "$@" -framework "$fw" -debug-symbols "$fw.dSYM"
+  done
+  echo "Creating XCFramework"
+  rm -rf "$DIST/$FRAMEWORK.xcframework"
+  xcodebuild -create-xcframework "$@" -output "$DIST/$FRAMEWORK.xcframework"
+}
 
-# tvOS needs its *platform* installed, not just the SDK -- a generic tvOS
-# destination fails without it (Xcode > Settings > Components, or
-# `xcodebuild -downloadPlatform tvOS`). Dropping -destination is not a
-# workaround: xcodebuild then silently resolves to the first matching
-# destination, which is iOS, and quietly produces no tvOS slice at all.
-# Skip the tvOS slices when the platform is absent so the rest of the
-# xcframework still builds, and say so.
-BUILD_TVOS=true
-# A tvOS destination is still *listed* when the platform is missing -- it just
-# carries an "error:... is not installed" note -- so match a line that offers
-# tvOS without one.
-if ! xcodebuild -showdestinations -project CanvasNative.xcodeproj -scheme CanvasNative 2>/dev/null \
-     | grep "platform:tvOS" | grep -qv "error:"; then
-  BUILD_TVOS=false
-  echo ""
-  echo "warning: tvOS platform not installed -- skipping the tvOS slices."
-  echo "         Install it with: xcodebuild -downloadPlatform tvOS"
-  echo ""
+if [ "$1" = "--xcframework" ]; then
+  create_xcframework
+  exit 0
 fi
 
-if $BUILD_TVOS; then
-echo "Build for appletvsimulator (tvOS Simulator)"
-xcodebuild \
-    -project CanvasNative.xcodeproj \
-    -scheme CanvasNative \
-    -sdk appletvsimulator \
-    -destination "generic/platform=tvOS Simulator" \
-    -configuration Release \
-    -quiet \
-    clean build \
-    BUILD_DIR=$(PWD)/dist \
-    ARCHS=arm64 \
-    ONLY_ACTIVE_ARCH=NO \
-    SKIP_INSTALL=NO \
-    BUILD_LIBRARY_FOR_DISTRIBUTION=YES
-
-echo "Build for appletvos (tvOS)"
-xcodebuild \
-    -project CanvasNative.xcodeproj \
-    -scheme CanvasNative \
-    -sdk appletvos \
-    -destination "generic/platform=tvOS" \
-    -configuration Release \
-    -quiet \
-    clean build \
-    BUILD_DIR=$(PWD)/dist \
-    ARCHS=arm64 \
-    ONLY_ACTIVE_ARCH=NO \
-    CODE_SIGN_IDENTITY="" \
-    CODE_SIGNING_REQUIRED=NO \
-    SKIP_INSTALL=NO \
-    BUILD_LIBRARY_FOR_DISTRIBUTION=YES
-
+if [ $# -eq 0 ]; then
+  rm -rf "$DIST"
+  build_ios
+  build_catalyst
+  build_visionos
+  if tvos_installed; then
+    build_tvos
+  else
+    echo ""
+    echo "warning: tvOS platform not installed, skipping the tvOS slices."
+    echo "         Install it with: xcodebuild -downloadPlatform tvOS"
+    echo ""
+  fi
+  create_xcframework
+  exit 0
 fi
 
-TVOS_ARGS=""
-if $BUILD_TVOS; then
-  TVOS_ARGS="-framework $(PWD)/dist/Release-appletvos/CanvasNative.framework \
-    -debug-symbols $(PWD)/dist/Release-appletvos/CanvasNative.framework.dSYM \
-    -framework $(PWD)/dist/Release-appletvsimulator/CanvasNative.framework \
-    -debug-symbols $(PWD)/dist/Release-appletvsimulator/CanvasNative.framework.dSYM"
-fi
-
-echo "Creating XCFramework"
-xcodebuild \
-    -create-xcframework \
-    -framework $(PWD)/dist/Release-iphoneos/CanvasNative.framework \
-    -debug-symbols $(PWD)/dist/Release-iphoneos/CanvasNative.framework.dSYM \
-    -framework $(PWD)/dist/Release-iphonesimulator/CanvasNative.framework \
-    -debug-symbols $(PWD)/dist/Release-iphonesimulator/CanvasNative.framework.dSYM \
-    -framework $(PWD)/dist/Release-maccatalyst/CanvasNative.framework \
-    -debug-symbols $(PWD)/dist/Release-maccatalyst/CanvasNative.framework.dSYM \
-    -framework $(PWD)/dist/Release-xros/CanvasNative.framework \
-    -debug-symbols $(PWD)/dist/Release-xros/CanvasNative.framework.dSYM \
-    -framework $(PWD)/dist/Release-xrsimulator/CanvasNative.framework \
-    -debug-symbols $(PWD)/dist/Release-xrsimulator/CanvasNative.framework.dSYM \
-    $TVOS_ARGS \
-    -output $(PWD)/dist/CanvasNative.xcframework
+for platform in "$@"; do
+  case $platform in
+    ios | catalyst | visionos) "build_$platform" ;;
+    tvos)
+      tvos_installed || { echo "error: tvOS platform not installed (xcodebuild -downloadPlatform tvOS)" >&2; exit 1; }
+      build_tvos
+      ;;
+    *) echo "error: unknown platform '$platform' (ios, catalyst, visionos, tvos)" >&2; exit 1 ;;
+  esac
+done

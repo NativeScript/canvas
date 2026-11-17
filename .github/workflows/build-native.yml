@@ -25,8 +25,10 @@
 # preserve file permissions.
 #
 # The canvas build mirrors the local flow:
-#   iOS:     make ios && make visionos && make tvos && make catalyst, then tools/scripts/canvas-build.sh
-#            (what `npm run build.canvas.ios.framework.release` runs, minus nx)
+#   Apple:   one runner per platform (ios, visionos, tvos, catalyst) runs `make <platform>` and
+#            `canvas-build.sh <platform>` for its framework slices; canvas-ios joins them with
+#            `canvas-build.sh --xcframework`. Locally, `npm run build.canvas.ios.framework.release`
+#            does all of it on one machine. canvas-svg is split the same way.
 #   Android: make android, then gradle :canvas:assembleRelease and copy the aar
 #
 #   Linux:   tools/scripts/build-linux.sh on Ubuntu 22.04 (glibc 2.35, GTK 4.6), natively on
@@ -88,36 +90,65 @@ jobs:
           path: packages/canvas/platforms/android/canvas-release.aar
           if-no-files-found: error
 
-  canvas-ios:
-    name: Canvas iOS + visionOS + tvOS + Catalyst
+  # One runner per platform: its Rust targets, then its framework slices. The Xcode pre-build
+  # phase reruns cargo for each slice, so the slices are built in the job that owns the target dir.
+  canvas-apple:
+    name: Canvas ${{ matrix.platform }}
     runs-on: macos-15
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [ios, visionos, tvos, catalyst]
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-apple-native
       - uses: ./.github/actions/skia-cache
         with:
-          name: canvas-ios
+          name: canvas-${{ matrix.platform }}
       - name: Fetch V8 + NativeScript runtime headers
         run: ./tools/scripts/download-v8.sh
-      - name: Build Rust libraries (iOS)
-        run: make ios
-      - name: Build Rust libraries (visionOS)
-        run: make visionos
-      # canvas-build.sh requires the tvOS static libs whenever the runner has a
-      # usable tvOS destination, which the macOS images do.
-      - name: Build Rust libraries (tvOS)
-        run: make tvos
-      - name: Build Rust libraries (Mac Catalyst)
-        run: make catalyst
-      # same as `npm run build.canvas.ios.framework.release`, without needing node_modules
+      - name: Build Rust libraries
+        run: make ${{ matrix.platform }}
       # Saved right after the Rust build, so a later failing step cannot drop the cache.
       - uses: ./.github/actions/skia-cache
         with:
-          name: canvas-ios
+          name: canvas-${{ matrix.platform }}
           save: 'true'
+      - name: Build CanvasNative.framework slices
+        working-directory: tools/scripts
+        run: sh canvas-build.sh ${{ matrix.platform }}
+      # tar keeps the Catalyst framework's symlinks and the file modes
+      - name: Pack slices
+        working-directory: packages/canvas/src-native/canvas-ios/dist
+        run: tar -czf "$GITHUB_WORKSPACE/canvas-apple-${{ matrix.platform }}.tar.gz" Release-*/CanvasNative.framework Release-*/CanvasNative.framework.dSYM
+      - uses: actions/upload-artifact@v4
+        with:
+          name: canvas-apple-${{ matrix.platform }}
+          path: canvas-apple-${{ matrix.platform }}.tar.gz
+          if-no-files-found: error
+          retention-days: 1
+
+  canvas-ios:
+    name: Canvas xcframework
+    needs: canvas-apple
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '^16.0'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: canvas-apple-*
+          merge-multiple: true
+          path: slices
+      - name: Unpack slices
+        run: |
+          mkdir -p packages/canvas/src-native/canvas-ios/dist
+          for f in slices/*.tar.gz; do tar -xzf "$f" -C packages/canvas/src-native/canvas-ios/dist; done
       - name: Build CanvasNative.xcframework
         working-directory: tools/scripts
-        run: sh canvas-build.sh
+        run: sh canvas-build.sh --xcframework
       - name: Pack xcframework
         run: tar -czf canvas-ios.tar.gz -C packages/canvas/platforms/ios/CanvasNativeBinary CanvasNative.xcframework
       - uses: actions/upload-artifact@v4
@@ -175,8 +206,64 @@ jobs:
           path: packages/canvas-svg/platforms/android/canvassvg-release.aar
           if-no-files-found: error
 
+  # canvas-svg changes rarely: on a hit for its xcframework the per-platform jobs never start.
+  # The lookup runs on macOS like the restore, so both compute the same cache version.
+  canvas-svg-cache:
+    name: Canvas SVG cache lookup
+    runs-on: macos-15
+    outputs:
+      key: ${{ steps.key.outputs.key }}
+      hit: ${{ steps.lookup.outputs.cache-hit }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: key
+        run: echo "key=${{ env.NATIVE_CACHE_VERSION }}-canvas-svg-ios-${{ hashFiles('crates/canvas-svg/**', 'crates/canvas-svg-c/**', 'crates/canvas-svg-ios/**', 'packages/canvas-svg/src-native/ios/**', '!packages/canvas-svg/src-native/ios/dist/**', 'Cargo.lock', 'tools/scripts/canvas-svg-build.sh', 'Makefile') }}" >> "$GITHUB_OUTPUT"
+      - id: lookup
+        uses: actions/cache/restore@v4
+        with:
+          path: canvas-svg-ios.tar.gz
+          key: ${{ steps.key.outputs.key }}
+          lookup-only: true
+
+  canvas-svg-apple:
+    name: Canvas SVG ${{ matrix.platform }}
+    needs: canvas-svg-cache
+    if: needs.canvas-svg-cache.outputs.hit != 'true'
+    runs-on: macos-15
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [ios, visionos, tvos, catalyst]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-apple-native
+      - uses: ./.github/actions/skia-cache
+        with:
+          name: canvas-svg-${{ matrix.platform }}
+      - name: Build Rust libraries
+        run: make ${{ matrix.platform }}-svg
+      # Saved right after the Rust build, so a later failing step cannot drop the cache.
+      - uses: ./.github/actions/skia-cache
+        with:
+          name: canvas-svg-${{ matrix.platform }}
+          save: 'true'
+      - name: Build CanvasSVG.framework slices
+        working-directory: tools/scripts
+        run: sh canvas-svg-build.sh ${{ matrix.platform }}
+      - name: Pack slices
+        working-directory: packages/canvas-svg/src-native/ios/dist
+        run: tar -czf "$GITHUB_WORKSPACE/canvas-svg-apple-${{ matrix.platform }}.tar.gz" Release-*/CanvasSVG.framework Release-*/CanvasSVG.framework.dSYM
+      - uses: actions/upload-artifact@v4
+        with:
+          name: canvas-svg-apple-${{ matrix.platform }}
+          path: canvas-svg-apple-${{ matrix.platform }}.tar.gz
+          if-no-files-found: error
+          retention-days: 1
+
   canvas-svg-ios:
-    name: Canvas SVG iOS + visionOS + tvOS + Catalyst
+    name: Canvas SVG xcframework
+    needs: [canvas-svg-cache, canvas-svg-apple]
+    if: ${{ !cancelled() && needs.canvas-svg-cache.result == 'success' && contains(fromJSON('["success","skipped"]'), needs.canvas-svg-apple.result) }}
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
@@ -185,27 +272,26 @@ jobs:
         uses: actions/cache@v4
         with:
           path: canvas-svg-ios.tar.gz
-          key: ${{ env.NATIVE_CACHE_VERSION }}-canvas-svg-ios-${{ hashFiles('crates/canvas-svg/**', 'crates/canvas-svg-ios/**', 'packages/canvas-svg/src-native/ios/**', '!packages/canvas-svg/src-native/ios/dist/**', 'Cargo.lock', 'tools/scripts/canvas-svg-build.sh', 'Makefile') }}
-      - uses: ./.github/actions/setup-apple-native
-        if: steps.svg-xcframework.outputs.cache-hit != 'true'
-      - uses: ./.github/actions/skia-cache
+          key: ${{ needs.canvas-svg-cache.outputs.key }}
+      - uses: maxim-lobanov/setup-xcode@v1
         if: steps.svg-xcframework.outputs.cache-hit != 'true'
         with:
-          name: canvas-svg-ios
-      - name: Build Rust libraries (iOS + visionOS + tvOS + Catalyst)
-        if: steps.svg-xcframework.outputs.cache-hit != 'true'
-        run: make svg
-      # same as `npm run build.canvas.svg.ios.framework.release`
-      # Saved right after the Rust build, so a later failing step cannot drop the cache.
-      - uses: ./.github/actions/skia-cache
+          xcode-version: '^16.0'
+      - uses: actions/download-artifact@v4
         if: steps.svg-xcframework.outputs.cache-hit != 'true'
         with:
-          name: canvas-svg-ios
-          save: 'true'
+          pattern: canvas-svg-apple-*
+          merge-multiple: true
+          path: slices
+      - name: Unpack slices
+        if: steps.svg-xcframework.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p packages/canvas-svg/src-native/ios/dist
+          for f in slices/*.tar.gz; do tar -xzf "$f" -C packages/canvas-svg/src-native/ios/dist; done
       - name: Build CanvasSVG.xcframework
         if: steps.svg-xcframework.outputs.cache-hit != 'true'
         working-directory: tools/scripts
-        run: sh canvas-svg-build.sh
+        run: sh canvas-svg-build.sh --xcframework
       - name: Pack xcframework
         if: steps.svg-xcframework.outputs.cache-hit != 'true'
         run: tar -czf canvas-svg-ios.tar.gz -C packages/canvas-svg/platforms/ios/CanvasSVGBinary CanvasSVG.xcframework
@@ -234,7 +320,9 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-          cache: gradle
+      # read-only off master, see setup-android-native
+      - uses: gradle/actions/setup-gradle@v4
+        if: steps.audio-aar.outputs.cache-hit != 'true'
       - name: Setup Android SDK
         if: steps.audio-aar.outputs.cache-hit != 'true'
         uses: android-actions/setup-android@v4

@@ -369,6 +369,10 @@ impl CanvasRenderingContext2D {
         self.threaded.as_ref()
     }
 
+    pub fn engine(&self) -> Engine {
+        self.engine
+    }
+
     pub fn is_threaded(&self) -> bool {
         self.threaded.is_some()
     }

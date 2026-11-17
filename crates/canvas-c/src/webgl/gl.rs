@@ -1654,7 +1654,7 @@ pub extern "C" fn canvas_native_webgl_state_get_premultiplied_alpha(
     state: *mut WebGLState,
 ) -> bool {
     let state = unsafe { &*state };
-    state.sync(|state| state.get_premultiplied_alpha())
+    state.sync(|state| state.get_unpack_premultiply_alpha())
 }
 
 #[no_mangle]
@@ -4078,6 +4078,20 @@ pub extern "C" fn canvas_native_webgl_tex_image2d_canvas2d(
     let canvas = unsafe { &mut *canvas };
     let state = unsafe { &*state };
 
+    if crate::webgl::canvas_source::copy_on_gpu(
+        canvas,
+        state,
+        target as u32,
+        level,
+        Some(internalformat),
+        0,
+        0,
+        format as u32,
+        image_type as u32,
+    ) {
+        return;
+    }
+
     let (width, height) = canvas.context.dimensions();
 
     let mut bytes = vec![0u8; (width * height * 4.) as usize];
@@ -4085,6 +4099,10 @@ pub extern "C" fn canvas_native_webgl_tex_image2d_canvas2d(
     canvas.read_pixels_into(bytes.as_mut_slice(), (0, 0), (width as i32, height as i32));
 
     state.post(move |state| {
+        let mut bytes = bytes;
+        if state.get_unpack_premultiply_alpha() {
+            crate::webgl::canvas_source::premultiply_in_place(&mut bytes);
+        }
         canvas_webgl::webgl::canvas_native_webgl_tex_image2d(
             target,
             level,
@@ -4323,6 +4341,20 @@ pub extern "C" fn canvas_native_webgl_tex_sub_image2d_canvas2d(
     let state = unsafe { &*state };
     let canvas = unsafe { &mut *canvas };
 
+    if crate::webgl::canvas_source::copy_on_gpu(
+        canvas,
+        state,
+        target,
+        level,
+        None,
+        xoffset,
+        yoffset,
+        format,
+        image_type as u32,
+    ) {
+        return;
+    }
+
     let (width, height) = canvas.context.dimensions();
 
     let mut bytes = vec![0u8; (width * height * 4.) as usize];
@@ -4330,6 +4362,10 @@ pub extern "C" fn canvas_native_webgl_tex_sub_image2d_canvas2d(
     canvas.read_pixels_into(bytes.as_mut_slice(), (0, 0), (width as i32, height as i32));
 
     state.post(move |state| {
+        let mut bytes = bytes;
+        if state.get_unpack_premultiply_alpha() {
+            crate::webgl::canvas_source::premultiply_in_place(&mut bytes);
+        }
         canvas_webgl::webgl::canvas_native_webgl_tex_sub_image2d(
             target,
             level,

@@ -109,6 +109,8 @@ impl TryFrom<i32> for WebGLVersion {
 pub(crate) struct WebGLStateInner {
     version: WebGLVersion,
     flip_y: bool,
+    /// `UNPACK_PREMULTIPLY_ALPHA_WEBGL`.
+    unpack_premultiply_alpha: bool,
     clear_stencil: i32,
     clear_color: [f32; 4],
     scissor_enabled: bool,
@@ -358,6 +360,7 @@ impl WebGLState {
                 stencil_func_mask_back: 0xFFFFFFFF,
                 depth_mask: true,
                 flip_y: false,
+                unpack_premultiply_alpha: false,
                 unpack_colorspace_conversion_webgl: WEBGL_BROWSER_DEFAULT_WEBGL as i32,
                 max_combined_texture_image_units: 0,
                 max_uniform_buffer_bindings: 0,
@@ -423,6 +426,7 @@ impl WebGLState {
                 stencil_func_mask_back: 0xFFFFFFFF,
                 depth_mask: true,
                 flip_y: false,
+                unpack_premultiply_alpha: false,
                 unpack_colorspace_conversion_webgl: WEBGL_BROWSER_DEFAULT_WEBGL as i32,
                 max_combined_texture_image_units: 0,
                 max_uniform_buffer_bindings: 0,
@@ -520,6 +524,14 @@ impl WebGLState {
 
     pub fn set_unpack_colorspace_conversion_webgl(&mut self, color_space: i32) {
         self.get_state_mut().unpack_colorspace_conversion_webgl = color_space;
+    }
+
+    pub fn set_unpack_premultiply_alpha(&mut self, premultiply: bool) {
+        self.get_state_mut().unpack_premultiply_alpha = premultiply;
+    }
+
+    pub fn get_unpack_premultiply_alpha(&self) -> bool {
+        self.get_state().unpack_premultiply_alpha
     }
 
     pub fn set_flip_y(&mut self, flip: bool) {

@@ -128,7 +128,8 @@ export function registerCanvasSourceSpec() {
 
 	suite('canvassource.webgl', () => {
 		/** Upload `source` as a texture and read back the pixel it renders to. */
-		function uploadAndReadBack(source: any, size = 32, upload?: (gl: any) => void) {
+		/** `at` is in readPixels coordinates: y counts up from texture row 0. */
+		function uploadAndReadBack(source: any, size = 32, upload?: (gl: any) => void, at: [number, number] = [size / 2, size / 2]) {
 			const canvas = makeCanvas(size, size);
 			const gl = canvas.getContext('webgl') as any;
 			if (!gl) {
@@ -193,8 +194,47 @@ void main() { gl_FragColor = texture2D(tex, uv); }`,
 			gl.finish();
 
 			const pixels = new Uint8Array(4);
-			gl.readPixels(size / 2, size / 2, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+			gl.readPixels(at[0], at[1], 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
 			return { pixels };
+		}
+
+		test('texImage2D honours UNPACK_PREMULTIPLY_ALPHA_WEBGL for a 2d canvas', () => {
+			const source = make2DSource(32, 'rgba(255, 0, 0, 0.5)');
+			const straight = uploadAndReadBack(source);
+			ok(straight && !straight.error, `texImage2D raised GL error ${straight?.error}`);
+			ok(pixelNear(straight.pixels, [255, 0, 0, 128]), `straight alpha, got ${describePixel(straight.pixels)}`);
+			const premultiplied = uploadAndReadBack(source, 32, (gl) => {
+				gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+				equal(gl.getParameter(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL), true, 'getParameter(UNPACK_PREMULTIPLY_ALPHA_WEBGL)');
+				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
+			});
+			ok(premultiplied && !premultiplied.error, `texImage2D raised GL error ${premultiplied?.error}`);
+			ok(pixelNear(premultiplied.pixels, [128, 0, 0, 128]), `premultiplied, got ${describePixel(premultiplied.pixels)}`);
+		});
+
+		for (const flipY of [false, true]) {
+			test(`texSubImage2D uploads a premultiplied 2d canvas${flipY ? ' with UNPACK_FLIP_Y_WEBGL' : ''}`, () => {
+				const { canvas, ctx } = make2D(32, 32);
+				ctx.fillStyle = 'red';
+				ctx.fillRect(0, 0, 32, 16);
+				ctx.fillStyle = 'blue';
+				ctx.fillRect(0, 16, 32, 16);
+				const result = uploadAndReadBack(
+					canvas,
+					32,
+					(gl) => {
+						gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+						gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, flipY);
+						gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 32, 32, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+						gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, gl.RGBA, gl.UNSIGNED_BYTE, canvas);
+					},
+					[16, 4],
+				);
+				ok(result && !result.error, `texSubImage2D raised GL error ${result?.error}`);
+				// Texture row 0 is the canvas's top row, or its bottom row when flipped.
+				const expected = flipY ? BLUE : RED;
+				ok(pixelNear(result.pixels, expected), `expected ${flipY ? 'blue' : 'red'} in row 4, got ${describePixel(result.pixels)}`);
+			});
 		}
 
 		test('texImage2D accepts a 2d canvas', () => {

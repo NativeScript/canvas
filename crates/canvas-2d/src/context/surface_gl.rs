@@ -238,6 +238,74 @@ impl Context {
     }
 
     /// Call after raw GL made behind Skia's back.
+    /// The canvas, top row first (bottom row first with `flip_y`) and premultiplied, in a new
+    /// texture another context on this EGL display can read once it waits on the share.
+    #[cfg(target_os = "linux")]
+    pub fn share_gl_texture(&mut self, flip_y: bool) -> Option<canvas_core::gpu::gl::SharedTexture> {
+        let gl = self.gl_context.as_ref()?;
+        if !gl.make_current() {
+            return None;
+        }
+        self.flush();
+        let (width, height) = (self.surface.width(), self.surface.height());
+        let mut texture = 0;
+        unsafe {
+            let mut bound = 0;
+            gl_bindings::GetIntegerv(gl_bindings::TEXTURE_BINDING_2D, &mut bound);
+            gl_bindings::GenTextures(1, &mut texture);
+            gl_bindings::BindTexture(gl_bindings::TEXTURE_2D, texture);
+            gl_bindings::TexParameteri(gl_bindings::TEXTURE_2D, gl_bindings::TEXTURE_MIN_FILTER, gl_bindings::NEAREST as i32);
+            gl_bindings::TexParameteri(gl_bindings::TEXTURE_2D, gl_bindings::TEXTURE_MAG_FILTER, gl_bindings::NEAREST as i32);
+            gl_bindings::TexImage2D(
+                gl_bindings::TEXTURE_2D,
+                0,
+                // Unsized: valid on GLES 2 as well as 3.
+                gl_bindings::RGBA as i32,
+                width,
+                height,
+                0,
+                gl_bindings::RGBA,
+                gl_bindings::UNSIGNED_BYTE,
+                std::ptr::null(),
+            );
+            gl_bindings::BindTexture(gl_bindings::TEXTURE_2D, bound as u32);
+        }
+        let ctx = self.direct_context.as_mut()?;
+        ctx.reset(None);
+        let info = gpu::gl::TextureInfo {
+            target: gl_bindings::TEXTURE_2D,
+            id: texture,
+            format: gl_bindings::RGBA8,
+            protected: gpu::Protected::No,
+        };
+        let backend = unsafe { gpu::backend_textures::make_gl((width, height), gpu::Mipmapped::No, info, "") };
+        let shared = gpu::surfaces::wrap_backend_texture(
+            ctx,
+            &backend,
+            gpu::SurfaceOrigin::TopLeft,
+            None,
+            ColorType::RGBA8888,
+            None,
+            None,
+        )
+        .and_then(|mut copy| {
+            let canvas = copy.canvas();
+            if flip_y {
+                canvas.translate((0., height as f32));
+                canvas.scale((1., -1.));
+            }
+            let mut paint = skia_safe::Paint::default();
+            paint.set_blend_mode(skia_safe::BlendMode::Src);
+            self.surface.draw(canvas, (0., 0.), skia_safe::SamplingOptions::default(), Some(&paint));
+            ctx.flush_and_submit_surface(&mut copy, None);
+            drop(copy);
+            canvas_core::gpu::gl::SharedTexture::new(texture)
+        });
+        unsafe { gl_bindings::DeleteTextures(1, &texture) };
+        ctx.reset(None);
+        shared
+    }
+
     pub fn reset_gpu_state(&mut self) {
         if let Some(ctx) = self.direct_context.as_mut() {
             ctx.reset(None);

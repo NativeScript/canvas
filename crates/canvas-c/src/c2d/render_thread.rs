@@ -1,6 +1,8 @@
-//! Rasterizes and presents every threaded 2D canvas. It must never wait on the JS thread: readbacks
-//! make the JS thread wait on it.
+//! Rasterizes and presents every threaded 2D canvas. Threads wait on each other in one order only:
+//! JS on the WebGL thread, and either of those on this one, for a readback or for a WebGL upload of
+//! a 2D canvas. So nothing here may wait on JS or on the WebGL thread.
 
+use std::cell::Cell;
 use std::collections::{HashMap, VecDeque};
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::{mpsc, Arc, Condvar, Mutex, OnceLock, Weak};
@@ -59,6 +61,14 @@ impl Worker {
 
 static WORKER: OnceLock<Option<Arc<Worker>>> = OnceLock::new();
 
+thread_local! {
+    static ON_RENDER_THREAD: Cell<bool> = const { Cell::new(false) };
+}
+
+pub(crate) fn is_render_thread() -> bool {
+    ON_RENDER_THREAD.with(|on| on.get())
+}
+
 fn worker() -> Option<Arc<Worker>> {
     WORKER
         .get_or_init(|| {
@@ -97,6 +107,7 @@ fn raise_priority() {
 
 fn run(worker: Arc<Worker>) {
     raise_priority();
+    ON_RENDER_THREAD.with(|on| on.set(true));
     let mut targets = Targets::default();
     let mut retry: Vec<u64> = Vec::new();
     loop {
@@ -185,6 +196,38 @@ where
 /// everything drawn before it, so an unbounded merge grows without limit and replays ever slower.
 const MAX_MERGED_FRAMES: u32 = 4;
 
+/// Reads from `read_later` a target may have waiting before the next one waits like `sync`. Each
+/// holds a copy of the canvas until it's taken, and the requestAnimationFrame hold-back never sees
+/// them, so a loop that draws and uploads would otherwise queue them without limit.
+const MAX_WAITING_READS: u32 = 2;
+
+/// A result from the render thread, taken with `wait`.
+pub struct Later<R> {
+    result: mpsc::Receiver<R>,
+    _waiting: Option<WaitingRead>,
+}
+
+impl<R> Later<R> {
+    pub fn ready(value: R) -> Self {
+        let (sender, result) = mpsc::sync_channel(1);
+        let _ = sender.send(value);
+        Self { result, _waiting: None }
+    }
+
+    /// `None` if the read never ran, because the real context was never made or the thread died.
+    pub fn wait(self) -> Option<R> {
+        self.result.recv().ok()
+    }
+}
+
+struct WaitingRead(Arc<AtomicU32>);
+
+impl Drop for WaitingRead {
+    fn drop(&mut self) {
+        self.0.fetch_sub(1, Ordering::AcqRel);
+    }
+}
+
 /// Drop waits for the real context to go, so its window can be released afterwards.
 pub struct RenderTarget {
     shared: Arc<TargetShared>,
@@ -199,6 +242,8 @@ struct TargetShared {
     /// is behind, which holds requestAnimationFrame back (`canvas_native_canvases_behind`).
     merged: Arc<AtomicU32>,
     behind: Behind,
+    /// Reads from `read_later` not yet taken.
+    reads: Arc<AtomicU32>,
 }
 
 /// The real context without the recording one, which belongs to the JS thread.
@@ -257,6 +302,7 @@ impl RenderTarget {
                 lost,
                 merged: Arc::new(AtomicU32::new(0)),
                 behind: crate::webgl::thread::behind_counter(),
+                reads: Arc::new(AtomicU32::new(0)),
             }),
         })
     }
@@ -326,6 +372,31 @@ impl RenderTarget {
         F: FnOnce(&mut CanvasRenderingContext2D) -> R + Send + 'static,
     {
         self.shared.sync(f)
+    }
+
+    /// Runs `read` after every frame committed so far, and returns without waiting for it unless
+    /// `MAX_WAITING_READS` are already waiting. `post` seals the open frame, so frames committed
+    /// afterwards can't change what it reads.
+    pub fn read_later<R, F>(&self, read: F) -> Later<R>
+    where
+        R: Send + 'static,
+        F: FnOnce(&mut CanvasRenderingContext2D) -> R + Send + 'static,
+    {
+        let shared = &self.shared;
+        if shared.reads.load(Ordering::Acquire) >= MAX_WAITING_READS {
+            let (sender, result) = mpsc::sync_channel(1);
+            if let Some(value) = shared.sync(read) {
+                let _ = sender.send(value);
+            }
+            return Later { result, _waiting: None };
+        }
+        shared.reads.fetch_add(1, Ordering::AcqRel);
+        let waiting = WaitingRead(Arc::clone(&shared.reads));
+        let (sender, result) = mpsc::sync_channel(1);
+        shared.post(move |real| {
+            let _ = sender.send(read(real));
+        });
+        Later { result, _waiting: Some(waiting) }
     }
 }
 

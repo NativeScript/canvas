@@ -1193,9 +1193,7 @@ pub extern "C" fn canvas_native_webgl2_tex_image3d_canvas2d(
     // let (width, height) = (canvas.context.width(), canvas.context.height());
     // let snapshot = canvas.context.as_data();
 
-    let (width, height) = canvas.context.dimensions();
-
-    let pixels = canvas.read_pixels_later((0, 0), (width as i32, height as i32));
+    let (width, height, pixels) = canvas.read_all_later();
 
     // todo handle pre-multipied
     // let premultiply = state.get_inner().get_premultiplied_alpha();
@@ -1208,8 +1206,8 @@ pub extern "C" fn canvas_native_webgl2_tex_image3d_canvas2d(
             target,
             level,
             internalformat,
-            width as i32,
-            height as i32,
+            width,
+            height,
             depth,
             border,
             format,
@@ -1483,9 +1481,7 @@ pub extern "C" fn canvas_native_webgl2_tex_sub_image3d_canvas2d(
     let state = unsafe { &*state };
     let canvas = unsafe { &mut *canvas };
 
-    let (width, height) = canvas.context.dimensions();
-
-    let pixels = canvas.read_pixels_later((0, 0), (width as i32, height as i32));
+    let (width, height, pixels) = canvas.read_all_later();
 
     // canvas.make_current();
     // let (width, height) = (canvas.context.width(), canvas.context.height());
@@ -1503,8 +1499,8 @@ pub extern "C" fn canvas_native_webgl2_tex_sub_image3d_canvas2d(
             xoffset,
             yoffset,
             zoffset,
-            width as i32,
-            height as i32,
+            width,
+            height,
             depth,
             format,
             type_,
@@ -2144,10 +2140,9 @@ pub extern "C" fn canvas_native_webgl2_tex_image2d_canvas2d(
         if format as u32 == gl_bindings::RGBA {
             unsafe {
                 if state.get_flip_y() {
-                    let mut buffer = bytes.to_vec();
                     utils::gl::flip_in_place(
-                        buffer.as_mut_ptr(),
-                        buffer.len(),
+                        bytes.as_mut_ptr(),
+                        bytes.len(),
                         (bytes_per_pixel(type_ as u32, format as u32) * source_width as u32)
                             as usize,
                         source_height as usize,
@@ -2162,7 +2157,7 @@ pub extern "C" fn canvas_native_webgl2_tex_image2d_canvas2d(
                         border,
                         format as u32,
                         type_ as u32,
-                        buffer.as_ptr() as *const c_void,
+                        bytes.as_ptr() as *const c_void,
                     );
 
                     return;

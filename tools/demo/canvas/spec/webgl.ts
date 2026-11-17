@@ -552,33 +552,50 @@ function registerCommon(version: 1 | 2) {
 			equal(gl.getError(), gl.NO_ERROR, 'texImage2D(ImageData) raised an error');
 		});
 
-		test('texSubImage2D from a 2D canvas uploads what the canvas showed at the call', () => {
-			// Text renderers reuse one canvas, redrawing it right after each upload.
+		test('a 2D canvas upload gets what the canvas showed at the call', () => {
+			// Text renderers reuse one canvas, redrawing it right after each upload. Nothing between
+			// an upload and the next drawing waits on the GL thread, so a late read would see the redraw.
 			const { gl } = makeGL(version);
-			const { canvas: source, ctx } = make2D(4, 4);
-			const upload = (color: string) => {
-				ctx.fillStyle = color;
-				ctx.fillRect(0, 0, 4, 4);
-				const texture = gl.createTexture();
-				gl.bindTexture(gl.TEXTURE_2D, texture);
-				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 4, 4, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-				gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, gl.RGBA, gl.UNSIGNED_BYTE, source);
-				return texture;
+			const { canvas: source, ctx } = make2D(4, 4, { threaded: true });
+			const uploads: Record<string, () => void> = {
+				texImage2D: () => gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source),
+				texSubImage2D: () => gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, gl.RGBA, gl.UNSIGNED_BYTE, source),
 			};
-			const red = upload('#ff0000');
-			const blue = upload('#0000ff');
-			equal(gl.getError(), gl.NO_ERROR, 'texSubImage2D(canvas) raised an error');
+			if (version === 2) {
+				uploads['texImage2D with a size'] = () => gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 4, 4, 0, gl.RGBA, gl.UNSIGNED_BYTE, source);
+			}
+			const colors: [string, number[]][] = [
+				['#ff0000', [255, 0, 0, 255]],
+				['#0000ff', [0, 0, 255, 255]],
+			];
+			const textures = Object.keys(uploads).map(() =>
+				colors.map(() => {
+					const texture = gl.createTexture();
+					gl.bindTexture(gl.TEXTURE_2D, texture);
+					gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 4, 4, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+					return texture;
+				}),
+			);
+			Object.values(uploads).forEach((upload, i) =>
+				colors.forEach(([color], j) => {
+					gl.bindTexture(gl.TEXTURE_2D, textures[i][j]);
+					ctx.fillStyle = color;
+					ctx.fillRect(0, 0, 4, 4);
+					upload();
+				}),
+			);
+			equal(gl.getError(), gl.NO_ERROR, 'an upload raised an error');
 
 			const framebuffer = gl.createFramebuffer();
 			gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
-			const pixelOf = (texture: any) => {
-				gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
-				const pixels = new Uint8Array(4);
-				gl.readPixels(1, 1, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
-				return pixels;
-			};
-			arrayEqual(pixelOf(red), [255, 0, 0, 255], 'the first upload lost its drawing');
-			arrayEqual(pixelOf(blue), [0, 0, 255, 255], 'the second upload lost its drawing');
+			Object.keys(uploads).forEach((name, i) =>
+				colors.forEach(([color, expected], j) => {
+					gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, textures[i][j], 0);
+					const pixel = new Uint8Array(4);
+					gl.readPixels(1, 1, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
+					arrayEqual(pixel, expected, `${name} lost its ${color} drawing`);
+				}),
+			);
 			gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 		});
 

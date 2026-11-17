@@ -2,6 +2,10 @@
 //! this one thread, so the JS thread never waits on the driver: calls that return nothing queue up
 //! behind each other, and the rest run here while the caller waits. One thread for all of them keeps
 //! reads from one context into another (texImage2D from a WebGL canvas) on a single thread.
+//!
+//! Uploading a threaded 2D canvas waits here for the 2D render thread to read it, so a JS call that
+//! waits here also waits for any such read queued ahead of it. The render thread must therefore
+//! never wait on this one, which `sync` asserts.
 
 use std::cell::{Cell, RefCell};
 use std::collections::VecDeque;
@@ -177,6 +181,10 @@ pub(crate) fn sync<R>(f: impl FnOnce() -> R) -> R {
     if on_gl_thread() {
         return f();
     }
+    debug_assert!(
+        !crate::c2d::render_thread::is_render_thread(),
+        "the 2D render thread waited on the WebGL thread, which can be waiting on it"
+    );
     let Some(worker) = worker() else {
         return f();
     };

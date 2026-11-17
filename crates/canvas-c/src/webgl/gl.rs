@@ -407,7 +407,8 @@ impl WebGLState {
 
     /// Runs `f` (which lets go of the window) after every queued call, skipping the presents queued
     /// meanwhile: they are for a window that is going away, and waiting on each would stall the
-    /// caller for as many frames as the GPU is behind.
+    /// caller for as many frames as the GPU is behind. A queued upload of a 2D canvas can make it
+    /// wait on the 2D render thread too, as a 2D canvas's own detach and every JS read of one do.
     pub fn detach<R>(&self, f: impl FnOnce(&mut canvas_webgl::prelude::WebGLState) -> R) -> R {
         self.detaching.store(true, Ordering::Release);
         let result = self.sync(f);
@@ -4092,9 +4093,7 @@ pub extern "C" fn canvas_native_webgl_tex_image2d_canvas2d(
         return;
     }
 
-    let (width, height) = canvas.context.dimensions();
-
-    let pixels = canvas.read_pixels_later((0, 0), (width as i32, height as i32));
+    let (width, height, pixels) = canvas.read_all_later();
 
     state.post(move |state| {
         let mut bytes = pixels.wait();
@@ -4105,8 +4104,8 @@ pub extern "C" fn canvas_native_webgl_tex_image2d_canvas2d(
             target,
             level,
             internalformat,
-            width as i32,
-            height as i32,
+            width,
+            height,
             0,
             format,
             image_type,
@@ -4353,9 +4352,7 @@ pub extern "C" fn canvas_native_webgl_tex_sub_image2d_canvas2d(
         return;
     }
 
-    let (width, height) = canvas.context.dimensions();
-
-    let pixels = canvas.read_pixels_later((0, 0), (width as i32, height as i32));
+    let (width, height, pixels) = canvas.read_all_later();
 
     state.post(move |state| {
         let mut bytes = pixels.wait();
@@ -4367,8 +4364,8 @@ pub extern "C" fn canvas_native_webgl_tex_sub_image2d_canvas2d(
             level,
             xoffset,
             yoffset,
-            width as i32,
-            height as i32,
+            width,
+            height,
             format,
             image_type,
             bytes.as_slice(),

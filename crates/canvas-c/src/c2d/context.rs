@@ -38,26 +38,22 @@ pub enum Engine {
     D3D,
 }
 
-/// Pixels a 2D canvas delivers once it has read them; see
+/// Pixels a 2D canvas reads in order with its drawing; see
 /// `CanvasRenderingContext2D::read_pixels_later`.
-pub enum PendingPixels {
-    Ready(Vec<u8>),
-    Later {
-        pixels: std::sync::mpsc::Receiver<Vec<u8>>,
-        len: usize,
-    },
+pub struct PendingPixels {
+    pixels: crate::c2d::render_thread::Later<Vec<u8>>,
+    len: usize,
 }
 
 impl PendingPixels {
-    /// Waits for the pixels. They are transparent if the canvas went away before reading them, as
-    /// a synchronous read leaves them.
+    /// Waits for the pixels. They are transparent only if the read never ran, because the canvas's
+    /// real context was never made or its render thread died.
     pub fn wait(self) -> Vec<u8> {
-        match self {
-            PendingPixels::Ready(pixels) => pixels,
-            PendingPixels::Later { pixels, len } => {
-                pixels.recv().unwrap_or_else(|_| vec![0u8; len])
-            }
-        }
+        let len = self.len;
+        self.pixels.wait().unwrap_or_else(|| {
+            log::warn!("canvas: a 2D canvas read never ran; using {len} transparent bytes");
+            vec![0u8; len]
+        })
     }
 }
 
@@ -489,38 +485,43 @@ impl CanvasRenderingContext2D {
             self.context.get_pixels_format(buffer, origin, size, format);
             return;
         }
-        let len = buffer.len();
-        if let Some(pixels) = self.with_pixels_source(move |context| {
+        let pixels = self.read_pixels_later(origin, size, format).wait();
+        let len = buffer.len().min(pixels.len());
+        buffer[..len].copy_from_slice(&pixels[..len]);
+    }
+
+    /// Pixels read in order after everything drawn so far. A threaded canvas reads them on its render
+    /// thread, and only whoever calls `wait` waits for them. For a texture upload that is the WebGL
+    /// thread rather than JS, which a GPU readback would otherwise stall. The call itself waits only
+    /// when the render thread is far behind (`RenderTarget::commit` and `RenderTarget::read_later`).
+    pub fn read_pixels_later(
+        &mut self,
+        origin: (i32, i32),
+        size: (i32, i32),
+        format: canvas_2d::context::ColorType,
+    ) -> PendingPixels {
+        let len = size.0.max(0) as usize * size.1.max(0) as usize * 4;
+        let read = move |context: &mut Context| {
             let mut pixels = vec![0u8; len];
             context.get_pixels_format(&mut pixels, origin, size, format);
             pixels
-        }) {
-            buffer.copy_from_slice(&pixels);
-        }
+        };
+        let pixels = match self.threaded.as_ref() {
+            Some(target) => {
+                target.commit(self.context.take_frame());
+                target.read_later(move |real| read(real.get_context_mut()))
+            }
+            None => crate::c2d::render_thread::Later::ready(read(&mut self.context)),
+        };
+        PendingPixels { pixels, len }
     }
 
-    /// RGBA pixels read in order after everything drawn so far, without waiting for them. A threaded
-    /// canvas reads on its render thread, so only whoever calls `wait` waits: for a texture upload,
-    /// the WebGL thread rather than JS, which a GPU readback would otherwise stall.
-    pub fn read_pixels_later(&mut self, origin: (i32, i32), size: (i32, i32)) -> PendingPixels {
-        let len = size.0.max(0) as usize * size.1.max(0) as usize * 4;
+    /// The whole canvas as RGBA, read like `read_pixels_later`, with the width and height read.
+    pub fn read_all_later(&mut self) -> (i32, i32, PendingPixels) {
+        let (width, height) = self.context.dimensions();
+        let (width, height) = (width as i32, height as i32);
         let format = canvas_2d::context::ColorType::RGBA8888;
-        let Some(target) = self.threaded.as_ref() else {
-            let mut pixels = vec![0u8; len];
-            self.context
-                .get_pixels_format(&mut pixels, origin, size, format);
-            return PendingPixels::Ready(pixels);
-        };
-        target.commit(self.context.take_frame());
-        let (sender, pixels) = std::sync::mpsc::sync_channel(1);
-        // `post` seals the frame just committed, so drawing after this can't merge into what it reads.
-        target.post(move |real| {
-            let mut pixels = vec![0u8; len];
-            real.get_context_mut()
-                .get_pixels_format(&mut pixels, origin, size, format);
-            let _ = sender.send(pixels);
-        });
-        PendingPixels::Later { pixels, len }
+        (width, height, self.read_pixels_later((0, 0), (width, height), format))
     }
 
     pub fn render(&mut self) {

@@ -35,14 +35,28 @@ jobs:
       - uses: actions/checkout@v4
       - name: V8 bridge invariants
         run: python3 tools/tests/check-v8-bridge-invariants.py
+      # Every native cache key resolves and holds what its job reads, and every cached job skips
+      # its build on a hit. The npm job waits for this, so a key that misses a read publishes nothing.
+      - name: Native cache inputs
+        run: |
+          python3 tools/tests/test_native_inputs.py
+          python3 tools/tests/check-native-inputs.py
 
   unit-tests:
     name: Unit Tests
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
+      # A pass is cached under the hash of what the tests build from, so unchanged code isn't
+      # retested.
+      - uses: ./.github/actions/native-cache
+        id: native
+        with:
+          artifact: unit-tests
+          path: .native-cache/unit-tests-passed
       # ~1.8 GB per entry: only master saves one, so pull requests don't crowd the 10 GB cache.
       - uses: actions/cache/restore@v4
+        if: steps.native.outputs.hit != 'true'
         id: test-cache
         with:
           path: |
@@ -58,11 +72,14 @@ jobs:
       # the macOS dylib build, and libtest cannot link against that, so the
       # rustflags are overridden for this run only.
       - name: Rust unit tests
+        if: steps.native.outputs.hit != 'true'
         env:
           RUSTFLAGS: '-C link-arg=-undefined -C link-arg=dynamic_lookup'
-        run: cargo test -p canvas-c --features 2d,webgl,gl
+        run: |
+          cargo test -p canvas-c --features 2d,webgl,gl
+          mkdir -p .native-cache && date -u > .native-cache/unit-tests-passed
       - uses: actions/cache/save@v4
-        if: steps.test-cache.outputs.cache-hit != 'true' && github.event_name == 'push' && github.ref == 'refs/heads/master'
+        if: steps.native.outputs.hit != 'true' && steps.test-cache.outputs.cache-hit != 'true' && github.event_name == 'push' && github.ref == 'refs/heads/master'
         with:
           path: |
             ~/.cargo/registry
@@ -78,7 +95,7 @@ jobs:
     name: Npm Build
     if: ${{ github.event_name != 'pull_request' }}
     runs-on: ubuntu-22.04
-    needs: [build-native]
+    needs: [static-checks, build-native]
     env:
       NPM_TAG: pr
       # Space separated; must match the packages/<name> directories.

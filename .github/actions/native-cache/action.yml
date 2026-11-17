@@ -1,0 +1,83 @@
+name: Native output cache
+description: >
+  Restores a job's finished output when nothing it is built from has changed, so the job can skip
+  its build (every later step is guarded by `if: steps.native.outputs.hit != 'true'`). The key is
+  the week plus the hash tools/scripts/native-inputs.py computes; its docstring says what that
+  covers and why. On a miss the job builds, and the output is saved once the job succeeds, into the
+  scope of the ref that ran it, so pull requests can restore master's entries. With
+  NATIVE_CACHE_FRESH=true (the release) it neither restores nor saves, and the job builds.
+
+  An output built by several jobs is looked up first, in a job of its own (`lookup-only`), whose
+  `hit` skips the jobs that build its parts and whose `key` the job that restores it passes back,
+  so both use the same week.
+
+inputs:
+  artifact:
+    description: The job's entry in tools/scripts/native-inputs.py
+    required: true
+  path:
+    description: The finished output, the same path the job uploads
+    required: true
+  variant:
+    description: "In a matrix job, `${{ toJSON(matrix) }}`: every leg gets its own key"
+    required: false
+    default: ''
+  lookup-only:
+    description: "'true' to only tell whether the output is cached, without restoring or saving it"
+    required: false
+    default: 'false'
+  key:
+    description: The key a lookup job computed for this output in the same run
+    required: false
+    default: ''
+
+outputs:
+  hit:
+    description: "'true' when the output is cached (and, unless lookup-only, restored), so the build can be skipped"
+    value: ${{ steps.cache.outputs.cache-hit || steps.lookup.outputs.cache-hit }}
+  key:
+    description: The key, for the job that restores the output after a lookup
+    value: ${{ inputs.key || steps.key.outputs.key }}
+
+runs:
+  using: composite
+  steps:
+    - name: Inputs
+      id: key
+      if: env.NATIVE_CACHE_FRESH != 'true' && inputs.key == ''
+      shell: bash
+      env:
+        ARTIFACT: ${{ inputs.artifact }}
+        VARIANT: ${{ inputs.variant }}
+      # --verbose logs the inputs it hashed, to see why a job missed. Windows runners name it
+      # `python`. The week bounds how old a reused output can be: crates.io versions and toolchains
+      # float, and each week's first run of an entry rebuilds it.
+      run: |
+        py=python3
+        "$py" -c '' 2> /dev/null || py=python
+        hash=$("$py" tools/scripts/native-inputs.py --verbose --job "$GITHUB_JOB" --variant "$VARIANT" "$ARTIFACT")
+        leg=""
+        if [ -n "$VARIANT" ] && [ "$VARIANT" != null ]; then
+          leg=-$(printf '%s' "$VARIANT" | git hash-object --stdin | cut -c1-12)
+        fi
+        week=$(date -u +%G-W%V)
+        # bump the version to drop every entry
+        echo "key=native-v1-$week-$ARTIFACT$leg-$hash" >> "$GITHUB_OUTPUT"
+
+    # Exact keys only: an output built from other inputs is never the right one.
+    - name: Restore
+      id: cache
+      if: env.NATIVE_CACHE_FRESH != 'true' && inputs.lookup-only != 'true'
+      uses: actions/cache@v4
+      with:
+        path: ${{ inputs.path }}
+        key: ${{ inputs.key || steps.key.outputs.key }}
+
+    - name: Look up
+      id: lookup
+      if: env.NATIVE_CACHE_FRESH != 'true' && inputs.lookup-only == 'true'
+      uses: actions/cache/restore@v4
+      with:
+        path: ${{ inputs.path }}
+        key: ${{ steps.key.outputs.key }}
+        lookup-only: true

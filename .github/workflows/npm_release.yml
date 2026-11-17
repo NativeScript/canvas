@@ -7,9 +7,12 @@
 # Every native artifact build-native.yml produces (Android AARs, iOS/visionOS/tvOS
 # xcframeworks, Windows and Linux Node-API modules) is built from the tag and placed before
 # packaging, replacing any committed copy, so npm ships what CI built from the tagged
-# sources. The committed binaries are only what local development uses; the xcframeworks
-# are not committed at all. canvas-polyfill's async-release.aar is the one native artifact
-# that still ships as committed.
+# sources. `fresh: true` skips the cached outputs that pull requests and master reuse, which
+# keep the crates.io versions and toolchains of whenever they were built (Skia's prebuilt
+# libraries still restore through skia-cache, as before), and a reused native_run_id must be
+# an earlier run of this workflow on the same tag. The committed
+# binaries are only what local development uses; the xcframeworks are not committed at all.
+# canvas-polyfill's async-release.aar is the one native artifact that still ships as committed.
 #
 # Running on the tag also keeps the build's caches safe: a run can restore master's cache
 # entries but saves only into its own ref's scope, so nothing a release executes can
@@ -44,7 +47,7 @@ on:
   workflow_dispatch:
     inputs:
       native_run_id:
-        description: 'Reuse native artifacts from this earlier run of the same tag instead of rebuilding'
+        description: 'Reuse native artifacts from this earlier npm Release run of the same tag instead of rebuilding (checked)'
         required: false
         default: ''
 
@@ -83,6 +86,8 @@ jobs:
     needs: [version]
     if: inputs.native_run_id == ''
     uses: ./.github/workflows/build-native.yml
+    with:
+      fresh: true
 
   publish:
     runs-on: ubuntu-latest
@@ -109,6 +114,23 @@ jobs:
           corepack enable npm
           corepack install -g npm@11.5.1
           test "$(npm --version)" = "11.5.1"
+
+      # Master's Canvas Native runs upload artifacts under the same names, but theirs can be
+      # cached outputs of any age, so only an npm Release run of this tag at this commit may stand
+      # in. Its conclusion is not checked: the usual reason to reuse a run is that its publish
+      # failed after the native builds succeeded, and place-native-artifacts.sh fails on any
+      # artifact that is missing.
+      - name: Check native_run_id
+        if: inputs.native_run_id != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ inputs.native_run_id }}
+        run: |
+          run=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID" --jq '.path + " " + .head_branch + " " + .head_sha')
+          if [ "$run" != ".github/workflows/npm_release.yml $GITHUB_REF_NAME $GITHUB_SHA" ]; then
+            echo "::error::native_run_id $RUN_ID is a run of '$run', not of npm_release.yml on $GITHUB_REF_NAME at $GITHUB_SHA"
+            exit 1
+          fi
 
       - name: Download native artifacts
         uses: actions/download-artifact@v4

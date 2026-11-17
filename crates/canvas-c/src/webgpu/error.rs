@@ -2,7 +2,6 @@ use std::error::Error;
 use std::ffi::CString;
 use std::fmt::Display;
 use std::os::raw::c_char;
-use std::sync::Arc;
 use std::fmt::Write;
 
 fn format_error(err: &(impl Error + 'static)) -> String {

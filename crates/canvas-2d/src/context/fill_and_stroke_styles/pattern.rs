@@ -89,10 +89,6 @@ impl Pattern {
         self.matrix.pre_concat(&matrix);
     }
 
-    pub(crate) fn matrix_mut(&mut self) -> &mut skia_safe::Matrix {
-        &mut self.matrix
-    }
-
     pub fn image(&self) -> &Image {
         &self.image
     }

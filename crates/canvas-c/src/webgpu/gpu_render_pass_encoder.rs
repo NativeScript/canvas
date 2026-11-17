@@ -2,7 +2,6 @@ use std::borrow::Cow;
 use std::sync::Arc;
 use std::{ffi::CStr, os::raw::c_char};
 
-use crate::webgpu::error::handle_error;
 use crate::webgpu::prelude::label_to_ptr;
 
 use super::{
@@ -13,8 +12,10 @@ use super::{
 
 pub struct CanvasGPURenderPassEncoder {
     pub(crate) label: Option<Cow<'static, str>>,
+    #[allow(dead_code)]
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
     pub(crate) pass: parking_lot::Mutex<Option<wgpu_core::command::RenderPass>>,
+    #[allow(dead_code)]
     pub(crate) error_sink: super::gpu_device::ErrorSink,
 }
 

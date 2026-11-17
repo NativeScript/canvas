@@ -5,8 +5,8 @@ use std::ptr::NonNull;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::OnceLock;
 
-use objc2::ffi::BOOL;
-use objc2::{class, msg_send, msg_send_id, rc::Id, Encode, Encoding};
+use objc2::rc::{Allocated, Retained};
+use objc2::{class, msg_send, Encode, Encoding};
 use objc2_foundation::{NSObject, NSUInteger};
 
 use crate::context_attributes::ContextAttributes;
@@ -66,6 +66,7 @@ pub(crate) struct GLContextInner {
 #[derive(Debug, Clone)]
 pub struct GLContextRaw {
     context: Option<EAGLContext>,
+    #[allow(dead_code)]
     sharegroup: EAGLSharegroup,
 }
 
@@ -115,15 +116,15 @@ unsafe impl Encode for EAGLRenderingAPI {
 }
 
 #[derive(Clone, Debug)]
-pub(crate) struct EAGLSharegroup(Id<NSObject>);
+pub(crate) struct EAGLSharegroup(Retained<NSObject>);
 
 impl EAGLSharegroup {
     pub fn new() -> Self {
         unsafe {
             let cls = class!(EAGLSharegroup);
-            let sharegroup = msg_send_id![cls, alloc];
-            let sharegroup: Id<NSObject> =
-                msg_send_id![sharegroup, initWithAPI: EAGLRenderingAPI::GLES3];
+            let sharegroup: Allocated<NSObject> = msg_send![cls, alloc];
+            let sharegroup: Retained<NSObject> =
+                msg_send![sharegroup, initWithAPI: EAGLRenderingAPI::GLES3];
 
             Self(sharegroup)
         }
@@ -132,9 +133,9 @@ impl EAGLSharegroup {
     pub fn legacy() -> Self {
         unsafe {
             let cls = class!(EAGLSharegroup);
-            let sharegroup = msg_send_id![cls, alloc];
-            let sharegroup: Id<NSObject> =
-                msg_send_id![sharegroup, initWithAPI: EAGLRenderingAPI::GLES2];
+            let sharegroup: Allocated<NSObject> = msg_send![cls, alloc];
+            let sharegroup: Retained<NSObject> =
+                msg_send![sharegroup, initWithAPI: EAGLRenderingAPI::GLES2];
 
             Self(sharegroup)
         }
@@ -148,19 +149,9 @@ impl Default for EAGLSharegroup {
 }
 
 #[derive(Clone, Debug)]
-pub(crate) struct EAGLContext(Id<NSObject>);
+pub(crate) struct EAGLContext(Retained<NSObject>);
 
 impl EAGLContext {
-    pub fn new_with_api(api: EAGLRenderingAPI) -> Option<Self> {
-        let context = unsafe {
-            let cls = class!(EAGLContext);
-            let context = msg_send_id![cls, alloc];
-            let context: Option<Id<NSObject>> = msg_send_id![context, initWithAPI: api];
-            context.map(EAGLContext)
-        };
-        invalidate_context_bindings();
-        context
-    }
 
     pub fn new_with_api_sharegroup(
         api: EAGLRenderingAPI,
@@ -168,9 +159,9 @@ impl EAGLContext {
     ) -> Option<Self> {
         let context = unsafe {
             let cls = class!(EAGLContext);
-            let context = msg_send_id![cls, alloc];
-            let context: Option<Id<NSObject>> =
-                msg_send_id![context, initWithAPI: api, sharegroup: &*sharegroup.0];
+            let context: Allocated<NSObject> = msg_send![cls, alloc];
+            let context: Option<Retained<NSObject>> =
+                msg_send![context, initWithAPI: api, sharegroup: &*sharegroup.0];
             context.map(EAGLContext)
         };
         invalidate_context_bindings();
@@ -178,7 +169,7 @@ impl EAGLContext {
     }
 
     fn raw_id(&self) -> usize {
-        Id::as_ptr(&self.0) as usize
+        Retained::as_ptr(&self.0) as usize
     }
 
     /// Binds `context` on the calling thread, skipping the call when it is already
@@ -192,18 +183,14 @@ impl EAGLContext {
                 if binding_is_current(binding) {
                     return true;
                 }
-                let bound: bool = unsafe {
-                    let instance: BOOL = msg_send![cls, setCurrentContext: &*ctx.0];
-                    instance.into()
-                };
+                let bound: bool = unsafe { msg_send![cls, setCurrentContext: &*ctx.0] };
                 set_current_binding(if bound { binding } else { UNBOUND });
                 bound
             }
             None => {
                 let unbound: bool = unsafe {
                     let nil: *mut NSObject = std::ptr::null_mut();
-                    let instance: BOOL = msg_send![cls, setCurrentContext: nil];
-                    instance.into()
+                    msg_send![cls, setCurrentContext: nil]
                 };
                 if unbound {
                     forget_current_binding();
@@ -213,23 +200,14 @@ impl EAGLContext {
         }
     }
 
-    pub fn get_current_context() -> Option<Self> {
-        unsafe {
-            let cls = class!(EAGLContext);
-            let context: Option<Id<NSObject>> = msg_send_id![cls, currentContext];
-
-            context.map(EAGLContext)
-        }
-    }
-
     pub fn remove_if_current(&self) -> bool {
         unsafe {
             let cls = class!(EAGLContext);
-            let current: Option<Id<NSObject>> = msg_send_id![cls, currentContext];
+            let current: Option<Retained<NSObject>> = msg_send![cls, currentContext];
 
             match current {
                 Some(current) => {
-                    let is_equal: bool = unsafe { msg_send![&current, isEqual: &*self.0] };
+                    let is_equal: bool = msg_send![&current, isEqual: &*self.0];
                     if is_equal {
                         return Self::set_current_context(None);
                     }
@@ -242,17 +220,15 @@ impl EAGLContext {
 
     pub fn present_renderbuffer(&self) -> bool {
         // GL_RENDERBUFFER
-        let result: BOOL = unsafe { msg_send![&self.0, presentRenderbuffer: 0x8d41 as NSUInteger] };
-        result.into()
+        unsafe { msg_send![&self.0, presentRenderbuffer: 0x8d41 as NSUInteger] }
     }
 
     /// Stores the bound renderbuffer in `layer` (a `CAEAGLLayer`), at the layer's size in pixels.
     /// This sets the layer's `contents`, so see [`change_view_layer`].
     pub fn renderbuffer_storage_from_drawable(&self, layer: &NSObject) -> bool {
-        let result: BOOL = change_view_layer(|| unsafe {
+        change_view_layer(|| unsafe {
             msg_send![&self.0, renderbufferStorage: 0x8d41 as NSUInteger, fromDrawable: layer]
-        });
-        result.into()
+        })
     }
 }
 
@@ -299,7 +275,7 @@ fn bound(binding: u32) -> u32 {
 /// it needs the main thread.
 #[derive(Debug, Default)]
 struct Drawable {
-    layer: Option<Id<NSObject>>,
+    layer: Option<Retained<NSObject>>,
     framebuffer: u32,
     color: u32,
     /// Packed depth and stencil, attached as either or both.
@@ -314,7 +290,7 @@ struct Drawable {
 }
 
 impl Drawable {
-    fn new(layer: Option<Id<NSObject>>, attrs: &ContextAttributes) -> Self {
+    fn new(layer: Option<Retained<NSObject>>, attrs: &ContextAttributes) -> Self {
         let mut drawable = Drawable {
             layer,
             depth: attrs.get_depth(),
@@ -527,7 +503,7 @@ impl GLContext {
 
     /// Moves the drawable to another `CAEAGLLayer`.
     pub fn set_surface(&mut self, layer: NonNull<c_void>) -> bool {
-        let Some(layer) = (unsafe { Id::<NSObject>::retain(layer.as_ptr() as _) }) else {
+        let Some(layer) = (unsafe { Retained::<NSObject>::retain(layer.as_ptr() as _) }) else {
             return false;
         };
         let Some(context) = self.0.context.clone() else {
@@ -563,7 +539,7 @@ impl GLContext {
         layer: NonNull<c_void>,
         context: &GLContext,
     ) -> Option<Self> {
-        let layer = unsafe { Id::<NSObject>::retain(layer.as_ptr() as _) }?;
+        let layer = unsafe { Retained::<NSObject>::retain(layer.as_ptr() as _) }?;
         GLContext::create(context_attrs, Some(layer), 0, 0, Some(context))
     }
 
@@ -572,14 +548,14 @@ impl GLContext {
         context_attrs: &mut ContextAttributes,
         layer: NonNull<c_void>,
     ) -> Option<Self> {
-        let layer = unsafe { Id::<NSObject>::retain(layer.as_ptr() as _) }?;
+        let layer = unsafe { Retained::<NSObject>::retain(layer.as_ptr() as _) }?;
         GLContext::create(context_attrs, Some(layer), 0, 0, None)
     }
 
     /// Makes the context current on the calling thread, with its drawable bound.
     fn create(
         context_attrs: &mut ContextAttributes,
-        layer: Option<Id<NSObject>>,
+        layer: Option<Retained<NSObject>>,
         width: i32,
         height: i32,
         shared_context: Option<&GLContext>,
@@ -639,10 +615,6 @@ impl GLContext {
         shared_context: &GLContext,
     ) -> Option<GLContext> {
         GLContext::create(context_attrs, None, width, height, Some(shared_context))
-    }
-
-    fn has_extension(extensions: &str, name: &str) -> bool {
-        !extensions.split(' ').into_iter().any(|s| s == name)
     }
 
     pub fn has_gl2support() -> bool {

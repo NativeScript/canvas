@@ -12,6 +12,7 @@ use canvas_core::gpu::gl::GLContext;
 use canvas_webgl::prelude::WebGLVersion;
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_void};
+#[cfg(not(any(target_os = "linux", target_os = "windows")))]
 use std::ptr::NonNull;
 use std::cell::UnsafeCell;
 use std::sync::atomic::{AtomicBool, AtomicU32, AtomicUsize, Ordering};

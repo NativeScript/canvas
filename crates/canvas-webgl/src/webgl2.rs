@@ -1420,7 +1420,7 @@ pub fn canvas_native_webgl2_tex_image3d_asset(
 
     let dimensions = asset.dimensions();
 
-    if let Some(mut bytes) = bytes {
+    if let Some(bytes) = bytes {
         state.make_current();
         unsafe {
             if state.get_flip_y() {
@@ -1544,7 +1544,7 @@ pub fn canvas_native_webgl2_tex_image3d_canvas2d(
         return;
     }
 
-    if let Some(mut bytes) = bytes {
+    if let Some(bytes) = bytes {
         let dimensions = asset.dimensions();
         state.make_current();
         unsafe {
@@ -1885,7 +1885,7 @@ pub fn canvas_native_webgl2_tex_sub_image3d_asset(
         return;
     }
 
-    if let Some(mut bytes) = bytes {
+    if let Some(bytes) = bytes {
         state.make_current();
         let dimensions = asset.dimensions();
         unsafe {
@@ -2404,7 +2404,7 @@ pub fn canvas_native_webgl2_tex_image2d_asset(
         }
     }
 
-    if let Some(mut bytes) = bytes {
+    if let Some(bytes) = bytes {
         let dimension = asset.dimensions();
         state.make_current();
         unsafe {
@@ -2508,16 +2508,16 @@ pub fn canvas_native_webgl2_tex_image2d_offset(
 
 // assuming all data passed here is rgba
 pub fn canvas_native_webgl2_tex_image2d_image_asset(
-    target: i32,
-    level: i32,
-    internalformat: i32,
-    width: u32,
-    height: u32,
-    border: i32,
-    format: i32,
-    type_: i32,
-    src_data: &[u8],
-    state: &WebGLState,
+    _target: i32,
+    _level: i32,
+    _internalformat: i32,
+    _width: u32,
+    _height: u32,
+    _border: i32,
+    _format: i32,
+    _type_: i32,
+    _src_data: &[u8],
+    _state: &WebGLState,
 ) {
 }
 

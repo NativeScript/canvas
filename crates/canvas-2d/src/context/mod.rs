@@ -23,7 +23,6 @@ use text_styles::{
 use crate::context::drawing_text::typography::Font;
 
 use bitflags::bitflags;
-use bytes::Buf;
 use canvas_core::context_attributes::ColorSpace;
 use skia_safe::gpu::RecordingContext;
 
@@ -90,6 +89,7 @@ pub struct State {
     pub(crate) letter_spacing_value: Arc<str>,
     pub(crate) letter_spacing: f32,
     pub(crate) matrix: skia_safe::Matrix,
+    #[allow(dead_code)]
     pub(crate) clip: Option<Path>,
     /// Device space; re-applied at picture boundaries.
     pub(crate) clips: Vec<recording::DeviceClip>,
@@ -486,7 +486,7 @@ impl Context {
         self.surface_state = self.surface_state | SurfaceState::Pending;
     }
 
-    pub fn set_bounds(&mut self, bounds: skia_safe::Rect) {}
+    pub fn set_bounds(&mut self, _bounds: skia_safe::Rect) {}
 
     #[inline]
     pub fn update_bounds(&mut self, bounds: skia_safe::Rect) {

@@ -3,7 +3,6 @@ use crate::context::text_styles::text_direction::TextDirection;
 use crate::context::{Context, State, SurfaceData, SurfaceEngine, SurfaceState};
 use canvas_core::context_attributes::ColorSpace;
 use canvas_core::gpu::metal::MetalContext;
-use foreign_types_shared::ForeignTypeRef;
 use objc2::rc::Retained;
 use objc2_metal::MTLTexture;
 use objc2_quartz_core::CAMetalDrawable;

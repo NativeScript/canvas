@@ -7,6 +7,7 @@ use std::cell::{Ref, RefCell, RefMut};
 use std::collections::HashMap;
 use std::ffi::CString;
 use std::os::raw::c_void;
+#[cfg(not(any(target_os = "linux", target_os = "windows")))]
 use std::ptr::NonNull;
 use std::rc::Rc;
 

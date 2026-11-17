@@ -7,25 +7,14 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-#![crate_name = "io_surface"]
-#![crate_type = "rlib"]
-
 // Rust bindings to the IOSurface framework on macOS.
 
 // use cgl::{kCGLNoError, CGLErrorString, CGLGetCurrentContext, CGLTexImageIOSurface2D, GLenum};
 use core::ffi::{c_int, c_void};
-use std::os::raw::c_uint;
 use core_foundation::base::{mach_port_t, CFRelease, CFRetain, CFType, CFTypeID, CFTypeRef, TCFType};
 use core_foundation::dictionary::{CFDictionary, CFDictionaryRef};
 use core_foundation::string::{CFString, CFStringRef};
-type GLenum = c_uint;
 use std::slice;
-
-const BGRA: GLenum = 0x80E1;
-const RGBA: GLenum = 0x1908;
-const RGB: GLenum = 0x1907;
-const TEXTURE_RECTANGLE_ARB: GLenum = 0x84F5;
-const UNSIGNED_INT_8_8_8_8_REV: GLenum = 0x8367;
 
 #[allow(non_snake_case, non_upper_case_globals)]
 pub mod IOSurfaceLockOptions {
@@ -162,7 +151,7 @@ impl IOSurface {
     }
 }
 
-#[cfg_attr(feature = "link", link(name = "IOSurface", kind = "framework"))]
+#[link(name = "IOSurface", kind = "framework")]
 extern "C" {
     pub static kIOSurfaceAllocSize: CFStringRef;
     pub static kIOSurfaceWidth: CFStringRef;

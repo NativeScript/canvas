@@ -298,10 +298,4 @@ impl Context {
         });
     }
 
-    pub(crate) fn draw_image_with_points(&mut self, image: &Image, x: f32, y: f32) {
-        self.draw_image_with_rect(
-            image,
-            Rect::from_xywh(x, y, image.width() as f32, image.height() as f32),
-        )
-    }
 }

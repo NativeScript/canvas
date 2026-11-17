@@ -1,6 +1,6 @@
 use crate::buffers::U8Buffer;
 use base64::Engine;
-use bytes::{Buf, Bytes};
+use bytes::Bytes;
 use std::ffi::{CStr, CString};
 use std::io::Read;
 use std::os::raw::c_char;

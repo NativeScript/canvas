@@ -19,7 +19,7 @@ on:
   workflow_dispatch:
     inputs:
       fresh:
-        description: Build every native output instead of restoring it (to check a cached output; it saves nothing)
+        description: Build every native output instead of restoring it, to check a cached one. Saves no cache entry; publishes the prerelease as any dispatch does
         type: boolean
         default: false
 
@@ -28,9 +28,10 @@ env:
   NATIVE_CACHE_FRESH: ${{ inputs.fresh }}
 
 # A pull request push cancels the run it supersedes. On master a running build finishes (it
-# saves the caches pull requests read) and only the newest waiting push runs after it.
+# saves the caches pull requests read) and only the newest waiting push runs after it. A `fresh`
+# run, which saves nothing, waits in a group of its own, so it never replaces a waiting push.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}${{ inputs.fresh && '-fresh' || '' }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:

@@ -84,3 +84,13 @@ runs:
       with:
         path: ${{ inputs.path }}
         key: ${{ steps.key.outputs.key }}
+
+    # The last job of an output built by several jobs runs only after its first job missed. A hit
+    # here means the parts were built for nothing: another run saved the entry meanwhile, or, when
+    # it repeats, the first job's runner cannot restore what this one saves.
+    - name: Note an entry the first job missed
+      if: inputs.key != '' && steps.cache.outputs.cache-hit == 'true'
+      shell: bash
+      env:
+        KEY: ${{ inputs.key }}
+      run: echo "::warning title=native-cache::restored $KEY, which the first job of this output missed"

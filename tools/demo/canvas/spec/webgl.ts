@@ -3,7 +3,7 @@
  * lifecycle, and end-to-end draws whose pixels are read back.
  */
 
-import { suite, test, ok, equal, notEqual, closeTo, oneOf, arrayEqual, throws, makeCanvas } from './harness';
+import { suite, test, ok, equal, notEqual, closeTo, oneOf, arrayEqual, throws, makeCanvas, make2D } from './harness';
 
 function makeGL(version: 1 | 2, options?: any) {
 	const canvas = makeCanvas(64, 64);
@@ -550,6 +550,36 @@ function registerCommon(version: 1 | 2) {
 			gl.getError();
 			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, data);
 			equal(gl.getError(), gl.NO_ERROR, 'texImage2D(ImageData) raised an error');
+		});
+
+		test('texSubImage2D from a 2D canvas uploads what the canvas showed at the call', () => {
+			// Text renderers reuse one canvas, redrawing it right after each upload.
+			const { gl } = makeGL(version);
+			const { canvas: source, ctx } = make2D(4, 4);
+			const upload = (color: string) => {
+				ctx.fillStyle = color;
+				ctx.fillRect(0, 0, 4, 4);
+				const texture = gl.createTexture();
+				gl.bindTexture(gl.TEXTURE_2D, texture);
+				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 4, 4, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+				gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, gl.RGBA, gl.UNSIGNED_BYTE, source);
+				return texture;
+			};
+			const red = upload('#ff0000');
+			const blue = upload('#0000ff');
+			equal(gl.getError(), gl.NO_ERROR, 'texSubImage2D(canvas) raised an error');
+
+			const framebuffer = gl.createFramebuffer();
+			gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+			const pixelOf = (texture: any) => {
+				gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+				const pixels = new Uint8Array(4);
+				gl.readPixels(1, 1, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+				return pixels;
+			};
+			arrayEqual(pixelOf(red), [255, 0, 0, 255], 'the first upload lost its drawing');
+			arrayEqual(pixelOf(blue), [0, 0, 255, 255], 'the second upload lost its drawing');
+			gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 		});
 
 		test('a framebuffer round trips its attachment', () => {

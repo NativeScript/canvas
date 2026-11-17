@@ -1195,9 +1195,7 @@ pub extern "C" fn canvas_native_webgl2_tex_image3d_canvas2d(
 
     let (width, height) = canvas.context.dimensions();
 
-    let mut bytes = vec![0u8; (width * height * 4.) as usize];
-
-    canvas.read_pixels_into(bytes.as_mut_slice(), (0, 0), (width as i32, height as i32));
+    let pixels = canvas.read_pixels_later((0, 0), (width as i32, height as i32));
 
     // todo handle pre-multipied
     // let premultiply = state.get_inner().get_premultiplied_alpha();
@@ -1205,6 +1203,7 @@ pub extern "C" fn canvas_native_webgl2_tex_image3d_canvas2d(
     // let buf = source_ctx.read_pixels_with_alpha_premultiply(&snapshot, format as i32, premultiply);
 
     state.post(move |state| {
+        let bytes = pixels.wait();
         canvas_webgl::webgl2::canvas_native_webgl2_tex_image3d(
             target,
             level,
@@ -1486,9 +1485,7 @@ pub extern "C" fn canvas_native_webgl2_tex_sub_image3d_canvas2d(
 
     let (width, height) = canvas.context.dimensions();
 
-    let mut bytes = vec![0u8; (width * height * 4.) as usize];
-
-    canvas.read_pixels_into(bytes.as_mut_slice(), (0, 0), (width as i32, height as i32));
+    let pixels = canvas.read_pixels_later((0, 0), (width as i32, height as i32));
 
     // canvas.make_current();
     // let (width, height) = (canvas.context.width(), canvas.context.height());
@@ -1499,6 +1496,7 @@ pub extern "C" fn canvas_native_webgl2_tex_sub_image3d_canvas2d(
     // let buf = source_ctx.read_pixels_with_alpha_premultiply(&snapshot, format as i32, premultiply);
 
     state.post(move |state| {
+        let bytes = pixels.wait();
         canvas_webgl::webgl2::canvas_native_webgl2_tex_sub_image3d(
             target,
             level,
@@ -2134,15 +2132,10 @@ pub extern "C" fn canvas_native_webgl2_tex_image2d_canvas2d(
         return;
     }
 
-    let mut bytes = vec![0u8; (source_width * source_height * 4.) as usize];
+    let pixels = canvas.read_pixels_later((0, 0), (source_width as i32, source_height as i32));
 
-    canvas.read_pixels_into(
-        bytes.as_mut_slice(),
-        (0, 0),
-        (source_width as i32, source_height as i32),
-    );
-
-    state.sync(|state| {
+    state.post(move |state| {
+        let mut bytes = pixels.wait();
         state.make_current();
         if state.get_unpack_premultiply_alpha() {
             crate::webgl::canvas_source::premultiply_in_place(&mut bytes);

@@ -4094,12 +4094,10 @@ pub extern "C" fn canvas_native_webgl_tex_image2d_canvas2d(
 
     let (width, height) = canvas.context.dimensions();
 
-    let mut bytes = vec![0u8; (width * height * 4.) as usize];
-
-    canvas.read_pixels_into(bytes.as_mut_slice(), (0, 0), (width as i32, height as i32));
+    let pixels = canvas.read_pixels_later((0, 0), (width as i32, height as i32));
 
     state.post(move |state| {
-        let mut bytes = bytes;
+        let mut bytes = pixels.wait();
         if state.get_unpack_premultiply_alpha() {
             crate::webgl::canvas_source::premultiply_in_place(&mut bytes);
         }
@@ -4357,12 +4355,10 @@ pub extern "C" fn canvas_native_webgl_tex_sub_image2d_canvas2d(
 
     let (width, height) = canvas.context.dimensions();
 
-    let mut bytes = vec![0u8; (width * height * 4.) as usize];
-
-    canvas.read_pixels_into(bytes.as_mut_slice(), (0, 0), (width as i32, height as i32));
+    let pixels = canvas.read_pixels_later((0, 0), (width as i32, height as i32));
 
     state.post(move |state| {
-        let mut bytes = bytes;
+        let mut bytes = pixels.wait();
         if state.get_unpack_premultiply_alpha() {
             crate::webgl::canvas_source::premultiply_in_place(&mut bytes);
         }

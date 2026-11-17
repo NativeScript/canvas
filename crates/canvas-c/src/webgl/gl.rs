@@ -280,6 +280,9 @@ pub struct WebGLState {
     /// A present found the context lost (threaded only: an unthreaded one is asked directly).
     lost: AtomicBool,
     behind: crate::webgl::thread::Behind,
+    /// What the calling thread last set with pixelStorei (`UNPACK_*` bits below) and whether it
+    /// is WebGL 2, so uploads can be planned without waiting for a threaded context.
+    unpack: std::sync::atomic::AtomicU8,
     /// The XAML surface a threaded context presents into, as the UI thread holds it: that thread
     /// ends the last draw once the context moves on from it.
     #[cfg(target_os = "windows")]
@@ -471,7 +474,9 @@ pub extern "C" fn canvas_native_webgl_state_destroy(state: *mut WebGLState) {
 
 impl WebGLState {
     fn wrap(state: canvas_webgl::prelude::WebGLState) -> Self {
+        let webgl2 = matches!(state.get_webgl_version(), WebGLVersion::V2);
         Self {
+            unpack: std::sync::atomic::AtomicU8::new(if webgl2 { Self::WEBGL2 } else { 0 }),
             inner: UnsafeCell::new(state),
             refs: AtomicUsize::new(1),
             threaded: false,
@@ -486,6 +491,29 @@ impl WebGLState {
 }
 
 impl WebGLState {
+    const UNPACK_FLIP_Y: u8 = 1;
+    const UNPACK_PREMULTIPLY_ALPHA: u8 = 2;
+    const WEBGL2: u8 = 4;
+
+    fn mirror_pixel_storei(&self, pname: u32, param: i32) {
+        let bit = match pname {
+            canvas_webgl::prelude::WEBGL_UNPACK_FLIP_Y_WEBGL => Self::UNPACK_FLIP_Y,
+            canvas_webgl::prelude::WEBGL_UNPACK_PREMULTIPLY_ALPHA_WEBGL => Self::UNPACK_PREMULTIPLY_ALPHA,
+            _ => return,
+        };
+        if param == 1 {
+            self.unpack.fetch_or(bit, Ordering::AcqRel);
+        } else {
+            self.unpack.fetch_and(!bit, Ordering::AcqRel);
+        }
+    }
+
+    /// (`UNPACK_FLIP_Y_WEBGL`, `UNPACK_PREMULTIPLY_ALPHA_WEBGL`, WebGL 2) as the calling thread set them.
+    pub(crate) fn unpack_flags(&self) -> (bool, bool, bool) {
+        let bits = self.unpack.load(Ordering::Acquire);
+        (bits & Self::UNPACK_FLIP_Y != 0, bits & Self::UNPACK_PREMULTIPLY_ALPHA != 0, bits & Self::WEBGL2 != 0)
+    }
+
     #[cfg(target_os = "android")]
     pub fn new_with_view(
         view: *mut c_void,
@@ -3813,6 +3841,7 @@ pub extern "C" fn canvas_native_webgl_link_program(program: u32, state: *mut Web
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_pixel_storei(pname: u32, param: i32, state: *mut WebGLState) {
     let state = unsafe { &*state };
+    state.mirror_pixel_storei(pname, param);
     state.post(move |state| {
         canvas_webgl::webgl::canvas_native_webgl_pixel_storei(pname, param, state)
     })

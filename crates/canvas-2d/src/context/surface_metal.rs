@@ -464,9 +464,9 @@ impl Context {
     }
 
     /// Copies the canvas into `target` (an `MTLTexture` of its size and format) on its own queue,
-    /// then signals `event` (an `MTLEvent`) with `value`. It signals even when it cannot copy, so
-    /// a queue waiting on it never hangs.
-    pub fn copy_to_metal_texture(&mut self, target: *const c_void, event: *const c_void, value: u64) {
+    /// then signals `event` (an `MTLEvent`, may be null) with `value`; with `wait`, returns once the
+    /// GPU finished. It signals even when it cannot copy, so a queue waiting on it never hangs.
+    pub fn copy_to_metal_texture(&mut self, target: *const c_void, event: *const c_void, value: u64, wait: bool) {
         use objc2::runtime::ProtocolObject;
         use objc2_metal::{
             MTLBlitCommandEncoder, MTLCommandBuffer, MTLCommandEncoder, MTLCommandQueue, MTLEvent,
@@ -501,9 +501,14 @@ impl Context {
                 blit.endEncoding();
             }
         }
-        let event = unsafe { &*(event as *const ProtocolObject<dyn MTLEvent>) };
-        command_buffer.encodeSignalEvent_value(event, value);
+        if !event.is_null() {
+            let event = unsafe { &*(event as *const ProtocolObject<dyn MTLEvent>) };
+            command_buffer.encodeSignalEvent_value(event, value);
+        }
         command_buffer.commit();
+        if wait {
+            command_buffer.waitUntilCompleted();
+        }
     }
 
     pub(crate) fn acquire_drawable(context: &mut Context) {

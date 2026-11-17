@@ -109,16 +109,17 @@ unsafe fn copy_from(source: u32, width: i32, height: i32, upload: Upload) {
     gl_bindings::DeleteFramebuffers(1, &framebuffer);
 }
 
-/// Linux: the canvas draws itself into a texture of its GL context, which this context reads
-/// through an EGLImage once an EGL fence says it is written.
-#[cfg(target_os = "linux")]
+/// Linux/Android: the canvas draws itself into a texture of its GL context, which this context
+/// reads through an EGLImage once an EGL fence says it is written.
+#[cfg(any(target_os = "linux", target_os = "android"))]
 mod platform {
     use super::*;
 
     pub(super) const SUPPORTED: bool = true;
 
     pub(super) fn copy(canvas: &mut CanvasRenderingContext2D, state: &WebGLState, flip_y: bool, upload: Upload) -> bool {
-        if canvas.engine() != crate::c2d::Engine::GL {
+        // A threaded canvas's stand-in reports CPU; its real context answers below.
+        if !canvas.is_threaded() && canvas.engine() != crate::c2d::Engine::GL {
             return false;
         }
         let Some(shared) = canvas
@@ -496,6 +497,7 @@ mod platform {
 
 #[cfg(not(any(
     target_os = "linux",
+    target_os = "android",
     all(feature = "gl", feature = "metal", any(target_os = "ios", target_os = "tvos"), not(target_abi = "macabi"))
 )))]
 mod platform {

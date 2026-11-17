@@ -244,7 +244,7 @@ impl Context {
     /// Call after raw GL made behind Skia's back.
     /// The canvas, top row first (bottom row first with `flip_y`) and premultiplied, in a new
     /// texture another context on this EGL display can read once it waits on the share.
-    #[cfg(target_os = "linux")]
+    #[cfg(any(target_os = "linux", target_os = "android"))]
     pub fn share_gl_texture(&mut self, flip_y: bool) -> Option<canvas_core::gpu::gl::SharedTexture> {
         let gl = self.gl_context.as_ref()?;
         if !gl.make_current() {

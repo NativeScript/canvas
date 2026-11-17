@@ -1,5 +1,5 @@
 use std::cell::Cell;
-use std::ffi::CString;
+use std::ffi::{c_void, CString};
 use std::fmt::{Debug, Formatter};
 use std::num::NonZeroU32;
 use std::sync::Arc;
@@ -1256,5 +1256,170 @@ impl GLContext {
     pub fn get_surface_dimensions(&self) -> (i32, i32) {
         let lock = self.0.dimensions.read();
         (lock.width as i32, lock.height as i32)
+    }
+}
+
+/// A texture of one context made readable by the other contexts on the display: an EGLImage,
+/// plus a fence the reader waits on before sampling it.
+pub struct SharedTexture {
+    display: *mut c_void,
+    image: *mut c_void,
+    sync: *mut c_void,
+}
+
+unsafe impl Send for SharedTexture {}
+
+const EGL_EXTENSIONS: i32 = 0x3055;
+const EGL_NONE: i32 = 0x3038;
+const EGL_TRUE: i32 = 1;
+const EGL_GL_TEXTURE_2D_KHR: u32 = 0x30B1;
+const EGL_IMAGE_PRESERVED_KHR: i32 = 0x30D2;
+const EGL_SYNC_FENCE_KHR: u32 = 0x30F9;
+const EGL_SYNC_FLUSH_COMMANDS_BIT_KHR: i32 = 0x0001;
+const EGL_FOREVER_KHR: u64 = u64::MAX;
+
+extern "C" {
+    fn eglGetProcAddress(name: *const std::ffi::c_char) -> *const c_void;
+    fn eglGetCurrentDisplay() -> *mut c_void;
+    fn eglGetCurrentContext() -> *mut c_void;
+    fn eglQueryString(display: *mut c_void, name: i32) -> *const std::ffi::c_char;
+}
+
+struct ShareFns {
+    create_image: unsafe extern "C" fn(*mut c_void, *mut c_void, u32, *mut c_void, *const i32) -> *mut c_void,
+    destroy_image: unsafe extern "C" fn(*mut c_void, *mut c_void) -> u32,
+    target_texture: unsafe extern "C" fn(u32, *mut c_void),
+    /// EGL_KHR_fence_sync: create, destroy, client wait.
+    fence: Option<(
+        unsafe extern "C" fn(*mut c_void, u32, *const i32) -> *mut c_void,
+        unsafe extern "C" fn(*mut c_void, *mut c_void) -> u32,
+        unsafe extern "C" fn(*mut c_void, *mut c_void, i32, u64) -> i32,
+    )>,
+    /// EGL_KHR_wait_sync: waits on the GPU instead of the CPU.
+    wait_sync: Option<unsafe extern "C" fn(*mut c_void, *mut c_void, i32) -> i32>,
+}
+
+fn share_fns() -> Option<&'static ShareFns> {
+    static FNS: OnceLock<Option<ShareFns>> = OnceLock::new();
+    FNS.get_or_init(|| unsafe {
+        let display = eglGetCurrentDisplay();
+        if display.is_null() {
+            return None;
+        }
+        let extensions = eglQueryString(display, EGL_EXTENSIONS);
+        if extensions.is_null() {
+            return None;
+        }
+        let extensions = std::ffi::CStr::from_ptr(extensions).to_string_lossy();
+        let has = |name: &str| extensions.split(' ').any(|e| e == name);
+        if !has("EGL_KHR_image_base") || !has("EGL_KHR_gl_texture_2D_image") {
+            return None;
+        }
+        let load = |name: &str| {
+            let name = CString::new(name).ok()?;
+            let f = eglGetProcAddress(name.as_ptr());
+            (!f.is_null()).then_some(f)
+        };
+        let fence = if has("EGL_KHR_fence_sync") {
+            match (load("eglCreateSyncKHR"), load("eglDestroySyncKHR"), load("eglClientWaitSyncKHR")) {
+                (Some(create), Some(destroy), Some(wait)) => Some((
+                    std::mem::transmute(create),
+                    std::mem::transmute(destroy),
+                    std::mem::transmute(wait),
+                )),
+                _ => None,
+            }
+        } else {
+            None
+        };
+        let wait_sync = if fence.is_some() && has("EGL_KHR_wait_sync") {
+            load("eglWaitSyncKHR").map(|f| std::mem::transmute(f))
+        } else {
+            None
+        };
+        Some(ShareFns {
+            create_image: std::mem::transmute(load("eglCreateImageKHR")?),
+            destroy_image: std::mem::transmute(load("eglDestroyImageKHR")?),
+            target_texture: std::mem::transmute(load("glEGLImageTargetTexture2DOES")?),
+            fence,
+            wait_sync,
+        })
+    })
+    .as_ref()
+}
+
+impl SharedTexture {
+    /// From a `TEXTURE_2D` of the current context, whose drawing so far it waits for.
+    pub fn new(texture: u32) -> Option<Self> {
+        let fns = share_fns()?;
+        unsafe {
+            let display = eglGetCurrentDisplay();
+            let context = eglGetCurrentContext();
+            if display.is_null() || context.is_null() {
+                return None;
+            }
+            // Without it the texture's contents are undefined once the image exists.
+            let attributes = [EGL_IMAGE_PRESERVED_KHR, EGL_TRUE, EGL_NONE];
+            let image = (fns.create_image)(
+                display,
+                context,
+                EGL_GL_TEXTURE_2D_KHR,
+                texture as usize as *mut c_void,
+                attributes.as_ptr(),
+            );
+            if image.is_null() {
+                return None;
+            }
+            let sync = match fns.fence {
+                Some((create, _, _)) => create(display, EGL_SYNC_FENCE_KHR, [EGL_NONE].as_ptr()),
+                None => std::ptr::null_mut(),
+            };
+            if sync.is_null() {
+                gl_bindings::Finish();
+            } else {
+                gl_bindings::Flush();
+            }
+            Some(Self { display, image, sync })
+        }
+    }
+
+    /// Makes `texture` of the current context an alias of the image, once the writer finished.
+    /// The active unit's `TEXTURE_2D` binding is kept.
+    pub fn attach(&self, texture: u32) -> bool {
+        let Some(fns) = share_fns() else {
+            return false;
+        };
+        unsafe {
+            if let (false, Some((_, _, client_wait))) = (self.sync.is_null(), fns.fence) {
+                match fns.wait_sync {
+                    Some(wait) => {
+                        wait(self.display, self.sync, 0);
+                    }
+                    None => {
+                        client_wait(self.display, self.sync, EGL_SYNC_FLUSH_COMMANDS_BIT_KHR, EGL_FOREVER_KHR);
+                    }
+                }
+            }
+            let mut bound = 0;
+            gl_bindings::GetIntegerv(gl_bindings::TEXTURE_BINDING_2D, &mut bound);
+            gl_bindings::BindTexture(gl_bindings::TEXTURE_2D, texture);
+            (fns.target_texture)(gl_bindings::TEXTURE_2D, self.image);
+            gl_bindings::BindTexture(gl_bindings::TEXTURE_2D, bound as u32);
+        }
+        true
+    }
+}
+
+impl Drop for SharedTexture {
+    fn drop(&mut self) {
+        let Some(fns) = share_fns() else {
+            return;
+        };
+        unsafe {
+            if let (false, Some((_, destroy, _))) = (self.sync.is_null(), fns.fence) {
+                destroy(self.display, self.sync);
+            }
+            (fns.destroy_image)(self.display, self.image);
+        }
     }
 }

@@ -160,6 +160,24 @@ pub extern "C" fn canvas_native_ios_present_drawable(context: i64) {
     canvas_2d::context::Context::present(context.get_context_mut());
 }
 
+/// Whether the canvas's view is in a window. A Metal 2D canvas off screen does not present.
+#[no_mangle]
+pub extern "C" fn canvas_native_ios_context_set_displayed(context: i64, displayed: bool) {
+    if context == 0 {
+        return;
+    }
+
+    let context = context as *mut CanvasRenderingContext2D;
+    let context = unsafe { &mut *context };
+
+    match context.render_target() {
+        Some(target) => target.post(move |real| {
+            canvas_2d::context::Context::set_displayed(real.get_context_mut(), displayed)
+        }),
+        None => canvas_2d::context::Context::set_displayed(context.get_context_mut(), displayed),
+    }
+}
+
 #[no_mangle]
 pub extern "C" fn canvas_native_ios_flush_2d_context_and_sync_cpu(context: i64) {
     if context == 0 {

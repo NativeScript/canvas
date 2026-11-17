@@ -498,6 +498,7 @@ public class NSCCanvas: UIView {
 			nativeContext = CanvasHelpers.create2DContextMetal(self, alpha, density, -16777216, density * 160, direction, cs)
 			engine = .GPU
 			mtlView.isHidden = false
+			updateDisplayed()
 		}
 		
 		
@@ -618,8 +619,7 @@ public class NSCCanvas: UIView {
 	// them when it is the only content on screen.
 	public override var canBecomeFocused: Bool { true }
 
-	public override func didMoveToWindow() {
-		super.didMoveToWindow()
+	private func focusOnWindow() {
 		if window != nil {
 			becomeFirstResponder()
 			setNeedsFocusUpdate()
@@ -997,6 +997,21 @@ public class NSCCanvas: UIView {
 	}
 	
 	
+	public override func didMoveToWindow() {
+		super.didMoveToWindow()
+		updateDisplayed()
+		#if os(tvOS)
+		focusOnWindow()
+		#endif
+	}
+
+	/// A Metal 2D canvas outside a window (e.g. one a library draws text into) does not present.
+	private func updateDisplayed() {
+		if is2D && engine == .GPU && nativeContext != 0 {
+			canvas_native_ios_context_set_displayed(nativeContext, window != nil)
+		}
+	}
+
 	public override func layoutSubviews() {
 		super.layoutSubviews()
 		let currentBoundsSize = bounds.size

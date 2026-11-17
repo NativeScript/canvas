@@ -121,6 +121,35 @@ export function registerLifecycleSpec() {
 				pixelEqual(ctx, 20, 4, [0, 255, 0, 255], 2, 'third frame lost');
 				unmount(canvas);
 			});
+
+			// Libraries draw text into canvases that are never shown, then read them every frame.
+			test(`a 2d canvas outside the view tree keeps its drawing and reads back without waiting for the display (${threaded ? 'threaded' : 'direct'})`, async () => {
+				const canvas = new Canvas();
+				canvas.width = 32;
+				canvas.height = 32;
+				const ctx = canvas.getContext('2d', { threaded }) as any;
+				ok(ctx, 'no 2d context');
+				ctx.fillStyle = '#ff0000';
+				ctx.fillRect(0, 0, 8, 8);
+				await frames(3);
+				ctx.fillStyle = '#0000ff';
+				ctx.fillRect(16, 16, 8, 8);
+				await frames(3);
+				pixelEqual(ctx, 4, 4, [255, 0, 0, 255], 2, 'first frame lost');
+				pixelEqual(ctx, 20, 20, [0, 0, 255, 255], 2, 'second frame lost');
+
+				const reads = 20;
+				const start = performance.now();
+				for (let i = 0; i < reads; i++) {
+					ctx.fillStyle = i % 2 ? '#00ff00' : '#ffff00';
+					ctx.fillRect(16, 0, 8, 8);
+					ctx.getImageData(20, 4, 1, 1);
+				}
+				const perRead = (performance.now() - start) / reads;
+				pixelEqual(ctx, 20, 4, [0, 255, 0, 255], 2, 'last draw lost');
+				// A display waits at least one vsync (8.3 ms at 120 Hz).
+				ok(perRead < 4, `each draw + readback took ${perRead.toFixed(2)} ms`);
+			});
 		}
 
 		for (const type of ['webgl', 'webgl2'] as const) {

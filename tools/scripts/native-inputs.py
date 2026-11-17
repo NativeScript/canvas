@@ -100,8 +100,8 @@ SCRIPTS = [
     (("canvas-android",), "build-android"),
     (("canvas-svg-android",), "build-svg-android copy-svg-android"),
     (("canvas-android", "canvas-svg-android"), "build-android-v8-stub"),
-    (("canvas-ios",), "build-ios canvas-build canvas-build-debug"),
-    (("canvas-svg-ios",), "canvas-svg-build canvas-svg-build-debug"),
+    (("canvas-ios",), "canvas-build"),
+    (("canvas-svg-ios",), "canvas-svg-build"),
     (("audio-context-ios",), "audio-context-build"),
     (V8, "download-v8"),
     (WINDOWS, "build-napi download-angle"),
@@ -109,7 +109,8 @@ SCRIPTS = [
     # Release steps, which run on what the builds produced, the apps' download of the release's
     # frameworks (each release bumps its version), and the maintainers' scripts no job runs.
     (NONE, "place-native-artifacts release-ios-binaries download-ios-frameworks release repack android-build "
-           "copy-android copy-android-libs busy-trace busy-bench build-headers"),
+           "copy-android copy-android-libs busy-trace busy-bench build-headers build-ios canvas-build-debug "
+           "canvas-svg-build-debug"),
 ]
 # The package dirs each build reads: its native sources and the platform dir it writes its output
 # to (with the package's app-side files there). On Apple, only the binary's dir: the apps' pods
@@ -137,7 +138,9 @@ PACKAGE_DIRS = {
 OWNERS = [
     # The npm packages' TypeScript, docs and manifests, the demos, the JS tooling, and the patches
     # maintainers apply by hand.
-    ("*.ts", NONE), ("*.md", NONE), ("*.json", NONE), ("apps", NONE), ("tools/demo", NONE),
+    *((f"*.{ext}", NONE) for ext in ("ts", "tsx", "js", "jsx", "mjs", "cjs", "css", "scss", "md", "json")),
+    # The repo's own GitHub settings (its workflows and actions are keyed by job).
+    (".github", NONE), ("apps", NONE), ("tools/demo", NONE),
     ("tools/assets", NONE), ("tools/schematics", NONE), ("tools/tests", NONE),
     ("tools/workspace-scripts.js", NONE), ("tools/patches", NONE), ("packages/.gitkeep", NONE),
     *((name, NONE) for name in (".editorconfig", ".eslintignore", ".gitignore", ".husky", ".npmrc", ".npsrc",
@@ -346,15 +349,20 @@ def steps_of(text, key_column, where):
 
 
 @functools.lru_cache(maxsize=None)
+def crate_dirs(rev):
+    """Every dir with a Cargo.toml at rev, from git alone, so outputs without crates need no cargo."""
+    return tuple(sorted(p[: -len("/Cargo.toml")] for p in tracked(rev) if p.endswith("/Cargo.toml")))
+
+
+@functools.lru_cache(maxsize=None)
 def crate_meta(rev):
     """(deps, names, crate dirs, requirements) at rev: each workspace member's path dependencies and
     each package name's dir, as `cargo metadata` reports them for the commit's manifests, every dir
     with a Cargo.toml, and what decides the versions cargo resolves for the workspace: each member's
     declared dependencies and rust-version."""
     tree = tracked(rev)
-    crate_dirs = tuple(sorted(p[: -len("/Cargo.toml")] for p in tree if p.endswith("/Cargo.toml")))
     root = sorted({"Cargo.toml", *(p for p in tree if RUST_ROOT.match(p))})
-    archive = git("archive", "--format=tar", rev, "--", *root, *crate_dirs, binary=True)
+    archive = git("archive", "--format=tar", rev, "--", *root, *crate_dirs(rev), binary=True)
     with tempfile.TemporaryDirectory() as tmp:
         with tarfile.open(fileobj=io.BytesIO(archive)) as tar:
             if hasattr(tarfile, "data_filter"):
@@ -389,15 +397,15 @@ def crate_meta(rev):
         declared = [[dep.get(k) for k in RESOLVES] for dep in package["dependencies"]]
         requirements[member] = {"rust_version": package.get("rust_version"), "features": package.get("features"),
                                 "dependencies": sorted(declared, key=json.dumps)}
-    return deps, names, crate_dirs, requirements
+    return deps, names, crate_dirs(rev), requirements
 
 
 def closure(rev, start):
     """The crate dirs an artifact building start reads: start, the members they reach by path, and
     every crate dir that is not a member. Nothing when start is empty."""
-    deps, _, crate_dirs, _ = crate_meta(rev)
     if not start:
         return set()
+    deps, _, dirs, _ = crate_meta(rev)
     seen, queue = set(), list(start)
     while queue:
         crate = queue.pop()
@@ -407,7 +415,7 @@ def closure(rev, start):
             raise Failure(f"{crate} is not a workspace member at {rev}")
         seen.add(crate)
         queue.extend(deps[crate])
-    return seen | {d for d in crate_dirs if d not in deps}
+    return seen | {d for d in dirs if d not in deps}
 
 
 def used_actions(rev, text, where):
@@ -433,7 +441,7 @@ def key_filter(artifact, rev):
     """Whether a tracked path is one of the artifact's inputs."""
     actions = set().union(*(used_actions(rev, block, f"{path}#{job_id}") for path, job_id, _, block in job_blocks(artifact, rev)))
     crates = closure(rev, ARTIFACTS[artifact].get("crates", []))
-    crate_dirs = sorted(crate_meta(rev)[2], key=len, reverse=True)
+    dirs = sorted(crate_dirs(rev), key=len, reverse=True)
 
     def wanted(p):
         if p.startswith(".github/workflows/"):
@@ -442,7 +450,7 @@ def key_filter(artifact, rev):
             return True
         if p.startswith(".github/actions/"):
             return False
-        crate = next((d for d in crate_dirs if p.startswith(d + "/")), None)
+        crate = next((d for d in dirs if p.startswith(d + "/")), None)
         if crate is not None:
             return crate in crates
         if RUST_ROOT.match(p):

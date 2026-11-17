@@ -18,6 +18,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 sys.dont_write_bytecode = True  # no __pycache__ beside the scripts
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -127,6 +128,7 @@ class Commands(unittest.TestCase):
         self.assertEqual(values, {"platform": ["ios", "tvos"]})
         self.assertEqual(check.commands(step("run: make ${{ matrix.platform }}-svg"), "t", values)[3], (["ios-svg", "tvos-svg"], []))
         self.assertRaises(ni.Failure, check.commands, step("run: make ${{ matrix.target }}"), "t", values)
+        self.assertRaises(ni.Failure, check.matrix_values, ["    strategy:", "      matrix:", "        platform: [ios,", "          tvos]"])
 
     def test_what_the_environment_can_change_in_the_makefile(self):
         self.assertEqual(check.make_environment("x:\n\t$(if $(CI),a.sh,b.sh)\n", []), ["CI"])
@@ -134,9 +136,11 @@ class Commands(unittest.TestCase):
         self.assertEqual(check.make_environment("x:\n\t./$(S)\n", ["S=a.sh"]), [])
         self.assertEqual(check.make_environment(
             "T ?= nightly\nf = echo $(1)\nx:\n\tcargo +$(T) $(call f,a) $(foreach v,a b,$(v)) $$(HOME)\n", []), [])
-        for makefile in ("t:\n\tS=x.sh cargo test\nx:\n\t./$(S)\n", "x:\n\t./$(S:.sh=-2.sh)\n", "x:\n\t./$S\n"):
+        for makefile in ("t:\n\tS=x.sh cargo test\nx:\n\t./$(S)\n", "x:\n\t./$(S:.sh=-2.sh)\n", "x:\n\t./$S\n",
+                         "S ?= a\nx:\n\tinclude $(S).mk\n"):
             with self.subTest(makefile=makefile):
                 self.assertEqual(check.make_environment(makefile, []), ["S"])
+        self.assertEqual(check.make_environment("x: S := a.sh\ndefine B\necho\nendef\nx:\n\t./$(S) $(B)\n", []), [])
 
 
 class Yaml(unittest.TestCase):
@@ -231,6 +235,20 @@ class Paths(unittest.TestCase):
                          {"tools/assets"})
         self.assertEqual(named(check.code("# tools/assets\necho x # tools/assets\nls ${#a}", "a.sh")), set())
         self.assertIsNone(check.code("see tools/assets", "packages/x/platforms/README.md"))
+
+    def test_a_comment_marker_in_a_string_is_text(self):
+        for text in ('g("x/*/y");\nread("tools/assets/icons/a.png");\n/* z */', 'f("a//b", read("tools/assets/icons/a.png"));'):
+            with self.subTest(text=text):
+                self.assertEqual(named(check.code(text, "a.rs")), {"tools/assets/icons/a.png"})
+        self.assertEqual(named(check.code('s.source = "#{root}/tools/assets/icons/a.png"', "a.podspec")), {"tools/assets/icons/a.png"})
+        self.assertEqual(check.code("#include tools/assets", "a.unknown"), "#include tools/assets")
+
+    def test_after_a_cd(self):
+        self.assertEqual(named("cd packages/canvas/src-native/android\ncp ../../platforms/ios/src/cpp/Caches.cpp x"),
+                         {"packages/canvas/src-native/android", "packages/canvas/platforms/ios/src/cpp/Caches.cpp"})
+
+    def test_the_words_made_of_a_matrix_value(self):
+        self.assertEqual(check.apart("cp a/b x/${{ matrix.n }}/y z"), ("cp a/b   z", "x/${{ matrix.n }}/y"))
 
     def test_a_matrix_value_is_one_segment_or_each_listed_value(self):
         self.assertEqual(named("cp packages/${{ matrix.name }}/platforms x"), {"packages/canvas/platforms"})
@@ -390,9 +408,17 @@ class Goals(unittest.TestCase):
         guarded = "      - name: Build Rust libraries\n        if: steps.native.outputs.hit != 'true'\n        run: make android"
         for name, new in (("unguarded", "      - name: Build Rust libraries\n        run: make android"),
                           ("|| guard", guarded.replace("!= 'true'", "!= 'true' || always()")),
+                          ("status function", guarded.replace("!= 'true'", "!= 'true' && !success()")),
                           ("run context", guarded.replace("run: make android", "run: echo ${{ github.sha }} && make android"))):
             with self.subTest(name=name):
                 self.assertRaises(ni.Failure, check.check_wiring, self.edit(ni.BUILD_NATIVE, guarded, new))
+        upload = "      - uses: actions/upload-artifact@v4\n        with:\n          name: canvas-android\n"
+        for name, new in (("renamed upload", upload.replace("name: canvas-android", "name: android")), ("no upload", "")):
+            with self.subTest(name=name):
+                self.assertRaises(ni.Failure, check.check_wiring, self.edit(
+                    ni.BUILD_NATIVE, upload + "          path: packages/canvas/platforms/android/canvas-release.aar\n"
+                    "          if-no-files-found: error\n", new and new + "          path: packages/canvas/platforms/android/"
+                    "canvas-release.aar\n          if-no-files-found: error\n"))
         self.assertRaises(ni.Failure, check.check_wiring,
                           self.edit(ni.BUILD_NATIVE, "          variant: ${{ toJSON(matrix) }}\n", ""))
         # GitHub evaluates expressions in an action's input descriptions and fails to load it.
@@ -422,6 +448,18 @@ class Goals(unittest.TestCase):
     def test_check_fails_a_build_file_naming_a_crate_outside_the_closure(self):
         rev = self.commit("packages/audio-context/src-native/android/extra.gradle", 'cargo { module = "../../../../crates/canvas-core" }\n')
         self.assertTrue(any("crates/canvas-core" in p for p in self.problems("audio-context-android", rev)))
+
+    def test_a_shared_job_counts_only_matrix_made_paths_against_its_legs(self):
+        build = "        run: ./tools/scripts/build-napi.sh ${{ matrix.target }} release-napi ${{ matrix.module.crate }}"
+        for line, flagged in (("cp -R packages/canvas-media/platforms/windows/x64/ x", True),
+                              ("cp -R packages/${{ matrix.module.name }}/platforms/windows/x64/ x", False)):
+            with self.subTest(line=line):
+                rev = self.edit(ni.BUILD_NATIVE, build, build.replace("run: ", f"run: {line} && "))
+                self.assertEqual(any("canvas-media/platforms/windows" in p for p in self.problems("canvas-svg-windows", rev)), flagged)
+
+    def test_an_output_without_crates_needs_no_cargo(self):
+        with mock.patch.object(ni, "crate_meta", side_effect=AssertionError("ran cargo")):
+            ni.key_inputs("audio-context-android", self.base)
 
 
 if __name__ == "__main__":

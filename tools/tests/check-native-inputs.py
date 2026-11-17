@@ -310,7 +310,7 @@ def matrix_values(strategy):
     start = next((i for i, l in enumerate(lines) if re.match(r"^\s+matrix:\s*$", l)), None)
     if start is None:
         return {}
-    values, key, column, item = {}, None, None, None
+    values, key, column = {}, None, None
     for line in lines[start + 1:]:
         if ni.indent(line) <= ni.indent(lines[start]):
             break
@@ -319,6 +319,8 @@ def matrix_values(strategy):
         if not m:
             continue
         dash, name, value = m.groups()
+        if value.startswith(("[", "{")) and not value.endswith(("]", "}")):
+            raise ni.Failure(f"write the matrix's `{name}:` on one line, so its values can be read: {line.strip()}")
         if ni.indent(line) == column and not dash:
             key = name
             if value.startswith("["):
@@ -337,16 +339,35 @@ def matrix_values(strategy):
     return values
 
 
+MATRIX = re.compile(r"\$\{\{\s*matrix\.([\w.-]+)\s*\}\}")
+MATRIX_WORD = re.compile(r"[^\s'\"]*\x03[\w.-]+\x03[^\s'\"]*")
+
+
+def marked(script):
+    """The script with each matrix value marked without the spaces `${{ }}` holds, so it stays in
+    its word."""
+    return MATRIX.sub(lambda m: f"\x03{m.group(1)}\x03", script)
+
+
+def unmarked(script):
+    return re.sub(r"\x03([\w.-]+)\x03", lambda m: "${{ matrix." + m.group(1) + " }}", script)
+
+
+def apart(script):
+    """(the script without its words that hold a matrix value, and those words, a line each)."""
+    script = marked(script)
+    return unmarked(MATRIX_WORD.sub(" ", script)), unmarked("\n".join(MATRIX_WORD.findall(script)))
+
+
 def each_leg(script, values):
     """The script with each word that holds a matrix value the strategy lists written once per value,
     so `make ${{ matrix.platform }}` reads as one make of every leg's target."""
-    # Marked without the spaces `${{ }}` holds, so each mark stays inside its word.
-    script = re.sub(r"\$\{\{\s*matrix\.([\w.-]+)\s*\}\}", lambda m: f"\x03{m.group(1)}\x03", script)
+    script = marked(script)
     for key, options in values.items():
         mark = f"\x03{key}\x03"
         script = re.sub(r"[^\s'\"]*" + re.escape(mark) + r"[^\s'\"]*",
                         lambda m: " ".join(m.group(0).replace(mark, v) for v in options), script)
-    return re.sub(r"\x03([\w.-]+)\x03", lambda m: "${{ matrix." + m.group(1) + " }}", script)
+    return unmarked(script)
 
 
 def commands(step, where, values=None):
@@ -465,11 +486,14 @@ def make_command(args, moved, command, where):
 
 def make_environment(makefile, variables):
     """The variables a Makefile's commands can take from the environment: those it reads but never
-    sets (a function's own, `$(call f,x)`'s $(1) and $(foreach x,...)'s x, are set), and its `?=`
-    defaults where they make a path."""
+    sets (a function's own, `$(call f,x)`'s $(1) and $(foreach x,...)'s x, are set, as are a
+    target's own, `t: X := y`, and `define X`), and its `?=` defaults where they make a path."""
     makefile = makefile.replace("$$", "")
     # Not a recipe's (tab-indented) shell assignment, which sets nothing for make.
-    set_here = set(re.findall(r"^(?!\t)[ ]*(?:export\s+|override\s+)?([A-Za-z_][\w.-]*)\s*(?::{1,3}=|\+=|\?=|=)", makefile, re.M))
+    assignment = r"(?:export[ \t]+|override[ \t]+)?([A-Za-z_][\w.-]*)[ \t]*(?::{1,3}=|\+=|\?=|=)"
+    set_here = set(re.findall(r"^(?!\t)[ ]*" + assignment, makefile, re.M))
+    set_here |= set(re.findall(r"^(?!\t)[^:=#\n]+:(?!=)[ \t]*" + assignment, makefile, re.M))
+    set_here |= set(re.findall(r"^define\s+([A-Za-z_][\w.-]*)", makefile, re.M))
     set_here |= {v.split("=", 1)[0] for v in variables} | set(re.findall(r"\$\(foreach\s+([\w.-]+)\s*,", makefile))
     defaults = set(re.findall(r"^\s*([A-Za-z_][\w.-]*)\s*\?=", makefile, re.M))
     found = []
@@ -479,7 +503,8 @@ def make_environment(makefile, variables):
         if name not in set_here and name not in ("MAKE", "MAKEFLAGS", "MAKECMDGOALS", "SHELL"):
             found.append(name)
     for name in defaults:
-        if re.search(rf"/\$[({{]{re.escape(name)}[)}}]|\$[({{]{re.escape(name)}[)}}]/", makefile):
+        # Next to a path's characters: `dir/$(X)`, `$(X)/lib.a`, `$(X).mk`, `$(X)-out`.
+        if re.search(rf"[\w./-]\$[({{]{re.escape(name)}[)}}]|\$[({{]{re.escape(name)}[)}}][\w./-]", makefile):
             found.append(name)
     return sorted(set(found))
 
@@ -521,8 +546,8 @@ def named_crates(rev, corpus):
 
 def discover(artifact, rev):
     """What the artifact's job is seen to read: ({path: where it was found}, all the text read, its
-    actions' steps as [(manifest, step)], and the steps' and job keys' text whose mentions count, as
-    [(where, text, its working-directory)])."""
+    actions' steps as [(manifest, step)], and the steps' and job keys' text whose paths count, as
+    [Read])."""
     blocks = ni.job_blocks(artifact, rev)
     tree = ni.tracked(rev)
     reads, corpus, todo, guesses, makes, actions, executed, wd_of = {}, [b for *_, b in blocks], [], [], [], [], set(), {}
@@ -538,7 +563,7 @@ def discover(artifact, rev):
             wd_of[p] = wd
             todo.append(p)
 
-    def take(step, step_where, scan, values=None):
+    def take(step, step_where, scan, values=None, job=None):
         wd, files, step_guesses, make = commands(step, step_where, values)
         text = "\n".join(step)
         corpus.append(text)
@@ -551,7 +576,7 @@ def discover(artifact, rev):
             executed.add(p)
             reach(p, step_where, wd)
         if scan:
-            texts_read.append((step_where, each_leg(text, values or {}), wd))
+            texts_read.append(Read(step_where, job, text, wd, values or {}))
             for p in mentions(text, [wd], tree):
                 reach(p, step_where, wd)
         guesses.extend(step_guesses)
@@ -568,11 +593,12 @@ def discover(artifact, rev):
                 raise ni.Failure(f"{where}: job-wide working-directory: {line.strip()}")
         # A matrix names every leg's values, each leg reads its own, and its key has them (variant).
         matrix = sections(outside, 4, {"strategy"})
-        texts_read.append((f"{where} job keys", each_leg("\n".join(l for l in outside if l not in matrix), matrix_values(matrix)), ""))
+        values = matrix_values(matrix)
+        texts_read.append(Read(f"{where} job keys", (path, job_id), "\n".join(l for l in outside if l not in matrix), "", values))
         for p in mentions("\n".join(outside), [], tree):
             reach(p, f"{where} job keys")
         for step in steps:
-            take(step, where, True, matrix_values(matrix))
+            take(step, where, True, values, (path, job_id))
     for p in sorted(tree):
         if own(p) and p.endswith((".sh", ".bash")):
             reach(p, f"a script in {artifact}'s dirs")
@@ -655,17 +681,28 @@ def check_reads(artifact, rev):
         if not moves_cache(step):
             for context in varying(expressions([], [step]), in_action=True):
                 problems.append(f"{artifact}: {manifest} uses {context}, which can change between runs that share a key")
-    # A matrix value stands for any leg's, so in a job whose legs build different artifacts (the
-    # variant keys each leg) a path made with one counts when no artifact of the job reads it.
-    entries, of_job = ni.tree_entries(rev), {}
-    for path, job_id in ni.jobs_of(artifact):
-        legs = [a for a in ni.ARTIFACTS if (path, job_id) in ni.jobs_of(a)]
-        filters = [ni.key_filter(a, rev) for a in legs] if len(legs) > 1 else [wanted]
-        of_job[f"{path}#{job_id}"] = lambda p, filters=filters: any(f(p) for f in filters)
-    for where, text, wd in texts_read:
-        problems += crossings(artifact, rev, of_job.get(where.split(" ")[0], wanted), where, wd,
-                              names(code(text, "step.yml"), wd, entries) - set(reads))
+    # A path made with a matrix value is one leg's: in a job whose legs build different artifacts
+    # (the variant keys each leg), it counts when no artifact of the job reads it. Any other path
+    # counts against this artifact's key.
+    entries, cache = ni.tree_entries(rev), MATCHED.setdefault(rev, {})
+    for read in texts_read:
+        legs = [a for a in ni.ARTIFACTS if read.job in ni.jobs_of(a)] if read.job else [artifact]
+        filters = [key_filter(a, rev) for a in legs]
+        plain, made = apart(read.text)
+        for text, wants in ((plain, wanted), (each_leg(made, read.values), lambda p: any(f(p) for f in filters))):
+            found = names(code(text, "step.yml"), read.wd, entries, cache) - set(reads)
+            problems += crossings(artifact, rev, wants, read.where, read.wd, found)
     return problems + scan(artifact, rev, wanted)
+
+
+# Text the job pass read: where it is, its job (path, id) if it is a job's, its working-directory,
+# and the values its job's matrix lists.
+Read = collections.namedtuple("Read", "where job text wd values")
+
+
+@functools.lru_cache(maxsize=None)
+def key_filter(artifact, rev):
+    return ni.key_filter(artifact, rev)
 
 
 def moves_cache(step):
@@ -698,14 +735,21 @@ def check_wiring(rev):
     jobs is restored with `restore-only: 'true'` by a first job that only uploads it on a hit and has
     the step's `hit` and `key` as outputs; its other jobs need that job and are skipped on its hit,
     and the last of them restores it as above, under the first job's key, and saves it. No job of an
-    artifact uses a value that changes from run to run where it could change what is built. And no
-    local action's metadata holds `${{ }}` but in its outputs' values: the runner evaluates it there
-    and cannot load the action."""
+    artifact uses a value that changes from run to run where it could change what is built, nor a
+    status function (success(), always(), cancelled(), failure()) in an `if:`, which would run a
+    step or job after one it follows failed. Each build-native.yml job that restores an output
+    uploads it once, under its artifact's name. And no local action's descriptions hold `${{ }}`:
+    the runner evaluates them and cannot load the action."""
     problems, artifacts_of, parsed = [], {}, {}
     for manifest in sorted(p for p in ni.tracked(rev) if re.match(r"^\.github/actions/[^/]+/action\.ya?ml$", p)):
+        column = None
         for line in ni.show(rev, manifest).split("\nruns:")[0].split("\n"):
-            if "${{" in line and not re.match(r"^\s*value:", line):
-                problems.append(f"{manifest}: an expression in an action's metadata stops the runner loading it: {line.strip()}")
+            if column is not None and line.strip() and ni.indent(line) <= column:
+                column = None
+            if re.match(r"^\s*description:", line):
+                column = ni.indent(line)
+            if column is not None and "${{" in line:
+                problems.append(f"{manifest}: an expression in an action's description stops the runner loading it: {line.strip()}")
     for artifact in ni.ARTIFACTS:
         for job in ni.jobs_of(artifact):
             artifacts_of.setdefault(job, []).append(artifact)
@@ -734,6 +778,10 @@ def check_wiring(rev):
             job_settings = settings + sections(outside, 4, {"runs-on", "env", "defaults", "strategy", "container", "services"})
             for context in varying(expressions(job_settings, builds)):
                 problems.append(f"{where}: uses {context}, which can change between runs that share a key")
+            for condition in [job_key(outside, "if"), *(field(s, "if") for s in steps)]:
+                if STATUS.search(condition):
+                    problems.append(f"{where}: `if: {condition.strip()}` holds a status function, which runs it after "
+                                    f"what it follows failed")
             if cache is None:
                 continue
             if field(cache, "id") != "native":
@@ -759,7 +807,7 @@ def check_wiring(rev):
         if len(jobs) == 1:
             if field(cache, "restore-only"):
                 problems.append(f"{where}: an output built by one job is restored and saved there, without restore-only")
-            problems += restored(*parsed[first])
+            problems += restored(*parsed[first], uploaded=first[0] == ni.BUILD_NATIVE)
             continue
         if field(cache, "restore-only") != "true":
             problems.append(f"{where}: {artifact} is built by several jobs, so its first job passes `restore-only: 'true'`")
@@ -768,21 +816,16 @@ def check_wiring(rev):
         for name in ("hit", "key"):
             if re.sub(r"\s", "", outputs.get(name, "")) != f"${{{{steps.native.outputs.{name}}}}}":
                 problems.append(f"{where}: its outputs are `{name}: ${{{{ steps.native.outputs.{name} }}}}`")
-        for step in steps[steps.index(cache) + 1:]:
-            if step not in uploads or bare(field(step, "if")) != "steps.native.outputs.hit == 'true'":
-                problems.append(f"{where}: after the restore it only uploads, with `if: steps.native.outputs.hit == 'true'`")
-            elif field(step, "path").rstrip("/") != field(cache, "path").rstrip("/"):
-                problems.append(f"{where}: uploads {field(step, 'path')} but restores {field(cache, 'path')}")
+        after = steps[steps.index(cache) + 1:]
+        if len(after) != 1 or after[0] not in uploads or bare(field(after[0], "if")) != "steps.native.outputs.hit == 'true'":
+            problems.append(f"{where}: after the restore it only uploads, once, with `if: steps.native.outputs.hit == 'true'`")
+        problems += uploaded_as(where, cache, after[:1])
         lookup = first[1]
         gate = f"needs.{lookup}.outputs.hit != 'true'"
         for job in jobs:
-            condition = bare(job_key(parsed[job][1], "if"))
-            # A status function would run the job after one it needs failed: building from a part
-            # that is missing, or on a hit.
-            if job != first and (lookup not in needs(parsed[job][1]) or not guarded(condition, gate)
-                                 or re.search(r"\b(always|cancelled|failure)\s*\(", condition)):
+            if job != first and (lookup not in needs(parsed[job][1]) or not guarded(bare(job_key(parsed[job][1], "if")), gate)):
                 problems.append(f"{parsed[job][0]}: it builds {artifact}, so it needs {lookup} and its `if:` is "
-                                f"{gate}, or that && more, with no || and no always(), cancelled() or failure()")
+                                f"{gate}, or that && more, with no ||")
         lasts = [job for job in cached if job != first]
         if len(lasts) != 1:
             problems.append(f"{artifact}: one of the jobs that build it restores it under {lookup}'s key, to save it")
@@ -795,25 +838,39 @@ def check_wiring(rev):
                            ("path", field(cache, "path")), ("restore-only", "")):
             if re.sub(r"\s", "", field(last_cache, name)) != re.sub(r"\s", "", want):
                 problems.append(f"{last_where}: its native-cache step's {name} must be {want or 'unset'}")
-        problems += restored(*parsed[lasts[0]])
+        problems += restored(*parsed[lasts[0]], uploaded=lasts[0][0] == ni.BUILD_NATIVE)
     if problems:
         raise ni.Failure("\n  ".join(["native-cache wiring:", *sorted(set(problems), key=problems.index)]))
 
 
-def restored(where, outside, steps, cache, uploads):
-    """The problems of a job that restores an output and builds it on a miss: it uploads what it
-    caches, on a hit too, and skips every other step on a hit."""
+STATUS = re.compile(r"\b(success|always|cancelled|failure)\s*\(")
+
+
+def restored(where, outside, steps, cache, uploads, uploaded):
+    """The problems of a job that restores an output and builds it on a miss: it skips every step
+    but the upload on a hit, and when uploaded, uploads what it caches once, on a hit too."""
     problems = []
     for step in steps[steps.index(cache) + 1:]:
-        condition = bare(field(step, "if"))
         if step in uploads:
-            if field(step, "path").rstrip("/") != field(cache, "path").rstrip("/"):
-                problems.append(f"{where}: uploads {field(step, 'path')} but caches {field(cache, 'path')}")
-            if condition:
+            if bare(field(step, "if")):
                 problems.append(f"{where}: the upload must run on a hit too")
-        elif not guarded(condition, GUARD):
+        elif not guarded(bare(field(step, "if")), GUARD):
             problems.append(f"{where}: `{step[0].strip()}` runs on a hit (its `if:` must be "
                             f"{GUARD}, or that && more, with no ||)")
+    if uploaded and len(uploads) != 1:
+        problems.append(f"{where}: it uploads what it restores once")
+    return problems + uploaded_as(where, cache, uploads)
+
+
+def uploaded_as(where, cache, uploads):
+    """The problems of uploads that are not the cached output under its artifact's name (with the
+    leg's suffix in a matrix job)."""
+    problems = []
+    for upload in uploads:
+        if field(upload, "path").rstrip("/") != field(cache, "path").rstrip("/"):
+            problems.append(f"{where}: uploads {field(upload, 'path')} but caches {field(cache, 'path')}")
+        if not re.sub(r"\s", "", field(upload, "name")).startswith(re.sub(r"\s", "", field(cache, "artifact"))):
+            problems.append(f"{where}: uploads {field(upload, 'name')}, not {field(cache, 'artifact')}")
     return problems
 
 
@@ -855,22 +912,30 @@ BINARY = (".node", ".aar", ".so", ".dll", ".dylib", ".a", ".lib", ".jar", ".zip"
           ".otf", ".woff", ".woff2")
 # How each kind of file writes comments; prose and git's own files are not read by builds.
 C_LIKE = (".rs", ".c", ".cc", ".cpp", ".cxx", ".h", ".hh", ".hpp", ".inl", ".m", ".mm", ".swift", ".kt", ".kts",
-          ".java", ".gradle", ".groovy", ".js", ".mjs", ".cjs", ".ts", ".tsx", ".go", ".cs", ".pbxproj", ".json5")
+          ".java", ".gradle", ".groovy", ".js", ".mjs", ".cjs", ".ts", ".tsx", ".go", ".cs", ".pbxproj", ".json5",
+          ".xcconfig", ".modulemap", ".metal", ".glsl", ".hlsl", ".vert", ".frag", ".comp", ".wgsl", ".S", ".rc", ".idl")
 HASH = (".sh", ".bash", ".zsh", ".py", ".cmake", ".toml", ".yml", ".yaml", ".rb", ".pl", ".properties", ".podspec",
         ".ps1", ".mk", ".cfg", ".ini", ".conf")
 HASH_NAMES = ("CMakeLists.txt", "Makefile", "Podfile", "Gemfile", "Dockerfile")
 XML = (".xml", ".plist", ".props", ".targets", ".storyboard", ".xib", ".xcscheme", ".xcworkspacedata", ".html")
 PROSE = (".md", ".markdown", ".rst", ".adoc", ".txt")
 PROSE_NAMES = re.compile(r"^(LICENSE|NOTICE|THIRD_PARTY_NOTICES|AUTHORS|CHANGELOG)([.-].*)?$|^\.git(ignore|attributes|keep)$")
-COMMENT_LINE = re.compile(r"^\s*(#|//|/\*|\*|<!--)")
+# A string on one line (kept, so a comment marker in it is text), or a comment (group 1).
+STRING = r"\"(?:\\.|[^\"\\\n])*\"|'(?:\\.|[^'\\\n])*'"
+C_COMMENT = re.compile(STRING + r"|(/\*.*?\*/|//[^\n]*)", re.S)
+# `#` after a space or at a line's start, but not Ruby's `#{`.
+HASH_COMMENT = re.compile(STRING + r"|((?:^|(?<=\s))#(?!\{)[^\n]*)", re.M)
+XML_COMMENT = re.compile(r"(<!--.*?-->)", re.S)
 # Where a file sets a variable to a path: a shell assignment anywhere on a line, CMake's set(), and
 # get_filename_component() with DIRECTORY, whose value is the dir above the path it is given.
 SHELL_SET = re.compile(r"(?:^|[\s;&|()])(?:export\s+|local\s+|readonly\s+|declare\s+)?([A-Za-z_]\w*)="
                        r"(\"[^\"]*\"|'[^']*'|[^\s;&|()]*)")
 CMAKE_SET = re.compile(r"^\s*(set|get_filename_component)\(\s*([A-Za-z_]\w*)\s+\"?([^\s\")]+)", re.I)
-# A variable: ${{ }}, then the named forms (`${X}`, `$(X)`, `$X`), then any other.
+# A variable: ${{ }}, then the named forms (`${X}`, `$(X)`, `$X`), then any other (Ruby's #{x} too).
 VARIABLE = re.compile(r"\$\{\{[^}]*\}\}|\$\{([A-Za-z_]\w*)\}|\$\(([A-Za-z_]\w*)\)|\$([A-Za-z_]\w*)"
-                      r"|\$\{[^}]*\}|\$\([^)]*\)|@[A-Za-z_]\w*@|%[A-Za-z_]\w*%")
+                      r"|\$\{[^}]*\}|\$\([^)]*\)|#\{[^}]*\}|@[A-Za-z_]\w*@|%[A-Za-z_]\w*%")
+# A shell's `cd`/`pushd` and where to.
+CD = re.compile(r"(?:^|[\s;&|(])(?:cd|pushd)\s+(\"[^\"]*\"|'[^']*'|[^\s;&|)]+)")
 TOKEN = re.compile(r"[^\s'\"`=;,(){}<>\[\]|&:!]*/[^\s'\"`=;,(){}<>\[\]|&:!]*")
 # A path given as its segments: path.join(root, 'apps', 'demo'), os.path.join(ROOT, "x").
 JOIN = re.compile(r"\b(?:join|resolve)\(([^()]*)\)")
@@ -908,22 +973,19 @@ def texts(rev):
 
 
 BLOBS = {}  # each blob's text, None for a binary, kept across revs
-MATCHED = {}  # the paths each pattern with a glob or variable matches, by (pattern, tree)
+MATCHED = {}  # by rev, the paths each pattern with a glob or variable matches
 
 
 def code(text, p):
-    """The file's text without its comments, by the kind of file p is; None for prose."""
+    """The file's text without its comments, by the kind of file p is (whole, for a kind whose
+    comments are not known: a path read for one is the safe mistake); None for prose."""
     name = posixpath.basename(p)
-    ext = posixpath.splitext(name)[1].lower()
-    if PROSE_NAMES.match(name) or (ext in PROSE and name not in HASH_NAMES):
+    ext = posixpath.splitext(name)[1]
+    if PROSE_NAMES.match(name) or (ext.lower() in PROSE and name not in HASH_NAMES):
         return None
-    if ext in C_LIKE:
-        return re.sub(r"(?<![:\\])//.*", "", re.sub(r"/\*.*?\*/", " ", text, flags=re.S))
-    if ext in XML:
-        return re.sub(r"<!--.*?-->", " ", text, flags=re.S)
-    if ext in HASH or name in HASH_NAMES:
-        return re.sub(r"(?m)(^|\s)#.*$", r"\1", text)
-    return "\n".join(line for line in text.split("\n") if not COMMENT_LINE.match(line))
+    syntax = (C_COMMENT if ext in C_LIKE or ext.lower() in C_LIKE else XML_COMMENT if ext.lower() in XML
+              else HASH_COMMENT if ext.lower() in HASH or name in HASH_NAMES else None)
+    return text if syntax is None else syntax.sub(lambda m: " " if m.group(1) else m.group(0), text)
 
 
 def expand(text, values):
@@ -940,7 +1002,7 @@ def expand(text, values):
     return [text[:m.start()] + option + rest for option in options for rest in rests]
 
 
-def resolve_token(token, here, entries):
+def resolve_token(token, here, entries, matched):
     """The tracked files and dirs a path in a file can name: from the repo or the file's dir, with
     WILD and globs standing for one segment. A path that goes up (`..`), or starts at a dir the file
     does not name (an unknown variable, or `"/../x"` after env!("CARGO_MANIFEST_DIR") or the like),
@@ -972,25 +1034,27 @@ def resolve_token(token, here, entries):
                 found.add(path)
             continue
         parts = path.split("/")
-        if (path, id(entries)) not in MATCHED:
+        if path not in matched:
             pattern = re.compile("^" + "/".join("[^/]*".join(map(re.escape, re.split(WILDS + "+", s))) for s in parts) + "$")
-            MATCHED[path, id(entries)] = {p for p in entries if pattern.match(p)}
-        matched = MATCHED[path, id(entries)]
+            matched[path] = {p for p in entries if pattern.match(p)}
         literal = "/".join(parts[:next(i for i, s in enumerate(parts) if re.search(WILDS, s))])
-        found |= matched or ({literal} if literal in entries else set())
+        found |= matched[path] or ({literal} if literal in entries else set())
     return found
 
 
-def names(text, here, entries):
-    """The tracked files and dirs the text's paths name (see resolve_token)."""
-    return set().union(*(resolve_token(token, here, entries) for token in path_tokens(text)))
+def names(text, here, entries, matched=None):
+    """The tracked files and dirs the text's paths name (see resolve_token), with matched a cache
+    for the tree entries come from."""
+    matched = {} if matched is None else matched
+    return set().union(*(resolve_token(token, here, entries, matched) for token in path_tokens(text)))
 
 
 @functools.lru_cache(maxsize=None)
 def path_tokens(text):
     """The paths the text names, but the values it sets variables to, with the variables it sets
-    expanded. The text is code: its comments already gone."""
-    values, found = {}, set()
+    expanded, and each relative path also from the dir the text has `cd` to. The text is code: its
+    comments already gone."""
+    values, found, cwd = {}, set(), None
 
     def define(name, value):
         # A value that is not a plain path (a command's output, say) is unknown.
@@ -1005,19 +1069,28 @@ def path_tokens(text):
             continue
         for m in SHELL_SET.finditer(line):
             define(m.group(1), m.group(2))
+        dirs = [cwd]
+        cd = CD.search(line)
+        if cd and cd.group(1).strip("'\"") != "-":
+            to = expand(cd.group(1).strip("'\""), values)[0]
+            to = to if re.match(r"^[\w./@+" + WILD + "-]*$", to) else WILD
+            cwd = to if cwd is None or to.startswith(("/", WILD)) else posixpath.join(cwd, to)
+            dirs.append(cwd)
         for expanded in expand(SHELL_SET.sub(" ", line), values):
             tokens = TOKEN.findall(expanded)
             for m in JOIN.finditer(expanded):
                 args = [a.strip() for a in m.group(1).split(",")]
                 tokens.append("/".join(a[1:-1] if len(a) > 1 and a[0] == a[-1] and a[0] in "'\"" else WILD for a in args))
             found.update(tokens)
+            found.update(posixpath.join(d, t) for d in dirs if d for t in tokens if not t.startswith(("/", WILD)))
     return tuple(sorted(found))
 
 
 @functools.lru_cache(maxsize=None)
 def named_paths(rev, p):
     text = code(texts(rev)[p], p)
-    return frozenset() if text is None else frozenset(names(text, posixpath.dirname(p), ni.tree_entries(rev)))
+    return frozenset() if text is None else frozenset(
+        names(text, posixpath.dirname(p), ni.tree_entries(rev), MATCHED.setdefault(rev, {})))
 
 
 @functools.lru_cache(maxsize=None)

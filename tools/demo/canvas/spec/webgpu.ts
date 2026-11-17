@@ -72,6 +72,14 @@ export function registerWebGPUSpec() {
 			equal(adapter.features.has('not-a-real-feature'), false, 'an unknown feature must not be present');
 		});
 
+		test('adapter.info names the vendor', async () => {
+			const { adapter } = await getDevice();
+			const info = adapter.info;
+			ok(info, 'adapter.info is missing');
+			equal(adapter.info, info, 'the same object each time');
+			equal(typeof info.vendor, 'string', 'vendor');
+		});
+
 		test('requestDevice resolves to a device with a queue', async () => {
 			const { device } = await getDevice();
 			ok(device, 'no device');

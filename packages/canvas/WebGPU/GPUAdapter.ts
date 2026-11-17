@@ -101,11 +101,15 @@ export class GPUAdapter {
 		return new GPUAdapter(adapter);
 	}
 
+	private _info?: GPUAdapterInfo;
+
+	get info(): GPUAdapterInfo {
+		return (this._info ??= GPUAdapterInfo.fromNative(this[native_].requestAdapterInfo()));
+	}
+
+	/** Removed from the spec in favour of `info`. */
 	requestAdapterInfo(): Promise<GPUAdapterInfo> {
-		return new Promise((resolve, reject) => {
-			const info = this[native_].requestAdapterInfo();
-			resolve(GPUAdapterInfo.fromNative(info) as never);
-		});
+		return Promise.resolve(this.info);
 	}
 
 	requestDevice(desc?: GPUDeviceDescriptor): Promise<GPUDevice> {

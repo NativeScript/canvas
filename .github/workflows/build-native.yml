@@ -167,7 +167,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: packages/canvas-svg/platforms/android/canvassvg-release.aar
-          key: ${{ env.NATIVE_CACHE_VERSION }}-canvas-svg-android-${{ hashFiles('crates/canvas-svg/**', 'crates/canvas-svg-android/**', 'packages/canvas-svg/src-native/android/**', '!packages/canvas-svg/src-native/android/**/build/**', '!packages/canvas-svg/src-native/android/**/jniLibs/**', 'Cargo.lock', 'tools/scripts/build-svg-android.sh', 'tools/scripts/copy-svg-android.sh', 'Makefile') }}
+          key: ${{ env.NATIVE_CACHE_VERSION }}-canvas-svg-android-${{ hashFiles('crates/canvas-svg/**', 'crates/canvas-svg-c/**', 'crates/canvas-svg-android/**', 'crates/canvas-utils/**', 'crates/canvas-core/**', 'crates/gl-bindings/**', 'packages/canvas-svg/src-native/android/**', '!packages/canvas-svg/src-native/android/**/build/**', '!packages/canvas-svg/src-native/android/**/jniLibs/**', 'Cargo.lock', 'tools/scripts/build-svg-android.sh', 'tools/scripts/copy-svg-android.sh', 'Makefile') }}
       - uses: ./.github/actions/setup-android-native
         if: steps.svg-aar.outputs.cache-hit != 'true'
       - uses: ./.github/actions/skia-cache
@@ -217,7 +217,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - id: key
-        run: echo "key=${{ env.NATIVE_CACHE_VERSION }}-canvas-svg-ios-${{ hashFiles('crates/canvas-svg/**', 'crates/canvas-svg-c/**', 'crates/canvas-svg-ios/**', 'packages/canvas-svg/src-native/ios/**', '!packages/canvas-svg/src-native/ios/dist/**', 'Cargo.lock', 'tools/scripts/canvas-svg-build.sh', 'Makefile') }}" >> "$GITHUB_OUTPUT"
+        run: echo "key=${{ env.NATIVE_CACHE_VERSION }}-canvas-svg-ios-${{ hashFiles('crates/canvas-svg/**', 'crates/canvas-svg-c/**', 'crates/canvas-svg-ios/**', 'crates/canvas-utils/**', 'crates/canvas-core/**', 'packages/canvas-svg/src-native/ios/**', '!packages/canvas-svg/src-native/ios/dist/**', 'Cargo.lock', 'tools/scripts/canvas-svg-build.sh', 'Makefile') }}" >> "$GITHUB_OUTPUT"
       - id: lookup
         uses: actions/cache/restore@v4
         with:
@@ -442,7 +442,7 @@ jobs:
             crate: canvas-svg-napi
             file: canvassvg.node
             addon-env: CANVAS_SVG_NAPI_ADDON
-            sources: crates/canvas-svg crates/canvas-svg-c crates/canvas-svg-napi crates/canvas-2d crates/canvas-core
+            sources: crates/canvas-svg crates/canvas-svg-c crates/canvas-svg-napi crates/canvas-utils
             skia: true
           # Runners have no audio device: its suite renders offline and on the 'none' sink.
           - name: audio-context

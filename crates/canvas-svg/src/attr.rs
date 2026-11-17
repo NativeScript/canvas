@@ -114,7 +114,7 @@ fn get_inherited_attribute(node: &TypedNode, name: &str) -> Option<String> {
         "transform" => return format_matrix(for_each_node!(node, |n| n.transform())),
         "fill" => for_each_node!(node, |n| n.fill())
             .and_then(|p| p.color())
-            .map(canvas_2d::utils::color::to_parsed_color)
+            .map(canvas_utils::color::to_parsed_color)
             .unwrap_or_else(|| "none".to_string()),
         _ => return None,
     })

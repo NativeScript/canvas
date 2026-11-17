@@ -48,6 +48,8 @@ pub struct CanvasRenderingContext2D {
     threaded: Option<crate::c2d::render_thread::RenderTarget>,
     /// Threaded: last image and the revision it shows
     snapshot: Option<(u64, canvas_2d::context::Image)>,
+    /// The `MTLDevice` it draws with, once asked (0: not yet, or none).
+    metal_device: usize,
 }
 
 impl CanvasRenderingContext2D {
@@ -248,6 +250,7 @@ impl CanvasRenderingContext2D {
             refs: AtomicUsize::new(1),
             threaded: None,
             snapshot: None,
+            metal_device: 0,
         }
     }
 
@@ -260,6 +263,7 @@ impl CanvasRenderingContext2D {
             refs: AtomicUsize::new(1),
             threaded: None,
             snapshot: None,
+            metal_device: 0,
         }
     }
 
@@ -272,6 +276,7 @@ impl CanvasRenderingContext2D {
             refs: AtomicUsize::new(1),
             threaded: None,
             snapshot: None,
+            metal_device: 0,
         }
     }
 
@@ -284,6 +289,7 @@ impl CanvasRenderingContext2D {
             refs: AtomicUsize::new(1),
             threaded: None,
             snapshot: None,
+            metal_device: 0,
         }
     }
 
@@ -296,6 +302,7 @@ impl CanvasRenderingContext2D {
             refs: AtomicUsize::new(1),
             threaded: None,
             snapshot: None,
+            metal_device: 0,
         }
     }
 
@@ -331,6 +338,7 @@ impl CanvasRenderingContext2D {
             refs: AtomicUsize::new(1),
             threaded: Some(target),
             snapshot: None,
+            metal_device: 0,
         }
     }
 
@@ -363,6 +371,33 @@ impl CanvasRenderingContext2D {
 
     pub fn is_threaded(&self) -> bool {
         self.threaded.is_some()
+    }
+
+    /// `with_pixels_source` without waiting for it.
+    pub fn post_to_pixels_source<F>(&mut self, f: F)
+    where
+        F: FnOnce(&mut Context) + Send + 'static,
+    {
+        match self.threaded.as_ref() {
+            Some(target) => {
+                target.commit(self.context.take_frame());
+                target.post(move |real| f(real.get_context_mut()));
+            }
+            None => f(&mut self.context),
+        }
+    }
+
+    /// The `MTLDevice` the canvas draws with; 0 when it is not drawn with Metal.
+    #[cfg(feature = "metal")]
+    pub fn metal_device(&mut self) -> usize {
+        if self.metal_device == 0 {
+            self.metal_device = self
+                .with_pixels_source(|context| {
+                    context.metal_context.as_ref().map_or(0, |metal| metal.device() as usize)
+                })
+                .unwrap_or(0);
+        }
+        self.metal_device
     }
 
     /// Threaded: runs on the render thread, after everything drawn so far.
@@ -873,6 +908,7 @@ pub extern "C" fn canvas_native_context_create(
         refs: AtomicUsize::new(1),
         threaded: None,
         snapshot: None,
+        metal_device: 0,
     }))
 }
 
@@ -909,6 +945,7 @@ pub extern "C" fn canvas_native_context_create_gl(
         refs: AtomicUsize::new(1),
         threaded: None,
         snapshot: None,
+        metal_device: 0,
     }))
 }
 
@@ -956,6 +993,7 @@ pub extern "C" fn canvas_native_context_create_gl_no_window(
         refs: AtomicUsize::new(1),
         threaded: None,
         snapshot: None,
+        metal_device: 0,
     }))
 }
 

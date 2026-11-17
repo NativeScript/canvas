@@ -290,6 +290,8 @@ pub struct CanvasImageCopyCanvasRenderingContext2D {
     /// If the Y coordinate of the image should be flipped. Even if this is
     /// true, `origin` is still relative to the top left.
     pub flip_y: bool,
+    /// The destination's `premultipliedAlpha`: whether its texels are premultiplied.
+    pub premultiplied_alpha: bool,
 }
 
 #[repr(C)]

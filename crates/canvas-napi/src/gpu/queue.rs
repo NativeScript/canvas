@@ -90,6 +90,7 @@ impl g_p_u_queue {
     let size = extent3d(Some(&copy_size));
     let origin: CanvasOrigin2d = origin2d(field(&source, c"origin").as_ref());
     let flip_y = boolean(&source, c"flipY").unwrap_or(false);
+    let premultiplied_alpha = boolean(&destination, c"premultipliedAlpha").unwrap_or(false);
     let queue = self.ptr();
 
     if let Some(texture) = number(&source, c"nativeTexture") {
@@ -173,6 +174,7 @@ impl g_p_u_queue {
             source: context.context,
             origin,
             flip_y,
+            premultiplied_alpha,
           },
           &dst,
           &size,

@@ -332,6 +332,17 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_context_to_texture(
     if copy.source.is_null() || (*destination).texture.is_null() {
         return;
     }
+
+    #[cfg(any(
+        target_os = "ios",
+        target_os = "macos",
+        target_os = "visionos",
+        target_os = "tvos"
+    ))]
+    if copy_context_on_gpu(&*queue, copy, &*destination, *size) {
+        return;
+    }
+
     let context = &mut *(copy.source as *mut crate::c2d::CanvasRenderingContext2D);
 
     // The whole canvas, in the destination's byte order; the origin / size window and flipY are
@@ -353,6 +364,18 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_context_to_texture(
         }
     }
 
+    // The readback is unpremultiplied.
+    if copy.premultiplied_alpha {
+        for pixel in data.chunks_exact_mut(4) {
+            let alpha = pixel[3] as u32;
+            if alpha != 255 {
+                for channel in &mut pixel[..3] {
+                    *channel = ((*channel as u32 * alpha + 127) / 255) as u8;
+                }
+            }
+        }
+    }
+
     let image = CanvasImageCopyExternalImage {
         source: data.as_ptr(),
         source_size: data.len(),
@@ -362,6 +385,200 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_context_to_texture(
         height,
     };
     canvas_native_webgpu_queue_copy_external_image_to_texture(queue, &image, destination, size);
+}
+
+/// Signalled by a 2D canvas's queue once its copy for WebGPU is written; wgpu's queue waits on it.
+#[cfg(any(
+    target_os = "ios",
+    target_os = "macos",
+    target_os = "visionos",
+    target_os = "tvos"
+))]
+struct CopyEvent {
+    device: usize,
+    event: objc2::rc::Retained<objc2::runtime::ProtocolObject<dyn objc2_metal::MTLEvent>>,
+    value: u64,
+}
+
+#[cfg(any(
+    target_os = "ios",
+    target_os = "macos",
+    target_os = "visionos",
+    target_os = "tvos"
+))]
+unsafe impl Send for CopyEvent {}
+
+/// Metal objects are thread safe; these only cross to the 2D render thread.
+#[cfg(any(
+    target_os = "ios",
+    target_os = "macos",
+    target_os = "visionos",
+    target_os = "tvos"
+))]
+#[derive(Clone, Copy)]
+struct SendPtr(*const c_void);
+#[cfg(any(
+    target_os = "ios",
+    target_os = "macos",
+    target_os = "visionos",
+    target_os = "tvos"
+))]
+unsafe impl Send for SendPtr {}
+
+#[cfg(any(
+    target_os = "ios",
+    target_os = "macos",
+    target_os = "visionos",
+    target_os = "tvos"
+))]
+struct SendRetained<T: ?Sized>(objc2::rc::Retained<T>);
+#[cfg(any(
+    target_os = "ios",
+    target_os = "macos",
+    target_os = "visionos",
+    target_os = "tvos"
+))]
+unsafe impl<T: ?Sized> Send for SendRetained<T> {}
+
+/// The 2D canvas copied on the GPU, with no readback: its queue blits it into a new texture and
+/// signals an `MTLEvent` that wgpu's queue waits on before sampling it. `false` leaves the copy
+/// to the readback path.
+#[cfg(any(
+    target_os = "ios",
+    target_os = "macos",
+    target_os = "visionos",
+    target_os = "tvos"
+))]
+unsafe fn copy_context_on_gpu(
+    queue: &CanvasGPUQueue,
+    copy: &CanvasImageCopyCanvasRenderingContext2D,
+    destination: &CanvasImageCopyTexture,
+    size: CanvasExtent3d,
+) -> bool {
+    use objc2::rc::Retained;
+    use objc2::runtime::ProtocolObject;
+    use objc2_metal::{
+        MTLCommandBuffer, MTLCommandQueue, MTLDevice, MTLPixelFormat, MTLStorageMode,
+        MTLTextureDescriptor, MTLTextureUsage,
+    };
+
+    static EVENT: Mutex<Option<CopyEvent>> = Mutex::new(None);
+
+    let destination_texture = &(*destination.texture).texture;
+    if !destination_texture
+        .descriptor()
+        .usage
+        .contains(wgt::TextureUsages::RENDER_ATTACHMENT)
+    {
+        return false;
+    }
+    let size: wgt::Extent3d = size.into();
+    if size.width == 0 || size.height == 0 {
+        return false;
+    }
+
+    let device = {
+        let Some(hal_device) = Arc::clone(&queue.device_id).as_hal::<wgpu_hal::api::Metal>()
+        else {
+            return false;
+        };
+        Retained::retain(Retained::as_ptr(hal_device.raw_device()) as *mut ProtocolObject<dyn MTLDevice>)
+    };
+    let Some(device) = device else {
+        return false;
+    };
+
+    let (event, value) = {
+        let Ok(mut slot) = EVENT.lock() else {
+            return false;
+        };
+        let device_key = Retained::as_ptr(&device) as usize;
+        if slot.as_ref().map(|e| e.device) != Some(device_key) {
+            let Some(event) = device.newEvent() else {
+                return false;
+            };
+            *slot = Some(CopyEvent {
+                device: device_key,
+                event,
+                value: 0,
+            });
+        }
+        let Some(entry) = slot.as_mut() else {
+            return false;
+        };
+        entry.value += 1;
+        (entry.event.clone(), entry.value)
+    };
+
+    let context = &mut *(copy.source as *mut crate::c2d::CanvasRenderingContext2D);
+    if context.metal_device() != Retained::as_ptr(&device) as usize {
+        return false;
+    }
+    let (width, height) = context.get_context().dimensions();
+    let (width, height) = (width as u32, height as u32);
+    if width == 0 || height == 0 || copy.origin.x + size.width > width || copy.origin.y + size.height > height {
+        return false;
+    }
+    let descriptor = MTLTextureDescriptor::texture2DDescriptorWithPixelFormat_width_height_mipmapped(
+        MTLPixelFormat::BGRA8Unorm,
+        width as usize,
+        height as usize,
+        false,
+    );
+    descriptor.setUsage(MTLTextureUsage::ShaderRead);
+    descriptor.setStorageMode(MTLStorageMode::Private);
+    let Some(texture) = device.newTextureWithDescriptor(&descriptor) else {
+        return false;
+    };
+
+    // Not waited for: wgpu's queue waits on the event instead.
+    let target = SendPtr(Retained::as_ptr(&texture) as *const c_void);
+    let signal = SendPtr(Retained::as_ptr(&event) as *const c_void);
+    let (keep_texture, keep_event) = (SendRetained(texture.clone()), SendRetained(event.clone()));
+    context.post_to_pixels_source(move |context| {
+        let (target, signal) = (target, signal);
+        context.copy_to_metal_texture(target.0, signal.0, value);
+        drop((keep_texture, keep_event));
+    });
+
+    // Queued work goes first; then wgpu's queue waits for the copy before anything after it.
+    super::gpu_device::timeline_of(&queue.error_sink).drain();
+    {
+        let Some(hal_queue) = Arc::clone(&queue.queue.id).as_hal::<wgpu_hal::api::Metal>() else {
+            return false;
+        };
+        let Some(command_buffer) = hal_queue.as_raw().commandBuffer() else {
+            return false;
+        };
+        command_buffer.encodeWaitForEvent_value(&event, value);
+        command_buffer.commit();
+    }
+
+    let Some(source) = super::gpu_native_texture::import_platform_texture(
+        &queue.device_id,
+        Retained::as_ptr(&texture) as *mut c_void,
+        width,
+        height,
+    ) else {
+        return false;
+    };
+
+    // Skia's surface is premultiplied.
+    super::gpu_native_texture::blit_texture_with(
+        queue,
+        &source,
+        width,
+        height,
+        copy.origin.x,
+        copy.origin.y,
+        copy.flip_y,
+        !copy.premultiplied_alpha,
+        destination_texture,
+        destination.mip_level,
+        destination.origin.z,
+        (destination.origin.x, destination.origin.y),
+        size,
+    )
 }
 
 #[no_mangle]

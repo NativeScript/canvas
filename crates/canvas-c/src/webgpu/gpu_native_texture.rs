@@ -52,9 +52,11 @@ const FRAME_FORMAT: wgt::TextureFormat = wgt::TextureFormat::Rgba8Unorm;
 ///
 /// `uv_transform` is `(scale.x, scale.y, offset.x, offset.y)`, applied to the triangle's
 /// UVs. It selects the source sub-rect and, with a negative y scale, performs `flipY`.
+/// `options.x` set unpremultiplies a premultiplied source.
 const BLIT_WGSL: &str = r#"
 struct Blit {
     uv_transform: vec4<f32>,
+    options: vec4<f32>,
 };
 
 @group(0) @binding(0) var src_texture: texture_2d<f32>;
@@ -80,12 +82,16 @@ fn vs_main(@builtin(vertex_index) vertex_index: u32) -> VertexOutput {
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    return textureSampleLevel(src_texture, src_sampler, in.uv, 0.0);
+    let color = textureSampleLevel(src_texture, src_sampler, in.uv, 0.0);
+    if (blit.options.x > 0.5 && color.a > 0.0) {
+        return vec4<f32>(color.rgb / color.a, color.a);
+    }
+    return color;
 }
 "#;
 
-/// Size of the `Blit` uniform: one `vec4<f32>`.
-const BLIT_UNIFORM_SIZE: u64 = 16;
+/// Size of the `Blit` uniform: two `vec4<f32>`.
+const BLIT_UNIFORM_SIZE: u64 = 32;
 
 /// Lazily built blit resources, cached for the life of the queue.
 ///
@@ -423,6 +429,40 @@ pub(crate) unsafe fn blit_texture(
     destination_origin: (u32, u32),
     size: wgt::Extent3d,
 ) -> bool {
+    blit_texture_with(
+        queue,
+        source_texture,
+        frame_width,
+        frame_height,
+        source_origin_x,
+        source_origin_y,
+        flip_y,
+        false,
+        destination_texture,
+        destination_mip_level,
+        destination_layer,
+        destination_origin,
+        size,
+    )
+}
+
+/// `blit_texture`, unpremultiplying a premultiplied source when `unpremultiply` is set.
+#[allow(clippy::too_many_arguments)]
+pub(crate) unsafe fn blit_texture_with(
+    queue: &CanvasGPUQueue,
+    source_texture: &Arc<wgpu_core::resource::Texture>,
+    frame_width: u32,
+    frame_height: u32,
+    source_origin_x: u32,
+    source_origin_y: u32,
+    flip_y: bool,
+    unpremultiply: bool,
+    destination_texture: &Arc<wgpu_core::resource::Texture>,
+    destination_mip_level: u32,
+    destination_layer: u32,
+    destination_origin: (u32, u32),
+    size: wgt::Extent3d,
+) -> bool {
     // Runs here, not queued: wait for the queued work it must follow.
     super::gpu_device::timeline_of(&queue.error_sink).drain();
     let device = &queue.device_id;
@@ -472,6 +512,7 @@ pub(crate) unsafe fn blit_texture(
     } else {
         [scale_x, scale_y, offset_x, offset_y]
     };
+    let options: [f32; 4] = [if unpremultiply { 1.0 } else { 0.0 }, 0.0, 0.0, 0.0];
 
     let mut cache = queue.blit.lock();
     let cache = cache.get_or_insert_with(|| BlitCache::new(device));
@@ -481,6 +522,7 @@ pub(crate) unsafe fn blit_texture(
         0,
         bytemuck_cast(&uv_transform),
     );
+    queue.queue.id.write_buffer(Arc::clone(&cache.uniforms), 16, bytemuck_cast(&options));
 
     let pipeline = cache.pipeline(device, destination_format);
     let bind_group_layout = pipeline.get_bind_group_layout(0);

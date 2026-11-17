@@ -313,10 +313,18 @@ void GPUQueueImpl::CopyExternalImageToTexture(const v8::FunctionCallbackInfo<v8:
 
 
         if (c2d != nullptr) {
+            bool premultipliedAlpha = false;
+            v8::Local<v8::Value> premultipliedVal;
+            if (destinationObj->Get(context, ConvertToV8String(isolate, "premultipliedAlpha")).ToLocal(
+                    &premultipliedVal) && premultipliedVal->IsBoolean()) {
+                premultipliedAlpha = premultipliedVal->BooleanValue(isolate);
+            }
+
             CanvasImageCopyCanvasRenderingContext2D source{
                     c2d,
                     sourceOrigin,
                     flipY,
+                    premultipliedAlpha,
             };
 
 

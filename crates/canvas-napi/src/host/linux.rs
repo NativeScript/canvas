@@ -3,7 +3,8 @@
 //! Contexts are GLES on the system EGL (canvas-core's `egl`), rendering into pbuffers on GDK's
 //! EGL display. At frame end the pbuffer is blitted into a texture GDK sees through an EGLImage
 //! and shown as a `GdkGLTexture`, so frames never leave the GPU. When GDK is not on EGL (GLX) or
-//! lacks EGLImage support, frames are read back into memory textures instead.
+//! lacks EGLImage support, frames are read back into memory textures instead. A CPU 2D canvas
+//! (`willReadFrequently`) is shown as a memory texture of its pixels.
 //!
 //! The drawing buffer is sized in physical pixels (300x150 until set, as on the web); the widget
 //! places it with the `fit` mode (`canvas_core::fit`) at its scale factor.
@@ -318,6 +319,8 @@ struct Slot {
 struct Presenter {
   view: glib::WeakRef<CanvasView>,
   egl_context: *mut c_void,
+  /// A CPU 2D context: its frames are copied out of its pixels, not read from GL.
+  cpu: Cell<*mut CCanvasRenderingContext2D>,
   flipped: bool,
   slots: RefCell<Vec<Slot>>,
   retired: RefCell<Vec<Slot>>,
@@ -376,6 +379,7 @@ impl Presenter {
     Rc::new(Presenter {
       view: view.downgrade(),
       egl_context,
+      cpu: Cell::new(std::ptr::null_mut()),
       flipped,
       slots: RefCell::new(Vec::new()),
       retired: RefCell::new(Vec::new()),
@@ -388,6 +392,13 @@ impl Presenter {
     let Some(view) = self.view.upgrade() else {
       return;
     };
+    let cpu = self.cpu.get();
+    if !cpu.is_null() {
+      if let Some(frame) = unsafe { cpu_frame(&mut *cpu) } {
+        view.show(frame, false);
+      }
+      return;
+    }
     if self.egl_context.is_null()
       || current_egl_context() != self.egl_context
       || width <= 0
@@ -661,6 +672,22 @@ unsafe fn read_back(width: i32, height: i32) -> Option<gdk::Texture> {
       width as usize * 4,
     )
     .upcast(),
+  )
+}
+
+/// A CPU 2D context's pixels as a memory texture.
+unsafe fn cpu_frame(context: &mut CCanvasRenderingContext2D) -> Option<gdk::Texture> {
+  let (width, height) = context.get_context().dimensions();
+  let (width, height) = (width as i32, height as i32);
+  if width <= 0 || height <= 0 {
+    return None;
+  }
+  let mut pixels = vec![0u8; width as usize * height as usize * 4];
+  context.read_pixels_into(&mut pixels, (0, 0), (width, height));
+  let bytes = glib::Bytes::from_owned(pixels);
+  Some(
+    gdk::MemoryTexture::new(width, height, gdk::MemoryFormat::R8g8b8a8, &bytes, width as usize * 4)
+      .upcast(),
   )
 }
 
@@ -1030,7 +1057,7 @@ impl NSCCanvas {
     _desynchronized: bool,
     _xr_compatible: bool,
     font_color: i32,
-    _will_read_frequently: bool,
+    will_read_frequently: bool,
     color_space: Option<i32>,
   ) -> Result<String> {
     match self.context {
@@ -1048,21 +1075,27 @@ impl NSCCanvas {
     };
     let (width, height) = (self.surface_width as f32, self.surface_height as f32);
     let density = self.density();
-    let mut context = canvas_c::canvas_native_context_create_gl(
-      std::ptr::null_mut(),
-      width,
-      height,
-      density,
-      alpha,
-      font_color,
-      density * 96.,
-      0,
-      color_space,
-    );
-    if context.is_null() {
-      log::error!(
-        "canvas: no GLES context available; the 2D canvas draws on the CPU and is not shown"
-      );
+    // willReadFrequently asks for a CPU canvas: readbacks are a copy, not a GPU round trip.
+    let mut context = if will_read_frequently {
+      std::ptr::null_mut()
+    } else {
+      canvas_c::canvas_native_context_create_gl(
+        std::ptr::null_mut(),
+        width,
+        height,
+        density,
+        alpha,
+        font_color,
+        density * 96.,
+        0,
+        color_space,
+      )
+    };
+    let on_cpu = context.is_null();
+    if on_cpu {
+      if !will_read_frequently {
+        log::error!("canvas: no GLES context available; the 2D canvas draws on the CPU");
+      }
       context = canvas_c::canvas_native_context_create(
         width,
         height,
@@ -1076,6 +1109,11 @@ impl NSCCanvas {
     }
     let egl_context = canvas_c::canvas_native_context_get_egl_context(context);
     self.attach(Context::TwoD(context), egl_context, true);
+    if on_cpu {
+      if let Some(presenter) = self.presenter.as_ref() {
+        presenter.cpu.set(context);
+      }
+    }
     Ok((context as usize).to_string())
   }
 

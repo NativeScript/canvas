@@ -702,6 +702,9 @@ pub extern "C" fn canvas_native_ios_webgl_tex_image_2d(
     let gl_context = context as *mut WebGLState;
     let gl_context = unsafe { &*gl_context };
     gl_context.sync(|state| {
+        if canvas_webgl::webgl::webgl1_rejects(state, internalformat as u32, Some(format as u32)) {
+            return;
+        }
         state.make_current();
         unsafe {
             if flip_y {

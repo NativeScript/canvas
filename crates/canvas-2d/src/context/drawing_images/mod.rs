@@ -6,18 +6,6 @@ use canvas_core::image_asset::ImageAsset;
 use crate::context::Context;
 
 impl Context {
-    #[cfg(feature = "2d")]
-    /// Uploads now, so it must bind first or the texture lands in another canvas's GL context.
-    fn promote_to_gpu(&mut self, img: Image) -> Image {
-        self.ensure_current();
-        if let Some(ctx) = self.direct_context.as_mut() {
-            img.new_texture_image(ctx, skia_safe::gpu::Mipmapped::No)
-                .unwrap_or(img)
-        } else {
-            img
-        }
-    }
-
     pub fn draw_image_asset_src_xywh_dst_xywh(
         &mut self,
         image: &ImageAsset,
@@ -30,16 +18,6 @@ impl Context {
         dst_width: f32,
         dst_height: f32,
     ) {
-        #[cfg(feature = "2d")]
-        if let Some(img) = image.raster_image() {
-            let img = self.promote_to_gpu(img);
-            self.draw_image_src_xywh_dst_xywh(
-                &img, src_x, src_y, src_width, src_height,
-                dst_x, dst_y, dst_width, dst_height,
-            );
-            return;
-        }
-
         image.with_skia_image_bytes(|image, bytes| {
             if let Some(image) = image {
                 self.draw_image_src_xywh_dst_xywh(
@@ -71,13 +49,6 @@ impl Context {
         let src_rect = src_rect.into();
         let dst_rect = dst_rect.into();
 
-        #[cfg(feature = "2d")]
-        if let Some(img) = image.raster_image() {
-            let img = self.promote_to_gpu(img);
-            self.draw_image(&img, src_rect, dst_rect);
-            return;
-        }
-
         image.with_skia_image_bytes(|image, bytes| {
             if let Some(image) = image {
                 self.draw_image(image, src_rect, dst_rect)
@@ -95,13 +66,6 @@ impl Context {
     }
 
     pub fn draw_image_asset_dx_dy(&mut self, image: &ImageAsset, x: f32, y: f32) {
-        #[cfg(feature = "2d")]
-        if let Some(img) = image.raster_image() {
-            let img = self.promote_to_gpu(img);
-            self.draw_image_dx_dy(&img, x, y);
-            return;
-        }
-
         image.with_skia_image_bytes(|image, bytes| {
             if let Some(image) = image {
                 self.draw_image_dx_dy(image, x, y)
@@ -126,13 +90,6 @@ impl Context {
         width: f32,
         height: f32,
     ) {
-        #[cfg(feature = "2d")]
-        if let Some(img) = image.raster_image() {
-            let img = self.promote_to_gpu(img);
-            self.draw_image_dx_dy_dw_dh(&img, x, y, width, height);
-            return;
-        }
-
         image.with_skia_image_bytes(|image, bytes| {
             if let Some(image) = image {
                 self.draw_image_dx_dy_dw_dh(image, x, y, width, height)
@@ -149,13 +106,6 @@ impl Context {
 
     pub fn draw_image_asset_with_rect(&mut self, image: &ImageAsset, dst_rect: impl Into<Rect>) {
         let dst_rect = dst_rect.into();
-
-        #[cfg(feature = "2d")]
-        if let Some(img) = image.raster_image() {
-            let img = self.promote_to_gpu(img);
-            self.draw_image_with_rect(&img, dst_rect);
-            return;
-        }
 
         image.with_skia_image_bytes(|image, bytes| {
             if let Some(image) = image {

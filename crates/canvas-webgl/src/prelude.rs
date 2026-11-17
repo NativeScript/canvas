@@ -111,6 +111,8 @@ pub(crate) struct WebGLStateInner {
     flip_y: bool,
     /// `UNPACK_PREMULTIPLY_ALPHA_WEBGL`.
     unpack_premultiply_alpha: bool,
+    /// An error WebGL raised itself, reported by getError before the driver's.
+    webgl_error: u32,
     clear_stencil: i32,
     clear_color: [f32; 4],
     scissor_enabled: bool,
@@ -361,6 +363,7 @@ impl WebGLState {
                 depth_mask: true,
                 flip_y: false,
                 unpack_premultiply_alpha: false,
+                webgl_error: 0,
                 unpack_colorspace_conversion_webgl: WEBGL_BROWSER_DEFAULT_WEBGL as i32,
                 max_combined_texture_image_units: 0,
                 max_uniform_buffer_bindings: 0,
@@ -427,6 +430,7 @@ impl WebGLState {
                 depth_mask: true,
                 flip_y: false,
                 unpack_premultiply_alpha: false,
+                webgl_error: 0,
                 unpack_colorspace_conversion_webgl: WEBGL_BROWSER_DEFAULT_WEBGL as i32,
                 max_combined_texture_image_units: 0,
                 max_uniform_buffer_bindings: 0,
@@ -532,6 +536,18 @@ impl WebGLState {
 
     pub fn get_unpack_premultiply_alpha(&self) -> bool {
         self.get_state().unpack_premultiply_alpha
+    }
+
+    /// Records `error` for getError unless one is already pending, as GL keeps the first.
+    pub fn set_webgl_error(&self, error: u32) {
+        let mut state = self.get_state_mut();
+        if state.webgl_error == 0 {
+            state.webgl_error = error;
+        }
+    }
+
+    pub fn take_webgl_error(&self) -> u32 {
+        std::mem::take(&mut self.get_state_mut().webgl_error)
     }
 
     pub fn set_flip_y(&mut self, flip: bool) {

@@ -45,6 +45,28 @@ export function registerContext2DSpec() {
 			equal(attrs.willReadFrequently, true, 'willReadFrequently');
 		});
 
+		test('a willReadFrequently canvas draws, reads back and is a drawable source like any other', () => {
+			const { canvas, ctx } = make2D(64, 64, { willReadFrequently: true });
+			ctx.fillStyle = '#ff0000';
+			ctx.fillRect(0, 0, 32, 32);
+			ctx.fillStyle = '#0000ff';
+			ctx.beginPath();
+			ctx.arc(48, 48, 12, 0, Math.PI * 2);
+			ctx.fill();
+			pixelEqual(ctx, 8, 8, [255, 0, 0, 255], 2, 'fillRect');
+			pixelEqual(ctx, 48, 48, [0, 0, 255, 255], 2, 'arc');
+			pixelEqual(ctx, 40, 8, [0, 0, 0, 0], 0, 'untouched pixels stay transparent');
+
+			const data = ctx.getImageData(0, 0, 4, 4);
+			ctx.putImageData(data, 40, 0);
+			pixelEqual(ctx, 41, 1, [255, 0, 0, 255], 2, 'putImageData');
+
+			const { ctx: target } = make2D(64, 64);
+			target.drawImage(canvas, 0, 0);
+			pixelEqual(target, 8, 8, [255, 0, 0, 255], 2, 'drawImage(willReadFrequently canvas)');
+			pixelEqual(target, 48, 48, [0, 0, 255, 255], 2, 'drawImage(willReadFrequently canvas)');
+		});
+
 		test('canvas.width/height round trip', () => {
 			const canvas = makeCanvas(123, 45);
 			equal((canvas as any).width, 123, 'width');

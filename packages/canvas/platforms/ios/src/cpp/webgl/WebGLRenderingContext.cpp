@@ -6226,6 +6226,11 @@ void WebGLRenderingContext::SetProps(v8::Isolate *isolate,
     tmpl->SetNativeDataProperty(ConvertToV8String(isolate, "drawingBufferWidth"), &GetDrawingBufferWidth);
     tmpl->SetNativeDataProperty(ConvertToV8String(isolate, "drawingBufferHeight"), &GetDrawingBufferHeight);
     tmpl->SetNativeDataProperty(ConvertToV8String(isolate, "__flipY"), &GetFlipY);
+    // Not in SetMethods: WebGL 2 puts those on its prototype, where info.Holder() is not the context.
+    tmpl->SetNativeDataProperty(ConvertToV8String(isolate, "continuousRenderMode"), GetContinuousRenderMode,
+                      SetContinuousRenderMode);
+    // True from the first draw of a frame until it is presented.
+    tmpl->SetNativeDataProperty(ConvertToV8String(isolate, "__presentPending"), GetPresentPending);
 }
 
 
@@ -6243,10 +6248,6 @@ WebGLRenderingContext::SetMethods(v8::Isolate *isolate, const v8::Local<v8::Obje
                   v8::Local<v8::Value>());
 
 
-    tmpl->SetNativeDataProperty(ConvertToV8String(isolate, "continuousRenderMode"), GetContinuousRenderMode,
-                      SetContinuousRenderMode);
-    // True from the first draw of a frame until it is presented.
-    tmpl->SetNativeDataProperty(ConvertToV8String(isolate, "__presentPending"), GetPresentPending);
 
 
     // todo

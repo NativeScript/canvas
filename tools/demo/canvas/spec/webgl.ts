@@ -602,7 +602,44 @@ export function registerWebGLSpec() {
 	registerCommon(1);
 	registerCommon(2);
 
+	suite('webgl1.only', () => {
+		const RGBA8 = 0x8058;
+
+		test('texImage2D rejects a sized internal format', () => {
+			const { gl } = makeGL(1);
+			gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
+			gl.texImage2D(gl.TEXTURE_2D, 0, RGBA8, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4));
+			equal(gl.getError(), gl.INVALID_ENUM, 'RGBA8 from a typed array');
+			const source = makeCanvas(4, 4);
+			source.getContext('2d');
+			gl.texImage2D(gl.TEXTURE_2D, 0, RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, source);
+			equal(gl.getError(), gl.INVALID_ENUM, 'RGBA8 from a canvas');
+			equal(gl.getError(), gl.NO_ERROR, 'getError clears the error');
+		});
+
+		test('texImage2D rejects an internal format other than format', () => {
+			const { gl } = makeGL(1);
+			gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
+			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4));
+			equal(gl.getError(), gl.INVALID_OPERATION);
+		});
+
+		test('copyTexImage2D rejects a sized internal format', () => {
+			const { gl } = makeGL(1);
+			gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
+			gl.copyTexImage2D(gl.TEXTURE_2D, 0, RGBA8, 0, 0, 1, 1, 0);
+			equal(gl.getError(), gl.INVALID_ENUM);
+		});
+	});
+
 	suite('webgl2.only', () => {
+		test('texImage2D takes a sized internal format', () => {
+			const { gl } = makeGL(2);
+			gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
+			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4));
+			equal(gl.getError(), gl.NO_ERROR);
+		});
+
 		test('the read and draw framebuffer bindings are separate', () => {
 			const { gl } = makeGL(2);
 			const read = gl.createFramebuffer();

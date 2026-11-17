@@ -252,6 +252,8 @@ impl Context {
             font_color: Color::new(font_color as u32),
             recording: None,
             snapshot: None,
+            #[cfg(all(feature = "gl", target_os = "linux"))]
+            vulkan_interop: Default::default(),
             surface_state: SurfaceState::None,
         })
     }
@@ -291,7 +293,32 @@ impl Context {
             );
             gl_bindings::BindTexture(gl_bindings::TEXTURE_2D, bound as u32);
         }
-        let ctx = self.direct_context.as_mut()?;
+        let shared = self
+            .draw_into_gl_texture(texture, width, height, flip_y, unpremultiply)
+            .then(|| canvas_core::gpu::gl::SharedTexture::new(texture))
+            .flatten();
+        unsafe { gl_bindings::DeleteTextures(1, &texture) };
+        if let Some(ctx) = self.direct_context.as_mut() {
+            ctx.reset(None);
+        }
+        shared
+    }
+
+    /// The canvas into `texture`, an RGBA8 `TEXTURE_2D` of this context, replacing its contents:
+    /// top row first (bottom row first with `flip_y`), through `color_filter` when given.
+    /// Submitted, not flushed.
+    #[cfg(any(target_os = "linux", target_os = "android"))]
+    pub(crate) fn draw_into_gl_texture(
+        &mut self,
+        texture: u32,
+        width: i32,
+        height: i32,
+        flip_y: bool,
+        color_filter: Option<skia_safe::ColorFilter>,
+    ) -> bool {
+        let Some(ctx) = self.direct_context.as_mut() else {
+            return false;
+        };
         ctx.reset(None);
         let info = gpu::gl::TextureInfo {
             target: gl_bindings::TEXTURE_2D,
@@ -300,7 +327,7 @@ impl Context {
             protected: gpu::Protected::No,
         };
         let backend = unsafe { gpu::backend_textures::make_gl((width, height), gpu::Mipmapped::No, info, "") };
-        let shared = gpu::surfaces::wrap_backend_texture(
+        let Some(mut copy) = gpu::surfaces::wrap_backend_texture(
             ctx,
             &backend,
             gpu::SurfaceOrigin::TopLeft,
@@ -308,24 +335,22 @@ impl Context {
             ColorType::RGBA8888,
             None,
             None,
-        )
-        .and_then(|mut copy| {
-            let canvas = copy.canvas();
-            if flip_y {
-                canvas.translate((0., height as f32));
-                canvas.scale((1., -1.));
-            }
-            let mut paint = skia_safe::Paint::default();
-            paint.set_blend_mode(skia_safe::BlendMode::Src);
-            paint.set_color_filter(unpremultiply);
-            self.surface.draw(canvas, (0., 0.), skia_safe::SamplingOptions::default(), Some(&paint));
-            ctx.flush_and_submit_surface(&mut copy, None);
-            drop(copy);
-            canvas_core::gpu::gl::SharedTexture::new(texture)
-        });
-        unsafe { gl_bindings::DeleteTextures(1, &texture) };
+        ) else {
+            return false;
+        };
+        let canvas = copy.canvas();
+        if flip_y {
+            canvas.translate((0., height as f32));
+            canvas.scale((1., -1.));
+        }
+        let mut paint = skia_safe::Paint::default();
+        paint.set_blend_mode(skia_safe::BlendMode::Src);
+        paint.set_color_filter(color_filter);
+        self.surface.draw(canvas, (0., 0.), skia_safe::SamplingOptions::default(), Some(&paint));
+        ctx.flush_and_submit_surface(&mut copy, None);
+        drop(copy);
         ctx.reset(None);
-        shared
+        true
     }
 
     pub fn reset_gpu_state(&mut self) {

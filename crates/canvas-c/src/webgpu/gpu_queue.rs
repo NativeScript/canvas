@@ -305,6 +305,11 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_context_to_texture(
         return;
     }
 
+    #[cfg(all(feature = "gl", target_os = "linux"))]
+    if copy_context_on_gpu_linux(&*queue, copy, &*destination, *size) {
+        return;
+    }
+
     let context = &mut *(copy.source as *mut crate::c2d::CanvasRenderingContext2D);
 
     // The whole canvas, in the destination's byte order; the origin / size window and flipY are
@@ -347,6 +352,106 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_context_to_texture(
         height,
     };
     canvas_native_webgpu_queue_copy_external_image_to_texture(queue, &image, destination, size);
+}
+
+/// Linux: the 2D canvas (GL) draws itself into an exportable Vulkan image of ours, as a video
+/// frame producer does, and the submit sampling it waits for its semaphore. `false` leaves the
+/// copy to the readback path.
+#[cfg(all(feature = "gl", target_os = "linux"))]
+unsafe fn copy_context_on_gpu_linux(
+    queue: &CanvasGPUQueue,
+    copy: &CanvasImageCopyCanvasRenderingContext2D,
+    destination: &CanvasImageCopyTexture,
+    size: CanvasExtent3d,
+) -> bool {
+    use crate::linux_video_frame::{CanvasLinuxFrameTarget, CanvasLinuxVideoFrame, KIND_GL};
+
+    unsafe extern "C" fn draw(frame: *mut CanvasLinuxVideoFrame, target: *const CanvasLinuxFrameTarget) -> bool {
+        let (Some(frame), Some(target)) = (frame.as_ref(), target.as_ref()) else {
+            return false;
+        };
+        let context = &mut *(frame.user as *mut crate::c2d::CanvasRenderingContext2D);
+        context
+            .get_context_mut()
+            .draw_into_vulkan_image(&canvas_2d::context::vulkan_interop::VulkanImageTarget {
+                id: target.id,
+                memory_fd: target.memory_fd,
+                allocation_size: target.allocation_size,
+                width: target.width as i32,
+                height: target.height as i32,
+                ready_fd: target.ready_fd,
+                release_fd: target.release_fd,
+                wait_release: target.wait_release != 0,
+            })
+    }
+
+    let destination_texture = &(*destination.texture).texture;
+    if !destination_texture
+        .descriptor()
+        .usage
+        .contains(wgt::TextureUsages::RENDER_ATTACHMENT)
+    {
+        return false;
+    }
+    let size: wgt::Extent3d = size.into();
+    let context = &mut *(copy.source as *mut crate::c2d::CanvasRenderingContext2D);
+    if context.is_threaded() || context.engine() != crate::c2d::Engine::GL {
+        return false;
+    }
+    let (width, height) = context.get_context().dimensions();
+    let (width, height) = (width as u32, height as u32);
+    if width == 0
+        || height == 0
+        || size.width == 0
+        || size.height == 0
+        || copy.origin.x + size.width > width
+        || copy.origin.y + size.height > height
+    {
+        return false;
+    }
+    let Some(device_uuid) = context.get_context_mut().gl_device_uuid() else {
+        return false;
+    };
+    let mut frame = CanvasLinuxVideoFrame {
+        size: std::mem::size_of::<CanvasLinuxVideoFrame>() as u32,
+        kind: KIND_GL,
+        width,
+        height,
+        producer: context.get_context().vulkan_producer(),
+        egl_display: std::ptr::null_mut(),
+        egl_image: std::ptr::null_mut(),
+        image_id: 0,
+        data: std::ptr::null(),
+        stride: 0,
+        reserved: 0,
+        device_uuid,
+        copy_to: Some(draw),
+        release_sync: std::ptr::null_mut(),
+        user: context as *mut crate::c2d::CanvasRenderingContext2D as *mut c_void,
+    };
+
+    // Queued work goes first, so the semaphore wait lands on the blit's submit.
+    super::gpu_device::timeline_of(&queue.error_sink).drain();
+    let Some(source) = super::linux_video_frame::shared(queue, &mut frame, true) else {
+        return false;
+    };
+
+    // Skia's surface is premultiplied.
+    super::gpu_native_texture::blit_texture_with(
+        queue,
+        &source,
+        width,
+        height,
+        copy.origin.x,
+        copy.origin.y,
+        copy.flip_y,
+        !copy.premultiplied_alpha,
+        destination_texture,
+        destination.mip_level,
+        destination.origin.z,
+        (destination.origin.x, destination.origin.y),
+        size,
+    )
 }
 
 /// Signalled by a 2D canvas's queue once its copy for WebGPU is written; wgpu's queue waits on it.

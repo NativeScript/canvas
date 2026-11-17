@@ -76,6 +76,8 @@ impl Context {
             font_color: Color::new(font_color as u32),
             recording: None,
             snapshot: None,
+            #[cfg(all(feature = "gl", target_os = "linux"))]
+            vulkan_interop: Default::default(),
             #[cfg(feature = "gl")]
             window_surface: None,
             #[cfg(any(feature = "gl", feature = "vulkan", feature = "metal"))]

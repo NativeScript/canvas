@@ -114,11 +114,12 @@ jobs:
 
   # The xcframework when nothing it is built from has changed: a hit uploads it here and skips the
   # per-platform jobs and canvas-ios, so a lost cache entry cannot fail the run between them. A miss
-  # leaves canvas-ios to save it under this job's key. On macOS, as canvas-ios, for the same cache
-  # version.
+  # leaves canvas-ios to save it under this job's key. On Linux, so a hit takes no macOS runner:
+  # actions/cache gives Linux and macOS the same version (both zstd), so it restores what canvas-ios
+  # saved; were it not to, this job would only miss, and the xcframework would build every run.
   canvas-ios-cache:
     name: Canvas xcframework (cached)
-    runs-on: macos-15
+    runs-on: ubuntu-22.04
     outputs:
       hit: ${{ steps.native.outputs.hit }}
       key: ${{ steps.native.outputs.key }}
@@ -269,7 +270,7 @@ jobs:
   # As canvas-ios-cache: a hit uploads the xcframework and skips the jobs that build it.
   canvas-svg-ios-cache:
     name: Canvas SVG xcframework (cached)
-    runs-on: macos-15
+    runs-on: ubuntu-22.04
     outputs:
       hit: ${{ steps.native.outputs.hit }}
       key: ${{ steps.native.outputs.key }}

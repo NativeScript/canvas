@@ -202,14 +202,16 @@ def is_absolute(token):
     return token.startswith(("/", "~")) or re.match(r"^[A-Za-z]:/", token) is not None
 
 
-def matrix_values(strategy):
+def matrix_values(strategy, artifact=None, named=""):
     """{key: [values]} of the values a job's strategy lists for each matrix key: `platform: [ios,
-    tvos]`, a list of scalars, a list of maps (`module.name`), and include's maps (their own keys)."""
+    tvos]`, a list of scalars, a list of maps (`module.name`), and include's maps (their own keys).
+    With an artifact, and named the job's native-cache `artifact:` (`${{ matrix.module.name
+    }}-windows`), a list of maps keeps only the item that names the artifact: its legs' values."""
     lines = [l for l in strategy if l.strip()]
     start = next((i for i, l in enumerate(lines) if re.match(r"^\s+matrix:\s*$", l)), None)
     if start is None:
         return {}
-    values, key, column = {}, None, None
+    values, items, key, column = {}, {}, None, None
     for line in lines[start + 1:]:
         if ni.indent(line) <= ni.indent(lines[start]):
             break
@@ -230,11 +232,24 @@ def matrix_values(strategy):
         if dash and not name:
             values.setdefault(key, []).append(value.strip("'\""))
             continue
+        if dash:
+            items.setdefault(key, []).append({})
         field_key = name if key == "include" else f"{key}.{name}"
         if value and not value.startswith(("[", "{")):
             values.setdefault(field_key, [])
             if value.strip("'\"") not in values[field_key]:
                 values[field_key].append(value.strip("'\""))
+            if key in items:
+                items[key][-1][name] = value.strip("'\"")
+    for key, maps in items.items():
+        own = [m for m in maps if artifact and key != "include" and re.sub(
+            r"\$\{\{\s*matrix\." + re.escape(key) + r"\.([\w-]+)\s*\}\}", lambda x: m.get(x.group(1), "\x00"), named) == artifact]
+        if len(own) == 1:
+            for name in {name for m in maps for name in m}:
+                if name in own[0]:
+                    values[f"{key}.{name}"] = [own[0][name]]
+                else:
+                    values.pop(f"{key}.{name}", None)
     return values
 
 
@@ -306,7 +321,10 @@ def unwrap(tokens):
     return tokens
 
 
-def walk(script, wd, where, files, guesses, makes, after_cd):
+def walk(script, wd, where, files, guesses, makes, after_cd, followed=False):
+    """What shell text runs, into files, guesses and makes, with the refusals in the docstring. A
+    followed script is held to the same refusals but may `cd` (the scan follows it); what it runs
+    is found by its mentions."""
     for tokens in shell_commands(script, where):
         command = " ".join(tokens)
         tokens = unwrap(tokens)
@@ -321,13 +339,20 @@ def walk(script, wd, where, files, guesses, makes, after_cd):
             raise ni.Failure(f"{where}: cannot follow the make in `{command}`; run `make <targets>` itself")
         if base in PACKAGE_RUNNERS:
             raise ni.Failure(f"{where}: `{command}` runs what a package manifest says; run the script itself")
-        if base == "cargo" and first in CARGO_BUILDS and not (wd or after_cd) and (
-                {"--workspace", "--all"} & set(args) or not any(
+        # --workspace builds crates no one names wherever it runs; without -p, cargo builds the
+        # crate of the dir it runs in, which only a cd or working-directory can name.
+        if base == "cargo" and first in CARGO_BUILDS and ({"--workspace", "--all"} & set(args) or (
+                not (wd or after_cd) and not any(
                     a in ("-p", "--package", "--manifest-path") or a.startswith(("--package=", "--manifest-path="))
-                    or (a.startswith("-p") and not a.startswith("--")) for a in args)):
+                    or (a.startswith("-p") and not a.startswith("--")) for a in args))):
             raise ni.Failure(f"{where}: `{command}` builds crates it does not name; name each with -p")
         if name in ("cd", "pushd"):
             after_cd = True
+        elif followed:
+            if base in ("python", "python3", "py") and "-m" in args:
+                raise ni.Failure(f"{where}: cannot tell which file `{command.strip()}` runs; run the file itself")
+            if base in SHELLS and "-c" in args and args.index("-c") + 1 < len(args):
+                after_cd = walk(args[args.index("-c") + 1], wd, where, files, guesses, makes, after_cd, followed)
         elif base in ("make", "gmake"):
             makes.append(make_command(args, wd or after_cd, command, where))
         elif base in INTERPRETERS:
@@ -491,8 +516,10 @@ def discover(artifact, rev):
             if re.match(r"^\s*(?:-\s+)?working-directory:", line):
                 raise ni.Failure(f"{where}: job-wide working-directory: {line.strip()}")
         # A matrix names every leg's values, each leg reads its own, and its key has them (variant).
+        # In a job whose legs build different artifacts, the values are this artifact's legs'.
         matrix = sections(outside, 4, {"strategy"})
-        values = matrix_values(matrix)
+        cache = next((s for s in steps if re.search(r"uses:\s*\./\.github/actions/native-cache\b", "\n".join(s))), [])
+        values = matrix_values(matrix, artifact, field(cache, "artifact"))
         texts_read.append(Read(f"{where} job keys", (path, job_id), "\n".join(l for l in outside if l not in matrix), "", values))
         for p in mentions("\n".join(outside), [], tree):
             reach(p, f"{where} job keys")
@@ -527,6 +554,8 @@ def discover(artifact, rev):
             # A JavaScript or Docker action's code lives in its dir, which is in the key whole.
             if any(re.match(r"^\s+using:\s*['\"]?composite", l) for l in lines[runs:]):
                 for step in ni.steps_of("\n".join(lines[runs:]), 2, manifest)[1]:
+                    # The action's own dir, as the runner gives it.
+                    step = [re.sub(r"\$\{\{\s*github\.action_path\s*\}\}|\$\{?GITHUB_ACTION_PATH\}?", p, l) for l in step]
                     take(step, manifest, p != SKIA_CACHE)
                     action_steps.append((manifest, step))
             continue
@@ -549,14 +578,20 @@ def discover(artifact, rev):
         if p not in OWN_MAKE:
             if re.search(r"^\s*(?:\S*/)?g?make\s", text, re.M):
                 raise ni.Failure(f"{p} runs make; run make from the job instead")
-            for m in re.finditer(r"^\s*(?:source|\.)\s+(\S+)", text, re.M):
+            # A file sourced from outside the repo ($HOME/.cargo/env) is not one of its inputs.
+            for m in re.finditer(r"(?:^|[;&|(])\s*(?:source|\.)\s+(\S+)", text, re.M):
                 source = SCRIPT_DIR_REF.sub("@", WORKSPACE_PREFIX.sub("", m.group(1).strip("'\"")))
-                if is_dynamic(source):
+                if is_dynamic(source) and not re.match(r"^(\$\{?HOME\b|~|/)", source):
                     raise ni.Failure(f"{p}: cannot tell which file `{m.group(0).strip()}` reads")
+            if p.endswith((".sh", ".bash", ".zsh")) or (p in executed and "." not in posixpath.basename(p)):
+                walk(text, "", p, set(), [], [], False, followed=True)
         corpus.append(text)
         here = posixpath.dirname(p)
         for found in mentions(text, [wd_of.get(p, ""), here], tree, here):
             reach(found, p, wd_of.get(p, ""))
+        # Run from another dir, its relative paths are read from there too.
+        if wd_of.get(p, "") not in ("", here):
+            texts_read.append(Read(p, None, text, wd_of[p], {}))
     return reads, "\n".join(corpus), action_steps, texts_read
 
 

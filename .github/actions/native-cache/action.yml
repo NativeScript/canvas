@@ -5,7 +5,11 @@ description: >
   the week plus the hash tools/scripts/native-inputs.py computes; its docstring says what that
   covers and why. On a miss the job builds, and the output is saved once the job succeeds, into the
   scope of the ref that ran it, so pull requests can restore master's entries. With
-  NATIVE_CACHE_FRESH=true (the release) it neither restores nor saves, and the job builds.
+  NATIVE_CACHE_FRESH=true (the release, or Canvas Native run by hand with `fresh`) it neither
+  restores nor saves, and the job builds.
+
+  An entry that holds a bad output stays until its week ends: delete it with `gh cache delete <key>`
+  (the job's log prints the key), or change the version in the key below to drop every entry.
 
   An output built by several jobs is restored first, in a job of its own (`restore-only`) that
   uploads it on a hit and skips the other jobs. On a miss they build it, and the last of them saves

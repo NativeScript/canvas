@@ -16,6 +16,8 @@ STEADY_CONTEXTS = {"matrix", "steps", "env", "strategy", "runner"}
 RUN_VARIABLE = re.compile(r"\bGITHUB_(SHA|REF|REF_NAME|REF_TYPE|REF_PROTECTED|HEAD_REF|BASE_REF|EVENT_NAME|"
                           r"EVENT_PATH|RUN_ID|RUN_NUMBER|RUN_ATTEMPT|ACTOR|ACTOR_ID|TRIGGERING_ACTOR|WORKFLOW|"
                           r"WORKFLOW_REF|WORKFLOW_SHA|RETENTION_DAYS)\b")
+# Git commands whose output is the commit, which differs between commits that share a key.
+READS_COMMIT = re.compile(r"\bgit\s+(?:describe|log|show|rev-parse\s+(?:--\S+\s+)*(?:HEAD|@)\b)")
 
 
 def moves_cache(step):
@@ -95,6 +97,9 @@ def check_wiring(rev):
                 if STATUS.search(condition):
                     problems.append(f"{where}: `if: {condition.strip()}` holds a status function, which runs it after "
                                     f"what it follows failed")
+            # It runs what follows a failure, and saves the cache with whatever the failed step left.
+            if job_key(outside, "continue-on-error") or any(field(s, "continue-on-error") for s in steps):
+                problems.append(f"{where}: continue-on-error runs it on after a failure, and the cache saves what is left")
             if cache is None:
                 continue
             if field(cache, "id") != "native":
@@ -156,7 +161,7 @@ def check_wiring(rev):
         raise ni.Failure("\n  ".join(["native-cache wiring:", *sorted(set(problems), key=problems.index)]))
 
 
-STATUS = re.compile(r"\b(success|always|cancelled|failure)\s*\(")
+STATUS = re.compile(r"\b(success|always|cancelled|failure)\s*\(", re.I)
 
 
 def restored(where, outside, steps, cache, uploads, uploaded):
@@ -197,9 +202,10 @@ def guarded(condition, guard):
 
 
 def job_key(outside, name):
-    """A job-level key's inline value; '' when the job has none."""
+    """A job-level key's value; '' when the job has none. A value continued on plain lines is an
+    error, as in a step."""
     lines = sections(outside, 4, {name})
-    return field(lines[:1], name) if lines else ""
+    return field(lines, name) if lines else ""
 
 
 def needs(outside):

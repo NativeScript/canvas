@@ -17,6 +17,15 @@ on:
       - master
   pull_request:
   workflow_dispatch:
+    inputs:
+      fresh:
+        description: Build every native output instead of restoring it (to check a cached output; it saves nothing)
+        type: boolean
+        default: false
+
+env:
+  # Read by .github/actions/native-cache.
+  NATIVE_CACHE_FRESH: ${{ inputs.fresh }}
 
 # A pull request push cancels the run it supersedes. On master a running build finishes (it
 # saves the caches pull requests read) and only the newest waiting push runs after it.
@@ -75,6 +84,7 @@ jobs:
         if: steps.native.outputs.hit != 'true'
         env:
           RUSTFLAGS: '-C link-arg=-undefined -C link-arg=dynamic_lookup'
+        # The marker the cache saves is the pass: written last, in the same step, after the tests.
         run: |
           cargo test -p canvas-c --features 2d,webgl,gl
           mkdir -p .native-cache && date -u > .native-cache/unit-tests-passed
@@ -90,6 +100,8 @@ jobs:
   build-native:
     name: Build Native
     uses: ./.github/workflows/build-native.yml
+    with:
+      fresh: ${{ inputs.fresh == true }}
 
   npm:
     name: Npm Build

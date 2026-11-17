@@ -190,8 +190,8 @@ ENTRIES = {p: ("tree" if "." not in p.rsplit("/", 1)[-1] else "blob", "") for p 
     "tools/assets/icons/a.png")}
 
 
-def named(text, here=""):
-    return paths.names(text, here, ENTRIES)
+def named(text, here="", shell=False):
+    return paths.names(text, here, ENTRIES, shell=shell)
 
 
 class Paths(unittest.TestCase):
@@ -243,6 +243,26 @@ class Paths(unittest.TestCase):
     def test_the_words_made_of_a_matrix_value(self):
         self.assertEqual(jobs.apart("cp a/b x/${{ matrix.n }}/y z"), ("cp a/b   z", "x/${{ matrix.n }}/y"))
 
+    def test_an_artifacts_own_leg_of_a_shared_matrix(self):
+        strategy = ["    strategy:", "      matrix:", "        module:", "          - name: canvas-svg", "            crate: svg-napi",
+                    "          - name: audio", "            crate: audio-napi", "        arch: [x64, arm64]"]
+        self.assertEqual(jobs.matrix_values(strategy, "audio-windows", "${{ matrix.module.name }}-windows"),
+                         {"module.name": ["audio"], "module.crate": ["audio-napi"], "arch": ["x64", "arm64"]})
+
+    def test_shell_writes_and_prints_are_not_reads(self):
+        self.assertEqual(named('mkdir -p tools/assets && cp x/y tools/assets/icons/a.png; rm -rf tools/assets\n'
+                               'echo tools/assets/icons/a.png; cat x > tools/assets/icons/a.png', shell=True), set())
+        self.assertEqual(named("cp tools/assets/icons/a.png out; echo tools/assets >> list", shell=True),
+                         {"tools/assets/icons/a.png", "tools/assets"})
+
+    def test_shell_bare_names_exports_and_lists(self):
+        self.assertEqual(named("ls apps; tar czf x.tgz tools", shell=True), {"apps", "tools"})
+        self.assertEqual(named('export ASSETS="$PWD/tools/assets"'), {"tools/assets"})
+        self.assertEqual(named("set(SRC a.c tools/assets/icons/a.png)"), {"tools/assets/icons/a.png"})
+        self.assertEqual(named("pushd tools; popd; pushd apps; cp demo/audio/a.wav /tmp/x", shell=True), {"apps/demo/audio/a.wav"})
+        self.assertEqual(named("OTHER_CFLAGS = -I$(SRCROOT)/../../platforms/ios/src/cpp", "packages/canvas/src-native/android"),
+                         {"packages/canvas/platforms/ios/src/cpp"})
+
     def test_a_matrix_value_is_one_segment_or_each_listed_value(self):
         self.assertEqual(named("cp packages/${{ matrix.name }}/platforms x"), {"packages/canvas/platforms"})
         self.assertEqual(jobs.each_leg("cp packages/${{ matrix.m.name }}/x/${{ matrix.arch }}", {"m.name": ["a"], "arch": ["x64", "arm64"]}),
@@ -283,7 +303,8 @@ class Goals(unittest.TestCase):
     """The keys do what the change set out to: a TypeScript edit rebuilds nothing, a crate edit
     every platform that links it, a Windows script edit only Windows, a Makefile edit every make
     job, and a file nobody has placed everything. The check fails a job that reads what its key
-    leaves out."""
+    leaves out. The base is HEAD with the working tree on top, untracked files too, so a local run
+    tests the change being made; CI's tree is clean."""
 
     @classmethod
     def setUpClass(cls):
@@ -370,8 +391,17 @@ class Goals(unittest.TestCase):
 
     def test_check_fails_a_value_of_the_run(self):
         script = "tools/scripts/build-napi.sh"
-        rev = self.commit(script, self.show(script) + '\necho "$GITHUB_SHA" > stamp\n')
-        self.assertTrue(any("GITHUB_SHA" in p for p in self.problems("canvas-windows", rev)))
+        for line, needle in (('echo "$GITHUB_SHA" > stamp', "GITHUB_SHA"), ("git describe --tags > stamp", "commit")):
+            with self.subTest(line=line):
+                rev = self.commit(script, self.show(script) + f"\n{line}\n")
+                self.assertTrue(any(needle in p for p in self.problems("canvas-windows", rev)))
+
+    def test_a_followed_script_is_held_to_the_refusals(self):
+        script = "tools/scripts/build-napi.sh"
+        for line in ("npx nx run canvas:build", "cargo build --workspace", "python3 -m gen", '[ -n "$X" ] && . "$DIR/$NAME.sh"'):
+            with self.subTest(line=line):
+                self.assertRaises(ni.Failure, self.problems, "canvas-windows", self.commit(script, self.show(script) + f"\n{line}\n"))
+        self.problems("canvas-windows", self.commit(script, self.show(script) + '\n[ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"\n'))
 
     def test_check_holds_the_claims_about_fixtures(self):
         rule = "apps/demo/src/assets/file-assets/audio"
@@ -402,6 +432,8 @@ class Goals(unittest.TestCase):
         for name, new in (("unguarded", "      - name: Build Rust libraries\n        run: make android"),
                           ("|| guard", guarded.replace("!= 'true'", "!= 'true' || always()")),
                           ("status function", guarded.replace("!= 'true'", "!= 'true' && !success()")),
+                          ("status function in another case", guarded.replace("!= 'true'", "!= 'true' && Always()")),
+                          ("continue-on-error", guarded + "\n        continue-on-error: true"),
                           ("run context", guarded.replace("run: make android", "run: echo ${{ github.sha }} && make android"))):
             with self.subTest(name=name):
                 self.assertRaises(ni.Failure, wiring.check_wiring, self.edit(ni.BUILD_NATIVE, guarded, new))
@@ -433,7 +465,9 @@ class Goals(unittest.TestCase):
                                 "        with:\n          name: canvas-ios\n"),
                                ("last job running after a failed part", combine,
                                 combine.replace("'true'\n", "'true' && !cancelled()\n")),
-                               ("last job not needing the parts", combine, combine.replace(", canvas-apple]", "]"))):
+                               ("last job not needing the parts", combine, combine.replace(", canvas-apple]", "]")),
+                               ("if: continued on the next line", combine,
+                                combine.replace("'true'\n", "'true' &&\n      always()\n"))):
             with self.subTest(name=name):
                 self.assertRaises(ni.Failure, wiring.check_wiring, self.edit(ni.BUILD_NATIVE, old, new))
         self.assertIn(f"{ni.BUILD_NATIVE}#canvas-apple", ni.key_inputs("canvas-ios", self.base))
@@ -442,9 +476,10 @@ class Goals(unittest.TestCase):
         rev = self.commit("packages/audio-context/src-native/android/extra.gradle", 'cargo { module = "../../../../crates/canvas-core" }\n')
         self.assertTrue(any("crates/canvas-core" in p for p in self.problems("audio-context-android", rev)))
 
-    def test_a_shared_job_counts_only_matrix_made_paths_against_its_legs(self):
+    def test_a_shared_job_reads_with_each_artifacts_own_matrix_values(self):
         build = "        run: ./tools/scripts/build-napi.sh ${{ matrix.target }} release-napi ${{ matrix.module.crate }}"
         for line, flagged in (("cp -R packages/canvas-media/platforms/windows/x64/ x", True),
+                              ("cp packages/canvas-media/platforms/windows/${{ matrix.arch }}/canvasmedia.node x", True),
                               ("cp -R packages/${{ matrix.module.name }}/platforms/windows/x64/ x", False)):
             with self.subTest(line=line):
                 rev = self.edit(ni.BUILD_NATIVE, build, build.replace("run: ", f"run: {line} && "))

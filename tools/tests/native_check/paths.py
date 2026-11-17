@@ -14,9 +14,6 @@ CARGO_TESTS = {"unit-tests"}
 # Paths that a file in a key names but that its job does not read there: (the file, as an OWNERS
 # rule; the whole path, where `*` stands for one segment; why).
 NOT_READ = [
-    ("tools/scripts/build-napi.sh", "packages/*/platforms/windows/*", "it writes each module's build there"),
-    ("tools/scripts/build-napi.sh", "packages/*/platforms/windows/*/*",
-     "it writes each module's build, and ANGLE's DLLs beside canvas's"),
     ("tools/scripts/download-v8.sh", "packages/canvas/src-native/canvas-android/canvas/src/main/cpp/include",
      "it writes the V8 headers it downloads there"),
     ("tools/scripts/download-v8.sh", "packages/canvas/src-native/canvas-ios/CanvasNative/include",
@@ -37,10 +34,6 @@ def not_read(p, target):
 
 
 LIMIT = 2_000_000
-# Files no build reads as text over the limit: what a key holds beyond it must be one of these.
-BINARY = (".node", ".aar", ".so", ".dll", ".dylib", ".a", ".lib", ".jar", ".zip", ".ogg", ".wav", ".mp3", ".mp4",
-          ".png", ".jpg", ".jpeg", ".webp", ".gif", ".hdr", ".exr", ".glb", ".ktx2", ".fbx", ".3mf", ".bin", ".ttf",
-          ".otf", ".woff", ".woff2")
 # How each kind of file writes comments; prose and git's own files are not read by builds.
 C_LIKE = (".rs", ".c", ".cc", ".cpp", ".cxx", ".h", ".hh", ".hpp", ".inl", ".m", ".mm", ".swift", ".kt", ".kts",
           ".java", ".gradle", ".groovy", ".js", ".mjs", ".cjs", ".ts", ".tsx", ".go", ".cs", ".pbxproj", ".json5",
@@ -59,9 +52,9 @@ HASH_COMMENT = re.compile(STRING + r"|((?:^|(?<=\s))#(?!\{)[^\n]*)", re.M)
 XML_COMMENT = re.compile(r"(<!--.*?-->)", re.S)
 # Where a file sets a variable to a path: a shell assignment anywhere on a line, CMake's set(), and
 # get_filename_component() with DIRECTORY, whose value is the dir above the path it is given.
-SHELL_SET = re.compile(r"(?:^|[\s;&|()])(?:export\s+|local\s+|readonly\s+|declare\s+)?([A-Za-z_]\w*)="
+SHELL_SET = re.compile(r"(?:^|[\s;&|()])(export\s+|(?:local|readonly|declare)\s+(?=\w))?([A-Za-z_]\w*)="
                        r"(\"[^\"]*\"|'[^']*'|[^\s;&|()]*)")
-CMAKE_SET = re.compile(r"^\s*(set|get_filename_component)\(\s*([A-Za-z_]\w*)\s+\"?([^\s\")]+)", re.I)
+CMAKE_SET = re.compile(r"^\s*(set|get_filename_component)\(\s*([A-Za-z_]\w*)\s+\"?([^\s\")]+)\"?([^)]*)", re.I)
 # A variable: ${{ }}, then the named forms (`${X}`, `$(X)`, `$X`), then any other (Ruby's #{x} too).
 VARIABLE = re.compile(r"\$\{\{[^}]*\}\}|\$\{([A-Za-z_]\w*)\}|\$\(([A-Za-z_]\w*)\)|\$([A-Za-z_]\w*)"
                       r"|\$\{[^}]*\}|\$\([^)]*\)|#\{[^}]*\}|@[A-Za-z_]\w*@|%[A-Za-z_]\w*%")
@@ -107,6 +100,17 @@ BLOBS = {}  # each blob's text, None for a binary, kept across revs
 MATCHED = {}  # by rev, the paths each pattern with a glob or variable matches
 
 
+SHELL_FILES = (".sh", ".bash", ".zsh")
+
+
+def textual(p):
+    """Whether p is of a kind of text file whose comments, or prose, this knows (or has no extension):
+    one too large to scan must not be skipped as if it were binary."""
+    name = posixpath.basename(p)
+    ext = posixpath.splitext(name)[1].lower()
+    return not ext or name in HASH_NAMES or ext in C_LIKE + HASH + XML + PROSE + (".json", ".svg", ".csv")
+
+
 def code(text, p):
     """The file's text without its comments, by the kind of file p is (whole, for a kind whose
     comments are not known: a path read for one is the safe mistake); None for prose."""
@@ -139,6 +143,7 @@ def resolve_token(token, here, entries, matched):
     does not name (an unknown variable, or `"/../x"` after env!("CARGO_MANIFEST_DIR") or the like),
     may start from any dir above the file, and after an unknown dir, the `..` may lead anywhere. A
     computed name that matches nothing names its dir."""
+    token = re.sub(r"^-(?:I|L|F|isystem|iquote|idirafter|include)(?=\S)", "", token)
     if token.startswith("/.."):
         token = WILD + token
     unknown = token.startswith(WILD + "/")
@@ -173,19 +178,68 @@ def resolve_token(token, here, entries, matched):
     return found
 
 
-def names(text, here, entries, matched=None):
+def names(text, here, entries, matched=None, shell=False):
     """The tracked files and dirs the text's paths name (see resolve_token), with matched a cache
-    for the tree entries come from."""
+    for the tree entries come from; shell for shell text (see path_tokens)."""
     matched = {} if matched is None else matched
-    return set().union(*(resolve_token(token, here, entries, matched) for token in path_tokens(text)))
+    return set().union(*(resolve_token(token, here, entries, matched) for token in path_tokens(text, shell)))
+
+
+# Shell commands whose arguments are paths they write, not read (the last of cp-like ones'), and
+# commands that read the paths given to them as bare words (`ls apps`).
+WRITES_ALL = {"mkdir", "rm", "rmdir", "touch", "chmod"}
+WRITES_LAST = {"cp", "mv", "install", "ln", "rsync"}
+PRINTS = {"echo", "printf"}
+READS = {"ls", "cat", "cp", "mv", "rsync", "tar", "zip", "find", "du", "stat", "head", "tail", "grep", "sed", "awk",
+         "cmp", "diff", "sha256sum", "shasum", "md5sum", "xxd", "ln", "source", ".", "bash", "sh", "zsh", "python",
+         "python3", "node", "file", "readlink", "realpath", "wc", "install"}
+
+
+def shell_reads(line):
+    """The words of a shell line that can be paths it reads: without what it only writes (the
+    arguments of mkdir and the like, the destination of cp and the like, a redirection's target) or
+    prints (echo without a redirection), with the bare words a reading command is given marked as
+    paths (`./`)."""
+    kept = []
+    for segment in re.split(r"&&|\|\||[;|]", line):
+        words = segment.split()
+        while words and re.match(r"^[A-Za-z_]\w*=", words[0]):
+            words = words[1:]
+        if not words:
+            continue
+        command = posixpath.basename(words[0].strip("'\""))
+        redirected = re.search(r"(?<![0-9&])>", segment)
+        if command in PRINTS and not redirected:
+            continue
+        args = [w for w in words[1:]]
+        drop = set()
+        for i, w in enumerate(args):
+            if w in (">", ">>") and i + 1 < len(args):
+                drop.add(i + 1)
+            elif re.match(r"^>>?\S", w):
+                drop.add(i)
+        operands = [i for i, w in enumerate(args) if not w.startswith("-") and i not in drop]
+        if command in WRITES_ALL:
+            drop.update(operands)
+        elif command in WRITES_LAST and operands:
+            target = next((i + 1 for i, w in enumerate(args) if w in ("-t", "--target-directory") and i + 1 < len(args)), None)
+            drop.add(target if target is not None else operands[-1])
+        kept.append(words[0])
+        for i, w in enumerate(args):
+            if i in drop:
+                continue
+            bare = command in READS and not w.startswith("-") and "/" not in w and re.search(r"[A-Za-z]", w)
+            kept.append("./" + w.strip("'\"") if bare else w)
+    return " ".join(kept)
 
 
 @functools.lru_cache(maxsize=None)
-def path_tokens(text):
-    """The paths the text names, but the values it sets variables to, with the variables it sets
-    expanded, and each relative path also from the dir the text has `cd` to. The text is code: its
-    comments already gone."""
-    values, found, cwd = {}, set(), None
+def path_tokens(text, shell=False):
+    """The paths the text names: its tokens with a `/` (and in shell text, the bare words a reading
+    command is given, without what a line only writes or prints), with the variables it sets
+    expanded, the values of the ones it exports and of CMake's set() lists, and each relative path
+    also from every dir the text has `cd` to. The text is code: its comments already gone."""
+    values, found, dirs = {}, set(), []
 
     def define(name, value):
         # A value that is not a plain path (a command's output, say) is unknown.
@@ -193,27 +247,31 @@ def path_tokens(text):
         values[name] += [v if re.match(r"^[\w./@+" + WILD + "-]*$", v) else WILD
                          for v in expand(value.strip("'\""), values) if v not in values[name]]
 
-    for line in text.split("\n"):
+    lines = re.sub(r"\\\n", " ", text).split("\n") if shell else text.split("\n")
+    for line in lines:
         cmake = CMAKE_SET.match(line)
         if cmake:
             define(cmake.group(2), cmake.group(3) + ("/.." if cmake.group(1).lower() != "set" else ""))
-            continue
+            # A list's values are what is built from (sources); one value names a dir its uses extend.
+            line = " ".join(cmake.group(3, 4)) if cmake.group(1).lower() == "set" and cmake.group(4).strip() else ""
         for m in SHELL_SET.finditer(line):
-            define(m.group(1), m.group(2))
-        dirs = [cwd]
-        cd = CD.search(line)
-        if cd and cd.group(1).strip("'\"") != "-":
+            define(m.group(2), m.group(3))
+        exported = " ".join(m.group(3) for m in SHELL_SET.finditer(line) if m.group(1))
+        for cd in CD.finditer(line):
+            if cd.group(1).strip("'\"") == "-":
+                continue
             to = expand(cd.group(1).strip("'\""), values)[0]
             to = to if re.match(r"^[\w./@+" + WILD + "-]*$", to) else WILD
-            cwd = to if cwd is None or to.startswith(("/", WILD)) else posixpath.join(cwd, to)
-            dirs.append(cwd)
-        for expanded in expand(SHELL_SET.sub(" ", line), values):
+            # As given and from the dir before it, since a popd or subshell may have left that one.
+            dirs += [to] + ([posixpath.join(dirs[-1], to)] if dirs and not to.startswith(("/", WILD)) else [])
+        rest = SHELL_SET.sub(" ", line) + " " + exported
+        for expanded in expand(shell_reads(rest) if shell else rest, values):
             tokens = TOKEN.findall(expanded)
             for m in JOIN.finditer(expanded):
                 args = [a.strip() for a in m.group(1).split(",")]
                 tokens.append("/".join(a[1:-1] if len(a) > 1 and a[0] == a[-1] and a[0] in "'\"" else WILD for a in args))
             found.update(tokens)
-            found.update(posixpath.join(d, t) for d in dirs if d for t in tokens if not t.startswith(("/", WILD)))
+            found.update(posixpath.join(d, t) for d in dirs for t in tokens if not t.startswith(("/", WILD)))
     return tuple(sorted(found))
 
 
@@ -221,7 +279,7 @@ def path_tokens(text):
 def named_paths(rev, p):
     text = code(texts(rev)[p], p)
     return frozenset() if text is None else frozenset(
-        names(text, posixpath.dirname(p), ni.tree_entries(rev), MATCHED.setdefault(rev, {})))
+        names(text, posixpath.dirname(p), ni.tree_entries(rev), MATCHED.setdefault(rev, {}), p.endswith(SHELL_FILES)))
 
 
 @functools.lru_cache(maxsize=None)
@@ -270,11 +328,10 @@ def scan(artifact, rev, wanted):
     in it too large to read that are not binaries. The job pass reads the workflows, actions and
     Makefile for what the job runs of them."""
     tested = set(ni.ARTIFACTS[artifact].get("crates", [])) if artifact in CARGO_TESTS else set()
-    problems = [f"{artifact}: {p} is in its key but too large to scan for paths; if it is not text, add its "
-                f"type to BINARY" for p, (_, size) in sorted(blobs(rev).items())
-                if size > LIMIT and wanted(p) and not p.lower().endswith(BINARY)]
+    problems = [f"{artifact}: {p} is in its key but too large to scan for paths" for p, (_, size) in sorted(blobs(rev).items())
+                if size > LIMIT and wanted(p) and textual(p)]
     for p in sorted(texts(rev)):
-        if p.startswith(".github/") or p == "Makefile" or not wanted(p):
+        if p.startswith(".github/workflows/") or re.match(r"^\.github/actions/[^/]+/action\.ya?ml$", p) or p == "Makefile" or not wanted(p):
             continue
         crate = crate_of(rev, p)
         if crate and p[len(crate) + 1:].split("/")[0] in ("tests", "benches", "examples") and crate not in tested:

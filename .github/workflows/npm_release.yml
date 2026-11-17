@@ -117,9 +117,10 @@ jobs:
 
       # Master's Canvas Native runs upload artifacts under the same names, but theirs can be
       # cached outputs of any age, so only an npm Release run of this tag at this commit may stand
-      # in. Its conclusion is not checked: the usual reason to reuse a run is that its publish
-      # failed after the native builds succeeded, and place-native-artifacts.sh fails on any
-      # artifact that is missing.
+      # in: it ran this workflow at this commit, which builds fresh. This identifies the run; it
+      # cannot see how the run built. Its conclusion is not checked: the usual reason to reuse a
+      # run is that its publish failed after the native builds succeeded, and
+      # place-native-artifacts.sh fails on any artifact that is missing.
       - name: Check native_run_id
         if: inputs.native_run_id != ''
         env:

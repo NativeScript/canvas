@@ -112,14 +112,16 @@ SCRIPTS = [
            "copy-android copy-android-libs busy-trace busy-bench build-headers"),
 ]
 # The package dirs each build reads: its native sources and the platform dir it writes its output
-# to (with the package's app-side files there).
+# to (with the package's app-side files there). On Apple, only the binary's dir: the apps' pods
+# compile platforms/ios/src, and no framework build reads it.
 PACKAGE_DIRS = {
     "canvas-android": ["packages/canvas/src-native/canvas-android", "packages/canvas/platforms/android"],
-    "canvas-ios": ["packages/canvas/src-native/canvas-ios", "packages/canvas/platforms/ios"],
+    "canvas-ios": ["packages/canvas/src-native/canvas-ios", "packages/canvas/platforms/ios/CanvasNativeBinary"],
     "canvas-svg-android": ["packages/canvas-svg/src-native/android", "packages/canvas-svg/platforms/android"],
-    "canvas-svg-ios": ["packages/canvas-svg/src-native/ios", "packages/canvas-svg/platforms/ios"],
+    "canvas-svg-ios": ["packages/canvas-svg/src-native/ios", "packages/canvas-svg/platforms/ios/CanvasSVGBinary"],
     "audio-context-android": ["packages/audio-context/src-native/android", "packages/audio-context/platforms/android"],
-    "audio-context-ios": ["packages/audio-context/src-native/ios", "packages/audio-context/platforms/ios"],
+    "audio-context-ios": ["packages/audio-context/src-native/ios",
+                          "packages/audio-context/platforms/ios/AudioContextNativeBinary"],
     "canvas-windows": ["packages/canvas/platforms/windows"],
     "canvas-svg-windows": ["packages/canvas-svg/platforms/windows"],
     "audio-context-windows": ["packages/audio-context/platforms/windows"],
@@ -139,7 +141,8 @@ OWNERS = [
     ("tools/assets", NONE), ("tools/schematics", NONE), ("tools/tests", NONE),
     ("tools/workspace-scripts.js", NONE), ("tools/patches", NONE), ("packages/.gitkeep", NONE),
     *((name, NONE) for name in (".editorconfig", ".eslintignore", ".gitignore", ".husky", ".npmrc", ".npsrc",
-                                ".nxignore", ".prettierignore", ".prettierrc", ".travis.yml", ".vscode", "LICENSE")),
+                                ".nxignore", ".prettierignore", ".prettierrc", ".travis.yml", ".vscode", ".yarn",
+                                ".yarnrc.yml", "LICENSE")),
     # Only audio-context-android checks out a submodule (Oboe).
     (".gitmodules", ("audio-context-android",)),
     # Only Apple's builds read Swift packages and pods, which name V8's headers too.
@@ -151,8 +154,9 @@ OWNERS = [
     # A package's platform dirs hold the files apps build from and the committed outputs; the
     # builds read none but their own output's (PACKAGE_DIRS).
     ("packages/*/src-native", MOBILE), ("packages/*/platforms", NONE),
-    # Its native code ships committed (async-release.aar); no job builds it.
+    # Its native code ships committed (async-release.aar); no job builds it. The others are JavaScript.
     ("packages/canvas-polyfill", NONE),
+    *((f"packages/canvas-{name}", NONE) for name in ("babylon", "chartjs", "phaser", "phaser-ce", "pixi", "three")),
     # No job runs it; the Node-API suites are under the crates.
     ("packages/canvas-gamepad/__test__", NONE),
     *((d, (artifact,)) for artifact, dirs in PACKAGE_DIRS.items() for d in dirs),
@@ -167,6 +171,9 @@ OWNERS = [
 ]
 
 RUST_ROOT = re.compile(r"^(Cargo\.toml|Cargo\.lock|rust-toolchain(\.toml)?|\.cargo/.*)$")
+# What cargo metadata says of a dependency that can change the versions resolved.
+RESOLVES = ("name", "req", "source", "registry", "kind", "target", "optional", "uses_default_features", "features",
+            "rename")
 LOCAL_USE = re.compile(r"^\s*(?:-\s+)?uses:\s*['\"]?\./([^\s'\"@#]+)")
 COMMENT = r"(?:\s+#.*)?"
 
@@ -378,9 +385,10 @@ def crate_meta(rev):
         member = rel(posixpath.dirname(package["manifest_path"].replace("\\", "/")))
         deps[member] = [rel(dep["path"]) for dep in package["dependencies"] if dep.get("path")]
         names[package["name"]] = member
-        declared = [{k: v for k, v in dep.items() if k != "path"} for dep in package["dependencies"]]
-        requirements[member] = {"rust_version": package.get("rust_version"),
-                                "dependencies": sorted(declared, key=lambda d: json.dumps(d, sort_keys=True))}
+        # Named fields, so a cargo that reports more of them does not move every key.
+        declared = [[dep.get(k) for k in RESOLVES] for dep in package["dependencies"]]
+        requirements[member] = {"rust_version": package.get("rust_version"), "features": package.get("features"),
+                                "dependencies": sorted(declared, key=json.dumps)}
     return deps, names, crate_dirs, requirements
 
 

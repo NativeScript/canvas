@@ -134,6 +134,9 @@ class Commands(unittest.TestCase):
         self.assertEqual(check.make_environment("x:\n\t./$(S)\n", ["S=a.sh"]), [])
         self.assertEqual(check.make_environment(
             "T ?= nightly\nf = echo $(1)\nx:\n\tcargo +$(T) $(call f,a) $(foreach v,a b,$(v)) $$(HOME)\n", []), [])
+        for makefile in ("t:\n\tS=x.sh cargo test\nx:\n\t./$(S)\n", "x:\n\t./$(S:.sh=-2.sh)\n", "x:\n\t./$S\n"):
+            with self.subTest(makefile=makefile):
+                self.assertEqual(check.make_environment(makefile, []), ["S"])
 
 
 class Yaml(unittest.TestCase):
@@ -202,6 +205,14 @@ class Paths(unittest.TestCase):
         self.assertEqual(named("set(DIR ../../platforms/ios/src/cpp)\nadd_library(x ${DIR}/Caches.cpp)", here), {cpp + "/Caches.cpp"})
         self.assertEqual(named("include(${PROJECT_ROOT}/../../packages/canvas/platforms/ios/src/cpp)"), {cpp})
 
+    def test_from_a_dir_above_the_file(self):
+        cpp = "packages/canvas/platforms/ios/src/cpp"
+        here = "packages/canvas/src-native/android"
+        self.assertEqual(named("include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../platforms/ios/src/cpp)", here), {cpp})
+        self.assertEqual(named('include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../platforms/ios/src/cpp/Caches.cpp"))', here),
+                         {cpp + "/Caches.cpp"})
+        self.assertEqual(named('Path::new(root).join("../../platforms/ios/src/cpp")', here + "/src"), {cpp})
+
     def test_values_set_in_case_branches(self):
         text = "  a) PKG=packages/canvas ;;\n  b) PKG=tools/assets ;;\nesac\ncp $PKG/icons/a.png out"
         self.assertEqual(named(text), {"tools/assets/icons/a.png"})
@@ -215,9 +226,21 @@ class Paths(unittest.TestCase):
     def test_a_path_given_as_segments(self):
         self.assertEqual(named("const a = path.join(root, 'apps', 'demo', 'audio');"), {"apps/demo/audio"})
 
-    def test_comments_and_matrix_values_are_not_paths(self):
-        self.assertEqual(named("# see tools/assets\n// tools/assets"), set())
-        self.assertEqual(named("cp packages/${{ matrix.name }}/platforms x"), set())
+    def test_comments_by_the_kind_of_file(self):
+        self.assertEqual(named(check.code("x(); // mirrors tools/assets\n/* tools/assets */ y(\"tools/assets\");", "a.rs")),
+                         {"tools/assets"})
+        self.assertEqual(named(check.code("# tools/assets\necho x # tools/assets\nls ${#a}", "a.sh")), set())
+        self.assertIsNone(check.code("see tools/assets", "packages/x/platforms/README.md"))
+
+    def test_a_matrix_value_is_one_segment_or_each_listed_value(self):
+        self.assertEqual(named("cp packages/${{ matrix.name }}/platforms x"), {"packages/canvas/platforms"})
+        self.assertEqual(check.each_leg("cp packages/${{ matrix.m.name }}/x/${{ matrix.arch }}", {"m.name": ["a"], "arch": ["x64", "arm64"]}),
+                         "cp packages/a/x/x64 packages/a/x/arm64")
+        strategy = ["    strategy:", "      matrix:", "        module:", "          - name: canvas-svg", "            crate: svg",
+                    "          - name: audio", "        arch: [x64, arm64]", "        include:", "          - arch: x64",
+                    "            target: x86_64"]
+        self.assertEqual(check.matrix_values(strategy), {"module.name": ["canvas-svg", "audio"], "module.crate": ["svg"],
+                                                          "arch": ["x64", "arm64"], "target": ["x86_64"]})
 
 
 class Contexts(unittest.TestCase):
@@ -372,17 +395,33 @@ class Goals(unittest.TestCase):
                 self.assertRaises(ni.Failure, check.check_wiring, self.edit(ni.BUILD_NATIVE, guarded, new))
         self.assertRaises(ni.Failure, check.check_wiring,
                           self.edit(ni.BUILD_NATIVE, "          variant: ${{ toJSON(matrix) }}\n", ""))
+        # GitHub evaluates expressions in an action's input descriptions and fails to load it.
+        self.assertRaises(ni.Failure, check.check_wiring, self.edit(
+            f"{ni.CACHE_ACTION}/action.yml", "    description: The job's entry", "    description: ${{ inputs.x }} The job's entry"))
         check.check_wiring(self.base)
 
     def test_the_wiring_of_an_artifact_built_in_parts(self):
         gate = "    needs: canvas-ios-cache\n    if: needs.canvas-ios-cache.outputs.hit != 'true'\n"
+        combine = "    needs: [canvas-ios-cache, canvas-apple]\n    if: needs.canvas-ios-cache.outputs.hit != 'true'\n"
         for name, old, new in (("ungated part", gate, "    needs: canvas-ios-cache\n"),
                                ("|| gate", gate, gate.replace("!= 'true'", "!= 'true' || always()")),
                                ("own key", "          key: ${{ needs.canvas-ios-cache.outputs.key }}\n", ""),
-                               ("no lookup", "          lookup-only: 'true'\n", "")):
+                               ("saving first job", "          artifact: canvas-ios\n          path: canvas-ios.tar.gz\n"
+                                                    "          restore-only: 'true'\n",
+                                "          artifact: canvas-ios\n          path: canvas-ios.tar.gz\n"),
+                               ("first job uploading on a miss", "        if: steps.native.outputs.hit == 'true'\n"
+                                                                 "        with:\n          name: canvas-ios\n",
+                                "        with:\n          name: canvas-ios\n"),
+                               ("last job running after a failed part", combine,
+                                combine.replace("'true'\n", "'true' && !cancelled()\n")),
+                               ("last job not needing the parts", combine, combine.replace(", canvas-apple]", "]"))):
             with self.subTest(name=name):
                 self.assertRaises(ni.Failure, check.check_wiring, self.edit(ni.BUILD_NATIVE, old, new))
         self.assertIn(f"{ni.BUILD_NATIVE}#canvas-apple", ni.key_inputs("canvas-ios", self.base))
+
+    def test_check_fails_a_build_file_naming_a_crate_outside_the_closure(self):
+        rev = self.commit("packages/audio-context/src-native/android/extra.gradle", 'cargo { module = "../../../../crates/canvas-core" }\n')
+        self.assertTrue(any("crates/canvas-core" in p for p in self.problems("audio-context-android", rev)))
 
 
 if __name__ == "__main__":

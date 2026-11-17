@@ -7,9 +7,9 @@ description: >
   scope of the ref that ran it, so pull requests can restore master's entries. With
   NATIVE_CACHE_FRESH=true (the release) it neither restores nor saves, and the job builds.
 
-  An output built by several jobs is looked up first, in a job of its own (`lookup-only`), whose
-  `hit` skips the jobs that build its parts and whose `key` the job that restores it passes back,
-  so both use the same week.
+  An output built by several jobs is restored first, in a job of its own (`restore-only`) that
+  uploads it on a hit and skips the other jobs. On a miss they build it, and the last of them saves
+  it under the `key` the first passes on, so both use the same week.
 
 inputs:
   artifact:
@@ -19,24 +19,24 @@ inputs:
     description: The finished output, the same path the job uploads
     required: true
   variant:
-    description: "In a matrix job, `${{ toJSON(matrix) }}`: every leg gets its own key"
+    description: In a matrix job, the matrix as JSON (toJSON of matrix), so every leg gets its own key
     required: false
     default: ''
-  lookup-only:
-    description: "'true' to only tell whether the output is cached, without restoring or saving it"
+  restore-only:
+    description: "'true' in the first job of an output built by several jobs: restore it, but leave the saving to the job that builds it"
     required: false
     default: 'false'
   key:
-    description: The key a lookup job computed for this output in the same run
+    description: The key the first job of an output built by several jobs computed, in the same run
     required: false
     default: ''
 
 outputs:
   hit:
-    description: "'true' when the output is cached (and, unless lookup-only, restored), so the build can be skipped"
-    value: ${{ steps.cache.outputs.cache-hit || steps.lookup.outputs.cache-hit }}
+    description: "'true' when the output was restored and the build can be skipped"
+    value: ${{ steps.cache.outputs.cache-hit || steps.restore.outputs.cache-hit }}
   key:
-    description: The key, for the job that restores the output after a lookup
+    description: The key, for the jobs that build the output after a miss
     value: ${{ inputs.key || steps.key.outputs.key }}
 
 runs:
@@ -67,17 +67,16 @@ runs:
     # Exact keys only: an output built from other inputs is never the right one.
     - name: Restore
       id: cache
-      if: env.NATIVE_CACHE_FRESH != 'true' && inputs.lookup-only != 'true'
+      if: env.NATIVE_CACHE_FRESH != 'true' && inputs.restore-only != 'true'
       uses: actions/cache@v4
       with:
         path: ${{ inputs.path }}
         key: ${{ inputs.key || steps.key.outputs.key }}
 
-    - name: Look up
-      id: lookup
-      if: env.NATIVE_CACHE_FRESH != 'true' && inputs.lookup-only == 'true'
+    - name: Restore without saving
+      id: restore
+      if: env.NATIVE_CACHE_FRESH != 'true' && inputs.restore-only == 'true'
       uses: actions/cache/restore@v4
       with:
         path: ${{ inputs.path }}
         key: ${{ steps.key.outputs.key }}
-        lookup-only: true

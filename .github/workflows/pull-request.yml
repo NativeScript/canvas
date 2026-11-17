@@ -25,9 +25,9 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  # Fast, dependency-free guards. These run first because they catch the class
-  # of regression that merges introduce silently -- see
-  # tools/tests/check-v8-bridge-invariants.py.
+  # Guards for the class of regression that merges introduce silently (see
+  # tools/tests/check-v8-bridge-invariants.py), on one Linux runner in a few
+  # minutes; the native cache check needs the runner's cargo and make.
   static-checks:
     name: Static Checks
     runs-on: ubuntu-22.04

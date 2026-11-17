@@ -46,10 +46,10 @@
 # is built from (tools/scripts/native-inputs.py says what that covers). On a hit it skips its build
 # and uploads the restored output, so a change rebuilds only the jobs that depend on it: a crate
 # change rebuilds every platform that links the crate, a Windows script change only the Windows
-# jobs, and a TypeScript change nothing. An output built by several jobs (the Apple xcframeworks)
-# is looked up first, so a hit skips the jobs that build its parts. A job that builds Skia also
-# keeps Skia's built libraries per target in .github/actions/skia-cache, saved only by pushes to
-# master.
+# jobs, and a TypeScript change nothing. An output built by several jobs (the Apple xcframeworks) is
+# restored by a job of its own, which on a hit uploads it and skips the jobs that build it. A job
+# that builds Skia also keeps Skia's built libraries per target in .github/actions/skia-cache, saved
+# only by pushes to master.
 name: Build Native
 
 permissions:
@@ -112,10 +112,12 @@ jobs:
           path: packages/canvas/platforms/android/canvas-release.aar
           if-no-files-found: error
 
-  # A hit for the xcframework skips the per-platform jobs. The lookup runs on macOS, as the restore
-  # does, so both get the same cache version.
+  # The xcframework when nothing it is built from has changed: a hit uploads it here and skips the
+  # per-platform jobs and canvas-ios, so a lost cache entry cannot fail the run between them. A miss
+  # leaves canvas-ios to save it under this job's key. On macOS, as canvas-ios, for the same cache
+  # version.
   canvas-ios-cache:
-    name: Canvas xcframework cache lookup
+    name: Canvas xcframework (cached)
     runs-on: macos-15
     outputs:
       hit: ${{ steps.native.outputs.hit }}
@@ -127,7 +129,13 @@ jobs:
         with:
           artifact: canvas-ios
           path: canvas-ios.tar.gz
-          lookup-only: 'true'
+          restore-only: 'true'
+      - uses: actions/upload-artifact@v4
+        if: steps.native.outputs.hit == 'true'
+        with:
+          name: canvas-ios
+          path: canvas-ios.tar.gz
+          if-no-files-found: error
 
   # One runner per platform: its Rust targets, then its framework slices. The Xcode pre-build
   # phase reruns cargo for each slice, so the slices are built in the job that owns the target dir.
@@ -172,7 +180,7 @@ jobs:
   canvas-ios:
     name: Canvas xcframework
     needs: [canvas-ios-cache, canvas-apple]
-    if: ${{ !cancelled() && needs.canvas-ios-cache.result == 'success' && contains(fromJSON('["success","skipped"]'), needs.canvas-apple.result) }}
+    if: needs.canvas-ios-cache.outputs.hit != 'true'
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
@@ -258,9 +266,9 @@ jobs:
           path: packages/canvas-svg/platforms/android/canvassvg-release.aar
           if-no-files-found: error
 
-  # As canvas-ios: a hit for the xcframework skips the per-platform jobs.
+  # As canvas-ios-cache: a hit uploads the xcframework and skips the jobs that build it.
   canvas-svg-ios-cache:
-    name: Canvas SVG xcframework cache lookup
+    name: Canvas SVG xcframework (cached)
     runs-on: macos-15
     outputs:
       hit: ${{ steps.native.outputs.hit }}
@@ -272,7 +280,13 @@ jobs:
         with:
           artifact: canvas-svg-ios
           path: canvas-svg-ios.tar.gz
-          lookup-only: 'true'
+          restore-only: 'true'
+      - uses: actions/upload-artifact@v4
+        if: steps.native.outputs.hit == 'true'
+        with:
+          name: canvas-svg-ios
+          path: canvas-svg-ios.tar.gz
+          if-no-files-found: error
 
   canvas-svg-apple:
     name: Canvas SVG ${{ matrix.platform }}
@@ -312,7 +326,7 @@ jobs:
   canvas-svg-ios:
     name: Canvas SVG xcframework
     needs: [canvas-svg-ios-cache, canvas-svg-apple]
-    if: ${{ !cancelled() && needs.canvas-svg-ios-cache.result == 'success' && contains(fromJSON('["success","skipped"]'), needs.canvas-svg-apple.result) }}
+    if: needs.canvas-svg-ios-cache.outputs.hit != 'true'
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4

@@ -722,6 +722,9 @@ pub fn canvas_native_webgl_copy_tex_image2d(
     border: i32,
     state: &mut WebGLState,
 ) {
+    if webgl1_rejects(state, internalformat, None) {
+        return;
+    }
     state.make_current();
     unsafe {
         gl_bindings::CopyTexImage2D(target, level, internalformat, x, y, width, height, border)
@@ -1072,10 +1075,48 @@ pub fn canvas_native_webgl_get_context_attributes(state: &WebGLState) -> Context
 }
 
 pub fn canvas_native_webgl_get_error(state: &mut WebGLState) -> u32 {
+    let error = state.take_webgl_error();
+    if error != 0 {
+        return error;
+    }
     state.make_current();
-    let ret = unsafe { gl_bindings::GetError() };
+    unsafe { gl_bindings::GetError() }
+}
 
-    ret
+const SRGB_EXT: u32 = 0x8C40;
+const SRGB_ALPHA_EXT: u32 = 0x8C42;
+
+/// The unsized formats WebGL 1 takes, its extensions' included.
+fn is_webgl1_format(format: u32) -> bool {
+    matches!(
+        format,
+        gl_bindings::ALPHA
+            | gl_bindings::RGB
+            | gl_bindings::RGBA
+            | gl_bindings::LUMINANCE
+            | gl_bindings::LUMINANCE_ALPHA
+            | gl_bindings::DEPTH_COMPONENT
+            | gl_bindings::DEPTH_STENCIL
+            | SRGB_EXT
+            | SRGB_ALPHA_EXT
+    )
+}
+
+/// WebGL 1 has no sized internal formats, which a GLES 3 driver would accept: `internalformat`
+/// must be one of its formats and equal `format`. Records the error and returns true when not.
+pub fn webgl1_rejects(state: &WebGLState, internalformat: u32, format: Option<u32>) -> bool {
+    if !matches!(state.get_webgl_version(), WebGLVersion::V1) {
+        return false;
+    }
+    let error = if !is_webgl1_format(internalformat) || format.is_some_and(|f| !is_webgl1_format(f)) {
+        INVALID_ENUM
+    } else if format.is_some_and(|f| f != internalformat) {
+        INVALID_OPERATION
+    } else {
+        return false;
+    };
+    state.set_webgl_error(error);
+    true
 }
 
 #[cfg(target_os = "windows")]
@@ -2274,6 +2315,9 @@ pub fn canvas_native_webgl_tex_image2d_asset(
     asset: &ImageAsset,
     state: &WebGLState,
 ) {
+    if webgl1_rejects(state, internalformat as u32, Some(format as u32)) {
+        return;
+    }
     let mut is_rgba = false;
     let bytes = match format as u32 {
         gl_bindings::RGBA => {
@@ -2445,6 +2489,9 @@ pub fn canvas_native_webgl_tex_image2d_image_none(
     image_type: i32,
     state: &WebGLState,
 ) {
+    if webgl1_rejects(state, internalformat as u32, Some(format as u32)) {
+        return;
+    }
     state.make_current();
     unsafe {
         gl_bindings::TexImage2D(
@@ -2473,6 +2520,9 @@ pub fn canvas_native_webgl_tex_image2d(
     buf: &[u8],
     state: &WebGLState,
 ) {
+    if webgl1_rejects(state, internalformat as u32, Some(format as u32)) {
+        return;
+    }
     state.make_current();
 
     unsafe {
@@ -2525,6 +2575,9 @@ pub fn canvas_native_webgl_tex_image2d_none(
     image_type: i32,
     state: &WebGLState,
 ) {
+    if webgl1_rejects(state, internalformat as u32, Some(format as u32)) {
+        return;
+    }
     state.make_current();
     unsafe {
         gl_bindings::TexImage2D(

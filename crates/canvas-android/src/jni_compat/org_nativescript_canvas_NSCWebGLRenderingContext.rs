@@ -33,6 +33,9 @@ pub extern "system" fn nativeTexImage2D(
         let stride = info.stride();
         // The bitmap's bytes are a copy, so the upload can queue.
         context.post(move |state| unsafe {
+            if canvas_webgl::webgl::webgl1_rejects(state, internalformat as u32, Some(format as u32)) {
+                return;
+            }
             state.make_current();
             if flip_y == JNI_TRUE {
                 let mut buffer = bytes;

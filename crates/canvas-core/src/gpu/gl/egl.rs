@@ -452,7 +452,14 @@ impl SharedTexture {
         let buffer = unsafe { egl::ClientBuffer::from_ptr(texture as usize as *mut c_void) };
         let image = egl
             .instance
-            .create_image(egl.display, context, egl::GL_TEXTURE_2D as egl::Enum, buffer, &[egl::ATTRIB_NONE])
+            .create_image(
+                egl.display,
+                context,
+                egl::GL_TEXTURE_2D as egl::Enum,
+                buffer,
+                // Without it the texture's contents are undefined once the image exists.
+                &[egl::IMAGE_PRESERVED as egl::Attrib, egl::TRUE as egl::Attrib, egl::ATTRIB_NONE],
+            )
             .ok()?;
         let sync = unsafe { egl.instance.create_sync(egl.display, egl::SYNC_FENCE as egl::Enum, &[egl::ATTRIB_NONE]) }.ok();
         unsafe { gl_bindings::Flush() };

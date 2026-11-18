@@ -50,6 +50,8 @@ pub mod matrix;
 pub mod non_standard;
 pub mod surface;
 pub mod surface_gl;
+#[cfg(all(feature = "gl", target_os = "linux"))]
+pub mod vulkan_interop;
 pub mod text_decoder;
 pub mod text_encoder;
 pub mod transformations;
@@ -248,6 +250,8 @@ pub struct Context {
     pub(crate) recording: Option<recording::Recording>,
     /// GPU readback of the surface, with the generation it was read at
     pub(crate) snapshot: Option<(u32, Image)>,
+    #[cfg(all(feature = "gl", target_os = "linux"))]
+    pub(crate) vulkan_interop: vulkan_interop::VulkanInterop,
 }
 
 impl Drop for Context {

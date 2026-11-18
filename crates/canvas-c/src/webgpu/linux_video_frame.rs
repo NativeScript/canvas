@@ -29,6 +29,9 @@ struct SharedImage {
     raw: ash::Device,
     release_pending: bool,
     read: bool,
+    used: std::time::Instant,
+    /// A 2D canvas's: one per canvas, outside the video cap.
+    canvas: bool,
 }
 
 impl Drop for SharedImage {
@@ -130,6 +133,7 @@ unsafe fn create_shared(
     width: u32,
     height: u32,
     with_semaphores: bool,
+    canvas: bool,
 ) -> Option<SharedImage> {
     let size = wgt::Extent3d {
         width,
@@ -173,6 +177,8 @@ unsafe fn create_shared(
         raw,
         release_pending: false,
         read: false,
+        used: std::time::Instant::now(),
+        canvas,
     })
 }
 
@@ -183,9 +189,13 @@ fn wait_idle(device: &Arc<wgpu_core::device::Device>) {
     });
 }
 
-unsafe fn shared(
+/// A GL producer's frame drawn into an image of ours, which the queue's next submit waits for.
+/// Videos share `MAX_IMAGES`; a 2D canvas (`canvas`) keeps its own image until it goes a second
+/// without a copy, so canvases taking turns never evict, and wait for, each other's.
+pub(crate) unsafe fn shared(
     queue: &CanvasGPUQueue,
     frame: &mut crate::linux_video_frame::CanvasLinuxVideoFrame,
+    canvas: bool,
 ) -> Option<Arc<wgpu_core::resource::Texture>> {
     let copy_to = frame.copy_to?;
     let device = &queue.device_id;
@@ -200,23 +210,30 @@ unsafe fn shared(
     }) {
         Some(index) => index,
         None => {
+            let idle = |image: &SharedImage| {
+                image.canvas && image.used.elapsed() >= std::time::Duration::from_secs(1)
+            };
+            let videos = |images: &[SharedImage]| images.iter().filter(|image| !image.canvas).count();
             let stale = cache
                 .images
                 .iter()
-                .any(|image| image.producer == frame.producer)
-                || cache.images.len() >= MAX_IMAGES;
+                .any(|image| image.producer == frame.producer || idle(image))
+                || (!canvas && videos(&cache.images) >= MAX_IMAGES);
             if stale {
                 // Their semaphores may be in flight.
                 wait_idle(device);
                 cache
                     .images
-                    .retain(|image| image.producer != frame.producer);
-                if cache.images.len() >= MAX_IMAGES {
-                    cache.images.remove(0);
+                    .retain(|image| image.producer != frame.producer && !idle(image));
+                if !canvas && videos(&cache.images) >= MAX_IMAGES {
+                    if let Some(oldest) = cache.images.iter().position(|image| !image.canvas) {
+                        cache.images.remove(oldest);
+                    }
                 }
             }
-            let image =
-                unsafe { create_shared(device, frame.producer, width, height, with_semaphores) }?;
+            let image = unsafe {
+                create_shared(device, frame.producer, width, height, with_semaphores, canvas)
+            }?;
             cache.images.push(image);
             cache.images.len() - 1
         }
@@ -246,6 +263,7 @@ unsafe fn shared(
     }
     let image = &mut cache.images[index];
     image.read = true;
+    image.used = std::time::Instant::now();
     if let Some((ready, release)) = image.semaphores {
         let hal_queue = unsafe { Arc::clone(&queue.queue.id).as_hal::<wgpu_hal::api::Vulkan>() }?;
         hal_queue.add_wait_semaphore(ready, None, vk::PipelineStageFlags::ALL_COMMANDS);
@@ -334,7 +352,7 @@ pub(crate) unsafe fn import_and_stage(
     }
     let kind = frame.kind;
     let texture = match kind {
-        KIND_GL => unsafe { shared(queue, frame) },
+        KIND_GL => unsafe { shared(queue, frame, false) },
         KIND_MEMORY => unsafe { upload(queue, frame) },
         _ => None,
     };

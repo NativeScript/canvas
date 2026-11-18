@@ -512,9 +512,8 @@ export abstract class DrawableController {
 	/** Brings snapshots up to date; returns the views that got a new one. */
 	protected abstract refresh(list: View[]): View[];
 
-	/** Notes that `view` has a new native snapshot, taken at `scale`. */
-	protected recordSnapshot(view: View, scale: { x: number; y: number }) {
-		const css = this.cssSize(view);
+	/** Notes that `view` has a new native snapshot, taken at `scale`; `css` is its size (DIP). */
+	protected recordSnapshot(view: View, scale: { x: number; y: number }, css = this.cssSize(view)) {
 		let rec = this.snapshots.get(view);
 		if (!rec) {
 			rec = { asset: null, width: 0, height: 0, cssWidth: 0, cssHeight: 0, defaultWidth: 0, defaultHeight: 0 };

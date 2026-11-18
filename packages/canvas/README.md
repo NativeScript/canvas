@@ -150,7 +150,7 @@ const canvas = OffscreenCanvas._fromHandle(data.canvas);
 
 ### Views in the canvas (HTML-in-Canvas)
 
-The [HTML-in-Canvas](https://github.com/WICG/html-in-canvas) API, with NativeScript views as the elements (iOS and Android). With `content="drawable"` the canvas lays its children out (stacked, at its width) but never shows them; a context draws a snapshot of any descendant marked `drawable`, and touches reach the real view where it was drawn.
+The [HTML-in-Canvas](https://github.com/WICG/html-in-canvas) API, with NativeScript views as the elements (iOS, Android and Linux). With `content="drawable"` the canvas lays its children out (stacked, at its width) but never shows them; a context draws a snapshot of any descendant marked `drawable`, and touches reach the real view where it was drawn.
 
 ```xml
 <canvas:Canvas content="drawable" loaded="onLoaded">
@@ -176,6 +176,7 @@ canvas.on('paint', () => {
 - WebGL: `gl.texElementSubImage2D(target, level, x, y, view)`. WebGPU: `device.queue.drawElementImageToTexture({ source: view }, { texture })`. Neither sets hit testing: call `canvas.updateElementGeometry(view, { canvasTransform })` yourself.
 - `canvas.captureElementImage(view)` returns an `ElementImage` that outlives the frame and is what an OffscreenCanvas's 2D context draws.
 - Snapshots are taken on the CPU (`layer.render(in:)` on iOS, `View.draw` on Android), so content that only exists on the GPU (video, other canvases, maps, blurs) is not in them.
+- On Linux, GTK renders the snapshots from each view's render nodes, so GL content (other canvases) is in them. Hit testing follows the geometry of the canvas's own children only: a drawable view nested deeper gets input through its top-level ancestor's geometry.
 
 ## Linux
 

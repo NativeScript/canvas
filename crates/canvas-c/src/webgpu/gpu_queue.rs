@@ -295,11 +295,14 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_context_to_texture(
         return;
     }
 
-    #[cfg(any(
-        target_os = "ios",
-        target_os = "macos",
-        target_os = "visionos",
-        target_os = "tvos"
+    #[cfg(all(
+        feature = "metal",
+        any(
+            target_os = "ios",
+            target_os = "macos",
+            target_os = "visionos",
+            target_os = "tvos"
+        )
     ))]
     if copy_context_on_gpu(&*queue, copy, &*destination, *size) {
         return;
@@ -455,11 +458,14 @@ unsafe fn copy_context_on_gpu_linux(
 }
 
 /// Signalled by a 2D canvas's queue once its copy for WebGPU is written; wgpu's queue waits on it.
-#[cfg(any(
-    target_os = "ios",
-    target_os = "macos",
-    target_os = "visionos",
-    target_os = "tvos"
+#[cfg(all(
+    feature = "metal",
+    any(
+        target_os = "ios",
+        target_os = "macos",
+        target_os = "visionos",
+        target_os = "tvos"
+    )
 ))]
 struct CopyEvent {
     device: usize,
@@ -467,54 +473,72 @@ struct CopyEvent {
     value: u64,
 }
 
-#[cfg(any(
-    target_os = "ios",
-    target_os = "macos",
-    target_os = "visionos",
-    target_os = "tvos"
+#[cfg(all(
+    feature = "metal",
+    any(
+        target_os = "ios",
+        target_os = "macos",
+        target_os = "visionos",
+        target_os = "tvos"
+    )
 ))]
 unsafe impl Send for CopyEvent {}
 
 /// Metal objects are thread safe; these only cross to the 2D render thread.
-#[cfg(any(
-    target_os = "ios",
-    target_os = "macos",
-    target_os = "visionos",
-    target_os = "tvos"
+#[cfg(all(
+    feature = "metal",
+    any(
+        target_os = "ios",
+        target_os = "macos",
+        target_os = "visionos",
+        target_os = "tvos"
+    )
 ))]
 #[derive(Clone, Copy)]
 struct SendPtr(*const c_void);
-#[cfg(any(
-    target_os = "ios",
-    target_os = "macos",
-    target_os = "visionos",
-    target_os = "tvos"
+#[cfg(all(
+    feature = "metal",
+    any(
+        target_os = "ios",
+        target_os = "macos",
+        target_os = "visionos",
+        target_os = "tvos"
+    )
 ))]
 unsafe impl Send for SendPtr {}
 
-#[cfg(any(
-    target_os = "ios",
-    target_os = "macos",
-    target_os = "visionos",
-    target_os = "tvos"
+#[cfg(all(
+    feature = "metal",
+    any(
+        target_os = "ios",
+        target_os = "macos",
+        target_os = "visionos",
+        target_os = "tvos"
+    )
 ))]
 struct SendRetained<T: ?Sized>(objc2::rc::Retained<T>);
-#[cfg(any(
-    target_os = "ios",
-    target_os = "macos",
-    target_os = "visionos",
-    target_os = "tvos"
+#[cfg(all(
+    feature = "metal",
+    any(
+        target_os = "ios",
+        target_os = "macos",
+        target_os = "visionos",
+        target_os = "tvos"
+    )
 ))]
 unsafe impl<T: ?Sized> Send for SendRetained<T> {}
 
 /// The 2D canvas copied on the GPU, with no readback: its queue blits it into a new texture and
 /// signals an `MTLEvent` that wgpu's queue waits on before sampling it. `false` leaves the copy
 /// to the readback path.
-#[cfg(any(
-    target_os = "ios",
-    target_os = "macos",
-    target_os = "visionos",
-    target_os = "tvos"
+#[cfg(all(
+    feature = "metal",
+    any(
+        target_os = "ios",
+        target_os = "macos",
+        target_os = "visionos",
+        target_os = "tvos"
+    )
 ))]
 unsafe fn copy_context_on_gpu(
     queue: &CanvasGPUQueue,

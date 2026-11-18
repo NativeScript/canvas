@@ -319,16 +319,19 @@ export abstract class DrawableController {
 		this.hitOrder = [];
 	}
 
+	protected canvasCssSize(canvas: any): { width: number; height: number } {
+		const density = Screen.mainScreen.scale || 1;
+		return { width: canvas.getMeasuredWidth() / density, height: canvas.getMeasuredHeight() / density };
+	}
+
 	/** Pixels per DIP of the canvas grid. */
 	gridScale(): { x: number; y: number } {
 		const canvas = this.canvas;
-		const density = Screen.mainScreen.scale || 1;
-		const fallback = density;
+		const fallback = Screen.mainScreen.scale || 1;
 		if (!canvas) {
 			return { x: fallback, y: fallback };
 		}
-		const cssWidth = canvas.getMeasuredWidth() / density;
-		const cssHeight = canvas.getMeasuredHeight() / density;
+		const { width: cssWidth, height: cssHeight } = this.canvasCssSize(canvas);
 		const width = canvas.width;
 		const height = canvas.height;
 		return {
@@ -483,7 +486,8 @@ export abstract class DrawableController {
 		}
 		const changed: View[] = [];
 		// The grid's scale is only known once the canvas has a size.
-		if (canvas.content === 'drawable' && canvas.getMeasuredWidth() > 0 && canvas.getMeasuredHeight() > 0) {
+		const size = canvas.content === 'drawable' ? this.canvasCssSize(canvas) : null;
+		if (size && size.width > 0 && size.height > 0) {
 			const list = this.drawables();
 			const live = new Set(list);
 			for (const [view, rec] of this.snapshots) {

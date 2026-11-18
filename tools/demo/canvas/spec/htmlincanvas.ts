@@ -5,10 +5,30 @@ import { Canvas } from '@nativescript/canvas';
 import { suite, test, skip, ok, equal, closeTo, throws, getPageCanvas, pixelAt } from './harness';
 
 declare const navigator: any;
-declare const __LINUX__: boolean;
+declare const __LINUX__: boolean, __WINDOWS__: boolean;
 declare const gtk_widget_pick: any, gtk_widget_is_ancestor: any;
+declare const Microsoft: any, Windows: any, NSWinRT: any;
 
 const isLinux = typeof __LINUX__ !== 'undefined' && __LINUX__;
+const isWindows = typeof __WINDOWS__ !== 'undefined' && __WINDOWS__;
+
+/**
+ * Windows: whether XAML hit testing at (x, y) DIP in the canvas finds `target`. Input hit testing is
+ * the same, so a Projection, which neither follows, would fail here.
+ */
+function xamlHits(canvas: any, target: View, x: number, y: number) {
+	const panel = canvas.nativeView;
+	const point = panel.TransformToVisual(null).TransformPoint(new Windows.Foundation.Point(x, y));
+	const key = NSWinRT.interop.pointerKey(target.nativeView);
+	const iterator = Microsoft.UI.Xaml.Media.VisualTreeHelper.FindElementsInHostCoordinates(point, panel).First();
+	while (iterator.HasCurrent) {
+		if (NSWinRT.interop.pointerKey(iterator.Current) === key) {
+			return true;
+		}
+		iterator.MoveNext();
+	}
+	return false;
+}
 
 /** Linux: whether the canvas picks `target` (or something in it) at (x, y) DIP. */
 function gtkHits(canvas: any, target: View, x: number, y: number) {
@@ -412,8 +432,56 @@ export function registerHtmlInCanvasSpec() {
 				await wait(100);
 				ok(gtkHits(canvas, button, 150, 70), 'the drawn position picks the button');
 				ok(!gtkHits(canvas, button, 20, 20), 'the layout position does not');
+			} else if (isWindows) {
+				await wait(100);
+				ok(xamlHits(canvas, button, 150, 70), 'the drawn position hits the button');
+				ok(!xamlHits(canvas, button, 20, 20), 'the layout position does not');
 			}
 		});
+
+		if (isWindows) {
+			// XAML input follows neither a Projection nor a 4x4 TransformMatrix: the host aims the view at
+			// each pointer before XAML hit-tests it (host.aim stands in for the pointer here).
+			mountedTest('a view drawn with a perspective matrix is hit where it is drawn', async () => {
+				const button = new Button();
+				button.text = 'hit';
+				button.width = 60;
+				button.height = 40;
+				button.horizontalAlignment = 'left';
+				(button as any).drawable = true;
+				const { canvas } = await mount([button], 200, 100, null);
+				await snapshotted(canvas, button);
+				// Column-major 4x4: translate(100, 50) · perspective(200) · rotateY(60deg) · translate(-30, -20).
+				const mul = (a: number[], b: number[]) => {
+					const o = new Array(16).fill(0);
+					for (let c = 0; c < 4; c++) for (let r = 0; r < 4; r++) for (let k = 0; k < 4; k++) o[c * 4 + r] += a[k * 4 + r] * b[c * 4 + k];
+					return o;
+				};
+				const translate = (x: number, y: number) => [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, x, y, 0, 1];
+				const a = (60 * Math.PI) / 180;
+				const perspective = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, -1 / 200, 0, 0, 0, 1];
+				const rotateY = [Math.cos(a), 0, -Math.sin(a), 0, 0, 1, 0, 0, Math.sin(a), 0, Math.cos(a), 0, 0, 0, 0, 1];
+				const m = mul(mul(mul(translate(100, 50), perspective), rotateY), translate(-30, -20));
+				canvas.updateElementGeometry(button, { canvasTransform: new Float64Array(m) });
+				const project = (x: number, y: number) => {
+					const w = m[3] * x + m[7] * y + m[15];
+					return [(m[0] * x + m[4] * y + m[12]) / w, (m[1] * x + m[5] * y + m[13]) / w];
+				};
+				await wait(100);
+				const host = canvas._drawables.host;
+				// 2 px inside and outside its edges: an affine approximation taken at the button's center gets
+				// both wrong under this perspective.
+				for (const [bx, by, inside] of [
+					[30, 20, true],
+					[2, 20, true],
+					[62, 20, false],
+				] as const) {
+					const [x, y] = project(bx, by);
+					host.aim(x, y);
+					equal(xamlHits(canvas, button, x, y), inside, `button point (${bx}, ${by}) drawn at (${x.toFixed(1)}, ${y.toFixed(1)})`);
+				}
+			});
+		}
 
 		mountedTest('a source rect limits hit testing to the drawn part', async () => {
 			const button = new Button();
@@ -452,6 +520,9 @@ export function registerHtmlInCanvasSpec() {
 			} else if (isLinux) {
 				await wait(100);
 				ok(!gtkHits(canvas, button, 20, 20), 'no longer picks the button');
+			} else if (isWindows) {
+				await wait(100);
+				ok(!xamlHits(canvas, button, 20, 20), 'no longer hits the button');
 			}
 		});
 	});

@@ -19,6 +19,10 @@ use napi::{Env, Error, Result};
 use napi_derive::napi;
 use windows_core::{IUnknown, Interface};
 
+mod drawable;
+mod picking;
+mod xaml;
+
 /// `CanvasModule.__simulateD3DDeviceRemoval()`: removes the thread's Direct3D 12 device (2D
 /// canvases), as a driver reset would, to exercise context loss. `false` where unsupported.
 #[napi(js_name = "__simulateD3DDeviceRemoval")]

@@ -47,11 +47,10 @@ pub(crate) fn copy_on_gpu(
     if !platform::SUPPORTED || format != gl_bindings::RGBA || type_ != gl_bindings::UNSIGNED_BYTE {
         return false;
     }
-    // The copy is premultiplied, like the canvas.
     let (flip_y, premultiply, webgl2) = state.unpack_flags();
     // Sized formats are WebGL 2 only; anything else is validated by the readback path.
     let allowed = |internal: i32| internal == gl_bindings::RGBA as i32 || (webgl2 && internal == gl_bindings::RGBA8 as i32);
-    if !premultiply || allocate.is_some_and(|internal| !allowed(internal)) {
+    if allocate.is_some_and(|internal| !allowed(internal)) {
         return false;
     }
     let upload = Upload {
@@ -64,7 +63,7 @@ pub(crate) fn copy_on_gpu(
         type_,
         webgl2,
     };
-    platform::copy(canvas, state, flip_y, upload)
+    platform::copy(canvas, state, flip_y, premultiply, upload)
 }
 
 /// On the WebGL thread: `source`, a `width` x `height` texture of this context whose first row is
@@ -117,13 +116,13 @@ mod platform {
 
     pub(super) const SUPPORTED: bool = true;
 
-    pub(super) fn copy(canvas: &mut CanvasRenderingContext2D, state: &WebGLState, flip_y: bool, upload: Upload) -> bool {
+    pub(super) fn copy(canvas: &mut CanvasRenderingContext2D, state: &WebGLState, flip_y: bool, premultiply: bool, upload: Upload) -> bool {
         // A threaded canvas's stand-in reports CPU; its real context answers below.
         if !canvas.is_threaded() && canvas.engine() != crate::c2d::Engine::GL {
             return false;
         }
         let Some(shared) = canvas
-            .with_pixels_source(move |context| context.share_gl_texture(flip_y))
+            .with_pixels_source(move |context| context.share_gl_texture(flip_y, premultiply))
             .flatten()
         else {
             return false;
@@ -398,9 +397,9 @@ mod platform {
         }
     }
 
-    pub(super) fn copy(canvas: &mut CanvasRenderingContext2D, state: &WebGLState, flip_y: bool, upload: Upload) -> bool {
-        // A blit cannot flip.
-        if flip_y {
+    pub(super) fn copy(canvas: &mut CanvasRenderingContext2D, state: &WebGLState, flip_y: bool, premultiply: bool, upload: Upload) -> bool {
+        // A blit cannot flip or unpremultiply.
+        if flip_y || !premultiply {
             return false;
         }
         // Asks the real context: a threaded canvas's own engine is its recorder's.
@@ -505,7 +504,7 @@ mod platform {
 
     pub(super) const SUPPORTED: bool = false;
 
-    pub(super) fn copy(_canvas: &mut CanvasRenderingContext2D, _state: &WebGLState, _flip_y: bool, _upload: Upload) -> bool {
+    pub(super) fn copy(_canvas: &mut CanvasRenderingContext2D, _state: &WebGLState, _flip_y: bool, _premultiply: bool, _upload: Upload) -> bool {
         false
     }
 }

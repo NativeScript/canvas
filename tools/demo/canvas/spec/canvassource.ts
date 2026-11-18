@@ -237,6 +237,29 @@ void main() { gl_FragColor = texture2D(tex, uv); }`,
 			});
 		}
 
+		for (const flipY of [false, true]) {
+			test(`texSubImage2D uploads a straight-alpha 2d canvas${flipY ? ' with UNPACK_FLIP_Y_WEBGL' : ''}`, () => {
+				const { canvas, ctx } = make2D(32, 32);
+				ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
+				ctx.fillRect(0, 0, 32, 16);
+				ctx.fillStyle = 'rgba(0, 0, 255, 0.25)';
+				ctx.fillRect(0, 16, 32, 16);
+				const result = uploadAndReadBack(
+					canvas,
+					32,
+					(gl) => {
+						gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, flipY);
+						gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 32, 32, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+						gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, gl.RGBA, gl.UNSIGNED_BYTE, canvas);
+					},
+					[16, 4],
+				);
+				ok(result && !result.error, `texSubImage2D raised GL error ${result?.error}`);
+				const expected = flipY ? [0, 0, 255, 64] : [255, 0, 0, 128];
+				ok(pixelNear(result.pixels, expected), `expected ${describePixel(expected)} in row 4, got ${describePixel(result.pixels)}`);
+			});
+		}
+
 		test('texImage2D accepts a 2d canvas', () => {
 			const source = make2DSource(32, 'red');
 			const result = uploadAndReadBack(source);

@@ -85,6 +85,21 @@ const GR_GL_RGBA8: u32 = 0x8058;
 /// An opaque config's buffer, which RGB888x wraps.
 const GR_GL_RGB8: u32 = 0x8051;
 
+/// Divides each colour by its alpha. Drawn with `BlendMode::Src` into an 8-bit target, Skia
+/// writes what the filter returns, so the texture holds straight alpha.
+#[cfg(all(feature = "gl", any(target_os = "linux", target_os = "android")))]
+fn unpremultiply() -> Option<skia_safe::ColorFilter> {
+    thread_local! {
+        static FILTER: Option<skia_safe::ColorFilter> =
+            skia_safe::RuntimeEffect::make_for_color_filter("half4 main(half4 color) { return unpremul(color); }", None)
+                .ok()
+                .and_then(|effect| {
+                    effect.make_color_filter(skia_safe::Data::new_empty(), None::<&[skia_safe::runtime_effect::ChildPtr]>)
+                });
+    }
+    FILTER.with(Clone::clone)
+}
+
 #[cfg(feature = "gl")]
 impl Context {
     pub fn new_gl(
@@ -242,10 +257,12 @@ impl Context {
     }
 
     /// Call after raw GL made behind Skia's back.
-    /// The canvas, top row first (bottom row first with `flip_y`) and premultiplied, in a new
-    /// texture another context on this EGL display can read once it waits on the share.
+    /// The canvas, top row first (bottom row first with `flip_y`) and premultiplied unless
+    /// `premultiplied` is false, in a new texture another context on this EGL display can read
+    /// once it waits on the share.
     #[cfg(any(target_os = "linux", target_os = "android"))]
-    pub fn share_gl_texture(&mut self, flip_y: bool) -> Option<canvas_core::gpu::gl::SharedTexture> {
+    pub fn share_gl_texture(&mut self, flip_y: bool, premultiplied: bool) -> Option<canvas_core::gpu::gl::SharedTexture> {
+        let unpremultiply = if premultiplied { None } else { Some(unpremultiply()?) };
         let gl = self.gl_context.as_ref()?;
         if !gl.make_current() {
             return None;
@@ -300,6 +317,7 @@ impl Context {
             }
             let mut paint = skia_safe::Paint::default();
             paint.set_blend_mode(skia_safe::BlendMode::Src);
+            paint.set_color_filter(unpremultiply);
             self.surface.draw(canvas, (0., 0.), skia_safe::SamplingOptions::default(), Some(&paint));
             ctx.flush_and_submit_surface(&mut copy, None);
             drop(copy);

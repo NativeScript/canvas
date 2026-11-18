@@ -81,6 +81,20 @@ export class GPUQueue {
 			width = size.width;
 			height = size.height ?? 1;
 		}
+		const whole = !crop && (width === undefined || width === resolved.width) && (height === undefined || height === resolved.height);
+		const renderable = ((destination?.texture as any)?.usage ?? 0) & GPUTextureUsage.RENDER_ATTACHMENT;
+		const snapshot = whole && renderable ? resolved.nativeSnapshot?.() : null;
+		if (snapshot) {
+			try {
+				const pointer = __ANDROID__ ? snapshot.getTexturePointer() : snapshot.texturePointer;
+				if (pointer && String(pointer) !== '0') {
+					this.copyExternalImageToTexture({ nativeTexture: pointer, width: resolved.width, height: resolved.height } as never, target, { width: resolved.width, height: resolved.height, depthOrArrayLayers: 1 });
+					return;
+				}
+			} finally {
+				snapshot.close?.();
+			}
+		}
 		const image = elementAsset(resolved, 'drawElementImageToTexture', crop, width, height);
 		this.copyExternalImageToTexture({ source: image.asset as never }, target, { width: image.width, height: image.height, depthOrArrayLayers: 1 });
 	}
@@ -132,6 +146,12 @@ export class GPUQueue {
 					src.source = source.source._canvas.native;
 				}
 			}
+		}
+
+		if ((source as any).nativeTexture) {
+			(src as any).nativeTexture = (source as any).nativeTexture;
+			(src as any).width = (source as any).width;
+			(src as any).height = (source as any).height;
 		}
 
 		if (typeof source.flipY === 'boolean') {

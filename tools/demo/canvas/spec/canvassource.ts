@@ -384,6 +384,23 @@ void main() { gl_FragColor = texture2D(tex, uv); }`,
 			ok(pixelNear(pixel, RED), `expected red, got ${describePixel(pixel)}`);
 		});
 
+		test('copyExternalImageToTexture keeps many 2d canvases apart across repeated uploads', async () => {
+			const device = await getDevice();
+			ok(device, 'no webgpu device');
+
+			const sources = Array.from({ length: 6 }, () => make2D(32, 32));
+			for (let round = 0; round < 3; round++) {
+				for (let i = 0; i < sources.length; i++) {
+					const expected: [number, number, number, number] = [i * 40, round * 100, 200, 255];
+					const { canvas, ctx } = sources[i];
+					ctx.fillStyle = `rgb(${expected[0]}, ${expected[1]}, ${expected[2]})`;
+					ctx.fillRect(0, 0, 32, 32);
+					const pixel = await copyAndReadBack(device, canvas);
+					ok(pixelNear(pixel, expected), `canvas ${i}, round ${round}: expected ${describePixel(expected)}, got ${describePixel(pixel)}`);
+				}
+			}
+		});
+
 		test('copyExternalImageToTexture accepts a webgl canvas', async () => {
 			const device = await getDevice();
 			ok(device, 'no webgpu device');

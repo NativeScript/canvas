@@ -160,7 +160,10 @@ export class Canvas extends NapiCanvas {
 			}
 			start = last = [x, y];
 			down = true;
-			gtk_widget_grab_focus(widget);
+			// A press on a hosted child (content="drawable") leaves focus to it.
+			if (!canvas._canvas.picksChild(x, y)) {
+				gtk_widget_grab_focus(widget);
+			}
 			canvas._handleEvents({ event: 'down', ptrId: 0, x, y, isPrimary: true });
 		});
 		on(drag, 'drag-update', ['double', 'double'], (dx: number, dy: number) => {

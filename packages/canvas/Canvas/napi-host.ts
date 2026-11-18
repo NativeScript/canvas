@@ -14,7 +14,7 @@ import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
 import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
 import { GPUCanvasContext } from '../WebGPU';
 import { ImageBitmapRenderingContext } from '../ImageBitmapRenderingContext';
-import { ImageSource, Screen, Utils, widthProperty, heightProperty } from '@nativescript/core';
+import { ImageSource, Screen, Utils, View, widthProperty, heightProperty } from '@nativescript/core';
 import { handleContextOptions, microtask, CanvasContextType, isPercentLength, setParentPercentSize, holdBackAnimationFramesWhileBehind } from './utils';
 import { Helpers } from '../helpers';
 
@@ -374,6 +374,17 @@ export abstract class NapiCanvas extends CanvasBase {
 
 	onLayout(left: number, top: number, right: number, bottom: number) {
 		super.onLayout(left, top, right, bottom);
+		if (this.getChildrenCount() > 0) {
+			const width = right - left;
+			let y = 0;
+			this.eachChildView((child) => {
+				const size = child.getMeasuredHeight();
+				View.layoutChild(this, child, 0, y, width, y + size);
+				y += size;
+				return true;
+			});
+		}
+		(this._drawables as any)?.layoutHost?.();
 		this._shimParent();
 	}
 
@@ -424,7 +435,15 @@ export abstract class NapiCanvas extends CanvasBase {
 
 	public onMeasure(widthMeasureSpec: number, heightMeasureSpec: number) {
 		if (this._canvas) {
-			this.setMeasuredDimension(Utils.layout.getMeasureSpecSize(widthMeasureSpec), Utils.layout.getMeasureSpecSize(heightMeasureSpec));
+			const width = Utils.layout.getMeasureSpecSize(widthMeasureSpec);
+			this.setMeasuredDimension(width, Utils.layout.getMeasureSpecSize(heightMeasureSpec));
+			// Children never size the canvas.
+			const childWidth = Utils.layout.makeMeasureSpec(width, Utils.layout.EXACTLY);
+			const childHeight = Utils.layout.makeMeasureSpec(0, Utils.layout.UNSPECIFIED);
+			this.eachChildView((child) => {
+				View.measureChild(this, child, childWidth, childHeight);
+				return true;
+			});
 		}
 	}
 

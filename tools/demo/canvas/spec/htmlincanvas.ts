@@ -5,6 +5,17 @@ import { Canvas } from '@nativescript/canvas';
 import { suite, test, skip, ok, equal, closeTo, throws, getPageCanvas, pixelAt } from './harness';
 
 declare const navigator: any;
+declare const __LINUX__: boolean;
+declare const gtk_widget_pick: any, gtk_widget_is_ancestor: any;
+
+const isLinux = typeof __LINUX__ !== 'undefined' && __LINUX__;
+
+/** Linux: whether the canvas picks `target` (or something in it) at (x, y) DIP. */
+function gtkHits(canvas: any, target: View, x: number, y: number) {
+	const picked = gtk_widget_pick(canvas.nativeView, x, y, 0);
+	const native: any = target.nativeView;
+	return !!picked && (picked.toNumber() === native.toNumber() || !!gtk_widget_is_ancestor(picked, native));
+}
 
 const RED: [number, number, number, number] = [255, 0, 0, 255];
 const BLUE: [number, number, number, number] = [0, 0, 255, 255];
@@ -396,6 +407,29 @@ export function registerHtmlInCanvasSpec() {
 				equal(touched, 0, 'the layout position does not reach the button');
 				send(150, 70);
 				equal(touched, 2, 'the drawn position reaches the button (down + up)');
+			} else if (isLinux) {
+				// Allocation catches up on GTK's next layout pass.
+				await wait(100);
+				ok(gtkHits(canvas, button, 150, 70), 'the drawn position picks the button');
+				ok(!gtkHits(canvas, button, 20, 20), 'the layout position does not');
+			}
+		});
+
+		mountedTest('a source rect limits hit testing to the drawn part', async () => {
+			const button = new Button();
+			button.text = 'hit';
+			button.width = 60;
+			button.height = 40;
+			button.horizontalAlignment = 'left';
+			(button as any).drawable = true;
+			const { canvas, ctx } = await mount([button]);
+			await snapshotted(canvas, button);
+			// The left half, at (120, 50): the right half would have been at 150..180.
+			ctx.drawElementImage(button, 0, 0, 30, 40, 120, 50, 30, 40);
+			if (isLinux) {
+				await wait(100);
+				ok(gtkHits(canvas, button, 135, 70), 'the drawn half picks the button');
+				ok(!gtkHits(canvas, button, 165, 70), 'the half left out does not');
 			}
 		});
 
@@ -415,6 +449,9 @@ export function registerHtmlInCanvasSpec() {
 			if (__APPLE__) {
 				const hit = (canvas.nativeView as UIView).hitTestWithEvent(CGPointMake(20, 20), null);
 				ok(hit !== button.nativeView && !hit?.isDescendantOfView?.(button.nativeView), 'no longer hits the button');
+			} else if (isLinux) {
+				await wait(100);
+				ok(!gtkHits(canvas, button, 20, 20), 'no longer picks the button');
 			}
 		});
 	});

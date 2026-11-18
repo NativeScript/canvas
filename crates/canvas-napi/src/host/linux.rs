@@ -25,6 +25,8 @@ use napi::bindgen_prelude::ObjectFinalize;
 use napi::{Env, Error, Result};
 use napi_derive::napi;
 
+mod drawable;
+
 mod imp {
   use super::*;
 
@@ -54,7 +56,12 @@ mod imp {
       (0, 0, -1, -1)
     }
 
+    fn size_allocate(&self, _: i32, _: i32, _: i32) {
+      drawable::allocate_children(&self.obj());
+    }
+
     fn snapshot(&self, snapshot: &gtk::Snapshot) {
+      drawable::snapshot_children(&self.obj());
       let Some(frame) = self.frame.borrow().clone() else {
         return;
       };
@@ -833,6 +840,15 @@ impl NSCCanvas {
   #[napi(getter)]
   pub fn widget(&self) -> f64 {
     self.view.as_ptr() as usize as f64
+  }
+
+  /// Whether a hosted child (`content="drawable"`) takes input at (x, y) DIP.
+  #[napi]
+  pub fn picks_child(&self, x: f64, y: f64) -> bool {
+    self
+      .view
+      .pick(x, y, gtk::PickFlags::DEFAULT)
+      .is_some_and(|picked| picked != *self.view.upcast_ref::<gtk::Widget>())
   }
 
   #[napi(getter)]

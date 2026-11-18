@@ -5,6 +5,7 @@ import { GPUCommandBuffer } from './GPUCommandBuffer';
 import { GPUImageCopyExternalImage, GPUImageCopyTexture, GPUImageCopyTextureTagged, GPUImageDataLayout } from './Interfaces';
 import { GPUExtent3D } from './Types';
 import { isCanvasView, isOffscreenCanvas } from '../Canvas/utils';
+import { elementAsset, resolveElementSource } from '../Canvas/drawable/common';
 export class GPUQueue {
 	[native_]: any;
 
@@ -58,6 +59,32 @@ export class GPUQueue {
 		return undefined;
 	}
 
+	drawElementImageToTexture(source: { source: any; sourceX?: number; sourceY?: number; sourceWidth?: number; sourceHeight?: number }, destination: GPUImageCopyTextureTagged & { size?: GPUExtent3D }) {
+		const element = source?.source;
+		const resolved = resolveElementSource(null, element, 'drawElementImageToTexture');
+		const cropped = source.sourceX !== undefined || source.sourceY !== undefined || source.sourceWidth !== undefined || source.sourceHeight !== undefined;
+		const crop = cropped
+			? {
+					x: source.sourceX ?? 0,
+					y: source.sourceY ?? 0,
+					width: source.sourceWidth ?? resolved.width - (source.sourceX ?? 0),
+					height: source.sourceHeight ?? resolved.height - (source.sourceY ?? 0),
+				}
+			: null;
+		const { size, ...target } = destination as any;
+		let width: number | undefined;
+		let height: number | undefined;
+		if (Array.isArray(size)) {
+			width = size[0];
+			height = size[1] ?? 1;
+		} else if (size) {
+			width = size.width;
+			height = size.height ?? 1;
+		}
+		const image = elementAsset(resolved, 'drawElementImageToTexture', crop, width, height);
+		this.copyExternalImageToTexture({ source: image.asset as never }, target, { width: image.width, height: image.height, depthOrArrayLayers: 1 });
+	}
+
 	copyExternalImageToTexture(source: GPUImageCopyExternalImage, destination: GPUImageCopyTextureTagged, copySize: GPUExtent3D) {
 		const src: GPUImageCopyExternalImage = {
 			source: undefined,
@@ -96,7 +123,7 @@ export class GPUQueue {
 			} else if (source.source?._type === '2d' || source.source?._type?.indexOf('webgl') > -1 || source.source?._type === 'webgpu') {
 				_keepAlive = source.source;
 				src.source = (source.source as any).native;
-			} else if ((isCanvasView(source.source) || isOffscreenCanvas(source.source))) {
+			} else if (isCanvasView(source.source) || isOffscreenCanvas(source.source)) {
 				_keepAlive = source.source;
 				src.source = source.source.native;
 			} else if (typeof source.source.tagName === 'string' && source.source.tagName === 'CANVAS') {

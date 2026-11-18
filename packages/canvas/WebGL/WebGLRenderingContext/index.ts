@@ -45,6 +45,7 @@ import { Helpers } from '../../helpers';
 import { NAPI_HOST, POINTER_CONTEXT_HOST } from '../../platform';
 import { imageAssetFor } from '../../platform/index';
 import { isCanvasView, isOffscreenCanvas } from '../../Canvas/utils';
+import { ElementImage, elementAsset, resolveElementSource } from '../../Canvas/drawable/common';
 
 /** An image, canvas, video, bitmap or ImageData: not pixels in a buffer, an offset or null. */
 function isTexImageSource(value: unknown): boolean {
@@ -1038,6 +1039,18 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 	@profile
 	texParameteri(target: number, pname: number, param: number): void {
 		this.native.texParameteri(target, pname, param);
+	}
+
+	texElementSubImage2D(target: number, level: number, xoffset: number, yoffset: number, element: any, config: { sx?: number; sy?: number; swidth?: number; sheight?: number; width?: number; height?: number } = {}): void {
+		const owner = (this as any)._canvas;
+		if (isOffscreenCanvas(owner) && !(element instanceof ElementImage)) {
+			throw new TypeError("Failed to execute 'texElementSubImage2D' on 'WebGLRenderingContext': parameter 5 is not of type 'ElementImage'.");
+		}
+		const source = resolveElementSource(owner, element, 'texElementSubImage2D');
+		const cropped = config.sx !== undefined || config.sy !== undefined || config.swidth !== undefined || config.sheight !== undefined;
+		const crop = cropped ? { x: config.sx ?? 0, y: config.sy ?? 0, width: config.swidth ?? source.width - (config.sx ?? 0), height: config.sheight ?? source.height - (config.sy ?? 0) } : null;
+		const { asset } = elementAsset(source, 'texElementSubImage2D', crop, config.width, config.height);
+		this.texSubImage2D(target, level, xoffset, yoffset, this.RGBA, this.UNSIGNED_BYTE, asset);
 	}
 
 	texSubImage2D(target: number, level: number, xoffset: number, yoffset: number, width: number, height: number, format: number, type: number, pixels: ArrayBufferView): void;

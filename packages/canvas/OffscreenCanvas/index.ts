@@ -8,6 +8,7 @@ import { Helpers } from '../helpers';
 import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
 import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
 import { GPUCanvasContext } from '../WebGPU/GPUCanvasContext';
+import { ElementImage } from '../Canvas/drawable/common';
 
 declare const navigator: any;
 
@@ -193,9 +194,31 @@ export class OffscreenCanvas {
 	private _contextId: OffscreenRenderingContextId | null = null;
 	private _context: any = null;
 	private _listeners: Map<string, { listener: any; once: boolean }[]> | null = null;
+	private _placeholder: WeakRef<Canvas> | null = null;
 
 	oncontextlost: ((event: any) => any) | null = null;
 	oncontextrestored: ((event: any) => any) | null = null;
+
+	updateElementGeometry(element: ElementImage, options: { canvasTransform?: any; canvasClip?: any; preserveHitTestOrder?: boolean } = {}) {
+		if (!(element instanceof ElementImage)) {
+			throw new TypeError("Failed to execute 'updateElementGeometry' on 'OffscreenCanvas': parameter 1 is not of type 'ElementImage'.");
+		}
+		(this._placeholder?.deref() as any)?._queueElementGeometry(element, options ?? {});
+	}
+
+	clearElementGeometry(element: ElementImage) {
+		if (!(element instanceof ElementImage)) {
+			throw new TypeError("Failed to execute 'clearElementGeometry' on 'OffscreenCanvas': parameter 1 is not of type 'ElementImage'.");
+		}
+		(this._placeholder?.deref() as any)?._queueElementGeometry(element, null);
+	}
+
+	getElementImageDefaultSize(element: ElementImage): { width: number; height: number } {
+		if (!(element instanceof ElementImage)) {
+			throw new TypeError("Failed to execute 'getElementImageDefaultSize' on 'OffscreenCanvas': parameter 1 is not of type 'ElementImage'.");
+		}
+		return { width: element._defaultWidth, height: element._defaultHeight };
+	}
 
 	constructor(width: number, height: number) {
 		if (arguments.length < 2) {
@@ -209,9 +232,12 @@ export class OffscreenCanvas {
 	static _fromPlaceholder(canvas: Canvas): OffscreenCanvas {
 		const surface = surfaces() ? (canvas as any)._createOffscreenSurface?.() : null;
 		if (surface) {
-			return OffscreenCanvas._fromSurface(surface);
+			const offscreen = OffscreenCanvas._fromSurface(surface);
+			offscreen._placeholder = new WeakRef(canvas);
+			return offscreen;
 		}
 		const offscreen = new OffscreenCanvas(canvas.width, canvas.height);
+		offscreen._placeholder = new WeakRef(canvas);
 		offscreen._attachHost(canvas);
 		return offscreen;
 	}

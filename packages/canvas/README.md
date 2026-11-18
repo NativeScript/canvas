@@ -148,6 +148,35 @@ const canvas = OffscreenCanvas._fromHandle(data.canvas);
 - `2d`, `bitmaprenderer`, `webgl`, `webgl2` and `webgpu` all work there, as does `new OffscreenCanvas(w, h)` made in the Worker, which can be transferred back.
 - Resizing it in the Worker resizes the view on the UI thread a moment later.
 
+### Views in the canvas (HTML-in-Canvas)
+
+The [HTML-in-Canvas](https://github.com/WICG/html-in-canvas) API, with NativeScript views as the elements (iOS and Android). With `content="drawable"` the canvas lays its children out (stacked, at its width) but never shows them; a context draws a snapshot of any descendant marked `drawable`, and touches reach the real view where it was drawn.
+
+```xml
+<canvas:Canvas content="drawable" loaded="onLoaded">
+	<StackLayout id="form" drawable="true" width="280">
+		<TextField hint="Name" />
+		<Button text="Send" tap="send" />
+	</StackLayout>
+</canvas:Canvas>
+```
+
+```ts
+const ctx = canvas.getContext('2d');
+const form = canvas.getViewById('form');
+canvas.on('paint', () => {
+	ctx.reset();
+	ctx.rotate(0.1);
+	ctx.drawElementImage(form, 40, 40); // also makes the form hit-testable there
+});
+```
+
+- `paint` fires after a frame's `requestAnimationFrame` callbacks when drawable views changed (`event.changedElements`), or after `canvas.requestPaint()`. Draw a view only once it has had its first snapshot, so from a `paint` event; earlier, `drawElementImage` throws `InvalidStateError`.
+- Sizes are in canvas grid units: `canvas.getElementImageDefaultSize(view)` is the view's size there.
+- WebGL: `gl.texElementSubImage2D(target, level, x, y, view)`. WebGPU: `device.queue.drawElementImageToTexture({ source: view }, { texture })`. Neither sets hit testing: call `canvas.updateElementGeometry(view, { canvasTransform })` yourself.
+- `canvas.captureElementImage(view)` returns an `ElementImage` that outlives the frame and is what an OffscreenCanvas's 2D context draws.
+- Snapshots are taken on the CPU (`layer.render(in:)` on iOS, `View.draw` on Android), so content that only exists on the GPU (video, other canvases, maps, blurs) is not in them.
+
 ## Linux
 
 On NativeScript Linux the canvas is a GTK 4 (>= 4.6) widget and `canvasnative.node` (a Node-API

@@ -3,7 +3,7 @@ import { DOMMatrix } from '../Canvas2D';
 import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
 import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
 import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
-import { ImageSource, Utils, Screen, isUserInteractionEnabledProperty, widthProperty, heightProperty } from '@nativescript/core';
+import { ImageSource, Utils, Screen, View, isUserInteractionEnabledProperty, widthProperty, heightProperty } from '@nativescript/core';
 import { GPUCanvasContext } from '../WebGPU';
 import { ImageBitmapRenderingContext } from '../ImageBitmapRenderingContext';
 import { handleContextOptions, microtask, CanvasContextType, setParentPercentSize, holdBackAnimationFramesWhileBehind } from './utils';
@@ -326,6 +326,17 @@ export class Canvas extends CanvasBase {
 
 	onLayout(left: number, top: number, right: number, bottom: number) {
 		super.onLayout(left, top, right, bottom);
+		if (this.getChildrenCount() > 0) {
+			const width = right - left;
+			let y = 0;
+			this.eachChildView((child) => {
+				const size = child.getMeasuredHeight();
+				View.layoutChild(this, child, 0, y, width, y + size);
+				y += size;
+				return true;
+			});
+		}
+		(this._drawables as any)?.layoutHost?.();
 		if (!this.parent) {
 			return;
 		}
@@ -380,6 +391,13 @@ export class Canvas extends CanvasBase {
 			const width = Utils.layout.getMeasureSpecSize(widthMeasureSpec);
 			const height = Utils.layout.getMeasureSpecSize(heightMeasureSpec);
 			this.setMeasuredDimension(width, height);
+			// Children never size the canvas.
+			const childWidth = Utils.layout.makeMeasureSpec(width, Utils.layout.EXACTLY);
+			const childHeight = Utils.layout.makeMeasureSpec(0, Utils.layout.UNSPECIFIED);
+			this.eachChildView((child) => {
+				View.measureChild(this, child, childWidth, childHeight);
+				return true;
+			});
 		}
 	}
 

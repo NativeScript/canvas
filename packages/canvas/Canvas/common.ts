@@ -2,6 +2,9 @@ import { CSSType, View, Property, booleanConverter, Screen, ContainerView } from
 import type { CanvasRenderingContext } from '../common';
 import { CANVAS_VIEW, removeItemFromArray } from './utils';
 import { OffscreenCanvas } from '../OffscreenCanvas';
+import { createDrawableController, DrawableController, ElementImage, ElementSource, elementImageSource, isDrawable, mat4 } from './drawable';
+
+export { ElementImage } from './drawable';
 
 export interface ICanvasBase {
 	/** @deprecated The canvas is usable as soon as it exists; call getContext() directly. */
@@ -81,6 +84,33 @@ export class CustomEvent extends Event {
 	constructor(type: string, options?: EventOptions & { detail?: any }) {
 		super(type, options);
 		this.detail = options?.detail ?? null;
+	}
+}
+
+export class CanvasPaintEvent extends Event {
+	readonly changedElements: ReadonlyArray<View>;
+	/** For Observable listeners. */
+	readonly eventName: string;
+	readonly object: any;
+
+	constructor(type: string, options?: EventOptions & { changedElements?: View[] }) {
+		super(type, options);
+		this.changedElements = Object.freeze([...(options?.changedElements ?? [])]);
+		this.eventName = type;
+		this.object = options?.target ?? null;
+	}
+}
+
+export class ElementGeometryUpdateEvent extends Event {
+	readonly elements: ReadonlyArray<View>;
+	readonly eventName: string;
+	readonly object: any;
+
+	constructor(type: string, options?: EventOptions & { elements?: View[] }) {
+		super(type, options);
+		this.elements = Object.freeze([...(options?.elements ?? [])]);
+		this.eventName = type;
+		this.object = options?.target ?? null;
 	}
 }
 
@@ -1313,6 +1343,309 @@ export abstract class CanvasBase extends ContainerView implements ICanvasBase {
 
 	setAttribute(attrib, value?) {
 		this[attrib] = value ?? attrib;
+	}
+
+	private _subViews: View[] = [];
+	private _content: 'fallback' | 'drawable' = 'fallback';
+	/** @internal */
+	_drawables: DrawableController | null = null;
+	private _paintRequested = false;
+	private _pendingGeometry: Map<View, any> | null = null;
+
+	onpaint: ((event: CanvasPaintEvent) => void) | null = null;
+
+	onelementgeometryupdate: ((event: ElementGeometryUpdateEvent) => void) | null = null;
+
+	get content(): 'fallback' | 'drawable' {
+		return this._content;
+	}
+
+	set content(value: string) {
+		const next =
+			String(value ?? '')
+				.trim()
+				.toLowerCase() === 'drawable'
+				? 'drawable'
+				: 'fallback';
+		if (next === this._content) {
+			return;
+		}
+		this._content = next;
+		this._updateDrawableActivity();
+	}
+
+	/** @internal */
+	_ensureDrawables(): DrawableController | null {
+		if (!this._drawables && this.nativeViewProtected) {
+			this._drawables = createDrawableController(this);
+			if (this._drawables && this._paintRequested) {
+				this._paintRequested = false;
+				this._drawables.requestPaint();
+			}
+		}
+		return this._drawables;
+	}
+
+	private _updateDrawableActivity() {
+		// Only a drawable canvas, or one with children, gets a host view.
+		const controller = this._content === 'drawable' ? this._ensureDrawables() : this._drawables;
+		if (!controller) {
+			return;
+		}
+		if (this._content === 'drawable' && this.isLoaded) {
+			DrawableController.activate(controller);
+		} else {
+			DrawableController.deactivate(controller);
+		}
+	}
+
+	onLoaded() {
+		super.onLoaded();
+		this._updateDrawableActivity();
+	}
+
+	onUnloaded() {
+		super.onUnloaded();
+		this._updateDrawableActivity();
+	}
+
+	disposeNativeView() {
+		this._drawables?.dispose();
+		this._drawables = null;
+		super.disposeNativeView();
+	}
+
+	requestLayout() {
+		super.requestLayout();
+		this._drawables?.markHot();
+	}
+
+	_addChildFromBuilder(name: string, value: any) {
+		if (value instanceof View) {
+			this.addChild(value);
+		}
+	}
+
+	addChild(child: View) {
+		this.insertChild(child, this._subViews.length);
+	}
+
+	insertChild(child: View, atIndex: number) {
+		const index = Math.max(0, Math.min(atIndex ?? this._subViews.length, this._subViews.length));
+		this._subViews.splice(index, 0, child);
+		this._addView(child, index);
+		this._drawables?.markHot();
+	}
+
+	removeChild(child: View) {
+		this._removeView(child);
+	}
+
+	removeChildren() {
+		while (this._subViews.length) {
+			this._removeView(this._subViews[this._subViews.length - 1]);
+		}
+	}
+
+	// Frameworks remove children of non-layout views through this.
+	_removeView(child: any) {
+		const index = this._subViews.indexOf(child);
+		if (index > -1) {
+			this._subViews.splice(index, 1);
+		}
+		this._drawables?.clearGeometry(child);
+		super._removeView(child);
+	}
+
+	getChildrenCount(): number {
+		return this._subViews.length;
+	}
+
+	get _childrenCount(): number {
+		return this._subViews.length;
+	}
+
+	getChildAt(index: number): View {
+		return this._subViews[index];
+	}
+
+	getChildIndex(child: View): number {
+		return this._subViews.indexOf(child);
+	}
+
+	eachChildView(callback: (child: View) => boolean) {
+		for (const child of this._subViews.slice()) {
+			if (callback(child) === false) {
+				break;
+			}
+		}
+	}
+
+	_addViewToNativeVisualTree(child: any, atIndex?: number): boolean {
+		super._addViewToNativeVisualTree(child, atIndex);
+		return this._ensureDrawables()?.attachChild(child, atIndex) ?? false;
+	}
+
+	_removeViewFromNativeVisualTree(child: any) {
+		super._removeViewFromNativeVisualTree(child);
+		this._drawables?.detachChild(child);
+	}
+
+	requestPaint() {
+		const controller = this._ensureDrawables();
+		if (controller) {
+			controller.requestPaint();
+		} else {
+			this._paintRequested = true;
+		}
+	}
+
+	/** @internal */
+	_dispatchPaint(changed: View[]) {
+		const event = new CanvasPaintEvent('paint', { changedElements: changed, target: this });
+		if (typeof this.onpaint === 'function') {
+			this.onpaint.call(this, event);
+		}
+		this.notify(event as any);
+	}
+
+	private _drawableTarget(element: any, method: string): View {
+		const view = element instanceof ElementImage ? element._element?.deref() : element;
+		if (!(view instanceof View)) {
+			throw new TypeError(`Failed to execute '${method}' on 'HTMLCanvasElement': parameter 1 is not of type 'Element' or 'ElementImage'.`);
+		}
+		if (!this._isOwnDescendant(view)) {
+			throw domError('InvalidStateError', `Failed to execute '${method}' on 'HTMLCanvasElement': The element is not a descendant of this canvas.`);
+		}
+		const controller = this._ensureDrawables();
+		if (!controller) {
+			throw domError('NotSupportedError', `Failed to execute '${method}' on 'HTMLCanvasElement': Drawable elements are not supported on this platform.`);
+		}
+		return view;
+	}
+
+	/** Not through another canvas. */
+	private _isOwnDescendant(view: View): boolean {
+		let node: any = view.parent;
+		while (node) {
+			if (node === this) {
+				return true;
+			}
+			if (node instanceof CanvasBase) {
+				return false;
+			}
+			node = node.parent;
+		}
+		return false;
+	}
+
+	/** @internal */
+	_elementSource(element: any, method: string): ElementSource {
+		if (element instanceof ElementImage) {
+			return elementImageSource(element, method);
+		}
+		if (!(element instanceof View)) {
+			throw new TypeError(`Failed to execute '${method}': parameter 1 is not of type 'Element' or 'ElementImage'.`);
+		}
+		if (this._content !== 'drawable') {
+			throw domError('InvalidStateError', `Failed to execute '${method}': The canvas's content attribute is not "drawable".`);
+		}
+		if (!isDrawable(element)) {
+			throw domError('InvalidStateError', `Failed to execute '${method}': The element is not drawable.`);
+		}
+		const view = this._drawableTarget(element, method);
+		const rec = this._drawables.snapshot(view);
+		if (!rec) {
+			throw domError('InvalidStateError', `Failed to execute '${method}': The element has no snapshot yet; draw it from a paint event.`);
+		}
+		return {
+			asset: rec.asset,
+			width: rec.width,
+			height: rec.height,
+			defaultWidth: rec.defaultWidth,
+			defaultHeight: rec.defaultHeight,
+			cssWidth: rec.cssWidth,
+			cssHeight: rec.cssHeight,
+			view,
+			canvas: this,
+		};
+	}
+
+	captureElementImage(element: View): ElementImage {
+		const source = this._elementSource(element, 'captureElementImage');
+		const asset = this._drawables.render(source.view, source.width, source.height);
+		if (!asset) {
+			throw domError('InvalidStateError', "Failed to execute 'captureElementImage': The element could not be captured.");
+		}
+		const image = ElementImage._create();
+		image._asset = asset;
+		image._width = source.width;
+		image._height = source.height;
+		image._defaultWidth = source.defaultWidth;
+		image._defaultHeight = source.defaultHeight;
+		image._cssWidth = source.cssWidth;
+		image._cssHeight = source.cssHeight;
+		image._element = new WeakRef(source.view);
+		image._canvas = new WeakRef(this);
+		return image;
+	}
+
+	updateElementGeometry(element: View | ElementImage, options: { canvasTransform?: any; canvasClip?: any; preserveHitTestOrder?: boolean } = {}) {
+		const view = this._drawableTarget(element, 'updateElementGeometry');
+		this._drawables.updateGeometry(view, options);
+	}
+
+	clearElementGeometry(element: View | ElementImage) {
+		const view = this._drawableTarget(element, 'clearElementGeometry');
+		this._drawables.clearGeometry(view);
+	}
+
+	getElementTransform(element: View | ElementImage): any {
+		const view = this._drawableTarget(element, 'getElementTransform');
+		return mat4.toDOMMatrix(this._drawables.getGeometry(view)?.transform ?? null) as any;
+	}
+
+	getElementImageDefaultSize(element: View | ElementImage): { width: number; height: number } {
+		if (element instanceof ElementImage) {
+			return { width: element._defaultWidth, height: element._defaultHeight };
+		}
+		const view = this._drawableTarget(element, 'getElementImageDefaultSize');
+		return this._drawables.defaultSize(view);
+	}
+
+	/** @internal From this canvas's OffscreenCanvas, batched into a microtask. */
+	_queueElementGeometry(element: View | ElementImage, options: any) {
+		const view = element instanceof ElementImage ? element._element?.deref() : element;
+		if (!(view instanceof View)) {
+			return;
+		}
+		const first = !this._pendingGeometry;
+		this._pendingGeometry ??= new Map();
+		this._pendingGeometry.set(view, options === null ? null : { ...(this._pendingGeometry.get(view) ?? {}), ...options });
+		if (!first) {
+			return;
+		}
+		queueMicrotask(() => {
+			const pending = this._pendingGeometry;
+			this._pendingGeometry = null;
+			const elements: View[] = [];
+			for (const [target, opts] of pending ?? []) {
+				if (!this._isOwnDescendant(target) || !this._ensureDrawables()) {
+					continue;
+				}
+				if (opts === null) {
+					this._drawables.clearGeometry(target);
+				} else {
+					this._drawables.updateGeometry(target, opts);
+				}
+				elements.push(target);
+			}
+			const event = new ElementGeometryUpdateEvent('elementgeometryupdate', { elements, target: this });
+			if (typeof this.onelementgeometryupdate === 'function') {
+				this.onelementgeometryupdate.call(this, event);
+			}
+			this.notify(event as any);
+		});
 	}
 
 	/** Set by `transferControlToOffscreen()`: the canvas then only shows its OffscreenCanvas's frames. */

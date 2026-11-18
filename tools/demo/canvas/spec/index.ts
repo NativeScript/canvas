@@ -6,7 +6,7 @@
  *   adb logcat -d | grep 'SPEC|'
  *
  * `--es suite <prefix>` narrows the run: a group (`2d`, `webgl`, `webgpu`,
- * `imagebitmap`, `bitmaprenderer`, `lifecycle`, `offscreen` (with `offscreen.worker`), `audio` and `media` on Windows and Linux) or a single suite (`2d.path2d`).
+ * `imagebitmap`, `bitmaprenderer`, `lifecycle`, `offscreen` (with `offscreen.worker`), `htmlincanvas` (iOS, Android), `audio` and `media` on Windows and Linux) or a single suite (`2d.path2d`).
  * `contextlost` (Windows) runs on its own: it removes the GPU device.
  */
 
@@ -23,6 +23,7 @@ import { registerMediaSpec } from './media';
 import { registerLifecycleSpec } from './lifecycle';
 import { registerOffscreenCanvasSpec } from './offscreen';
 import { registerOffscreenWorkerSpec } from './offscreen-worker';
+import { registerHtmlInCanvasSpec } from './htmlincanvas';
 
 declare const __WINDOWS__: boolean, __LINUX__: boolean;
 
@@ -42,6 +43,9 @@ export async function runSpecTests(group: SpecGroup = 'all') {
 	registerLifecycleSpec();
 	registerOffscreenCanvasSpec();
 	registerOffscreenWorkerSpec();
+	if (!(typeof __WINDOWS__ !== 'undefined' && __WINDOWS__) && !(typeof __LINUX__ !== 'undefined' && __LINUX__)) {
+		registerHtmlInCanvasSpec();
+	}
 	if ((typeof __WINDOWS__ !== 'undefined' && __WINDOWS__) || (typeof __LINUX__ !== 'undefined' && __LINUX__)) {
 		registerAudioSpec();
 		registerMediaSpec();

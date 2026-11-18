@@ -330,6 +330,30 @@ export function registerHtmlInCanvasSpec() {
 		});
 	});
 
+	suite('htmlincanvas.gpu', () => {
+		mountedTest('snapshots live on the GPU and draw from there', async () => {
+			const child = block(50, 50, 'red');
+			const { canvas, ctx } = await mount([child]);
+			await snapshotted(canvas, child);
+			const snapshot = canvas._drawables.nativeSnapshot(child);
+			if (__ANDROID__ && android.os.Build.VERSION.SDK_INT >= 29) {
+				ok(snapshot?.getHardwareBuffer?.(), 'expected a HardwareBuffer');
+				const drawn = (org as any).nativescript.canvas.NSCDrawableHost.draw2D(long(ctx.context.__getPointer()), snapshot, 0, 0, snapshot.getWidth(), snapshot.getHeight(), 100, 0, 50, 50);
+				ok(drawn, 'expected the GPU draw to be taken');
+				ctx.context.__makeDirty();
+				const pixel = pixelAt(ctx, 125, 25);
+				ok(near(pixel, RED), `expected red from the GPU draw, got ${show(pixel)}`);
+			} else if (__APPLE__) {
+				ok(snapshot, 'expected a native snapshot');
+				ok(snapshot.draw2D(ctx.context.__getPointer(), 0, 0, snapshot.width, snapshot.height, 100, 0, 50, 50), 'expected the Metal draw to be taken');
+				ctx.context.__makeDirty?.();
+				const pixel = pixelAt(ctx, 125, 25);
+				ok(near(pixel, RED), `expected red from the Metal draw, got ${show(pixel)}`);
+			}
+			snapshot?.close?.();
+		});
+	});
+
 	suite('htmlincanvas.hittest', () => {
 		mountedTest('touches reach the element where it is drawn, not where it is laid out', async () => {
 			const button = new Button();

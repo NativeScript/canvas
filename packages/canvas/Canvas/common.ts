@@ -1558,8 +1558,12 @@ export abstract class CanvasBase extends ContainerView implements ICanvasBase {
 		if (!rec) {
 			throw domError('InvalidStateError', `Failed to execute '${method}': The element has no snapshot yet; draw it from a paint event.`);
 		}
+		const controller = this._drawables;
 		return {
-			asset: rec.asset,
+			get asset() {
+				return controller.assetOf(view, rec);
+			},
+			nativeSnapshot: () => controller.nativeSnapshot(view),
 			width: rec.width,
 			height: rec.height,
 			defaultWidth: rec.defaultWidth,

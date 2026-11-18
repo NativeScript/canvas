@@ -1014,7 +1014,31 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 		if (![sx, sy, sw, sh, dx, dy, dw, dh].every(Number.isFinite) || !sw || !sh || !dw || !dh) {
 			return;
 		}
-		this.context.drawImage(source.asset.native, sx, sy, sw, sh, dx, dy, dw, dh);
+		let drawn = false;
+		if (__ANDROID__) {
+			const snapshot = source.nativeSnapshot?.();
+			if (snapshot) {
+				try {
+					drawn = (<any>org).nativescript.canvas.NSCDrawableHost.draw2D(long(this.context.__getPointer()), snapshot, sx, sy, sw, sh, dx, dy, dw, dh);
+				} finally {
+					snapshot.close();
+				}
+				if (drawn) {
+					this.context.__makeDirty();
+				}
+			}
+		} else if (__APPLE__) {
+			const snapshot = source.nativeSnapshot?.();
+			if (snapshot) {
+				drawn = snapshot.draw2D(this.context.__getPointer(), sx, sy, sw, sh, dx, dy, dw, dh);
+				if (drawn) {
+					this.context.__makeDirty();
+				}
+			}
+		}
+		if (!drawn) {
+			this.context.drawImage(source.asset.native, sx, sy, sw, sh, dx, dy, dw, dh);
+		}
 
 		if (options?.preserveElementGeometry) {
 			return;

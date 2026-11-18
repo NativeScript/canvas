@@ -18,6 +18,7 @@
 		F18165C72621CECC0051F06B /* NSCRender.swift in Sources */ = {isa = PBXBuildFile; fileRef = F18165C62621CECC0051F06B /* NSCRender.swift */; };
 		F181661D26228CBA0051F06B /* NSCImageBitmap.swift in Sources */ = {isa = PBXBuildFile; fileRef = F181661C26228CBA0051F06B /* NSCImageBitmap.swift */; };
 		F1886A102C7B12FE00B2892C /* NSCCanvasVideoFrame.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1886A0F2C7B12FE00B2892C /* NSCCanvasVideoFrame.swift */; };
+		F1A0DA0D2EB8000100C0FFEE /* NSCDrawableHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A0DA0C2EB8000100C0FFEE /* NSCDrawableHost.swift */; };
 		F1A87C75255D00BA00394387 /* NSCCanvas.xib in Resources */ = {isa = PBXBuildFile; fileRef = F1A87C74255D00BA00394387 /* NSCCanvas.xib */; };
 		F1CB77132BBFC05900481C3F /* NSCWebGLRenderingContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1CB77122BBFC05900481C3F /* NSCWebGLRenderingContext.swift */; };
 		F1D1AE292ADAAEAA005C140B /* canvas_ios.h in Headers */ = {isa = PBXBuildFile; fileRef = F1D1AE252ADAAEAA005C140B /* canvas_ios.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -83,6 +84,7 @@
 		F18165C62621CECC0051F06B /* NSCRender.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSCRender.swift; sourceTree = "<group>"; };
 		F181661C26228CBA0051F06B /* NSCImageBitmap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSCImageBitmap.swift; sourceTree = "<group>"; };
 		F1886A0F2C7B12FE00B2892C /* NSCCanvasVideoFrame.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NSCCanvasVideoFrame.swift; path = CanvasNative/Source/NSCCanvasVideoFrame.swift; sourceTree = "<group>"; };
+		F1A0DA0C2EB8000100C0FFEE /* NSCDrawableHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NSCDrawableHost.swift; path = CanvasNative/Source/NSCDrawableHost.swift; sourceTree = "<group>"; };
 		F1A87C74255D00BA00394387 /* NSCCanvas.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = NSCCanvas.xib; sourceTree = "<group>"; };
 		F1CB77122BBFC05900481C3F /* NSCWebGLRenderingContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSCWebGLRenderingContext.swift; sourceTree = "<group>"; };
 		F1D1AE252ADAAEAA005C140B /* canvas_ios.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = canvas_ios.h; path = CanvasNative/include/canvas_ios.h; sourceTree = "<group>"; };
@@ -128,6 +130,7 @@
 				F1DC52652CB59F16000DD64F /* NSCMTLView.h */,
 				F1DC52632CB59EFA000DD64F /* NSCMTLView.m */,
 				F1886A0F2C7B12FE00B2892C /* NSCCanvasVideoFrame.swift */,
+				F1A0DA0C2EB8000100C0FFEE /* NSCDrawableHost.swift */,
 				F1CB77122BBFC05900481C3F /* NSCWebGLRenderingContext.swift */,
 				F14908962AEA0F8D007C6693 /* NSCTouchHandler.swift */,
 				F1D1AE252ADAAEAA005C140B /* canvas_ios.h */,
@@ -372,6 +375,7 @@
 				F1FF6A6C25248CFF001DAE0D /* NSCCanvasListener.swift in Sources */,
 				F134FE5C29D005BE0051057B /* CanvasHelpers.swift in Sources */,
 				F1886A102C7B12FE00B2892C /* NSCCanvasVideoFrame.swift in Sources */,
+				F1A0DA0D2EB8000100C0FFEE /* NSCDrawableHost.swift in Sources */,
 				F1DC52642CB59EFA000DD64F /* NSCMTLView.m in Sources */,
 				F1FF6A7825248CFF001DAE0D /* NSCCanvas.swift in Sources */,
 				F1FF6A8225248CFF001DAE0D /* GLUtils.swift in Sources */,

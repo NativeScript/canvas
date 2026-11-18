@@ -172,6 +172,10 @@ export function rectFrom(init: any): Rect | null {
 	};
 }
 
+export function sameRect(a: Rect | null, b: Rect | null): boolean {
+	return a === b || (!!a && !!b && a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height);
+}
+
 export function rectContains(rect: Rect, x: number, y: number) {
 	const left = Math.min(rect.x, rect.x + rect.width);
 	const top = Math.min(rect.y, rect.y + rect.height);
@@ -233,7 +237,10 @@ export class ElementImage {
 }
 
 export interface ElementSource {
-	asset: ImageAsset;
+	/** Built on first use where the snapshot lives on the GPU. */
+	readonly asset: ImageAsset;
+	/** A retained native snapshot (close it), or null. */
+	nativeSnapshot?: () => any;
 	width: number;
 	height: number;
 	/** Grid units. */
@@ -264,9 +271,6 @@ export interface SnapshotRecord {
 	[key: string]: any;
 }
 
-export const HOT_FRAMES = 30;
-export const COLD_INTERVAL = 10;
-
 export abstract class DrawableController {
 	protected readonly canvasRef: WeakRef<any>;
 	protected snapshots = new Map<View, SnapshotRecord>();
@@ -274,7 +278,11 @@ export abstract class DrawableController {
 	/** Bottom to top. */
 	protected hitOrder: View[] = [];
 	protected paintRequested = false;
-	protected hotUntil = 0;
+	private generation = 0;
+	/** What the native host last got for each view. */
+	private sent = new Map<View, { native: any; m: Mat4; clip: Rect | null }>();
+	/** The view last raised above the others for hit testing. */
+	private top: View | null = null;
 	protected disposed = false;
 
 	constructor(canvas: any) {
@@ -289,15 +297,10 @@ export abstract class DrawableController {
 
 	abstract detachChild(child: View): void;
 
-	/** False when the pixels did not change. */
-	protected abstract capture(view: View, rec: SnapshotRecord, width: number, height: number, scaleX: number, scaleY: number, nested: View[]): boolean;
-
-	protected abstract needsCapture(view: View, rec: SnapshotRecord, frame: number): boolean;
-
 	/** `source` is in DIP. */
 	abstract render(view: View, width: number, height: number, source?: Rect): ImageAsset | null;
 
-	protected abstract applyGeometry(view: View, geometry: ElementGeometry | null): void;
+	protected abstract applyGeometry(view: View, geometry: ElementGeometry | null, moveToTop?: boolean): void;
 
 	protected releaseRecord(rec: SnapshotRecord) {
 		rec.asset = null;
@@ -311,6 +314,8 @@ export abstract class DrawableController {
 		}
 		this.snapshots.clear();
 		this.geometry.clear();
+		this.sent.clear();
+		this.top = null;
 		this.hitOrder = [];
 	}
 
@@ -350,22 +355,6 @@ export abstract class DrawableController {
 		return out;
 	}
 
-	protected nestedDrawables(view: View): View[] {
-		const out: View[] = [];
-		const visit = (node: View) => {
-			node.eachChildView((child) => {
-				if (isDrawable(child)) {
-					out.push(child);
-				} else {
-					visit(child);
-				}
-				return true;
-			});
-		};
-		visit(view);
-		return out;
-	}
-
 	contains(view: View): boolean {
 		const canvas = this.canvas;
 		let node: any = view?.parent;
@@ -391,12 +380,20 @@ export abstract class DrawableController {
 
 	snapshot(view: View): SnapshotRecord | null {
 		const rec = this.snapshots.get(view);
-		return rec?.asset ? rec : null;
+		return rec?.asset || rec?.native ? rec : null;
 	}
 
-	markHot(frames = HOT_FRAMES) {
-		this.hotUntil = Math.max(this.hotUntil, DrawableController.frameNumber + frames);
+	/** The snapshot as an ImageAsset, for consumers with no GPU path. */
+	assetOf(view: View, rec: SnapshotRecord): ImageAsset | null {
+		return rec.asset;
 	}
+
+	/** A retained native snapshot the GPU paths can draw (close it when done), or null. */
+	nativeSnapshot(view: View): any {
+		return null;
+	}
+
+	markHot() {}
 
 	requestPaint() {
 		this.paintRequested = true;
@@ -421,13 +418,14 @@ export abstract class DrawableController {
 			geometry.clip = rectFrom(options.canvasClip);
 		}
 		const index = this.hitOrder.indexOf(view);
-		if (!(options?.preserveHitTestOrder && known && index > -1)) {
+		const moveToTop = !(options?.preserveHitTestOrder && known && index > -1);
+		if (moveToTop) {
 			if (index > -1) {
 				this.hitOrder.splice(index, 1);
 			}
 			this.hitOrder.push(view);
 		}
-		this.applyGeometry(view, geometry);
+		this.applyGeometry(view, geometry, moveToTop);
 	}
 
 	clearGeometry(view: View) {
@@ -448,6 +446,27 @@ export abstract class DrawableController {
 		}
 		const scale = this.gridScale();
 		return mat4.multiply(mat4.scale(1 / scale.x, 1 / scale.y), geometry.transform);
+	}
+
+	/**
+	 * drawElementImage sets geometry on every draw, and most of it is unchanged: whether the host
+	 * needs `m` (null: cleared) and `clip` for `view`, and whether it still needs raising.
+	 */
+	protected geometryUpdate(view: View, native: any, m: Mat4 | null, clip: Rect | null, moveToTop: boolean): { send: boolean; raise: boolean } {
+		const last = this.sent.get(view);
+		if (!m) {
+			this.sent.delete(view);
+			return { send: !!last, raise: false };
+		}
+		const raise = moveToTop && this.top !== view;
+		if (!raise && last && last.native === native && mat4.equals(last.m, m) && sameRect(last.clip, clip)) {
+			return { send: false, raise: false };
+		}
+		this.sent.set(view, { native, m, clip: clip ? { ...clip } : null });
+		if (raise) {
+			this.top = view;
+		}
+		return { send: true, raise };
 	}
 
 	protected syncGeometry() {
@@ -478,42 +497,7 @@ export abstract class DrawableController {
 					this.clearGeometry(view);
 				}
 			}
-			const scale = this.gridScale();
-			for (const view of list) {
-				const css = this.cssSize(view);
-				if (css.width <= 0 || css.height <= 0 || !view.nativeViewProtected) {
-					continue;
-				}
-				let rec = this.snapshots.get(view);
-				if (!rec) {
-					rec = { asset: null, width: 0, height: 0, cssWidth: 0, cssHeight: 0, defaultWidth: 0, defaultHeight: 0 };
-					this.snapshots.set(view, rec);
-				}
-				const width = Math.max(1, Math.ceil(css.width * scale.x - 1e-3));
-				const height = Math.max(1, Math.ceil(css.height * scale.y - 1e-3));
-				const resized = !rec.asset || rec.width !== width || rec.height !== height || rec.scaleX !== scale.x || rec.scaleY !== scale.y;
-				if (!resized && frameNumber > this.hotUntil && !this.needsCapture(view, rec, frameNumber)) {
-					continue;
-				}
-				let didChange = false;
-				try {
-					didChange = this.capture(view, rec, width, height, scale.x, scale.y, this.nestedDrawables(view));
-				} catch (e) {
-					console.error('Canvas: could not snapshot a drawable element', e);
-				}
-				if (didChange || resized) {
-					rec.cssWidth = css.width;
-					rec.cssHeight = css.height;
-					rec.defaultWidth = css.width * scale.x;
-					rec.defaultHeight = css.height * scale.y;
-					rec.scaleX = scale.x;
-					rec.scaleY = scale.y;
-					rec.hotUntil = frameNumber + HOT_FRAMES;
-					if (rec.asset) {
-						changed.push(view);
-					}
-				}
-			}
+			changed.push(...this.refresh(list));
 			this.syncGeometry();
 		}
 		if (changed.length || this.paintRequested) {
@@ -523,6 +507,27 @@ export abstract class DrawableController {
 		if (canvas.content !== 'drawable' || !canvas.isLoaded) {
 			DrawableController.deactivate(this);
 		}
+	}
+
+	/** Brings snapshots up to date; returns the views that got a new one. */
+	protected abstract refresh(list: View[]): View[];
+
+	/** Notes that `view` has a new native snapshot, taken at `scale`. */
+	protected recordSnapshot(view: View, scale: { x: number; y: number }) {
+		const css = this.cssSize(view);
+		let rec = this.snapshots.get(view);
+		if (!rec) {
+			rec = { asset: null, width: 0, height: 0, cssWidth: 0, cssHeight: 0, defaultWidth: 0, defaultHeight: 0 };
+			this.snapshots.set(view, rec);
+		}
+		rec.native = true;
+		rec.width = Math.max(1, Math.ceil(css.width * scale.x - 1e-3));
+		rec.height = Math.max(1, Math.ceil(css.height * scale.y - 1e-3));
+		rec.cssWidth = css.width;
+		rec.cssHeight = css.height;
+		rec.defaultWidth = css.width * scale.x;
+		rec.defaultHeight = css.height * scale.y;
+		rec.generation = ++this.generation;
 	}
 
 	private static active = new Set<DrawableController>();

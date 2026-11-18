@@ -87,9 +87,9 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_adapter_info(
     Arc::into_raw(Arc::new(CanvasGPUAdapterInfo::new(info)))
 }
 
-/// `Adapter::request_device` with VK_KHR_external_semaphore_fd, which video frames shared with
-/// GL synchronize with (`linux_video_frame`).
-#[cfg(target_os = "linux")]
+/// `Adapter::request_device` with VK_KHR_external_semaphore_fd, which GL frames and canvases
+/// shared with WebGPU synchronize with (`linux_video_frame`, `android_canvas_copy`).
+#[cfg(any(target_os = "linux", target_os = "android"))]
 fn request_device_sharing_semaphores(
     adapter: &Arc<wgpu_core::instance::Adapter>,
     descriptor: &wgpu_core::device::DeviceDescriptor,
@@ -192,9 +192,9 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
         };
         let callback_data = callback_data as *mut c_void;
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         let device = request_device_sharing_semaphores(&adapter_inner, &descriptor);
-        #[cfg(not(target_os = "linux"))]
+        #[cfg(not(any(target_os = "linux", target_os = "android")))]
         let device = adapter_inner.request_device(&descriptor);
         match device {
             Ok((device, queue)) => {
@@ -222,6 +222,8 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
                     shared_frames: Default::default(),
                     #[cfg(target_os = "linux")]
                     linux_frames: Default::default(),
+                    #[cfg(all(feature = "gl", target_os = "android"))]
+                    android_canvases: Default::default(),
                 });
 
                 let pipeline_cache = super::pipeline_cache::PipelineCache::create(

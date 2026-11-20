@@ -379,6 +379,9 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 
 	@profile
 	deleteBuffer(buffer: WebGLBuffer): void {
+		if (!buffer) {
+			return;
+		}
 		const value = buffer.native;
 		this.native.deleteBuffer(value);
 		if (this._pixelPackBuffer === buffer) {
@@ -395,6 +398,9 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 
 	@profile
 	deleteFramebuffer(frameBuffer: WebGLFramebuffer): void {
+		if (!frameBuffer) {
+			return;
+		}
 		const value = frameBuffer.native;
 		this.native.deleteFramebuffer(value);
 		// Deleting a bound framebuffer unbinds it.
@@ -408,12 +414,18 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 
 	@profile
 	deleteProgram(program: WebGLProgram): void {
+		if (!program) {
+			return;
+		}
 		const value = program.native;
 		this.native.deleteProgram(value);
 	}
 
 	@profile
 	deleteRenderbuffer(renderBuffer: WebGLRenderbuffer): void {
+		if (!renderBuffer) {
+			return;
+		}
 		const value = renderBuffer.native;
 		this.native.deleteRenderbuffer(value);
 		if (this._renderbuffer === renderBuffer) {
@@ -431,6 +443,9 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 
 	@profile
 	deleteTexture(texture: WebGLTexture): void {
+		if (!texture) {
+			return;
+		}
 		const value = texture.native;
 		this.native.deleteTexture(value);
 		// Deleting a texture unbinds it from every unit.
@@ -783,6 +798,9 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 
 	@profile
 	isBuffer(buffer: WebGLBuffer): boolean {
+		if (!buffer) {
+			return false;
+		}
 		const value = buffer.native;
 		return this.native.isBuffer(value);
 	}
@@ -805,24 +823,36 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 
 	@profile
 	isProgram(program: WebGLProgram): boolean {
+		if (!program) {
+			return false;
+		}
 		const value = program.native;
 		return this.native.isProgram(value);
 	}
 
 	@profile
 	isRenderbuffer(renderbuffer: WebGLRenderbuffer): boolean {
+		if (!renderbuffer) {
+			return false;
+		}
 		const value = renderbuffer.native;
 		return this.native.isRenderbuffer(value);
 	}
 
 	@profile
 	isShader(shader: WebGLShader): boolean {
+		if (!shader) {
+			return false;
+		}
 		const value = shader.native;
 		return this.native.isShader(value);
 	}
 
 	@profile
 	isTexture(texture: WebGLTexture): boolean {
+		if (!texture) {
+			return false;
+		}
 		const value = texture.native;
 		return this.native.isTexture(value);
 	}
@@ -1136,114 +1166,171 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 
 	@profile
 	uniform1f(location: WebGLUniformLocation, v0: number): void {
+		if (!location) {
+			return;
+		}
 		const loc = location.native;
 		this.native.uniform1f(loc, v0);
 	}
 
 	@profile
 	uniform1iv(location: WebGLUniformLocation, value: number[] | Int32Array): void {
+		if (!location) {
+			return;
+		}
 		const loc = location.native;
 		this.native.uniform1iv(loc, value);
 	}
 
 	@profile
 	uniform1fv(location: WebGLUniformLocation, value: number[] | Float32Array): void {
+		if (!location) {
+			return;
+		}
 		const loc = location.native;
 		this.native.uniform1fv(loc, value);
 	}
 
 	@profile
 	uniform1i(location: WebGLUniformLocation, v0: number): void {
+		if (!location) {
+			return;
+		}
 		const loc = location.native;
 		this.native.uniform1i(loc, Number(v0));
 	}
 
 	@profile
 	uniform2f(location: WebGLUniformLocation, v0: number, v1: number): void {
+		if (!location) {
+			return;
+		}
 		const loc = location.native;
 		this.native.uniform2f(loc, v0, v1);
 	}
 
 	@profile
 	uniform2iv(location: WebGLUniformLocation, value: number[] | Int32Array): void {
+		if (!location) {
+			return;
+		}
 		const loc = location.native;
 		this.native.uniform2iv(loc, value);
 	}
 
 	@profile
 	uniform2fv(location: WebGLUniformLocation, value: number[] | Float32Array): void {
+		if (!location) {
+			return;
+		}
 		const loc = location.native;
 		this.native.uniform2fv(loc, value);
 	}
 
 	@profile
 	uniform2i(location: WebGLUniformLocation, v0: number, v1: number): void {
+		if (!location) {
+			return;
+		}
 		const loc = location.native;
 		this.native.uniform2i(loc, v0, v1);
 	}
 
 	@profile
 	uniform3f(location: WebGLUniformLocation, v0: number, v1: number, v2: number): void {
+		if (!location) {
+			return;
+		}
 		const loc = location.native;
 		this.native.uniform3f(loc, v0, v1, v2);
 	}
 
 	@profile
 	uniform3iv(location: WebGLUniformLocation, value: number[] | Int32Array): void {
+		if (!location) {
+			return;
+		}
 		const loc = location.native;
 		this.native.uniform3iv(loc, value);
 	}
 
 	@profile
 	uniform3fv(location: WebGLUniformLocation, value: number[] | Float32Array): void {
+		if (!location) {
+			return;
+		}
 		const loc = location.native;
 		this.native.uniform3fv(loc, value);
 	}
 
 	@profile
 	uniform3i(location: WebGLUniformLocation, v0: number, v1: number, v2: number): void {
+		if (!location) {
+			return;
+		}
 		const loc = location.native;
 		this.native.uniform3i(loc, v0, v1, v2);
 	}
 
 	@profile
 	uniform4f(location: WebGLUniformLocation, v0: number, v1: number, v2: number, v3: number): void {
+		if (!location) {
+			return;
+		}
 		const loc = location.native;
 		this.native.uniform4f(loc, v0, v1, v2, v3);
 	}
 
 	@profile
 	uniform4iv(location: WebGLUniformLocation, value: number[] | Int32Array): void {
+		if (!location) {
+			return;
+		}
 		const loc = location.native;
 		this.native.uniform4iv(loc, value);
 	}
 
 	@profile
 	uniform4fv(location: WebGLUniformLocation, value: number[] | Float32Array): void {
+		if (!location) {
+			return;
+		}
 		const loc = location.native;
 		this.native.uniform4fv(loc, value);
 	}
 
 	@profile
 	uniform4i(location: WebGLUniformLocation, v0: number, v1: number, v2: number, v3: number): void {
+		if (!location) {
+			return;
+		}
 		const loc = location.native;
 		this.native.uniform4i(loc, v0, v1, v2, v3);
 	}
 
 	@profile
 	uniformMatrix2fv(location: WebGLUniformLocation, transpose: boolean, value: number[] | Float32Array): void {
+		if (!location) {
+			return;
+		}
 		const loc = location.native;
 		this.native.uniformMatrix2fv(loc, transpose, value);
 	}
 
 	@profile
 	uniformMatrix3fv(location: WebGLUniformLocation, transpose: boolean, value: number[] | Float32Array): void {
+		if (!location) {
+			return;
+		}
 		const loc = location.native;
 		this.native.uniformMatrix3fv(loc, transpose, value);
 	}
 
 	@profile
 	uniformMatrix4fv(location: WebGLUniformLocation, transpose: boolean, value: number[] | Float32Array): void {
+		if (!location) {
+			return;
+		}
 		const loc = location.native;
 		this.native.uniformMatrix4fv(loc, transpose, value);
 	}

@@ -702,7 +702,7 @@ void GPUDeviceImpl::CreateComputePipeline(const v8::FunctionCallbackInfo<v8::Val
 
         if (!entryPoint.IsEmpty() && entryPoint->IsString()) {
             auto ep = v8::String::Utf8Value(isolate, entryPoint);
-            entry_point = (char *) malloc(ep.length());
+            entry_point = (char *) malloc(ep.length() + 1);
             std::strcpy(entry_point, *ep);
         }
 
@@ -859,7 +859,7 @@ void GPUDeviceImpl::CreateComputePipelineAsync(const v8::FunctionCallbackInfo<v8
 
         if (!entryPoint.IsEmpty() && entryPoint->IsString()) {
             auto ep = v8::String::Utf8Value(isolate, entryPoint);
-            entry_point = (char *) malloc(ep.length());
+            entry_point = (char *) malloc(ep.length() + 1);
             std::strcpy(entry_point, *ep);
         }
 
@@ -1738,7 +1738,7 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
 
         if (hasEntryPoint && entryPoint->IsString()) {
             auto ep = v8::String::Utf8Value(isolate, entryPoint);
-            char *entry_point = (char *) malloc(ep.length());
+            char *entry_point = (char *) malloc(ep.length() + 1);
             std::strcpy(entry_point, *ep);
 
             fragment->entry_point = entry_point;
@@ -2208,7 +2208,7 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
 
         if (!entryPoint.IsEmpty() && entryPoint->IsString()) {
             auto ep = v8::String::Utf8Value(isolate, entryPoint);
-            char *entry_point = (char *) malloc(ep.length());
+            char *entry_point = (char *) malloc(ep.length() + 1);
             std::strcpy(entry_point, *ep);
             vertex->entry_point = entry_point;
         }
@@ -2704,7 +2704,7 @@ void GPUDeviceImpl::CreateRenderPipelineAsync(const v8::FunctionCallbackInfo<v8:
 
         if (!entryPoint.IsEmpty() && entryPoint->IsString()) {
             auto ep = v8::String::Utf8Value(isolate, entryPoint);
-            char *entry_point = (char *) malloc(ep.length());
+            char *entry_point = (char *) malloc(ep.length() + 1);
             std::strcpy(entry_point, *ep);
 
             fragment->entry_point = entry_point;
@@ -3168,7 +3168,7 @@ void GPUDeviceImpl::CreateRenderPipelineAsync(const v8::FunctionCallbackInfo<v8:
 
         if (!entryPoint.IsEmpty() && entryPoint->IsString()) {
             auto ep = v8::String::Utf8Value(isolate, entryPoint);
-            char *entry_point = (char *) malloc(ep.length());
+            char *entry_point = (char *) malloc(ep.length() + 1);
             std::strcpy(entry_point, *ep);
             vertex->entry_point = entry_point;
         }

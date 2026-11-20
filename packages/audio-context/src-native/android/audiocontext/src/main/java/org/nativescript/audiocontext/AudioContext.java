@@ -966,10 +966,7 @@ public class AudioContext {
 
 	public AudioBuffer decodeAudioData(String base64) {
 		try {
-			byte[] data = Base64.decode(base64, Base64.DEFAULT);
-			String id = decodeAudioDataBytes(data);
-			if (id == null) return null;
-			return makeAudioBufferFromId(id);
+			return decodeAudioDataFromByteArray(Base64.decode(base64, Base64.DEFAULT));
 		} catch (Exception e) {
 			return null;
 		}

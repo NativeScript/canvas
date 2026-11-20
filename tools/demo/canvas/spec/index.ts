@@ -19,6 +19,7 @@ import { registerCanvasSourceSpec } from './canvassource';
 import { registerScalingSpec } from './scaling';
 import { registerContextLossSpec } from './contextloss';
 import { registerAudioSpec } from './audio';
+import { registerAudioDecodeSpec } from './audio-decode';
 import { registerMediaSpec } from './media';
 import { registerLifecycleSpec } from './lifecycle';
 import { registerOffscreenCanvasSpec } from './offscreen';
@@ -44,6 +45,7 @@ export async function runSpecTests(group: SpecGroup = 'all') {
 	registerOffscreenCanvasSpec();
 	registerOffscreenWorkerSpec();
 	registerHtmlInCanvasSpec();
+	registerAudioDecodeSpec();
 	if ((typeof __WINDOWS__ !== 'undefined' && __WINDOWS__) || (typeof __LINUX__ !== 'undefined' && __LINUX__)) {
 		registerAudioSpec();
 		registerMediaSpec();

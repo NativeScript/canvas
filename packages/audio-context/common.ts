@@ -99,6 +99,20 @@ export function looksLikePath(source: string): boolean {
 	return source.indexOf('/') >= 0 || source.indexOf('file:') === 0 || source.indexOf('~') === 0;
 }
 
+const BASE64_PATTERN = /^[A-Za-z0-9+/\s]{16,}={0,2}$/;
+
+/** Whether a decodeAudioData string is base64 rather than a path; base64 has '/' too, so it is checked first. */
+export function isBase64Source(source: string): boolean {
+	return source.startsWith('data:') || BASE64_PATTERN.test(source) || !looksLikePath(source);
+}
+
+/** The base64 after a `data:` URL's comma, or the string itself. */
+export function base64Payload(source: string): string {
+	if (!source.startsWith('data:')) return source;
+	const comma = source.indexOf(',');
+	return comma >= 0 ? source.substring(comma + 1) : source;
+}
+
 export type LatencyHint = 'interactive' | 'balanced' | 'playback' | number;
 
 export interface AudioContextOptions {

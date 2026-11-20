@@ -26,7 +26,8 @@ import {
 	StereoPannerOptions,
 	WaveShaperOptions,
 	context_,
-	looksLikePath,
+	isBase64Source,
+	base64Payload,
 	native_,
 	nativeCtor_,
 	normalizeSourcePath,
@@ -692,7 +693,7 @@ export class OfflineAudioContext extends BaseAudioContext {
 	decodeAudioData(source: string | ArrayBuffer | ArrayBufferView, successCallback?: (buffer: AudioBuffer) => void, errorCallback?: (error: Error) => void): Promise<AudioBuffer> {
 		const ret = new Promise<AudioBuffer>((resolve, reject) => {
 			if (typeof source === 'string') {
-				if (looksLikePath(source)) {
+				if (!isBase64Source(source)) {
 					const filePath = normalizeSourcePath(source);
 					OfflineAudioContext.getInstance().decodeAudioDataFromFileAsync(
 						filePath,
@@ -708,7 +709,7 @@ export class OfflineAudioContext extends BaseAudioContext {
 				}
 
 				OfflineAudioContext.getInstance().decodeAudioDataAsync(
-					source,
+					base64Payload(source),
 					this.native,
 					new org.nativescript.audiocontext.DecodeCallback({
 						onResult(buffer) {
@@ -886,7 +887,7 @@ export class AudioContext extends BaseAudioContext {
 	decodeAudioData(source: string | ArrayBuffer | ArrayBufferView, successCallback?: (buffer: AudioBuffer) => void, errorCallback?: (error: Error) => void): Promise<AudioBuffer> {
 		const ret = new Promise<AudioBuffer>((resolve, reject) => {
 			if (typeof source === 'string') {
-				if (looksLikePath(source)) {
+				if (!isBase64Source(source)) {
 					const filePath = normalizeSourcePath(source);
 					AudioContext.getInstance().decodeAudioDataFromFileAsync(
 						filePath,
@@ -902,7 +903,7 @@ export class AudioContext extends BaseAudioContext {
 				}
 
 				AudioContext.getInstance().decodeAudioDataAsync(
-					source,
+					base64Payload(source),
 					this.native,
 					new org.nativescript.audiocontext.DecodeCallback({
 						onResult(buffer) {

@@ -3,6 +3,7 @@ import UIKit
 import Metal
 import IOSurface
 import QuartzCore
+import WebKit
 
 private let metalDevice: MTLDevice? = MTLCreateSystemDefaultDevice()
 private let deviceRGB = CGColorSpaceCreateDeviceRGB()
@@ -67,7 +68,7 @@ public class NSCDrawableSnapshot: NSObject {
 		return UIImage(cgImage: image)
 	}
 
-	func render(_ view: UIView, scaleX: CGFloat, scaleY: CGFloat, sourceX: CGFloat, sourceY: CGFloat, hide: [UIView]) {
+	func render(_ view: UIView, scaleX: CGFloat, scaleY: CGFloat, sourceX: CGFloat, sourceY: CGFloat, hide: [UIView], webImages: [ObjectIdentifier: CGImage]) {
 		surface.lock(options: [], seed: nil)
 		defer { surface.unlock(options: [], seed: nil) }
 		guard let context = CGContext(data: surface.baseAddress, width: width, height: height, bitsPerComponent: 8, bytesPerRow: surface.bytesPerRow, space: deviceRGB, bitmapInfo: bgraInfo) else { return }
@@ -76,17 +77,53 @@ public class NSCDrawableSnapshot: NSObject {
 		context.scaleBy(x: scaleX, y: -scaleY)
 		let origin = view.layer.bounds.origin
 		context.translateBy(x: -origin.x - sourceX, y: -origin.y - sourceY)
-		if hide.isEmpty {
+		let webViews = NSCDrawableSnapshot.webViews(in: view, hide)
+		// Rendering WebKit's layers costs tens of ms and draws little: its snapshot goes on top instead.
+		let hidden = hide + webViews
+		if hidden.isEmpty {
 			// The presentation layer catches in-flight animations.
 			(view.layer.presentation() ?? view.layer).render(in: context)
-			return
+		} else {
+			CATransaction.begin()
+			CATransaction.setDisableActions(true)
+			for v in hidden { v.layer.isHidden = true }
+			view.layer.render(in: context)
+			for v in hidden { v.layer.isHidden = false }
+			CATransaction.commit()
 		}
-		CATransaction.begin()
-		CATransaction.setDisableActions(true)
-		for v in hide { v.layer.isHidden = true }
-		view.layer.render(in: context)
-		for v in hide { v.layer.isHidden = false }
-		CATransaction.commit()
+		for web in webViews {
+			guard let image = webImages[ObjectIdentifier(web)] else { continue }
+			let rect = web === view ? view.bounds : web.convert(web.bounds, to: view)
+			context.saveGState()
+			// The context is flipped to UIKit's y-down; CGImages draw y-up.
+			context.translateBy(x: rect.minX, y: rect.maxY)
+			context.scaleBy(x: 1, y: -1)
+			context.draw(image, in: CGRect(origin: .zero, size: rect.size))
+			context.restoreGState()
+		}
+	}
+
+	/// `image` redrawn in this snapshot's pixel format, so drawing it each frame is a plain copy.
+	static func nativeFormat(_ image: UIImage) -> CGImage? {
+		guard let cg = image.cgImage,
+			  let context = CGContext(data: nil, width: cg.width, height: cg.height, bitsPerComponent: 8, bytesPerRow: 0, space: deviceRGB, bitmapInfo: bgraInfo) else { return nil }
+		context.draw(cg, in: CGRect(x: 0, y: 0, width: cg.width, height: cg.height))
+		return context.makeImage()
+	}
+
+	/// WebKit draws in another process: render(in:) often sees an empty layer, so web views are drawn from WebKit's own snapshots.
+	static func webViews(in root: UIView, _ hide: [UIView]) -> [WKWebView] {
+		var out: [WKWebView] = []
+		func visit(_ node: UIView) {
+			if node.isHidden || hide.contains(where: { $0 === node }) { return }
+			if let web = node as? WKWebView {
+				out.append(web)
+				return
+			}
+			node.subviews.forEach(visit)
+		}
+		visit(root)
+		return out
 	}
 
 	func samePixels(as other: NSCDrawableSnapshot) -> Bool {
@@ -120,6 +157,7 @@ public class NSCDrawableHost: UIView {
 		var probe: NSCDrawableSnapshot?
 		var probeScratch: NSCDrawableSnapshot?
 		var signature = 0
+		var webGeneration = 0
 		/// Seconds (CACurrentMediaTime): frame counts would scale with the refresh rate.
 		var hotUntil: CFTimeInterval = 0
 		var interval = NSCDrawableHost.minInterval
@@ -141,6 +179,60 @@ public class NSCDrawableHost: UIView {
 	private var hitOrder: [Entry] = []
 	private var hotAll: CFTimeInterval = 0
 	private var updates = 0
+
+	private final class WebSnapshot {
+		weak var view: WKWebView?
+		var image: CGImage?
+		var generation = 0
+		var requested = 0
+		var arrived = 0
+		var inFlight = 0
+		init(_ view: WKWebView) { self.view = view }
+	}
+	private var webSnapshots: [ObjectIdentifier: WebSnapshot] = [:]
+	/// WebKit's snapshots take several frames: two in flight keeps them coming at about twice the rate.
+	private static let maxWebSnapshotsInFlight = 2
+	private static let webDecodeQueue = DispatchQueue(label: "NSCDrawableHost.web", qos: .userInteractive)
+
+	private var webImages: [ObjectIdentifier: CGImage] {
+		webSnapshots.compactMapValues { $0.view == nil ? nil : $0.image }
+	}
+
+	/// Asks WebKit for a new snapshot of each web view; it renders off the main thread.
+	private func requestWebSnapshots(_ webs: [WKWebView]) {
+		for web in webs {
+			let key = ObjectIdentifier(web)
+			let state: WebSnapshot
+			if let existing = webSnapshots[key], existing.view === web {
+				state = existing
+			} else {
+				state = WebSnapshot(web)
+				webSnapshots[key] = state
+			}
+			if state.inFlight >= NSCDrawableHost.maxWebSnapshotsInFlight { continue }
+			state.inFlight += 1
+			state.requested += 1
+			let sequence = state.requested
+			web.takeSnapshot(with: nil) { [weak state] image, _ in
+				guard let state = state else { return }
+				guard let image = image else {
+					state.inFlight -= 1
+					return
+				}
+				NSCDrawableHost.webDecodeQueue.async {
+					let converted = NSCDrawableSnapshot.nativeFormat(image)
+					DispatchQueue.main.async {
+						state.inFlight -= 1
+						// A later request may have landed first.
+						guard let converted = converted, sequence > state.arrived else { return }
+						state.arrived = sequence
+						state.image = converted
+						state.generation &+= 1
+					}
+				}
+			}
+		}
+	}
 
 	public override init(frame: CGRect) {
 		super.init(frame: frame)
@@ -179,6 +271,7 @@ public class NSCDrawableHost: UIView {
 	public func update(_ scaleX: Double, _ scaleY: Double) -> [NSNumber]? {
 		let now = CACurrentMediaTime()
 		updates += 1
+		if updates % 600 == 0 { webSnapshots = webSnapshots.filter { $0.value.view != nil } }
 		keepOnTop()
 		var changed: [NSNumber]?
 		for (index, entry) in entries.enumerated() {
@@ -193,9 +286,17 @@ public class NSCDrawableHost: UIView {
 			let signatureChanged = signature != entry.signature
 			entry.signature = signature
 			let hide = nested(of: view)
-			if !resized && !signatureChanged {
+			let webs = NSCDrawableSnapshot.webViews(in: view, hide)
+			var webHasher = Hasher()
+			for web in webs { webHasher.combine(webSnapshots[ObjectIdentifier(web)]?.generation ?? 0) }
+			let webGeneration = webs.isEmpty ? 0 : webHasher.finalize()
+			let webChanged = webGeneration != entry.webGeneration
+			entry.webGeneration = webGeneration
+			let forced = resized || signatureChanged || webChanged
+			if !forced {
 				let hot = now <= entry.hotUntil || now <= hotAll
 				if !hot && now < entry.nextCheck { continue }
+				requestWebSnapshots(webs)
 				if !probeChanged(entry, view, width, height, scaleX, scaleY, hide) {
 					if !hot { entry.interval = min(entry.interval * 2, NSCDrawableHost.maxInterval) }
 					entry.nextCheck = now + entry.interval
@@ -211,8 +312,10 @@ public class NSCDrawableHost: UIView {
 			} else {
 				continue
 			}
-			target.render(view, scaleX: CGFloat(scaleX), scaleY: CGFloat(scaleY), sourceX: 0, sourceY: 0, hide: hide)
-			if signatureChanged || resized { _ = probeChanged(entry, view, width, height, scaleX, scaleY, hide) }
+			// Not for a web snapshot that just landed: a changed one makes the entry hot, which asks again.
+			if resized || signatureChanged { requestWebSnapshots(webs) }
+			target.render(view, scaleX: CGFloat(scaleX), scaleY: CGFloat(scaleY), sourceX: 0, sourceY: 0, hide: hide, webImages: webImages)
+			if forced { _ = probeChanged(entry, view, width, height, scaleX, scaleY, hide) }
 			if !resized, let current = entry.snapshot, target.samePixels(as: current) {
 				entry.scratch = target
 				entry.nextCheck = now + entry.interval
@@ -242,7 +345,7 @@ public class NSCDrawableHost: UIView {
 		} else {
 			return true
 		}
-		target.render(view, scaleX: CGFloat(scaleX * s), scaleY: CGFloat(scaleY * s), sourceX: 0, sourceY: 0, hide: hide)
+		target.render(view, scaleX: CGFloat(scaleX * s), scaleY: CGFloat(scaleY * s), sourceX: 0, sourceY: 0, hide: hide, webImages: webImages)
 		let same = entry.probe.map { target.samePixels(as: $0) } ?? false
 		entry.probeScratch = entry.probe
 		entry.probe = target
@@ -256,7 +359,7 @@ public class NSCDrawableHost: UIView {
 	/// A snapshot of `view` that is not shared with the per-frame one.
 	public func capture(_ view: UIView, _ width: Int, _ height: Int, _ scaleX: Double, _ scaleY: Double, _ sourceX: Double, _ sourceY: Double) -> NSCDrawableSnapshot? {
 		guard let snapshot = NSCDrawableSnapshot(width: width, height: height) else { return nil }
-		snapshot.render(view, scaleX: CGFloat(scaleX), scaleY: CGFloat(scaleY), sourceX: CGFloat(sourceX), sourceY: CGFloat(sourceY), hide: nested(of: view))
+		snapshot.render(view, scaleX: CGFloat(scaleX), scaleY: CGFloat(scaleY), sourceX: CGFloat(sourceX), sourceY: CGFloat(sourceY), hide: nested(of: view), webImages: webImages)
 		return snapshot
 	}
 
@@ -299,6 +402,16 @@ public class NSCDrawableHost: UIView {
 			}
 			// Animating: a new signature every update.
 			if model.animationKeys()?.isEmpty == false { hasher.combine(updates) }
+			// Its look comes from WebKit's snapshots; the scroll position is the one change seen in-process.
+			if let web = model.delegate as? WKWebView {
+				let scroll = web.scrollView
+				hasher.combine(scroll.contentOffset.x)
+				hasher.combine(scroll.contentOffset.y)
+				hasher.combine(scroll.contentSize.width)
+				hasher.combine(scroll.contentSize.height)
+				hasher.combine(scroll.zoomScale)
+				return
+			}
 			let sublayers = model.sublayers ?? []
 			hasher.combine(sublayers.count)
 			for sublayer in sublayers { visit(sublayer) }

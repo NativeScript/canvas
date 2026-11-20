@@ -3,7 +3,9 @@ import UIKit
 import Metal
 import IOSurface
 import QuartzCore
+#if canImport(WebKit)
 import WebKit
+#endif
 
 private let metalDevice: MTLDevice? = MTLCreateSystemDefaultDevice()
 private let deviceRGB = CGColorSpaceCreateDeviceRGB()
@@ -112,17 +114,19 @@ public class NSCDrawableSnapshot: NSObject {
 	}
 
 	/// WebKit draws in another process: render(in:) often sees an empty layer, so web views are drawn from WebKit's own snapshots.
-	static func webViews(in root: UIView, _ hide: [UIView]) -> [WKWebView] {
-		var out: [WKWebView] = []
+	static func webViews(in root: UIView, _ hide: [UIView]) -> [UIView] {
+		var out: [UIView] = []
+		#if canImport(WebKit)
 		func visit(_ node: UIView) {
 			if node.isHidden || hide.contains(where: { $0 === node }) { return }
-			if let web = node as? WKWebView {
-				out.append(web)
+			if node is WKWebView {
+				out.append(node)
 				return
 			}
 			node.subviews.forEach(visit)
 		}
 		visit(root)
+		#endif
 		return out
 	}
 
@@ -181,13 +185,13 @@ public class NSCDrawableHost: UIView {
 	private var updates = 0
 
 	private final class WebSnapshot {
-		weak var view: WKWebView?
+		weak var view: UIView?
 		var image: CGImage?
 		var generation = 0
 		var requested = 0
 		var arrived = 0
 		var inFlight = 0
-		init(_ view: WKWebView) { self.view = view }
+		init(_ view: UIView) { self.view = view }
 	}
 	private var webSnapshots: [ObjectIdentifier: WebSnapshot] = [:]
 	/// WebKit's snapshots take several frames: two in flight keeps them coming at about twice the rate.
@@ -199,8 +203,9 @@ public class NSCDrawableHost: UIView {
 	}
 
 	/// Asks WebKit for a new snapshot of each web view; it renders off the main thread.
-	private func requestWebSnapshots(_ webs: [WKWebView]) {
-		for web in webs {
+	private func requestWebSnapshots(_ webs: [UIView]) {
+		#if canImport(WebKit)
+		for case let web as WKWebView in webs {
 			let key = ObjectIdentifier(web)
 			let state: WebSnapshot
 			if let existing = webSnapshots[key], existing.view === web {
@@ -232,6 +237,7 @@ public class NSCDrawableHost: UIView {
 				}
 			}
 		}
+		#endif
 	}
 
 	public override init(frame: CGRect) {
@@ -403,6 +409,7 @@ public class NSCDrawableHost: UIView {
 			// Animating: a new signature every update.
 			if model.animationKeys()?.isEmpty == false { hasher.combine(updates) }
 			// Its look comes from WebKit's snapshots; the scroll position is the one change seen in-process.
+			#if canImport(WebKit)
 			if let web = model.delegate as? WKWebView {
 				let scroll = web.scrollView
 				hasher.combine(scroll.contentOffset.x)
@@ -412,6 +419,7 @@ public class NSCDrawableHost: UIView {
 				hasher.combine(scroll.zoomScale)
 				return
 			}
+			#endif
 			let sublayers = model.sublayers ?? []
 			hasher.combine(sublayers.count)
 			for sublayer in sublayers { visit(sublayer) }

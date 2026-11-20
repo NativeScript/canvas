@@ -287,10 +287,13 @@ export class Canvas extends NapiCanvas {
 		switch (name) {
 			case 'Pressed':
 				this._down.add(ptrId);
-				panel.CapturePointer(pointer);
-				try {
-					panel.Focus(Microsoft.UI.Xaml.FocusState.Pointer);
-				} catch (e) {}
+				// A press on a hosted child (content="drawable") leaves capture and focus to it.
+				if (!(this._drawables as any)?.owns?.(args.OriginalSource)) {
+					panel.CapturePointer(pointer);
+					try {
+						panel.Focus(Microsoft.UI.Xaml.FocusState.Pointer);
+					} catch (e) {}
+				}
 				this._handleEvents({ event: 'down', ptrId, x, y, isPrimary });
 				break;
 			case 'Moved':

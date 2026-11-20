@@ -30,6 +30,10 @@ log.workspace = true
 canvas-core = { workspace = true, features = ["2d", "gl", "d3d"] }
 canvas-c = { workspace = true, features = ["2d", "webgl", "gl", "d3d"] }
 windows-core = "0.62"
+# The WinUI 3 members drawable children use (host/windows/xaml.rs) build on these.
+windows = { workspace = true, features = ["Foundation", "Storage_Streams", "Win32_Foundation", "Win32_System_WinRT"] }
+windows-collections = "0.3"
+windows-future = "0.3"
 
 # Linux shows frames in a GTK 4 (>= 4.6) widget, shared with GDK's GL context as EGLImages.
 [target.'cfg(target_os = "linux")'.dependencies]

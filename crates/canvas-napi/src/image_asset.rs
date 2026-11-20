@@ -35,6 +35,16 @@ fn load_encoded(asset: &CImageAsset, bytes: &[u8]) -> bool {
   canvas_c::canvas_native_image_asset_load_from_raw_encoded(asset, bytes.as_ptr(), bytes.len())
 }
 
+/// Premultiplied BGRA8 rows (a XAML RenderTargetBitmap's pixels).
+#[cfg(target_os = "windows")]
+pub(crate) fn load_bgra(asset: &ImageAsset, width: u32, height: u32, bgra: &[u8]) -> bool {
+  let mut pixels = bgra.to_vec();
+  for pixel in pixels.chunks_exact_mut(4) {
+    pixel.swap(0, 2);
+  }
+  load_raw(&asset.asset, width, height, &pixels, true)
+}
+
 /// RGBA8 pixels; `premultiplied` when they already are, or they are premultiplied twice.
 fn load_raw(
   asset: &CImageAsset,

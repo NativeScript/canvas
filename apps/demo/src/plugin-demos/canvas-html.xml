@@ -4,9 +4,9 @@
 	</Page.actionBar>
 	<GridLayout rows="*, auto">
 		<canvas:Canvas row="0" id="canvas" content="drawable" loaded="{{ canvasLoaded }}" unloaded="{{ canvasUnloaded }}" style="width:100%;height:100%">
-			<StackLayout id="form" drawable="true" width="280" padding="20" backgroundColor="white" borderRadius="16">
+			<StackLayout id="form" drawable="true" width="280" class="drawable-card">
 				<Label text="A form inside a canvas" fontSize="20" fontWeight="bold" />
-				<Label text="Drawn by drawElementImage, rotated, still interactive." textWrap="true" color="#666" marginBottom="8" />
+				<Label text="Drawn by drawElementImage, rotated, still interactive." textWrap="true" class="drawable-card-note" marginBottom="8" />
 				<TextField hint="Type here" text="{{ name }}" />
 				<Label text="{{ 'Hello ' + (name || '…') }}" marginTop="4" />
 				<Slider value="{{ tilt }}" minValue="-30" maxValue="30" marginTop="8" />

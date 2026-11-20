@@ -70,6 +70,8 @@ pub mod gpu_shared_frame;
 pub mod gpu_supported_limits;
 pub mod gpu_texture;
 pub mod gpu_texture_view;
+#[cfg(all(feature = "gl", target_os = "android"))]
+pub mod android_canvas_copy;
 #[cfg(target_os = "linux")]
 pub mod linux_frames;
 #[cfg(target_os = "linux")]

@@ -35,6 +35,9 @@ pub struct CanvasGPUQueue {
     #[cfg(target_os = "linux")]
     pub(crate) linux_frames:
         Arc<parking_lot::Mutex<crate::webgpu::linux_video_frame::LinuxFrameCache>>,
+    #[cfg(all(feature = "gl", target_os = "android"))]
+    pub(crate) android_canvases:
+        Arc<parking_lot::Mutex<crate::webgpu::android_canvas_copy::AndroidCanvasCache>>,
 }
 
 unsafe impl Send for CanvasGPUQueue {}
@@ -310,6 +313,11 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_context_to_texture(
 
     #[cfg(all(feature = "gl", target_os = "linux"))]
     if copy_context_on_gpu_linux(&*queue, copy, &*destination, *size) {
+        return;
+    }
+
+    #[cfg(all(feature = "gl", target_os = "android"))]
+    if super::android_canvas_copy::copy_context_on_gpu(&*queue, copy, &*destination, *size) {
         return;
     }
 

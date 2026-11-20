@@ -52,6 +52,9 @@ pub mod surface;
 pub mod surface_gl;
 #[cfg(all(feature = "gl", target_os = "linux"))]
 pub mod vulkan_interop;
+#[cfg(all(feature = "gl", target_os = "android"))]
+#[path = "vulkan_interop_android.rs"]
+pub mod vulkan_interop;
 pub mod text_decoder;
 pub mod text_encoder;
 pub mod transformations;
@@ -250,7 +253,7 @@ pub struct Context {
     pub(crate) recording: Option<recording::Recording>,
     /// GPU readback of the surface, with the generation it was read at
     pub(crate) snapshot: Option<(u32, Image)>,
-    #[cfg(all(feature = "gl", target_os = "linux"))]
+    #[cfg(all(feature = "gl", any(target_os = "linux", target_os = "android")))]
     pub(crate) vulkan_interop: vulkan_interop::VulkanInterop,
 }
 
@@ -260,7 +263,12 @@ impl Drop for Context {
         // may be another canvas's; its names would then delete that canvas's objects.
         #[cfg(feature = "gl")]
         if let Some(ref context) = self.gl_context {
-            context.make_current();
+            let _current = context.make_current();
+            // The buffer's image and texture keep its memory alive.
+            #[cfg(target_os = "android")]
+            if _current {
+                self.vulkan_interop.release();
+            }
         }
     }
 }

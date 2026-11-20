@@ -97,8 +97,8 @@
     if (_automationTimer) return;
     if (![self hasFutureAutomation]) return;
     dispatch_source_t timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
-    uint64_t intervalNs = (uint64_t)(NSEC_PER_SEC / 60.0);
-    uint64_t leewayNs = (uint64_t)(NSEC_PER_SEC / 240.0);
+    uint64_t intervalNs = (uint64_t)(NSEC_PER_SEC / 500.0);
+    uint64_t leewayNs = (uint64_t)(NSEC_PER_SEC / 2000.0);
     NSCAudioContext *ctx = self.context;
     double now = ctx ? ctx.currentTime : 0.0;
     if (now <= 0.0) {

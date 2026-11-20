@@ -26,12 +26,26 @@ runs:
         rustup default stable
         rustc --version
 
-    # MSVC's STL rejects clang older than 19. Installing LLVM over the image's one
-    # (choco) fails, so the image's is used as is.
+    # MSVC's STL rejects any clang older than the one its Visual Studio bundles (14.52 wants
+    # 22), and the image's standalone LLVM lags behind VS updates. Installing over it (choco)
+    # fails, so take whichever of the two is newer.
     - name: Skia toolchain
       shell: bash
       run: |
+        major() { local v; v=$(ls "$(cygpath -u "$1")/lib/clang" 2>/dev/null | sort -n | tail -1 || true); echo "${v%%.*}"; }
+        VS=$("$(cygpath -u 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe')" -latest -products '*' -property installationPath | tr -d '\r')
         LLVM='C:\Program Files\LLVM'
+        VS_LLVM="$VS\\VC\\Tools\\Llvm\\x64"
+        if [ -f "$(cygpath -u "$VS_LLVM")/bin/libclang.dll" ] && [ "$(major "$VS_LLVM")" -gt "$(major "$LLVM")" ]; then
+          LLVM="$VS_LLVM"
+        fi
+        STL=$(ls -d "$(cygpath -u "$VS")"/VC/Tools/MSVC/*/include/yvals_core.h | sort -V | tail -1)
+        WANT=$(grep -oE 'expected Clang [0-9]+' "$STL" | grep -oE '[0-9]+' | head -1 || true)
+        echo "LLVM: $LLVM (clang $(major "$LLVM")), STL wants clang ${WANT:-?}"
+        if [ -n "$WANT" ] && [ "$(major "$LLVM")" -lt "$WANT" ]; then
+          echo "::error::No LLVM on the image satisfies $STL (needs clang $WANT)"
+          exit 1
+        fi
         {
           echo "LLVM_HOME=$LLVM"
           echo "LIBCLANG_PATH=$LLVM\\bin"

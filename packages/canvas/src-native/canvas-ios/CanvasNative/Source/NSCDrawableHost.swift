@@ -36,7 +36,8 @@ public class NSCDrawableSnapshot: NSObject {
 		let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .bgra8Unorm, width: width, height: height, mipmapped: false)
 		descriptor.usage = .shaderRead
 		descriptor.storageMode = .shared
-		_texture = device.makeTexture(descriptor: descriptor, iosurface: surface, plane: 0)
+		// Mac Catalyst builds against the macOS SDK, where IOSurface and IOSurfaceRef are distinct types.
+		_texture = device.makeTexture(descriptor: descriptor, iosurface: unsafeBitCast(surface, to: IOSurfaceRef.self), plane: 0)
 		return _texture
 	}
 

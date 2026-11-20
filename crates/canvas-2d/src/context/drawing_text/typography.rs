@@ -60,7 +60,42 @@ static FONT_CACHE: OnceLock<parking_lot::RwLock<HashMap<String, Font>>> = OnceLo
 /// Once full it stops accepting entries rather than evicting.
 const FONT_CACHE_CAPACITY: usize = 256;
 
+/// Chrome's Windows defaults for the CSS generic families, which DirectWrite does not know.
+#[cfg(target_os = "windows")]
+fn windows_generic_family(name: &str) -> Option<&'static str> {
+    Some(match name.to_ascii_lowercase().as_str() {
+        "serif" | "ui-serif" => "Times New Roman",
+        "sans-serif" | "ui-sans-serif" => "Arial",
+        "monospace" | "ui-monospace" => "Consolas",
+        "cursive" => "Comic Sans MS",
+        "fantasy" => "Impact",
+        "system-ui" => "Segoe UI",
+        _ => return None,
+    })
+}
+
 impl Font {
+    /// The families to hand Skia. On Windows Chrome's standard font ends the list, or SkParagraph
+    /// falls back to the last registered web font when DirectWrite matches nothing.
+    pub(crate) fn skia_families(&self) -> Vec<&str> {
+        #[cfg(target_os = "windows")]
+        {
+            let mut families: Vec<&str> = self
+                .family
+                .iter()
+                .map(|f| windows_generic_family(f.as_str()).unwrap_or(f.as_str()))
+                .collect();
+            if !families.contains(&"Times New Roman") {
+                families.push("Times New Roman");
+            }
+            families
+        }
+        #[cfg(not(target_os = "windows"))]
+        {
+            self.family.iter().map(|s| s.as_str()).collect()
+        }
+    }
+
     pub fn new(font_rules: &str) -> Result<Font, String> {
         let cache = FONT_CACHE.get_or_init(|| parking_lot::RwLock::new(HashMap::new()));
 

@@ -223,11 +223,15 @@ export function registerWebGPUSpec() {
 					const drawn = performance.now();
 					// The first two frames are left out: the display link is still starting.
 					if (frame >= 2) {
+						// Timed from the first poll: NativeScript Windows runs timers once a frame, so the first poll can
+						// itself land a frame after drawing. A present at the next vsync still shows on a later poll.
+						let first = 0;
 						const poll = () => {
-							const waited = performance.now() - drawn;
+							const now = performance.now();
+							first ||= now;
 							if (ctx.native.hasCurrentTexture === false) {
-								delays.push(waited);
-							} else if (waited < 100) {
+								delays.push(now - first);
+							} else if (now - drawn < 100) {
 								setTimeout(poll, 0);
 							} else {
 								delays.push(Infinity);

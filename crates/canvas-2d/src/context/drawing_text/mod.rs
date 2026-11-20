@@ -320,7 +320,7 @@ mod parity {
         let sk_font_style =
             skia_safe::FontStyle::new(weight, font_style.stretch.into(), font_style.style.into());
 
-        let families: Vec<&str> = font_style.family.iter().map(|s| s.as_str()).collect();
+        let families = font_style.skia_families();
 
         let mut text_style = skia_safe::textlayout::TextStyle::new();
         text_style.set_font_families(families.as_slice());

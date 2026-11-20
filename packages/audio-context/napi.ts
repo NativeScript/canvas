@@ -26,7 +26,7 @@ import {
 	context_,
 	distanceModelFromNumber,
 	distanceModelToNumber,
-	looksLikePath,
+	isBase64Source,
 	markMediaElementUsed,
 	native_,
 	nativeCtor_,
@@ -1116,9 +1116,7 @@ abstract class NativeAudioContextBase extends BaseAudioContext {
 		let decoded: Promise<NativeBuffer>;
 		try {
 			if (typeof source === 'string') {
-				// base64 has '/' too, so it is recognised before looksLikePath.
-				const base64 = source.startsWith('data:') || /^[A-Za-z0-9+/\s]{16,}={0,2}$/.test(source) || !looksLikePath(source);
-				decoded = base64 ? native.decodeAudioBase64(source) : native.decodeAudioFile(nativePath(source));
+				decoded = isBase64Source(source) ? native.decodeAudioBase64(source) : native.decodeAudioFile(nativePath(source));
 			} else if (source instanceof ArrayBuffer) {
 				decoded = native.decodeAudioData(new Uint8Array(source));
 			} else if (ArrayBuffer.isView(source)) {

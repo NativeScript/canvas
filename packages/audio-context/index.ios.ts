@@ -25,7 +25,7 @@ import {
 	StereoPannerOptions,
 	WaveShaperOptions,
 	context_,
-	looksLikePath,
+	isBase64Source,
 	native_,
 	nativeCtor_,
 	normalizeSourcePath,
@@ -1149,7 +1149,7 @@ export class AudioContext extends BaseAudioContext {
 		const ret = new Promise<AudioBuffer>((resolve, reject) => {
 			try {
 				if (typeof source === 'string') {
-					if (looksLikePath(source)) {
+					if (!isBase64Source(source)) {
 						const filePath = normalizeSourcePath(source);
 						this.native.decodeAudioDataFromFileAsync(filePath, (wrapper) => {
 							if (!wrapper) return reject(new Error('decodeAudioData failed'));
@@ -1253,7 +1253,7 @@ export class OfflineAudioContext extends BaseAudioContext {
 		const ret = new Promise<AudioBuffer>((resolve, reject) => {
 			try {
 				if (typeof source === 'string') {
-					if (looksLikePath(source)) {
+					if (!isBase64Source(source)) {
 						const filePath = normalizeSourcePath(source);
 						this.native.decodeAudioDataFromFileAsyncOffline(filePath, (wrapper) => {
 							if (!wrapper) return reject(new Error('decodeAudioData failed'));

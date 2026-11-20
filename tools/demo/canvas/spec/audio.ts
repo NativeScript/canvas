@@ -101,6 +101,9 @@ export function registerAudioSpec() {
 			const oscillator = context.createOscillator();
 			oscillator.connect(gain).connect(context.destination);
 			oscillator.start();
+			// Rendering starts asynchronously, so `running` can lag construction.
+			const startBy = Date.now() + 2000;
+			while (context.state !== 'running' && Date.now() < startBy) await wait(10);
 			equal(context.state, 'running');
 			ok(context.sampleRate > 0, `sampleRate ${context.sampleRate}`);
 			const start = context.currentTime;

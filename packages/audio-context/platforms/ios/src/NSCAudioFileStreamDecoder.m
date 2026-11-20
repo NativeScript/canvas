@@ -105,6 +105,17 @@ static void packetsProc(void *inClientData,
     ctx.packetCount = (UInt32)(ctx.packetDescData.length / sizeof(AudioStreamPacketDescription));
 }
 
+// AudioConverter's end-of-input signal is noErr with zero packets; it then returns what it
+// already produced and flushes any codec tail.
+static OSStatus endOfInput(UInt32 *ioNumberDataPackets, AudioBufferList *ioData) {
+    *ioNumberDataPackets = 0;
+    for (UInt32 b = 0; b < ioData->mNumberBuffers; ++b) {
+        ioData->mBuffers[b].mData = NULL;
+        ioData->mBuffers[b].mDataByteSize = 0;
+    }
+    return noErr;
+}
+
 static OSStatus audioConverterInputProc(AudioConverterRef inAudioConverter,
                                         UInt32 *ioNumberDataPackets,
                                         AudioBufferList *ioData,
@@ -112,8 +123,7 @@ static OSStatus audioConverterInputProc(AudioConverterRef inAudioConverter,
                                         void *inUserData) {
     NSCAudioFileStreamDecoderContext *ctx = (__bridge NSCAudioFileStreamDecoderContext *)inUserData;
     if (!ctx.packetDescData || ctx.packetIndex >= ctx.packetCount) {
-        *ioNumberDataPackets = 0;
-        return kAudioConverterErr_NoMoreInputData;
+        return endOfInput(ioNumberDataPackets, ioData);
     }
 
     UInt32 packetsRequested = *ioNumberDataPackets;
@@ -126,8 +136,7 @@ static OSStatus audioConverterInputProc(AudioConverterRef inAudioConverter,
     uint64_t compLen = (uint64_t)ctx.compData.length;
     int64_t firstOffset = startDesc->mStartOffset;
     if (firstOffset < 0 || (uint64_t)firstOffset >= compLen) {
-        *ioNumberDataPackets = 0;
-        return kAudioConverterErr_NoMoreInputData;
+        return endOfInput(ioNumberDataPackets, ioData);
     }
 
     UInt32 accumulatedBytes = 0;
@@ -144,8 +153,7 @@ static OSStatus audioConverterInputProc(AudioConverterRef inAudioConverter,
     }
 
     if (actualPackets == 0) {
-        *ioNumberDataPackets = 0;
-        return kAudioConverterErr_NoMoreInputData;
+        return endOfInput(ioNumberDataPackets, ioData);
     }
 
     ioData->mNumberBuffers = 1;
@@ -240,6 +248,85 @@ static OSStatus audioConverterInputProc(AudioConverterRef inAudioConverter,
     return YES;
 }
 
+// Decodes every packet parsed so far. Returns nil with *error set on failure, or nil with
+// *error left alone when there was nothing to decode.
+static AVAudioPCMBuffer *_Nullable decodeParsedPackets(NSCAudioFileStreamDecoderContext *ctx, NSError *_Nullable *_Nullable error) {
+    AudioStreamBasicDescription srcASBD = ctx.asbd;
+    AVAudioFormat *dstFormat = [[AVAudioFormat alloc] initWithCommonFormat:AVAudioPCMFormatFloat32 sampleRate:srcASBD.mSampleRate channels:srcASBD.mChannelsPerFrame interleaved:NO];
+    if (!dstFormat) {
+        if (error) *error = [NSError errorWithDomain:@"NSCAudioFileStreamDecoder" code:-1 userInfo:@{NSLocalizedDescriptionKey: @"failed to create destination format"}];
+        return nil;
+    }
+
+    AudioConverterRef converter = NULL;
+    OSStatus s = AudioConverterNew(&srcASBD, dstFormat.streamDescription, &converter);
+    if (s != noErr || !converter) {
+        if (error) *error = [NSError errorWithDomain:@"NSCAudioFileStreamDecoder" code:s userInfo:@{NSLocalizedDescriptionKey: @"AudioConverterNew failed"}];
+        return nil;
+    }
+
+    if (ctx.magicCookie && ctx.magicCookie.length > 0) {
+        AudioConverterSetProperty(converter, kAudioConverterDecompressionMagicCookie, (UInt32)ctx.magicCookie.length, (void *)ctx.magicCookie.bytes);
+    }
+
+    UInt32 numChannels = (UInt32)dstFormat.channelCount;
+    if (numChannels == 0) {
+        AudioConverterDispose(converter);
+        if (error) *error = [NSError errorWithDomain:@"NSCAudioFileStreamDecoder" code:-1 userInfo:@{NSLocalizedDescriptionKey: @"no channels"}];
+        return nil;
+    }
+    const UInt32 bufferFrames = 4096;
+
+    NSMutableArray<NSMutableData *> *channelAcc = [NSMutableArray arrayWithCapacity:numChannels];
+    for (UInt32 c = 0; c < numChannels; ++c) [channelAcc addObject:[NSMutableData data]];
+
+    size_t ablSize = sizeof(AudioBufferList) + (numChannels - 1) * sizeof(AudioBuffer);
+    AudioBufferList *outABL = (AudioBufferList *)calloc(1, ablSize);
+    outABL->mNumberBuffers = numChannels;
+    float *scratch = (float *)malloc((size_t)numChannels * bufferFrames * sizeof(float));
+
+    UInt32 totalFrames = 0;
+    OSStatus failure = noErr;
+    while (1) {
+        for (UInt32 c = 0; c < numChannels; ++c) {
+            outABL->mBuffers[c].mNumberChannels = 1;
+            outABL->mBuffers[c].mDataByteSize = bufferFrames * sizeof(float);
+            outABL->mBuffers[c].mData = scratch + (size_t)c * bufferFrames;
+        }
+
+        UInt32 ioOutputPackets = bufferFrames;
+        OSStatus cs = AudioConverterFillComplexBuffer(converter, audioConverterInputProc, (__bridge void *)ctx, &ioOutputPackets, outABL, NULL);
+
+        // A call that hits the end of input still reports the frames it produced.
+        if (ioOutputPackets > 0 && (cs == noErr || cs == kAudioConverterErr_NoMoreInputData)) {
+            for (UInt32 c = 0; c < numChannels; ++c) {
+                [channelAcc[c] appendBytes:outABL->mBuffers[c].mData length:ioOutputPackets * sizeof(float)];
+            }
+            totalFrames += ioOutputPackets;
+        }
+        if (cs == noErr && ioOutputPackets > 0) continue;
+        if (cs != noErr && cs != kAudioConverterErr_NoMoreInputData) failure = cs;
+        break;
+    }
+
+    AudioConverterDispose(converter);
+    free(scratch);
+    free(outABL);
+
+    if (failure != noErr) {
+        if (error) *error = [NSError errorWithDomain:@"NSCAudioFileStreamDecoder" code:failure userInfo:@{NSLocalizedDescriptionKey: @"AudioConverterFillComplexBuffer failed"}];
+        return nil;
+    }
+    if (totalFrames == 0) return nil;
+
+    AVAudioPCMBuffer *pcm = [[AVAudioPCMBuffer alloc] initWithPCMFormat:dstFormat frameCapacity:totalFrames];
+    pcm.frameLength = totalFrames;
+    for (UInt32 c = 0; c < numChannels; ++c) {
+        memcpy(pcm.floatChannelData[c], channelAcc[c].bytes, channelAcc[c].length);
+    }
+    return pcm;
+}
+
 - (nullable AVAudioPCMBuffer *)finalizeAndDecodeWithError:(NSError * _Nullable * _Nullable)error {
     if (_afs) {
         AudioFileStreamClose(_afs);
@@ -251,120 +338,11 @@ static OSStatus audioConverterInputProc(AudioConverterRef inAudioConverter,
         return nil;
     }
 
-    AudioStreamBasicDescription srcASBD = _ctx.asbd;
-    AVAudioFormat *dstFormat = [[AVAudioFormat alloc] initWithCommonFormat:AVAudioPCMFormatFloat32 sampleRate:srcASBD.mSampleRate channels:srcASBD.mChannelsPerFrame interleaved:NO];
-    if (!dstFormat) {
-        if (error) *error = [NSError errorWithDomain:@"NSCAudioFileStreamDecoder" code:-1 userInfo:@{NSLocalizedDescriptionKey: @"failed to create destination format"}];
-        return nil;
+    NSError *decodeError = nil;
+    AVAudioPCMBuffer *pcm = decodeParsedPackets(_ctx, &decodeError);
+    if (!pcm && error) {
+        *error = decodeError ?: [NSError errorWithDomain:@"NSCAudioFileStreamDecoder" code:-1 userInfo:@{NSLocalizedDescriptionKey: @"no decoded frames"}];
     }
-
-    AudioConverterRef converter = NULL;
-    OSStatus s = AudioConverterNew(&srcASBD, dstFormat.streamDescription, &converter);
-    if (s != noErr || !converter) {
-        if (error) *error = [NSError errorWithDomain:@"NSCAudioFileStreamDecoder" code:s userInfo:@{NSLocalizedDescriptionKey: @"AudioConverterNew failed"}];
-        return nil;
-    }
-
-    if (_ctx.magicCookie && _ctx.magicCookie.length > 0) {
-        OSStatus ss = AudioConverterSetProperty(converter, kAudioConverterDecompressionMagicCookie, (UInt32)_ctx.magicCookie.length, (void *)_ctx.magicCookie.bytes);
-        (void)ss;
-    }
-
-    UInt32 numChannels = (UInt32)dstFormat.channelCount;
-    UInt32 bufferFrames = 4096;
-
-    NSMutableArray<NSMutableData *> *channelAcc = [NSMutableArray arrayWithCapacity:numChannels];
-    for (UInt32 c = 0; c < numChannels; ++c) [channelAcc addObject:[NSMutableData data]];
-
-    size_t ablSize = sizeof(AudioBufferList) + (numChannels - 1) * sizeof(AudioBuffer);
-    AudioBufferList *outABL = (AudioBufferList *)malloc(ablSize);
-    memset(outABL, 0, ablSize);
-    outABL->mNumberBuffers = numChannels;
-
-    UInt32 totalFrames = 0;
-
-    UInt32 primeFrames = 256;
-    for (UInt32 c = 0; c < numChannels; ++c) {
-        outABL->mBuffers[c].mNumberChannels = 1;
-        outABL->mBuffers[c].mDataByteSize = primeFrames * sizeof(float);
-        outABL->mBuffers[c].mData = malloc(outABL->mBuffers[c].mDataByteSize);
-    }
-    UInt32 ioPrimePackets = primeFrames;
-    OSStatus primeStatus = AudioConverterFillComplexBuffer(converter, audioConverterInputProc, (__bridge void *)_ctx, &ioPrimePackets, outABL, NULL);
-    if (primeStatus == noErr && ioPrimePackets > 0) {
-        UInt32 bytesProducedPerChannel = ioPrimePackets * sizeof(float);
-        for (UInt32 c = 0; c < numChannels; ++c) {
-            [channelAcc[c] appendBytes:outABL->mBuffers[c].mData length:bytesProducedPerChannel];
-            free(outABL->mBuffers[c].mData);
-            outABL->mBuffers[c].mData = NULL;
-        }
-        totalFrames += ioPrimePackets;
-    } else {
-        for (UInt32 c = 0; c < numChannels; ++c) {
-            if (outABL->mBuffers[c].mData) {
-                free(outABL->mBuffers[c].mData);
-                outABL->mBuffers[c].mData = NULL;
-            }
-        }
-    }
-
-    while (1) {
-        for (UInt32 c = 0; c < numChannels; ++c) {
-            outABL->mBuffers[c].mNumberChannels = 1;
-            outABL->mBuffers[c].mDataByteSize = bufferFrames * sizeof(float);
-            outABL->mBuffers[c].mData = malloc(outABL->mBuffers[c].mDataByteSize);
-        }
-
-        UInt32 ioOutputPackets = bufferFrames; 
-        OSStatus cs = AudioConverterFillComplexBuffer(converter, audioConverterInputProc, (__bridge void *)_ctx, &ioOutputPackets, outABL, NULL);
-
-        if (cs == noErr) {
-            if (ioOutputPackets == 0) {
-                for (UInt32 c = 0; c < numChannels; ++c) free(outABL->mBuffers[c].mData);
-                break;
-            }
-
-            UInt32 bytesProducedPerChannel = ioOutputPackets * sizeof(float);
-            for (UInt32 c = 0; c < numChannels; ++c) {
-                [channelAcc[c] appendBytes:outABL->mBuffers[c].mData length:bytesProducedPerChannel];
-                free(outABL->mBuffers[c].mData);
-            }
-            totalFrames += ioOutputPackets;
-            continue;
-        } else if (cs == kAudioConverterErr_NoMoreInputData) {
-            for (UInt32 c = 0; c < numChannels; ++c) free(outABL->mBuffers[c].mData);
-            break;
-        } else {
-            for (UInt32 c = 0; c < numChannels; ++c) {
-                if (outABL->mBuffers[c].mData) free(outABL->mBuffers[c].mData);
-            }
-            AudioConverterDispose(converter);
-            free(outABL);
-            channelAcc = nil;
-            if (error) *error = [NSError errorWithDomain:@"NSCAudioFileStreamDecoder" code:cs userInfo:@{NSLocalizedDescriptionKey: @"AudioConverterFillComplexBuffer failed"}];
-            return nil;
-        }
-    }
-
-    AudioConverterDispose(converter);
-    free(outABL);
-
-    if (totalFrames == 0) {
-        channelAcc = nil;
-        if (error) *error = [NSError errorWithDomain:@"NSCAudioFileStreamDecoder" code:-1 userInfo:@{NSLocalizedDescriptionKey: @"no decoded frames"}];
-        return nil;
-    }
-
-    AVAudioPCMBuffer *pcm = [[AVAudioPCMBuffer alloc] initWithPCMFormat:dstFormat frameCapacity:totalFrames];
-    pcm.frameLength = totalFrames;
-
-    for (UInt32 c = 0; c < numChannels; ++c) {
-        const void *src = channelAcc[c].bytes;
-        memcpy(pcm.floatChannelData[c], src, channelAcc[c].length);
-    }
-
-    (void)channelAcc;
-
     return pcm;
 }
 
@@ -372,118 +350,13 @@ static OSStatus audioConverterInputProc(AudioConverterRef inAudioConverter,
     if (!_ctx.hasASBD || _ctx.packetCount == 0 || _ctx.compData.length == 0) {
         return @[];
     }
-
-    AudioStreamBasicDescription srcASBD = _ctx.asbd;
-    AVAudioFormat *dstFormat = [[AVAudioFormat alloc] initWithCommonFormat:AVAudioPCMFormatFloat32 sampleRate:srcASBD.mSampleRate channels:srcASBD.mChannelsPerFrame interleaved:NO];
-    if (!dstFormat) {
-        if (error) *error = [NSError errorWithDomain:@"NSCAudioFileStreamDecoder" code:-1 userInfo:@{NSLocalizedDescriptionKey: @"failed to create destination format"}];
+    NSError *decodeError = nil;
+    AVAudioPCMBuffer *pcm = decodeParsedPackets(_ctx, &decodeError);
+    if (decodeError) {
+        if (error) *error = decodeError;
         return nil;
     }
-
-    AudioConverterRef converter = NULL;
-    OSStatus s = AudioConverterNew(&srcASBD, dstFormat.streamDescription, &converter);
-    if (s != noErr || !converter) {
-        if (error) *error = [NSError errorWithDomain:@"NSCAudioFileStreamDecoder" code:s userInfo:@{NSLocalizedDescriptionKey: @"AudioConverterNew failed"}];
-        return nil;
-    }
-
-    if (_ctx.magicCookie && _ctx.magicCookie.length > 0) {
-        OSStatus ss = AudioConverterSetProperty(converter, kAudioConverterDecompressionMagicCookie, (UInt32)_ctx.magicCookie.length, (void *)_ctx.magicCookie.bytes);
-        (void)ss;
-    }
-
-    UInt32 numChannels = (UInt32)dstFormat.channelCount;
-    UInt32 bufferFrames = 4096;
-
-    NSMutableArray<NSMutableData *> *channelAcc = [NSMutableArray arrayWithCapacity:numChannels];
-    for (UInt32 c = 0; c < numChannels; ++c) [channelAcc addObject:[NSMutableData data]];
-
-    size_t ablSize = sizeof(AudioBufferList) + (numChannels - 1) * sizeof(AudioBuffer);
-    AudioBufferList *outABL = (AudioBufferList *)malloc(ablSize);
-    memset(outABL, 0, ablSize);
-    outABL->mNumberBuffers = numChannels;
-
-    UInt32 totalFrames = 0;
-
-    UInt32 primeFrames = 256;
-    for (UInt32 c = 0; c < numChannels; ++c) {
-        outABL->mBuffers[c].mNumberChannels = 1;
-        outABL->mBuffers[c].mDataByteSize = primeFrames * sizeof(float);
-        outABL->mBuffers[c].mData = malloc(outABL->mBuffers[c].mDataByteSize);
-    }
-    UInt32 ioPrimePackets = primeFrames;
-    OSStatus primeStatus = AudioConverterFillComplexBuffer(converter, audioConverterInputProc, (__bridge void *)_ctx, &ioPrimePackets, outABL, NULL);
-    if (primeStatus == noErr && ioPrimePackets > 0) {
-        UInt32 bytesProducedPerChannel = ioPrimePackets * sizeof(float);
-        for (UInt32 c = 0; c < numChannels; ++c) {
-            [channelAcc[c] appendBytes:outABL->mBuffers[c].mData length:bytesProducedPerChannel];
-            free(outABL->mBuffers[c].mData);
-            outABL->mBuffers[c].mData = NULL;
-        }
-        totalFrames += ioPrimePackets;
-    } else {
-        for (UInt32 c = 0; c < numChannels; ++c) {
-            if (outABL->mBuffers[c].mData) {
-                free(outABL->mBuffers[c].mData);
-                outABL->mBuffers[c].mData = NULL;
-            }
-        }
-    }
-
-    while (1) {
-        for (UInt32 c = 0; c < numChannels; ++c) {
-            outABL->mBuffers[c].mNumberChannels = 1;
-            outABL->mBuffers[c].mDataByteSize = bufferFrames * sizeof(float);
-            outABL->mBuffers[c].mData = malloc(outABL->mBuffers[c].mDataByteSize);
-        }
-
-        UInt32 ioOutputPackets = bufferFrames;
-        OSStatus cs = AudioConverterFillComplexBuffer(converter, audioConverterInputProc, (__bridge void *)_ctx, &ioOutputPackets, outABL, NULL);
-
-        if (cs == noErr) {
-            if (ioOutputPackets == 0) {
-                for (UInt32 c = 0; c < numChannels; ++c) free(outABL->mBuffers[c].mData);
-                break;
-            }
-            UInt32 bytesProducedPerChannel = ioOutputPackets * sizeof(float);
-            for (UInt32 c = 0; c < numChannels; ++c) {
-                [channelAcc[c] appendBytes:outABL->mBuffers[c].mData length:bytesProducedPerChannel];
-                free(outABL->mBuffers[c].mData);
-            }
-            totalFrames += ioOutputPackets;
-            continue;
-        } else if (cs == kAudioConverterErr_NoMoreInputData) {
-            for (UInt32 c = 0; c < numChannels; ++c) free(outABL->mBuffers[c].mData);
-            break;
-        } else {
-            for (UInt32 c = 0; c < numChannels; ++c) {
-                if (outABL->mBuffers[c].mData) free(outABL->mBuffers[c].mData);
-            }
-            AudioConverterDispose(converter);
-            free(outABL);
-            channelAcc = nil;
-            if (error) *error = [NSError errorWithDomain:@"NSCAudioFileStreamDecoder" code:cs userInfo:@{NSLocalizedDescriptionKey: @"AudioConverterFillComplexBuffer failed"}];
-            return nil;
-        }
-    }
-
-    AudioConverterDispose(converter);
-    free(outABL);
-
-    if (totalFrames == 0) {
-        channelAcc = nil;
-        return @[];
-    }
-
-    AVAudioPCMBuffer *pcm = [[AVAudioPCMBuffer alloc] initWithPCMFormat:dstFormat frameCapacity:totalFrames];
-    pcm.frameLength = totalFrames;
-
-    for (UInt32 c = 0; c < numChannels; ++c) {
-        const void *src = channelAcc[c].bytes;
-        memcpy(pcm.floatChannelData[c], src, channelAcc[c].length);
-    }
-
-    return @[pcm];
+    return pcm ? @[pcm] : @[];
 }
 
 + (nullable AVAudioPCMBuffer *)decodeDataToPCMBuffer:(NSData *)data error:(NSError * _Nullable * _Nullable)error {

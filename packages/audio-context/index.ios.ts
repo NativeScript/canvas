@@ -443,18 +443,23 @@ export class AudioScheduledSourceNode extends AudioNode {
 		this.dispatchEvent({ type: 'ended', target: this });
 	}
 
-	start(when?: number, _offset?: number, duration?: number) {
+	start(when?: number, offset?: number, duration?: number) {
 		this._endedFired = false;
-		if (typeof when === 'number' && Number.isFinite(when) && when > 0) {
-			this._ensureNativeEndedWired();
-			this.native.startAt(when);
-		} else {
-			this.native.start();
-		}
+		const at = typeof when === 'number' && Number.isFinite(when) && when > 0 ? when : 0;
+		if (at > 0) this._ensureNativeEndedWired();
+		this._startNative(at, typeof offset === 'number' && Number.isFinite(offset) ? Math.max(0, offset) : 0);
 		if (typeof duration === 'number' && Number.isFinite(duration) && duration >= 0) {
 			const now = (this.context as any)?.currentTime ?? 0;
 			const startAt = typeof when === 'number' && Number.isFinite(when) ? Math.max(now, when) : now;
 			this.stop(startAt + duration);
+		}
+	}
+
+	protected _startNative(when: number, _offset: number) {
+		if (when > 0) {
+			this.native.startAt(when);
+		} else {
+			this.native.start();
 		}
 	}
 
@@ -848,6 +853,10 @@ export class AudioBufferSourceNode extends AudioScheduledSourceNode {
 
 	get native() {
 		return this[native_] as NSCAudioBufferSourceNode;
+	}
+
+	protected _startNative(when: number, offset: number) {
+		this.native.startAtOffset(when > 0 ? when : (null as never), offset);
 	}
 
 	set loop(v: boolean) {

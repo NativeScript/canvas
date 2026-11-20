@@ -15,6 +15,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (NSCAudioParam *)getPlaybackRateParam;
 
+// `offset` is in seconds into the buffer.
+- (void)startAt:(nullable NSNumber *)when offset:(double)offset;
+
 - (instancetype)initWithContext:(NSCAudioContext *)context
                          buffer:(nullable NSCAudioBuffer *)buffer NS_DESIGNATED_INITIALIZER;
 - (instancetype)initWithContext:(NSCAudioContext *)context node:(nullable AVAudioNode *)node NS_UNAVAILABLE;

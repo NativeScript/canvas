@@ -42,6 +42,8 @@ public class AudioContext {
 	private final ConcurrentHashMap<String, AudioTrack> tracks = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<String, Thread> trackThreads = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<String, java.util.concurrent.CopyOnWriteArrayList<EndedListener>> trackEndedListeners = new ConcurrentHashMap<>();
+	// Where to deliver a track's ended event when the render thread reports it.
+	private final ConcurrentHashMap<String, Looper> trackEndedLoopers = new ConcurrentHashMap<>();
 
 	public interface EndedListener {
 		void onEnded(String trackId);
@@ -50,6 +52,8 @@ public class AudioContext {
 
 	public void addEndedListener(String trackId, @NonNull EndedListener listener) {
 		if (trackId == null) return;
+		Looper looper = Looper.myLooper();
+		if (looper != null) trackEndedLoopers.put(trackId, looper);
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
 			trackEndedListeners
 				.computeIfAbsent(trackId, k -> new CopyOnWriteArrayList<>())
@@ -91,6 +95,7 @@ public class AudioContext {
 
 
 	void fireEnded(String trackId) {
+		trackEndedLoopers.remove(trackId);
 		java.util.concurrent.CopyOnWriteArrayList<EndedListener> list = trackEndedListeners.remove(trackId);
 		if (list == null) return;
 		for (EndedListener l : list) {
@@ -102,9 +107,14 @@ public class AudioContext {
 		}
 	}
 
+	// Called from the native notifier thread when a voice stops on its own: a scheduled
+	// stop, or a buffer that played to its end.
 	@SuppressWarnings("unused")
-	void nativeOnTrackEnded(String trackId) {
-		fireEnded(trackId);
+	public static void onNativeTrackEnded(String trackId) {
+		if (trackId == null) return;
+		AudioContext inst = getInstance();
+		if (!inst.trackEndedListeners.containsKey(trackId)) return;
+		inst.dispatch(inst.trackEndedLoopers.get(trackId), () -> inst.fireEnded(trackId));
 	}
 
 	private static boolean nativeAvailable;
@@ -579,6 +589,15 @@ public class AudioContext {
 		if (set.isEmpty()) contextTracksMap.remove(contextId);
 	}
 
+	@Nullable
+	String findContextForTrack(String trackId) {
+		if (trackId == null) return null;
+		for (java.util.Map.Entry<String, Set<String>> e : contextTracksMap.entrySet()) {
+			if (e.getValue().contains(trackId)) return e.getKey();
+		}
+		return null;
+	}
+
 	public String[] getContextTrackIds(String contextId) {
 		Set<String> set = contextTracksMap.get(contextId);
 		if (set == null || set.isEmpty()) return new String[0];
@@ -736,6 +755,14 @@ public class AudioContext {
 	private native void nativeStartOscillator(String id, String type, double frequency);
 
 	private native void nativeStopTrack(String id);
+
+	private native void nativeStartOscillatorAt(String id, String type, double frequency, String contextId, double when);
+
+	private native void nativeStopTrackAt(String id, String contextId, double when);
+
+	private native void nativeSetOscillatorType(String id, String type);
+
+	private native void nativeStartBufferSourceAt(String trackId, boolean loop, String contextId, double when, double offset);
 
 	private native String nativeCreateBufferSource(String bufferId, byte[] pcmBytes, int sampleRate, int channels);
 
@@ -1805,6 +1832,26 @@ public class AudioContext {
 		th.start();
 	}
 
+	public void startOscillatorAt(String id, String type, double frequency, @Nullable String contextId, double when) {
+		if (nativeAvailable && contextId != null) {
+			nativeStartOscillatorAt(id, type, frequency, contextId, when);
+			return;
+		}
+		startOscillator(id, type, frequency);
+	}
+
+	public void stopTrackAt(String id, @Nullable String contextId, double when) {
+		if (nativeAvailable && contextId != null) {
+			nativeStopTrackAt(id, contextId, when);
+			return;
+		}
+		stopTrack(id);
+	}
+
+	public void setOscillatorType(String id, String type) {
+		if (nativeAvailable && id != null && type != null) nativeSetOscillatorType(id, type);
+	}
+
 	public void stopTrack(String id) {
 		if (nativeAvailable) {
 			nativeStopTrack(id);
@@ -2817,6 +2864,7 @@ public class AudioContext {
 		GainNode pr = createGain(context);
 		attachPlaybackRateToVoice(id, pr.getId());
 		AudioBufferSourceNode node = new AudioBufferSourceNode(id, buffer, pr.getId());
+		node.contextId = context.getId();
 		if (ownsSourceBuffer(id, buffer)) node.ownBuffer(id);
 		return node;
 	}
@@ -3097,6 +3145,14 @@ public class AudioContext {
 			addToContextSet(contextBuffers, contextId, id + "::buffer");
 		}
 		return id;
+	}
+
+	public void startBufferSourceAt(String trackId, boolean loop, @Nullable String contextId, double when, double offset) {
+		if (nativeAvailable && contextId != null) {
+			nativeStartBufferSourceAt(trackId, loop, contextId, when, offset);
+			return;
+		}
+		startBufferSource(trackId, loop);
 	}
 
 	public void startBufferSource(final String trackId, final boolean loop) {

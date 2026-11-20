@@ -1299,6 +1299,8 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                         streamSampleRate_ > 0 ? static_cast<double>(streamSampleRate_) : 48000.0;
                 v.phaseIncrement = v.frequency / sr;
                 v.playing = true;
+                v.startAtNs = c.timeNs;
+                v.stopAtNs = 0;
 
                 auto vgInitIt2 = voiceGainByOutput_.find(v.id);
                 if (vgInitIt2 != voiceGainByOutput_.end() && !vgInitIt2->second.empty()) {
@@ -1346,6 +1348,20 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                 audioVoices_.erase(c.id);
                 break;
             }
+            case NativeEngine::CMD_STOP_TRACK_AT: {
+                auto vit = audioVoices_.find(c.id);
+                if (vit != audioVoices_.end()) vit->second.stopAtNs = c.timeNs;
+                break;
+            }
+            case NativeEngine::CMD_SET_OSC_TYPE: {
+                auto vit = audioVoices_.find(c.id);
+                if (vit != audioVoices_.end() && vit->second.voiceType == Voice::Oscillator) {
+                    vit->second.waveform = c.waveform;
+                    // A basic type replaces a periodic wave, as in the spec.
+                    vit->second.periodicWaveId.clear();
+                }
+                break;
+            }
             case NativeEngine::CMD_START_BUFFER: {
                 auto bit = audioBuffers_.find(c.id);
                 if (bit == audioBuffers_.end()) break;
@@ -1357,8 +1373,10 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                 v.loop = c.loop;
                 v.gain = 1.0;
                 v.playing = true;
+                v.startAtNs = c.timeNs;
                 v.bufferChannels = bit->second.channels;
                 v.bufferSampleRate = bit->second.sampleRate;
+                v.position = c.startOffset * static_cast<double>(v.bufferSampleRate);
                 double sr =
                         streamSampleRate_ > 0 ? static_cast<double>(streamSampleRate_) : 48000.0;
                 v.increment = static_cast<double>(v.bufferSampleRate) / sr;
@@ -1736,6 +1754,7 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
 
         for (const auto &voiceView: localVoices) {
             const Voice &v = *voiceView.voice;
+            if (v.waveform == "constant") usedGains.insert(v.id);
             if (!v.gainId.empty()) {
                 usedGains.insert(v.gainId);
                 addCompressorParamGains(v.gainId);
@@ -2295,9 +2314,23 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                 const auto *pannerRoute = voiceView.pannerRoute;
                 const std::string *playbackRatePrimaryId = voiceView.playbackRatePrimaryId;
                 if (!v.playing) continue;
+                if (v.startAtNs > 0 || v.stopAtNs > 0) {
+                    auto frameNs = audioStartNs + static_cast<int64_t>(frame * sampleDurationNs);
+                    if (v.stopAtNs > 0 && frameNs >= v.stopAtNs) {
+                        v.playing = false;
+                        continue;
+                    }
+                    if (v.startAtNs > 0) {
+                        if (frameNs < v.startAtNs) continue;
+                        v.startAtNs = 0;
+                    }
+                }
                 if (v.voiceType == Voice::Oscillator) {
                     double s = 0.0;
-                    if (!v.periodicWaveId.empty()) {
+                    if (v.waveform == "constant") {
+                        // ConstantSourceNode: its offset param is stored as a gain under the voice id.
+                        s = resolveGainValueForFrame(v.id, 1.0, frame);
+                    } else if (!v.periodicWaveId.empty()) {
                         auto pwIt = periodicWaves_.find(v.periodicWaveId);
                         if (pwIt != periodicWaves_.end()) {
                             double sr =
@@ -3007,6 +3040,7 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
     for (const auto &voiceId: stoppedVoices) {
         audioVoices_.erase(voiceId);
     }
+    queueEnded(stoppedVoices);
 
     return oboe::DataCallbackResult::Continue;
 }

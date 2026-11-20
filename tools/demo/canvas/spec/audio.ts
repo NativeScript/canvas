@@ -10,7 +10,7 @@ function rms(samples: Float32Array): number {
 }
 
 /** A mono 16-bit WAV of `samples`, base64. */
-function wavBase64(samples: Float32Array, sampleRate: number): string {
+export function wavBase64(samples: Float32Array, sampleRate: number): string {
 	const bytes = new DataView(new ArrayBuffer(44 + samples.length * 2));
 	const text = (offset: number, value: string) => {
 		for (let i = 0; i < value.length; i++) bytes.setUint8(offset + i, value.charCodeAt(i));

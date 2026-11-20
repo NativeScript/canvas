@@ -99,7 +99,9 @@ public class AudioContextInstance {
 	public AudioOscillatorNode createOscillatorNodeFrequency(String type, double frequency) {
 		String id = AudioContext.getInstance().createOscillator(getId(), type, frequency);
 		if (id == null) return null;
-		return new AudioOscillatorNode(id, type, frequency);
+		AudioOscillatorNode node = new AudioOscillatorNode(id, type, frequency);
+		node.contextId = getId();
+		return node;
 	}
 
 	public ExternalPcmSourceNode createExternalPcmSource(int sampleRate, int channels) {

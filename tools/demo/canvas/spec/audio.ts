@@ -54,7 +54,8 @@ export function registerAudioSpec() {
 			oscillator.start();
 			const buffer = await context.startRendering();
 			equal(buffer.length, 4800);
-			closeTo(rms(buffer.getChannelData(0).subarray(480)), 0.5, 0.02, 'square wave rms');
+			// The square is the spec's normalized PeriodicWave (peak 1, RMS about 0.83), as in Chrome.
+			closeTo(rms(buffer.getChannelData(0).subarray(480)), 0.415, 0.01, 'square wave rms');
 			equal(context.state, 'closed');
 		});
 

@@ -47,6 +47,13 @@ import { imageAssetFor } from '../../platform/index';
 import { isCanvasView, isOffscreenCanvas } from '../../Canvas/utils';
 import { ElementImage, elementAsset, resolveElementSource } from '../../Canvas/drawable/common';
 
+/** Node-API bindings take a WebGPU canvas as a canvas source, other contexts as they are. */
+function canvasTextureSource(canvas: any) {
+	const native = canvas.native;
+	const webgpu = canvas._contextId === 'webgpu' || (!!canvas._gpuContext && canvas._gpuContext.native === native);
+	return NAPI_HOST && native && webgpu ? { __native__context: native } : native;
+}
+
 /** An image, canvas, video, bitmap or ImageData: not pixels in a buffer, an offset or null. */
 function isTexImageSource(value: unknown): boolean {
 	return !!value && typeof value === 'object' && !ArrayBuffer.isView(value) && !(value instanceof ArrayBuffer);
@@ -941,7 +948,7 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 			} else if (pixels instanceof ImageBitmap) {
 				this.native.texImage2D(target, level, internalformat, width, height, border, format, type ?? internalformat, pixels.native);
 			} else if (isCanvasView(pixels) || isOffscreenCanvas(pixels)) {
-				this.native.texImage2D(target, level, internalformat, width, height, border, format, type ?? internalformat, pixels.native);
+				this.native.texImage2D(target, level, internalformat, width, height, border, format, type ?? internalformat, canvasTextureSource(pixels));
 			} else if (__ANDROID__ && pixels instanceof android.graphics.Bitmap) {
 				(<any>org).nativescript.canvas.NSCWebGLRenderingContext.texImage2D(java.lang.Long.valueOf(this._contextPtr), target, level, internalformat, width, height, pixels, this.native.__flipY);
 				//this.native.texImage2D(target, level, internalformat, width, height, pixels);
@@ -997,7 +1004,7 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 			} else if (border instanceof ImageBitmap) {
 				this.native.texImage2D(target, level, internalformat, width, height, border.native);
 			} else if (isCanvasView(border) || isOffscreenCanvas(border)) {
-				this.native.texImage2D(target, level, internalformat, width, height, border.native);
+				this.native.texImage2D(target, level, internalformat, width, height, canvasTextureSource(border));
 			} else if (__ANDROID__ && border instanceof android.graphics.Bitmap) {
 				(<any>org).nativescript.canvas.NSCWebGLRenderingContext.texImage2D(java.lang.Long.valueOf(this._contextPtr), target, level, internalformat, width, height, border, this.native.__flipY);
 				this.native.texImage2D(target, level, internalformat, width, height, border);
@@ -1093,7 +1100,7 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 			} else if (format instanceof ImageAsset) {
 				this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, format.native);
 			} else if (isCanvasView(format) || isOffscreenCanvas(format)) {
-				this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, format.native);
+				this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, canvasTextureSource(format));
 			} else if (format instanceof ImageBitmap) {
 				this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, format.native);
 			} else if (format && typeof format.tagName === 'string' && (format.tagName === 'IMG' || format.tagName === 'IMAGE')) {

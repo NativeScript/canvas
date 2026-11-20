@@ -98,27 +98,29 @@ NSString * const NSCAudioSessionManagerLatencyKey = @"latency";
     AVAudioSession *session = [AVAudioSession sharedInstance];
     __block NSError *err = nil;
 
+    // Note: DefaultToSpeaker, AllowBluetoothA2DP, and AllowAirPlay are invalid with
+    // AVAudioSessionCategoryPlayback on iOS/iPadOS (causing OSStatus -50 BadParam).
+    // Playback already routes to speaker, Bluetooth A2DP, and AirPlay automatically.
     AVAudioSessionCategoryOptions categoryOptions = 0;
-#ifdef AVAudioSessionCategoryOptionDefaultToSpeaker
-    categoryOptions |= AVAudioSessionCategoryOptionDefaultToSpeaker;
-#endif
-#ifdef AVAudioSessionCategoryOptionAllowBluetoothA2DP
-    categoryOptions |= AVAudioSessionCategoryOptionAllowBluetoothA2DP;
-#endif
-#ifdef AVAudioSessionCategoryOptionAllowAirPlay
-    categoryOptions |= AVAudioSessionCategoryOptionAllowAirPlay;
-#endif
+    if ([session.category isEqualToString:AVAudioSessionCategoryPlayback]) {
+        AVAudioSessionCategoryOptions validPlaybackMask = AVAudioSessionCategoryOptionMixWithOthers | AVAudioSessionCategoryOptionDuckOthers;
+        categoryOptions = session.categoryOptions & validPlaybackMask;
+    }
 
     if (![NSThread isMainThread]) {
         dispatch_sync(dispatch_get_main_queue(), ^{
-            BOOL sessionOK = [session setCategory:AVAudioSessionCategoryPlayback withOptions:categoryOptions error:&err];
+            BOOL sessionOK = (categoryOptions != 0)
+                ? [session setCategory:AVAudioSessionCategoryPlayback withOptions:categoryOptions error:&err]
+                : [session setCategory:AVAudioSessionCategoryPlayback error:&err];
             if (!sessionOK) {
                 NSCLogError(@"NSCAudioSessionManager: setCategory failed: %@", err);
             }
         });
         if (err) return;
     } else {
-        BOOL sessionOK = [session setCategory:AVAudioSessionCategoryPlayback withOptions:categoryOptions error:&err];
+        BOOL sessionOK = (categoryOptions != 0)
+            ? [session setCategory:AVAudioSessionCategoryPlayback withOptions:categoryOptions error:&err]
+            : [session setCategory:AVAudioSessionCategoryPlayback error:&err];
         if (!sessionOK) {
             NSCLogError(@"NSCAudioSessionManager: setCategory failed: %@", err);
             return;

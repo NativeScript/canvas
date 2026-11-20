@@ -408,6 +408,8 @@ export class AudioScheduledSourceNode extends AudioNode {
 	private _nativeEndedWired = false;
 	private _javaEndedListener: any = null;
 	private _endedFired = false;
+	private _startTimer: ReturnType<typeof setTimeout> | null = null;
+	private _stopTimer: ReturnType<typeof setTimeout> | null = null;
 
 	constructor(context: NativeBaseAudioContext, node: org.nativescript.audiocontext.AudioScheduledSourceNode) {
 		super(context);
@@ -454,13 +456,47 @@ export class AudioScheduledSourceNode extends AudioNode {
 		this.dispatchEvent({ type: 'ended', target: this });
 	}
 
-	start() {
+	start(when?: number, _offset?: number, duration?: number) {
 		this._endedFired = false;
-		this.native.start();
+		if (this._startTimer !== null) {
+			clearTimeout(this._startTimer);
+			this._startTimer = null;
+		}
+		const now = (this.context as any)?.currentTime ?? 0;
+		const delayMs = typeof when === 'number' && Number.isFinite(when) ? Math.max(0, (when - now) * 1000) : 0;
+		if (delayMs <= 1) {
+			this.native.start();
+		} else {
+			this._startTimer = setTimeout(() => {
+				this._startTimer = null;
+				this.native.start();
+			}, delayMs);
+		}
+		if (typeof duration === 'number' && Number.isFinite(duration) && duration >= 0) {
+			const startAt = typeof when === 'number' && Number.isFinite(when) ? Math.max(now, when) : now;
+			this.stop(startAt + duration);
+		}
 	}
 
-	stop() {
-		this.native.stop();
+	stop(when?: number) {
+		if (this._stopTimer !== null) {
+			clearTimeout(this._stopTimer);
+			this._stopTimer = null;
+		}
+		const now = (this.context as any)?.currentTime ?? 0;
+		const delayMs = typeof when === 'number' && Number.isFinite(when) ? Math.max(0, (when - now) * 1000) : 0;
+		if (delayMs <= 1) {
+			if (this._startTimer !== null) {
+				clearTimeout(this._startTimer);
+				this._startTimer = null;
+			}
+			this.native.stop();
+		} else {
+			this._stopTimer = setTimeout(() => {
+				this._stopTimer = null;
+				this.native.stop();
+			}, delayMs);
+		}
 	}
 }
 
@@ -996,12 +1032,20 @@ export class OscillatorNode extends AudioScheduledSourceNode {
 	private _periodicWave: PeriodicWave | null = null;
 	constructor(context: NativeBaseAudioContext, options: { type?: string; frequency?: number } = {}) {
 		const type = options?.type || 'sine';
-		const freq = options?.frequency || 440;
+		const freq = typeof options?.frequency === 'number' ? options.frequency : 440;
 		super(context, context.native.createOscillatorNodeFrequency(type, freq));
 	}
 
 	get native() {
 		return this[native_] as org.nativescript.audiocontext.AudioOscillatorNode;
+	}
+
+	get type(): string {
+		return this.native.getType();
+	}
+
+	set type(v: string) {
+		this.native.setType(v);
 	}
 
 	private _frequencyParam!: AudioParam;

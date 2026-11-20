@@ -125,7 +125,9 @@ export declare class MediaElementAudioSourceNode extends AudioNode {
 }
 
 export declare class OscillatorNode extends AudioScheduledSourceNode {
-	constructor(context: BaseAudioContext, options: { type?: string; frequency?: number });
+	constructor(context: BaseAudioContext, options?: { type?: string; frequency?: number });
+
+	type: string;
 
 	readonly frequency: AudioParam;
 

@@ -58,20 +58,19 @@ static void NSCAudioContext_prepareAudioSessionForPlayback(void) {
     AVAudioSession *session = [AVAudioSession sharedInstance];
     if (!session) return;
 
-    AVAudioSessionCategoryOptions options = 0;
-#ifdef AVAudioSessionCategoryOptionDefaultToSpeaker
-    options |= AVAudioSessionCategoryOptionDefaultToSpeaker;
-#endif
-#ifdef AVAudioSessionCategoryOptionAllowBluetoothA2DP
-    options |= AVAudioSessionCategoryOptionAllowBluetoothA2DP;
-#endif
-#ifdef AVAudioSessionCategoryOptionAllowAirPlay
-    options |= AVAudioSessionCategoryOptionAllowAirPlay;
-#endif
-
     void (^configure)(void) = ^{
+        // DefaultToSpeaker / AllowBluetoothA2DP / AllowAirPlay are invalid with
+        // AVAudioSessionCategoryPlayback (OSStatus -50 BadParam); preserve only valid mixing flags.
+        AVAudioSessionCategoryOptions options = 0;
+        if ([session.category isEqualToString:AVAudioSessionCategoryPlayback]) {
+            AVAudioSessionCategoryOptions validPlaybackMask = AVAudioSessionCategoryOptionMixWithOthers | AVAudioSessionCategoryOptionDuckOthers;
+            options = session.categoryOptions & validPlaybackMask;
+        }
         NSError *catErr = nil;
-        if (![session setCategory:AVAudioSessionCategoryPlayback withOptions:options error:&catErr]) {
+        BOOL catOK = (options != 0)
+            ? [session setCategory:AVAudioSessionCategoryPlayback withOptions:options error:&catErr]
+            : [session setCategory:AVAudioSessionCategoryPlayback error:&catErr];
+        if (!catOK) {
             NSCLogDebug(@"NSCAudioContext: prepare session setCategory failed: %@", catErr);
         }
 
@@ -616,7 +615,11 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
 }
 - (NSCBiquadNode *)createBiquadNode { return [[NSCBiquadNode alloc] initWithContext:self]; }
 - (NSCAudioPannerNode *)createPannerNode { return [[NSCAudioPannerNode alloc] initWithContext:self]; }
-- (NSCAudioOscillatorNode *)createOscillatorNode:(nullable NSString *)type frequency:(double)frequency { return [[NSCAudioOscillatorNode alloc] initWithContext:self]; }
+- (NSCAudioOscillatorNode *)createOscillatorNode:(nullable NSString *)type frequency:(double)frequency {
+    NSString *resolvedType = (type.length > 0) ? type : @"sine";
+    double resolvedFreq = (isfinite(frequency) && frequency > 0.0) ? frequency : 440.0;
+    return [[NSCAudioOscillatorNode alloc] initWithContext:self type:resolvedType frequency:resolvedFreq];
+}
 - (nullable NSCAudioBufferSourceNode *)createBufferSourceNode:(nullable NSCAudioBuffer *)buffer { return [[NSCAudioBufferSourceNode alloc] initWithContext:self buffer:buffer]; }
 - (NSCStereoPannerNode *)createStereoPannerNode:(double)pan { return [[NSCStereoPannerNode alloc] initWithContext:self pan:pan]; }
 - (NSCDelayNode *)createDelayNode:(double)delayTime maxDelayTime:(double)maxDelayTime { return [[NSCDelayNode alloc] initWithContext:self delayTime:delayTime maxDelayTime:maxDelayTime]; }

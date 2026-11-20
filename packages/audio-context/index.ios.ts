@@ -233,7 +233,10 @@ export class GainNode extends AudioNode {
 	constructor(context: NativeBaseAudioContext, options: { gain?: number } = {}) {
 		super(context);
 		this._native = context.native.createGainNode();
-		this._initialGain = typeof options?.gain === 'number' ? options!.gain! : (this._native.gain ?? 1);
+		this._initialGain = typeof options?.gain === 'number' ? options.gain : (this._native.gain ?? 1);
+		if (typeof options?.gain === 'number') {
+			this._native.gain = options.gain;
+		}
 	}
 	get native() {
 		return this._native;
@@ -440,26 +443,50 @@ export class AudioScheduledSourceNode extends AudioNode {
 		this.dispatchEvent({ type: 'ended', target: this });
 	}
 
-	start() {
+	start(when?: number, _offset?: number, duration?: number) {
 		this._endedFired = false;
-		this.native.start();
+		if (typeof when === 'number' && Number.isFinite(when) && when > 0) {
+			this._ensureNativeEndedWired();
+			this.native.startAt(when);
+		} else {
+			this.native.start();
+		}
+		if (typeof duration === 'number' && Number.isFinite(duration) && duration >= 0) {
+			const now = (this.context as any)?.currentTime ?? 0;
+			const startAt = typeof when === 'number' && Number.isFinite(when) ? Math.max(now, when) : now;
+			this.stop(startAt + duration);
+		}
 	}
 
-	stop() {
-		this.native.stop();
-		setTimeout(() => this._fireEnded(), 0);
+	stop(when?: number) {
+		const now = (this.context as any)?.currentTime ?? 0;
+		if (typeof when === 'number' && Number.isFinite(when) && when > now) {
+			this._ensureNativeEndedWired();
+			this.native.stopAt(when);
+		} else {
+			this.native.stop();
+			setTimeout(() => this._fireEnded(), 0);
+		}
 	}
 }
 
 export class OscillatorNode extends AudioScheduledSourceNode {
 	constructor(context: NativeBaseAudioContext, options: { type?: string; frequency?: number } = {}) {
 		const type = options?.type || 'sine';
-		const freq = options?.frequency || 440;
+		const freq = typeof options?.frequency === 'number' ? options.frequency : 440;
 		super(context, context.native.createOscillatorNodeFrequency(type, freq));
 	}
 
 	get native() {
 		return this[native_] as NSCAudioOscillatorNode;
+	}
+
+	get type(): string {
+		return this.native.type;
+	}
+
+	set type(v: string) {
+		this.native.type = v;
 	}
 
 	private _frequencyParam!: AudioParam;

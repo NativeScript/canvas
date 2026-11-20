@@ -1,0 +1,24 @@
+<Page xmlns="http://schemas.nativescript.org/tns.xsd" xmlns:canvas="@nativescript/canvas" navigatingTo="navigatingTo" class="page">
+	<Page.actionBar>
+		<ActionBar title="shared element transitions" icon="" class="action-bar" />
+	</Page.actionBar>
+	<GridLayout rows="*, auto, auto" iosOverflowSafeArea="false">
+		<canvas:Canvas row="0" id="canvas" iosOverflowSafeArea="false" content="drawable" loaded="{{ canvasLoaded }}" unloaded="{{ canvasUnloaded }}" />
+		<ScrollView row="1" orientation="horizontal" scrollBarIndicatorVisible="false">
+			<StackLayout orientation="horizontal" padding="8 12 0 12">
+				<Label text="Morph" tap="{{ pickEffect }}" class="{{ effect === 0 ? 'fx-chip fx-on' : 'fx-chip' }}" />
+				<Label text="Ripple" tap="{{ pickEffect }}" class="{{ effect === 1 ? 'fx-chip fx-on' : 'fx-chip' }}" />
+				<Label text="Warp" tap="{{ pickEffect }}" class="{{ effect === 2 ? 'fx-chip fx-on' : 'fx-chip' }}" />
+				<Label text="Haze" tap="{{ pickEffect }}" class="{{ effect === 3 ? 'fx-chip fx-on' : 'fx-chip' }}" />
+				<Label text="Flip" tap="{{ pickEffect }}" class="{{ effect === 4 ? 'fx-chip fx-on' : 'fx-chip' }}" />
+				<Label text="Vortex" tap="{{ pickEffect }}" class="{{ effect === 5 ? 'fx-chip fx-on' : 'fx-chip' }}" />
+				<Label text="Ink" tap="{{ pickEffect }}" class="{{ effect === 6 ? 'fx-chip fx-on' : 'fx-chip' }}" />
+				<Label text="Shatter" tap="{{ pickEffect }}" class="{{ effect === 7 ? 'fx-chip fx-on' : 'fx-chip' }}" />
+				<Label text="Burn" tap="{{ pickEffect }}" class="{{ effect === 8 ? 'fx-chip fx-on' : 'fx-chip' }}" />
+				<Label text="Pixels" tap="{{ pickEffect }}" class="{{ effect === 9 ? 'fx-chip fx-on' : 'fx-chip' }}" />
+				<Label text="Cube" tap="{{ pickEffect }}" class="{{ effect === 10 ? 'fx-chip fx-on' : 'fx-chip' }}" />
+			</StackLayout>
+		</ScrollView>
+		<Label row="2" text="{{ status }}" tap="{{ toggleSlow }}" textWrap="true" class="p-10" fontSize="12" />
+	</GridLayout>
+</Page>

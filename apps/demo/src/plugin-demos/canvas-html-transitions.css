@@ -1,0 +1,24 @@
+.fx-chip {
+	padding: 7 14;
+	margin: 0 4;
+	border-radius: 16;
+	font-size: 14;
+	font-weight: 600;
+	background-color: #e8e9f0;
+	color: #3a3a44;
+}
+
+.fx-on {
+	background-color: #4f46e5;
+	color: #fff;
+}
+
+.ns-dark .fx-chip {
+	background-color: #2a2a32;
+	color: #d8d8e0;
+}
+
+.ns-dark .fx-on {
+	background-color: #6d64ff;
+	color: #fff;
+}

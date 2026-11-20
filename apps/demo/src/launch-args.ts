@@ -26,9 +26,9 @@ import { getFileAccess, knownFolders, path } from '@nativescript/core';
 
 declare const __WINDOWS__: boolean, __LINUX__: boolean, NSWinRT: any, Windows: any;
 
-export const launchArgs: { demo?: string; profile?: string; frames?: number; suite?: string; surface?: string } = {};
+export const launchArgs: { demo?: string; profile?: string; frames?: number; suite?: string; surface?: string; slow?: string; auto?: string; renderer?: string } = {};
 
-const KEYS = ['demo', 'profile', 'suite', 'surface'] as const;
+const KEYS = ['demo', 'profile', 'suite', 'surface', 'slow', 'auto', 'renderer'] as const;
 
 let ready: Promise<void> = Promise.resolve();
 

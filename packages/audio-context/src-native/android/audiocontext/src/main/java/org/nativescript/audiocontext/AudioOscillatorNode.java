@@ -23,11 +23,14 @@ public class AudioOscillatorNode extends AudioScheduledSourceNode {
 
 	public AudioOscillatorNode(AudioContextInstance context) {
 		super(AudioContext.getInstance().createOscillator(context.getId(), "sine", 440));
+		contextId = context.getId();
 		init(440);
 	}
 
 	public AudioOscillatorNode(AudioContextInstance context, String type, double frequency) {
 		super(AudioContext.getInstance().createOscillator(context.getId(), type, frequency));
+		contextId = context.getId();
+		if (type != null) this.mType = type;
 		init(frequency);
 	}
 
@@ -35,8 +38,10 @@ public class AudioOscillatorNode extends AudioScheduledSourceNode {
 		return mType;
 	}
 
-	public void setType(String mType) {
-		this.mType = mType;
+	public void setType(String type) {
+		if (type == null) return;
+		this.mType = type;
+		AudioContext.getInstance().setOscillatorType(id, type);
 	}
 
 	public AudioParam getFrequency() {
@@ -46,6 +51,11 @@ public class AudioOscillatorNode extends AudioScheduledSourceNode {
 	@Override
 	public void start() {
 		AudioContext.getInstance().startOscillator(id, mType, mFrequency.getValue());
+	}
+
+	@Override
+	public void startAt(double when) {
+		AudioContext.getInstance().startOscillatorAt(id, mType, mFrequency.getValue(), resolveContextId(), when);
 	}
 
 	public void setPeriodicWave(PeriodicWave pw) {

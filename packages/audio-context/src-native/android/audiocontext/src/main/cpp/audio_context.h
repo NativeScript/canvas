@@ -12,6 +12,8 @@
 #include <memory>
 #include <atomic>
 #include <cstdint>
+#include <condition_variable>
+#include <thread>
 
 #include "kiss_fft.h"
 
@@ -39,6 +41,14 @@ public:
 
     void stopTrack(const std::string &id);
 
+    // `when` is in the context's currentTime seconds; at or before now starts/stops immediately.
+    void startOscillatorAt(const std::string &id, const std::string &type, double frequency,
+                           const std::string &contextId, double when);
+
+    void stopTrackAt(const std::string &id, const std::string &contextId, double when);
+
+    void setOscillatorType(const std::string &id, const std::string &type);
+
     std::string createBufferSource(std::vector<int16_t> &&pcm, int sampleRate, int channels);
 
     std::string createBufferSourceFromExisting(const std::string &bufferId);
@@ -46,6 +56,10 @@ public:
     bool hasBuffer(const std::string &id);
 
     void startBufferSource(const std::string &id, bool loop);
+
+    // `offset` is in seconds into the buffer.
+    void startBufferSourceAt(const std::string &id, bool loop, const std::string &contextId,
+                             double when, double offset);
 
     std::string
     renderOfflineForTracks(const std::vector<std::string> &trackIds, int frames, int sampleRate,
@@ -177,6 +191,9 @@ private:
         std::string panId;
         double pan = 0.0;
         bool playing = false;
+        // CLOCK_MONOTONIC ns, the same clock as g_audioTimeNanos; 0 means unscheduled.
+        int64_t startAtNs = 0;
+        int64_t stopAtNs = 0;
         int bufferChannels = 0;
         int bufferSampleRate = 0;
 
@@ -202,6 +219,8 @@ public:
         CMD_CREATE_OSC,
         CMD_START_OSC,
         CMD_STOP_TRACK,
+        CMD_STOP_TRACK_AT,
+        CMD_SET_OSC_TYPE,
         CMD_CREATE_BUFFER_DIRECT,
         CMD_CREATE_BUFFER_PLANAR,
         CMD_CREATE_BUFFER_COPY,
@@ -251,6 +270,8 @@ public:
         std::string contextId;
         std::string waveform;
         double frequency = 0.0;
+        int64_t timeNs = 0;
+        double startOffset = 0.0;
         std::string gainId;
         std::string compressorThresholdId;
         std::string compressorKneeId;
@@ -582,6 +603,19 @@ public:
     jclass audioContextClassGlobalRef = nullptr;
     jmethodID onNativeBufferHeldMethod = nullptr;
     jmethodID onNativeBufferReleasedMethod = nullptr;
+    jmethodID onNativeTrackEndedMethod = nullptr;
+
+    int64_t contextTimeToNanos(const std::string &contextId, double when);
+
+    // Voices that stop on the render thread are reported to Java from this thread, so the
+    // audio callback never attaches to the JVM.
+    void queueEnded(const std::vector<std::string> &ids);
+    void endedNotifierLoop();
+    std::mutex endedMutex_;
+    std::condition_variable endedCv_;
+    std::vector<std::string> endedQueue_;
+    std::thread endedThread_;
+    bool endedStop_ = false;
 
     std::unordered_map<std::string, int64_t> contextStartNanos_;
     std::mutex contextMutex_;

@@ -97,6 +97,8 @@ declare module org {
 		export module audiocontext {
 			export class AudioBufferSourceNode extends org.nativescript.audiocontext.AudioScheduledSourceNode {
 				public static class: java.lang.Class<org.nativescript.audiocontext.AudioBufferSourceNode>;
+				public startAt(when: number): void;
+				public startAt(when: number, offset: number): void;
 				public connect(node: org.nativescript.audiocontext.AudioNode, output: number): void;
 				public connect(param0: org.nativescript.audiocontext.AudioNode): void;
 				public disconnect(destId: org.nativescript.audiocontext.AudioNode, this_: number, node: number): void;
@@ -513,8 +515,10 @@ declare module org {
 				public disconnect(node: org.nativescript.audiocontext.AudioNode, output: number): void;
 				public disconnect(destId: org.nativescript.audiocontext.AudioNode, this_: number): void;
 				public stop(): void;
+				public stopAt(when: number): void;
 				public removeEndedListener(listener: org.nativescript.audiocontext.AudioContext.EndedListener): void;
 				public start(): void;
+				public startAt(when: number): void;
 				public disconnect(): void;
 				public disconnect(output: number): void;
 				public disconnect(node: org.nativescript.audiocontext.AudioNode, output: number, input: number): void;

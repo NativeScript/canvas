@@ -89,6 +89,8 @@ declare class NSCAudioBufferSourceNode extends NSCAudioScheduledSourceNode {
 
 	getPlaybackRateParam(): NSCAudioParam;
 
+	startAtOffset(when: number, offset: number): void;
+
 	initWithContextBuffer(context: NSCAudioContext, buffer: NSCAudioBuffer): this;
 }
 

@@ -12,6 +12,7 @@ public class ConstantSourceNode extends AudioScheduledSourceNode {
 
     public ConstantSourceNode(AudioContextInstance context) {
         super(AudioContext.getInstance().createOscillator(context.getId(), "sine", 0.0));
+        contextId = context.getId();
         this.offsetParam = new AudioParam(id);
         this.offsetParam.setValue(offset);
     }
@@ -23,7 +24,12 @@ public class ConstantSourceNode extends AudioScheduledSourceNode {
 
     @Override
     public void start() {
-        AudioContext.getInstance().startOscillator(id, "sine", 0.0);
+        AudioContext.getInstance().startOscillator(id, "constant", 0.0);
+    }
+
+    @Override
+    public void startAt(double when) {
+        AudioContext.getInstance().startOscillatorAt(id, "constant", 0.0, resolveContextId(), when);
     }
 
     @Override

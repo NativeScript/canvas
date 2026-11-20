@@ -1203,6 +1203,54 @@ Java_org_nativescript_audiocontext_AudioContext_nativeStopTrack(JNIEnv *env, job
     if (id) env->ReleaseStringUTFChars(jid, id);
 }
 
+static std::string jstringToStd(JNIEnv *env, jstring js) {
+    if (!js) return {};
+    const char *c = env->GetStringUTFChars(js, nullptr);
+    if (!c) return {};
+    std::string out(c);
+    env->ReleaseStringUTFChars(js, c);
+    return out;
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_org_nativescript_audiocontext_AudioContext_nativeStartOscillatorAt(JNIEnv *env, jobject thiz,
+                                                                        jstring jid, jstring jtype,
+                                                                        jdouble frequency,
+                                                                        jstring jcontextId,
+                                                                        jdouble when) {
+    NativeEngine::getInstance().startOscillatorAt(jstringToStd(env, jid),
+                                                  jstringToStd(env, jtype), frequency,
+                                                  jstringToStd(env, jcontextId), when);
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_org_nativescript_audiocontext_AudioContext_nativeStopTrackAt(JNIEnv *env, jobject thiz,
+                                                                  jstring jid, jstring jcontextId,
+                                                                  jdouble when) {
+    NativeEngine::getInstance().stopTrackAt(jstringToStd(env, jid),
+                                            jstringToStd(env, jcontextId), when);
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_org_nativescript_audiocontext_AudioContext_nativeSetOscillatorType(JNIEnv *env, jobject thiz,
+                                                                        jstring jid,
+                                                                        jstring jtype) {
+    NativeEngine::getInstance().setOscillatorType(jstringToStd(env, jid),
+                                                  jstringToStd(env, jtype));
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_org_nativescript_audiocontext_AudioContext_nativeStartBufferSourceAt(JNIEnv *env,
+                                                                          jobject thiz,
+                                                                          jstring jid,
+                                                                          jboolean jloop,
+                                                                          jstring jcontextId,
+                                                                          jdouble when,
+                                                                          jdouble offset) {
+    NativeEngine::getInstance().startBufferSourceAt(jstringToStd(env, jid), jloop == JNI_TRUE,
+                                                    jstringToStd(env, jcontextId), when, offset);
+}
+
 extern "C" JNIEXPORT jstring JNICALL
 Java_org_nativescript_audiocontext_AudioContext_nativeCreateBufferSource(JNIEnv *env, jobject thiz,
                                                                          jstring jbufferId,

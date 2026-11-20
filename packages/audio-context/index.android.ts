@@ -409,8 +409,6 @@ export class AudioScheduledSourceNode extends AudioNode {
 	private _nativeEndedWired = false;
 	private _javaEndedListener: any = null;
 	private _endedFired = false;
-	private _startTimer: ReturnType<typeof setTimeout> | null = null;
-	private _stopTimer: ReturnType<typeof setTimeout> | null = null;
 
 	constructor(context: NativeBaseAudioContext, node: org.nativescript.audiocontext.AudioScheduledSourceNode) {
 		super(context);
@@ -457,46 +455,30 @@ export class AudioScheduledSourceNode extends AudioNode {
 		this.dispatchEvent({ type: 'ended', target: this });
 	}
 
-	start(when?: number, _offset?: number, duration?: number) {
+	start(when?: number, offset?: number, duration?: number) {
 		this._endedFired = false;
-		if (this._startTimer !== null) {
-			clearTimeout(this._startTimer);
-			this._startTimer = null;
-		}
 		const now = (this.context as any)?.currentTime ?? 0;
-		const delayMs = typeof when === 'number' && Number.isFinite(when) ? Math.max(0, (when - now) * 1000) : 0;
-		if (delayMs <= 1) {
-			this.native.start();
-		} else {
-			this._startTimer = setTimeout(() => {
-				this._startTimer = null;
-				this.native.start();
-			}, delayMs);
-		}
+		const at = typeof when === 'number' && Number.isFinite(when) ? when : 0;
+		this._startNative(at > now ? at : 0, typeof offset === 'number' && Number.isFinite(offset) ? Math.max(0, offset) : 0);
 		if (typeof duration === 'number' && Number.isFinite(duration) && duration >= 0) {
-			const startAt = typeof when === 'number' && Number.isFinite(when) ? Math.max(now, when) : now;
-			this.stop(startAt + duration);
+			this.stop(Math.max(now, at) + duration);
+		}
+	}
+
+	protected _startNative(when: number, _offset: number) {
+		if (when > 0) {
+			this.native.startAt(when);
+		} else {
+			this.native.start();
 		}
 	}
 
 	stop(when?: number) {
-		if (this._stopTimer !== null) {
-			clearTimeout(this._stopTimer);
-			this._stopTimer = null;
-		}
 		const now = (this.context as any)?.currentTime ?? 0;
-		const delayMs = typeof when === 'number' && Number.isFinite(when) ? Math.max(0, (when - now) * 1000) : 0;
-		if (delayMs <= 1) {
-			if (this._startTimer !== null) {
-				clearTimeout(this._startTimer);
-				this._startTimer = null;
-			}
-			this.native.stop();
+		if (typeof when === 'number' && Number.isFinite(when) && when > now) {
+			this.native.stopAt(when);
 		} else {
-			this._stopTimer = setTimeout(() => {
-				this._stopTimer = null;
-				this.native.stop();
-			}, delayMs);
+			this.native.stop();
 		}
 	}
 }
@@ -508,6 +490,9 @@ export class AudioBufferSourceNode extends AudioScheduledSourceNode {
 	}
 	get native() {
 		return this[native_] as org.nativescript.audiocontext.AudioBufferSourceNode;
+	}
+	protected _startNative(when: number, offset: number) {
+		this.native.startAt(when, offset);
 	}
 	get loop(): boolean {
 		return this.native.getLoop();

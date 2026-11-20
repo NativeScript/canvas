@@ -82,6 +82,16 @@ public class AudioBufferSourceNode extends AudioScheduledSourceNode {
 		AudioContext.getInstance().startBufferSource(id, mLoop);
 	}
 
+	@Override
+	public void startAt(double when) {
+		startAt(when, 0.0);
+	}
+
+	// `offset` is in seconds into the buffer.
+	public void startAt(double when, double offset) {
+		AudioContext.getInstance().startBufferSourceAt(id, mLoop, resolveContextId(), when, offset);
+	}
+
 	@Nullable
 	public AudioParam getPlaybackRateParam() {
 		if (playbackRateId == null) return null;

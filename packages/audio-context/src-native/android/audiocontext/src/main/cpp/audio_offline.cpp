@@ -132,7 +132,10 @@ NativeEngine::renderOfflineForTracks(const std::vector<std::string> &trackIds, i
 
             if (v.voiceType == Voice::Oscillator) {
                 double s = 0.0;
-                if (!v.periodicWaveId.empty()) {
+                if (v.waveform == "constant") {
+                    auto cit = localGains.find(v.id);
+                    s = cit != localGains.end() ? cit->second : 1.0;
+                } else if (!v.periodicWaveId.empty()) {
                     auto pwIt = localPeriodicWaves.find(v.periodicWaveId);
                     if (pwIt != localPeriodicWaves.end()) {
                         double sr = sampleRate > 0 ? static_cast<double>(sampleRate) : 48000.0;

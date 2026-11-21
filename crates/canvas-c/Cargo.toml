@@ -80,5 +80,7 @@ wgpu-core = { workspace = true, features = ["wgsl", "vulkan"] }
 wgpu-hal = { workspace = true, features = ["vulkan"] }
 
 # tests/threaded_d3d.rs: a D3D11 producer of shared video frames.
+# tests/webgpu_panel_d3d.rs: a stand-in SwapChainPanel bound to its thread.
 [target.'cfg(target_os="windows")'.dev-dependencies]
-windows = { workspace = true, features = ["Win32_Graphics_Direct3D", "Win32_Graphics_Direct3D11", "Win32_Graphics_Dxgi", "Win32_Graphics_Dxgi_Common"] }
+windows = { workspace = true, features = ["Win32_Graphics_Direct3D", "Win32_Graphics_Direct3D11", "Win32_Graphics_Dxgi", "Win32_Graphics_Dxgi_Common", "Win32_System_Threading", "Win32_UI_WindowsAndMessaging"] }
+windows-core = "0.62"

@@ -87,6 +87,25 @@ export class HTMLCanvasElement extends HTMLElement {
 		return null;
 	}
 
+	requestPointerLock(options?: { unadjustedMovement?: boolean }): Promise<void> {
+		const canvas = this.nativeElement as any;
+		if (typeof canvas?.requestPointerLock === 'function') {
+			return canvas.requestPointerLock(options);
+		}
+		const error: any = new Error("Failed to execute 'requestPointerLock' on 'Element': Pointer lock is not supported on this platform.");
+		error.name = 'NotSupportedError';
+		return Promise.reject(error);
+	}
+
+	// For `ownerDocument`, which is the canvas itself (below).
+	get pointerLockElement() {
+		return Canvas.pointerLockElement;
+	}
+
+	exitPointerLock() {
+		Canvas.exitPointerLock();
+	}
+
 	setPointerCapture(id: string) {}
 
 	releasePointerCapture(id: string) {}

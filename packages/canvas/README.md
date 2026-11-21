@@ -178,6 +178,22 @@ canvas.on('paint', () => {
 - On Linux, GTK renders the snapshots from each view's render nodes, so GL content (other canvases) is in them. Hit testing follows the geometry of the canvas's own children only: a drawable view nested deeper gets input through its top-level ancestor's geometry.
 - On Windows, snapshots come from XAML's `RenderTargetBitmap`, which is asynchronous: a `paint` event follows a change by a frame or more, and views are re-rendered and compared to notice changes. Other canvases (SwapChainPanel content) are not in them. As on Linux, hit testing follows the geometry of the canvas's own children only.
 
+### Keyboard, cursor and pointer lock (Windows and Linux)
+
+While a canvas is loaded, its window's keys reach `window` and `document` listeners (with the polyfill) whatever has focus: `keydown`/`keyup` go to the focused canvas first, then `document`, then `window`, with `key`, `code`, `repeat` and the modifier flags. `stopPropagation()` stops it at the current target; `preventDefault()` keeps the key from the focused view (a text field, a button).
+
+`canvas.style.cursor` (or CSS `cursor`) sets the cursor over the canvas: `none`, `default`, `pointer`, `crosshair`, `grab`, `grabbing`, `text`, `move`, the resize cursors and others.
+
+```ts
+canvas.addEventListener('pointerdown', () => canvas.requestPointerLock());
+document.addEventListener('pointerlockchange', () => {
+	const locked = document.pointerLockElement != null;
+});
+canvas.addEventListener('pointermove', (e) => camera.turn(e.movementX, e.movementY));
+```
+
+While locked the cursor is hidden and moves report their travel in `movementX`/`movementY` (`clientX`/`clientY` stay where the lock began). Esc, `document.exitPointerLock()` or the window losing focus release it. The pointer is held in the canvas on Windows and in the window on Linux under X11, and goes back to the canvas center after each move. Under Wayland GTK can neither confine nor warp the pointer: it is hidden over the window and moves are measured from one to the next, so they stop when the pointer leaves the window.
+
 ## Linux
 
 On NativeScript Linux the canvas is a GTK 4 (>= 4.6) widget and `canvasnative.node` (a Node-API

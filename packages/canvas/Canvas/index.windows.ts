@@ -12,9 +12,32 @@ export { createSVGMatrix } from './napi-host';
 
 declare const Microsoft: any, Windows: any, NSWinRT: any;
 
-type PointerEvent = 'Pressed' | 'Moved' | 'Released' | 'Canceled' | 'CaptureLost' | 'WheelChanged';
+type PointerEvent = 'Pressed' | 'Moved' | 'Released' | 'Canceled' | 'CaptureLost' | 'WheelChanged' | 'Entered' | 'Exited';
 
-const POINTER_EVENTS: PointerEvent[] = ['Pressed', 'Moved', 'Released', 'Canceled', 'CaptureLost', 'WheelChanged'];
+const POINTER_EVENTS: PointerEvent[] = ['Pressed', 'Moved', 'Released', 'Canceled', 'CaptureLost', 'WheelChanged', 'Entered', 'Exited'];
+
+/** Web `pointerType` for a `Microsoft.UI.Input.PointerDeviceType`: Touch 0, Pen 1, Mouse 2, Touchpad 3 (a mouse on the web). */
+function pointerTypeOf(deviceType: number): 'mouse' | 'pen' | 'touch' {
+	return deviceType === 0 ? 'touch' : deviceType === 1 ? 'pen' : 'mouse';
+}
+
+/** Web `buttons` bitmask (1 left or contact, 2 right or barrel, 4 middle, 8 back, 16 forward) of a pointer point. */
+function buttonsOf(point: any): number {
+	const p = point.Properties;
+	if (!p) {
+		return 0;
+	}
+	return (p.IsLeftButtonPressed ? 1 : 0) | (p.IsRightButtonPressed || p.IsBarrelButtonPressed ? 2 : 0) | (p.IsMiddleButtonPressed ? 4 : 0) | (p.IsXButton1Pressed ? 8 : 0) | (p.IsXButton2Pressed ? 16 : 0);
+}
+
+/**
+ * Web `button` that changed (0 left, 1 middle, 2 right, 3 back, 4 forward), or -1, from the point's
+ * `PointerUpdateKind` (1 to 10: Left, Right, Middle, XButton1, XButton2, each Pressed then Released).
+ */
+function changedButtonOf(point: any): number {
+	const kind: number = point.Properties?.PointerUpdateKind ?? 0;
+	return kind >= 1 && kind <= 10 ? [0, 2, 1, 3, 4][(kind - 1) >> 1] : -1;
+}
 
 /** Web `key` / `code` for a `Windows.System.VirtualKey`. */
 function keyInfo(virtualKey: number): { key: string; code: string } {
@@ -274,6 +297,11 @@ export class Canvas extends NapiCanvas {
 		this._handleEvents({ event: 'key', phase, key, code, repeat: phase === 'down' && !!args.KeyStatus?.WasKeyDown });
 	}
 
+	private _contains(x: number, y: number) {
+		const panel = this._panel;
+		return !!panel && x >= 0 && y >= 0 && x < (panel.ActualWidth || 0) && y < (panel.ActualHeight || 0);
+	}
+
 	private _onPointer(name: PointerEvent, args: any) {
 		const panel = this._panel;
 		if (!panel || this._ignoreTouchEvents) {
@@ -284,6 +312,7 @@ export class Canvas extends NapiCanvas {
 		const point = args.GetCurrentPoint(panel);
 		const { X: x, Y: y } = point.Position;
 		const isPrimary = !!point.Properties?.IsPrimary;
+		const pointerType = pointerTypeOf(pointer.PointerDeviceType ?? point.PointerDeviceType);
 		switch (name) {
 			case 'Pressed':
 				this._down.add(ptrId);
@@ -294,25 +323,43 @@ export class Canvas extends NapiCanvas {
 						panel.Focus(Microsoft.UI.Xaml.FocusState.Pointer);
 					} catch (e) {}
 				}
-				this._handleEvents({ event: 'down', ptrId, x, y, isPrimary });
+				this._handleEvents({ event: 'down', ptrId, x, y, isPrimary, pointerType, button: Math.max(changedButtonOf(point), 0), buttons: buttonsOf(point) || 1 });
 				break;
 			case 'Moved':
-				// A mouse or touchpad hovering is not a touch: moves are reported between down and
-				// up only, as on iOS and Android.
 				if (this._down.has(ptrId)) {
-					this._handleEvents({ event: 'move', pointers: [{ ptrId, x, y, isPrimary }] });
+					// Further mouse buttons pressed or released while one is down arrive as moves.
+					this._handleEvents({ event: 'move', pointers: [{ ptrId, x, y, isPrimary, pointerType, button: changedButtonOf(point), buttons: buttonsOf(point) || 1 }] });
+				} else if (pointerType !== 'touch' && buttonsOf(point) === 0) {
+					// A mouse or pen hovering moves with no buttons, as on the web. A touch is only
+					// reported between down and up, as on iOS and Android.
+					this._handleEvents({ event: 'move', pointers: [{ ptrId, x, y, isPrimary, pointerType, button: -1, buttons: 0 }] });
 				}
 				break;
 			case 'Released':
 				if (this._down.delete(ptrId)) {
 					panel.ReleasePointerCapture(pointer);
-					this._handleEvents({ event: 'up', ptrId, x, y, isPrimary });
+					this._handleEvents({ event: 'up', ptrId, x, y, isPrimary, pointerType, button: Math.max(changedButtonOf(point), 0), buttons: buttonsOf(point) });
+					// Exited is ignored while down: leave here if it was released outside.
+					if (pointerType !== 'touch' && !this._contains(x, y)) {
+						this._handleEvents({ event: 'leave', ptrId, x, y, isPrimary, pointerType });
+					}
 				}
 				break;
 			case 'Canceled':
 			case 'CaptureLost':
 				if (this._down.delete(ptrId)) {
-					this._handleEvents({ event: 'cancel', ptrId, x, y, isPrimary });
+					this._handleEvents({ event: 'cancel', ptrId, x, y, isPrimary, pointerType });
+				}
+				break;
+			// Mouse and pen only: a touch leaves on up, and a pressed pointer on release.
+			case 'Entered':
+				if (pointerType !== 'touch' && !this._down.has(ptrId)) {
+					this._handleEvents({ event: 'enter', ptrId, x, y, isPrimary, pointerType });
+				}
+				break;
+			case 'Exited':
+				if (pointerType !== 'touch' && !this._down.has(ptrId)) {
+					this._handleEvents({ event: 'leave', ptrId, x, y, isPrimary, pointerType });
 				}
 				break;
 			case 'WheelChanged': {

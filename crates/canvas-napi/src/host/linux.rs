@@ -26,6 +26,7 @@ use napi::{Env, Error, Result};
 use napi_derive::napi;
 
 mod drawable;
+mod pointer_lock;
 
 mod imp {
   use super::*;
@@ -40,6 +41,8 @@ mod imp {
     pub size: Cell<(i32, i32)>,
     /// Buffer pixels per DIP, as the TS view reports it.
     pub density: Cell<f32>,
+    /// Wayland: the pointer lock `lockPointer` holds.
+    pub pointer_lock: RefCell<Option<super::pointer_lock::Lock>>,
   }
 
   #[glib::object_subclass]
@@ -49,7 +52,27 @@ mod imp {
     type ParentType = gtk::Widget;
   }
 
-  impl ObjectImpl for CanvasView {}
+  impl ObjectImpl for CanvasView {
+    /// Wayland pointer lock (`lockPointer`): `pointer-lock-state` (1 locked, 0 unlocked by the
+    /// compositor) and `pointer-lock-motion` (dx, dy, unaccelerated dx, dy, in DIPs).
+    fn signals() -> &'static [glib::subclass::Signal] {
+      static SIGNALS: std::sync::OnceLock<Vec<glib::subclass::Signal>> = std::sync::OnceLock::new();
+      SIGNALS.get_or_init(|| {
+        vec![
+          glib::subclass::Signal::builder("pointer-lock-state")
+            .param_types([i32::static_type()])
+            .build(),
+          glib::subclass::Signal::builder("pointer-lock-motion")
+            .param_types([f64::static_type(); 4])
+            .build(),
+        ]
+      })
+    }
+
+    fn dispose(&self) {
+      self.pointer_lock.take();
+    }
+  }
 
   impl WidgetImpl for CanvasView {
     fn measure(&self, _: gtk::Orientation, _: i32) -> (i32, i32, i32, i32) {
@@ -840,6 +863,31 @@ impl NSCCanvas {
   #[napi(getter)]
   pub fn widget(&self) -> f64 {
     self.view.as_ptr() as usize as f64
+  }
+
+  /// Wayland: locks the pointer in place over the view's window (zwp_pointer_constraints_v1) and
+  /// reports its travel (zwp_relative_pointer_v1) as the view's `pointer-lock-*` signals until
+  /// `unlockPointer`. Returns 1 if requested, 0 if the display is not Wayland, -1 if the
+  /// compositor lacks the protocols or the view is not in a window.
+  #[napi]
+  pub fn lock_pointer(&self) -> i32 {
+    let imp = self.view.imp();
+    // A surface takes one lock at a time: drop this view's first.
+    imp.pointer_lock.take();
+    match pointer_lock::lock(&self.view) {
+      pointer_lock::LockResult::Locked(lock) => {
+        imp.pointer_lock.replace(Some(lock));
+        1
+      }
+      pointer_lock::LockResult::NotWayland => 0,
+      pointer_lock::LockResult::Unavailable => -1,
+    }
+  }
+
+  #[napi]
+  pub fn unlock_pointer(&self) {
+    let lock = self.view.imp().pointer_lock.take();
+    drop(lock);
   }
 
   /// Whether a hosted child (`content="drawable"`) takes input at (x, y) DIP.

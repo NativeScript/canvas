@@ -192,7 +192,7 @@ document.addEventListener('pointerlockchange', () => {
 canvas.addEventListener('pointermove', (e) => camera.turn(e.movementX, e.movementY));
 ```
 
-While locked the cursor is hidden and moves report their travel in `movementX`/`movementY` (`clientX`/`clientY` stay where the lock began). Esc, `document.exitPointerLock()` or the window losing focus release it. The pointer is held in the canvas on Windows and in the window on Linux under X11, and goes back to the canvas center after each move. Under Wayland GTK can neither confine nor warp the pointer: it is hidden over the window and moves are measured from one to the next, so they stop when the pointer leaves the window.
+While locked the cursor is hidden and moves report their travel in `movementX`/`movementY` (`clientX`/`clientY` stay where the lock began). Esc, `document.exitPointerLock()` or the window losing focus release it. Under Wayland the compositor holds the pointer in place (`zwp_pointer_constraints_v1`) and reports its travel (`zwp_relative_pointer_v1`), so moves never stop at a screen edge, and `{ unadjustedMovement: true }` reports it without pointer acceleration; a compositor without these protocols rejects the request with `pointerlockerror`. Under X11 the pointer is grabbed in the window and on Windows clipped to the canvas; on both it goes back to the canvas center after each move and back where it was when the lock ends.
 
 ## Linux
 

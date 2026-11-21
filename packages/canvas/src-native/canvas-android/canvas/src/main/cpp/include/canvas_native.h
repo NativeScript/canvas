@@ -1384,6 +1384,10 @@ typedef struct CanvasGPURequestAdapterOptions {
   enum CanvasGPUPowerPreference power_preference;
   bool force_fallback_adapter;
   enum CanvasGPUFeatureLevel feature_level;
+  /**
+   * Report the backend's own limits, not the capped ones ([`browser_limits`]).
+   */
+  bool native_limits;
 } CanvasGPURequestAdapterOptions;
 
 typedef struct CanvasGPUSupportedLimits {

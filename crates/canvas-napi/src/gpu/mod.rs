@@ -83,7 +83,7 @@ extern "C" fn on_adapter(
 
 /// `requestAdapter` options: `powerPreference` as the WebGPU string (what packages/canvas
 /// passes) or the V8 bindings' int (1 low-power, 2 high-performance); `forceFallbackAdapter`
-/// (or packages/canvas's `isFallbackAdapter`); `featureLevel`.
+/// (or packages/canvas's `isFallbackAdapter`); `featureLevel`; `nativeLimits` (non-standard).
 fn adapter_options(options: Option<&Unknown>) -> CanvasGPURequestAdapterOptions {
   let mut ret = CanvasGPURequestAdapterOptions::default();
   let Some(options) = options.filter(|options| is_object(options)) else {
@@ -103,6 +103,9 @@ fn adapter_options(options: Option<&Unknown>) -> CanvasGPURequestAdapterOptions 
   }
   if field(options, c"featureLevel").and_then(|v| as_string(&v)).as_deref() == Some("compatibility") {
     ret.feature_level = CanvasGPUFeatureLevel::Compatibility;
+  }
+  if let Some(native) = field(options, c"nativeLimits") {
+    ret.native_limits = as_bool(&native).unwrap_or(false);
   }
   ret
 }
@@ -150,7 +153,7 @@ impl g_p_u {
 
   /// `requestAdapter(options, callback(error, adapter))`: `adapter` is null when there is none.
   #[napi(
-    ts_args_type = "options: { powerPreference?: string | number, forceFallbackAdapter?: boolean, isFallbackAdapter?: boolean, featureLevel?: string } | null | undefined, callback: (error: Error | null, adapter: GPUAdapter | null) => void"
+    ts_args_type = "options: { powerPreference?: string | number, forceFallbackAdapter?: boolean, isFallbackAdapter?: boolean, featureLevel?: string, nativeLimits?: boolean } | null | undefined, callback: (error: Error | null, adapter: GPUAdapter | null) => void"
   )]
   pub fn request_adapter(&self, options: Option<Unknown>, callback: AdapterCallback) -> Result<()> {
     let options = adapter_options(options.as_ref());

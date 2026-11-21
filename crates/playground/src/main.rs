@@ -1942,7 +1942,8 @@ fn main() {
     let options = canvas_c::webgpu::gpu::CanvasGPURequestAdapterOptions {
         power_preference: canvas_c::webgpu::gpu::CanvasGPUPowerPreference::None,
         force_fallback_adapter: false,
-        feature_level: CanvasGPUFeatureLevel::Core
+        feature_level: CanvasGPUFeatureLevel::Core,
+        native_limits: false,
     };
 
     let (tx, rx) = std::sync::mpsc::channel();

@@ -16,6 +16,7 @@ declare const gtk_widget_add_controller: any, gtk_widget_remove_controller: any,
 declare const gtk_widget_get_scale_factor: any, gtk_widget_get_root: any, gtk_widget_translate_coordinates: any, gtk_widget_get_width: any, gtk_widget_get_height: any;
 declare const gtk_event_controller_set_propagation_phase: any, gtk_gesture_single_set_button: any, gtk_window_get_default_size: any;
 declare const g_signal_connect_data: any, g_signal_handler_disconnect: any, gdk_keyval_name: any, gdk_keyval_to_unicode: any;
+declare const gtk_event_controller_motion_new: any, gtk_event_controller_get_current_event_device: any, gtk_gesture_single_get_current_button: any, gdk_device_get_source: any;
 
 type Arg = 'double' | 'uint' | 'int' | 'pointer';
 
@@ -56,6 +57,26 @@ function connect(instance: any, name: string, args: Arg[], handler: (...args: an
 
 const GTK_EVENT_CONTROLLER_SCROLL_BOTH_AXES = 3;
 const GTK_PHASE_CAPTURE = 1;
+const GDK_SOURCE_PEN = 1;
+const GDK_SOURCE_TOUCHSCREEN = 3;
+
+type PointerType = 'mouse' | 'pen' | 'touch';
+
+/** Web `pointerType` of the device behind the event `controller` is handling. */
+function pointerTypeOf(controller: any): PointerType {
+	const device = gtk_event_controller_get_current_event_device(controller);
+	switch (device ? gdk_device_get_source(device) : -1) {
+		case GDK_SOURCE_PEN:
+			return 'pen';
+		case GDK_SOURCE_TOUCHSCREEN:
+			return 'touch';
+		default:
+			return 'mouse';
+	}
+}
+
+/** Web `button` and `buttons` bit for GDK buttons 1 left, 2 middle, 3 right, 8 back, 9 forward. */
+const WEB_BUTTONS: Record<number, [number, number]> = { 1: [0, 1], 2: [1, 4], 3: [2, 2], 8: [3, 8], 9: [4, 16] };
 
 /** Web `deltaY` pixels per wheel notch, as Chromium reports. */
 const WHEEL_PIXELS_PER_NOTCH = 100;
@@ -145,14 +166,17 @@ export class Canvas extends NapiCanvas {
 		on(widget, 'notify::scale-factor', ['pointer'], () => ref.deref()?._syncScale());
 		this._syncScale();
 
-		// One pointer (mouse, pen or first touch): moves are reported between down and up only,
-		// as on iOS and Android.
+		// One pointer (mouse, pen or first touch) pressed. Touch moves are reported between down and up
+		// only, as on iOS and Android; a mouse or pen also hovers (below).
 		const drag = add(gtk_gesture_drag_new());
 		gtk_gesture_single_set_button(drag, 0);
 		gtk_event_controller_set_propagation_phase(drag, GTK_PHASE_CAPTURE);
 		let start = [0, 0];
 		let last = [0, 0];
 		let down = false;
+		let pointerType: PointerType = 'mouse';
+		let button = 0;
+		let buttons = 1;
 		on(drag, 'drag-begin', ['double', 'double'], (x: number, y: number) => {
 			const canvas = ref.deref();
 			if (!canvas || canvas._ignoreTouchEvents) {
@@ -160,30 +184,63 @@ export class Canvas extends NapiCanvas {
 			}
 			start = last = [x, y];
 			down = true;
+			pointerType = pointerTypeOf(drag);
+			[button, buttons] = (pointerType !== 'touch' && WEB_BUTTONS[gtk_gesture_single_get_current_button(drag)]) || [0, 1];
 			// A press on a hosted child (content="drawable") leaves focus to it.
 			if (!canvas._canvas.picksChild(x, y)) {
 				gtk_widget_grab_focus(widget);
 			}
-			canvas._handleEvents({ event: 'down', ptrId: 0, x, y, isPrimary: true });
+			canvas._handleEvents({ event: 'down', ptrId: 0, x, y, isPrimary: true, pointerType, button, buttons });
 		});
 		on(drag, 'drag-update', ['double', 'double'], (dx: number, dy: number) => {
 			if (!down) {
 				return;
 			}
 			last = [start[0] + dx, start[1] + dy];
-			ref.deref()?._handleEvents({ event: 'move', pointers: [{ ptrId: 0, x: last[0], y: last[1], isPrimary: true }] });
+			ref.deref()?._handleEvents({ event: 'move', pointers: [{ ptrId: 0, x: last[0], y: last[1], isPrimary: true, pointerType, button: -1, buttons }] });
 		});
 		on(drag, 'drag-end', ['double', 'double'], (dx: number, dy: number) => {
 			if (!down) {
 				return;
 			}
 			down = false;
-			ref.deref()?._handleEvents({ event: 'up', ptrId: 0, x: start[0] + dx, y: start[1] + dy, isPrimary: true });
+			const [x, y] = (last = [start[0] + dx, start[1] + dy]);
+			const canvas = ref.deref();
+			canvas?._handleEvents({ event: 'up', ptrId: 0, x, y, isPrimary: true, pointerType, button, buttons: 0 });
+			// The drag's grab held back the motion controller's leave.
+			if (pointerType !== 'touch' && !(x >= 0 && y >= 0 && x < gtk_widget_get_width(widget) && y < gtk_widget_get_height(widget))) {
+				canvas?._handleEvents({ event: 'leave', ptrId: 0, x, y, isPrimary: true, pointerType });
+			}
 		});
 		on(drag, 'cancel', ['pointer'], () => {
 			if (down) {
 				down = false;
-				ref.deref()?._handleEvents({ event: 'cancel', ptrId: 0, x: last[0], y: last[1], isPrimary: true });
+				ref.deref()?._handleEvents({ event: 'cancel', ptrId: 0, x: last[0], y: last[1], isPrimary: true, pointerType });
+			}
+		});
+
+		// Hover: a mouse or pen with nothing pressed moves with buttons 0, as on the web. While pressed,
+		// the drag reports the moves.
+		const motion = add(gtk_event_controller_motion_new());
+		const hover = (event: 'enter' | 'move', x: number, y: number) => {
+			const canvas = ref.deref();
+			if (!canvas || canvas._ignoreTouchEvents || down) {
+				return;
+			}
+			const type = pointerTypeOf(motion);
+			if (type === 'touch') {
+				return;
+			}
+			pointerType = type;
+			last = [x, y];
+			const pointer = { ptrId: 0, x, y, isPrimary: true, pointerType };
+			canvas._handleEvents(event === 'enter' ? { event, ...pointer } : { event, pointers: [{ ...pointer, button: -1, buttons: 0 }] });
+		};
+		on(motion, 'enter', ['double', 'double'], (x: number, y: number) => hover('enter', x, y));
+		on(motion, 'motion', ['double', 'double'], (x: number, y: number) => hover('move', x, y));
+		on(motion, 'leave', [], () => {
+			if (!down && pointerType !== 'touch') {
+				ref.deref()?._handleEvents({ event: 'leave', ptrId: 0, x: last[0], y: last[1], isPrimary: true, pointerType });
 			}
 		});
 

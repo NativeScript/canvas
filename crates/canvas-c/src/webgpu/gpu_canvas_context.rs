@@ -1098,7 +1098,16 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create_swap_chain_panel(
     width: u32,
     height: u32,
 ) -> *const CanvasGPUCanvasContext {
-    create_swap_chain_panel(instance, panel, None, width, height)
+    // The queue thread presents, and so applies reconfigurations (resizes): wgpu binds the new
+    // swapchain from there, and only this thread may hand it to the panel.
+    let ui = match canvas_core::gpu::dxgi::UiThread::current() {
+        Ok(ui) => Some(ui),
+        Err(error) => {
+            log::warn!("canvas_native_webgpu_context_create_swap_chain_panel: no UI thread handle: {error}");
+            None
+        }
+    };
+    create_swap_chain_panel(instance, panel, ui, width, height)
 }
 
 /// `ui`: where the panel lives, when called from another thread.

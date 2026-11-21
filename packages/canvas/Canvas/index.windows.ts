@@ -197,6 +197,8 @@ export class Canvas extends NapiCanvas {
 	private _lockWindow: any = null;
 	private _lockRect: Int32Array | null = null;
 	private _lockAt = { x: 0, y: 0 };
+	/** Where the cursor was on screen, to put it back on release, as Chrome does. */
+	private _lockRestore: Int32Array | null = null;
 	private _lockTimer: any = null;
 	/** Transparent canvases: a XAML SurfaceImageSource in an Image instead of the panel's swapchain. */
 	private _image: any;
@@ -427,8 +429,12 @@ export class Canvas extends NapiCanvas {
 			return false;
 		}
 		this._lockWindow = foreground;
+		// Where the cursor is before the clip moves it: it goes back there on release.
+		const cursor = new Int32Array(2);
+		this._lockRestore = api.GetCursorPos(cursor) ? cursor : null;
 		if (!this._clipCursor()) {
 			this._lockWindow = null;
+			this._lockRestore = null;
 			return false;
 		}
 		const width = panel.ActualWidth || 0;
@@ -450,10 +456,17 @@ export class Canvas extends NapiCanvas {
 		this._lockTimer = null;
 		if (this._lockRect) {
 			try {
-				win32()?.ClipCursor(null);
+				const api = win32();
+				api?.ClipCursor(null);
+				// Back where it was locked, unless the window lost the foreground to another.
+				const restore = this._lockRestore;
+				if (api && restore && Number(api.GetForegroundWindow()) === Number(this._lockWindow)) {
+					api.SetCursorPos(restore[0], restore[1]);
+				}
 			} catch (e) {}
 		}
 		this._lockRect = null;
+		this._lockRestore = null;
 		this._lockWindow = null;
 		this._syncCursor();
 	}

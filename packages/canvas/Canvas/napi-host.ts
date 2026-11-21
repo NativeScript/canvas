@@ -231,10 +231,11 @@ export abstract class NapiCanvas extends CanvasBase {
 	/**
 	 * Locks the mouse to this canvas, as `Element.requestPointerLock()`: it is hidden and held in the
 	 * window, and moves report their travel in movementX/Y. Esc, `document.exitPointerLock()` or the
-	 * window losing focus release it. `options` are ignored.
+	 * window losing focus release it. `unadjustedMovement` (travel without pointer acceleration)
+	 * applies under Wayland only.
 	 */
 	requestPointerLock(options?: { unadjustedMovement?: boolean }): Promise<void> {
-		return this._requestPointerLock();
+		return this._requestPointerLock(options);
 	}
 
 	get lang() {

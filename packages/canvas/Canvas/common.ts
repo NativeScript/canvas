@@ -1393,8 +1393,11 @@ export abstract class CanvasBase extends ContainerView implements ICanvasBase {
 		return pointerLockCanvas === this;
 	}
 
-	/** Overridden by hosts that can lock the pointer: hide it, hold it in the window and report travel. */
-	protected _acquirePointerLock(): boolean {
+	/**
+	 * Overridden by hosts that can lock the pointer: hide it, hold it in place and report travel.
+	 * `unadjustedMovement` asks for travel without pointer acceleration, where the host supports it.
+	 */
+	protected _acquirePointerLock(options?: { unadjustedMovement?: boolean }): boolean {
 		return false;
 	}
 
@@ -1407,7 +1410,7 @@ export abstract class CanvasBase extends ContainerView implements ICanvasBase {
 		}
 	}
 
-	protected _requestPointerLock(): Promise<void> {
+	protected _requestPointerLock(options?: { unadjustedMovement?: boolean }): Promise<void> {
 		if (pointerLockCanvas === this) {
 			return Promise.resolve();
 		}
@@ -1416,7 +1419,7 @@ export abstract class CanvasBase extends ContainerView implements ICanvasBase {
 			pointerLockCanvas = null;
 			previous._releasePointerLock();
 		}
-		if (!this._acquirePointerLock()) {
+		if (!this._acquirePointerLock(options)) {
 			return Promise.resolve().then(() => {
 				if (previous) {
 					firePointerLockEvent('pointerlockchange', previous);

@@ -1,0 +1,96 @@
+name: Native output cache
+description: >
+  Restores a job's finished output when nothing it is built from has changed, so the job can skip
+  its build (every later step is guarded by `if: steps.native.outputs.hit != 'true'`). The key is
+  the week plus the hash tools/scripts/native-inputs.py computes; its docstring says what that
+  covers and why. On a miss the job builds, and the output is saved once the job succeeds, into the
+  scope of the ref that ran it, so pull requests can restore master's entries. With
+  NATIVE_CACHE_FRESH=true (the release, or Canvas Native run by hand with `fresh`) it neither
+  restores nor saves, and the job builds.
+
+  An entry that holds a bad output stays until its week ends: delete it with `gh cache delete <key>`
+  (the job's log prints the key), or change the version in the key below to drop every entry.
+
+  An output built by several jobs is restored first, in a job of its own (`restore-only`) that
+  uploads it on a hit and skips the other jobs. On a miss they build it, and the last of them saves
+  it under the `key` the first passes on, so both use the same week.
+
+inputs:
+  artifact:
+    description: The job's entry in tools/scripts/native-inputs.py
+    required: true
+  path:
+    description: The finished output, the path the job uploads (or, for a job that uploads nothing, a file it writes when it passes)
+    required: true
+  variant:
+    description: In a matrix job, the matrix as JSON (toJSON of matrix), so every leg gets its own key
+    required: false
+    default: ''
+  restore-only:
+    description: "'true' in the first job of an output built by several jobs: restore it, but leave the saving to the job that builds it"
+    required: false
+    default: 'false'
+  key:
+    description: The key the first job of an output built by several jobs computed, in the same run
+    required: false
+    default: ''
+
+outputs:
+  hit:
+    description: "'true' when the output was restored and the build can be skipped"
+    value: ${{ steps.cache.outputs.cache-hit || steps.restore.outputs.cache-hit }}
+  key:
+    description: The key, for the jobs that build the output after a miss
+    value: ${{ inputs.key || steps.key.outputs.key }}
+
+runs:
+  using: composite
+  steps:
+    - name: Inputs
+      id: key
+      if: env.NATIVE_CACHE_FRESH != 'true' && inputs.key == ''
+      shell: bash
+      env:
+        ARTIFACT: ${{ inputs.artifact }}
+        VARIANT: ${{ inputs.variant }}
+      # --verbose logs the inputs it hashed, to see why a job missed. Windows runners name it
+      # `python`. The week bounds how old a reused output can be: crates.io versions and toolchains
+      # float, and each week's first run of an entry rebuilds it.
+      run: |
+        py=python3
+        "$py" -c '' 2> /dev/null || py=python
+        hash=$("$py" tools/scripts/native-inputs.py --verbose --job "$GITHUB_JOB" --variant "$VARIANT" "$ARTIFACT")
+        leg=""
+        if [ -n "$VARIANT" ] && [ "$VARIANT" != null ]; then
+          leg=-$(printf '%s' "$VARIANT" | git hash-object --stdin | cut -c1-12)
+        fi
+        week=$(date -u +%G-W%V)
+        # bump the version to drop every entry
+        echo "key=native-v1-$week-$ARTIFACT$leg-$hash" >> "$GITHUB_OUTPUT"
+
+    # Exact keys only: an output built from other inputs is never the right one.
+    - name: Restore
+      id: cache
+      if: env.NATIVE_CACHE_FRESH != 'true' && inputs.restore-only != 'true'
+      uses: actions/cache@v4
+      with:
+        path: ${{ inputs.path }}
+        key: ${{ inputs.key || steps.key.outputs.key }}
+
+    - name: Restore without saving
+      id: restore
+      if: env.NATIVE_CACHE_FRESH != 'true' && inputs.restore-only == 'true'
+      uses: actions/cache/restore@v4
+      with:
+        path: ${{ inputs.path }}
+        key: ${{ steps.key.outputs.key }}
+
+    # The last job of an output built by several jobs runs only after its first job missed. A hit
+    # here means the parts were built for nothing: another run saved the entry meanwhile, or, when
+    # it repeats, the first job's runner cannot restore what this one saves.
+    - name: Note an entry the first job missed
+      if: inputs.key != '' && steps.cache.outputs.cache-hit == 'true'
+      shell: bash
+      env:
+        KEY: ${{ inputs.key }}
+      run: echo "::warning title=native-cache::restored $KEY, which the first job of this output missed"

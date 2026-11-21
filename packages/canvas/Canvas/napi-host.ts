@@ -14,12 +14,26 @@ import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
 import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
 import { GPUCanvasContext } from '../WebGPU';
 import { ImageBitmapRenderingContext } from '../ImageBitmapRenderingContext';
-import { ImageSource, Screen, Utils, View, widthProperty, heightProperty } from '@nativescript/core';
+import { CssProperty, ImageSource, Screen, Style, Utils, View, widthProperty, heightProperty } from '@nativescript/core';
 import { handleContextOptions, microtask, CanvasContextType, isPercentLength, setParentPercentSize, holdBackAnimationFramesWhileBehind } from './utils';
 import { Helpers } from '../helpers';
 
 export function createSVGMatrix(): DOMMatrix {
 	return new DOMMatrix();
+}
+
+/** CSS `cursor` over the canvas (`canvas.style.cursor`). */
+export const cursorProperty = new CssProperty<Style, string>({ name: 'cursor', cssName: 'cursor', defaultValue: 'auto' });
+cursorProperty.register(Style);
+
+/** The keyword a CSS `cursor` value resolves to (the fallback after any `url()`s), or null for the default. */
+export function cursorKeyword(value: unknown): string | null {
+	const keyword = String(value ?? '')
+		.split(',')
+		.pop()
+		.trim()
+		.toLowerCase();
+	return keyword === '' || keyword === 'auto' || keyword === 'default' || keyword === 'inherit' || keyword === 'initial' || keyword === 'unset' || keyword.startsWith('url(') ? null : keyword;
 }
 
 const defaultOpts = {
@@ -212,6 +226,15 @@ export abstract class NapiCanvas extends CanvasBase {
 			}
 		};
 		setTimeout(() => attempt(0), 0);
+	}
+
+	/**
+	 * Locks the mouse to this canvas, as `Element.requestPointerLock()`: it is hidden and held in the
+	 * window, and moves report their travel in movementX/Y. Esc, `document.exitPointerLock()` or the
+	 * window losing focus release it. `options` are ignored.
+	 */
+	requestPointerLock(options?: { unadjustedMovement?: boolean }): Promise<void> {
+		return this._requestPointerLock();
 	}
 
 	get lang() {

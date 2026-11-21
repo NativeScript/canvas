@@ -359,6 +359,10 @@ interface KeyboardEventOptions extends UIEventOptions {
 	key?: string;
 	code?: string;
 	repeat?: boolean;
+	shiftKey?: boolean;
+	ctrlKey?: boolean;
+	altKey?: boolean;
+	metaKey?: boolean;
 }
 
 /**
@@ -369,12 +373,97 @@ export class KeyboardEvent extends UIEvent {
 	readonly key: string;
 	readonly code: string;
 	readonly repeat: boolean;
+	readonly shiftKey: boolean;
+	readonly ctrlKey: boolean;
+	readonly altKey: boolean;
+	readonly metaKey: boolean;
 
 	constructor(type: 'keydown' | 'keyup', options?: KeyboardEventOptions) {
 		super(type as any, options);
 		this.key = options?.key ?? '';
 		this.code = options?.code ?? '';
 		this.repeat = options?.repeat ?? false;
+		this.shiftKey = options?.shiftKey ?? false;
+		this.ctrlKey = options?.ctrlKey ?? false;
+		this.altKey = options?.altKey ?? false;
+		this.metaKey = options?.metaKey ?? false;
+	}
+}
+
+/** A key as a host reports it (`event: 'key'`). */
+export interface HostKey {
+	phase: 'down' | 'up';
+	key: string;
+	code: string;
+	repeat?: boolean;
+	shiftKey?: boolean;
+	ctrlKey?: boolean;
+	altKey?: boolean;
+	metaKey?: boolean;
+}
+
+function keyboardEvent(data: HostKey, options: EventOptions) {
+	return new KeyboardEvent(data.phase === 'up' ? 'keyup' : 'keydown', {
+		...options,
+		key: data.key,
+		code: data.code,
+		repeat: !!data.repeat,
+		shiftKey: !!data.shiftKey,
+		ctrlKey: !!data.ctrlKey,
+		altKey: !!data.altKey,
+		metaKey: !!data.metaKey,
+		cancelable: true,
+	});
+}
+
+/**
+ * A key the window got, raised as a browser bubbles it: on `canvas` (the focused one, if any),
+ * then `document`, then `window`. Returns whether a listener called preventDefault().
+ * @internal
+ */
+export function dispatchWindowKey(data: HostKey, canvas?: CanvasBase | null): boolean {
+	const g = global as any;
+	let defaultPrevented = false;
+	let stopped = false;
+	const event = keyboardEvent(data, {
+		bubbles: true,
+		target: canvas ? (canvas.__target ?? canvas) : (g.document?.body ?? null),
+		preventDefault: () => {
+			defaultPrevented = true;
+		},
+		stopPropagation: () => {
+			stopped = true;
+		},
+	});
+	try {
+		canvas?._raiseKey(event);
+		for (const node of [g.document, g.window]) {
+			if (stopped) {
+				break;
+			}
+			if (typeof node?.dispatchEvent === 'function') {
+				node.dispatchEvent(event);
+			}
+		}
+	} catch (error) {
+		console.error(error);
+	}
+	return defaultPrevented;
+}
+
+let pointerLockCanvas: CanvasBase | null = null;
+
+function firePointerLockEvent(type: 'pointerlockchange' | 'pointerlockerror', canvas: CanvasBase) {
+	const g = global as any;
+	const event = new Event(type, { bubbles: true, target: g.document ?? null });
+	try {
+		if (typeof g.document?.dispatchEvent === 'function') {
+			g.document.dispatchEvent(event);
+		}
+		// Listeners added through the canvas' ownerDocument.
+		canvas.notify(Object.create(event, { eventName: { value: type }, object: { value: canvas, writable: true } }));
+	} catch (error) {
+		console.error(error);
 	}
 }
 
@@ -526,6 +615,9 @@ interface HostPointer {
 	/** Web numbering: 0 left (or contact), 1 middle, 2 right. */
 	button?: number;
 	buttons?: number;
+	/** Under pointer lock: the travel, while `x`/`y` stay where the lock began. */
+	movementX?: number;
+	movementY?: number;
 }
 
 function domError(name: string, message: string) {
@@ -602,6 +694,12 @@ export abstract class CanvasBase extends ContainerView implements ICanvasBase {
 				defaultView: doc_?.defaultView ?? doc.defaultView,
 				body: doc_?.body ?? null,
 				documentElement: doc_?.documentElement ?? null,
+				get pointerLockElement() {
+					return CanvasBase.pointerLockElement;
+				},
+				exitPointerLock() {
+					CanvasBase.exitPointerLock();
+				},
 				addEventListener(type: string, cb: any, opts?: any) {
 					self.addEventListener(type, cb, opts);
 				},
@@ -809,7 +907,7 @@ export abstract class CanvasBase extends ContainerView implements ICanvasBase {
 			for (const pointer of pointers) {
 				const pointerId = pointer.ptrId;
 				const previousEvent = this._lastPointerEventById.get(pointerId) ?? { pointerId, x: 0, y: 0 };
-				const movement = { x: pointer.x - previousEvent.x, y: pointer.y - previousEvent.y };
+				const movement = pointer.movementX !== undefined ? { x: pointer.movementX, y: pointer.movementY ?? 0 } : { x: pointer.x - previousEvent.x, y: pointer.y - previousEvent.y };
 				movements.push(movement);
 
 				if (hasPointerCallbacks) {
@@ -1259,21 +1357,76 @@ export abstract class CanvasBase extends ContainerView implements ICanvasBase {
 		}
 	}
 
-	private _keyCallback(data: { phase: string; key: string; code: string; repeat?: boolean }) {
+	private _keyCallback(data: HostKey) {
 		const callbacks = data.phase === 'up' ? this._keyUpCallbacks : this._keyDownCallbacks;
 		if (callbacks.length === 0) {
 			return;
 		}
-		const event = new KeyboardEvent(data.phase === 'up' ? 'keyup' : 'keydown', {
-			key: data.key,
-			code: data.code,
-			repeat: !!data.repeat,
-			target: this.__target ?? this,
-			cancelable: true,
-		} as any);
+		this._raiseKey(keyboardEvent(data, { target: this.__target ?? this }));
+	}
+
+	/** @internal */
+	_raiseKey(event: KeyboardEvent) {
+		const callbacks = event.type === 'keyup' ? this._keyUpCallbacks : this._keyDownCallbacks;
 		for (const callback of callbacks.slice()) {
 			callback(event);
 		}
+	}
+
+	/** The canvas holding the pointer lock (its DOM element when it has one), or null. */
+	static get pointerLockElement(): any {
+		return pointerLockCanvas ? (pointerLockCanvas.__target ?? pointerLockCanvas) : null;
+	}
+
+	static exitPointerLock() {
+		const canvas = pointerLockCanvas;
+		if (!canvas) {
+			return;
+		}
+		pointerLockCanvas = null;
+		canvas._releasePointerLock();
+		Promise.resolve().then(() => firePointerLockEvent('pointerlockchange', canvas));
+	}
+
+	/** @internal */
+	get _pointerLocked() {
+		return pointerLockCanvas === this;
+	}
+
+	/** Overridden by hosts that can lock the pointer: hide it, hold it in the window and report travel. */
+	protected _acquirePointerLock(): boolean {
+		return false;
+	}
+
+	protected _releasePointerLock() {}
+
+	/** The host lost the lock: Esc, the window was deactivated or the canvas unloaded. */
+	protected _pointerLockLost() {
+		if (pointerLockCanvas === this) {
+			CanvasBase.exitPointerLock();
+		}
+	}
+
+	protected _requestPointerLock(): Promise<void> {
+		if (pointerLockCanvas === this) {
+			return Promise.resolve();
+		}
+		const previous = pointerLockCanvas;
+		if (previous) {
+			pointerLockCanvas = null;
+			previous._releasePointerLock();
+		}
+		if (!this._acquirePointerLock()) {
+			return Promise.resolve().then(() => {
+				if (previous) {
+					firePointerLockEvent('pointerlockchange', previous);
+				}
+				firePointerLockEvent('pointerlockerror', this);
+				throw domError('WrongDocumentError', "Failed to execute 'requestPointerLock' on 'Element': The pointer could not be locked; the canvas must be in an active window.");
+			});
+		}
+		pointerLockCanvas = this;
+		return Promise.resolve().then(() => firePointerLockEvent('pointerlockchange', this));
 	}
 
 	private _pinchCallback(data: { event: string; deltaX: number; deltaY: number; deltaMode: number; pointers: { ptrId: number; x: number; y: number }[]; isInProgress: boolean }) {

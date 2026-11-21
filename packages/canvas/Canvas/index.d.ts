@@ -94,4 +94,7 @@ export declare class Canvas extends CanvasBase {
 	snapshot(flip?: boolean): ImageSource | null;
 
 	toHTMLCanvas?(): any;
+
+	/** Windows and Linux: locks the mouse to the canvas, as `Element.requestPointerLock()`. */
+	requestPointerLock?(options?: { unadjustedMovement?: boolean }): Promise<void>;
 }

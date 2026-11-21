@@ -5,7 +5,7 @@ import { HTMLCanvasElement } from './HTMLCanvasElement';
 import { HTMLDivElement } from './HTMLDivElement';
 import { Text } from './Text';
 import { Canvas, FontFaceSet } from '@nativescript/canvas';
-import { ContentView, Frame, StackLayout, knownFolders } from '@nativescript/core';
+import { ContentView, Frame, Observable, StackLayout, knownFolders } from '@nativescript/core';
 import { Node } from './Node';
 import { Element, parseChildren } from './Element';
 import { SVGSVGElement } from './svg/SVGSVGElement';
@@ -31,8 +31,10 @@ export class Document extends Node {
 	// set as app root
 	baseURI: string;
 	readonly fonts: FontFaceSet;
+	private _listeners = new Observable();
 	constructor() {
 		super('#document');
+		this._emitter = new WeakRef(this._listeners);
 		this.body = new HTMLBodyElement('BODY');
 		this.body._ownerDocument = this as never;
 		this._documentElement = new HTMLHtmlElement('HTML');
@@ -205,6 +207,14 @@ export class Document extends Node {
 
 	get documentElement() {
 		return this._documentElement;
+	}
+
+	get pointerLockElement() {
+		return Canvas.pointerLockElement;
+	}
+
+	exitPointerLock() {
+		Canvas.exitPointerLock();
 	}
 
 	//@ts-ignore

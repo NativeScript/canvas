@@ -92,6 +92,7 @@ void GPUImpl::RequestAdapter(const v8::FunctionCallbackInfo<v8::Value> &args) {
     opts.force_fallback_adapter = false;
     opts.feature_level = CanvasGPUFeatureLevel::CanvasGPUFeatureLevelCore;
     opts.power_preference = CanvasGPUPowerPreference::CanvasGPUPowerPreferenceNone;
+    opts.native_limits = false;
     auto optionsValue = args[0];
 
     if (optionsValue->IsObject()) {
@@ -132,6 +133,12 @@ void GPUImpl::RequestAdapter(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
         if (!forceFallbackValue.IsEmpty()) {
             opts.force_fallback_adapter = forceFallbackValue->BooleanValue(isolate);
+        }
+
+        v8::Local<v8::Value> nativeLimitsValue;
+        if (options->Get(context, ConvertToV8String(isolate, "nativeLimits")).ToLocal(
+                &nativeLimitsValue)) {
+            opts.native_limits = nativeLimitsValue->BooleanValue(isolate);
         }
     }
 

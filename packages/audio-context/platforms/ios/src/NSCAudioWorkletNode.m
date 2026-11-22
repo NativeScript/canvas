@@ -27,14 +27,17 @@ typedef struct {
     uint32_t lowWater;
     uint32_t window;
     BOOL finished;
+    // Offline: requests run ahead of the render; the first is frame 0.
+    BOOL offline;
+    uint64_t requestFrame;
 } WorkletRender;
 
-static void PushRequest(WorkletRender *r, NSArray<NSCAudioParam *> *params, double time, double sampleRate) {
+static BOOL PushRequest(WorkletRender *r, NSArray<NSCAudioParam *> *params, uint64_t requestFrame, double time, double sampleRate) {
     uint32_t requested = atomic_load_explicit(&r->header[REQUESTED], memory_order_relaxed);
     uint32_t read = atomic_load_explicit(&r->header[READ], memory_order_acquire);
-    if (requested - read >= SLOTS) return;
+    if (requested - read >= SLOTS) return NO;
     float *slot = r->words + (requested % SLOTS) * r->slotWords;
-    double frame = (double)r->nextFrame;
+    double frame = (double)requestFrame;
     memcpy(slot + FRAME, &frame, sizeof frame);
     ((uint32_t *)slot)[ALIVE] = 1;
     ((uint32_t *)slot)[r->outputCounts] = (uint32_t)r->channels;
@@ -47,6 +50,33 @@ static void PushRequest(WorkletRender *r, NSArray<NSCAudioParam *> *params, doub
         ((uint32_t *)slot)[r->paramLengths + p] = (uint32_t)length;
     }
     atomic_store_explicit(&r->header[REQUESTED], requested + 1, memory_order_release);
+    return YES;
+}
+
+static void ReadSlot(WorkletRender *r, uint32_t read) {
+    float *slot = r->words + (read % SLOTS) * r->slotWords;
+    uint32_t count = MIN(((uint32_t *)slot)[r->outputCounts], (uint32_t)r->channels);
+    for (NSInteger c = 0; c < r->channels; c++) {
+        if ((uint32_t)c < count) memcpy(r->out[c], slot + r->outputData + c * QUANTUM, sizeof r->out[c]);
+        else memset(r->out[c], 0, sizeof r->out[c]);
+    }
+    if (((uint32_t *)slot)[ALIVE] == 0) r->finished = YES;
+}
+
+static void Silence(WorkletRender *r) {
+    for (NSInteger c = 0; c < r->channels; c++) memset(r->out[c], 0, sizeof r->out[c]);
+}
+
+// Offline: the oldest response, never skipped. The context waits until it is in.
+static void PullOffline(WorkletRender *r) {
+    uint32_t read = atomic_load_explicit(&r->header[READ], memory_order_relaxed);
+    uint32_t done = atomic_load_explicit(&r->header[DONE], memory_order_acquire);
+    if (done == read) {
+        Silence(r);
+        return;
+    }
+    ReadSlot(r, read);
+    atomic_store_explicit(&r->header[READ], read + 1, memory_order_release);
 }
 
 static void PullResponse(WorkletRender *r) {
@@ -66,16 +96,10 @@ static void PullResponse(WorkletRender *r) {
         }
     }
     if (done != read) {
-        float *slot = r->words + (read % SLOTS) * r->slotWords;
-        uint32_t count = MIN(((uint32_t *)slot)[r->outputCounts], (uint32_t)r->channels);
-        for (NSInteger c = 0; c < r->channels; c++) {
-            if ((uint32_t)c < count) memcpy(r->out[c], slot + r->outputData + c * QUANTUM, sizeof r->out[c]);
-            else memset(r->out[c], 0, sizeof r->out[c]);
-        }
-        if (((uint32_t *)slot)[ALIVE] == 0) r->finished = YES;
+        ReadSlot(r, read);
         read++;
     } else {
-        for (NSInteger c = 0; c < r->channels; c++) memset(r->out[c], 0, sizeof r->out[c]);
+        Silence(r);
     }
     atomic_store_explicit(&r->header[READ], read, memory_order_release);
 }
@@ -84,6 +108,7 @@ static void PullResponse(WorkletRender *r) {
     NSData *_ring;
     NSMutableData *_renderData;
     WorkletRender *_render;
+    double _sampleRate;
 }
 
 - (instancetype)initWithContext:(NSCAudioContext *)context
@@ -109,6 +134,7 @@ static void PullResponse(WorkletRender *r) {
     render->paramData = paramData;
     render->position = QUANTUM;
     render->lowWater = UINT32_MAX;
+    render->offline = context.engine.isInManualRenderingMode;
 
     NSMutableArray<NSCAudioParam *> *params = [NSMutableArray array];
     for (NSNumber *value in paramDefaults) {
@@ -127,8 +153,12 @@ static void PullResponse(WorkletRender *r) {
         AVAudioFrameCount written = 0;
         while (written < frameCount) {
             if (r->position == QUANTUM) {
-                if (!r->finished) PushRequest(r, renderParams, blockTime + written / sampleRate, sampleRate);
-                PullResponse(r);
+                if (r->offline) {
+                    PullOffline(r);
+                } else {
+                    if (!r->finished) PushRequest(r, renderParams, r->nextFrame, blockTime + written / sampleRate, sampleRate);
+                    PullResponse(r);
+                }
                 r->nextFrame += QUANTUM;
                 r->position = 0;
             }
@@ -151,6 +181,7 @@ static void PullResponse(WorkletRender *r) {
         _renderData = renderData;
         _render = render;
         _params = renderParams;
+        _sampleRate = sampleRate;
         [context.engine attachNode:source];
     }
     return self;
@@ -158,6 +189,21 @@ static void PullResponse(WorkletRender *r) {
 
 - (void)close {
     if (_render) atomic_store_explicit(&_render->header[CLOSED], 1, memory_order_release);
+}
+
+// Called on the thread that renders, between quanta.
+- (BOOL)prepareOfflineQuantum {
+    WorkletRender *r = _render;
+    if (!r || !r->offline || r->finished) return YES;
+    if (atomic_load_explicit(&r->header[CLOSED], memory_order_acquire)) return YES;
+    while (PushRequest(r, _params, r->requestFrame, r->requestFrame / _sampleRate, _sampleRate)) r->requestFrame += QUANTUM;
+    return atomic_load_explicit(&r->header[DONE], memory_order_acquire) != atomic_load_explicit(&r->header[READ], memory_order_relaxed);
+}
+
+- (void)abandonOffline {
+    if (!_render) return;
+    _render->finished = YES;
+    [self close];
 }
 
 - (void)dealloc {

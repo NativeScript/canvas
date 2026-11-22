@@ -8,7 +8,8 @@ NS_ASSUME_NONNULL_BEGIN
 @class NSCAudioContext;
 
 /// An AudioWorkletNode with no inputs and one output: renders the quanta a Worker writes into
-/// `ring` (layout in audio-worklet-ring.ts).
+/// `ring` (layout in audio-worklet-ring.ts). In an offline context it plays every response in
+/// order, so the output is sample-exact.
 @interface NSCAudioWorkletNode : NSCAudioNode
 
 @property (nonatomic, readonly) NSArray<NSCAudioParam *> *params;
@@ -27,6 +28,11 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// The Worker stops serving the ring once it has drained.
 - (void)close;
+
+/// Offline: queues requests ahead and reports whether the next quantum's response is in.
+- (BOOL)prepareOfflineQuantum;
+/// Offline: renders silence from now on.
+- (void)abandonOffline;
 
 @end
 

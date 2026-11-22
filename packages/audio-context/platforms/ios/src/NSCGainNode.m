@@ -136,4 +136,8 @@
     [self stopAutomationLink];
 }
 
+- (void)applyAutomation {
+    [self applyGainAtCurrentTime];
+}
+
 @end

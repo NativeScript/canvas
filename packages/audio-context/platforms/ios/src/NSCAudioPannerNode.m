@@ -890,4 +890,8 @@ static inline double NSCWrapPannerAzimuthDegrees(double azimuth) {
     [self applySpatial];
 }
 
+- (void)applyAutomation {
+    [self applySpatial];
+}
+
 @end

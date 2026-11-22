@@ -35,7 +35,8 @@ liveMetric('devicePixelRatio', () => Screen.mainScreen.scale || 1);
 // const screenHeight = Screen.mainScreen.heightPixels;
 const screenWidth = Screen.mainScreen.widthDIPs;
 const screenHeight = Screen.mainScreen.heightDIPs;
-if ((typeof __WINDOWS__ !== 'undefined' && __WINDOWS__) || (typeof __LINUX__ !== 'undefined' && __LINUX__)) {
+const desktop = (typeof __WINDOWS__ !== 'undefined' && __WINDOWS__) || (typeof __LINUX__ !== 'undefined' && __LINUX__);
+if (desktop) {
 	for (const name of ['innerWidth', 'clientWidth']) {
 		liveMetric(name, () => Screen.mainScreen.widthDIPs);
 	}
@@ -56,14 +57,20 @@ if (!(global as any).__TNS_BROWSER_POLYFILL_RESIZE) {
 		// const width = Screen.mainScreen.widthPixels;
 		// const height = Screen.mainScreen.heightPixels;
 
-		const portrait = args.newValue === 'portrait';
-		const width = portrait ? screenWidth : screenHeight;
-		const height = portrait ? screenHeight : screenWidth;
+		// Windows and Linux raise this on every window resize. The live metrics already follow the
+		// window; the sizes read at load are the screen's defaults from before the window existed
+		// (1920x1080, landscape, so swapped here too), and writing them would pin innerWidth and
+		// innerHeight there, over whatever the page assigned.
+		if (!desktop) {
+			const portrait = args.newValue === 'portrait';
+			const width = portrait ? screenWidth : screenHeight;
+			const height = portrait ? screenHeight : screenWidth;
 
-		(global as any).window.innerWidth = (global as any).innerWidth = width;
-		(global as any).window.clientWidth = (global as any).clientWidth = width;
-		(global as any).window.innerHeight = (global as any).innerHeight = height;
-		(global as any).window.clientHeight = (global as any).clientHeight = height;
+			(global as any).window.innerWidth = (global as any).innerWidth = width;
+			(global as any).window.clientWidth = (global as any).clientWidth = width;
+			(global as any).window.innerHeight = (global as any).innerHeight = height;
+			(global as any).window.clientHeight = (global as any).clientHeight = height;
+		}
 		(global as any).window.orientation = (global as any).orientation = args.newValue === 'portrait' ? 0 : 90;
 		(global as any).window.screen.orientation = (global as any).screen.orientation = (global as any).orientation;
 		if ((global as any).emitter && (global as any).emitter.emit) {

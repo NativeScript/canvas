@@ -314,6 +314,7 @@ export const AUDIO_WORKLET_SCOPE = String.raw`(function (global) {
 			case 'create':
 				try {
 					if (initError) throw initError;
+					if (message.ring && bridge.adopt) bridge.adopt(message.id, message.ring);
 					nodes.set(message.id, new Node(message.id, message.name, message.options));
 					drain();
 				} catch (e) {

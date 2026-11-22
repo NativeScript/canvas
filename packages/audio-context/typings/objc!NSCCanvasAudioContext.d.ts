@@ -496,6 +496,18 @@ declare class NSCConstantSourceNode extends NSCAudioScheduledSourceNode {
 	initWithContextOffset(context: NSCAudioContext, offset: number): this;
 }
 
+declare class NSCAudioWorkletNode extends NSCAudioNode {
+	static alloc(): NSCAudioWorkletNode; // inherited from NSObject
+
+	static new(): NSCAudioWorkletNode; // inherited from NSObject
+
+	readonly params: NSArray<NSCAudioParam>;
+
+	initWithContextRingChannelsSlotWordsHeaderOutputCountsOutputDataParamLengthsParamDataParamDefaults(context: NSCAudioContext, ring: NSData, channels: number, slotWords: number, header: number, outputCounts: number, outputData: number, paramLengths: number, paramData: number, paramDefaults: NSArray<number> | number[]): this;
+
+	close(): void;
+}
+
 declare class NSCConvolverNode extends NSCAudioNode {
 	static alloc(): NSCConvolverNode; // inherited from NSObject
 

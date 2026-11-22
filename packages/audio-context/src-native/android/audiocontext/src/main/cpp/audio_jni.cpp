@@ -1928,3 +1928,29 @@ Java_org_nativescript_audiocontext_AudioContext_nativeEndExternalPcmSource(JNIEn
     NativeEngine::getInstance().endExternalPcmSource(std::string(idChars));
     env->ReleaseStringUTFChars(jid, idChars);
 }
+
+extern "C" JNIEXPORT jstring JNICALL
+Java_org_nativescript_audiocontext_AudioContext_nativeCreateWorkletSource(JNIEnv *env, jobject thiz,
+                                                                         jobject ring, jint channels,
+                                                                         jint slotWords, jint header,
+                                                                         jint outputCounts, jint outputData,
+                                                                         jint paramLengths, jint paramData,
+                                                                         jobjectArray paramIds) {
+    if (!ring) return nullptr;
+    auto *words = static_cast<float *>(env->GetDirectBufferAddress(ring));
+    jlong capacity = env->GetDirectBufferCapacity(ring);
+    if (!words || capacity < (static_cast<jlong>(header) + 8) * 4) return nullptr;
+    std::vector<std::string> ids;
+    jsize count = paramIds ? env->GetArrayLength(paramIds) : 0;
+    for (jsize i = 0; i < count; i++) {
+        auto id = static_cast<jstring>(env->GetObjectArrayElement(paramIds, i));
+        const char *chars = id ? env->GetStringUTFChars(id, nullptr) : nullptr;
+        ids.emplace_back(chars ? chars : "");
+        if (chars) env->ReleaseStringUTFChars(id, chars);
+        if (id) env->DeleteLocalRef(id);
+    }
+    std::string id = NativeEngine::getInstance().createWorkletSource(
+            words, channels, slotWords, header, outputCounts, outputData, paramLengths, paramData,
+            std::move(ids));
+    return id.empty() ? nullptr : env->NewStringUTF(id.c_str());
+}

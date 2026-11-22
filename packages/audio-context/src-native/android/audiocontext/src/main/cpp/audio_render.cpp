@@ -1345,6 +1345,9 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                                    vit->second.filterId.c_str(), gainOutputsForVoice,
                                    pannerOutputsForVoice, filterOutputsForVoice);
                 }
+                if (existed && vit->second.worklet) {
+                    vit->second.worklet->header[3].store(1, std::memory_order_release);
+                }
                 audioVoices_.erase(c.id);
                 break;
             }
@@ -1419,6 +1422,30 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
             }
             case NativeEngine::CMD_SUSPEND: {
                 stopStream();
+                break;
+            }
+            case NativeEngine::CMD_CREATE_WORKLET: {
+                if (!c.externalRing || !c.worklet) break;
+                Voice v;
+                v.voiceType = Voice::ExternalPCM;
+                v.id = c.id;
+                v.playing = true;
+                v.bufferChannels = c.channels;
+                v.bufferSampleRate = streamSampleRate_ > 0 ? streamSampleRate_ : 48000;
+                v.increment = 1.0;
+                v.externalRing = c.externalRing;
+                v.worklet = c.worklet;
+                v.externalPrev.assign((size_t) v.bufferChannels, 0.0f);
+                v.externalCurr.assign((size_t) v.bufferChannels, 0.0f);
+                auto vg = voiceGainByOutput_.find(v.id);
+                if (vg != voiceGainByOutput_.end() && !vg->second.empty()) {
+                    auto mapIt = vg->second.find(0);
+                    if (mapIt == vg->second.end()) mapIt = vg->second.begin();
+                    v.gainId = mapIt->second;
+                    auto git = gains_.find(v.gainId);
+                    if (git != gains_.end()) v.gain = git->second;
+                }
+                audioVoices_[c.id] = std::move(v);
                 break;
             }
             case NativeEngine::CMD_CREATE_EXTERNAL_PCM: {
@@ -1649,6 +1676,16 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
         std::array<const NativeEngine::Panner *, kRouteCacheChannels> pannerNodeByOutput{};
         const std::string *playbackRatePrimaryId = nullptr;
     };
+
+    {
+        const int64_t workletStartNs = g_audioTimeNanos.load(std::memory_order_relaxed);
+        const double workletFrameNs = 1000000000.0 / (streamSampleRate_ > 0 ? streamSampleRate_ : 48000);
+        for (auto &kv: audioVoices_) {
+            if (kv.second.worklet && kv.second.playing) {
+                produceWorkletQuanta(kv.second, numFrames, workletStartNs, workletFrameNs);
+            }
+        }
+    }
 
     std::vector<ActiveVoiceView> localVoices;
     localVoices.reserve(audioVoices_.size());
@@ -3038,6 +3075,10 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
     }
 
     for (const auto &voiceId: stoppedVoices) {
+        auto vit = audioVoices_.find(voiceId);
+        if (vit != audioVoices_.end() && vit->second.worklet) {
+            vit->second.worklet->header[3].store(1, std::memory_order_release);
+        }
         audioVoices_.erase(voiceId);
     }
     queueEnded(stoppedVoices);

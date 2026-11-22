@@ -101,6 +101,11 @@ public:
     void pushPcmFrames(const std::string &id, const float *interleaved, size_t sampleCount);
     void endExternalPcmSource(const std::string &id);
 
+    // An AudioWorkletNode's voice over its ring (audio-worklet-ring.ts); offsets are in 4-byte words.
+    std::string createWorkletSource(float *ring, int channels, int slotWords, int header,
+                                    int outputCounts, int outputData, int paramLengths,
+                                    int paramData, std::vector<std::string> paramIds);
+
 #ifdef HAS_OBOE
 
     oboe::DataCallbackResult
@@ -168,6 +173,24 @@ private:
         std::atomic<bool> ended{false};
     };
 
+    struct WorkletRing {
+        float *words = nullptr;
+        std::atomic<uint32_t> *header = nullptr;
+        int channels = 1;
+        int slotWords = 0;
+        int outputCounts = 0;
+        int outputData = 0;
+        int paramLengths = 0;
+        int paramData = 0;
+        std::vector<std::string> paramIds;
+        // Render thread only.
+        std::vector<float> out;
+        uint64_t nextFrame = 0;
+        uint32_t lowWater = UINT32_MAX;
+        uint32_t window = 0;
+        bool finished = false;
+    };
+
     struct Voice {
         enum Type {
             Oscillator, BufferSource, ExternalPCM
@@ -198,11 +221,15 @@ private:
         int bufferSampleRate = 0;
 
         std::shared_ptr<ExternalRing> externalRing;
+        std::shared_ptr<WorkletRing> worklet;
         std::vector<float> externalPrev;
         std::vector<float> externalCurr;
         double externalSubPos = 0.0;
         bool externalPrimed = false;
     };
+
+    // Fills the voice's ExternalRing with worklet quanta until it holds `frames`.
+    void produceWorkletQuanta(Voice &voice, int frames, int64_t startNs, double frameNs);
 
     std::unordered_map<std::string, BufferData> audioBuffers_;
     std::unordered_map<std::string, Voice> audioVoices_;
@@ -261,7 +288,8 @@ public:
         CMD_DETACH_PLAYBACK_RATE,
         CMD_FREE_PLAYBACK_RATE,
         CMD_SET_PANNER_HRIR,
-        CMD_SET_PANNER_PARTITION_SIZE
+        CMD_SET_PANNER_PARTITION_SIZE,
+        CMD_CREATE_WORKLET
     };
 
     struct Command {
@@ -321,6 +349,7 @@ public:
         std::shared_ptr<std::vector<int16_t>> pcm;
         std::shared_ptr<std::vector<float>> pcmFloat;
         std::shared_ptr<ExternalRing> externalRing;
+        std::shared_ptr<WorkletRing> worklet;
         std::shared_ptr<std::vector<float>> hrirLeft;
         std::shared_ptr<std::vector<float>> hrirRight;
         bool clearHrir = false;

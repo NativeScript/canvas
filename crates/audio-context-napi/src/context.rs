@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::io::Cursor;
 
 use base64::Engine as _;
@@ -11,10 +12,13 @@ use web_audio_api::context::{
   AudioContextLatencyCategory, AudioContextOptions, AudioContextState, BaseAudioContext, ConcreteBaseAudioContext,
   OfflineAudioContext,
 };
-use web_audio_api::PeriodicWaveOptions;
+use web_audio_api::node::{AudioNodeOptions, ChannelCountMode, ChannelInterpretation};
+use web_audio_api::worklet::{AudioWorkletNode, AudioWorkletNodeOptions};
+use web_audio_api::{AudioParamDescriptor, PeriodicWaveOptions};
 
 use crate::buffer::{AudioBuffer, PeriodicWave};
-use crate::node::{AudioNode, Kind};
+use crate::node::{AudioNode, Kind, WorkletNode};
+use crate::worklet::{self, AudioWorkletScope, JsProcessor, Layout, ProcessorOptions, Ring, Scope};
 use crate::param::AudioParam;
 use crate::{error, guard};
 
@@ -27,6 +31,28 @@ pub struct ContextOptions {
   pub latency_hint: Option<Either<String, f64>>,
   /// An output device id, `''` for the default device or `'none'` to render without one.
   pub sink_id: Option<String>,
+}
+
+#[napi(object)]
+pub struct WorkletParamDescriptor {
+  pub name: String,
+  pub default_value: Option<f64>,
+  pub min_value: Option<f64>,
+  pub max_value: Option<f64>,
+  pub automation_rate: Option<String>,
+}
+
+/// `AudioWorkletNodeOptions` plus the processor's `parameterDescriptors`.
+#[napi(object)]
+pub struct WorkletNodeOptions {
+  pub number_of_inputs: Option<u32>,
+  pub number_of_outputs: Option<u32>,
+  pub output_channel_count: Option<Vec<u32>>,
+  pub parameter_data: Option<HashMap<String, f64>>,
+  pub channel_count: Option<u32>,
+  pub channel_count_mode: Option<String>,
+  pub channel_interpretation: Option<String>,
+  pub descriptors: Vec<WorkletParamDescriptor>,
 }
 
 enum Backing {
@@ -243,6 +269,75 @@ impl AudioContext {
   }
 
   #[napi]
+  pub fn audio_worklet_scope(&self) -> AudioWorkletScope {
+    AudioWorkletScope { scope: Scope::new() }
+  }
+
+  #[napi]
+  pub fn create_audio_worklet_node(&self, scope: &AudioWorkletScope, options: WorkletNodeOptions) -> Result<AudioNode> {
+    let inputs = options.number_of_inputs.unwrap_or(1) as usize;
+    let outputs = options.number_of_outputs.unwrap_or(1) as usize;
+    let output_channel_count: Vec<usize> =
+      options.output_channel_count.unwrap_or_default().into_iter().map(|count| count as usize).collect();
+    let mut names = Vec::with_capacity(options.descriptors.len());
+    let mut descriptors = Vec::with_capacity(options.descriptors.len());
+    for descriptor in options.descriptors {
+      if names.contains(&descriptor.name) {
+        return Err(error(format!("NotSupportedError: duplicate parameter name '{}'", descriptor.name)));
+      }
+      let min = descriptor.min_value.unwrap_or(f32::MIN as f64);
+      let max = descriptor.max_value.unwrap_or(f32::MAX as f64);
+      let default = descriptor.default_value.unwrap_or(0.);
+      if !(min <= default && default <= max) {
+        return Err(error(format!("InvalidStateError: '{}' defaultValue is out of its range", descriptor.name)));
+      }
+      names.push(descriptor.name.clone());
+      descriptors.push(AudioParamDescriptor {
+        name: descriptor.name,
+        automation_rate: worklet::automation_rate(descriptor.automation_rate.as_deref())?,
+        default_value: default as f32,
+        min_value: min as f32,
+        max_value: max as f32,
+      });
+    }
+    let mut channels = AudioNodeOptions::default();
+    if let Some(count) = options.channel_count {
+      channels.channel_count = count as usize;
+    }
+    if let Some(mode) = options.channel_count_mode {
+      channels.channel_count_mode = match mode.as_str() {
+        "max" => ChannelCountMode::Max,
+        "clamped-max" => ChannelCountMode::ClampedMax,
+        "explicit" => ChannelCountMode::Explicit,
+        _ => return Err(invalid_enum(&mode, "ChannelCountMode")),
+      };
+    }
+    if let Some(interpretation) = options.channel_interpretation {
+      channels.channel_interpretation = match interpretation.as_str() {
+        "speakers" => ChannelInterpretation::Speakers,
+        "discrete" => ChannelInterpretation::Discrete,
+        _ => return Err(invalid_enum(&interpretation, "ChannelInterpretation")),
+      };
+    }
+    let layout = Layout::new(inputs, worklet::output_capacity(inputs, outputs, &output_channel_count), names.len());
+    let ring = Arc::new(Ring::new(layout, matches!(self.backing, Backing::Offline(..))));
+    let processor_options = ProcessorOptions { ring: ring.clone(), scope: scope.scope.clone(), param_names: names };
+    let worklet_options = AudioWorkletNodeOptions {
+      number_of_inputs: inputs,
+      number_of_outputs: outputs,
+      output_channel_count,
+      parameter_data: options.parameter_data.unwrap_or_default(),
+      processor_options,
+      audio_node_options: channels,
+    };
+    let node = guard(|| {
+      worklet::with_descriptors(descriptors, || AudioWorkletNode::new::<JsProcessor>(&self.base, worklet_options))
+    })?;
+    let id = scope.scope.add(&ring);
+    Ok(AudioNode::new(Kind::Worklet(WorkletNode { node, id })))
+  }
+
+  #[napi]
   pub fn create_gain(&self) -> Result<AudioNode> {
     self.node(|base| Kind::Gain(base.create_gain()))
   }
@@ -331,6 +426,10 @@ impl AudioContext {
     };
     guard(|| PeriodicWave { inner: self.base.create_periodic_wave(options) })
   }
+}
+
+fn invalid_enum(value: &str, name: &str) -> napi::Error {
+  error(format!("TypeError: '{value}' is not a valid value for enumeration {name}"))
 }
 
 pub enum StateChange {

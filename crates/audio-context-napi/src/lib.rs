@@ -11,11 +11,15 @@ mod context;
 mod node;
 mod param;
 mod tap;
+mod worklet;
 
 pub use buffer::{AudioBuffer, PeriodicWave};
 pub use context::AudioContext;
 pub use node::AudioNode;
 pub use param::AudioParam;
+pub use worklet::{
+  audio_worklet_script, read_audio_worklet_module, AudioWorkletBridge, AudioWorkletRing, AudioWorkletScope,
+};
 
 thread_local! {
   static GUARDED: Cell<bool> = const { Cell::new(false) };

@@ -161,6 +161,23 @@ reads wav, mp3, ogg/vorbis, flac and aac. Differences from iOS and Android:
 - A `WaveShaperNode` takes one curve; assigning a second one throws `InvalidStateError`.
 - `sinkId` is `''` for the default device; `'none'` renders without a device.
 
+### AudioWorklet
+
+`context.audioWorklet.addModule(url)` and `new AudioWorkletNode(context, name, options)` work as on
+the web: `registerProcessor`, `AudioWorkletProcessor`, `port`, `parameters`, `processorOptions`,
+`sampleRate`, `currentFrame` and `currentTime`. Processors run in a Worker (one per context), not
+on the app's JS thread.
+
+- `url` is a path (`~/`, relative to the app folder, absolute or `file://`), a `data:` URL, or an
+  `http(s):` / `blob:` URL the runtime's `fetch` can read.
+- A realtime node's output plays about one device buffer late (a few ms at the `interactive`
+  latency hint); its params and inputs reach `process()` that much early. Offline rendering is
+  sample-exact.
+- An input or a channel-following output carries at most 8 channels; unconnected inputs are one
+  silent channel rather than empty.
+- `audioWorklet` is `undefined` where the runtime has no `Worker` (the QuickJS, Hermes and JSC
+  builds) and on iOS and Android.
+
 ## Linux
 
 Linux uses the same engine and module as Windows (`audiocontext.node`), playing through ALSA

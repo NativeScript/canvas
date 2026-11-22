@@ -3,6 +3,7 @@ import { normalizeSourcePath } from './common';
 declare const __non_webpack_require__: (specifier: string) => any;
 
 // Loaded on import, so a missing module leaves AudioContext undefined in canvas-polyfill's probe.
+export const ADDON = 'system_lib://audiocontext.node';
 export const Native = __non_webpack_require__('system_lib://audiocontext.node');
 
 /** `file:///C:/x` and `/C:/x` name a drive path on Windows. */

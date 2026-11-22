@@ -119,6 +119,9 @@
     void (^connectBlock)(void) = ^{
       BOOL destinationIsMixer =
           [destinationNode isKindOfClass:[AVAudioMixerNode class]];
+      // Offline, nil leaves mixers at stereo: mono graphs drop 3 dB and worklets go silent.
+      AVAudioFormat *firstFormat =
+          (ctx && engine.isInManualRenderingMode) ? ctx.format : nil;
       AVAudioFormat *sourceFormat = nil;
       @try {
         sourceFormat = [sourceNode outputFormatForBus:fromBus];
@@ -131,7 +134,7 @@
                        to:destinationNode
                   fromBus:fromBus
                     toBus:toBus
-                   format:nil];
+                   format:firstFormat];
           connectOk = YES;
         } @catch (NSException *e) {
           NSCLogDebug(@"NSCAudioNode: direct connect with nil format threw: %@; "
@@ -201,7 +204,7 @@
         [engine connect:sourceNode
             toConnectionPoints:pointsToConnect
                        fromBus:fromBus
-                        format:nil];
+                        format:firstFormat];
         connectOk = YES;
       } @catch (NSException *e) {
         NSCLogDebug(@"NSCAudioNode: connect with nil format threw: %@; trying "
@@ -386,5 +389,7 @@
     if (!destination) return;
     [destination handleDisconnectFrom:self output:output input:input];
 }
+
+- (void)applyAutomation {}
 
 @end

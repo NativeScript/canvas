@@ -286,6 +286,16 @@ static inline NSCOscWaveform NSCOscWaveformFromString(NSString * _Nullable type)
     }
     NSCAudioContext *ctx = self.context;
     if (!ctx) return;
+    if (ctx.engine.isInManualRenderingMode) {
+        // Offline sample time starts at 0, so a context time maps straight to a sample.
+        if ([self isPlaying]) return;
+        int64_t targetSample = (int64_t)llround(MAX(when.doubleValue, ctx.currentTime) * ctx.sampleRate);
+        if (_stopSamplePtr) atomic_store_explicit(_stopSamplePtr, (int64_t)-1, memory_order_release);
+        if (_startSamplePtr) atomic_store_explicit(_startSamplePtr, targetSample, memory_order_release);
+        [self setPlaying:YES];
+        [ctx incrementActiveCount];
+        return;
+    }
     if (ctx.engine.isRunning) {
         AVAudioTime *nowTime = ctx.engine.outputNode.lastRenderTime;
         if (nowTime && nowTime.isSampleTimeValid && nowTime.sampleRate > 0.0) {
@@ -319,6 +329,10 @@ static inline NSCOscWaveform NSCOscWaveformFromString(NSString * _Nullable type)
         return;
     }
     NSCAudioContext *ctx = self.context;
+    if (ctx && ctx.engine.isInManualRenderingMode && when.doubleValue > ctx.currentTime) {
+        if ([self isPlaying] && _stopSamplePtr) atomic_store_explicit(_stopSamplePtr, (int64_t)llround(when.doubleValue * ctx.sampleRate), memory_order_release);
+        return;
+    }
     if (ctx && ctx.engine.isRunning && [self isPlaying]) {
         AVAudioTime *nowTime = ctx.engine.outputNode.lastRenderTime;
         if (nowTime && nowTime.isSampleTimeValid && nowTime.sampleRate > 0.0) {

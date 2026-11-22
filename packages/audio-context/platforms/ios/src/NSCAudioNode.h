@@ -37,6 +37,9 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)disconnectTo:(NSCAudioNode *)destination output:(nullable NSNumber *)output;
 - (void)disconnectTo:(NSCAudioNode *)destination output:(nullable NSNumber *)output input:(nullable NSNumber *)input;
 
+/// Applies param automation at the context's current time. Offline rendering calls it per quantum.
+- (void)applyAutomation;
+
 @end
 
 NS_ASSUME_NONNULL_END

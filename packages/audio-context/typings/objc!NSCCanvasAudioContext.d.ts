@@ -261,6 +261,8 @@ declare class NSCAudioNode extends NSObject {
 
 	constructor(o: { context: NSCAudioContext; node: AVAudioNode });
 
+	applyAutomation(): void;
+
 	connectTo(destination: NSCAudioNode): void;
 
 	connectToOutput(destination: NSCAudioNode, output: number): void;
@@ -505,7 +507,11 @@ declare class NSCAudioWorkletNode extends NSCAudioNode {
 
 	initWithContextRingChannelsSlotWordsHeaderOutputCountsOutputDataParamLengthsParamDataParamDefaults(context: NSCAudioContext, ring: NSData, channels: number, slotWords: number, header: number, outputCounts: number, outputData: number, paramLengths: number, paramData: number, paramDefaults: NSArray<number> | number[]): this;
 
+	abandonOffline(): void;
+
 	close(): void;
+
+	prepareOfflineQuantum(): boolean;
 }
 
 declare class NSCConvolverNode extends NSCAudioNode {
@@ -610,6 +616,8 @@ declare class NSCOfflineAudioContext extends NSCAudioContext {
 	static alloc(): NSCOfflineAudioContext; // inherited from NSObject
 
 	static new(): NSCOfflineAudioContext; // inherited from NSObject
+
+	readonly length: number;
 
 	configure(channels: number, lengthInFrames: number, sampleRate: number): void;
 

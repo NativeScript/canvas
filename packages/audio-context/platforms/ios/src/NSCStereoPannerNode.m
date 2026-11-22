@@ -113,4 +113,9 @@
     _automationAnchorAudioTime = 0.0;
 }
 
+- (void)applyAutomation {
+    double v = [_panParam valueAtTime:[self currentTimeForApply]];
+    ((AVAudioMixerNode *)self.avNode).pan = (float)MAX(-1.0, MIN(1.0, v));
+}
+
 @end

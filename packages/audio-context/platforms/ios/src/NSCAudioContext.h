@@ -136,6 +136,8 @@ FOUNDATION_EXPORT void *NSCProducerTokenKey;
 
 @interface NSCOfflineAudioContext : NSCAudioContext
 
+@property (nonatomic, readonly) NSInteger length;
+
 - (instancetype)init;
 - (void)configure:(NSNumber *)channels :(NSNumber *)lengthInFrames :(NSNumber *)sampleRate;
 

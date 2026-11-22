@@ -1,4 +1,4 @@
-import { Utils } from '@nativescript/core';
+import { File, Utils, knownFolders } from '@nativescript/core';
 import {
 	AnalyserOptions,
 	AudioBufferCopyOptions,
@@ -41,6 +41,10 @@ import {
 	resolveNativePlayer,
 	throwInvalidMediaElement,
 } from './common';
+import { AUDIO_WORKLET_SCOPE } from './audio-worklet-scope';
+import { SHARED_RING_BRIDGE, createWorkletRing, workletRingLayout } from './audio-worklet-ring';
+import { AudioParamMap, AudioWorkletNodeOptions, AudioWorkletPort, WorkletHost, closeWithContext, domError, isWorkerSupported, loadWorkletModule, resolveWorkletNodeOptions } from './audio-worklet-host';
+export { AudioWorkletNodeOptions };
 
 type NativeBaseAudioContext = BaseAudioContext & { native: org.nativescript.audiocontext.AudioContextInstance };
 
@@ -741,6 +745,153 @@ export class OfflineAudioContext extends BaseAudioContext {
 	}
 }
 
+let workletScriptPath: string | null = null;
+
+function workletScript(): string {
+	if (!workletScriptPath) {
+		const file = knownFolders.temp().getFile('ns-audio-worklet-scope.js');
+		file.writeTextSync(SHARED_RING_BRIDGE + '\n' + AUDIO_WORKLET_SCOPE);
+		workletScriptPath = file.path;
+	}
+	return workletScriptPath;
+}
+
+function readWorkletModule(source: string): Promise<string> {
+	if (source.startsWith('data:')) {
+		const comma = source.indexOf(',');
+		const data = source.slice(comma + 1);
+		return Promise.resolve(/;base64$/i.test(source.slice(0, comma)) ? atob(data) : decodeURIComponent(data));
+	}
+	if (!File.exists(source)) return Promise.reject(new Error(`${source}: no such file`));
+	return File.fromPath(source).readText();
+}
+
+function workletPath(path: string): string {
+	if (path.startsWith('file://')) path = decodeURIComponent(path.slice('file://'.length));
+	return path.startsWith('~/') ? knownFolders.currentApp().path + path.slice(1) : path;
+}
+
+// Header word the native side marks: tells a shared ring from a copy.
+const RING_NATIVE_MARK = 5;
+const RING_CLOSED = 3;
+
+let nextWorkletNode = 1;
+// Connected nodes keep playing without a JS reference, as in browsers.
+const connectedWorkletNodes = new Set<AudioWorkletNode>();
+// The native voice reads the ring until the render thread drops it, a callback after stop().
+const stopWorkletNode = (held: { native: org.nativescript.audiocontext.WorkletSourceNode; ring: SharedArrayBuffer }) => {
+	held.native.stop();
+	setTimeout(() => held.ring.byteLength, 2000);
+};
+const workletNodeRegistry = typeof FinalizationRegistry === 'function' ? new FinalizationRegistry(stopWorkletNode) : null;
+
+export class AudioWorklet {
+	private [context_]: AudioContext;
+	private _host: WorkletHost | null = null;
+
+	constructor(a?: any, context?: AudioContext) {
+		if (a !== nativeCtor_ || !context) throw new TypeError('Illegal constructor.');
+		this[context_] = context;
+	}
+
+	/** @internal */
+	_scope(create: boolean): WorkletHost | null {
+		if (!this._host && create) {
+			const context = this[context_];
+			this._host = new WorkletHost(workletScript(), { scope: 0, sampleRate: context.sampleRate, addon: '' }, { android: { priority: 'audio' } });
+			closeWithContext?.register(context, this._host);
+		}
+		return this._host;
+	}
+
+	addModule(moduleURL: string | { href: string }, _options?: { credentials?: string }): Promise<void> {
+		let host: WorkletHost;
+		try {
+			if (this[context_].state === 'closed') throw domError('InvalidStateError', 'The AudioContext is closed');
+			host = this._scope(true);
+		} catch (e) {
+			return Promise.reject(e);
+		}
+		const url = typeof moduleURL === 'string' ? moduleURL : String(moduleURL?.href ?? moduleURL);
+		return loadWorkletModule(url, readWorkletModule, workletPath).then(({ source, url }) => host.addModule(source, url));
+	}
+}
+
+export class AudioWorkletNode extends AudioNode {
+	readonly port: AudioWorkletPort;
+	readonly parameters: AudioParamMap<AudioParam>;
+	[native_]: org.nativescript.audiocontext.WorkletSourceNode;
+	private _ring: SharedArrayBuffer;
+	private _onprocessorerror: ((event: any) => void) | null = null;
+
+	constructor(context: AudioContext, name: string, options: AudioWorkletNodeOptions = {}) {
+		const worklet = context?.audioWorklet;
+		const resolved = resolveWorkletNodeOptions(worklet?._scope(false), name, options);
+		const { host, descriptors, numberOfInputs, numberOfOutputs, outputChannelCount, parameterData } = resolved;
+		if (numberOfInputs > 0) throw domError('NotSupportedError', 'AudioWorkletNode: inputs are not supported on Android');
+		if (numberOfOutputs !== 1) throw domError('NotSupportedError', 'AudioWorkletNode: Android supports one output');
+		super(context);
+		const channels = Math.min(outputChannelCount?.[0] ?? 1, 8);
+		const layout = workletRingLayout(0, [channels], descriptors.length);
+		const ring = createWorkletRing(layout);
+		const offsets = (Array as any).create('int', 6);
+		[layout.slotWords, layout.header, layout.outputCounts, layout.outputData[0], layout.paramLengths, layout.paramData].forEach((value, i) => (offsets[i] = value));
+		const defaults = (Array as any).create('double', descriptors.length);
+		descriptors.forEach((d, i) => (defaults[i] = parameterData?.[d.name] ?? d.defaultValue));
+		const native = AudioContext.getInstance().createWorkletSource(context.native, ring as any, channels, offsets, defaults);
+		if (!native) throw domError('NotSupportedError', 'AudioWorkletNode: the audio engine is unavailable');
+		const header = new Uint32Array(ring, layout.header * 4, 8);
+		if (Atomics.load(header, RING_NATIVE_MARK) !== 0x574b4c54) {
+			native.stop();
+			throw domError('NotSupportedError', 'AudioWorkletNode: this runtime copies SharedArrayBuffers passed to native code');
+		}
+		this[native_] = native;
+		this._ring = ring;
+		this.parameters = new AudioParamMap(new Map(descriptors.map((d, i) => [d.name, new AudioParam(nativeCtor_, native.getParam(i))])));
+		const id = nextWorkletNode++;
+		this.port = new AudioWorkletPort(host, id);
+		workletNodeRegistry?.register(this, { native, ring }, this);
+		host.create(this, id, String(name), { ...options, numberOfInputs, numberOfOutputs, outputChannelCount: [channels], parameterData }, { buffer: ring, layout });
+	}
+
+	get native() {
+		return this[native_];
+	}
+
+	connect(node: any, output?: number, input?: number) {
+		connectedWorkletNodes.add(this);
+		return super.connect(node, output, input);
+	}
+
+	disconnect(...args: any[]) {
+		if (args.length === 0) connectedWorkletNodes.delete(this);
+		return (super.disconnect as any)(...args);
+	}
+
+	get onprocessorerror() {
+		return this._onprocessorerror;
+	}
+
+	set onprocessorerror(callback: ((event: any) => void) | null) {
+		if (this._onprocessorerror) this.removeEventListener('processorerror', this._onprocessorerror);
+		this._onprocessorerror = typeof callback === 'function' ? callback : null;
+		if (this._onprocessorerror) this.addEventListener('processorerror', this._onprocessorerror);
+	}
+
+	/** @internal */
+	_processorError(message: string) {
+		this.dispatchEvent({ type: 'processorerror', message, error: new Error(message), target: this } as any);
+	}
+
+	/** @internal */
+	_stop() {
+		workletNodeRegistry?.unregister(this);
+		connectedWorkletNodes.delete(this);
+		Atomics.store(new Uint32Array(this._ring, this._ring.byteLength - 32, 8), RING_CLOSED, 1);
+		stopWorkletNode({ native: this[native_], ring: this._ring });
+	}
+}
+
 let audioContextInstance: org.nativescript.audiocontext.AudioContext | null = null;
 
 export class AudioContext extends BaseAudioContext {
@@ -761,6 +912,13 @@ export class AudioContext extends BaseAudioContext {
 
 		this.destination = new AudioDestinationNode(this, this[native_].getDestination());
 		this._setState('running');
+	}
+
+	private _audioWorklet: AudioWorklet | null = null;
+
+	get audioWorklet(): AudioWorklet | undefined {
+		if (!this._audioWorklet && isWorkerSupported()) this._audioWorklet = new AudioWorklet(nativeCtor_, this);
+		return this._audioWorklet ?? undefined;
 	}
 
 	createMediaElementSource(mediaElement: MediaElementLike): MediaElementAudioSourceNode {
@@ -964,6 +1122,10 @@ export class AudioContext extends BaseAudioContext {
 
 	close(): Promise<void> {
 		if (this._state === 'closed') return Promise.resolve();
+		this._audioWorklet?._scope(false)?.close();
+		connectedWorkletNodes.forEach((node) => {
+			if (node.context === this) node._stop();
+		});
 		return new Promise((resolve, reject) => {
 			const ref = new WeakRef(this);
 			AudioContext.getInstance().closeAsync(

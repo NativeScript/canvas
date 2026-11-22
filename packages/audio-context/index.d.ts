@@ -222,12 +222,12 @@ export interface AudioWorkletNodeOptions {
 	channelInterpretation?: string;
 }
 
-/** Windows and Linux. */
+/** Windows, Linux and Android. */
 export declare class AudioWorklet {
 	addModule(moduleURL: string | URL, options?: { credentials?: string }): Promise<void>;
 }
 
-/** Windows and Linux. */
+/** Windows, Linux and Android (a source there: no inputs, one output). */
 export declare class AudioWorkletNode extends AudioNode {
 	constructor(context: BaseAudioContext, name: string, options?: AudioWorkletNodeOptions);
 	readonly port: MessagePort;
@@ -239,7 +239,7 @@ export declare class AudioContext extends BaseAudioContext {
 	constructor(options?: AudioContextOptions);
 
 	readonly destination: AudioDestinationNode;
-	/** Undefined where processors can't run (iOS, Android, runtimes without Worker). */
+	/** Undefined where the runtime has no Worker. */
 	readonly audioWorklet: AudioWorklet | undefined;
 
 	createGain(options?: { gain?: number }): GainNode;

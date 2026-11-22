@@ -2928,6 +2928,22 @@ public class AudioContext {
 
 	private native String nativeCreateExternalPcmSource(int sampleRate, int channels);
 
+	private native String nativeCreateWorkletSource(java.nio.ByteBuffer ring, int channels, int slotWords, int header, int outputCounts, int outputData, int paramLengths, int paramData, String[] paramIds);
+
+	@Nullable
+	String createWorkletSource(String contextId, java.nio.ByteBuffer ring, int channels, int[] layout, String[] paramIds) {
+		if (!nativeAvailable || ring == null || !ring.isDirect() || layout == null || layout.length < 6) return null;
+		// Param automation times are the context's.
+		for (String paramId : paramIds) registerGainForContext(contextId, paramId);
+		return nativeCreateWorkletSource(ring, channels, layout[0], layout[1], layout[2], layout[3], layout[4], layout[5], paramIds);
+	}
+
+	/** An AudioWorkletNode's source over `ring` (a SharedArrayBuffer); layout: slotWords, header, outputCounts, outputData, paramLengths, paramData. */
+	@Nullable
+	public WorkletSourceNode createWorkletSource(AudioContextInstance context, java.nio.ByteBuffer ring, int channels, int[] layout, double[] paramDefaults) {
+		return WorkletSourceNode.create(context, ring, channels, layout, paramDefaults);
+	}
+
 	private native void nativeConfigureExternalPcmSource(String trackId, int sampleRate, int channels);
 
 	private native void nativePushPcmFramesFloatArray(String trackId, float[] data, int frames);

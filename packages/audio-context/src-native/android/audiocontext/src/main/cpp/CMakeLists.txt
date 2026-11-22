@@ -26,6 +26,7 @@ add_library(native-audio SHARED
     audio_render.cpp
     audio_offline.cpp
     audio_jni.cpp
+    audio_worklet.cpp
     hrtf_convolver.cpp)
 
 # Include small bundled kissfft implementation

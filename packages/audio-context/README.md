@@ -176,7 +176,10 @@ on the app's JS thread.
 - An input or a channel-following output carries at most 8 channels; unconnected inputs are one
   silent channel rather than empty.
 - `audioWorklet` is `undefined` where the runtime has no `Worker` (the QuickJS, Hermes and JSC
-  builds) and on iOS and Android.
+  builds).
+- On Android an `AudioWorkletNode` is a source: no inputs, one output of up to 8 channels, and no
+  `OfflineAudioContext` worklet. Its ring is a `SharedArrayBuffer` the Worker polls every 2 ms, so
+  output plays up to a device buffer plus 2 ms late.
 
 ## Linux
 

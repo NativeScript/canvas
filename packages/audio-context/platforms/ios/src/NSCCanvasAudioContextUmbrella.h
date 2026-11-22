@@ -6,6 +6,7 @@
 #import "NSCAudioBufferSourceNode.h"
 #import "NSCAudioPannerNode.h"
 #import "NSCGainNode.h"
+#import "NSCAudioWorkletNode.h"
 #import "NSCBiquadNode.h"
 #import "NSCStereoPannerNode.h"
 #import "NSCDelayNode.h"

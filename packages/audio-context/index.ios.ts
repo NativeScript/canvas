@@ -38,6 +38,11 @@ import {
 	resolveNativePlayer,
 	throwInvalidMediaElement,
 } from './common';
+import { File, knownFolders } from '@nativescript/core';
+import { AUDIO_WORKLET_SCOPE } from './audio-worklet-scope';
+import { SHARED_RING_BRIDGE, createWorkletRing, workletRingLayout } from './audio-worklet-ring';
+import { AudioParamMap, AudioWorkletNodeOptions, AudioWorkletPort, WorkletHost, closeWithContext, domError, isWorkerSupported, loadWorkletModule, resolveWorkletNodeOptions } from './audio-worklet-host';
+export { AudioWorkletNodeOptions };
 
 type NativeBaseAudioContext = BaseAudioContext & { native: NSCAudioContext };
 
@@ -959,12 +964,146 @@ export class MediaElementAudioSourceNode extends AudioNode {
 	}
 }
 
+let workletScriptPath: string | null = null;
+
+function workletScript(): string {
+	if (!workletScriptPath) {
+		const file = knownFolders.temp().getFile('ns-audio-worklet-scope.js');
+		file.writeTextSync(SHARED_RING_BRIDGE + '\n' + AUDIO_WORKLET_SCOPE);
+		workletScriptPath = file.path;
+	}
+	return workletScriptPath;
+}
+
+function readWorkletModule(source: string): Promise<string> {
+	if (source.startsWith('data:')) {
+		const comma = source.indexOf(',');
+		const data = source.slice(comma + 1);
+		return Promise.resolve(/;base64$/i.test(source.slice(0, comma)) ? atob(data) : decodeURIComponent(data));
+	}
+	if (!File.exists(source)) return Promise.reject(new Error(`${source}: no such file`));
+	return File.fromPath(source).readText();
+}
+
+function workletPath(path: string): string {
+	return path.startsWith('~/') ? knownFolders.currentApp().path + path.slice(1) : path;
+}
+
+let nextWorkletNode = 1;
+// Connected nodes keep playing without a JS reference, as in browsers.
+const connectedWorkletNodes = new Set<AudioWorkletNode>();
+
+export class AudioWorklet {
+	private [context_]: AudioContext;
+	private _host: WorkletHost | null = null;
+
+	constructor(a?: any, context?: AudioContext) {
+		if (a !== nativeCtor_ || !context) throw new TypeError('Illegal constructor.');
+		this[context_] = context;
+	}
+
+	/** @internal */
+	_scope(create: boolean): WorkletHost | null {
+		if (!this._host && create) {
+			const context = this[context_];
+			this._host = new WorkletHost(workletScript(), { scope: 0, sampleRate: context.sampleRate, addon: '' });
+			closeWithContext?.register(context, this._host);
+		}
+		return this._host;
+	}
+
+	addModule(moduleURL: string | { href: string }, _options?: { credentials?: string }): Promise<void> {
+		let host: WorkletHost;
+		try {
+			if (this[context_].state === 'closed') throw domError('InvalidStateError', 'The AudioContext is closed');
+			host = this._scope(true);
+		} catch (e) {
+			return Promise.reject(e);
+		}
+		const url = typeof moduleURL === 'string' ? moduleURL : String(moduleURL?.href ?? moduleURL);
+		return loadWorkletModule(url, readWorkletModule, workletPath).then(({ source, url }) => host.addModule(source, url));
+	}
+}
+
+export class AudioWorkletNode extends AudioNode {
+	readonly port: AudioWorkletPort;
+	readonly parameters: AudioParamMap<AudioParam>;
+	private _native: NSCAudioWorkletNode;
+	private _ring: SharedArrayBuffer;
+	private _onprocessorerror: ((event: any) => void) | null = null;
+
+	constructor(context: AudioContext, name: string, options: AudioWorkletNodeOptions = {}) {
+		const worklet = context?.audioWorklet;
+		const resolved = resolveWorkletNodeOptions(worklet?._scope(false), name, options);
+		const { host, descriptors, numberOfInputs, numberOfOutputs, outputChannelCount, parameterData } = resolved;
+		if (numberOfInputs > 0) throw domError('NotSupportedError', 'AudioWorkletNode: inputs are not supported on iOS');
+		super(context);
+		const layout = workletRingLayout(0, outputChannelCount, descriptors.length);
+		const ring = createWorkletRing(layout);
+		const defaults = descriptors.map((d) => parameterData?.[d.name] ?? d.defaultValue);
+		this._ring = ring;
+		this._native = NSCAudioWorkletNode.alloc().initWithContextRingChannelsSlotWordsHeaderOutputCountsOutputDataParamLengthsParamDataParamDefaults(
+			context.native,
+			ring as any,
+			outputChannelCount[0] ?? 1,
+			layout.slotWords,
+			layout.header,
+			layout.outputCounts,
+			layout.outputData[0] ?? layout.paramData,
+			layout.paramLengths,
+			layout.paramData,
+			defaults,
+		);
+		const params = this._native.params;
+		this.parameters = new AudioParamMap(new Map(descriptors.map((d, i) => [d.name, new AudioParam(nativeCtor_, params.objectAtIndex(i))])));
+		const id = nextWorkletNode++;
+		this.port = new AudioWorkletPort(host, id);
+		host.create(this, id, String(name), { ...options, numberOfInputs, numberOfOutputs, outputChannelCount, parameterData }, { buffer: ring, layout });
+	}
+
+	get native() {
+		return this._native;
+	}
+
+	connect(node: any, output?: number, input?: number) {
+		connectedWorkletNodes.add(this);
+		return super.connect(node, output, input);
+	}
+
+	disconnect(...args: any[]) {
+		if (args.length === 0) connectedWorkletNodes.delete(this);
+		return (super.disconnect as any)(...args);
+	}
+
+	get onprocessorerror() {
+		return this._onprocessorerror;
+	}
+
+	set onprocessorerror(callback: ((event: any) => void) | null) {
+		if (this._onprocessorerror) this.removeEventListener('processorerror', this._onprocessorerror);
+		this._onprocessorerror = typeof callback === 'function' ? callback : null;
+		if (this._onprocessorerror) this.addEventListener('processorerror', this._onprocessorerror);
+	}
+
+	/** @internal */
+	_processorError(message: string) {
+		this.dispatchEvent({ type: 'processorerror', message, error: new Error(message), target: this } as any);
+	}
+}
+
 export class AudioContext extends BaseAudioContext {
 	private [native_]: NSCAudioContext;
 
 	private _destination: AudioDestinationNode | null = null;
 
 	private _listener: AudioListener | null = null;
+
+	private _audioWorklet: AudioWorklet | null = null;
+
+	get audioWorklet(): AudioWorklet | undefined {
+		if (!this._audioWorklet && isWorkerSupported()) this._audioWorklet = new AudioWorklet(nativeCtor_, this);
+		return this._audioWorklet ?? undefined;
+	}
 
 	constructor(options?: AudioContextOptions) {
 		super();
@@ -1120,6 +1259,10 @@ export class AudioContext extends BaseAudioContext {
 
 	close(): Promise<void> {
 		if (this._state === 'closed') return Promise.resolve();
+		this._audioWorklet?._scope(false)?.close();
+		connectedWorkletNodes.forEach((node) => {
+			if (node.context === this) connectedWorkletNodes.delete(node);
+		});
 		const native = this.native;
 		return new Promise((resolve) => {
 			const finish = () => {

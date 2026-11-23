@@ -10,6 +10,7 @@ mod buffer;
 mod context;
 mod node;
 mod param;
+mod suspend;
 mod tap;
 mod worklet;
 

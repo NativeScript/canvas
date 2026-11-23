@@ -113,6 +113,19 @@ const rendered = await off.startRendering();
 console.log(rendered.length, rendered.sampleRate, rendered.numberOfChannels);
 ```
 
+`suspend(time)` holds rendering at `time`, rounded up to a 128-frame quantum, and resolves once it
+is held there; changes made before `resume()` apply from that frame. Suspends can be scheduled
+before `startRendering()` or while held. iOS, Windows and Linux; not Android yet. On iOS,
+connecting a node once rendering has started clears effect state (delay lines, filter memory,
+reverb tails).
+
+```ts
+off.suspend(0.5).then(() => {
+  osc.frequency.setValueAtTime(880, off.currentTime);
+  off.resume();
+});
+```
+
 ## Supported API Surface
 
 Main contexts:
@@ -175,8 +188,9 @@ on the app's JS thread.
   sample-exact.
 - On iOS an `AudioWorkletNode` is a source: no inputs, one output of up to 8 channels. In an
   `OfflineAudioContext` rendering waits for the Worker each quantum, so it is sample-exact too.
-- An input or a channel-following output carries at most 8 channels; unconnected inputs are one
-  silent channel rather than empty.
+- An input or a channel-following output carries at most 8 channels.
+- An input with nothing playing into it is empty, as in browsers. A source that has stopped
+  still feeds silent channels until it is garbage collected.
 - `audioWorklet` is `undefined` where the runtime has no `Worker` (the QuickJS, Hermes and JSC
   builds).
 - On Android an `AudioWorkletNode` is a source: no inputs, one output of up to 8 channels, and no

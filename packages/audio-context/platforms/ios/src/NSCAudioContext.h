@@ -146,6 +146,24 @@ FOUNDATION_EXPORT void *NSCProducerTokenKey;
 - (nullable NSCAudioBufferSourceNode *)createBufferSourceNodeOffline:(nullable NSCAudioBuffer *)buffer;
 - (void)startRenderingAsync:(void (^)(NSCAudioBuffer * _Nullable))completion;
 
+/// Runs with the frame rendering holds at, before that quantum renders.
+@property (nonatomic, copy, nullable) void (^onSuspend)(NSInteger frame);
+/// Schedules a hold at `time` rounded up to a quantum. Returns the frame, or a negative
+/// NSCOfflineSuspendError.
+- (NSInteger)scheduleSuspend:(double)time;
+/// Continues a render held at a suspend.
+- (void)resumeRendering;
+/// Before a connect: an initialized mixer would keep a new input at its default format.
+- (void)willConnect;
+
 @end
+
+typedef NS_ENUM(NSInteger, NSCOfflineSuspendError) {
+    NSCOfflineSuspendErrorInvalidTime = -1,
+    NSCOfflineSuspendErrorFinished = -2,
+    NSCOfflineSuspendErrorPastEnd = -3,
+    NSCOfflineSuspendErrorNotAfterCurrent = -4,
+    NSCOfflineSuspendErrorDuplicate = -5,
+};
 
 NS_ASSUME_NONNULL_END

@@ -939,6 +939,12 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
         if (completion) completion(NO);
         return NO;
     }
+    // An offline engine runs only while it renders.
+    if (engine.isInManualRenderingMode) {
+        BOOL running = engine.isRunning;
+        if (completion) dispatch_async(dispatch_get_main_queue(), ^{ completion(running); });
+        return running;
+    }
     __block NSError *err = nil;
     __block BOOL ok = NO;
     @try {
@@ -1092,6 +1098,9 @@ static const CFTimeInterval NSCOfflineWorkletStallSeconds = 5.0;
     AVAudioPCMBuffer *_chunk;
     CFAbsoluteTime _lastProgress;
     void (^_completion)(NSCAudioBuffer * _Nullable);
+    NSMutableIndexSet *_suspends;
+    BOOL _paused;
+    BOOL _finished;
 }
 
 - (instancetype)init {
@@ -1119,6 +1128,39 @@ static const CFTimeInterval NSCOfflineWorkletStallSeconds = 5.0;
 }
 
 - (NSInteger)length { return _length; }
+
+- (NSInteger)scheduleSuspend:(double)time {
+    double rate = self.sampleRate;
+    if (!isfinite(time) || time < 0.0 || rate <= 0.0) return NSCOfflineSuspendErrorInvalidTime;
+    if (_finished) return NSCOfflineSuspendErrorFinished;
+    // The epsilon keeps an exact boundary from rounding up a quantum.
+    NSUInteger frame = (NSUInteger)MAX(0.0, ceil(time * rate / NSCOfflineQuantum - 1e-9)) * NSCOfflineQuantum;
+    if (frame >= _length) return NSCOfflineSuspendErrorPastEnd;
+    NSUInteger current = _started ? _rendered.frameLength : 0;
+    if (frame < current || (_started && frame <= current)) return NSCOfflineSuspendErrorNotAfterCurrent;
+    if (!_suspends) _suspends = [NSMutableIndexSet indexSet];
+    if ([_suspends containsIndex:frame]) return NSCOfflineSuspendErrorDuplicate;
+    [_suspends addIndex:frame];
+    return (NSInteger)frame;
+}
+
+// An initialized mixer keeps a new input at its default format (44.1 kHz stereo: resampled,
+// +3 dB), so a render stops the engine before a connect and restarts it for the next quantum.
+// Stopping keeps the sample time but clears effect state (delay lines, filters, reverb tails).
+- (void)willConnect {
+    // A paused engine is still initialized.
+    if (_started && !_finished) {
+        @try { [self.engine stop]; } @catch (NSException *e) {}
+    }
+}
+
+- (void)resumeRendering {
+    if (!_paused || _finished) return;
+    _paused = NO;
+    // Time spent held is not a worklet stall.
+    _lastProgress = CFAbsoluteTimeGetCurrent();
+    dispatch_async(dispatch_get_main_queue(), ^{ [self renderSlice]; });
+}
 
 - (double)currentTime {
     AVAudioEngine *engine = self.engine;
@@ -1170,13 +1212,30 @@ static const CFTimeInterval NSCOfflineWorkletStallSeconds = 5.0;
 
 // Renders on the main thread, where nodes apply automation, a quantum at a time.
 - (void)renderSlice {
+    if (_paused || !_rendered) return;
     AVAudioEngine *engine = self.engine;
+    NSError *startErr = nil;
+    if (!engine.isRunning && ![engine startAndReturnError:&startErr]) {
+        NSCLogError(@"NSCOfflineAudioContext: could not restart rendering: %@", startErr);
+        [self finishRendering:NO];
+        return;
+    }
     CFAbsoluteTime deadline = CFAbsoluteTimeGetCurrent() + NSCOfflineSliceSeconds;
     while (_rendered.frameLength < _length) {
+        if ([_suspends containsIndex:_rendered.frameLength]) {
+            [_suspends removeIndex:_rendered.frameLength];
+            _paused = YES;
+            @try { [engine pause]; } @catch (NSException *e) {}
+            if (self.onSuspend) self.onSuspend((NSInteger)_rendered.frameLength);
+            return;
+        }
         NSArray<NSCAudioNode *> *nodes = [self allNodeWrappers];
+        // Worklets don't run past a suspend, where the graph may change.
+        NSUInteger next = [_suspends indexGreaterThanIndex:_rendered.frameLength];
+        uint64_t limit = next == NSNotFound ? UINT64_MAX : next;
         BOOL ready = YES;
         for (NSCAudioNode *node in nodes) {
-            if ([node isKindOfClass:[NSCAudioWorkletNode class]] && ![(NSCAudioWorkletNode *)node prepareOfflineQuantum]) ready = NO;
+            if ([node isKindOfClass:[NSCAudioWorkletNode class]] && ![(NSCAudioWorkletNode *)node prepareOfflineQuantumBefore:limit]) ready = NO;
         }
         if (!ready) {
             if (CFAbsoluteTimeGetCurrent() - _lastProgress < NSCOfflineWorkletStallSeconds) {
@@ -1222,6 +1281,9 @@ static const CFTimeInterval NSCOfflineWorkletStallSeconds = 5.0;
 }
 
 - (void)finishRendering:(BOOL)ok {
+    _finished = YES;
+    _paused = NO;
+    [_suspends removeAllIndexes];
     @try { [self.engine stop]; } @catch (NSException *e) {}
     NSCAudioBuffer *buffer = nil;
     if (ok && _rendered) {

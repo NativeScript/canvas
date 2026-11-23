@@ -192,11 +192,11 @@ static void PullResponse(WorkletRender *r) {
 }
 
 // Called on the thread that renders, between quanta.
-- (BOOL)prepareOfflineQuantum {
+- (BOOL)prepareOfflineQuantumBefore:(uint64_t)limit {
     WorkletRender *r = _render;
     if (!r || !r->offline || r->finished) return YES;
     if (atomic_load_explicit(&r->header[CLOSED], memory_order_acquire)) return YES;
-    while (PushRequest(r, _params, r->requestFrame, r->requestFrame / _sampleRate, _sampleRate)) r->requestFrame += QUANTUM;
+    while (r->requestFrame < limit && PushRequest(r, _params, r->requestFrame, r->requestFrame / _sampleRate, _sampleRate)) r->requestFrame += QUANTUM;
     return atomic_load_explicit(&r->header[DONE], memory_order_acquire) != atomic_load_explicit(&r->header[READ], memory_order_relaxed);
 }
 

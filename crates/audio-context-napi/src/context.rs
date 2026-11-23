@@ -20,6 +20,7 @@ use crate::buffer::{AudioBuffer, PeriodicWave};
 use crate::node::{AudioNode, Kind, WorkletNode};
 use crate::worklet::{self, AudioWorkletScope, JsProcessor, Layout, ProcessorOptions, Ring, Scope};
 use crate::param::AudioParam;
+use crate::suspend::{SuspendProcessor, Suspends};
 use crate::{error, guard};
 
 #[napi(object)]
@@ -57,11 +58,20 @@ pub struct WorkletNodeOptions {
 
 enum Backing {
   Online(Arc<web_audio_api::context::AudioContext>),
+  Offline(Box<Offline>),
+}
+
+struct Offline {
   /// Taken by `startRendering`.
-  Offline(Mutex<Option<OfflineAudioContext>>, usize),
+  context: Mutex<Option<OfflineAudioContext>>,
+  length: usize,
+  suspends: Arc<Suspends>,
+  /// Holds the render thread at suspends.
+  _holder: AudioWorkletNode,
 }
 
 type StateChangeCallback<'a> = Function<'a, (), UnknownReturnValue>;
+type SuspendCallback<'a> = Function<'a, f64, UnknownReturnValue>;
 
 /// An `AudioContext` or an `OfflineAudioContext`. Nodes are made on the shared base, so both
 /// kinds build graphs the same way.
@@ -76,6 +86,13 @@ impl AudioContext {
     match &self.backing {
       Backing::Online(context) => Ok(context),
       Backing::Offline(..) => Err(error("InvalidStateError: not supported by an OfflineAudioContext")),
+    }
+  }
+
+  fn suspends(&self) -> Result<&Arc<Suspends>> {
+    match &self.backing {
+      Backing::Offline(offline) => Ok(&offline.suspends),
+      Backing::Online(_) => Err(error("InvalidStateError: only an OfflineAudioContext suspends at a time")),
     }
   }
 
@@ -116,9 +133,28 @@ impl AudioContext {
   #[napi(factory)]
   pub fn offline(number_of_channels: u32, length: u32, sample_rate: f64) -> Result<Self> {
     let context = guard(|| OfflineAudioContext::new(number_of_channels as usize, length as usize, sample_rate as f32))?;
+    let suspends = Suspends::new(length as u64, context.sample_rate() as f64);
+    let holder = guard(|| {
+      AudioWorkletNode::new::<SuspendProcessor>(
+        &context,
+        AudioWorkletNodeOptions {
+          number_of_inputs: 0,
+          number_of_outputs: 1,
+          output_channel_count: vec![1],
+          parameter_data: HashMap::new(),
+          processor_options: suspends.clone(),
+          audio_node_options: AudioNodeOptions::default(),
+        },
+      )
+    })?;
     Ok(Self {
       base: context.base().clone(),
-      backing: Backing::Offline(Mutex::new(Some(context)), length as usize),
+      backing: Backing::Offline(Box::new(Offline {
+        context: Mutex::new(Some(context)),
+        length: length as usize,
+        suspends,
+        _holder: holder,
+      })),
     })
   }
 
@@ -160,7 +196,7 @@ impl AudioContext {
   #[napi(getter)]
   pub fn length(&self) -> u32 {
     match &self.backing {
-      Backing::Offline(_, length) => *length as u32,
+      Backing::Offline(offline) => offline.length as u32,
       Backing::Online(_) => 0,
     }
   }
@@ -207,14 +243,48 @@ impl AudioContext {
   /// Renders the graph once, off the JS thread.
   #[napi(ts_return_type = "Promise<AudioBuffer>")]
   pub fn start_rendering(&self) -> Result<AsyncTask<RenderTask>> {
-    let Backing::Offline(context, _) = &self.backing else {
+    let Backing::Offline(offline) = &self.backing else {
       return Err(error("InvalidStateError: only an OfflineAudioContext renders"));
     };
-    let context = context.lock().ok().and_then(|mut context| context.take());
+    let suspends = &offline.suspends;
+    let context = offline.context.lock().ok().and_then(|mut context| context.take());
     match context {
-      Some(context) => Ok(AsyncTask::new(RenderTask { context: Some(context) })),
+      Some(context) => {
+        suspends.start();
+        Ok(AsyncTask::new(RenderTask { context: Some(context), suspends: suspends.clone() }))
+      }
       None => Err(error("InvalidStateError: startRendering can only be called once")),
     }
+  }
+
+  /// Offline: schedules a suspend at `time`, rounded up to a quantum; returns its frame.
+  #[napi]
+  pub fn suspend_at(&self, time: f64) -> Result<f64> {
+    let suspends = self.suspends()?;
+    let current = (self.base.current_time() * self.base.sample_rate() as f64).round() as u64;
+    suspends.schedule(time, current).map(|frame| frame as f64).map_err(error)
+  }
+
+  /// Offline: continues a render held at a suspend.
+  #[napi]
+  pub fn resume_rendering(&self) -> Result<()> {
+    self.suspends()?.resume().map_err(error)
+  }
+
+  /// Offline: `callback` runs on the JS thread with the frame each suspend holds at.
+  #[napi(ts_args_type = "callback: ((frame: number) => void) | null")]
+  pub fn set_onsuspend(&self, callback: Option<SuspendCallback>) -> Result<()> {
+    let suspends = self.suspends()?;
+    match callback {
+      Some(callback) => {
+        let tsfn = callback.build_threadsafe_function::<f64>().weak::<true>().build_callback(|ctx| Ok(ctx.value))?;
+        suspends.set_notify(Some(Box::new(move |frame| {
+          tsfn.call(frame as f64, ThreadsafeFunctionCallMode::NonBlocking);
+        })));
+      }
+      None => suspends.set_notify(None),
+    }
+    Ok(())
   }
 
   /// Decodes a complete encoded file (wav, mp3, ogg/vorbis, flac, aac, ...) to the context's
@@ -467,6 +537,7 @@ impl Task for StateTask {
 
 pub struct RenderTask {
   context: Option<OfflineAudioContext>,
+  suspends: Arc<Suspends>,
 }
 
 impl Task for RenderTask {
@@ -475,7 +546,10 @@ impl Task for RenderTask {
 
   fn compute(&mut self) -> Result<Self::Output> {
     let mut context = self.context.take().ok_or_else(|| error("InvalidStateError: already rendered"))?;
-    guard(|| context.start_rendering_sync())
+    self.suspends.reach(0);
+    let rendered = guard(|| context.start_rendering_sync());
+    self.suspends.finish();
+    rendered
   }
 
   fn resolve(&mut self, _: Env, buffer: Self::Output) -> Result<AudioBuffer> {
@@ -519,5 +593,14 @@ impl Task for DecodeTask {
 
   fn resolve(&mut self, _: Env, buffer: Self::Output) -> Result<AudioBuffer> {
     Ok(AudioBuffer { inner: buffer })
+  }
+}
+
+impl Drop for AudioContext {
+  /// A render held at a suspend would otherwise wait forever.
+  fn drop(&mut self) {
+    if let Backing::Offline(offline) = &self.backing {
+      offline.suspends.finish();
+    }
   }
 }

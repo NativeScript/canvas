@@ -123,6 +123,14 @@ class Once extends AudioWorkletProcessor {
 	}
 }
 registerProcessor('once', Once);
+
+class Counter extends AudioWorkletProcessor {
+	process(inputs, outputs) {
+		outputs[0][0].fill(inputs[0].length);
+		return true;
+	}
+}
+registerProcessor('counter', Counter);
 `;
 
 test('runs a processor with params, options and a port, sample-exact offline', async () => {
@@ -183,6 +191,29 @@ test('processes inputs', async () => {
 			samples.every((v) => v === 0.5),
 			`${samples[0]} ${samples[511]}`,
 		);
+	} finally {
+		await scope.close();
+	}
+});
+
+test('an input with nothing playing into it is empty', async () => {
+	const context = Audio.AudioContext.offline(2, 128 * 3, 48000);
+	const scope = new Scope(context);
+	try {
+		await scope.addModule(processors);
+		const merger = context.createChannelMerger(2);
+		merger.connect(context.destination());
+		const fed = scope.node('counter', { outputChannelCount: [1] });
+		fed.connect(merger, 0, 0);
+		const unconnected = scope.node('counter', { outputChannelCount: [1] });
+		unconnected.connect(merger, 0, 1);
+		const source = context.createConstantSource();
+		source.connect(fed);
+		source.start(128 / 48000);
+		const rendered = await context.startRendering();
+		const [left, right] = [rendered.channelData(0), rendered.channelData(1)];
+		assert.deepEqual([0, 1, 2].map((q) => left[q * 128]), [0, 1, 1], 'empty until the source starts');
+		assert.ok(right.every((v) => v === 0), 'empty with nothing connected');
 	} finally {
 		await scope.close();
 	}

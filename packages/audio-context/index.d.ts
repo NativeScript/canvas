@@ -306,6 +306,11 @@ export declare class OfflineAudioContext extends BaseAudioContext {
 	decodeAudioData(source: string | ArrayBuffer | ArrayBufferView, successCallback?: (buffer: AudioBuffer) => void, errorCallback?: (error: Error) => void): Promise<AudioBuffer>;
 
 	startRendering(): Promise<AudioBuffer>;
+	/** Holds rendering at `suspendTime`, rounded up to a 128-frame quantum; resolves once held there. */
+	suspend(suspendTime: number): Promise<void>;
+	/** Continues a render held at a suspend. Rejects before `startRendering`. */
+	resume(): Promise<void>;
+	readonly length: number;
 }
 
 export class AudioListener {

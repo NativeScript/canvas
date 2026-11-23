@@ -55,6 +55,9 @@
   NSCAudioContext *ctx = self.context ?: source.context;
   BOOL sourceIsPlayer = [sourceNode isKindOfClass:[AVAudioPlayerNode class]];
   __block BOOL connectOk = NO;
+  if ([ctx isKindOfClass:[NSCOfflineAudioContext class]]) {
+    [(NSCOfflineAudioContext *)ctx willConnect];
+  }
   NSCLogDebug(
       @"NSCAudioNode: connecting source=%@(avNode=%@) -> dest=%@(avNode=%@) "
       @"fromBus=%d toBus=%d",

@@ -1231,7 +1231,7 @@ static const CFTimeInterval NSCOfflineWorkletStallSeconds = 5.0;
         }
         NSArray<NSCAudioNode *> *nodes = [self allNodeWrappers];
         // Worklets don't run past a suspend, where the graph may change.
-        NSUInteger next = [_suspends indexGreaterThanIndex:_rendered.frameLength];
+        NSUInteger next = _suspends ? [_suspends indexGreaterThanIndex:_rendered.frameLength] : NSNotFound;
         uint64_t limit = next == NSNotFound ? UINT64_MAX : next;
         BOOL ready = YES;
         for (NSCAudioNode *node in nodes) {

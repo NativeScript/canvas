@@ -1,4 +1,4 @@
-import { OfflineAudioContext } from '@nativescript/audio-context';
+import { AudioWorkletNode, OfflineAudioContext } from '@nativescript/audio-context';
 import { isAndroid } from '@nativescript/core';
 import { suite, test, skip, equal, closeTo, rejects } from './harness';
 
@@ -6,6 +6,19 @@ import { suite, test, skip, equal, closeTo, rejects } from './harness';
 
 const RATE = 48000;
 const Q = 128;
+
+const LEVEL = 'data:text/javascript,' + encodeURIComponent(`
+class Level extends AudioWorkletProcessor {
+	static get parameterDescriptors() {
+		return [{ name: 'level', defaultValue: 0.25, automationRate: 'k-rate' }];
+	}
+	process(inputs, outputs, parameters) {
+		outputs[0][0].fill(parameters.level[0]);
+		return true;
+	}
+}
+registerProcessor('level', Level);
+`);
 
 export function registerAudioOfflineSuspendSpec() {
 	suite('audio.offline.suspend', () => {
@@ -62,6 +75,22 @@ export function registerAudioOfflineSuspendSpec() {
 			equal(samples.findIndex((v) => v !== 0), Q * 4, 'the source added while held starts at the suspend');
 			equal(samples[Q * 10 + 4], 0.5, 'only that source before the scheduled frame');
 			equal(samples[Q * 10 + 5], 1.5, 'the source scheduled before rendering joins on its frame');
+		});
+
+		test('a worklet sees a param set while held from the suspend frame', async () => {
+			if (typeof (globalThis as any).Worker !== 'function') return;
+			const context = new OfflineAudioContext(1, Q * 16, RATE);
+			await context.audioWorklet.addModule(LEVEL);
+			const node = new AudioWorkletNode(context, 'level', { numberOfInputs: 0, outputChannelCount: [1] });
+			node.connect(context.destination);
+			context.suspend((Q * 6) / RATE).then(() => {
+				node.parameters.get('level').setValueAtTime(0.75, context.currentTime);
+				context.resume();
+			});
+			const samples = (await context.startRendering()).getChannelData(0);
+			equal(samples[0], 0.25, 'the default level from the first frame');
+			equal(samples[Q * 6 - 1], 0.25, 'the default level before the suspend');
+			equal(samples[Q * 6], 0.75, 'the new level from the suspend frame');
 		});
 
 		test('suspends at 0 and rounds up to a quantum', async () => {

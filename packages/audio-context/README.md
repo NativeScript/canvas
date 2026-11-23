@@ -186,6 +186,8 @@ on the app's JS thread.
 - A realtime node's output plays about one device buffer late (a few ms at the `interactive`
   latency hint); its params and inputs reach `process()` that much early. Offline rendering is
   sample-exact.
+- On iOS the Worker needs `@nativescript/ios` 9.1 or later; earlier runtimes give Workers no
+  timers, so `addModule` rejects.
 - On iOS an `AudioWorkletNode` is a source: no inputs, one output of up to 8 channels. In an
   `OfflineAudioContext` rendering waits for the Worker each quantum, so it is sample-exact too.
 - An input or a channel-following output carries at most 8 channels.

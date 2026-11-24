@@ -12,7 +12,7 @@ public class DelayNode implements NativeObject, AudioNode {
     }
 
     DelayNode(AudioContextInstance context) {
-        this(AudioContext.getInstance().createDelay(context.getId()));
+        this(AudioContext.getInstance().createDelay(context.getId(), 1.0));
     }
 
     @Override

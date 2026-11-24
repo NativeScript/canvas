@@ -272,92 +272,6 @@ public class AudioContext {
 		return id;
 	}
 
-	public void renderOfflineAsync(final String[] trackIds, final int frames, final int sampleRate, final int channels, final DecodeCallback cb) {
-		final Looper callerLooper = captureCallerLooper();
-		decodeExecutor.submit(() -> {
-			AudioBuffer id;
-			if (nativeAvailable) {
-				try {
-					String nid = nativeRenderOffline(trackIds, frames, sampleRate, channels);
-					id = makeAudioBufferFromId(nid);
-				} catch (Throwable t) {
-					id = null;
-				}
-			} else {
-				try {
-					if (trackIds == null || trackIds.length == 0) {
-						id = null;
-					} else {
-						int outSampleRate = sampleRate > 0 ? sampleRate : 48000;
-						int outChannels = channels > 0 ? channels : 1;
-						float[] out = new float[frames * outChannels];
-						for (String tid : trackIds) {
-							if (tid == null) continue;
-							java.nio.ByteBuffer src = directBuffers.get(tid);
-							if (src == null) src = directBuffers.get(tid + "::buffer");
-							if (src == null) continue;
-							int srcChannels = 1;
-							if (bufferChannels.containsKey(tid)) srcChannels = bufferChannels.get(tid);
-							else if (bufferChannels.containsKey(tid + "::buffer"))
-								srcChannels = bufferChannels.get(tid + "::buffer");
-							int srcSampleRate = 48000;
-							if (sampleRates.containsKey(tid)) srcSampleRate = sampleRates.get(tid);
-							else if (sampleRates.containsKey(tid + "::buffer"))
-								srcSampleRate = sampleRates.get(tid + "::buffer");
-							int byteLen = src.capacity();
-							int bytesPerSample = (byteLen % 4 == 0) ? 4 : 2;
-							int srcFrames = (byteLen / bytesPerSample) / Math.max(1, srcChannels);
-							java.nio.ByteBuffer dup = src.duplicate().order(ByteOrder.LITTLE_ENDIAN);
-							double increment = ((double) srcSampleRate) / ((double) outSampleRate);
-							double pos = 0.0;
-							for (int f = 0; f < frames; f++) {
-								int i0 = (int) Math.floor(pos);
-								double frac = pos - i0;
-								for (int c = 0; c < outChannels; c++) {
-									int chIdx;
-									if (srcChannels == 1) chIdx = 0;
-									else if (srcChannels >= outChannels) chIdx = c;
-									else chIdx = c % srcChannels;
-									int idx0 = Math.max(0, Math.min(srcFrames - 1, i0)) * srcChannels + chIdx;
-									int idx1 = Math.max(0, Math.min(srcFrames - 1, i0 + 1)) * srcChannels + chIdx;
-									float s0 = 0.0f, s1 = 0.0f;
-									if (bytesPerSample == 4) {
-										s0 = dup.getFloat(idx0 * 4);
-										s1 = dup.getFloat(idx1 * 4);
-									} else {
-										s0 = (float) dup.getShort(idx0 * 2) / 32768.0f;
-										s1 = (float) dup.getShort(idx1 * 2) / 32768.0f;
-									}
-									float sample = s0 * (float) (1.0 - frac) + s1 * (float) frac;
-									out[f * outChannels + c] += sample;
-								}
-								pos += increment;
-								if (pos >= srcFrames) pos = srcFrames;
-							}
-						}
-						java.nio.ByteBuffer outBb = java.nio.ByteBuffer.allocateDirect(frames * outChannels * 4).order(java.nio.ByteOrder.LITTLE_ENDIAN);
-						for (float value : out) {
-							float v = value;
-							if (v > 1.0f) v = 1.0f;
-							if (v < -1.0f) v = -1.0f;
-							outBb.putFloat(v);
-						}
-						outBb.position(0);
-						String nid = UUID.randomUUID().toString();
-						directBuffers.put(nid, outBb);
-						getOrCreate(nid).incrementAndGet();
-						sampleRates.put(nid, outSampleRate);
-						bufferChannels.put(nid, outChannels);
-						id = makeAudioBufferFromId(nid);
-					}
-				} catch (Throwable t) {
-					id = null;
-				}
-			}
-			final AudioBuffer result = id;
-			dispatch(callerLooper, () -> cb.onResult(result));
-		});
-	}
 
 	public AudioContextInstance createContextInstance() {
 		return new AudioContextInstance(createContext());
@@ -424,6 +338,36 @@ public class AudioContext {
 		} catch (Throwable ignored) {
 		}
 		contextStartNanos.remove(contextId);
+		if (isOfflineId(contextId)) {
+			try {
+				nativeReleaseOfflineContext(contextId);
+			} catch (Throwable ignored) {
+			}
+		}
+	}
+
+	// An OfflineAudioContext's time 0 on its engine's clock (kOfflineBaseNs).
+	private static final long OFFLINE_START_NANOS = 1_000_000_000L;
+
+	/** Whether {@code id} came from an offline context's engine. */
+	static boolean isOfflineId(@Nullable String id) {
+		return id != null && id.startsWith("o") && id.indexOf('_') > 1;
+	}
+
+	public AudioContextInstance createOfflineContextInstance(int sampleRate, int channels) {
+		if (!nativeAvailable) return null;
+		int sr = sampleRate > 0 ? sampleRate : 48000;
+		String id = nativeCreateOfflineContext(sr, Math.max(1, channels));
+		if (id == null) return null;
+		contextSampleRates.put(id, sr);
+		contextBuffers.put(id, createConcurrentSet());
+		contextTracksMap.put(id, createConcurrentSet());
+		contextStartNanos.put(id, OFFLINE_START_NANOS);
+		return new AudioContextInstance(id);
+	}
+
+	boolean renderOfflineFrames(String contextId, long startFrame, int frames, java.nio.ByteBuffer[] channels) {
+		return nativeAvailable && nativeRenderOfflineFrames(contextId, startFrame, frames, channels);
 	}
 
 	public long getContextStartNanos(String contextId) {
@@ -441,14 +385,6 @@ public class AudioContext {
 		}
 	}
 
-	void renderOfflineForContext(final String contextId, final int frames, final int sampleRate, final int channels, final DecodeCallback cb) {
-		Set<String> set = contextTracksMap.get(contextId);
-		String[] arr = null;
-		if (set != null && !set.isEmpty()) {
-			arr = set.toArray(new String[0]);
-		}
-		renderOfflineAsync(arr, frames, sampleRate, channels, cb);
-	}
 
 	public AudioIIRNode createIIR(AudioContextInstance context, double[] feedforward, double[] feedback) {
 		String id = createIIR(context != null ? context.getId() : null, feedforward, feedback);
@@ -459,7 +395,7 @@ public class AudioContext {
 		String id = null;
 		if (nativeAvailable) {
 			try {
-				id = nativeCreateIIR(feedforward, feedback);
+				id = nativeCreateIIR(contextId, feedforward, feedback);
 			} catch (Throwable ignored) {
 			}
 		}
@@ -482,7 +418,7 @@ public class AudioContext {
 		String id = null;
 		if (nativeAvailable) {
 			try {
-				id = nativeCreatePeriodicWave(real, imag, disableNormalization);
+				id = nativeCreatePeriodicWave(contextId, real, imag, disableNormalization);
 			} catch (Throwable ignored) {
 			}
 		}
@@ -507,7 +443,7 @@ public class AudioContext {
 				imagView.limit(imag.limit());
 				java.nio.FloatBuffer imagSlice = imagView.slice();
 
-				id = nativeCreatePeriodicWaveDirect(realSlice, imagSlice, disableNormalization);
+				id = nativeCreatePeriodicWaveDirect(contextId, realSlice, imagSlice, disableNormalization);
 			} catch (Throwable ignored) {
 			}
 		}
@@ -750,7 +686,7 @@ public class AudioContext {
 
 	private native String nativeDecodeAudioDataDirect(java.nio.ByteBuffer buffer);
 
-	private native String nativeCreateOscillator(String type, double frequency);
+	private native String nativeCreateOscillator(String contextId, String type, double frequency);
 
 	private native void nativeStartOscillator(String id, String type, double frequency);
 
@@ -764,19 +700,25 @@ public class AudioContext {
 
 	private native void nativeStartBufferSourceAt(String trackId, boolean loop, String contextId, double when, double offset);
 
-	private native String nativeCreateBufferSource(String bufferId, byte[] pcmBytes, int sampleRate, int channels);
+	private native String nativeCreateBufferSource(String contextId, String bufferId, byte[] pcmBytes, int sampleRate, int channels);
 
-	private native String nativeCreateBufferSourceDirect(java.nio.ByteBuffer buffer, int sampleRate, int channels, int bytesPerSample);
+	private native String nativeCreateBufferSourceDirect(String contextId, java.nio.ByteBuffer buffer, int sampleRate, int channels, int bytesPerSample);
 
-	private native String nativeCreateBufferSourcePlanar(java.nio.Buffer[] channelBuffers, int sampleRate, int channels);
+	private native String nativeCreateBufferSourcePlanar(String contextId, java.nio.Buffer[] channelBuffers, int sampleRate, int channels);
 
 	private native boolean nativeHasBuffer(String id);
 
 	private native void nativeStartBufferSource(String trackId, boolean loop);
 
-	private native String nativeRenderOffline(String[] trackIds, int frames, int sampleRate, int channels);
+	private native String nativeCreateDelay(String contextId, double maxDelayTime);
 
-	private native String nativeCreateGain();
+	private native String nativeCreateOfflineContext(int sampleRate, int channels);
+
+	private native void nativeReleaseOfflineContext(String contextId);
+
+	private native boolean nativeRenderOfflineFrames(String contextId, long startFrame, int frames, java.nio.ByteBuffer[] channels);
+
+	private native String nativeCreateGain(String contextId);
 
 	private native void nativeCreateDynamicsCompressor(String nodeId, String thresholdId, String kneeId, String ratioId, String attackId, String releaseId, String reductionId);
 
@@ -812,7 +754,7 @@ public class AudioContext {
 
 	private native void nativeReleaseGain(String gainId);
 
-	private native String nativeCreateBiquad(String type, double frequency, double Q, double gain);
+	private native String nativeCreateBiquad(String contextId, String type, double frequency, double Q, double gain);
 
 	private native String nativeCreatePanner(String contextId, double positionX, double positionY, double positionZ,
 																					 double orientationX, double orientationY, double orientationZ,
@@ -857,7 +799,7 @@ public class AudioContext {
 
 	private native void nativeSetBiquadParams(String biquadId, double frequency, double Q, double gain, String type);
 
-	private native String nativeCreateIIR(double[] feedforward, double[] feedback);
+	private native String nativeCreateIIR(String contextId, double[] feedforward, double[] feedback);
 
 	private native void nativeReleaseIIR(String id);
 
@@ -865,9 +807,9 @@ public class AudioContext {
 
 	private native void nativeGetIIRFrequencyResponseDirect(String iirId, java.nio.FloatBuffer frequencyHz, java.nio.FloatBuffer magResponse, java.nio.FloatBuffer phaseResponse, double sampleRate);
 
-	private native String nativeCreatePeriodicWave(double[] real, double[] imag, boolean disableNormalization);
+	private native String nativeCreatePeriodicWave(String contextId, double[] real, double[] imag, boolean disableNormalization);
 
-	private native String nativeCreatePeriodicWaveDirect(java.nio.FloatBuffer real, java.nio.FloatBuffer imag, boolean disableNormalization);
+	private native String nativeCreatePeriodicWaveDirect(String contextId, java.nio.FloatBuffer real, java.nio.FloatBuffer imag, boolean disableNormalization);
 
 	private native void nativeSetWaveShaperCurveArray(String id, float[] curve, String oversample);
 
@@ -875,7 +817,7 @@ public class AudioContext {
 
 	private native void nativeSetPannerHRIRDirect(String pannerId, java.nio.FloatBuffer left, java.nio.FloatBuffer right);
 
-	private native String nativeCreateAnalyser(int fftSize, double smoothingTimeConstant, double minDecibels, double maxDecibels);
+	private native String nativeCreateAnalyser(String contextId, int fftSize, double smoothingTimeConstant, double minDecibels, double maxDecibels);
 
 	private native void nativeReleaseAnalyser(String id);
 
@@ -1071,6 +1013,7 @@ public class AudioContext {
 
 	public double getContextCurrentTime(String contextId) {
 		if (contextId == null) return 0.0;
+		if (nativeAvailable && isOfflineId(contextId)) return (double) nativeGetContextCurrentTimeNanos(contextId) / 1e9;
 		if (nativeAvailable) {
 			long ns = nativeGetContextCurrentTimeNanos(contextId);
 			if (ns > 0L) return (double) ns / 1e9;
@@ -1456,6 +1399,7 @@ public class AudioContext {
 	public int getSampleRate(String id) {
 		if (id == null) return 0;
 		Integer sr = contextSampleRates.get(id);
+		if (sr != null && isOfflineId(id)) return sr;
 		if (sr != null) {
 			if (nativeAvailable) {
 				try {
@@ -1766,7 +1710,7 @@ public class AudioContext {
 
 	String createOscillator(String contextId, String type, double frequency) {
 		if (nativeAvailable) {
-			String id = nativeCreateOscillator(type, frequency);
+			String id = nativeCreateOscillator(contextId, type, frequency);
 			if (id != null) {
 				addToContextSet(contextTracksMap, contextId, id);
 				return id;
@@ -1901,7 +1845,7 @@ public class AudioContext {
 	GainNode createGain(String contextId) {
 		String id = null;
 		if (nativeAvailable) {
-			id = nativeCreateGain();
+			id = nativeCreateGain(contextId);
 		}
 
 		if (id == null) {
@@ -1917,11 +1861,11 @@ public class AudioContext {
 		return new GainNode(id);
 	}
 
-	private String createGainBackedNodeId(double initialValue) {
+	private String createGainBackedNodeId(String contextId, double initialValue) {
 		String id = null;
 		if (nativeAvailable) {
 			try {
-				id = nativeCreateGain();
+				id = nativeCreateGain(contextId);
 			} catch (Throwable ignored) {
 			}
 		}
@@ -1965,13 +1909,13 @@ public class AudioContext {
 	public DynamicsCompressorNode createDynamicsCompressor(AudioContextInstance context) {
 		String contextId = context != null ? context.getId() : null;
 
-		String id = createGainBackedNodeId(1.0);
-		String thresholdId = createGainBackedNodeId(-24.0);
-		String kneeId = createGainBackedNodeId(30.0);
-		String ratioId = createGainBackedNodeId(12.0);
-		String attackId = createGainBackedNodeId(0.003);
-		String releaseId = createGainBackedNodeId(0.25);
-		String reductionId = createGainBackedNodeId(0.0);
+		String id = createGainBackedNodeId(contextId, 1.0);
+		String thresholdId = createGainBackedNodeId(contextId, -24.0);
+		String kneeId = createGainBackedNodeId(contextId, 30.0);
+		String ratioId = createGainBackedNodeId(contextId, 12.0);
+		String attackId = createGainBackedNodeId(contextId, 0.003);
+		String releaseId = createGainBackedNodeId(contextId, 0.25);
+		String reductionId = createGainBackedNodeId(contextId, 0.0);
 
 		if (nativeAvailable) {
 			try {
@@ -1993,14 +1937,14 @@ public class AudioContext {
 
 	public ChannelSplitterNode createChannelSplitter(AudioContextInstance context, int numberOfOutputs) {
 		String contextId = context != null ? context.getId() : null;
-		String id = createGainBackedNodeId(1.0);
+		String id = createGainBackedNodeId(contextId, 1.0);
 		registerGainForContext(contextId, id);
 		return new ChannelSplitterNode(id, numberOfOutputs);
 	}
 
 	public ChannelMergerNode createChannelMerger(AudioContextInstance context, int numberOfInputs) {
 		String contextId = context != null ? context.getId() : null;
-		String id = createGainBackedNodeId(1.0);
+		String id = createGainBackedNodeId(contextId, 1.0);
 		registerGainForContext(contextId, id);
 		return new ChannelMergerNode(id, numberOfInputs);
 	}
@@ -2009,7 +1953,7 @@ public class AudioContext {
 		String id = null;
 		if (nativeAvailable) {
 			try {
-				id = nativeCreateGain();
+				id = nativeCreateGain(contextId);
 			} catch (Throwable ignored) {
 			}
 		}
@@ -2031,7 +1975,7 @@ public class AudioContext {
 	String createBiquad(String contextId, String type, double frequency, double Q, double gain) {
 		String id = null;
 		if (nativeAvailable) {
-			id = nativeCreateBiquad(type, frequency, Q, gain);
+			id = nativeCreateBiquad(contextId, type, frequency, Q, gain);
 		}
 
 		if (id == null) id = UUID.randomUUID().toString();
@@ -2615,7 +2559,7 @@ public class AudioContext {
 		if (pannerId == null) return;
 		if (!nativeAvailable) return;
 		try {
-			String bid = nativeCreateBiquad("lowpass", 22050.0, 0.707, 0.0);
+			String bid = nativeCreateBiquad(pannerId, "lowpass", 22050.0, 0.707, 0.0);
 			if (bid != null) {
 				addToContextSet(contextBiquads, pannerContexts.get(pannerId), bid);
 				nativeAttachBiquadToPanner(pannerId, bid);
@@ -2870,16 +2814,16 @@ public class AudioContext {
 	}
 
 	public ExternalPcmSourceNode createExternalPcmSource(AudioContextInstance context, int sampleRate, int channels) {
-		String id = createExternalPcmSource(sampleRate, channels);
+		String id = createExternalPcmSource(context != null ? context.getId() : null, sampleRate, channels);
 		if (id == null) return null;
 		GainNode pr = createGain(context);
 		attachPlaybackRateToVoice(id, pr.getId());
 		return new ExternalPcmSourceNode(id, sampleRate, channels, pr.getId());
 	}
 
-	public String createExternalPcmSource(int sampleRate, int channels) {
+	public String createExternalPcmSource(String contextId, int sampleRate, int channels) {
 		if (nativeAvailable) {
-			return nativeCreateExternalPcmSource(sampleRate, channels);
+			return nativeCreateExternalPcmSource(contextId, sampleRate, channels);
 		}
 		return null;
 	}
@@ -2926,16 +2870,16 @@ public class AudioContext {
 		fireEnded(trackId);
 	}
 
-	private native String nativeCreateExternalPcmSource(int sampleRate, int channels);
+	private native String nativeCreateExternalPcmSource(String contextId, int sampleRate, int channels);
 
-	private native String nativeCreateWorkletSource(java.nio.ByteBuffer ring, int channels, int slotWords, int header, int outputCounts, int outputData, int paramLengths, int paramData, String[] paramIds);
+	private native String nativeCreateWorkletSource(String contextId, java.nio.ByteBuffer ring, int channels, int slotWords, int header, int outputCounts, int outputData, int paramLengths, int paramData, String[] paramIds);
 
 	@Nullable
 	String createWorkletSource(String contextId, java.nio.ByteBuffer ring, int channels, int[] layout, String[] paramIds) {
 		if (!nativeAvailable || ring == null || !ring.isDirect() || layout == null || layout.length < 6) return null;
 		// Param automation times are the context's.
 		for (String paramId : paramIds) registerGainForContext(contextId, paramId);
-		return nativeCreateWorkletSource(ring, channels, layout[0], layout[1], layout[2], layout[3], layout[4], layout[5], paramIds);
+		return nativeCreateWorkletSource(contextId, ring, channels, layout[0], layout[1], layout[2], layout[3], layout[4], layout[5], paramIds);
 	}
 
 	/** An AudioWorkletNode's source over `ring` (a SharedArrayBuffer); layout: slotWords, header, outputCounts, outputData, paramLengths, paramData. */
@@ -3039,7 +2983,7 @@ public class AudioContext {
 					int resolvedChannels = channels > 0 ? channels : channelData.length;
 					resolvedChannels = Math.min(resolvedChannels, channelData.length);
 					if (resolvedChannels > 0) {
-						String newId = nativeCreateBufferSourcePlanar(channelData, sampleRate, resolvedChannels);
+						String newId = nativeCreateBufferSourcePlanar(trackId, channelData, sampleRate, resolvedChannels);
 						if (newId != null && !newId.isEmpty()) {
 							java.nio.ByteBuffer src = directBuffers.get(buffer.id);
 							if (src != null) directBuffers.put(newId, src);
@@ -3061,7 +3005,7 @@ public class AudioContext {
 				srcView.position(src.position());
 				srcView.limit(src.limit());
 				java.nio.ByteBuffer srcSlice = srcView.slice();
-				String newId = nativeCreateBufferSourceDirect(srcSlice, sampleRate, channels, bytesPerSample);
+				String newId = nativeCreateBufferSourceDirect(trackId, srcSlice, sampleRate, channels, bytesPerSample);
 				if (newId == null || newId.isEmpty()) return null;
 				directBuffers.put(newId, src);
 				getOrCreate(newId).incrementAndGet();
@@ -3089,7 +3033,8 @@ public class AudioContext {
 			bufferId = buffer.id;
 		}
 		java.nio.ByteBuffer src = directBuffers.get(bufferId);
-		if (nativeAvailable && buffer != null && nativeHasBuffer(bufferId) && !buffer.hasChannelDataCache()) {
+		// An offline context renders on its own engine, so its sources copy the data in.
+		if (nativeAvailable && buffer != null && !isOfflineId(contextId) && nativeHasBuffer(bufferId) && !buffer.hasChannelDataCache()) {
 			addToContextSet(contextBuffers, contextId, bufferId);
 			addToContextSet(contextTracksMap, contextId, bufferId);
 			return bufferId;
@@ -3104,7 +3049,7 @@ public class AudioContext {
 					int resolvedChannels = channels > 0 ? channels : channelData.length;
 					resolvedChannels = Math.min(resolvedChannels, channelData.length);
 					if (resolvedChannels > 0) {
-						String id = nativeCreateBufferSourcePlanar(channelData, sampleRate, resolvedChannels);
+						String id = nativeCreateBufferSourcePlanar(contextId, channelData, sampleRate, resolvedChannels);
 						if (id != null) {
 							if (src != null) directBuffers.put(id, src);
 							planarBuffers.put(id, channelData);
@@ -3130,7 +3075,7 @@ public class AudioContext {
 				srcView.position(src.position());
 				srcView.limit(src.limit());
 				java.nio.ByteBuffer srcSlice = srcView.slice();
-				String id = nativeCreateBufferSourceDirect(srcSlice, sampleRate, channels, bytesPerSample);
+				String id = nativeCreateBufferSourceDirect(contextId, srcSlice, sampleRate, channels, bytesPerSample);
 				if (id != null) {
 					directBuffers.put(id, src);
 					getOrCreate(id).incrementAndGet();
@@ -3258,7 +3203,7 @@ public class AudioContext {
 		String id = null;
 		if (nativeAvailable) {
 			try {
-				id = nativeCreateGain();
+				id = nativeCreateGain(contextId);
 			} catch (Throwable ignored) {
 			}
 		}
@@ -3520,7 +3465,7 @@ public class AudioContext {
 		String id = null;
 		if (nativeAvailable) {
 			try {
-				id = nativeCreateAnalyser(2048, 0.8, -100.0, -30.0);
+				id = nativeCreateAnalyser(contextId, 2048, 0.8, -100.0, -30.0);
 			} catch (Throwable ignored) {
 			}
 		}
@@ -3536,21 +3481,26 @@ public class AudioContext {
 	}
 
 	public DelayNode createDelay(AudioContextInstance context) {
-		return new DelayNode(createDelay(context.getId()));
+		return createDelay(context, 1.0);
 	}
 
-	String createDelay(String contextId) {
+	public DelayNode createDelay(AudioContextInstance context, double maxDelayTime) {
+		DelayNode node = new DelayNode(createDelay(context.getId(), maxDelayTime));
+		node.setMaxDelayTime(maxDelayTime);
+		return node;
+	}
+
+	String createDelay(String contextId, double maxDelayTime) {
 		String id = null;
 		if (nativeAvailable) {
 			try {
-				id = nativeCreateGain();
+				id = nativeCreateDelay(contextId, maxDelayTime);
 			} catch (Throwable ignored) {
 			}
 		}
-		if (id == null) {
-			id = UUID.randomUUID().toString();
-			gains.put(id, 1.0);
-		}
+		if (id == null) id = UUID.randomUUID().toString();
+		// delayTime defaults to 0.
+		gains.put(id, 0.0);
 		if (contextId != null) {
 			addToContextSet(contextGains, contextId, id);
 			gainContexts.put(id, contextId);

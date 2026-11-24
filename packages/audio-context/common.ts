@@ -51,6 +51,10 @@ export class OfflineSuspends {
 		return new Promise((resolve, reject) => this._pending.set(frame, { resolve, reject }));
 	}
 
+	has(frame: number) {
+		return this._pending.has(frame);
+	}
+
 	reached(frame: number) {
 		const pending = this._pending.get(frame);
 		this._pending.delete(frame);

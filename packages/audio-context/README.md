@@ -115,7 +115,7 @@ console.log(rendered.length, rendered.sampleRate, rendered.numberOfChannels);
 
 `suspend(time)` holds rendering at `time`, rounded up to a 128-frame quantum, and resolves once it
 is held there; changes made before `resume()` apply from that frame. Suspends can be scheduled
-before `startRendering()` or while held. iOS, Windows and Linux; not Android yet. On iOS,
+before `startRendering()` or while held. On iOS,
 connecting a node once rendering has started clears effect state (delay lines, filter memory,
 reverb tails).
 
@@ -147,10 +147,14 @@ Context lifecycle and routing:
 - `state`, `onstatechange`
 - `sinkId`, `setSinkId(deviceId)`
 
+On Android an `OfflineAudioContext` renders on its own engine, the same mixer as the realtime
+one, with nothing reaching the device. A source connected to it reads an `AudioBuffer` in place.
+A `DelayNode` there can't be part of a feedback loop: its output doesn't reach its own input.
+
 ## Android memory
 
-Decoded audio is held in native memory, not on the Java heap, so long tracks can't throw
-`OutOfMemoryError`. The samples are freed when the `AudioBuffer` is garbage collected. Neither
+Decoded audio, and an `OfflineAudioContext`'s rendered buffer and delay lines, are held in native
+memory, not on the Java heap, so long tracks can't throw `OutOfMemoryError`. The samples are freed when the `AudioBuffer` is garbage collected. Neither
 V8 nor ART sees that memory, so while a lot of native audio is live the plugin asks Java to
 collect. For V8 to follow, enable the runtime's GC bridge in `nativescript.config.ts`:
 

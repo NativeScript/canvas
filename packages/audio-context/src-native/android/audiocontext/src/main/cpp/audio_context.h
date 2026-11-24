@@ -27,7 +27,37 @@ struct HRTFConvolver;
 
 class NativeEngine {
 public:
+    // The engine this thread's calls reach: an offline context's inside its Scope, else realtime().
     static NativeEngine &getInstance();
+
+    static NativeEngine &realtime();
+
+    // An OfflineAudioContext's own engine, with no stream; returns its context id.
+    static std::string createOffline(int sampleRate, int channels);
+
+    static void releaseOffline(const std::string &contextId);
+
+    // The offline engine whose prefix `id` carries, if any.
+    static std::shared_ptr<NativeEngine> offlineFor(const char *id);
+
+    // Routes getInstance() on this thread to `engine` (null: realtime) for the scope's lifetime.
+    struct Scope {
+        explicit Scope(std::shared_ptr<NativeEngine> engine);
+        ~Scope();
+        Scope(const Scope &) = delete;
+        Scope &operator=(const Scope &) = delete;
+    private:
+        std::shared_ptr<NativeEngine> engine_;
+        NativeEngine *previous_;
+    };
+
+    const std::string &idPrefix() const { return idPrefix_; }
+
+    bool isOffline() const { return offline_; }
+
+    // Offline: renders `frames` context frames from `startFrame`, channel c into `out[c]`.
+    // Commands queued since the last call apply from `startFrame`.
+    void renderOfflineFrames(int64_t startFrame, int frames, const std::vector<float *> &out);
 
     void resume();
 
@@ -60,10 +90,6 @@ public:
     // `offset` is in seconds into the buffer.
     void startBufferSourceAt(const std::string &id, bool loop, const std::string &contextId,
                              double when, double offset);
-
-    std::string
-    renderOfflineForTracks(const std::vector<std::string> &trackIds, int frames, int sampleRate,
-                           int channels);
 
     void setJavaVM(JavaVM *vm);
 
@@ -126,6 +152,14 @@ private:
     NativeEngine();
 
     ~NativeEngine();
+
+    bool offline_ = false;
+    std::string idPrefix_;
+    int64_t offlineBaseNs_ = 0;
+    std::mutex offlineRenderMutex_;
+    std::vector<float> offlineScratch_;
+    // The render clock: CLOCK_MONOTONIC ns for realtime, virtual for offline.
+    std::atomic<int64_t> nowNs_{0};
 
     void ensureStream();
 
@@ -228,6 +262,21 @@ private:
         bool externalPrimed = false;
     };
 
+    // A DelayNode: voices routed through it sum into `input`; its delayTime is a gain-style
+    // param under the same id.
+    struct DelayLine {
+        int channels = 0;
+        int size = 0;
+        int writePos = 0;
+        double delayFrames = 0.0;
+        // `channels` runs of `size` frames.
+        std::vector<float> data;
+        std::vector<float> input;
+    };
+    std::unordered_map<std::string, DelayLine> delays_;
+    // Voice id -> the DelayNode it plays through.
+    std::unordered_map<std::string, std::string> voiceDelay_;
+
     // Fills the voice's ExternalRing with worklet quanta until it holds `frames`.
     void produceWorkletQuanta(Voice &voice, int frames, int64_t startNs, double frameNs);
 
@@ -289,7 +338,8 @@ public:
         CMD_FREE_PLAYBACK_RATE,
         CMD_SET_PANNER_HRIR,
         CMD_SET_PANNER_PARTITION_SIZE,
-        CMD_CREATE_WORKLET
+        CMD_CREATE_WORKLET,
+        CMD_CREATE_DELAY
     };
 
     struct Command {
@@ -309,6 +359,7 @@ public:
         std::string compressorReductionId;
         std::string playbackRateId;
         double gainValue = 1.0;
+        double maxDelayTime = 1.0;
         std::string biquadId;
         std::string biquadType;
         double biquadFrequency = 440.0;

@@ -167,7 +167,7 @@ declare module org {
 				public static onNativeBufferHeld(id: string): void;
 				public createBufferSource(context: org.nativescript.audiocontext.AudioContextInstance, buffer: org.nativescript.audiocontext.AudioBuffer): org.nativescript.audiocontext.AudioBufferSourceNode;
 				public removeEndedListener(trackId: string, listener: org.nativescript.audiocontext.AudioContext.EndedListener): void;
-				public renderOfflineAsync(trackIds: androidNative.Array<string>, frames: number, sampleRate: number, channels: number, cb: org.nativescript.audiocontext.DecodeCallback): void;
+				public createOfflineContextInstance(sampleRate: number, channels: number): org.nativescript.audiocontext.AudioContextInstance;
 				public createChannelMerger(context: org.nativescript.audiocontext.AudioContextInstance, numberOfInputs: number): org.nativescript.audiocontext.ChannelMergerNode;
 				public createPeriodicWave(context: org.nativescript.audiocontext.AudioContextInstance, real: java.nio.FloatBuffer, imag: java.nio.FloatBuffer, disableNormalization: boolean): org.nativescript.audiocontext.PeriodicWave;
 				public getAnalyserByteTimeDomainDataDirect(slice: string, this_: java.nio.ByteBuffer): boolean;
@@ -207,6 +207,7 @@ declare module org {
 				public static onNativeBufferReleased(id: string): void;
 				public setAnalyserDecibels(id: string, minDecibels: number, maxDecibels: number): void;
 				public createDelay(context: org.nativescript.audiocontext.AudioContextInstance): org.nativescript.audiocontext.DelayNode;
+				public createDelay(context: org.nativescript.audiocontext.AudioContextInstance, maxDelayTime: number): org.nativescript.audiocontext.DelayNode;
 				public createContextInstance(sampleRate: number, latencyHintSec: number): org.nativescript.audiocontext.AudioContextInstance;
 				public createAnalyser(context: org.nativescript.audiocontext.AudioContextInstance): org.nativescript.audiocontext.AnalyserNode;
 				public unregisterContextTrack(contextId: string, trackId: string): void;
@@ -295,7 +296,8 @@ declare module org {
 				public getOutputLatency(): number;
 				public closeAsync(cb: org.nativescript.audiocontext.AudioContext.AsyncCallback): void;
 				public getListenerForwardZParam(): org.nativescript.audiocontext.AudioParam;
-				public renderOfflineAsync(frames: number, sampleRate: number, channels: number, cb: org.nativescript.audiocontext.DecodeCallback): void;
+				public static createOffline(sampleRate: number, channels: number): org.nativescript.audiocontext.AudioContextInstance;
+				public createRenderer(frames: number, channels: number, sampleRate: number): org.nativescript.audiocontext.OfflineRenderer;
 				public createSourceNodeFromMediaPlayer(ok: any): org.nativescript.audiocontext.ExternalPcmSourceNode;
 				public getListenerPositionYParam(): org.nativescript.audiocontext.AudioParam;
 				public getDestination(): org.nativescript.audiocontext.GainNode;
@@ -642,6 +644,22 @@ declare module org {
 declare module org {
 	export module nativescript {
 		export module audiocontext {
+			export class OfflineRenderer {
+				public static class: java.lang.Class<org.nativescript.audiocontext.OfflineRenderer>;
+				public suspendAt(frame: number): boolean;
+				public resume(): void;
+				public getPosition(): number;
+				public start(callback: org.nativescript.audiocontext.OfflineRenderer.Callback): void;
+			}
+			export module OfflineRenderer {
+				export class Callback {
+					public static class: java.lang.Class<org.nativescript.audiocontext.OfflineRenderer.Callback>;
+					public constructor(implementation: { onSuspend(frame: number): void; onComplete(buffer: org.nativescript.audiocontext.AudioBuffer): void });
+					public constructor();
+					public onSuspend(frame: number): void;
+					public onComplete(buffer: org.nativescript.audiocontext.AudioBuffer): void;
+				}
+			}
 			export class DecodeCallback {
 				public static class: java.lang.Class<org.nativescript.audiocontext.DecodeCallback>;
 				/**

@@ -23,6 +23,7 @@ import { registerAudioSchedulingSpec } from './audio-scheduling';
 import { registerAudioDecodeSpec } from './audio-decode';
 import { registerAudioOfflineSuspendSpec } from './audio-offline-suspend';
 import { registerAudioWorkletSpec } from './audio-worklet';
+import { registerAudioOfflineRenderSpec } from './audio-offline-render';
 import { registerMediaSpec } from './media';
 import { registerLifecycleSpec } from './lifecycle';
 import { registerOffscreenCanvasSpec } from './offscreen';
@@ -51,6 +52,7 @@ export async function runSpecTests(group: SpecGroup = 'all') {
 	registerAudioSchedulingSpec();
 	registerAudioDecodeSpec();
 	registerAudioOfflineSuspendSpec();
+	registerAudioOfflineRenderSpec();
 	registerAudioWorkletSpec();
 	if ((typeof __WINDOWS__ !== 'undefined' && __WINDOWS__) || (typeof __LINUX__ !== 'undefined' && __LINUX__)) {
 		registerAudioSpec();

@@ -22,11 +22,6 @@ registerProcessor('level', Level);
 
 export function registerAudioOfflineSuspendSpec() {
 	suite('audio.offline.suspend', () => {
-		if (isAndroid) {
-			skip('suspend and resume', 'not implemented on Android');
-			return;
-		}
-
 		test('changes made while suspended apply from the suspend frame', async () => {
 			const context = new OfflineAudioContext(1, Q * 32, RATE);
 			const states: string[] = [];
@@ -77,7 +72,8 @@ export function registerAudioOfflineSuspendSpec() {
 			equal(samples[Q * 10 + 5], 1.5, 'the source scheduled before rendering joins on its frame');
 		});
 
-		test('a worklet sees a param set while held from the suspend frame', async () => {
+		if (isAndroid) skip('a worklet sees a param set while held from the suspend frame', 'no OfflineAudioContext worklets on Android');
+		else test('a worklet sees a param set while held from the suspend frame', async () => {
 			if (typeof (globalThis as any).Worker !== 'function') return;
 			const context = new OfflineAudioContext(1, Q * 16, RATE);
 			await context.audioWorklet.addModule(LEVEL);

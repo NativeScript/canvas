@@ -4,11 +4,14 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class NSCAudioContext;
 @class NSCAudioParam;
+@class NSCAudioNode;
 
 @interface NSCAudioParam : NSObject
 
 @property (nonatomic, copy) NSString *automationRate;
 @property (nonatomic, readonly) double value;
+/// The node that applies this param per frame; audio connected to the param sums in there.
+@property (nonatomic, weak, nullable) NSCAudioNode *owner;
 
 @property (nonatomic, copy, nullable) void (^onScheduleChanged)(NSCAudioParam *param);
 

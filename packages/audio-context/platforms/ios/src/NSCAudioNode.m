@@ -1,6 +1,7 @@
 #import "NSCAudioContext.h"
 #import "NSCAudioLog.h"
 #import <objc/message.h>
+#import "NSCParamEffectNode.h"
 
 @interface NSCAudioNode ()
 @property (nonatomic, readwrite) AVAudioNode *avNode;
@@ -40,13 +41,20 @@
   AVAudioNodeBus fromBus = (AVAudioNodeBus)MAX(0, output ? output.intValue : 0);
 
   AVAudioNodeBus toBus = 0;
-  if (input) {
+  BOOL multiInput = [self isKindOfClass:[NSCChannelMergerNode class]];
+  if (input && (multiInput || ![destinationNode isKindOfClass:[AVAudioMixerNode class]])) {
     toBus = (AVAudioNodeBus)MAX(0, input.intValue);
   } else if ([destinationNode isKindOfClass:[AVAudioMixerNode class]]) {
+    // A mixer-backed node has one input; each source takes its own bus so they sum.
     AVAudioMixerNode *m = (AVAudioMixerNode *)destinationNode;
     toBus = m.nextAvailableInputBus;
-  } else {
-    toBus = 0;
+    AVAudioConnectionPoint *existing = nil;
+    @try {
+      for (AVAudioConnectionPoint *point in [engine outputConnectionPointsForNode:sourceNode outputBus:fromBus]) {
+        if (point.node == destinationNode) { existing = point; break; }
+      }
+    } @catch (NSException *e) {}
+    if (existing) toBus = existing.bus;
   }
 
   AVAudioConnectionPoint *destPoint =
@@ -357,12 +365,36 @@
 
 - (void)connectTo:(NSCAudioNode *)destination output:(NSNumber *)output {
     if (!destination) return;
-    [destination handleConnectFrom:self output:output input:@(0)];
+    [destination handleConnectFrom:self output:output input:nil];
 }
 
 - (void)connectTo:(NSCAudioNode *)destination output:(NSNumber *)output input:(NSNumber *)input {
     if (!destination) return;
     [destination handleConnectFrom:self output:output input:input];
+}
+
+static NSCAudioNode *ParamInput(NSCAudioParam *param, BOOL create) {
+    NSCAudioNode *owner = param.owner;
+    if (![owner isKindOfClass:[NSCParamEffectNode class]]) return nil;
+    NSCParamEffectNode *node = (NSCParamEffectNode *)owner;
+    return create || node.hasParamInput ? [node paramInput] : nil;
+}
+
+- (void)connectToParam:(NSCAudioParam *)param output:(NSNumber *)output {
+    NSCAudioNode *input = ParamInput(param, YES);
+    if (!input) {
+        NSCLogDebug(@"NSCAudioNode: this AudioParam does not take audio inputs on iOS");
+        return;
+    }
+    if (output) [self connectTo:input output:output];
+    else [self connectTo:input];
+}
+
+- (void)disconnectFromParam:(NSCAudioParam *)param output:(NSNumber *)output {
+    NSCAudioNode *input = ParamInput(param, NO);
+    if (!input) return;
+    if (output) [self disconnectTo:input output:output];
+    else [self disconnectTo:input];
 }
 
 - (void)disconnect {

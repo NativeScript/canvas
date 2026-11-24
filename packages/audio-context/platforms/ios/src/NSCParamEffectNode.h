@@ -22,6 +22,10 @@ typedef NS_ENUM(NSInteger, NSCParamEffectKind) {
                    maxDelayTime:(double)maxDelayTime NS_DESIGNATED_INITIALIZER;
 - (instancetype)initWithContext:(NSCAudioContext *)context node:(nullable AVAudioNode *)node NS_UNAVAILABLE;
 
+/// Where audio connected to the param goes; made on first use.
+- (nullable NSCAudioNode *)paramInput;
+@property (nonatomic, readonly) BOOL hasParamInput;
+
 @end
 
 NS_ASSUME_NONNULL_END

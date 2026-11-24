@@ -122,7 +122,8 @@ export class AudioNode extends AudioNodeBase {
 		const that = this as never as AudioNode & { native: NSCAudioNode };
 		const target = node?.native || node;
 		try {
-			if (typeof output === 'number' && typeof input === 'number') that.native.connectToOutputInput(target, output, input);
+			if (target instanceof NSCAudioParam) that.native.connectToParamOutput(target, typeof output === 'number' ? output : (null as never));
+			else if (typeof output === 'number' && typeof input === 'number') that.native.connectToOutputInput(target, output, input);
 			else if (typeof output === 'number') that.native.connectToOutput(target, output);
 			else that.native.connectTo(target);
 		} catch (e) {
@@ -148,7 +149,8 @@ export class AudioNode extends AudioNodeBase {
 			}
 			const dest = destinationOrOutput.native || destinationOrOutput;
 			try {
-				if (typeof output === 'number' && typeof input === 'number') that.native.disconnectToOutputInput(dest, output, input);
+				if (dest instanceof NSCAudioParam) that.native.disconnectFromParamOutput(dest, typeof output === 'number' ? output : (null as never));
+				else if (typeof output === 'number' && typeof input === 'number') that.native.disconnectToOutputInput(dest, output, input);
 				else if (typeof output === 'number') that.native.disconnectToOutput(dest, output);
 				else that.native.disconnectTo(dest);
 			} catch (e) {

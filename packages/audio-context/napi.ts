@@ -30,6 +30,7 @@ import {
 	markMediaElementUsed,
 	native_,
 	nativeCtor_,
+	OfflineSuspends,
 	panningModelFromNumber,
 	panningModelToNumber,
 	resolveLatencyHint,
@@ -40,6 +41,12 @@ import {
 import { AUDIO_WORKLET_SCOPE } from './audio-worklet-scope';
 import { AudioParamMap, AudioWorkletNodeOptions, AudioWorkletPort, WorkletHost, closeWithContext, domError, isWorkerSupported, loadWorkletModule, resolveWorkletNodeOptions } from './audio-worklet-host';
 import { ADDON, Native, nativePath } from './native-module';
+
+/** The addon throws "<Name>Error: message"; as a DOMException. */
+function nativeDomError(e: unknown): unknown {
+	const match = e instanceof Error ? /^([A-Za-z]+Error): ([\s\S]*)$/.exec(e.message) : null;
+	return match && match[1] !== 'TypeError' ? domError(match[1], match[2]) : e;
+}
 
 interface NativeParam {
 	value: number;
@@ -98,6 +105,9 @@ interface NativeContext {
 	close(): Promise<void>;
 	setSinkId(sinkId: string): Promise<void>;
 	startRendering(): Promise<NativeBuffer>;
+	suspendAt(time: number): number;
+	resumeRendering(): void;
+	setOnsuspend(callback: ((frame: number) => void) | null): void;
 	decodeAudioData(data: Uint8Array): Promise<NativeBuffer>;
 	decodeAudioBase64(data: string): Promise<NativeBuffer>;
 	decodeAudioFile(path: string): Promise<NativeBuffer>;
@@ -1231,26 +1241,76 @@ abstract class NativeAudioContextBase extends BaseAudioContext {
 }
 
 export class OfflineAudioContext extends NativeAudioContextBase {
+	private _suspends = new OfflineSuspends();
+	private _rendering: Promise<AudioBuffer> | null = null;
+
 	constructor(numberOfChannels: number | { numberOfChannels?: number; length: number; sampleRate: number }, lengthInFrames?: number, sampleRate?: number) {
 		const options = typeof numberOfChannels === 'object' ? numberOfChannels : { numberOfChannels, length: lengthInFrames, sampleRate };
 		super(Native.AudioContext.offline(Math.max(1, (options.numberOfChannels ?? 1) | 0), Math.max(0, options.length | 0), options.sampleRate && Number.isFinite(options.sampleRate) ? options.sampleRate : 48000));
+		const native = this[native_];
+		// State follows startRendering, suspends and resume, not the engine's events.
+		native.setOnstatechange(null);
+		const ref = new WeakRef(this);
+		native.setOnsuspend((frame) => ref.deref()?._reached(frame));
 	}
 
 	get length(): number {
 		return this[native_].length;
 	}
 
+	private _reached(frame: number) {
+		this._setState('suspended');
+		this._suspends.reached(frame);
+	}
+
+	/** Holds rendering at `suspendTime`, rounded up to a 128-frame quantum. */
+	suspend(suspendTime: number): Promise<void> {
+		if (this._state === 'closed') return Promise.reject(domError('InvalidStateError', 'OfflineAudioContext: rendering has finished'));
+		let frame: number;
+		try {
+			frame = this[native_].suspendAt(Number(suspendTime));
+		} catch (e) {
+			return Promise.reject(nativeDomError(e));
+		}
+		return this._suspends.add(frame);
+	}
+
+	resume(): Promise<void> {
+		if (this._state === 'closed') return Promise.reject(domError('InvalidStateError', 'OfflineAudioContext: rendering has finished'));
+		if (!this._rendering) return Promise.reject(domError('InvalidStateError', 'OfflineAudioContext: rendering has not started'));
+		try {
+			this[native_].resumeRendering();
+		} catch (e) {
+			return Promise.reject(nativeDomError(e));
+		}
+		this._setState('running');
+		return Promise.resolve();
+	}
+
 	startRendering(): Promise<AudioBuffer> {
+		if (this._rendering) return Promise.reject(domError('InvalidStateError', 'OfflineAudioContext: rendering has already started'));
 		let rendering: Promise<NativeBuffer>;
 		try {
 			rendering = this[native_].startRendering();
 		} catch (e) {
-			return Promise.reject(e);
+			return Promise.reject(nativeDomError(e));
 		}
-		return rendering.then((buffer) => {
-			this._syncState();
-			return new AudioBuffer(nativeCtor_, buffer);
-		});
+		this._setState('running');
+		const finish = () => {
+			this._setState('closed');
+			this._suspends.rejectAll(() => domError('InvalidStateError', 'OfflineAudioContext: rendering finished before the suspend'));
+		};
+		this._rendering = rendering.then(
+			(buffer) => {
+				finish();
+				return new AudioBuffer(nativeCtor_, buffer);
+			},
+			(e) => {
+				finish();
+				throw nativeDomError(e);
+			},
+		);
+		return this._rendering;
 	}
 }
 

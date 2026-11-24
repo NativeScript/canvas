@@ -28,6 +28,7 @@ import {
 	isBase64Source,
 	native_,
 	nativeCtor_,
+	OfflineSuspends,
 	normalizeSourcePath,
 	resolveLatencyHint,
 	resolvePannerOptions,
@@ -1338,12 +1339,21 @@ export class AudioContext extends BaseAudioContext {
 	}
 }
 
+const offlineSuspendErrors: Record<number, string> = {
+	[-1]: 'suspendTime must be a non-negative number',
+	[-2]: 'rendering has finished',
+	[-3]: 'suspendTime is at or past the end of the render',
+	[-4]: 'suspendTime is not after the current time',
+	[-5]: 'a suspend is already scheduled at that time',
+};
+
 export class OfflineAudioContext extends BaseAudioContext {
 	private [native_]: NSCOfflineAudioContext;
 	destination: AudioDestinationNode | null = null;
 	private _listener: AudioListener | null = null;
 	private _audioWorklet: AudioWorklet | null = null;
 	private _rendering: Promise<AudioBuffer> | null = null;
+	private _suspends = new OfflineSuspends();
 
 	constructor(numberOfChannels: number | { numberOfChannels?: number; length: number; sampleRate: number }, lengthInFrames?: number, sampleRate?: number) {
 		super();
@@ -1357,6 +1367,29 @@ export class OfflineAudioContext extends BaseAudioContext {
 			this.destination = null;
 		}
 		this._state = 'suspended';
+		const ref = new WeakRef(this);
+		this[native_].onSuspend = (frame) => ref.deref()?._reached(frame);
+	}
+
+	private _reached(frame: number) {
+		this._setState('suspended');
+		this._suspends.reached(frame);
+	}
+
+	/** Holds rendering at `suspendTime`, rounded up to a 128-frame quantum. */
+	suspend(suspendTime: number): Promise<void> {
+		if (this._state === 'closed') return Promise.reject(domError('InvalidStateError', 'OfflineAudioContext: rendering has finished'));
+		const frame = this.native.scheduleSuspend(Number(suspendTime));
+		if (frame < 0) return Promise.reject(domError('InvalidStateError', `OfflineAudioContext.suspend: ${offlineSuspendErrors[frame] ?? 'invalid suspendTime'}`));
+		return this._suspends.add(frame);
+	}
+
+	resume(): Promise<void> {
+		if (this._state === 'closed') return Promise.reject(domError('InvalidStateError', 'OfflineAudioContext: rendering has finished'));
+		if (!this._rendering) return Promise.reject(domError('InvalidStateError', 'OfflineAudioContext: rendering has not started'));
+		this._setState('running');
+		this.native.resumeRendering();
+		return Promise.resolve();
 	}
 
 	get native() {
@@ -1482,6 +1515,7 @@ export class OfflineAudioContext extends BaseAudioContext {
 					if (node.context === this) connectedWorkletNodes.delete(node);
 				});
 				this._setState('closed');
+				this._suspends.rejectAll(() => domError('InvalidStateError', 'OfflineAudioContext: rendering finished before the suspend'));
 				if (!wrapper) return reject(new Error('startRendering failed'));
 				resolve(new AudioBuffer(nativeCtor_, wrapper));
 			});

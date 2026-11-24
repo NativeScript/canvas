@@ -21,6 +21,7 @@ import { registerContextLossSpec } from './contextloss';
 import { registerAudioSpec } from './audio';
 import { registerAudioSchedulingSpec } from './audio-scheduling';
 import { registerAudioDecodeSpec } from './audio-decode';
+import { registerAudioOfflineSuspendSpec } from './audio-offline-suspend';
 import { registerMediaSpec } from './media';
 import { registerLifecycleSpec } from './lifecycle';
 import { registerOffscreenCanvasSpec } from './offscreen';
@@ -48,6 +49,7 @@ export async function runSpecTests(group: SpecGroup = 'all') {
 	registerHtmlInCanvasSpec();
 	registerAudioSchedulingSpec();
 	registerAudioDecodeSpec();
+	registerAudioOfflineSuspendSpec();
 	if ((typeof __WINDOWS__ !== 'undefined' && __WINDOWS__) || (typeof __LINUX__ !== 'undefined' && __LINUX__)) {
 		registerAudioSpec();
 		registerMediaSpec();

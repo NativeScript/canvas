@@ -511,7 +511,7 @@ declare class NSCAudioWorkletNode extends NSCAudioNode {
 
 	close(): void;
 
-	prepareOfflineQuantum(): boolean;
+	prepareOfflineQuantumBefore(limit: number): boolean;
 }
 
 declare class NSCConvolverNode extends NSCAudioNode {
@@ -627,7 +627,25 @@ declare class NSCOfflineAudioContext extends NSCAudioContext {
 
 	decodeAudioDataFromFileAsyncOffline(path: string, completion: (p1: NSCAudioBuffer) => void): void;
 
+	onSuspend: (frame: number) => void;
+
+	resumeRendering(): void;
+
+	scheduleSuspend(time: number): number;
+
 	startRenderingAsync(completion: (p1: NSCAudioBuffer) => void): void;
+}
+
+declare const enum NSCOfflineSuspendError {
+	InvalidTime = -1,
+
+	Finished = -2,
+
+	PastEnd = -3,
+
+	NotAfterCurrent = -4,
+
+	Duplicate = -5,
 }
 
 declare class NSCPeriodicWave extends NSObject {

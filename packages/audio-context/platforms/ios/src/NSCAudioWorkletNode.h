@@ -29,8 +29,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// The Worker stops serving the ring once it has drained.
 - (void)close;
 
-/// Offline: queues requests ahead and reports whether the next quantum's response is in.
-- (BOOL)prepareOfflineQuantum;
+/// Offline: queues requests ahead, not past `limit`, and reports whether the next quantum's
+/// response is in.
+- (BOOL)prepareOfflineQuantumBefore:(uint64_t)limit;
 /// Offline: renders silence from now on.
 - (void)abandonOffline;
 

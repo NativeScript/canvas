@@ -43,6 +43,28 @@ export class AudioEventTarget extends Observable {
 	protected _onLastListenerRemoved?(type: string): void;
 }
 
+/** An OfflineAudioContext's pending suspend promises, by the frame each holds at. */
+export class OfflineSuspends {
+	private _pending = new Map<number, { resolve: () => void; reject: (error: unknown) => void }>();
+
+	add(frame: number): Promise<void> {
+		return new Promise((resolve, reject) => this._pending.set(frame, { resolve, reject }));
+	}
+
+	reached(frame: number) {
+		const pending = this._pending.get(frame);
+		this._pending.delete(frame);
+		pending?.resolve();
+	}
+
+	/** Suspends rendering never reached. */
+	rejectAll(error: () => unknown) {
+		const pending = [...this._pending.values()];
+		this._pending.clear();
+		pending.forEach((p) => p.reject(error()));
+	}
+}
+
 export class BaseAudioContext extends AudioEventTarget {
 	protected _state: AudioContextState = 'running';
 	private _onstatechange: ((ev: { type: 'statechange' }) => void) | null = null;

@@ -503,9 +503,13 @@ declare class NSCAudioWorkletNode extends NSCAudioNode {
 
 	static new(): NSCAudioWorkletNode; // inherited from NSObject
 
+	readonly numberOfInputs: number;
+
+	readonly numberOfOutputs: number;
+
 	readonly params: NSArray<NSCAudioParam>;
 
-	initWithContextRingChannelsSlotWordsHeaderOutputCountsOutputDataParamLengthsParamDataParamDefaults(context: NSCAudioContext, ring: NSData, channels: number, slotWords: number, header: number, outputCounts: number, outputData: number, paramLengths: number, paramData: number, paramDefaults: NSArray<number> | number[]): this;
+	initWithContextRingInputChannelsOutputChannelsSlotWordsHeaderInputCountsInputDataOutputCountsOutputDataParamLengthsParamDataParamDefaults(context: NSCAudioContext, ring: NSData, inputChannels: NSArray<number> | number[], outputChannels: NSArray<number> | number[], slotWords: number, header: number, inputCounts: number, inputData: number, outputCounts: number, outputData: NSArray<number> | number[], paramLengths: number, paramData: number, paramDefaults: NSArray<number> | number[]): this;
 
 	abandonOffline(): void;
 

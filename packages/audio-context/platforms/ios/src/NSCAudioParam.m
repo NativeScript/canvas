@@ -31,7 +31,7 @@ typedef struct {
 } NSCParamEventSnapshot;
 
 @implementation NSCAudioParam {
-    __strong NSCAudioContext *_context;
+    __weak NSCAudioContext *_context;
     NSMutableArray<ParamEvent *> *_events;
     double _defaultValue;
     double _currentValueInternal;
@@ -176,7 +176,25 @@ static inline void NSCAudioParam_insertSorted(NSMutableArray<ParamEvent *> *even
                                 sampleRate:(double)sampleRate
                                 frameCount:(NSInteger)frameCount
                                             into:(double *)outValues {
+    return [self fillValues:startTime byFrame:NO sampleRate:sampleRate frameCount:frameCount into:outValues];
+}
+
+- (BOOL)fillValuesFromFrame:(double)startFrame
+                 sampleRate:(double)sampleRate
+                 frameCount:(NSInteger)frameCount
+                       into:(double *)outValues {
+    if (sampleRate <= 0.0) return [self fillValuesForRange:0.0 sampleRate:1.0 frameCount:frameCount into:outValues];
+    return [self fillValues:startFrame byFrame:YES sampleRate:sampleRate frameCount:frameCount into:outValues];
+}
+
+// byFrame: frame i is at (start + i) / sampleRate, so an event on a frame lands exactly on it.
+- (BOOL)fillValues:(double)start
+           byFrame:(BOOL)byFrame
+        sampleRate:(double)sampleRate
+        frameCount:(NSInteger)frameCount
+              into:(double *)outValues {
     if (!outValues || frameCount <= 0) return NO;
+    double startTime = byFrame ? start / sampleRate : start;
     
     [_lock lock];
     NSUInteger evtCount = _events.count;
@@ -239,7 +257,7 @@ static inline void NSCAudioParam_insertSorted(NSMutableArray<ParamEvent *> *even
     NSInteger nextIdx = 0;
     NSInteger prevIdx = -1;
     for (NSInteger i = 0; i < frameCount; ++i) {
-        double t = startTime + (double)i / sampleRate;
+        double t = byFrame ? (start + (double)i) / sampleRate : startTime + (double)i / sampleRate;
         while (nextIdx < (NSInteger)evtCount && evts[nextIdx].time <= t) {
             prevIdx = nextIdx;
             nextIdx += 1;

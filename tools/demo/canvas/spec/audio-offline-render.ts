@@ -1,6 +1,5 @@
 import { OfflineAudioContext } from '@nativescript/audio-context';
-import { isIOS } from '@nativescript/core';
-import { suite, test, skip, equal, closeTo, ok } from './harness';
+import { suite, test, equal, closeTo, ok } from './harness';
 
 // OfflineAudioContext rendering, against what Chrome does.
 
@@ -39,8 +38,7 @@ export function registerAudioOfflineRenderSpec() {
 			}
 		});
 
-		if (isIOS) skip('applies setValueAtTime on its frame', 'iOS misses an offline gain automation step on its frame');
-		else test('applies setValueAtTime on its frame', async () => {
+		test('applies setValueAtTime on its frame', async () => {
 			const context = new OfflineAudioContext(1, Q * 8, RATE);
 			const gain = context.createGain();
 			gain.gain.setValueAtTime(1, 0);
@@ -74,8 +72,7 @@ export function registerAudioOfflineRenderSpec() {
 			closeTo(buffer.getChannelData(1)[25], 1, 1e-4, 'right');
 		});
 
-		if (isIOS) skip('delays by delayTime, tail included', 'AVAudioUnitDelay smooths the first frames');
-		else test('delays by delayTime, tail included', async () => {
+		test('delays by delayTime, tail included', async () => {
 			const context = new OfflineAudioContext(1, Q * 8, RATE);
 			const delay = context.createDelay(1);
 			equal(delay.delayTime.value, 0, 'delayTime defaults to 0');
@@ -91,8 +88,7 @@ export function registerAudioOfflineRenderSpec() {
 			equal(samples[Q * 4], 0, 'and ends delayTime after it');
 		});
 
-		if (isIOS) skip('delays into a gain', 'AVAudioUnitDelay smooths the first frames');
-		else test('delays into a gain', async () => {
+		test('delays into a gain', async () => {
 			const context = new OfflineAudioContext(1, Q * 2, RATE);
 			const delay = context.createDelay();
 			delay.delayTime.value = 10 / RATE;

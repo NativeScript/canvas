@@ -154,7 +154,7 @@ declare module org {
 				public pushPcmFrames(p: string, this_: java.nio.FloatBuffer): void;
 				public createOscillator(context: org.nativescript.audiocontext.AudioContextInstance, type: string, frequency: number): org.nativescript.audiocontext.AudioOscillatorNode;
 				public createExternalPcmSource(context: org.nativescript.audiocontext.AudioContextInstance, sampleRate: number, channels: number): org.nativescript.audiocontext.ExternalPcmSourceNode;
-				public createWorkletSource(context: org.nativescript.audiocontext.AudioContextInstance, ring: java.nio.ByteBuffer, channels: number, layout: number[], paramDefaults: number[]): org.nativescript.audiocontext.WorkletSourceNode;
+				public createWorklet(context: org.nativescript.audiocontext.AudioContextInstance, ring: java.nio.ByteBuffer, inputChannels: number[], outputChannels: number[], layout: number[], outputData: number[], paramDefaults: number[]): org.nativescript.audiocontext.WorkletNode;
 				public createOscillator(context: org.nativescript.audiocontext.AudioContextInstance): org.nativescript.audiocontext.AudioOscillatorNode;
 				public decodeAudioDataFromByteArrayAsync(data: androidNative.Array<number>, context: org.nativescript.audiocontext.AudioContextInstance, cb: org.nativescript.audiocontext.DecodeCallback): void;
 				public createConvolver(context: org.nativescript.audiocontext.AudioContextInstance): org.nativescript.audiocontext.ConvolverNode;
@@ -733,10 +733,22 @@ declare module org {
 declare module org {
 	export module nativescript {
 		export module audiocontext {
-			export class WorkletSourceNode extends org.nativescript.audiocontext.AudioScheduledSourceNode {
-				public static class: java.lang.Class<org.nativescript.audiocontext.WorkletSourceNode>;
+			export class WorkletNode extends java.lang.Object implements org.nativescript.audiocontext.AudioNode {
+				public static class: java.lang.Class<org.nativescript.audiocontext.WorkletNode>;
+				public getId(): string;
+				public getOutputId(output: number): string;
 				public getParamCount(): number;
 				public getParam(index: number): org.nativescript.audiocontext.AudioParam;
+				public stop(): void;
+				public release(): void;
+				public connect(node: org.nativescript.audiocontext.AudioNode): void;
+				public connect(node: org.nativescript.audiocontext.AudioNode, output: number): void;
+				public connect(node: org.nativescript.audiocontext.AudioNode, output: number, input: number): void;
+				public disconnect(): void;
+				public disconnect(output: number): void;
+				public disconnect(node: org.nativescript.audiocontext.AudioNode): void;
+				public disconnect(node: org.nativescript.audiocontext.AudioNode, output: number): void;
+				public disconnect(node: org.nativescript.audiocontext.AudioNode, output: number, input: number): void;
 			}
 			export class ExternalPcmSourceNode extends org.nativescript.audiocontext.AudioScheduledSourceNode {
 				public static class: java.lang.Class<org.nativescript.audiocontext.ExternalPcmSourceNode>;

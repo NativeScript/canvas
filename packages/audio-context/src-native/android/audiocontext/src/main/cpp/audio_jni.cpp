@@ -298,8 +298,9 @@ Java_org_nativescript_audiocontext_AudioContext_nativeCancelAndHoldPannerEvents(
     }
 }
 
+// The long name: a short one would also bind the (voice, gain, output, input) overload.
 extern "C" JNIEXPORT void JNICALL
-Java_org_nativescript_audiocontext_AudioContext_nativeAttachGain(JNIEnv *env, jobject thiz,
+Java_org_nativescript_audiocontext_AudioContext_nativeAttachGain__Ljava_lang_String_2Ljava_lang_String_2(JNIEnv *env, jobject thiz,
                                                                  jstring jvoiceId,
                                                                  jstring jgainId) {
     NativeEngine::Scope scope__(engineFor(env, jvoiceId));
@@ -2055,18 +2056,24 @@ Java_org_nativescript_audiocontext_AudioContext_nativeEndExternalPcmSource(JNIEn
     env->ReleaseStringUTFChars(jid, idChars);
 }
 
+static std::vector<int> intArray(JNIEnv *env, jintArray array) {
+    std::vector<int> values(array ? static_cast<size_t>(env->GetArrayLength(array)) : 0);
+    if (!values.empty()) env->GetIntArrayRegion(array, 0, static_cast<jsize>(values.size()), reinterpret_cast<jint *>(values.data()));
+    return values;
+}
+
+// layout: slotWords, header, inputCounts, inputData, outputCounts, paramLengths, paramData.
 extern "C" JNIEXPORT jstring JNICALL
-Java_org_nativescript_audiocontext_AudioContext_nativeCreateWorkletSource(JNIEnv *env, jobject thiz, jstring jcontextId,
-                                                                         jobject ring, jint channels,
-                                                                         jint slotWords, jint header,
-                                                                         jint outputCounts, jint outputData,
-                                                                         jint paramLengths, jint paramData,
-                                                                         jobjectArray paramIds) {
+Java_org_nativescript_audiocontext_AudioContext_nativeCreateWorklet(JNIEnv *env, jobject thiz, jstring jcontextId,
+                                                                   jobject ring, jintArray jinputChannels,
+                                                                   jintArray joutputChannels, jintArray jlayout,
+                                                                   jintArray joutputData, jobjectArray paramIds) {
     NativeEngine::Scope scope__(engineFor(env, jcontextId));
     if (!ring) return nullptr;
     auto *words = static_cast<float *>(env->GetDirectBufferAddress(ring));
     jlong capacity = env->GetDirectBufferCapacity(ring);
-    if (!words || capacity < (static_cast<jlong>(header) + 8) * 4) return nullptr;
+    std::vector<int> layout = intArray(env, jlayout);
+    if (!words || layout.size() < 7 || capacity < (static_cast<jlong>(layout[1]) + 8) * 4) return nullptr;
     std::vector<std::string> ids;
     jsize count = paramIds ? env->GetArrayLength(paramIds) : 0;
     for (jsize i = 0; i < count; i++) {
@@ -2076,8 +2083,20 @@ Java_org_nativescript_audiocontext_AudioContext_nativeCreateWorkletSource(JNIEnv
         if (chars) env->ReleaseStringUTFChars(id, chars);
         if (id) env->DeleteLocalRef(id);
     }
-    std::string id = NativeEngine::getInstance().createWorkletSource(
-            words, channels, slotWords, header, outputCounts, outputData, paramLengths, paramData,
-            std::move(ids));
+    std::string id = NativeEngine::getInstance().createWorklet(
+            words, intArray(env, jinputChannels), intArray(env, joutputChannels), layout[0], layout[1],
+            layout[2], layout[3], layout[4], intArray(env, joutputData), layout[5], layout[6], std::move(ids));
     return id.empty() ? nullptr : env->NewStringUTF(id.c_str());
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_org_nativescript_audiocontext_AudioContext_nativeSetWorkletOutputConnected(JNIEnv *env, jobject thiz,
+                                                                               jstring jid, jint output,
+                                                                               jboolean connected) {
+    NativeEngine::Scope scope__(engineFor(env, jid));
+    if (!jid) return;
+    const char *id = env->GetStringUTFChars(jid, nullptr);
+    if (!id) return;
+    NativeEngine::getInstance().setWorkletOutputConnected(id, (int) output, connected == JNI_TRUE);
+    env->ReleaseStringUTFChars(jid, id);
 }

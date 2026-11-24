@@ -1,5 +1,4 @@
 import { AudioContext, AudioWorkletNode, OfflineAudioContext } from '@nativescript/audio-context';
-import { isAndroid } from '@nativescript/core';
 import { suite, test, skip, equal, closeTo, ok } from './harness';
 
 // AudioWorkletNode inputs, outputs and fan-in, against what Chrome does.
@@ -64,10 +63,6 @@ const MONO = { channelCount: 1, channelCountMode: 'explicit' } as any;
 
 export function registerAudioWorkletSpec() {
 	suite('audio.worklet', () => {
-		if (isAndroid) {
-			skip('inputs and outputs', 'Android worklets are sources only');
-			return;
-		}
 		if (typeof (globalThis as any).Worker !== 'function') {
 			skip('inputs and outputs', 'no Worker in this runtime');
 			return;

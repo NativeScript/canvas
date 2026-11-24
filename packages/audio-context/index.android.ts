@@ -136,6 +136,9 @@ export class AudioNode extends AudioNodeBase {
 	}
 
 	connect(node: any, output?: number, input?: number) {
+		if (node instanceof AudioWorkletNode && ((input ?? 0) < 0 || (input ?? 0) >= node.numberOfInputs)) {
+			throw domError('IndexSizeError', `AudioNode.connect: input ${input ?? 0} is out of range`);
+		}
 		const that = this as never as AudioNode & { native: org.nativescript.audiocontext.AudioNode };
 		const target = node?.native || node;
 		try {
@@ -611,6 +614,12 @@ export class OfflineAudioContext extends BaseAudioContext {
 	private _rendering: Promise<AudioBuffer> | null = null;
 	private _suspends = new OfflineSuspends();
 	private _listener: AudioListener | null = null;
+	private _audioWorklet: AudioWorklet | null = null;
+
+	get audioWorklet(): AudioWorklet | undefined {
+		if (!this._audioWorklet && isWorkerSupported()) this._audioWorklet = new AudioWorklet(nativeCtor_, this);
+		return this._audioWorklet ?? undefined;
+	}
 
 	static getInstance() {
 		if (!audioContextInstance) audioContextInstance = org.nativescript.audiocontext.AudioContext.getInstance();
@@ -689,6 +698,10 @@ export class OfflineAudioContext extends BaseAudioContext {
 					onComplete(buffer) {
 						const context = ref.deref();
 						if (context) {
+							context._audioWorklet?._scope(false)?.close();
+							connectedWorkletNodes.forEach((node) => {
+								if (node.context === context) node._stop();
+							});
 							context._setState('closed');
 							context._suspends.rejectAll(() => domError('InvalidStateError', 'OfflineAudioContext: rendering finished before the suspend'));
 						}
@@ -835,17 +848,19 @@ let nextWorkletNode = 1;
 // Connected nodes keep playing without a JS reference, as in browsers.
 const connectedWorkletNodes = new Set<AudioWorkletNode>();
 // The native voice reads the ring until the render thread drops it, a callback after stop().
-const stopWorkletNode = (held: { native: org.nativescript.audiocontext.WorkletSourceNode; ring: SharedArrayBuffer }) => {
+const stopWorkletNode = (held: { native: org.nativescript.audiocontext.WorkletNode; ring: SharedArrayBuffer }) => {
 	held.native.stop();
 	setTimeout(() => held.ring.byteLength, 2000);
 };
 const workletNodeRegistry = typeof FinalizationRegistry === 'function' ? new FinalizationRegistry(stopWorkletNode) : null;
 
+type WorkletContext = AudioContext | OfflineAudioContext;
+
 export class AudioWorklet {
-	private [context_]: AudioContext;
+	private [context_]: WorkletContext;
 	private _host: WorkletHost | null = null;
 
-	constructor(a?: any, context?: AudioContext) {
+	constructor(a?: any, context?: WorkletContext) {
 		if (a !== nativeCtor_ || !context) throw new TypeError('Illegal constructor.');
 		this[context_] = context;
 	}
@@ -873,28 +888,48 @@ export class AudioWorklet {
 	}
 }
 
+const ANDROID_WORKLET_MAX_CHANNELS = 8;
+
 export class AudioWorkletNode extends AudioNode {
 	readonly port: AudioWorkletPort;
 	readonly parameters: AudioParamMap<AudioParam>;
-	[native_]: org.nativescript.audiocontext.WorkletSourceNode;
+	[native_]: org.nativescript.audiocontext.WorkletNode;
 	private _ring: SharedArrayBuffer;
+	private _numberOfInputs: number;
+	private _numberOfOutputs: number;
 	private _onprocessorerror: ((event: any) => void) | null = null;
 
-	constructor(context: AudioContext, name: string, options: AudioWorkletNodeOptions = {}) {
+	constructor(context: WorkletContext, name: string, options: AudioWorkletNodeOptions = {}) {
 		const worklet = context?.audioWorklet;
 		const resolved = resolveWorkletNodeOptions(worklet?._scope(false), name, options);
-		const { host, descriptors, numberOfInputs, numberOfOutputs, outputChannelCount, parameterData } = resolved;
-		if (numberOfInputs > 0) throw domError('NotSupportedError', 'AudioWorkletNode: inputs are not supported on Android');
-		if (numberOfOutputs !== 1) throw domError('NotSupportedError', 'AudioWorkletNode: Android supports one output');
-		super(context);
-		const channels = Math.min(outputChannelCount?.[0] ?? 1, 8);
-		const layout = workletRingLayout(0, [channels], descriptors.length);
+		const { host, descriptors, numberOfInputs, numberOfOutputs, parameterData } = resolved;
+		// Each input sums into channelCount channels.
+		const inputChannels = Array.from({ length: numberOfInputs }, () => Math.max(1, (options as any).channelCount ?? 2) | 0);
+		// One input and one output: the output follows the input; otherwise one channel per output.
+		const outputChannelCount = resolved.outputChannelCount ?? Array.from({ length: numberOfOutputs }, () => (numberOfInputs === 1 && numberOfOutputs === 1 ? inputChannels[0] : 1));
+		if ([...inputChannels, ...outputChannelCount].some((count) => count > ANDROID_WORKLET_MAX_CHANNELS)) {
+			throw domError('NotSupportedError', `AudioWorkletNode: at most ${ANDROID_WORKLET_MAX_CHANNELS} channels per input or output on Android`);
+		}
+		if (numberOfInputs > 16 || numberOfOutputs > 16) throw domError('NotSupportedError', 'AudioWorkletNode: at most 16 inputs and 16 outputs on Android');
+		super(context as any);
+		const layout = workletRingLayout(numberOfInputs, outputChannelCount, descriptors.length);
 		const ring = createWorkletRing(layout);
-		const offsets = (Array as any).create('int', 6);
-		[layout.slotWords, layout.header, layout.outputCounts, layout.outputData[0], layout.paramLengths, layout.paramData].forEach((value, i) => (offsets[i] = value));
+		const ints = (values: number[]) => {
+			const array = (Array as any).create('int', values.length);
+			values.forEach((value, i) => (array[i] = value));
+			return array;
+		};
 		const defaults = (Array as any).create('double', descriptors.length);
 		descriptors.forEach((d, i) => (defaults[i] = parameterData?.[d.name] ?? d.defaultValue));
-		const native = AudioContext.getInstance().createWorkletSource(context.native, ring as any, channels, offsets, defaults);
+		const native = AudioContext.getInstance().createWorklet(
+			context.native,
+			ring as any,
+			ints(inputChannels),
+			ints(outputChannelCount),
+			ints([layout.slotWords, layout.header, layout.inputCounts, layout.inputData, layout.outputCounts, layout.paramLengths, layout.paramData]),
+			ints(layout.outputData),
+			defaults,
+		);
 		if (!native) throw domError('NotSupportedError', 'AudioWorkletNode: the audio engine is unavailable');
 		const header = new Uint32Array(ring, layout.header * 4, 8);
 		if (Atomics.load(header, RING_NATIVE_MARK) !== 0x574b4c54) {
@@ -903,25 +938,53 @@ export class AudioWorkletNode extends AudioNode {
 		}
 		this[native_] = native;
 		this._ring = ring;
+		this._numberOfInputs = numberOfInputs;
+		this._numberOfOutputs = numberOfOutputs;
 		this.parameters = new AudioParamMap(new Map(descriptors.map((d, i) => [d.name, new AudioParam(nativeCtor_, native.getParam(i))])));
 		const id = nextWorkletNode++;
 		this.port = new AudioWorkletPort(host, id);
 		workletNodeRegistry?.register(this, { native, ring }, this);
-		host.create(this, id, String(name), { ...options, numberOfInputs, numberOfOutputs, outputChannelCount: [channels], parameterData }, { buffer: ring, layout });
+		host.create(this, id, String(name), { ...options, numberOfInputs, numberOfOutputs, outputChannelCount, parameterData }, { buffer: ring, layout });
 	}
 
 	get native() {
 		return this[native_];
 	}
 
+	get numberOfInputs() {
+		return this._numberOfInputs;
+	}
+
+	get numberOfOutputs() {
+		return this._numberOfOutputs;
+	}
+
 	connect(node: any, output?: number, input?: number) {
+		if (output !== undefined && (output < 0 || output >= this._numberOfOutputs)) throw domError('IndexSizeError', `AudioWorkletNode.connect: output ${output} is out of range`);
 		connectedWorkletNodes.add(this);
 		return super.connect(node, output, input);
 	}
 
-	disconnect(...args: any[]) {
-		if (args.length === 0) connectedWorkletNodes.delete(this);
-		return (super.disconnect as any)(...args);
+	disconnect(destinationOrOutput?: any, output?: number, input?: number) {
+		const native = this[native_];
+		const checkOutput = (index: number) => {
+			if (index < 0 || index >= this._numberOfOutputs) throw domError('IndexSizeError', `AudioWorkletNode.disconnect: output ${index} is out of range`);
+		};
+		if (destinationOrOutput === undefined || destinationOrOutput === null) {
+			connectedWorkletNodes.delete(this);
+			native.disconnect();
+		} else if (typeof destinationOrOutput === 'number') {
+			checkOutput(destinationOrOutput);
+			native.disconnect(destinationOrOutput);
+		} else {
+			const target = destinationOrOutput.native || destinationOrOutput;
+			if (typeof output !== 'number') native.disconnect(target);
+			else {
+				checkOutput(output);
+				if (typeof input === 'number') native.disconnect(target, output, input);
+				else native.disconnect(target, output);
+			}
+		}
 	}
 
 	get onprocessorerror() {
@@ -936,14 +999,20 @@ export class AudioWorkletNode extends AudioNode {
 
 	/** @internal */
 	_processorError(message: string) {
+		// An offline render stops waiting on a failed processor.
+		this._close();
 		this.dispatchEvent({ type: 'processorerror', message, error: new Error(message), target: this } as any);
+	}
+
+	private _close() {
+		Atomics.store(new Uint32Array(this._ring, this._ring.byteLength - 32, 8), RING_CLOSED, 1);
 	}
 
 	/** @internal */
 	_stop() {
 		workletNodeRegistry?.unregister(this);
 		connectedWorkletNodes.delete(this);
-		Atomics.store(new Uint32Array(this._ring, this._ring.byteLength - 32, 8), RING_CLOSED, 1);
+		this._close();
 		stopWorkletNode({ native: this[native_], ring: this._ring });
 	}
 }

@@ -127,10 +127,16 @@ public:
     void pushPcmFrames(const std::string &id, const float *interleaved, size_t sampleCount);
     void endExternalPcmSource(const std::string &id);
 
-    // An AudioWorkletNode's voice over its ring (audio-worklet-ring.ts); offsets are in 4-byte words.
-    std::string createWorkletSource(float *ring, int channels, int slotWords, int header,
-                                    int outputCounts, int outputData, int paramLengths,
-                                    int paramData, std::vector<std::string> paramIds);
+    // An AudioWorkletNode over its ring (audio-worklet-ring.ts); offsets are in 4-byte words.
+    // Output o plays as voice `id` (o = 0) or `id#o`.
+    std::string createWorklet(float *ring, const std::vector<int> &inputChannels,
+                              const std::vector<int> &outputChannels, int slotWords, int header,
+                              int inputCounts, int inputData, int outputCounts,
+                              const std::vector<int> &outputData, int paramLengths, int paramData,
+                              std::vector<std::string> paramIds);
+
+    // Whether output `output` of worklet `id` is connected; unconnected outputs are silent.
+    void setWorkletOutputConnected(const std::string &id, int output, bool connected);
 
 #ifdef HAS_OBOE
 
@@ -158,6 +164,9 @@ private:
     int64_t offlineBaseNs_ = 0;
     std::mutex offlineRenderMutex_;
     std::vector<float> offlineScratch_;
+    // Offline: the quantum being rendered and the end of the current render call, in frames.
+    int64_t offlineFrame_ = 0;
+    int64_t offlineLimitFrame_ = 0;
     // The render clock: CLOCK_MONOTONIC ns for realtime, virtual for offline.
     std::atomic<int64_t> nowNs_{0};
 
@@ -207,27 +216,48 @@ private:
         std::atomic<bool> ended{false};
     };
 
-    struct WorkletRing {
+    static constexpr int kWorkletMaxPorts = 16;
+    static constexpr int kWorkletMaxChannels = 8;
+
+    struct WorkletNode {
+        std::string id;
         float *words = nullptr;
         std::atomic<uint32_t> *header = nullptr;
-        int channels = 1;
         int slotWords = 0;
+        int inputCounts = 0;
+        int inputData = 0;
         int outputCounts = 0;
-        int outputData = 0;
         int paramLengths = 0;
         int paramData = 0;
+        int inputs = 0;
+        int outputs = 0;
+        int inChannels[kWorkletMaxPorts] = {};
+        int outChannels[kWorkletMaxPorts] = {};
+        int outputData[kWorkletMaxPorts] = {};
         std::vector<std::string> paramIds;
         // Render thread only.
-        std::vector<float> out;
+        bool connected[kWorkletMaxPorts] = {};
+        // The context's channels of each input, a quantum each: inputs x mixChannels x 128.
+        int mixChannels = 1;
+        std::vector<float> inMix;
+        bool inActive[kWorkletMaxPorts] = {};
+        // The quantum playing: outputs x kWorkletMaxChannels x 128.
+        std::vector<float> outQ;
+        int position = 0;
         uint64_t nextFrame = 0;
         uint32_t lowWater = UINT32_MAX;
         uint32_t window = 0;
         bool finished = false;
+        bool drained = false;
+        bool ended = false;
+        // Offline sources: requests run ahead of the render to here.
+        bool requesting = false;
+        uint64_t requestFrame = 0;
     };
 
     struct Voice {
         enum Type {
-            Oscillator, BufferSource, ExternalPCM
+            Oscillator, BufferSource, ExternalPCM, WorkletOutput
         } voiceType;
         std::string id;
         std::string waveform = "sine";
@@ -255,7 +285,8 @@ private:
         int bufferSampleRate = 0;
 
         std::shared_ptr<ExternalRing> externalRing;
-        std::shared_ptr<WorkletRing> worklet;
+        std::shared_ptr<WorkletNode> worklet;
+        int workletOutput = 0;
         std::vector<float> externalPrev;
         std::vector<float> externalCurr;
         double externalSubPos = 0.0;
@@ -271,14 +302,27 @@ private:
         double delayFrames = 0.0;
         // `channels` runs of `size` frames.
         std::vector<float> data;
+        // One render call's input, `channels` runs of `inputStride` frames.
         std::vector<float> input;
+        int inputStride = 0;
     };
     std::unordered_map<std::string, DelayLine> delays_;
     // Voice id -> the DelayNode it plays through.
     std::unordered_map<std::string, std::string> voiceDelay_;
 
-    // Fills the voice's ExternalRing with worklet quanta until it holds `frames`.
-    void produceWorkletQuanta(Voice &voice, int frames, int64_t startNs, double frameNs);
+    std::unordered_map<std::string, std::shared_ptr<WorkletNode>> worklets_;
+    // Voice id -> the worklet and input it plays into.
+    std::unordered_map<std::string, std::pair<std::string, int>> voiceWorklet_;
+
+    // Pushes a request for the quantum at `frame`, with params from `paramNs`; false if the ring is full.
+    bool workletPush(WorkletNode &w, uint64_t frame, int64_t paramNs, bool withInputs);
+    void workletReadSlot(WorkletNode &w, uint32_t read);
+    void workletSilence(WorkletNode &w);
+    // Realtime: pushes the quantum just filled and plays the newest response.
+    void workletEndQuantum(WorkletNode &w, int64_t paramNs);
+    // Offline: renders the quantum at offlineFrame_ into outQ, waiting for the Worker.
+    void workletRenderOffline(WorkletNode &w);
+    void removeWorklet(const std::string &id);
 
     std::unordered_map<std::string, BufferData> audioBuffers_;
     std::unordered_map<std::string, Voice> audioVoices_;
@@ -339,7 +383,8 @@ public:
         CMD_SET_PANNER_HRIR,
         CMD_SET_PANNER_PARTITION_SIZE,
         CMD_CREATE_WORKLET,
-        CMD_CREATE_DELAY
+        CMD_CREATE_DELAY,
+        CMD_WORKLET_OUTPUT
     };
 
     struct Command {
@@ -400,7 +445,7 @@ public:
         std::shared_ptr<std::vector<int16_t>> pcm;
         std::shared_ptr<std::vector<float>> pcmFloat;
         std::shared_ptr<ExternalRing> externalRing;
-        std::shared_ptr<WorkletRing> worklet;
+        std::shared_ptr<WorkletNode> worklet;
         std::shared_ptr<std::vector<float>> hrirLeft;
         std::shared_ptr<std::vector<float>> hrirRight;
         bool clearHrir = false;

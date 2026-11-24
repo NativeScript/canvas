@@ -62,8 +62,9 @@ public class WorkletSourceInstrumentedTest {
 		AudioContextInstance context = audio.createContextInstance(48000, 0.01);
 		AnalyserNode analyser = audio.createAnalyser(context);
 		ByteBuffer ring = ByteBuffer.allocateDirect((HEADER + 8) * 4).order(ByteOrder.LITTLE_ENDIAN);
-		WorkletSourceNode node = audio.createWorkletSource(context, ring, 1, new int[]{SLOT_WORDS, HEADER, OUTPUT_COUNTS, OUTPUT_DATA, PARAM_LENGTHS, PARAM_DATA}, new double[]{0.25});
+		WorkletNode node = audio.createWorklet(context, ring, new int[0], new int[]{1}, new int[]{SLOT_WORDS, HEADER, OUTPUT_COUNTS, OUTPUT_DATA, OUTPUT_COUNTS, PARAM_LENGTHS, PARAM_DATA}, new int[]{OUTPUT_DATA}, new double[]{0.25});
 		Assert.assertNotNull(node);
+		node.connect(analyser);
 		Assert.assertEquals("native marks the ring it reads", 0x574B4C54, ring.getInt((HEADER + 5) * 4));
 		Assert.assertEquals(1, node.getParamCount());
 

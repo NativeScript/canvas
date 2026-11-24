@@ -2,10 +2,72 @@
 #include "audio_internal.h"
 #include "hrtf_convolver.h"
 
+#include <cstring>
 
-NativeEngine &NativeEngine::getInstance() {
+
+namespace {
+thread_local NativeEngine *tlsEngine = nullptr;
+std::mutex offlineMutex;
+// Prefix -> engine.
+std::unordered_map<std::string, std::shared_ptr<NativeEngine>> offlineEngines;
+uint64_t offlineSerial = 0;
+// Offline context time 0; nonzero, as a start time of 0 means unscheduled.
+constexpr int64_t kOfflineBaseNs = 1000000000LL;
+}
+
+NativeEngine &NativeEngine::realtime() {
     static NativeEngine inst;
     return inst;
+}
+
+NativeEngine &NativeEngine::getInstance() {
+    return tlsEngine ? *tlsEngine : realtime();
+}
+
+NativeEngine::Scope::Scope(std::shared_ptr<NativeEngine> engine) : engine_(std::move(engine)), previous_(tlsEngine) {
+    tlsEngine = engine_.get();
+}
+
+NativeEngine::Scope::~Scope() {
+    tlsEngine = previous_;
+}
+
+std::string NativeEngine::createOffline(int sampleRate, int channels) {
+    std::shared_ptr<NativeEngine> engine(new NativeEngine(), [](NativeEngine *e) { delete e; });
+    engine->offline_ = true;
+#ifdef HAS_OBOE
+    engine->streamSampleRate_ = sampleRate > 0 ? sampleRate : 48000;
+    engine->streamChannels_ = std::max(1, channels);
+#endif
+    engine->offlineBaseNs_ = kOfflineBaseNs;
+    engine->nowNs_.store(kOfflineBaseNs, std::memory_order_relaxed);
+    std::string contextId;
+    {
+        std::lock_guard<std::mutex> lock(offlineMutex);
+        engine->idPrefix_ = "o" + std::to_string(++offlineSerial) + "_";
+        contextId = engine->idPrefix_ + "context";
+        offlineEngines[engine->idPrefix_] = engine;
+    }
+    engine->registerContextStart(contextId, kOfflineBaseNs);
+    if (realtime().jvm_) engine->setJavaVM(realtime().jvm_);
+    return contextId;
+}
+
+void NativeEngine::releaseOffline(const std::string &contextId) {
+    auto engine = offlineFor(contextId.c_str());
+    if (!engine) return;
+    std::lock_guard<std::mutex> lock(offlineMutex);
+    offlineEngines.erase(engine->idPrefix_);
+}
+
+std::shared_ptr<NativeEngine> NativeEngine::offlineFor(const char *id) {
+    if (!id || id[0] != 'o') return nullptr;
+    const char *end = std::strchr(id, '_');
+    if (!end) return nullptr;
+    std::string prefix(id, static_cast<size_t>(end - id) + 1);
+    std::lock_guard<std::mutex> lock(offlineMutex);
+    auto it = offlineEngines.find(prefix);
+    return it != offlineEngines.end() ? it->second : nullptr;
 }
 
 NativeEngine::NativeEngine() = default;
@@ -303,7 +365,8 @@ NativeEngine::getIIRCoefficients(const std::string &iirId) {
 }
 
 int64_t NativeEngine::getContextCurrentTimeNanos(const std::string &contextId) {
-    int64_t audioNs = g_audioTimeNanos.load(std::memory_order_relaxed);
+    int64_t audioNs = offline_ ? nowNs_.load(std::memory_order_relaxed)
+                               : g_audioTimeNanos.load(std::memory_order_relaxed);
     if (audioNs == 0) {
         audioNs = std::chrono::duration_cast<std::chrono::nanoseconds>(
                 std::chrono::steady_clock::now().time_since_epoch()).count();

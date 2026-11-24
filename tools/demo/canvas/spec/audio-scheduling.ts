@@ -154,6 +154,28 @@ export function registerAudioSchedulingSpec() {
 			ok(endedAt > 0 && Math.abs(took - decoded.duration) < 0.1, `${decoded.duration.toFixed(3)} s buffer ended after ${took.toFixed(3)} s`);
 		});
 
+		test('a delay holds its input back by delayTime, tail included', async () => {
+			const { context, analyser } = await runningContext();
+			const delay = context.createDelay(1);
+			delay.delayTime.value = 0.3;
+			delay.connect(analyser);
+			const source = context.createConstantSource({ offset: 1 });
+			source.connect(delay);
+			const t0 = context.currentTime;
+			source.start(t0);
+			source.stop(t0 + 0.3);
+			await until(context, t0 + 0.15);
+			const before = rmsOf(analyser);
+			await until(context, t0 + 0.45);
+			const during = rmsOf(analyser);
+			await until(context, t0 + 0.85);
+			const after = rmsOf(analyser);
+			await context.close();
+			ok(quiet(before), `silent for delayTime, rms ${before}`);
+			ok(loud(during), `audible after the source stopped, rms ${during}`);
+			ok(quiet(after), `silent once the tail ends, rms ${after}`);
+		});
+
 		test('constant source sounds only between start(when) and stop(when)', async () => {
 			const { context, analyser } = await runningContext();
 			const source = context.createConstantSource({ offset: 1 });

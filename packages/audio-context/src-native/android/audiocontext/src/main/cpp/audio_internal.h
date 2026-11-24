@@ -55,10 +55,10 @@ inline void audioThreadLog(int prio, const char *fmt, ...) {
 }
 
 inline std::string genId() {
-    static std::mt19937_64 rng((std::random_device()) ());
+    thread_local std::mt19937_64 rng((std::random_device()) ());
     std::uniform_int_distribution<uint64_t> dist;
     std::ostringstream ss;
-    ss << std::hex << dist(rng);
+    ss << NativeEngine::getInstance().idPrefix() << std::hex << dist(rng);
     return ss.str();
 }
 

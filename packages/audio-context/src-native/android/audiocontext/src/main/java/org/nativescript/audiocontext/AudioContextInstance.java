@@ -72,8 +72,13 @@ public class AudioContextInstance {
 	}
 
 
-	public void renderOfflineAsync(int frames, int sampleRate, int channels, DecodeCallback cb) {
-		AudioContext.getInstance().renderOfflineForContext(id, frames, sampleRate, channels, cb);
+	/** An OfflineAudioContext of {@code channels} channels at {@code sampleRate}. */
+	public static AudioContextInstance createOffline(int sampleRate, int channels) {
+		return AudioContext.getInstance().createOfflineContextInstance(sampleRate, channels);
+	}
+
+	public OfflineRenderer createRenderer(int frames, int channels, int sampleRate) {
+		return new OfflineRenderer(id, frames, channels, sampleRate);
 	}
 
 	public void release() {

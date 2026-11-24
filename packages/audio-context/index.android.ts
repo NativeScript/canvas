@@ -40,6 +40,7 @@ import {
 	unmarkMediaElementUsed,
 	resolveNativePlayer,
 	throwInvalidMediaElement,
+	OfflineSuspends,
 } from './common';
 import { AUDIO_WORKLET_SCOPE } from './audio-worklet-scope';
 import { SHARED_RING_BRIDGE, createWorkletRing, workletRingLayout } from './audio-worklet-ring';
@@ -597,37 +598,107 @@ export class MediaElementAudioSourceNode extends AudioNode {
 	}
 }
 
+const QUANTUM = 128;
+
 export class OfflineAudioContext extends BaseAudioContext {
 	[native_]: org.nativescript.audiocontext.AudioContextInstance;
 	destination: AudioDestinationNode | null = null;
 
-	private _frames: number = 0;
-	private _sampleRate: number = 48000;
-	private _channels: number = 1;
+	private _length: number;
+	private _sampleRate: number;
+	private _channels: number;
+	private _renderer: org.nativescript.audiocontext.OfflineRenderer;
+	private _rendering: Promise<AudioBuffer> | null = null;
+	private _suspends = new OfflineSuspends();
+	private _listener: AudioListener | null = null;
 
 	static getInstance() {
 		if (!audioContextInstance) audioContextInstance = org.nativescript.audiocontext.AudioContext.getInstance();
 		return audioContextInstance;
 	}
 
-	constructor(numberOfChannels: number, lengthInFrames: number, sampleRate: number) {
+	constructor(numberOfChannels: number | { numberOfChannels?: number; length: number; sampleRate: number }, lengthInFrames?: number, sampleRate?: number) {
 		super();
-		this._frames = Math.max(0, lengthInFrames | 0);
-		this._sampleRate = sampleRate && Number.isFinite(sampleRate) ? sampleRate : 48000;
-		this._channels = Math.max(1, numberOfChannels | 0);
-
-		this[native_] = OfflineAudioContext.getInstance().createContextInstance();
+		const options = typeof numberOfChannels === 'object' ? numberOfChannels : { numberOfChannels, length: lengthInFrames, sampleRate };
+		this._channels = Math.max(1, (options.numberOfChannels ?? 1) | 0);
+		this._length = Math.max(0, options.length | 0);
+		this._sampleRate = options.sampleRate && Number.isFinite(options.sampleRate) ? options.sampleRate : 48000;
+		OfflineAudioContext.getInstance();
+		this[native_] = org.nativescript.audiocontext.AudioContextInstance.createOffline(this._sampleRate, this._channels);
+		this._renderer = this[native_].createRenderer(this._length, this._channels, this._sampleRate);
 		this.destination = new AudioDestinationNode(this, this[native_].getDestination());
+		this._state = 'suspended';
 	}
 
 	get native() {
 		return this[native_];
 	}
 
-	configure(numberOfChannels: number, lengthInFrames: number, sampleRate: number) {
-		this._channels = Math.max(1, numberOfChannels | 0);
-		this._frames = Math.max(0, lengthInFrames | 0);
-		this._sampleRate = sampleRate && Number.isFinite(sampleRate) ? sampleRate : this._sampleRate;
+	get sampleRate(): number {
+		return this._sampleRate;
+	}
+
+	get length(): number {
+		return this._length;
+	}
+
+	get currentTime(): number {
+		return this[native_].getCurrentTime();
+	}
+
+	get listener() {
+		if (!this._listener) this._listener = new AudioListener(nativeCtor_, this as unknown as NativeBaseAudioContext);
+		return this._listener;
+	}
+
+	/** Holds rendering at `suspendTime`, rounded up to a 128-frame quantum. */
+	suspend(suspendTime: number): Promise<void> {
+		const fail = (reason: string) => Promise.reject(domError('InvalidStateError', `OfflineAudioContext.suspend: ${reason}`));
+		if (this._state === 'closed') return fail('rendering has finished');
+		const time = Number(suspendTime);
+		if (!Number.isFinite(time) || time < 0) return fail('suspendTime must be a non-negative number');
+		// The epsilon keeps an exact boundary from rounding up a quantum.
+		const frame = Math.max(0, Math.ceil((time * this._sampleRate) / QUANTUM - 1e-9)) * QUANTUM;
+		if (frame >= this._length) return fail('suspendTime is at or past the end of the render');
+		if (this._suspends.has(frame)) return fail('a suspend is already scheduled at that time');
+		if (!this._renderer.suspendAt(frame)) return fail('suspendTime is not after the current time');
+		return this._suspends.add(frame);
+	}
+
+	resume(): Promise<void> {
+		if (this._state === 'closed') return Promise.reject(domError('InvalidStateError', 'OfflineAudioContext: rendering has finished'));
+		if (!this._rendering) return Promise.reject(domError('InvalidStateError', 'OfflineAudioContext: rendering has not started'));
+		this._setState('running');
+		this._renderer.resume();
+		return Promise.resolve();
+	}
+
+	startRendering(): Promise<AudioBuffer> {
+		if (this._rendering) return Promise.reject(domError('InvalidStateError', 'OfflineAudioContext: rendering has already started'));
+		this._setState('running');
+		const ref = new WeakRef(this);
+		this._rendering = new Promise<AudioBuffer>((resolve, reject) => {
+			this._renderer.start(
+				new org.nativescript.audiocontext.OfflineRenderer.Callback({
+					onSuspend(frame: number) {
+						const context = ref.deref();
+						if (!context) return;
+						context._setState('suspended');
+						context._suspends.reached(frame);
+					},
+					onComplete(buffer) {
+						const context = ref.deref();
+						if (context) {
+							context._setState('closed');
+							context._suspends.rejectAll(() => domError('InvalidStateError', 'OfflineAudioContext: rendering finished before the suspend'));
+						}
+						if (!buffer) return reject(new Error('startRendering failed'));
+						resolve(new AudioBuffer(nativeCtor_, buffer));
+					},
+				}),
+			);
+		});
+		return this._rendering;
 	}
 
 	createGain(options?: { gain?: number }) {
@@ -728,21 +799,6 @@ export class OfflineAudioContext extends BaseAudioContext {
 		return ret;
 	}
 
-	startRendering(): Promise<AudioBuffer> {
-		return new Promise((resolve, reject) => {
-			this.native.renderOfflineAsync(
-				this._frames,
-				this._sampleRate,
-				this._channels,
-				new org.nativescript.audiocontext.DecodeCallback({
-					onResult(buffer) {
-						if (!buffer) return reject(new Error('startRendering failed'));
-						resolve(new AudioBuffer(nativeCtor_, buffer));
-					},
-				}),
-			);
-		});
-	}
 }
 
 let workletScriptPath: string | null = null;
@@ -1010,22 +1066,6 @@ export class AudioContext extends BaseAudioContext {
 		return new AudioBufferSourceNode(this, options);
 	}
 
-	renderOffline(trackIds: string[], frames: number, sampleRate: number, channels: number): Promise<AudioBuffer> {
-		return new Promise((resolve, reject) => {
-			AudioContext.getInstance().renderOfflineAsync(
-				trackIds,
-				frames,
-				sampleRate,
-				channels,
-				new org.nativescript.audiocontext.DecodeCallback({
-					onResult(buffer) {
-						if (!buffer) return reject(new Error('renderOffline failed'));
-						resolve(new AudioBuffer(nativeCtor_, buffer));
-					},
-				}),
-			);
-		});
-	}
 
 	decodeAudioData(source: string | ArrayBuffer | ArrayBufferView, successCallback?: (buffer: AudioBuffer) => void, errorCallback?: (error: Error) => void): Promise<AudioBuffer> {
 		const ret = new Promise<AudioBuffer>((resolve, reject) => {
@@ -1237,7 +1277,7 @@ export class DelayNode extends AudioNode {
 	constructor(context: NativeBaseAudioContext, options: DelayOptions = {}) {
 		super(context);
 		this.maxDelayTime = typeof options.maxDelayTime === 'number' ? options.maxDelayTime : 1.0;
-		const delay = AudioContext.getInstance().createDelay(context.native);
+		const delay = AudioContext.getInstance().createDelay(context.native, this.maxDelayTime);
 		if (typeof options.delayTime === 'number' && options.delayTime !== 0) {
 			delay.getDelayTime().setValue(options.delayTime);
 		}

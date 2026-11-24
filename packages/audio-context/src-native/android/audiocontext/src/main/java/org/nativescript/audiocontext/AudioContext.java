@@ -2872,20 +2872,26 @@ public class AudioContext {
 
 	private native String nativeCreateExternalPcmSource(String contextId, int sampleRate, int channels);
 
-	private native String nativeCreateWorkletSource(String contextId, java.nio.ByteBuffer ring, int channels, int slotWords, int header, int outputCounts, int outputData, int paramLengths, int paramData, String[] paramIds);
+	private native String nativeCreateWorklet(String contextId, java.nio.ByteBuffer ring, int[] inputChannels, int[] outputChannels, int[] layout, int[] outputData, String[] paramIds);
+
+	private native void nativeSetWorkletOutputConnected(String id, int output, boolean connected);
 
 	@Nullable
-	String createWorkletSource(String contextId, java.nio.ByteBuffer ring, int channels, int[] layout, String[] paramIds) {
-		if (!nativeAvailable || ring == null || !ring.isDirect() || layout == null || layout.length < 6) return null;
+	String createWorkletNative(String contextId, java.nio.ByteBuffer ring, int[] inputChannels, int[] outputChannels, int[] layout, int[] outputData, String[] paramIds) {
+		if (!nativeAvailable || ring == null || !ring.isDirect() || layout == null || layout.length < 7) return null;
 		// Param automation times are the context's.
 		for (String paramId : paramIds) registerGainForContext(contextId, paramId);
-		return nativeCreateWorkletSource(contextId, ring, channels, layout[0], layout[1], layout[2], layout[3], layout[4], layout[5], paramIds);
+		return nativeCreateWorklet(contextId, ring, inputChannels, outputChannels, layout, outputData, paramIds);
 	}
 
-	/** An AudioWorkletNode's source over `ring` (a SharedArrayBuffer); layout: slotWords, header, outputCounts, outputData, paramLengths, paramData. */
+	void setWorkletOutputConnected(String id, int output, boolean connected) {
+		if (nativeAvailable) nativeSetWorkletOutputConnected(id, output, connected);
+	}
+
+	/** An AudioWorkletNode over `ring` (a SharedArrayBuffer); layout: slotWords, header, inputCounts, inputData, outputCounts, paramLengths, paramData. */
 	@Nullable
-	public WorkletSourceNode createWorkletSource(AudioContextInstance context, java.nio.ByteBuffer ring, int channels, int[] layout, double[] paramDefaults) {
-		return WorkletSourceNode.create(context, ring, channels, layout, paramDefaults);
+	public WorkletNode createWorklet(AudioContextInstance context, java.nio.ByteBuffer ring, int[] inputChannels, int[] outputChannels, int[] layout, int[] outputData, double[] paramDefaults) {
+		return WorkletNode.create(context, ring, inputChannels, outputChannels, layout, outputData, paramDefaults);
 	}
 
 	private native void nativeConfigureExternalPcmSource(String trackId, int sampleRate, int channels);

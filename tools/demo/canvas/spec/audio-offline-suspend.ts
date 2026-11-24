@@ -1,6 +1,5 @@
 import { AudioWorkletNode, OfflineAudioContext } from '@nativescript/audio-context';
-import { isAndroid } from '@nativescript/core';
-import { suite, test, skip, equal, closeTo, rejects } from './harness';
+import { suite, test, equal, closeTo, rejects } from './harness';
 
 // OfflineAudioContext.suspend(when) / resume(), against what Chrome does.
 
@@ -72,8 +71,7 @@ export function registerAudioOfflineSuspendSpec() {
 			equal(samples[Q * 10 + 5], 1.5, 'the source scheduled before rendering joins on its frame');
 		});
 
-		if (isAndroid) skip('a worklet sees a param set while held from the suspend frame', 'no OfflineAudioContext worklets on Android');
-		else test('a worklet sees a param set while held from the suspend frame', async () => {
+		test('a worklet sees a param set while held from the suspend frame', async () => {
 			if (typeof (globalThis as any).Worker !== 'function') return;
 			const context = new OfflineAudioContext(1, Q * 16, RATE);
 			await context.audioWorklet.addModule(LEVEL);

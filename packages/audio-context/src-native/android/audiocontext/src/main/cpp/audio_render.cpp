@@ -513,10 +513,17 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                 break;
             }
             case NativeEngine::CMD_ATTACH_GAIN: {
-                if (!c.gainId.empty() && delays_.count(c.gainId)) {
-                    voiceDelay_[c.id] = c.gainId;
+                if (!c.gainId.empty() && worklets_.count(c.gainId)) {
+                    voiceWorklet_[c.id] = {c.gainId, c.inputIndex};
+                    voiceDelay_.erase(c.id);
                     break;
                 }
+                if (!c.gainId.empty() && delays_.count(c.gainId)) {
+                    voiceDelay_[c.id] = c.gainId;
+                    voiceWorklet_.erase(c.id);
+                    break;
+                }
+                if (c.gainId.empty()) voiceWorklet_.erase(c.id);
                 auto vit = audioVoices_.find(c.id);
                 std::string prevGainId;
                 bool voiceExists = vit != audioVoices_.end();
@@ -1341,6 +1348,11 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                 break;
             }
             case NativeEngine::CMD_STOP_TRACK: {
+                if (worklets_.count(c.id)) {
+                    removeWorklet(c.id);
+                    break;
+                }
+                voiceWorklet_.erase(c.id);
                 auto vit = audioVoices_.find(c.id);
                 bool existed = vit != audioVoices_.end();
                 size_t gainOutputsForVoice = 0;
@@ -1369,9 +1381,6 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                                    vit->second.gainId.c_str(), vit->second.panId.c_str(),
                                    vit->second.filterId.c_str(), gainOutputsForVoice,
                                    pannerOutputsForVoice, filterOutputsForVoice);
-                }
-                if (existed && vit->second.worklet) {
-                    vit->second.worklet->header[3].store(1, std::memory_order_release);
                 }
                 audioVoices_.erase(c.id);
                 break;
@@ -1450,27 +1459,35 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                 break;
             }
             case NativeEngine::CMD_CREATE_WORKLET: {
-                if (!c.externalRing || !c.worklet) break;
-                Voice v;
-                v.voiceType = Voice::ExternalPCM;
-                v.id = c.id;
-                v.playing = true;
-                v.bufferChannels = c.channels;
-                v.bufferSampleRate = streamSampleRate_ > 0 ? streamSampleRate_ : 48000;
-                v.increment = 1.0;
-                v.externalRing = c.externalRing;
-                v.worklet = c.worklet;
-                v.externalPrev.assign((size_t) v.bufferChannels, 0.0f);
-                v.externalCurr.assign((size_t) v.bufferChannels, 0.0f);
-                auto vg = voiceGainByOutput_.find(v.id);
-                if (vg != voiceGainByOutput_.end() && !vg->second.empty()) {
-                    auto mapIt = vg->second.find(0);
-                    if (mapIt == vg->second.end()) mapIt = vg->second.begin();
-                    v.gainId = mapIt->second;
-                    auto git = gains_.find(v.gainId);
-                    if (git != gains_.end()) v.gain = git->second;
+                if (!c.worklet) break;
+                auto worklet = c.worklet;
+                worklets_[worklet->id] = worklet;
+                for (int o = 0; o < worklet->outputs; o++) {
+                    Voice v;
+                    v.voiceType = Voice::WorkletOutput;
+                    v.id = o == 0 ? worklet->id : worklet->id + "#" + std::to_string(o);
+                    v.playing = true;
+                    v.bufferChannels = worklet->outChannels[o];
+                    v.bufferSampleRate = streamSampleRate_ > 0 ? streamSampleRate_ : 48000;
+                    v.worklet = worklet;
+                    v.workletOutput = o;
+                    auto vg = voiceGainByOutput_.find(v.id);
+                    if (vg != voiceGainByOutput_.end() && !vg->second.empty()) {
+                        auto mapIt = vg->second.find(0);
+                        if (mapIt == vg->second.end()) mapIt = vg->second.begin();
+                        v.gainId = mapIt->second;
+                        auto git = gains_.find(v.gainId);
+                        if (git != gains_.end()) v.gain = git->second;
+                    }
+                    audioVoices_[v.id] = std::move(v);
                 }
-                audioVoices_[c.id] = std::move(v);
+                break;
+            }
+            case NativeEngine::CMD_WORKLET_OUTPUT: {
+                auto wit = worklets_.find(c.id);
+                if (wit != worklets_.end() && c.outputIndex >= 0 && c.outputIndex < wit->second->outputs) {
+                    wit->second->connected[c.outputIndex] = c.loop;
+                }
                 break;
             }
             case NativeEngine::CMD_CREATE_EXTERNAL_PCM: {
@@ -1701,17 +1718,12 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
         std::array<const NativeEngine::Panner *, kRouteCacheChannels> pannerNodeByOutput{};
         const std::string *playbackRatePrimaryId = nullptr;
         NativeEngine::DelayLine *delay = nullptr;
+        // The worklet input this voice plays into instead of the output.
+        NativeEngine::WorkletNode *into = nullptr;
+        int intoInput = 0;
+        // Routed into a worklet that is gone.
+        bool dropped = false;
     };
-
-    {
-        const int64_t workletStartNs = nowNs_.load(std::memory_order_relaxed) + 4;
-        const double workletFrameNs = 1000000000.0 / (streamSampleRate_ > 0 ? streamSampleRate_ : 48000);
-        for (auto &kv: audioVoices_) {
-            if (kv.second.worklet && kv.second.playing) {
-                produceWorkletQuanta(kv.second, numFrames, workletStartNs, workletFrameNs);
-            }
-        }
-    }
 
     std::vector<ActiveVoiceView> localVoices;
     localVoices.reserve(audioVoices_.size());
@@ -1797,6 +1809,17 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
         if (delayIt != voiceDelay_.end()) {
             auto lineIt = delays_.find(delayIt->second);
             if (lineIt != delays_.end()) view.delay = &lineIt->second;
+        }
+        auto intoIt = voiceWorklet_.find(voice.id);
+        if (intoIt != voiceWorklet_.end()) {
+            auto nodeIt = worklets_.find(intoIt->second.first);
+            if (nodeIt != worklets_.end() && intoIt->second.second >= 0 &&
+                intoIt->second.second < nodeIt->second->inputs) {
+                view.into = nodeIt->second.get();
+                view.intoInput = intoIt->second.second;
+            } else {
+                view.dropped = true;
+            }
         }
 
         localVoices.push_back(std::move(view));
@@ -2372,12 +2395,38 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
     if (collectAnalyser) analyserMono.assign((size_t) numFrames, 0.0f);
 
     const double delayRate = streamSampleRate_ > 0 ? static_cast<double>(streamSampleRate_) : 48000.0;
-    // A voice routed through a DelayNode feeds its line instead of the output.
-    auto emitVoice = [](const ActiveVoiceView &view, int channel, float sample, float &mixed) {
-        if (view.delay && channel < view.delay->channels) view.delay->input[static_cast<size_t>(channel)] += sample;
-        else mixed += sample;
+    for (auto &kv: delays_) {
+        NativeEngine::DelayLine &d = kv.second;
+        const size_t need = static_cast<size_t>(d.channels) * static_cast<size_t>(numFrames);
+        if (d.input.size() < need) d.input.assign(need, 0.0f);
+        d.inputStride = numFrames;
+    }
+    // Offline renders one quantum per call, so a worklet's position is the frame.
+    auto workletAt = [&](const NativeEngine::WorkletNode &w, int frame) {
+        return static_cast<size_t>(offline_ ? frame : w.position);
+    };
+    // A voice routed into a worklet input or through a DelayNode feeds it instead of the output.
+    auto emitVoice = [&](const ActiveVoiceView &view, int channel, int frame, float sample, float &mixed) {
+        if (view.dropped) return;
+        if (view.into) {
+            NativeEngine::WorkletNode &w = *view.into;
+            if (channel < w.mixChannels) {
+                w.inMix[static_cast<size_t>((view.intoInput * w.mixChannels + channel) * 128) + workletAt(w, frame)] += sample;
+                w.inActive[view.intoInput] = true;
+            }
+        } else if (view.delay && channel < view.delay->channels) {
+            view.delay->input[static_cast<size_t>(channel * view.delay->inputStride + frame)] += sample;
+        } else {
+            mixed += sample;
+        }
     };
 
+    std::vector<NativeEngine::WorkletNode *> worklets;
+    worklets.reserve(worklets_.size());
+    for (auto &kv: worklets_) worklets.push_back(kv.second.get());
+
+    // Mixes `pass`'s voices into `out`; realtime worklets step a frame at a time.
+    auto renderPass = [&](const std::vector<ActiveVoiceView *> &pass) {
     for (int frame = 0; frame < numFrames; ++frame) {
         pannerCutoffByBiquad.clear();
         pannerFrameCache.clear();
@@ -2385,7 +2434,8 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
         hrtfOutputCache.clear();
         for (int ch = 0; ch < channels; ++ch) {
             float mixed = 0.0f;
-            for (const auto &voiceView: localVoices) {
+            for (const ActiveVoiceView *voiceViewPtr: pass) {
+                const ActiveVoiceView &voiceView = *voiceViewPtr;
                 Voice &v = *voiceView.voice;
                 const BufferData *voiceBuffer = voiceView.bufferData;
                 const auto *gainRoute = voiceView.gainRoute;
@@ -2393,6 +2443,13 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                 const auto *pannerRoute = voiceView.pannerRoute;
                 const std::string *playbackRatePrimaryId = voiceView.playbackRatePrimaryId;
                 if (!v.playing) continue;
+                if (v.voiceType == Voice::WorkletOutput) {
+                    if (!v.worklet || v.worklet->ended) {
+                        v.playing = false;
+                        continue;
+                    }
+                    if (!v.worklet->connected[v.workletOutput]) continue;
+                }
                 if (v.startAtNs > 0 || v.stopAtNs > 0) {
                     auto frameNs = audioStartNs + static_cast<int64_t>(frame * sampleDurationNs);
                     if (v.stopAtNs > 0 && frameNs >= v.stopAtNs) {
@@ -2515,25 +2572,25 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                         float voiceOut = static_cast<float>(s * monoGain);
                         voiceOut = applyDynamicsCompressorForGain(effGainId, ch, frame,
                                                                    voiceOut);
-                        emitVoice(voiceView, ch, voiceOut, mixed);
+                        emitVoice(voiceView, ch, frame, voiceOut, mixed);
                     } else {
                         double g = static_cast<double>(scheduled) * distanceAtt;
                         if (ch == 0) {
                             float voiceOut = static_cast<float>(s * g * leftGain);
                             voiceOut = applyDynamicsCompressorForGain(effGainId, ch, frame,
                                                                        voiceOut);
-                            emitVoice(voiceView, ch, voiceOut, mixed);
+                            emitVoice(voiceView, ch, frame, voiceOut, mixed);
                         } else if (ch == 1) {
                             float voiceOut = static_cast<float>(s * g * rightGain);
                             voiceOut = applyDynamicsCompressorForGain(effGainId, ch, frame,
                                                                        voiceOut);
-                            emitVoice(voiceView, ch, voiceOut, mixed);
+                            emitVoice(voiceView, ch, frame, voiceOut, mixed);
                         } else {
                             double avg = 0.5 * (leftGain + rightGain);
                             float voiceOut = static_cast<float>(s * g * avg);
                             voiceOut = applyDynamicsCompressorForGain(effGainId, ch, frame,
                                                                        voiceOut);
-                            emitVoice(voiceView, ch, voiceOut, mixed);
+                            emitVoice(voiceView, ch, frame, voiceOut, mixed);
                         }
                     }
                     if (ch == channels - 1) {
@@ -2541,7 +2598,8 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                         if (v.phase >= 1.0) v.phase -= 1.0;
                     }
                 } else if (v.voiceType == Voice::BufferSource ||
-                           v.voiceType == Voice::ExternalPCM) {
+                           v.voiceType == Voice::ExternalPCM ||
+                           v.voiceType == Voice::WorkletOutput) {
                     int bufChannels = 1;
                     int bufFrames = 0;
                     int chIdx = ch;
@@ -2550,6 +2608,8 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                     int idx0_dbg = 0;
                     int idx1_dbg = 0;
                     const BufferData *bd_dbg = nullptr;
+                    // A worklet output's quantum at this frame, channel c at c * 128.
+                    const float *workletFrame = nullptr;
 
                     if (v.voiceType == Voice::BufferSource) {
                         if (!voiceBuffer) continue;
@@ -2621,6 +2681,24 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                         }
                         sample = fs0 * (1.0f - static_cast<float>(frac)) +
                                  fs1 * static_cast<float>(frac);
+                    } else if (v.voiceType == Voice::WorkletOutput) {
+                        const NativeEngine::WorkletNode &w = *v.worklet;
+                        bufChannels = w.outChannels[v.workletOutput];
+                        bufFrames = INT32_MAX;
+                        if (bufChannels == 1) chIdx = 0;
+                        else if (bufChannels >= channels) chIdx = ch;
+                        else chIdx = ch % bufChannels;
+                        workletFrame = w.outQ.data() +
+                                       static_cast<size_t>(v.workletOutput * NativeEngine::kWorkletMaxChannels * 128) +
+                                       workletAt(w, frame);
+                        if (channels == 1 && bufChannels > 1) {
+                            // Down-mixes by averaging, as Web Audio's "speakers" do.
+                            float sum = 0.0f;
+                            for (int c = 0; c < bufChannels; c++) sum += workletFrame[c * 128];
+                            sample = sum / static_cast<float>(bufChannels);
+                        } else {
+                            sample = workletFrame[chIdx * 128];
+                        }
                     } else /* ExternalPCM */ {
                         auto &ring = v.externalRing;
                         if (!ring) continue;
@@ -2767,6 +2845,7 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                                    fs1 * static_cast<float>(frac);
                         }
 
+                        if (workletFrame) return workletFrame[inputChannelIndex * 128];
                         auto &ring = v.externalRing;
                         if (!ring || !v.externalPrimed || bufChannels <= 0) return 0.0f;
                         size_t safeChannel = static_cast<size_t>(inputChannelIndex);
@@ -2936,7 +3015,7 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                         float voiceOut = static_cast<float>(sample * monoGain);
                         voiceOut = applyDynamicsCompressorForGain(effGainId3, ch, frame,
                                                                    voiceOut);
-                        emitVoice(voiceView, ch, voiceOut, mixed);
+                        emitVoice(voiceView, ch, frame, voiceOut, mixed);
                     } else {
                         double g = static_cast<double>(scheduled) * distanceAtt;
                         if (stereoInput && !treatStereoAsMono) {
@@ -2950,7 +3029,7 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                                 float voiceOut = static_cast<float>(outputL * g);
                                 voiceOut = applyDynamicsCompressorForGain(effGainId3, ch,
                                                                            frame, voiceOut);
-                                emitVoice(voiceView, ch, voiceOut, mixed);
+                                emitVoice(voiceView, ch, frame, voiceOut, mixed);
                             } else if (ch == 1) {
                                 double outputR = inputRight;
                                 if (hasResolvedPanner) {
@@ -2961,20 +3040,20 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                                 float voiceOut = static_cast<float>(outputR * g);
                                 voiceOut = applyDynamicsCompressorForGain(effGainId3, ch,
                                                                            frame, voiceOut);
-                                emitVoice(voiceView, ch, voiceOut, mixed);
+                                emitVoice(voiceView, ch, frame, voiceOut, mixed);
                             } else {
                                 double avg = 0.5 * (leftGain + rightGain);
                                 float voiceOut = static_cast<float>(sample * g * avg);
                                 voiceOut = applyDynamicsCompressorForGain(effGainId3, ch,
                                                                            frame, voiceOut);
-                                emitVoice(voiceView, ch, voiceOut, mixed);
+                                emitVoice(voiceView, ch, frame, voiceOut, mixed);
                             }
                         } else if (useHrtfConvolution) {
                             if (ch <= 1) {
                                 float voiceOut = static_cast<float>(sample * g);
                                 voiceOut = applyDynamicsCompressorForGain(effGainId3, ch,
                                                                            frame, voiceOut);
-                                emitVoice(voiceView, ch, voiceOut, mixed);
+                                emitVoice(voiceView, ch, frame, voiceOut, mixed);
                             } else {
                                 auto hrtfIt = hrtfOutputCache.find(v.id);
                                 float hrtfAvg = sample;
@@ -2985,24 +3064,24 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                                 float voiceOut = static_cast<float>(hrtfAvg * g);
                                 voiceOut = applyDynamicsCompressorForGain(effGainId3, ch,
                                                                            frame, voiceOut);
-                                emitVoice(voiceView, ch, voiceOut, mixed);
+                                emitVoice(voiceView, ch, frame, voiceOut, mixed);
                             }
                         } else if (ch == 0) {
                             float voiceOut = static_cast<float>(sample * g * leftGain);
                             voiceOut = applyDynamicsCompressorForGain(effGainId3, ch, frame,
                                                                        voiceOut);
-                            emitVoice(voiceView, ch, voiceOut, mixed);
+                            emitVoice(voiceView, ch, frame, voiceOut, mixed);
                         } else if (ch == 1) {
                             float voiceOut = static_cast<float>(sample * g * rightGain);
                             voiceOut = applyDynamicsCompressorForGain(effGainId3, ch, frame,
                                                                        voiceOut);
-                            emitVoice(voiceView, ch, voiceOut, mixed);
+                            emitVoice(voiceView, ch, frame, voiceOut, mixed);
                         } else {
                             double avg = 0.5 * (leftGain + rightGain);
                             float voiceOut = static_cast<float>(sample * g * avg);
                             voiceOut = applyDynamicsCompressorForGain(effGainId3, ch, frame,
                                                                        voiceOut);
-                            emitVoice(voiceView, ch, voiceOut, mixed);
+                            emitVoice(voiceView, ch, frame, voiceOut, mixed);
                         }
                     }
 
@@ -3022,7 +3101,7 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                                 if (v.loop) v.position = std::fmod(v.position, bufFrames);
                                 else v.playing = false;
                             }
-                        } else /* ExternalPCM */ {
+                        } else if (v.voiceType == Voice::ExternalPCM) {
                             auto &ring = v.externalRing;
                             if (ring && v.externalPrimed && bufChannels > 0) {
                                 v.externalSubPos += v.increment;
@@ -3055,6 +3134,72 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
             }
 
 
+            out[frame * channels + ch] += mixed;
+        }
+        if (!offline_) {
+            for (NativeEngine::WorkletNode *w: worklets) {
+                if (++w->position >= 128) {
+                    workletEndQuantum(*w, audioStartNs + static_cast<int64_t>((frame + 1) * sampleDurationNs));
+                }
+            }
+        }
+    }
+    };
+
+    std::vector<ActiveVoiceView *> allViews;
+    allViews.reserve(localVoices.size());
+    for (auto &view: localVoices) allViews.push_back(&view);
+    if (!offline_) {
+        renderPass(allViews);
+    } else {
+        // Offline output is sample-exact: a worklet with inputs runs once every voice feeding it has.
+        std::vector<NativeEngine::WorkletNode *> pending;
+        for (NativeEngine::WorkletNode *w: worklets) {
+            if (w->inputs == 0) workletRenderOffline(*w);
+            else pending.push_back(w);
+        }
+        auto isPending = [&](const NativeEngine::WorkletNode *w) {
+            return std::find(pending.begin(), pending.end(), w) != pending.end();
+        };
+        auto ownerOf = [](const ActiveVoiceView *view) -> NativeEngine::WorkletNode * {
+            const Voice &v = *view->voice;
+            return v.voiceType == Voice::WorkletOutput ? v.worklet.get() : nullptr;
+        };
+        std::vector<ActiveVoiceView *> pass;
+        for (ActiveVoiceView *view: allViews) {
+            if (!isPending(ownerOf(view))) pass.push_back(view);
+        }
+        renderPass(pass);
+        while (!pending.empty()) {
+            std::vector<NativeEngine::WorkletNode *> ready;
+            for (NativeEngine::WorkletNode *w: pending) {
+                bool waiting = false;
+                for (ActiveVoiceView *view: allViews) {
+                    NativeEngine::WorkletNode *owner = ownerOf(view);
+                    if (view->into == w && owner != w && isPending(owner)) {
+                        waiting = true;
+                        break;
+                    }
+                }
+                if (!waiting) ready.push_back(w);
+            }
+            // A cycle: run what's left with the inputs it has.
+            if (ready.empty()) ready = pending;
+            for (NativeEngine::WorkletNode *w: ready) {
+                workletRenderOffline(*w);
+                pending.erase(std::find(pending.begin(), pending.end(), w));
+            }
+            pass.clear();
+            for (ActiveVoiceView *view: allViews) {
+                if (std::find(ready.begin(), ready.end(), ownerOf(view)) != ready.end()) pass.push_back(view);
+            }
+            renderPass(pass);
+        }
+    }
+
+    for (int frame = 0; frame < numFrames; ++frame) {
+        for (int ch = 0; ch < channels; ++ch) {
+            float mixed = out[frame * channels + ch];
             for (auto &kv: delays_) {
                 NativeEngine::DelayLine &d = kv.second;
                 const int lineChannels = std::min(d.channels, channels);
@@ -3064,8 +3209,9 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                     d.delayFrames = std::max(0.0, std::min(seconds * delayRate, static_cast<double>(d.size - 2)));
                 }
                 float *line = d.data.data() + static_cast<size_t>(ch) * d.size;
-                line[d.writePos] = d.input[static_cast<size_t>(ch)];
-                d.input[static_cast<size_t>(ch)] = 0.0f;
+                float &input = d.input[static_cast<size_t>(ch * d.inputStride + frame)];
+                line[d.writePos] = input;
+                input = 0.0f;
                 double readPos = d.writePos - d.delayFrames;
                 if (readPos < 0.0) readPos += d.size;
                 const int i0 = static_cast<int>(readPos);
@@ -3137,11 +3283,13 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
     }
 
     for (const auto &voiceId: stoppedVoices) {
-        auto vit = audioVoices_.find(voiceId);
-        if (vit != audioVoices_.end() && vit->second.worklet) {
-            vit->second.worklet->header[3].store(1, std::memory_order_release);
-        }
         audioVoices_.erase(voiceId);
+        voiceWorklet_.erase(voiceId);
+    }
+    for (NativeEngine::WorkletNode *w: worklets) {
+        if (!w->ended) continue;
+        std::string id = w->id;
+        removeWorklet(id);
     }
     queueEnded(stoppedVoices);
 

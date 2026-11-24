@@ -200,9 +200,14 @@ on the app's JS thread.
   still feeds silent channels until it is garbage collected.
 - `audioWorklet` is `undefined` where the runtime has no `Worker` (the QuickJS, Hermes and JSC
   builds).
-- On Android an `AudioWorkletNode` is a source: no inputs, one output of up to 8 channels, and no
-  `OfflineAudioContext` worklet. Its ring is a `SharedArrayBuffer` the Worker polls every 2 ms, so
-  output plays up to a device buffer plus 2 ms late.
+- On Android an `AudioWorkletNode` has up to 16 inputs and 16 outputs of up to 8 channels each,
+  with the same input mixing as iOS, and works in an `OfflineAudioContext`. Its ring is a
+  `SharedArrayBuffer` the Worker polls every 2 ms, so realtime output plays up to a device buffer
+  plus 2 ms late, and an offline render waits up to 2 ms per 128-frame quantum for a worklet with
+  inputs (a source's quanta are requested ahead).
+- On Android an input is mixed at the context's channel count before it is up- or down-mixed to
+  `channelCount`, so in a mono context a stereo source reaches the worklet as its mono mix. A node
+  connected into a worklet input plays only into it, as with `DelayNode`.
 
 ## Linux
 

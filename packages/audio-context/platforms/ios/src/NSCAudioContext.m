@@ -156,6 +156,9 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
     NSCAudioParam *_listenerUpYParam;
     NSCAudioParam *_listenerUpZParam;
     dispatch_source_t _listenerAutomationTimer;
+    NSMutableData *_timelineCell;
+    AVAudioSourceNode *_clock;
+    id _configurationObserver;
 }
 
 - (instancetype)initWithSampleRate:(double)sampleRate {
@@ -189,6 +192,13 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
         }
 
           NSCAudioContext_registerEngine(_engine, self);
+        _timelineCell = [NSMutableData dataWithLength:NSCTimelineSlots * sizeof(double)];
+        [self refreshTimelineRate];
+        if (![self isKindOfClass:[NSCOfflineAudioContext class]]) [self attachClock];
+        __weak NSCAudioContext *weakSelf = self;
+        _configurationObserver = [[NSNotificationCenter defaultCenter] addObserverForName:AVAudioEngineConfigurationChangeNotification object:_engine queue:nil usingBlock:^(NSNotification *note) {
+            [weakSelf refreshTimelineRate];
+        }];
         @try {
             if (_engine.mainMixerNode) {
                 _destination = [[NSCAudioNode alloc] initWithContext:self node:_engine.mainMixerNode];
@@ -1031,7 +1041,58 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
 + (NSMutableData *)marshalMutableData:(NSMutableData *)data { return data; }
 
 - (void)dealloc {
+    if (_configurationObserver) [[NSNotificationCenter defaultCenter] removeObserver:_configurationObserver];
     @try { [[NSCAudioSessionManager sharedManager] unregisterContext:self]; } @catch (NSException *e) {}
+}
+
+#pragma mark - Render timeline
+
+- (NSMutableData *)timelineCell { return _timelineCell; }
+
+static void UpdateTimelineOffset(double *timeline, double contextRate) {
+    double device = timeline[NSCTimelineDeviceRate];
+    timeline[NSCTimelineOffset] = device > 0.0 && contextRate > 0.0 ? timeline[NSCTimelineStart] * (1.0 - contextRate / device) : 0.0;
+}
+
+- (void)refreshTimelineRate {
+    AVAudioEngine *engine = _engine;
+    if (!engine || !_timelineCell) return;
+    double *timeline = (double *)_timelineCell.mutableBytes;
+    timeline[NSCTimelineDeviceRate] = engine.isInManualRenderingMode ? 0.0 : [engine.outputNode outputFormatForBus:0].sampleRate;
+    UpdateTimelineOffset(timeline, self.sampleRate);
+}
+
+// currentTime counts device samples, but render timestamps start at the device sample the engine
+// started on and then count context frames; this silent input tracks that start.
+- (void)attachClock {
+    NSMutableData *cell = _timelineCell;
+    double contextRate = self.sampleRate;
+    __block double expected = -1.0;
+    _clock = [[AVAudioSourceNode alloc] initWithFormat:_format renderBlock:^OSStatus(BOOL *isSilence, const AudioTimeStamp *ts, AVAudioFrameCount frames, AudioBufferList *abl) {
+        for (UInt32 b = 0; b < abl->mNumberBuffers; b++) if (abl->mBuffers[b].mData) memset(abl->mBuffers[b].mData, 0, abl->mBuffers[b].mDataByteSize);
+        if (isSilence) *isSilence = YES;
+        if (ts && (ts->mFlags & kAudioTimeStampSampleTimeValid)) {
+            double *timeline = (double *)cell.mutableBytes;
+            if (fabs(ts->mSampleTime - expected) > 0.5) {
+                timeline[NSCTimelineStart] = ts->mSampleTime;
+                UpdateTimelineOffset(timeline, contextRate);
+            }
+            expected = ts->mSampleTime + frames;
+        }
+        return noErr;
+    }];
+    @try {
+        [_engine attachNode:_clock];
+        [_engine connect:_clock to:_engine.mainMixerNode format:_format];
+    } @catch (NSException *e) {
+        NSCLogDebug(@"NSCAudioContext: the clock input did not connect: %@", e);
+    }
+}
+
+- (int64_t)frameForTime:(double)when {
+    double rate = self.sampleRate;
+    double now = self.currentTime;
+    return (int64_t)llround(MAX(when, now) * rate);
 }
 
 #pragma mark - setSinkId
@@ -1125,6 +1186,7 @@ static const CFTimeInterval NSCOfflineWorkletStallSeconds = 5.0;
     // The mixer keeps the hardware format it was created with otherwise.
     [engine connect:engine.mainMixerNode to:engine.outputNode format:format];
     [self adoptFormat:format];
+    [self refreshTimelineRate];
 }
 
 - (NSInteger)length { return _length; }

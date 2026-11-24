@@ -74,6 +74,7 @@ static inline NSCOscWaveform NSCOscWaveformFromString(NSString * _Nullable type)
     NSMutableData *capturedStartSampleData = startSampleData;
     NSMutableData *capturedStopSampleData = stopSampleData;
     NSMutableData *capturedWaveTypeData = waveTypeData;
+    NSMutableData *timelineCell = context.timelineCell ?: [NSMutableData dataWithLength:NSCTimelineSlots * sizeof(double)];
     __weak NSCAudioOscillatorNode *weakSelf = self;
 
     AVAudioSourceNode *source = [[AVAudioSourceNode alloc] initWithFormat:format renderBlock:^OSStatus(BOOL * _Nonnull isSilence, const AudioTimeStamp * _Nonnull timestamp, AVAudioFrameCount frameCount, AudioBufferList * _Nonnull audioBufferList) {
@@ -99,7 +100,8 @@ static inline NSCOscWaveform NSCOscWaveformFromString(NSString * _Nullable type)
 
         double sampleRate = format.sampleRate;
         BOOL hasSampleTime = (timestamp && (timestamp->mFlags & kAudioTimeStampSampleTimeValid));
-        double startTime = hasSampleTime ? timestamp->mSampleTime / sampleRate : 0.0;
+        double blockFrame = hasSampleTime ? NSCContextFrame(timestamp->mSampleTime, (const double *)timelineCell.bytes) : 0.0;
+        double startTime = blockFrame / sampleRate;
 
         UInt32 bufCount = audioBufferList->mNumberBuffers;
         float *out0 = (bufCount > 0) ? (float *)audioBufferList->mBuffers[0].mData : NULL;
@@ -110,7 +112,7 @@ static inline NSCOscWaveform NSCOscWaveformFromString(NSString * _Nullable type)
         BOOL hitStop = NO;
 
         if (hasSampleTime) {
-            int64_t blockStart = (int64_t)timestamp->mSampleTime;
+            int64_t blockStart = llround(blockFrame);
             int64_t blockEnd = blockStart + (int64_t)frameCount;
             if (startSample >= 0) {
                 if (startSample >= blockEnd) {
@@ -257,59 +259,26 @@ static inline NSCOscWaveform NSCOscWaveformFromString(NSString * _Nullable type)
 }
 
 - (void)start {
-    BOOL wasPlaying = [self isPlaying];
-    if (wasPlaying) return;
+    [self beginAtFrame:-1];
+}
+
+- (void)beginAtFrame:(int64_t)frame {
     NSCAudioContext *ctx = self.context;
-    if (!ctx) return;
-    int64_t desiredStart = -1;
-    double extra = [ctx extraLatencySeconds];
-    if (extra > 0.0 && ctx.engine.isRunning) {
-        AVAudioTime *now = ctx.engine.outputNode.lastRenderTime;
-        if (now && now.isSampleTimeValid) {
-            AVAudioFramePosition offset = (AVAudioFramePosition)llround(extra * now.sampleRate);
-            desiredStart = (int64_t)(now.sampleTime + offset);
-        }
-    }
+    if (!ctx || [self isPlaying]) return;
     if (_stopSamplePtr) atomic_store_explicit(_stopSamplePtr, (int64_t)-1, memory_order_release);
-    if (_startSamplePtr) atomic_store_explicit(_startSamplePtr, desiredStart, memory_order_release);
+    if (_startSamplePtr) atomic_store_explicit(_startSamplePtr, frame, memory_order_release);
     [self setPlaying:YES];
     [ctx incrementActiveCount];
-    if (!ctx.engine.isRunning) {
+    if (!ctx.engine.isRunning && !ctx.engine.isInManualRenderingMode) {
         [NSCAudioContext startEngineWithRetry:ctx.engine attempts:3 label:@"oscillator" asyncCompletion:nil];
     }
 }
 
 - (void)startAt:(NSNumber *)when {
-    if (!when || when.doubleValue <= 0.0) {
-        [self start];
-        return;
-    }
     NSCAudioContext *ctx = self.context;
     if (!ctx) return;
-    if (ctx.engine.isInManualRenderingMode) {
-        // Offline sample time starts at 0, so a context time maps straight to a sample.
-        if ([self isPlaying]) return;
-        int64_t targetSample = (int64_t)llround(MAX(when.doubleValue, ctx.currentTime) * ctx.sampleRate);
-        if (_stopSamplePtr) atomic_store_explicit(_stopSamplePtr, (int64_t)-1, memory_order_release);
-        if (_startSamplePtr) atomic_store_explicit(_startSamplePtr, targetSample, memory_order_release);
-        [self setPlaying:YES];
-        [ctx incrementActiveCount];
-        return;
-    }
-    if (ctx.engine.isRunning) {
-        AVAudioTime *nowTime = ctx.engine.outputNode.lastRenderTime;
-        if (nowTime && nowTime.isSampleTimeValid && nowTime.sampleRate > 0.0) {
-            if ([self isPlaying]) return;
-            double delaySec = MAX(0.0, when.doubleValue - ctx.currentTime) + [ctx extraLatencySeconds];
-            int64_t targetSample = (int64_t)llround((double)nowTime.sampleTime + delaySec * nowTime.sampleRate);
-            if (_stopSamplePtr) atomic_store_explicit(_stopSamplePtr, (int64_t)-1, memory_order_release);
-            if (_startSamplePtr) atomic_store_explicit(_startSamplePtr, targetSample, memory_order_release);
-            [self setPlaying:YES];
-            [ctx incrementActiveCount];
-            return;
-        }
-    }
-    [super startAt:when];
+    double t = when ? when.doubleValue : 0.0;
+    [self beginAtFrame:t > ctx.currentTime ? [ctx frameForTime:t] : -1];
 }
 
 - (void)stop {
@@ -323,26 +292,14 @@ static inline NSCOscWaveform NSCOscWaveformFromString(NSString * _Nullable type)
 }
 
 - (void)stopAt:(NSNumber *)when {
-    if (!when) {
-        [self stop];
-        if (self.onended) self.onended();
-        return;
-    }
     NSCAudioContext *ctx = self.context;
-    if (ctx && ctx.engine.isInManualRenderingMode && when.doubleValue > ctx.currentTime) {
-        if ([self isPlaying] && _stopSamplePtr) atomic_store_explicit(_stopSamplePtr, (int64_t)llround(when.doubleValue * ctx.sampleRate), memory_order_release);
+    if (!when || !ctx || when.doubleValue <= ctx.currentTime) {
+        BOOL wasPlaying = [self isPlaying];
+        [self stop];
+        if (wasPlaying && self.onended) self.onended();
         return;
     }
-    if (ctx && ctx.engine.isRunning && [self isPlaying]) {
-        AVAudioTime *nowTime = ctx.engine.outputNode.lastRenderTime;
-        if (nowTime && nowTime.isSampleTimeValid && nowTime.sampleRate > 0.0) {
-            double delaySec = MAX(0.0, when.doubleValue - ctx.currentTime);
-            int64_t targetSample = (int64_t)llround((double)nowTime.sampleTime + delaySec * nowTime.sampleRate);
-            if (_stopSamplePtr) atomic_store_explicit(_stopSamplePtr, targetSample, memory_order_release);
-            return;
-        }
-    }
-    [super stopAt:when];
+    if ([self isPlaying] && _stopSamplePtr) atomic_store_explicit(_stopSamplePtr, [ctx frameForTime:when.doubleValue], memory_order_release);
 }
 
 - (double)frequency {

@@ -26,6 +26,14 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class NSCOfflineAudioContext;
 
+/// Slots of `timelineCell`.
+enum { NSCTimelineDeviceRate = 0, NSCTimelineStart = 1, NSCTimelineOffset = 2, NSCTimelineSlots = 3 };
+
+/// Context frame at a render timestamp's sample time; `timeline` is the context's `timelineCell`.
+static inline double NSCContextFrame(double sampleTime, const double *timeline) {
+    return timeline ? sampleTime - timeline[NSCTimelineOffset] : sampleTime;
+}
+
 #pragma mark - NSCAudioContext
 
 @interface NSCAudioContext : NSObject
@@ -88,6 +96,12 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)hasActiveAudio;
 
 - (double)extraLatencySeconds;
+
+/// Doubles shared with render blocks, indexed by NSCTimeline*: render timestamps minus the offset are context frames.
+@property (nonatomic, readonly) NSMutableData *timelineCell;
+- (void)refreshTimelineRate;
+/// The context frame at which `when` falls on the render timeline.
+- (int64_t)frameForTime:(double)when;
 
 - (nullable NSCAudioBuffer *)decodeAudioData:(NSString *)base64;
 - (nullable NSCAudioBuffer *)decodeAudioDataFromFile:(NSString *)path;

@@ -50,6 +50,7 @@ static void NSCBufferSourceSilence(AudioBufferList *abl) {
   NSCAudioParam *rateParam = [[NSCAudioParam alloc] initWithContext:context defaultValue:1.0];
   AVAudioFormat *format = context.format
       ?: [[AVAudioFormat alloc] initWithCommonFormat:AVAudioPCMFormatFloat32 sampleRate:44100.0 channels:2 interleaved:NO];
+  NSMutableData *timelineCell = context.timelineCell ?: [NSMutableData dataWithLength:NSCTimelineSlots * sizeof(double)];
   __weak NSCAudioBufferSourceNode *weakSelf = self;
 
   AVAudioSourceNode *source = [[AVAudioSourceNode alloc] initWithFormat:format renderBlock:^OSStatus(BOOL *_Nonnull isSilence, const AudioTimeStamp *_Nonnull timestamp, AVAudioFrameCount frameCount, AudioBufferList *_Nonnull abl) {
@@ -75,9 +76,10 @@ static void NSCBufferSourceSilence(AudioBufferList *abl) {
     BOOL finished = NO;
     BOOL hasSampleTime = timestamp && (timestamp->mFlags & kAudioTimeStampSampleTimeValid);
     double sampleRate = format.sampleRate;
-    double blockTime = hasSampleTime ? timestamp->mSampleTime / sampleRate : 0.0;
+    double blockFrame = hasSampleTime ? NSCContextFrame(timestamp->mSampleTime, (const double *)timelineCell.bytes) : 0.0;
+    double blockTime = blockFrame / sampleRate;
     if (hasSampleTime) {
-      int64_t blockStart = (int64_t)timestamp->mSampleTime;
+      int64_t blockStart = llround(blockFrame);
       int64_t blockEnd = blockStart + (int64_t)frameCount;
       if (stopSample >= 0 && stopSample <= blockStart) {
         end = 0;
@@ -206,18 +208,6 @@ static void NSCBufferSourceSilence(AudioBufferList *abl) {
   return _state ? atomic_load_explicit(&_state->playing, memory_order_acquire) == 1 : NO;
 }
 
-// Converts a context time to the sample position the render block compares against.
-- (int64_t)sampleForContextTime:(double)when context:(NSCAudioContext *)ctx {
-  if (ctx.engine.isRunning) {
-    AVAudioTime *now = ctx.engine.outputNode.lastRenderTime;
-    if (now && now.isSampleTimeValid && now.sampleRate > 0.0) {
-      double delay = MAX(0.0, when - ctx.currentTime);
-      return (int64_t)llround((double)now.sampleTime + delay * now.sampleRate);
-    }
-  }
-  return (int64_t)llround(MAX(0.0, when) * ctx.sampleRate);
-}
-
 - (void)beginAtSample:(int64_t)startSample offset:(double)offset {
   NSCAudioContext *ctx = self.context;
   if (!ctx || !_state || [self isPlaying]) return;
@@ -249,7 +239,7 @@ static void NSCBufferSourceSilence(AudioBufferList *abl) {
   double extra = [ctx extraLatencySeconds];
   double t = when ? when.doubleValue : 0.0;
   if (t > ctx.currentTime || extra > 0.0) {
-    startSample = [self sampleForContextTime:MAX(t, ctx.currentTime) + extra context:ctx];
+    startSample = [ctx frameForTime:MAX(t, ctx.currentTime) + extra];
   }
   [self beginAtSample:startSample offset:offset];
 }
@@ -272,7 +262,7 @@ static void NSCBufferSourceSilence(AudioBufferList *abl) {
     return;
   }
   if (!_state || ![self isPlaying]) return;
-  int64_t stopSample = [self sampleForContextTime:when.doubleValue context:ctx];
+  int64_t stopSample = [ctx frameForTime:when.doubleValue];
   atomic_store_explicit(&_state->stopSample, stopSample, memory_order_release);
 }
 

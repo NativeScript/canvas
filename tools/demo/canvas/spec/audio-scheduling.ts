@@ -1,5 +1,6 @@
 import { AudioContext } from '@nativescript/audio-context';
-import { suite, test, ok } from './harness';
+import { isAndroid } from '@nativescript/core';
+import { suite, test, skip, ok } from './harness';
 import { wavBase64 } from './audio';
 
 // start(when, offset) / stop(when) against a running context, read back through an analyser.
@@ -197,6 +198,88 @@ export function registerAudioSchedulingSpec() {
 			ok(quiet(after), `silent after stop, rms ${after}`);
 			ok(ended === 1, `ended events ${ended}`);
 		});
+
+		test('buffer source start(when) lines up with gain automation', async () => {
+			const { context, analyser } = await runningContext();
+			const rate = context.sampleRate;
+			// Both sides climb 0.01 a frame from `when`; a source starting k frames off leaves 0.01·k.
+			const step = 0.01;
+			const buffer = context.createBuffer({ numberOfChannels: 1, length: rate, sampleRate: rate });
+			const ramp = new Float32Array(rate);
+			for (let i = 0; i < rate; i++) ramp[i] = step * i;
+			buffer.copyToChannel(ramp, 0);
+			const source: any = context.createBufferSource();
+			source.buffer = buffer;
+			source.connect(analyser);
+			const reference = context.createGain();
+			reference.connect(analyser);
+			const negative = context.createConstantSource({ offset: -1 });
+			negative.connect(reference);
+			const t0 = context.currentTime;
+			const when = t0 + 0.3;
+			reference.gain.setValueAtTime(0, t0);
+			reference.gain.setValueAtTime(0, when);
+			reference.gain.linearRampToValueAtTime(step * rate, when + 1);
+			negative.start();
+			source.start(when);
+			await until(context, when + 0.2);
+			const rms = rmsOf(analyser);
+			await context.close();
+			ok(rms < 0.02, `buffer and ramp differ by ${(rms / step).toFixed(1)} frames, rms ${rms}`);
+		});
+
+		test('gain follows setValueAtTime and linearRampToValueAtTime', async () => {
+			const { context, analyser } = await runningContext();
+			const gain = context.createGain();
+			gain.connect(analyser);
+			const source = context.createConstantSource({ offset: 1 });
+			source.connect(gain);
+			const t0 = context.currentTime;
+			gain.gain.setValueAtTime(0, t0);
+			gain.gain.setValueAtTime(1, t0 + 0.3);
+			gain.gain.setValueAtTime(1, t0 + 0.6);
+			gain.gain.linearRampToValueAtTime(0, t0 + 1.2);
+			source.start(t0);
+			await until(context, t0 + 0.15);
+			const before = rmsOf(analyser);
+			await until(context, t0 + 0.45);
+			const held = rmsOf(analyser);
+			await until(context, t0 + 0.9);
+			const ramping = rmsOf(analyser);
+			await until(context, t0 + 1.35);
+			const after = rmsOf(analyser);
+			await context.close();
+			ok(quiet(before), `silent before the step, rms ${before}`);
+			ok(Math.abs(held - 1) < 0.05, `1 after the step, rms ${held}`);
+			ok(ramping > 0.3 && ramping < 0.7, `halfway down the ramp, rms ${ramping}`);
+			ok(quiet(after), `silent after the ramp, rms ${after}`);
+		});
+
+		const PARAM_INPUT = 'a source connected to gain.gain while running opens it';
+		if (isAndroid) {
+			skip(PARAM_INPUT, 'no AudioNode.connect(AudioParam) on Android');
+		} else {
+			test(PARAM_INPUT, async () => {
+				const { context, analyser } = await runningContext();
+				const gain = context.createGain();
+				gain.gain.value = 0;
+				gain.connect(analyser);
+				const source = context.createConstantSource({ offset: 1 });
+				source.connect(gain);
+				source.start();
+				const t0 = context.currentTime;
+				const modulator = context.createConstantSource({ offset: 1 });
+				modulator.connect(gain.gain);
+				modulator.start(t0 + 0.3);
+				await until(context, t0 + 0.15);
+				const before = rmsOf(analyser);
+				await until(context, t0 + 0.45);
+				const after = rmsOf(analyser);
+				await context.close();
+				ok(quiet(before), `silent before the input starts, rms ${before}`);
+				ok(Math.abs(after - 1) < 0.05, `gain 0 plus input 1, rms ${after}`);
+			});
+		}
 
 		test('oscillator sounds only between start(when) and stop(when)', async () => {
 			const { context, analyser } = await runningContext();

@@ -156,6 +156,12 @@ lands on its frame, in an `OfflineAudioContext` and a realtime one, and `gain` c
 below 0. A `DelayNode`'s `maxDelayTime` defaults to 1 s and can be up to 180 s; a `delayTime`
 between two frames interpolates linearly.
 
+On iOS `node.connect(param)` works for those two params, `GainNode.gain` and `DelayNode.delayTime`:
+the node's output, mixed down to mono, adds to the param's value every frame. Other params
+(oscillator `frequency`, `BiquadFilterNode`, panner and `ConstantSourceNode.offset` params, and
+the rest) aren't evaluated per frame and ignore audio connected to them. Android doesn't
+support `node.connect(param)`.
+
 ## Android memory
 
 Decoded audio, and an `OfflineAudioContext`'s rendered buffer and delay lines, are held in native

@@ -46,6 +46,7 @@
     NSMutableData *capturedPlayingData = playingData;
     NSMutableData *capturedOffsetData = offsetData;
     NSMutableData *capturedScheduleData = scheduleData;
+    NSMutableData *timelineCell = context.timelineCell ?: [NSMutableData dataWithLength:NSCTimelineSlots * sizeof(double)];
     __weak NSCConstantSourceNode *weakSelf = self;
     AVAudioSourceNode *source = [[AVAudioSourceNode alloc] initWithFormat:format renderBlock:^OSStatus(BOOL *isSilence, const AudioTimeStamp *ts, AVAudioFrameCount frameCount, AudioBufferList *abl) {
         atomic_uint_least8_t *playingCell = (atomic_uint_least8_t *)capturedPlayingData.mutableBytes;
@@ -56,7 +57,7 @@
         AVAudioFrameCount end = playing ? frameCount : 0;
         BOOL hitStop = NO;
         if (playing && ts && (ts->mFlags & kAudioTimeStampSampleTimeValid)) {
-            int64_t blockStart = (int64_t)ts->mSampleTime;
+            int64_t blockStart = llround(NSCContextFrame(ts->mSampleTime, (const double *)timelineCell.bytes));
             int64_t blockEnd = blockStart + (int64_t)frameCount;
             int64_t startSample = atomic_load_explicit(&schedule[0], memory_order_acquire);
             int64_t stopSample = atomic_load_explicit(&schedule[1], memory_order_acquire);
@@ -112,18 +113,6 @@
     return _playingFlag ? atomic_load_explicit(_playingFlag, memory_order_acquire) == 1 : NO;
 }
 
-// The render block compares against the engine's sample time, which is what currentTime reads.
-- (int64_t)sampleForContextTime:(double)when context:(NSCAudioContext *)ctx {
-    if (ctx.engine.isRunning) {
-        AVAudioTime *now = ctx.engine.outputNode.lastRenderTime;
-        if (now && now.isSampleTimeValid && now.sampleRate > 0.0) {
-            double delay = MAX(0.0, when - ctx.currentTime);
-            return (int64_t)llround((double)now.sampleTime + delay * now.sampleRate);
-        }
-    }
-    return (int64_t)llround(MAX(0.0, when) * ctx.sampleRate);
-}
-
 - (void)start {
     [self startAt:nil];
 }
@@ -133,7 +122,7 @@
     if (!ctx || !_playingFlag || [self isPlaying]) return;
     double t = when ? when.doubleValue : 0.0;
     int64_t startSample = -1;
-    if (t > ctx.currentTime) startSample = [self sampleForContextTime:t context:ctx];
+    if (t > ctx.currentTime) startSample = [ctx frameForTime:t];
     atomic_store_explicit(&_schedule[1], (int_least64_t)-1, memory_order_release);
     atomic_store_explicit(&_schedule[0], startSample, memory_order_release);
     atomic_store_explicit(_playingFlag, 1, memory_order_release);
@@ -161,7 +150,7 @@
         return;
     }
     if (![self isPlaying]) return;
-    atomic_store_explicit(&_schedule[1], [self sampleForContextTime:when.doubleValue context:ctx], memory_order_release);
+    atomic_store_explicit(&_schedule[1], [ctx frameForTime:when.doubleValue], memory_order_release);
 }
 
 @end

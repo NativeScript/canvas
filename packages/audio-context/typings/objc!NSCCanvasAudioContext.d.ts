@@ -269,6 +269,10 @@ declare class NSCAudioNode extends NSObject {
 
 	connectToOutputInput(destination: NSCAudioNode, output: number, input: number): void;
 
+	connectToParamOutput(param: NSCAudioParam, output: number): void;
+
+	disconnectFromParamOutput(param: NSCAudioParam, output: number): void;
+
 	disconnect(): void;
 
 	disconnectOutput(output: number): void;

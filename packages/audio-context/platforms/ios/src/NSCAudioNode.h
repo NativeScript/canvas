@@ -4,6 +4,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class NSCAudioContext;
+@class NSCAudioParam;
 
 @interface NSCAudioNode : NSObject
 
@@ -30,6 +31,10 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)connectTo:(NSCAudioNode *)destination;
 - (void)connectTo:(NSCAudioNode *)destination output:(nullable NSNumber *)output;
 - (void)connectTo:(NSCAudioNode *)destination output:(nullable NSNumber *)output input:(nullable NSNumber *)input;
+
+/// Adds this node's output, downmixed to mono, to `param` per frame; a no-op for params not read per frame.
+- (void)connectToParam:(NSCAudioParam *)param output:(nullable NSNumber *)output;
+- (void)disconnectFromParam:(NSCAudioParam *)param output:(nullable NSNumber *)output;
 
 - (void)disconnect;
 - (void)disconnectOutput:(NSNumber *)output;

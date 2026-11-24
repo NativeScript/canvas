@@ -1,10 +1,22 @@
 #import "NSCParamEffectNode.h"
 #import <AudioToolbox/AudioToolbox.h>
 #import <math.h>
+#import <stdatomic.h>
 #import "NSCAudioContext.h"
 #import "NSCAudioLog.h"
 
 #define MAX_CHANNELS 32
+#define MAX_FRAMES 4096
+
+// Mono downmix of the audio connected to a param, written by its sink and read by its effect.
+typedef struct {
+    _Atomic double sampleTime;
+    UInt32 frames;
+    float values[MAX_FRAMES];
+} ParamInput;
+
+// Renders a param's inputs into a ParamInput, outputting silence; not a public kind.
+static const NSCParamEffectKind KindSink = (NSCParamEffectKind)2;
 
 typedef struct {
     NSCParamEffectKind kind;
@@ -21,9 +33,13 @@ typedef struct {
     float *line;
     int64_t lineLength;
     int64_t write;
-    // Rate of the timestamps' sample time: the output device's in a realtime context.
-    double timelineRate;
+    // The context's timeline cell (retained).
+    CFTypeRef timelineCell;
+    const double *timeline;
     double nextFrame;
+    // Shared with the param's sink (retained NSMutableData), NULL until something connects to the param.
+    CFTypeRef paramInputData;
+    _Atomic(ParamInput *) paramInput;
 } EffectRender;
 
 static void ProcessGain(EffectRender *r, AUAudioFrameCount frames) {
@@ -69,6 +85,30 @@ static void ProcessDelay(EffectRender *r, AUAudioFrameCount frames) {
     r->write = (r->write + frames) % length;
 }
 
+// The sink renders in the same cycle, before this, as it feeds this unit's input mixer.
+static void AddParamInput(EffectRender *r, const AudioTimeStamp *ts, AUAudioFrameCount frames) {
+    ParamInput *in = atomic_load_explicit(&r->paramInput, memory_order_acquire);
+    if (!in || !ts || atomic_load_explicit(&in->sampleTime, memory_order_acquire) != ts->mSampleTime || in->frames != frames) return;
+    for (AUAudioFrameCount k = 0; k < frames; k++) r->values[k] += in->values[k];
+}
+
+static void WriteParamInput(EffectRender *r, const AudioTimeStamp *ts, AUAudioFrameCount frames, BOOL silent) {
+    ParamInput *in = atomic_load_explicit(&r->paramInput, memory_order_acquire);
+    if (!in || !ts) return;
+    if (silent) {
+        memset(in->values, 0, frames * sizeof(float));
+    } else {
+        float scale = 1.0f / (float)r->channels;
+        for (AUAudioFrameCount k = 0; k < frames; k++) {
+            float sum = 0.0f;
+            for (UInt32 c = 0; c < r->channels; c++) sum += r->pulled[c * r->maxFrames + k];
+            in->values[k] = sum * scale;
+        }
+    }
+    in->frames = frames;
+    atomic_store_explicit(&in->sampleTime, ts->mSampleTime, memory_order_release);
+}
+
 #pragma mark - The audio unit
 
 // Bus format for the unit being instantiated; set around the synchronous instantiation.
@@ -94,7 +134,7 @@ static AVAudioFormat *pendingFormat;
     _outputBusses = [[AUAudioUnitBusArray alloc] initWithAudioUnit:self busType:AUAudioUnitBusTypeOutput busses:@[ output ]];
     _render = calloc(1, sizeof(EffectRender));
     _render->pullList = calloc(1, sizeof(AudioBufferList) + (MAX_CHANNELS - 1) * sizeof(AudioBuffer));
-    self.maximumFramesToRender = 4096;
+    self.maximumFramesToRender = MAX_FRAMES;
     return self;
 }
 
@@ -154,14 +194,25 @@ static AVAudioFormat *pendingFormat;
             else if (abl->mBuffers[c].mData != mine) memcpy(mine, abl->mBuffers[c].mData, frames * sizeof(float));
         }
 
-        double timelineRate = r->timelineRate > 0.0 ? r->timelineRate : r->sampleRate;
+        if (r->kind == KindSink) {
+            WriteParamInput(r, ts, frames, silent);
+            for (UInt32 c = 0; c < out->mNumberBuffers; c++) {
+                if (!out->mBuffers[c].mData) out->mBuffers[c].mData = r->rendered + MIN(c, r->channels - 1) * r->maxFrames;
+                memset(out->mBuffers[c].mData, 0, frames * sizeof(float));
+                out->mBuffers[c].mDataByteSize = frames * sizeof(float);
+            }
+            *flags |= kAudioUnitRenderAction_OutputIsSilence;
+            return noErr;
+        }
+
         double frame = ts && (ts->mFlags & kAudioTimeStampSampleTimeValid)
-            ? (timelineRate == r->sampleRate ? ts->mSampleTime : ts->mSampleTime * (r->sampleRate / timelineRate))
+            ? NSCContextFrame(ts->mSampleTime, r->timeline)
             : r->nextFrame;
         r->nextFrame = frame + frames;
         NSCAudioParam *param = (__bridge NSCAudioParam *)r->param;
         if (param) [param fillValuesFromFrame:frame sampleRate:r->sampleRate frameCount:frames into:r->values];
         else for (AUAudioFrameCount k = 0; k < frames; k++) r->values[k] = r->kind == NSCParamEffectKindGain ? 1.0 : 0.0;
+        AddParamInput(r, ts, frames);
 
         if (r->kind == NSCParamEffectKindDelay && r->line) ProcessDelay(r, frames);
         else ProcessGain(r, frames);
@@ -185,6 +236,8 @@ static AVAudioFormat *pendingFormat;
     free(r->line);
     free(r->pullList);
     if (r->param) CFRelease(r->param);
+    if (r->timelineCell) CFRelease(r->timelineCell);
+    if (r->paramInputData) CFRelease(r->paramInputData);
     free(r);
 }
 
@@ -213,44 +266,55 @@ static AVAudioFormat *EffectFormat(NSCAudioContext *context) {
     AVAudioMixerNode *_mixer;
     // Connections into this node go to this wrapper of its mixer.
     NSCAudioNode *_input;
-    id _configurationObserver;
+    NSCAudioNode *_paramInput;
+    AVAudioUnitEffect *_paramSink;
 }
 
-// currentTime counts the output node's samples, which run at the device's rate.
-static void UpdateTimelineRate(AVAudioUnitEffect *unit, AVAudioEngine *engine) {
+static AVAudioUnitEffect *MakeUnit(NSCAudioContext *context, AVAudioFormat *format, NSCParamEffectKind kind, NSCAudioParam *param, double maxDelayTime) {
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{
+        [AUAudioUnit registerSubclass:[NSCParamEffectUnit class] asComponentDescription:EffectDescription() name:@"NativeScript: param effect" version:1];
+    });
+    pendingFormat = format;
+    // A registered in-process unit instantiates synchronously.
+    AVAudioUnitEffect *unit = [[AVAudioUnitEffect alloc] initWithAudioComponentDescription:EffectDescription()];
+    pendingFormat = nil;
     NSCParamEffectUnit *au = (NSCParamEffectUnit *)unit.AUAudioUnit;
-    if (![au isKindOfClass:[NSCParamEffectUnit class]] || !engine) return;
-    double rate = engine.isInManualRenderingMode ? engine.manualRenderingFormat.sampleRate : [engine.outputNode outputFormatForBus:0].sampleRate;
-    if (rate > 0.0) au.render->timelineRate = rate;
+    if (![au isKindOfClass:[NSCParamEffectUnit class]]) {
+        NSCLogError(@"NSCParamEffectNode: could not instantiate the effect audio unit");
+        return unit;
+    }
+    EffectRender *r = au.render;
+    r->kind = kind;
+    r->param = param ? CFBridgingRetain(param) : NULL;
+    r->maxDelayTime = maxDelayTime;
+    r->sampleRate = format.sampleRate;
+    NSMutableData *cell = context.timelineCell;
+    if (cell) {
+        r->timelineCell = CFBridgingRetain(cell);
+        r->timeline = (const double *)cell.bytes;
+    }
+    return unit;
+}
+
+static void ShareParamInput(AVAudioUnitEffect *unit, NSMutableData *data) {
+    NSCParamEffectUnit *au = (NSCParamEffectUnit *)unit.AUAudioUnit;
+    if (![au isKindOfClass:[NSCParamEffectUnit class]]) return;
+    au.render->paramInputData = CFBridgingRetain(data);
+    atomic_store_explicit(&au.render->paramInput, (ParamInput *)data.mutableBytes, memory_order_release);
 }
 
 - (instancetype)initWithContext:(NSCAudioContext *)context
                            kind:(NSCParamEffectKind)kind
                           param:(NSCAudioParam *)param
                    maxDelayTime:(double)maxDelayTime {
-    static dispatch_once_t once;
-    dispatch_once(&once, ^{
-        [AUAudioUnit registerSubclass:[NSCParamEffectUnit class] asComponentDescription:EffectDescription() name:@"NativeScript: param effect" version:1];
-    });
     // Ports at the context's channel count avoid AVAudioMixerNode's equal-power pan law.
     AVAudioFormat *format = EffectFormat(context);
-    pendingFormat = format;
-    // A registered in-process unit instantiates synchronously.
-    AVAudioUnitEffect *unit = [[AVAudioUnitEffect alloc] initWithAudioComponentDescription:EffectDescription()];
-    pendingFormat = nil;
-    NSCParamEffectUnit *au = (NSCParamEffectUnit *)unit.AUAudioUnit;
-    if ([au isKindOfClass:[NSCParamEffectUnit class]]) {
-        EffectRender *r = au.render;
-        r->kind = kind;
-        r->param = CFBridgingRetain(param);
-        r->maxDelayTime = maxDelayTime;
-        r->sampleRate = format.sampleRate;
-    } else {
-        NSCLogError(@"NSCParamEffectNode: could not instantiate the effect audio unit");
-    }
+    AVAudioUnitEffect *unit = MakeUnit(context, format, kind, param, maxDelayTime);
 
     if (!(self = [super initWithContext:context node:unit])) return nil;
     _unit = unit;
+    param.owner = self;
     AVAudioEngine *engine = context.engine;
     if ([context isKindOfClass:[NSCOfflineAudioContext class]]) [(NSCOfflineAudioContext *)context willConnect];
     AVAudioMixerNode *mixer = [[AVAudioMixerNode alloc] init];
@@ -263,17 +327,41 @@ static void UpdateTimelineRate(AVAudioUnitEffect *unit, AVAudioEngine *engine) {
     }
     _mixer = mixer;
     _input = [[NSCAudioNode alloc] initWithContext:context node:mixer];
-    UpdateTimelineRate(unit, engine);
-    __weak AVAudioUnitEffect *weakUnit = unit;
-    __weak AVAudioEngine *weakEngine = engine;
-    _configurationObserver = [[NSNotificationCenter defaultCenter] addObserverForName:AVAudioEngineConfigurationChangeNotification object:engine queue:nil usingBlock:^(NSNotification *note) {
-        UpdateTimelineRate(weakUnit, weakEngine);
-    }];
     return self;
 }
 
-- (void)dealloc {
-    if (_configurationObserver) [[NSNotificationCenter defaultCenter] removeObserver:_configurationObserver];
+// Audio connected to the param sums in a mixer feeding a sink unit, which feeds silence into this
+// node's input mixer, so it renders first in each cycle and leaves its downmix for this unit.
+- (BOOL)hasParamInput { return _paramInput != nil; }
+
+- (NSCAudioNode *)paramInput {
+    if (_paramInput) return _paramInput;
+    NSCAudioContext *context = self.context;
+    AVAudioEngine *engine = context.engine;
+    if (!engine || ![_unit.AUAudioUnit isKindOfClass:[NSCParamEffectUnit class]]) return nil;
+    AVAudioFormat *format = EffectFormat(context);
+    AVAudioUnitEffect *sink = MakeUnit(context, format, KindSink, nil, 0.0);
+    if (![sink.AUAudioUnit isKindOfClass:[NSCParamEffectUnit class]]) return nil;
+    NSMutableData *shared = [NSMutableData dataWithLength:sizeof(ParamInput)];
+    atomic_init(&((ParamInput *)shared.mutableBytes)->sampleTime, -1.0);
+    ShareParamInput(sink, shared);
+    AVAudioMixerNode *mixer = [[AVAudioMixerNode alloc] init];
+    if ([context isKindOfClass:[NSCOfflineAudioContext class]]) [(NSCOfflineAudioContext *)context willConnect];
+    [engine attachNode:mixer];
+    [engine attachNode:sink];
+    @try {
+        [engine connect:mixer to:sink format:format];
+        [engine connect:sink to:_mixer fromBus:0 toBus:_mixer.nextAvailableInputBus format:format];
+    } @catch (NSException *e) {
+        NSCLogError(@"NSCParamEffectNode: the param input did not connect: %@", e);
+        [engine detachNode:sink];
+        [engine detachNode:mixer];
+        return nil;
+    }
+    ShareParamInput(_unit, shared);
+    _paramSink = sink;
+    _paramInput = [[NSCAudioNode alloc] initWithContext:context node:mixer];
+    return _paramInput;
 }
 
 // Each connection takes the mixer's next free bus, so inputs sum.

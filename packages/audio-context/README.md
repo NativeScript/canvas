@@ -188,7 +188,8 @@ on the app's JS thread.
   sample-exact.
 - On iOS the Worker needs `@nativescript/ios` 9.1 or later; earlier runtimes give Workers no
   timers, so `addModule` rejects.
-- On iOS an `AudioWorkletNode` is a source: no inputs, one output of up to 8 channels. In an
+- On iOS each input and output of an `AudioWorkletNode` carries up to 8 channels. An input always
+  has `channelCount` channels, as if `channelCountMode` were `'explicit'`. In an
   `OfflineAudioContext` rendering waits for the Worker each quantum, so it is sample-exact too.
 - An input or a channel-following output carries at most 8 channels.
 - An input with nothing playing into it is empty, as in browsers. A source that has stopped

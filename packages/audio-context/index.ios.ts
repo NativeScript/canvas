@@ -991,6 +991,7 @@ function workletPath(path: string): string {
 }
 
 let nextWorkletNode = 1;
+const IOS_WORKLET_MAX_CHANNELS = 8;
 // Connected nodes keep playing without a JS reference, as in browsers.
 const connectedWorkletNodes = new Set<AudioWorkletNode>();
 
@@ -1033,32 +1034,44 @@ export class AudioWorkletNode extends AudioNode {
 	readonly parameters: AudioParamMap<AudioParam>;
 	private _native: NSCAudioWorkletNode;
 	private _ring: SharedArrayBuffer;
+	private _numberOfInputs: number;
+	private _numberOfOutputs: number;
 	private _onprocessorerror: ((event: any) => void) | null = null;
 
 	constructor(context: WorkletContext, name: string, options: AudioWorkletNodeOptions = {}) {
 		const worklet = context?.audioWorklet;
 		const resolved = resolveWorkletNodeOptions(worklet?._scope(false), name, options);
 		const { host, descriptors, numberOfInputs, numberOfOutputs, parameterData } = resolved;
-		// With no inputs, each output defaults to one channel.
-		const outputChannelCount = resolved.outputChannelCount ?? Array.from({ length: numberOfOutputs }, () => 1);
-		if (numberOfInputs > 0) throw domError('NotSupportedError', 'AudioWorkletNode: inputs are not supported on iOS');
+		// Each input sums into channelCount channels.
+		const inputChannels = Array.from({ length: numberOfInputs }, () => Math.max(1, (options as any).channelCount ?? 2) | 0);
+		// One input and one output: the output follows the input; otherwise one channel per output.
+		const outputChannelCount = resolved.outputChannelCount ?? Array.from({ length: numberOfOutputs }, () => (numberOfInputs === 1 && numberOfOutputs === 1 ? inputChannels[0] : 1));
+		if ([...inputChannels, ...outputChannelCount].some((count) => count > IOS_WORKLET_MAX_CHANNELS)) {
+			throw domError('NotSupportedError', `AudioWorkletNode: at most ${IOS_WORKLET_MAX_CHANNELS} channels per input or output on iOS`);
+		}
 		super(context);
-		const layout = workletRingLayout(0, outputChannelCount, descriptors.length);
+		const layout = workletRingLayout(numberOfInputs, outputChannelCount, descriptors.length);
 		const ring = createWorkletRing(layout);
 		const defaults = descriptors.map((d) => parameterData?.[d.name] ?? d.defaultValue);
 		this._ring = ring;
-		this._native = NSCAudioWorkletNode.alloc().initWithContextRingChannelsSlotWordsHeaderOutputCountsOutputDataParamLengthsParamDataParamDefaults(
+		this._numberOfInputs = numberOfInputs;
+		this._numberOfOutputs = numberOfOutputs;
+		this._native = NSCAudioWorkletNode.alloc().initWithContextRingInputChannelsOutputChannelsSlotWordsHeaderInputCountsInputDataOutputCountsOutputDataParamLengthsParamDataParamDefaults(
 			context.native,
 			ring as any,
-			outputChannelCount[0] ?? 1,
+			inputChannels,
+			outputChannelCount,
 			layout.slotWords,
 			layout.header,
+			layout.inputCounts,
+			layout.inputData,
 			layout.outputCounts,
-			layout.outputData[0] ?? layout.paramData,
+			layout.outputData,
 			layout.paramLengths,
 			layout.paramData,
 			defaults,
 		);
+		if (!this._native) throw domError('NotSupportedError', 'AudioWorkletNode: the audio unit could not be created');
 		const params = this._native.params;
 		this.parameters = new AudioParamMap(new Map(descriptors.map((d, i) => [d.name, new AudioParam(nativeCtor_, params.objectAtIndex(i))])));
 		const id = nextWorkletNode++;
@@ -1066,11 +1079,20 @@ export class AudioWorkletNode extends AudioNode {
 		host.create(this, id, String(name), { ...options, numberOfInputs, numberOfOutputs, outputChannelCount, parameterData }, { buffer: ring, layout });
 	}
 
+	get numberOfInputs() {
+		return this._numberOfInputs;
+	}
+
+	get numberOfOutputs() {
+		return this._numberOfOutputs;
+	}
+
 	get native() {
 		return this._native;
 	}
 
 	connect(node: any, output?: number, input?: number) {
+		if (output !== undefined && (output < 0 || output >= this._numberOfOutputs)) throw domError('IndexSizeError', `AudioWorkletNode.connect: output ${output} is out of range`);
 		connectedWorkletNodes.add(this);
 		return super.connect(node, output, input);
 	}

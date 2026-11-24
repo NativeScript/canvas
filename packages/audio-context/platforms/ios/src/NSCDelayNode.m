@@ -1,39 +1,21 @@
 #import "NSCAudioContext.h"
 
-@implementation NSCDelayNode {
-    AVAudioUnitDelay *_delay;
-}
+// Web Audio's limit for maxDelayTime.
+static const double NSCMaxDelaySeconds = 180.0;
+
+@implementation NSCDelayNode
 
 - (instancetype)initWithContext:(NSCAudioContext *)context
-                                            delayTime:(double)delayTime
-                                        maxDelayTime:(double)maxDelayTime {
-    AVAudioUnitDelay *d = [[AVAudioUnitDelay alloc] init];
-    double clamped = MAX(0.0, MIN(delayTime, maxDelayTime > 0 ? maxDelayTime : 2.0));
-    d.delayTime = clamped;
-    // Open filter: a DelayNode only delays.
-    double nyquist = context.sampleRate > 0 ? context.sampleRate / 2.0 : 22050.0;
-    d.feedback = 0.0; d.lowPassCutoff = nyquist; d.wetDryMix = 100.0;
-    [context.engine attachNode:d];
-    if (self = [super initWithContext:context node:d]) {
-        _delay = d;
-        _maxDelayTime = maxDelayTime > 0 ? maxDelayTime : 2.0;
-        _delayTimeParam = [[NSCAudioParam alloc] initWithContext:context defaultValue:clamped];
-        __weak typeof(self) weakSelf = self;
-        _delayTimeParam.onScheduleChanged = ^(NSCAudioParam *p) {
-            [weakSelf applyAutomation];
-        };
+                      delayTime:(double)delayTime
+                   maxDelayTime:(double)maxDelayTime {
+    double max = isfinite(maxDelayTime) && maxDelayTime > 0.0 ? MIN(maxDelayTime, NSCMaxDelaySeconds) : 1.0;
+    double initial = isfinite(delayTime) ? MAX(0.0, MIN(delayTime, max)) : 0.0;
+    NSCAudioParam *param = [[NSCAudioParam alloc] initWithContext:context defaultValue:initial];
+    if (self = [super initWithContext:context kind:NSCParamEffectKindDelay param:param maxDelayTime:max]) {
+        _delayTimeParam = param;
+        _maxDelayTime = max;
     }
     return self;
-}
-
-
-- (void)setDelayTimeScalar:(double)v {
-    _delay.delayTime = MAX(0.0, MIN(v, _maxDelayTime));
-}
-
-- (void)applyAutomation {
-    NSCAudioContext *ctx = self.context;
-    [self setDelayTimeScalar:[_delayTimeParam valueAtTime:ctx ? ctx.currentTime : 0.0]];
 }
 
 @end

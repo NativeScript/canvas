@@ -27,6 +27,11 @@ NS_ASSUME_NONNULL_BEGIN
                 sampleRate:(double)sampleRate
                 frameCount:(NSInteger)frameCount
                       into:(double *)outValues;
+/// Values for frames `startFrame`..., frame i at (startFrame + i) / sampleRate.
+- (BOOL)fillValuesFromFrame:(double)startFrame
+                 sampleRate:(double)sampleRate
+                 frameCount:(NSInteger)frameCount
+                       into:(double *)outValues;
 
 - (double)currentScalarValue;
 - (double)valueAtTime:(double)time;

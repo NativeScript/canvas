@@ -116,8 +116,8 @@ console.log(rendered.length, rendered.sampleRate, rendered.numberOfChannels);
 `suspend(time)` holds rendering at `time`, rounded up to a 128-frame quantum, and resolves once it
 is held there; changes made before `resume()` apply from that frame. Suspends can be scheduled
 before `startRendering()` or while held. On iOS,
-connecting a node once rendering has started clears effect state (delay lines, filter memory,
-reverb tails).
+connecting a node once rendering has started clears effect state (filter memory, reverb tails);
+a `DelayNode` keeps its delay line.
 
 ```ts
 off.suspend(0.5).then(() => {
@@ -150,6 +150,11 @@ Context lifecycle and routing:
 On Android an `OfflineAudioContext` renders on its own engine, the same mixer as the realtime
 one, with nothing reaching the device. A source connected to it reads an `AudioBuffer` in place.
 A `DelayNode` there can't be part of a feedback loop: its output doesn't reach its own input.
+
+On iOS a `GainNode` and a `DelayNode` evaluate `gain` and `delayTime` every frame, so automation
+lands on its frame, in an `OfflineAudioContext` and a realtime one, and `gain` can go above 1 or
+below 0. A `DelayNode`'s `maxDelayTime` defaults to 1 s and can be up to 180 s; a `delayTime`
+between two frames interpolates linearly.
 
 ## Android memory
 

@@ -5,6 +5,7 @@
 #import "NSCAnalyserNode.h"
 #import "NSCAudioBufferSourceNode.h"
 #import "NSCAudioPannerNode.h"
+#import "NSCParamEffectNode.h"
 #import "NSCGainNode.h"
 #import "NSCAudioWorkletNode.h"
 #import "NSCBiquadNode.h"

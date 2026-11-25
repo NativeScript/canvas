@@ -1,0 +1,57 @@
+name: Native output cache
+description: >
+  Restores a job's output when the files it is built from are unchanged, so the job can skip its
+  build; otherwise saves the output once the job succeeds. Releases (tags) always build.
+
+inputs:
+  name:
+    description: Cache entry; one per output (and matrix arch)
+    required: true
+  path:
+    description: The output, as the job uploads it
+    required: true
+  inputs:
+    description: >
+      Git pathspecs of what the output is built from. Each has to match a tracked file, so a
+      renamed input fails the job. `.github/actions` and build-native.yml always count.
+    required: true
+  restore-only:
+    description: "'true' when a later job builds and saves the output, under this action's `key`"
+    default: 'false'
+
+outputs:
+  cache-hit:
+    description: "'true' when the output was restored"
+    value: ${{ steps.cache.outputs.cache-hit || steps.restore.outputs.cache-hit }}
+  key:
+    description: The cache key
+    value: ${{ steps.key.outputs.key }}
+
+runs:
+  using: composite
+  steps:
+    # Git's hashes of the files, so every OS computes the same key. The week bounds how stale the
+    # crates.io versions and toolchains in a reused output can be. Bump v1 to drop every entry.
+    - id: key
+      shell: bash
+      env:
+        NAME: ${{ inputs.name }}
+        INPUTS: ${{ inputs.inputs }}
+      run: |
+        set -f
+        hash=$(git ls-files -s --error-unmatch -- .github/actions .github/workflows/build-native.yml $INPUTS | git hash-object --stdin)
+        echo "key=native-v1-$NAME-$(date -u +%G-W%V)-$hash" >> "$GITHUB_OUTPUT"
+
+    - id: cache
+      if: github.ref_type != 'tag' && inputs.restore-only != 'true'
+      uses: actions/cache@v4
+      with:
+        path: ${{ inputs.path }}
+        key: ${{ steps.key.outputs.key }}
+
+    - id: restore
+      if: github.ref_type != 'tag' && inputs.restore-only == 'true'
+      uses: actions/cache/restore@v4
+      with:
+        path: ${{ inputs.path }}
+        key: ${{ steps.key.outputs.key }}

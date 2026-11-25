@@ -12,6 +12,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, copy) NSString *type;
 @property (nonatomic, readonly) NSCAudioParam *frequencyParam;
+@property (nonatomic, readonly) NSCAudioParam *detuneParam;
 @property (nonatomic) double frequency;
 
 - (instancetype)initWithContext:(NSCAudioContext *)context;

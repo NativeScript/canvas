@@ -110,6 +110,7 @@ static inline double NSCWrapPannerAzimuthDegrees(double azimuth) {
         _orientationXParam = [[NSCAudioParam alloc] initWithContext:context defaultValue:1.0];
         _orientationYParam = [[NSCAudioParam alloc] initWithContext:context defaultValue:0.0];
         _orientationZParam = [[NSCAudioParam alloc] initWithContext:context defaultValue:0.0];
+        for (NSCAudioParam *param in @[ _positionXParam, _positionYParam, _positionZParam, _orientationXParam, _orientationYParam, _orientationZParam ]) param.owner = self;
         _orientationX = 1.0f; _orientationY = 0.0f; _orientationZ = 0.0f;
         _attachedSourcesMap = [NSMutableDictionary dictionary];
         _sourceRouting = [NSMutableDictionary dictionary];
@@ -760,11 +761,21 @@ static inline double NSCWrapPannerAzimuthDegrees(double azimuth) {
     [self applySpatial];
 }
 
+// Cuts only the source's connections into this panner.
+- (void)cutSource:(NSCAudioNode *)source output:(NSNumber *)output {
+    NSCAudioContext *ctx = self.context;
+    NSMutableArray<AVAudioNode *> *mine = [NSMutableArray array];
+    for (AVAudioNode *node in @[ [self activeAVNode] ?: [NSNull null], _panMixer ?: [NSNull null], _envNode ?: [NSNull null], self.avNode ?: [NSNull null] ]) {
+        if ([node isKindOfClass:[AVAudioNode class]] && ![mine containsObject:node]) [mine addObject:node];
+    }
+    for (AVAudioNode *node in mine) NSCDisconnectRemoving(ctx, source.avNode, output, node, nil);
+}
+
 - (void)detachSource:(NSCAudioNode *)source {
     NSCAudioContext *ctx = self.context;
     if (!ctx) return;
     NSValue *idv = [NSValue valueWithPointer:(__bridge const void *)(source)];
-    [ctx.engine disconnectNodeOutput:source.avNode];
+    [self cutSource:source output:nil];
     [_attachedSourcesMap removeObjectForKey:idv];
     [_sourceRouting removeObjectForKey:idv];
     NSMutableDictionary *pmap = ctx.voicePannerByOutput[idv];
@@ -812,7 +823,7 @@ static inline double NSCWrapPannerAzimuthDegrees(double azimuth) {
     if (!ctx) return;
     NSValue *idv = [NSValue valueWithPointer:(__bridge const void *)(source)];
     if (output) {
-        [ctx.engine disconnectNodeOutput:source.avNode];
+        [self cutSource:source output:output];
         NSMutableDictionary *pmap = ctx.voicePannerByOutput[idv];
         if (pmap) [pmap removeObjectForKey:@(output.intValue)];
         [_attachedSourcesMap removeObjectForKey:idv];
@@ -888,6 +899,11 @@ static inline double NSCWrapPannerAzimuthDegrees(double azimuth) {
     [self.orientationZParam setValueAtTime:z :@(now)];
     NSCLogDebug(@"NSCAudioPannerNode: setOrientation -> x=%f y=%f z=%f", [x doubleValue], [y doubleValue], [z doubleValue]);
     [self applySpatial];
+}
+
+- (void)attachParamSink:(AVAudioNode *)sink {
+    [super attachParamSink:sink];
+    [self ensureAutomationLink];
 }
 
 - (void)applyAutomation {

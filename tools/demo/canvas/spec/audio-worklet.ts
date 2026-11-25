@@ -1,5 +1,4 @@
 import { AudioBuffer, AudioContext, AudioWorkletNode, OfflineAudioContext } from '@nativescript/audio-context';
-import { isIOS } from '@nativescript/core';
 import { suite, test, skip, equal, closeTo, ok } from './harness';
 
 // AudioWorkletNode inputs, outputs and fan-in, against what Chrome does.
@@ -157,9 +156,7 @@ export function registerAudioWorkletSpec() {
 			closeTo(samples[Q * 4], 1.25, 1e-6, 'weighted sum of the inputs');
 		});
 
-		const SPEAKERS = 'mixes each input to its own channelCount with the speaker rules';
-		if (isIOS) skip(SPEAKERS, "iOS mixes an input at the context's channel count first");
-		else test(SPEAKERS, async () => {
+		test('mixes each input to its own channelCount with the speaker rules', async () => {
 			const h = Math.SQRT1_2;
 			// [source channel levels, channelCount, the input's channels]
 			const cases: [number[], number, number[]][] = [

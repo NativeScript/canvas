@@ -21,6 +21,7 @@
 #import "NSCIIRFilterNode.h"
 #import "NSCConvolverNode.h"
 #import "NSCDynamicsCompressorNode.h"
+#import "NSCChannelMixerNode.h"
 #import "NSCChannelSplitterNode.h"
 #import "NSCChannelMergerNode.h"
 #import "NSCPeriodicWave.h"

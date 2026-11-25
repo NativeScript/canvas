@@ -1,19 +1,19 @@
 #import <Foundation/Foundation.h>
 #import <AVFoundation/AVFoundation.h>
 
-#import "NSCAudioNode.h"
+#import "NSCChannelMixerNode.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 @class NSCAudioContext;
 
-@interface NSCChannelMergerNode : NSCAudioNode
+/// Input N, down-mixed to mono, plays as output channel N.
+@interface NSCChannelMergerNode : NSCChannelMixerNode
 
 @property (nonatomic, readonly) NSInteger numberOfInputs;
 
 - (instancetype)initWithContext:(NSCAudioContext *)context
-                 numberOfInputs:(NSInteger)numberOfInputs NS_DESIGNATED_INITIALIZER;
-- (instancetype)initWithContext:(NSCAudioContext *)context node:(nullable AVAudioNode *)node NS_UNAVAILABLE;
+                 numberOfInputs:(NSInteger)numberOfInputs;
 
 @end
 

@@ -89,6 +89,8 @@ declare class NSCAudioBufferSourceNode extends NSCAudioScheduledSourceNode {
 
 	getPlaybackRateParam(): NSCAudioParam;
 
+	readonly detuneParam: NSCAudioParam;
+
 	startAtOffset(when: number, offset: number): void;
 
 	initWithContextBuffer(context: NSCAudioContext, buffer: NSCAudioBuffer): this;
@@ -303,6 +305,8 @@ declare class NSCAudioOscillatorNode extends NSCAudioScheduledSourceNode {
 
 	readonly frequencyParam: NSCAudioParam;
 
+	readonly detuneParam: NSCAudioParam;
+
 	type: string;
 
 	constructor(o: { context: NSCAudioContext });
@@ -466,7 +470,15 @@ declare class NSCBiquadNode extends NSCAudioNode {
 	setType(type: string): void;
 }
 
-declare class NSCChannelMergerNode extends NSCAudioNode {
+declare class NSCChannelMixerNode extends NSCAudioNode {
+	static alloc(): NSCChannelMixerNode; // inherited from NSObject
+
+	static new(): NSCChannelMixerNode; // inherited from NSObject
+
+	readonly channels: number;
+}
+
+declare class NSCChannelMergerNode extends NSCChannelMixerNode {
 	static alloc(): NSCChannelMergerNode; // inherited from NSObject
 
 	static new(): NSCChannelMergerNode; // inherited from NSObject
@@ -478,7 +490,7 @@ declare class NSCChannelMergerNode extends NSCAudioNode {
 	initWithContextNumberOfInputs(context: NSCAudioContext, numberOfInputs: number): this;
 }
 
-declare class NSCChannelSplitterNode extends NSCAudioNode {
+declare class NSCChannelSplitterNode extends NSCChannelMixerNode {
 	static alloc(): NSCChannelSplitterNode; // inherited from NSObject
 
 	static new(): NSCChannelSplitterNode; // inherited from NSObject

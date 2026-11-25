@@ -25,6 +25,8 @@ typedef struct {
   NSMutableArray<AVAudioPCMBuffer *> *_keepAlive;
   NSCAudioBuffer *_buffer;
   NSCAudioParam *_playbackRateParam;
+  NSMutableData *_timelineCell;
+  AVAudioChannelCount _channels;
 }
 
 @synthesize buffer = _buffer;
@@ -35,25 +37,16 @@ static void NSCBufferSourceSilence(AudioBufferList *abl) {
   }
 }
 
-- (instancetype)initWithContext:(NSCAudioContext *)context
-                         buffer:(NSCAudioBuffer *)buffer {
-  NSMutableData *stateData = [NSMutableData dataWithLength:sizeof(NSCBufferSourceState)];
-  NSCBufferSourceState *state = (NSCBufferSourceState *)stateData.mutableBytes;
-  atomic_init(&state->playing, 0);
-  atomic_init(&state->loop, 0);
-  atomic_init(&state->startSample, (int_least64_t)-1);
-  atomic_init(&state->stopSample, (int_least64_t)-1);
-  atomic_init(&state->resetPending, 0);
-  atomic_init(&state->pcm, NULL);
+static AVAudioFormat *SourceFormat(double rate, AVAudioChannelCount channels) {
+  if (channels <= 2) return [[AVAudioFormat alloc] initStandardFormatWithSampleRate:rate channels:MAX(1u, channels)];
+  AVAudioChannelLayout *layout = [AVAudioChannelLayout layoutWithLayoutTag:kAudioChannelLayoutTag_DiscreteInOrder | channels];
+  return [[AVAudioFormat alloc] initStandardFormatWithSampleRate:rate channelLayout:layout];
+}
 
-  NSMutableArray<AVAudioPCMBuffer *> *keepAlive = [NSMutableArray array];
-  NSCAudioParam *rateParam = [[NSCAudioParam alloc] initWithContext:context defaultValue:1.0];
-  AVAudioFormat *format = context.format
-      ?: [[AVAudioFormat alloc] initWithCommonFormat:AVAudioPCMFormatFloat32 sampleRate:44100.0 channels:2 interleaved:NO];
-  NSMutableData *timelineCell = context.timelineCell ?: [NSMutableData dataWithLength:NSCTimelineSlots * sizeof(double)];
-  __weak NSCAudioBufferSourceNode *weakSelf = self;
-
-  AVAudioSourceNode *source = [[AVAudioSourceNode alloc] initWithFormat:format renderBlock:^OSStatus(BOOL *_Nonnull isSilence, const AudioTimeStamp *_Nonnull timestamp, AVAudioFrameCount frameCount, AudioBufferList *_Nonnull abl) {
+static AVAudioSourceNode *MakeSource(AVAudioFormat *format, NSMutableData *stateData, NSMutableArray<AVAudioPCMBuffer *> *keepAlive,
+                                     NSCAudioParam *rateParam, NSCAudioParam *detuneParam, NSMutableData *timelineCell,
+                                     __weak NSCAudioBufferSourceNode *weakSelf) {
+  return [[AVAudioSourceNode alloc] initWithFormat:format renderBlock:^OSStatus(BOOL *_Nonnull isSilence, const AudioTimeStamp *_Nonnull timestamp, AVAudioFrameCount frameCount, AudioBufferList *_Nonnull abl) {
     (void)keepAlive;
     NSCBufferSourceState *st = (NSCBufferSourceState *)stateData.mutableBytes;
     if (atomic_load_explicit(&st->playing, memory_order_acquire) != 1) {
@@ -77,7 +70,6 @@ static void NSCBufferSourceSilence(AudioBufferList *abl) {
     BOOL hasSampleTime = timestamp && (timestamp->mFlags & kAudioTimeStampSampleTimeValid);
     double sampleRate = format.sampleRate;
     double blockFrame = hasSampleTime ? NSCContextFrame(timestamp->mSampleTime, (const double *)timelineCell.bytes) : 0.0;
-    double blockTime = blockFrame / sampleRate;
     if (hasSampleTime) {
       int64_t blockStart = llround(blockFrame);
       int64_t blockEnd = blockStart + (int64_t)frameCount;
@@ -103,7 +95,15 @@ static void NSCBufferSourceSilence(AudioBufferList *abl) {
 
     if (first < end && src && frames > 0) {
       double rates[frameCount];
-      BOOL rateAutomated = [rateParam fillValuesForRange:blockTime sampleRate:sampleRate frameCount:(NSInteger)frameCount into:rates];
+      double detunes[frameCount];
+      BOOL rateAutomated = [rateParam fillValuesFromFrame:blockFrame sampleRate:sampleRate frameCount:(NSInteger)frameCount into:rates];
+      BOOL detuneAutomated = [detuneParam fillValuesFromFrame:blockFrame sampleRate:sampleRate frameCount:(NSInteger)frameCount into:detunes];
+      if (detuneAutomated) {
+        for (AVAudioFrameCount k = 0; k < frameCount; ++k) rates[k] *= exp2(detunes[k] / 1200.0);
+        rateAutomated = YES;
+      } else if (detunes[0] != 0.0) {
+        for (AVAudioFrameCount k = 0; k < frameCount; ++k) rates[k] *= exp2(detunes[0] / 1200.0);
+      }
       double pos = st->position;
       AVAudioFrameCount f = first;
       for (; f < end; ++f) {
@@ -144,6 +144,27 @@ static void NSCBufferSourceSilence(AudioBufferList *abl) {
     }
     return noErr;
   }];
+}
+
+- (instancetype)initWithContext:(NSCAudioContext *)context
+                         buffer:(NSCAudioBuffer *)buffer {
+  NSMutableData *stateData = [NSMutableData dataWithLength:sizeof(NSCBufferSourceState)];
+  NSCBufferSourceState *state = (NSCBufferSourceState *)stateData.mutableBytes;
+  atomic_init(&state->playing, 0);
+  atomic_init(&state->loop, 0);
+  atomic_init(&state->startSample, (int_least64_t)-1);
+  atomic_init(&state->stopSample, (int_least64_t)-1);
+  atomic_init(&state->resetPending, 0);
+  atomic_init(&state->pcm, NULL);
+
+  NSMutableArray<AVAudioPCMBuffer *> *keepAlive = [NSMutableArray array];
+  NSCAudioParam *rateParam = [[NSCAudioParam alloc] initWithContext:context defaultValue:1.0];
+  NSCAudioParam *detuneParam = [[NSCAudioParam alloc] initWithContext:context defaultValue:0.0];
+  AVAudioFormat *format = context.format
+      ?: [[AVAudioFormat alloc] initWithCommonFormat:AVAudioPCMFormatFloat32 sampleRate:44100.0 channels:2 interleaved:NO];
+  NSMutableData *timelineCell = context.timelineCell ?: [NSMutableData dataWithLength:NSCTimelineSlots * sizeof(double)];
+  __weak NSCAudioBufferSourceNode *weakSelf = self;
+  AVAudioSourceNode *source = MakeSource(format, stateData, keepAlive, rateParam, detuneParam, timelineCell, weakSelf);
 
   if (self = [super initWithContext:context node:source]) {
     _sourceNode = source;
@@ -151,16 +172,58 @@ static void NSCBufferSourceSilence(AudioBufferList *abl) {
     _state = state;
     _keepAlive = keepAlive;
     _playbackRateParam = rateParam;
-    if ([NSThread isMainThread]) {
-      [context.engine attachNode:source];
-    } else {
-      dispatch_sync(dispatch_get_main_queue(), ^{
-        [context.engine attachNode:source];
-      });
-    }
+    _detuneParam = detuneParam;
+    _timelineCell = timelineCell;
+    _channels = format.channelCount;
+    self.nativeFormat = format;
+    rateParam.owner = self;
+    detuneParam.owner = self;
+    [self attachSource:source];
     [self setBuffer:buffer];
   }
   return self;
+}
+
+- (void)attachSource:(AVAudioSourceNode *)source {
+  AVAudioEngine *engine = self.context.engine;
+  if ([NSThread isMainThread]) {
+    [engine attachNode:source];
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), ^{
+      [engine attachNode:source];
+    });
+  }
+}
+
+- (BOOL)usesOutputStage { return YES; }
+
+// A buffer with more channels than the context plays them all while the source can still change;
+// its stage down-mixes them to each destination with the speakers rules.
+- (AVAudioChannelCount)channelsForBuffer:(NSCAudioBuffer *)buffer {
+  NSCAudioContext *ctx = self.context;
+  AVAudioChannelCount current = _channels;
+  AVAudioChannelCount wanted = MIN((AVAudioChannelCount)8, [buffer getBuffer].format.channelCount);
+  if (!ctx || ctx.format.channelCount == 0) return current;
+  wanted = MAX(wanted, ctx.format.channelCount);
+  if (wanted == current) return current;
+  AVAudioEngine *engine = ctx.engine;
+  BOOL staged = [self outputAVNode] != _sourceNode;
+  NSArray *points = @[];
+  @try { points = [engine outputConnectionPointsForNode:_sourceNode outputBus:0]; } @catch (NSException *e) {}
+  if (points.count > 0 && !staged) return current;
+  AVAudioFormat *format = SourceFormat(ctx.format.sampleRate, wanted);
+  AVAudioSourceNode *source = MakeSource(format, _stateData, _keepAlive, _playbackRateParam, _detuneParam, _timelineCell, self);
+  if (!source) return current;
+  AVAudioSourceNode *old = _sourceNode;
+  [self attachSource:source];
+  _sourceNode = source;
+  _channels = wanted;
+  self.nativeFormat = format;
+  [self replaceAVNode:source];
+  @try { [engine disconnectNodeOutput:old]; } @catch (NSException *e) {}
+  @try { [ctx detachNode:old fromEngine:engine]; } @catch (NSException *e) {}
+  if (wanted != ctx.format.channelCount) [self ensureOutputStageWithChannels:wanted];
+  return wanted;
 }
 
 - (instancetype)initWithContext:(NSCAudioContext *)context
@@ -185,7 +248,8 @@ static void NSCBufferSourceSilence(AudioBufferList *abl) {
 }
 
 - (void)setBuffer:(NSCAudioBuffer *)newBuffer {
-  _buffer = newBuffer ? [self processBuffer:newBuffer context:self.context] : nil;
+  AVAudioChannelCount channels = newBuffer ? [self channelsForBuffer:newBuffer] : 0;
+  _buffer = newBuffer ? [self processBuffer:newBuffer context:self.context channels:channels] : nil;
   AVAudioPCMBuffer *pcm = [_buffer getBuffer];
   if (pcm && pcm.floatChannelData == NULL) pcm = nil;
   if (pcm) [_keepAlive addObject:pcm];
@@ -267,14 +331,15 @@ static void NSCBufferSourceSilence(AudioBufferList *abl) {
 }
 
 - (NSCAudioBuffer *)processBuffer:(NSCAudioBuffer *)input
-                          context:(NSCAudioContext *)context {
+                          context:(NSCAudioContext *)context
+                         channels:(AVAudioChannelCount)channels {
   if (!context)
     return nil;
   AVAudioPCMBuffer *srcBuf = [input getBuffer];
   if (!srcBuf)
     return nil;
   AVAudioFormat *mixerFmt = context.format;
-  AVAudioChannelCount targetChannels = mixerFmt.channelCount;
+  AVAudioChannelCount targetChannels = channels ?: mixerFmt.channelCount;
   double targetSampleRate = mixerFmt.sampleRate;
   AVAudioCommonFormat targetCommon = mixerFmt.commonFormat;
 

@@ -508,6 +508,12 @@ export class OscillatorNode extends AudioScheduledSourceNode {
 		return this._frequencyParam;
 	}
 
+	private _detuneParam!: AudioParam;
+	get detune(): AudioParam {
+		if (!this._detuneParam) this._detuneParam = new AudioParam(nativeCtor_, this.native.detuneParam);
+		return this._detuneParam;
+	}
+
 	setPeriodicWave(wave: PeriodicWave) {
 		if (!wave) return;
 		this.native.setPeriodicWave(wave.native);
@@ -886,6 +892,12 @@ export class AudioBufferSourceNode extends AudioScheduledSourceNode {
 		if (this._playbackRateParam) return this._playbackRateParam;
 		this._playbackRateParam = new AudioParam(nativeCtor_, this.native.getPlaybackRateParam());
 		return this._playbackRateParam;
+	}
+
+	private _detuneParam: AudioParam | null = null;
+	get detune(): AudioParam {
+		if (!this._detuneParam) this._detuneParam = new AudioParam(nativeCtor_, this.native.detuneParam);
+		return this._detuneParam;
 	}
 }
 

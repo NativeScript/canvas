@@ -161,16 +161,28 @@ lands on its frame, in an `OfflineAudioContext` and a realtime one, and `gain` c
 below 0. A `DelayNode`'s `maxDelayTime` defaults to 1 s and can be up to 180 s; a `delayTime`
 between two frames interpolates linearly.
 
-On iOS `node.connect(param)` works for those two params, `GainNode.gain` and `DelayNode.delayTime`:
-the node's output, mixed down to mono, adds to the param's value every frame. Other params
-(oscillator `frequency`, `BiquadFilterNode`, panner and `ConstantSourceNode.offset` params, and
-the rest) aren't evaluated per frame and ignore audio connected to them.
+On iOS `disconnect(destination)`, `disconnect(output)`, `disconnect(destination, output, input)`
+and `disconnect(param)` remove only the matching connections. Each connection into a
+`ChannelMergerNode`, `ChannelSplitterNode` or `AudioWorkletNode` input gets its own bus, mixed by
+the speaker rules for mono, stereo, quad and 5.1 (other counts mix discretely); each splitter
+output plays its own channel, and the merger puts each input on its channel. Other nodes take no
+`channelCount` or `channelCountMode`, and a cycle doesn't render, even through a `DelayNode`
+(AVAudioEngine can't render one). An `AudioBuffer` with more channels than the context plays all
+of them.
+
+On iOS `node.connect(param)` adds the node's output, mixed down to mono, to the param every frame
+for `GainNode.gain`, `DelayNode.delayTime`, the `BiquadFilterNode` params, oscillator `frequency`
+and `detune`, `ConstantSourceNode.offset`, `AudioBufferSourceNode.playbackRate` and `detune`, and
+the params of an `AudioWorkletNode` with inputs. Other params, such as `StereoPannerNode.pan`,
+the `PannerNode` position and orientation and a worklet's params when it has no inputs, follow
+the connected audio once per quantum, a quantum late.
 
 On Android `node.connect(param)` adds the node's output, mixed down to mono, to the param every
-frame for `GainNode.gain`, `DelayNode.delayTime`, `ConstantSourceNode.offset`, oscillator
-`frequency`, `AudioBufferSourceNode.playbackRate`, the `DynamicsCompressorNode` params, panner
+frame for `GainNode.gain`, `DelayNode.delayTime`, `ConstantSourceNode.offset`,
+`AudioBufferSourceNode.playbackRate`, the `DynamicsCompressorNode` params, panner
 params and `AudioWorkletNode` params (for a worklet with inputs). `BiquadFilterNode` and listener
-params ignore audio connected to them.
+params ignore audio connected to them, and oscillator `frequency` follows it but drifts from
+the automated value.
 
 ## Android memory
 

@@ -30,6 +30,11 @@ typedef NS_ENUM(NSInteger, NSCMixMode) {
 @property (nonatomic, readonly) NSInteger channels;
 /// Pick mode: the channel of bus 0 this node plays.
 - (void)setPick:(NSInteger)pick;
+/// Sum mode: mixes to no more channels than the widest connection has.
+- (void)setClamp:(BOOL)clamp;
+- (void)setDiscrete:(BOOL)discrete;
+/// The channels the last render mixed to; read on the render thread after pulling this node.
+- (const UInt32 *)mixedChannels;
 
 /// Connects `node`'s bus 0 to a bus rendered before the others; its audio is not mixed.
 - (void)connectEarly:(AVAudioNode *)node format:(AVAudioFormat *)format;

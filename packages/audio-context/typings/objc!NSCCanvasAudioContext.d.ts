@@ -294,6 +294,14 @@ declare class NSCAudioNode extends NSObject {
 	handleDisconnectedFromOutputInput(destination: NSCAudioNode, output: number, input: number): void;
 
 	initWithContextNode(context: NSCAudioContext, node: AVAudioNode): this;
+
+	readonly channelCount: number;
+
+	readonly channelCountMode: number;
+
+	readonly channelInterpretation: number;
+
+	setChannelConfigModeInterpretation(count: number, mode: number, interpretation: number): void;
 }
 
 declare class NSCAudioOscillatorNode extends NSCAudioScheduledSourceNode {

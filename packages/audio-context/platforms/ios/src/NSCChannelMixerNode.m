@@ -10,8 +10,10 @@
 
 typedef struct {
     NSCMixMode mode;
-    BOOL discrete;
+    _Atomic BOOL discrete;
     UInt32 channels;
+    // Sum mode: mix to at most the widest connection's channels (clamped-max).
+    _Atomic int clamp;
     // Pick mode: the channel of bus 0 this node plays.
     _Atomic int pick;
     // Per input bus: connected, its format's channels, the merger channel it feeds, rendered first.
@@ -80,6 +82,14 @@ static float *Mixed(MixRender *r, UInt32 c) { return r->mixed + c * r->maxFrames
 
 static void Mix(MixRender *r, const AudioTimeStamp *ts, AUAudioFrameCount frames, AURenderPullInputBlock pull) {
     UInt32 C = r->channels;
+    if (r->mode == NSCMixModeSum && atomic_load_explicit(&r->clamp, memory_order_relaxed)) {
+        UInt32 widest = 1;
+        for (int b = 0; b < MIX_BUSSES; b++) {
+            if (!atomic_load_explicit(&r->used[b], memory_order_acquire) || atomic_load_explicit(&r->early[b], memory_order_relaxed)) continue;
+            widest = MAX(widest, (UInt32)atomic_load_explicit(&r->busChannels[b], memory_order_relaxed));
+        }
+        C = MIN(C, widest);
+    }
     for (UInt32 c = 0; c < MIX_CHANNELS; c++) memset(Mixed(r, c), 0, frames * sizeof(float));
     r->mixedChannels = r->mode == NSCMixModePass ? 0 : C;
     r->silent = YES;
@@ -285,6 +295,21 @@ static AVAudioFormat *MixFormat(double rate, NSInteger channels) {
 
 - (MixRender *)render {
     return ((NSCChannelMixUnit *)_unit.AUAudioUnit).render;
+}
+
+- (const UInt32 *)mixedChannels {
+    MixRender *r = [self render];
+    return r ? &r->mixedChannels : NULL;
+}
+
+- (void)setDiscrete:(BOOL)discrete {
+    MixRender *r = [self render];
+    if (r) atomic_store(&r->discrete, discrete);
+}
+
+- (void)setClamp:(BOOL)clamp {
+    MixRender *r = [self render];
+    if (r) atomic_store(&r->clamp, clamp ? 1 : 0);
 }
 
 - (void)setPick:(NSInteger)pick {

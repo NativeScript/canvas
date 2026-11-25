@@ -383,6 +383,103 @@ static AudioComponentDescription WorkletDescription(BOOL generator) {
     return description;
 }
 
+#pragma mark - Output taps
+
+// Bus formats for the tap being instantiated; set around the synchronous instantiation.
+static AVAudioFormat *pendingTapInput;
+static AVAudioFormat *pendingTapOutput;
+
+// One output of a multi-output worklet: AVAudioEngine drops a unit's other output buses'
+// connections when one is connected, so each output pulls the unit's bus 0 and plays its own audio.
+@interface NSCWorkletTapUnit : AUAudioUnit
+@property (nonatomic, strong) AUAudioUnit *owner;
+@property (nonatomic) WorkletRender *render;
+@property (nonatomic) NSInteger output;
+@end
+
+@implementation NSCWorkletTapUnit {
+    AUAudioUnitBusArray *_inputBusses;
+    AUAudioUnitBusArray *_outputBusses;
+    float *_scratch;
+    AudioBufferList *_pullList;
+    UInt32 _maxFrames;
+    UInt32 _inChannels;
+}
+
+- (instancetype)initWithComponentDescription:(AudioComponentDescription)description options:(AudioComponentInstantiationOptions)options error:(NSError **)outError {
+    if (!(self = [super initWithComponentDescription:description options:options error:outError])) return nil;
+    AUAudioUnitBus *input = [[AUAudioUnitBus alloc] initWithFormat:pendingTapInput error:outError];
+    AUAudioUnitBus *output = [[AUAudioUnitBus alloc] initWithFormat:pendingTapOutput error:outError];
+    if (!input || !output) return nil;
+    _inputBusses = [[AUAudioUnitBusArray alloc] initWithAudioUnit:self busType:AUAudioUnitBusTypeInput busses:@[ input ]];
+    _outputBusses = [[AUAudioUnitBusArray alloc] initWithAudioUnit:self busType:AUAudioUnitBusTypeOutput busses:@[ output ]];
+    _pullList = calloc(1, sizeof(AudioBufferList) + (MAX_CHANNELS - 1) * sizeof(AudioBuffer));
+    self.maximumFramesToRender = 4096;
+    return self;
+}
+
+- (AUAudioUnitBusArray *)inputBusses { return _inputBusses; }
+- (AUAudioUnitBusArray *)outputBusses { return _outputBusses; }
+- (BOOL)canProcessInPlace { return NO; }
+
+- (BOOL)allocateRenderResourcesAndReturnError:(NSError **)outError {
+    if (![super allocateRenderResourcesAndReturnError:outError]) return NO;
+    UInt32 frames = MAX((UInt32)self.maximumFramesToRender, (UInt32)QUANTUM);
+    if (frames > _maxFrames) {
+        free(_scratch);
+        _scratch = calloc((size_t)MAX_CHANNELS * frames, sizeof(float));
+        _maxFrames = frames;
+    }
+    _inChannels = MAX(1u, MIN((UInt32)_inputBusses[0].format.channelCount, (UInt32)MAX_CHANNELS));
+    return _scratch != NULL;
+}
+
+- (AUInternalRenderBlock)internalRenderBlock {
+    WorkletRender **rp = &_render;
+    NSInteger *op = &_output;
+    float **scratch = &_scratch;
+    UInt32 *maxFrames = &_maxFrames;
+    UInt32 *inChannelsp = &_inChannels;
+    AudioBufferList *abl = _pullList;
+    return ^AUAudioUnitStatus(AudioUnitRenderActionFlags *flags, const AudioTimeStamp *ts, AUAudioFrameCount frames, NSInteger bus, AudioBufferList *out, const AURenderEvent *events, AURenderPullInputBlock pull) {
+        WorkletRender *r = *rp;
+        NSInteger o = *op;
+        UInt32 inChannels = *inChannelsp;
+        if (!r || !*scratch || frames > *maxFrames || frames > r->maxFrames) return kAudioUnitErr_TooManyFramesToProcess;
+        abl->mNumberBuffers = inChannels;
+        for (UInt32 c = 0; c < inChannels; c++) {
+            abl->mBuffers[c].mNumberChannels = 1;
+            abl->mBuffers[c].mData = *scratch + c * *maxFrames;
+            abl->mBuffers[c].mDataByteSize = frames * sizeof(float);
+        }
+        AudioUnitRenderActionFlags pullFlags = 0;
+        // Renders the worklet for this timestamp; its outputs are then in `rendered`.
+        if (pull) pull(&pullFlags, ts, frames, 0, abl);
+        for (UInt32 c = 0; c < out->mNumberBuffers; c++) {
+            float *from = Rendered(r, o, MIN((NSInteger)c, r->outChannels[o] - 1));
+            if (out->mBuffers[c].mData) memcpy(out->mBuffers[c].mData, from, frames * sizeof(float));
+            else out->mBuffers[c].mData = from;
+            out->mBuffers[c].mDataByteSize = frames * sizeof(float);
+        }
+        return noErr;
+    };
+}
+
+- (void)dealloc {
+    free(_scratch);
+    free(_pullList);
+}
+
+@end
+
+static AudioComponentDescription TapDescription(void) {
+    AudioComponentDescription description = {0};
+    description.componentType = kAudioUnitType_Effect;
+    description.componentSubType = 'nsct';
+    description.componentManufacturer = 'NSCa';
+    return description;
+}
+
 #pragma mark - The node
 
 @implementation NSCAudioWorkletNode {
@@ -393,6 +490,8 @@ static AudioComponentDescription WorkletDescription(BOOL generator) {
     AVAudioMixerNode *_paramMixer;
     AVAudioFormat *_paramFormat;
     BOOL _active;
+    // Multi-output: one tap per output.
+    NSArray<AVAudioUnit *> *_taps;
 }
 
 - (nullable instancetype)initWithContext:(NSCAudioContext *)context
@@ -418,6 +517,7 @@ static AudioComponentDescription WorkletDescription(BOOL generator) {
     dispatch_once(&once, ^{
         [AUAudioUnit registerSubclass:[NSCWorkletUnit class] asComponentDescription:WorkletDescription(YES) name:@"NativeScript: AudioWorklet" version:1];
         [AUAudioUnit registerSubclass:[NSCWorkletUnit class] asComponentDescription:WorkletDescription(NO) name:@"NativeScript: AudioWorklet" version:1];
+        [AUAudioUnit registerSubclass:[NSCWorkletTapUnit class] asComponentDescription:TapDescription() name:@"NativeScript: AudioWorklet output" version:1];
     });
 
     NSInteger inCounts[MAX_PORTS], outCounts[MAX_PORTS];
@@ -437,7 +537,7 @@ static AudioComponentDescription WorkletDescription(BOOL generator) {
     BOOL hasParams = paramDefaults.count > 0 && inputs > 0;
     AVAudioFormat *paramFormat = ChannelFormat(sampleRate, contextChannels);
     pendingInputs = hasParams ? [inFormats arrayByAddingObject:paramFormat] : inFormats;
-    pendingOutputs = outFormats;
+    pendingOutputs = outputs > 1 ? @[ outFormats[0] ] : outFormats;
     // A registered in-process unit instantiates synchronously.
     AVAudioUnit *unit = inputs > 0
         ? [[AVAudioUnitEffect alloc] initWithAudioComponentDescription:WorkletDescription(NO)]
@@ -519,6 +619,31 @@ static AudioComponentDescription WorkletDescription(BOOL generator) {
         [ports addObject:port];
     }
     _inputPorts = [ports copy];
+    if (outputs > 1) {
+        NSMutableArray<AVAudioUnit *> *taps = [NSMutableArray array];
+        NSMutableArray<AVAudioConnectionPoint *> *points = [NSMutableArray array];
+        for (NSInteger o = 0; o < outputs; o++) {
+            pendingTapInput = outFormats[0];
+            pendingTapOutput = outFormats[o];
+            AVAudioUnitEffect *tap = [[AVAudioUnitEffect alloc] initWithAudioComponentDescription:TapDescription()];
+            pendingTapInput = nil;
+            pendingTapOutput = nil;
+            NSCWorkletTapUnit *tapUnit = (NSCWorkletTapUnit *)tap.AUAudioUnit;
+            if (![tapUnit isKindOfClass:[NSCWorkletTapUnit class]]) return nil;
+            tapUnit.owner = au;
+            tapUnit.render = r;
+            tapUnit.output = o;
+            [engine attachNode:tap];
+            [taps addObject:tap];
+            [points addObject:[[AVAudioConnectionPoint alloc] initWithNode:tap bus:0]];
+        }
+        @try {
+            [engine connect:unit toConnectionPoints:points fromBus:0 format:outFormats[0]];
+        } @catch (NSException *e) {
+            NSCLogError(@"NSCAudioWorkletNode: the outputs did not connect: %@", e);
+        }
+        _taps = [taps copy];
+    }
     if (hasParams) {
         AVAudioMixerNode *mixer = [[AVAudioMixerNode alloc] init];
         [engine attachNode:mixer];
@@ -531,6 +656,29 @@ static AudioComponentDescription WorkletDescription(BOOL generator) {
         _paramFormat = paramFormat;
     }
     return self;
+}
+
+- (AVAudioNode *)outputNodeFor:(NSNumber *)output bus:(AVAudioNodeBus *)bus {
+    if (!_taps) return [super outputNodeFor:output bus:bus];
+    *bus = 0;
+    NSInteger i = output ? output.integerValue : 0;
+    return i >= 0 && i < (NSInteger)_taps.count ? _taps[(NSUInteger)i] : nil;
+}
+
+- (void)eachOutputNode:(NSNumber *)output block:(void (NS_NOESCAPE ^)(AVAudioNode *, NSNumber *))block {
+    if (!_taps) {
+        [super eachOutputNode:output block:block];
+        return;
+    }
+    for (NSInteger i = 0; i < (NSInteger)_taps.count; i++) {
+        if (output && output.integerValue != i) continue;
+        block(_taps[(NSUInteger)i], @0);
+    }
+}
+
+- (AVAudioFormat *)formatForOutput:(AVAudioNodeBus)bus {
+    if (!_taps || bus >= _taps.count) return [super formatForOutput:bus];
+    return [_taps[bus] outputFormatForBus:0];
 }
 
 // Sinks feed the param bus, which the unit pulls before it reads its params.
@@ -605,6 +753,7 @@ static AudioComponentDescription WorkletDescription(BOOL generator) {
     if (!ctx || !eng) return;
     NSMutableArray<AVAudioNode *> *nodes = [NSMutableArray array];
     if (_paramMixer) [nodes addObject:_paramMixer];
+    if (_taps) [nodes addObjectsFromArray:_taps];
     if (_unit) [nodes addObject:_unit];
     for (AVAudioNode *node in nodes) {
         if (![ctx isNode:node attachedToEngine:eng]) continue;

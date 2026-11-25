@@ -113,9 +113,64 @@ export class AudioParam extends AudioParamBase {
 	}
 }
 
+const COUNT_MODES = ['max', 'clamped-max', 'explicit'];
+const INTERPRETATIONS = ['speakers', 'discrete'];
+
 export class AudioNode extends AudioNodeBase {
+	private _channelCount?: number;
+	private _channelCountMode?: string;
+	private _channelInterpretation?: string;
+
 	constructor(context: NativeBaseAudioContext) {
 		super(context);
+	}
+
+	// The Web Audio defaults for this node's kind.
+	private _channelDefaults(): [number, string, string] {
+		if (this instanceof ChannelSplitterNode) return [this.numberOfOutputs, 'explicit', 'discrete'];
+		if (this instanceof ChannelMergerNode) return [1, 'explicit', 'speakers'];
+		if (this instanceof AudioDestinationNode) return [this.context instanceof OfflineAudioContext ? ((this.context as any).native?.format?.channelCount ?? 2) : 2, 'explicit', 'speakers'];
+		if (this instanceof PannerNode || this instanceof StereoPannerNode || this instanceof ConvolverNode || this instanceof DynamicsCompressorNode) return [2, 'clamped-max', 'speakers'];
+		return [2, 'max', 'speakers'];
+	}
+
+	private _applyChannelConfig(count: number, mode: number, interpretation: number) {
+		try {
+			(this as never as { native: NSCAudioNode }).native?.setChannelConfigModeInterpretation(count, mode, interpretation);
+		} catch (e) {}
+	}
+
+	get channelCount(): number {
+		return this._channelCount ?? this._channelDefaults()[0];
+	}
+
+	set channelCount(value: number) {
+		const count = Math.floor(Number(value));
+		if (!(count >= 1 && count <= 32)) throw domError('NotSupportedError', `AudioNode.channelCount: ${value} is out of range`);
+		this._channelCount = count;
+		this._applyChannelConfig(count, -1, -1);
+	}
+
+	get channelCountMode(): string {
+		return this._channelCountMode ?? this._channelDefaults()[1];
+	}
+
+	set channelCountMode(value: string) {
+		const mode = COUNT_MODES.indexOf(value);
+		if (mode < 0) return;
+		this._channelCountMode = value;
+		this._applyChannelConfig(-1, mode, -1);
+	}
+
+	get channelInterpretation(): string {
+		return this._channelInterpretation ?? this._channelDefaults()[2];
+	}
+
+	set channelInterpretation(value: string) {
+		const interpretation = INTERPRETATIONS.indexOf(value);
+		if (interpretation < 0) return;
+		this._channelInterpretation = value;
+		this._applyChannelConfig(-1, -1, interpretation);
 	}
 
 	connect(node: any, output?: number, input?: number) {

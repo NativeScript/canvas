@@ -68,6 +68,41 @@ void NSCDisconnectRemoving(NSCAudioContext *context, AVAudioNode *src, NSNumber 
     });
 }
 
+// A path of nodes from one of `starts` downstream to one of `targets`, or nil.
+static NSArray<AVAudioNode *> *DownstreamPath(AVAudioEngine *engine, NSArray<AVAudioNode *> *starts, NSHashTable<AVAudioNode *> *targets) {
+    NSMapTable<AVAudioNode *, id> *parent = [NSMapTable strongToStrongObjectsMapTable];
+    NSMutableArray<AVAudioNode *> *stack = [NSMutableArray array];
+    for (AVAudioNode *node in starts) {
+        if ([parent objectForKey:node]) continue;
+        [parent setObject:[NSNull null] forKey:node];
+        [stack addObject:node];
+    }
+    while (stack.count > 0) {
+        AVAudioNode *node = stack.lastObject;
+        [stack removeLastObject];
+        if ([targets containsObject:node]) {
+            NSMutableArray<AVAudioNode *> *path = [NSMutableArray array];
+            for (id at = node; at != [NSNull null]; at = [parent objectForKey:at]) [path insertObject:at atIndex:0];
+            return path;
+        }
+        for (AVAudioNodeBus bus = 0; bus < node.numberOfOutputs; bus++) {
+            NSArray<AVAudioConnectionPoint *> *points = nil;
+            @try { points = [engine outputConnectionPointsForNode:node outputBus:bus]; } @catch (NSException *e) {}
+            for (AVAudioConnectionPoint *point in points) {
+                AVAudioNode *next = point.node;
+                if (!next || [parent objectForKey:next]) continue;
+                [parent setObject:node forKey:next];
+                [stack addObject:next];
+            }
+        }
+    }
+    return nil;
+}
+
+static BOOL BreakAt(NSCAudioNode *node) {
+    return [node isKindOfClass:[NSCDelayNode class]] && [(NSCDelayNode *)node breakCycle];
+}
+
 @implementation NSCAudioNode {
     NSCChannelMixerNode *_stage;
 }
@@ -167,6 +202,7 @@ void NSCDisconnectRemoving(NSCAudioContext *context, AVAudioNode *src, NSNumber 
     if (self = [super init]) {
         _context = context;
         _avNode = node;
+        _channelCount = 2;
         if (_context) {
             @try { [_context registerNodeWrapper:self]; } @catch (NSException *e) {}
         }
@@ -466,18 +502,41 @@ void NSCDisconnectRemoving(NSCAudioContext *context, AVAudioNode *src, NSNumber 
 - (void)handleDisconnectedFrom:(NSCAudioNode *)destination output:(NSNumber *)output input:(NSNumber *)input {
   
 }
+// AVAudioEngine can't render a cycle: one through a DelayNode splits it, any other is refused,
+// which Web Audio's muting of a cycle without a delay matches.
+- (BOOL)allowsConnectionTo:(NSCAudioNode *)destination {
+    AVAudioEngine *engine = self.context.engine;
+    if (!engine) return YES;
+    NSMutableArray<AVAudioNode *> *starts = [NSMutableArray array];
+    [destination eachOutputNode:nil block:^(AVAudioNode *node, NSNumber *bus) { [starts addObject:node]; }];
+    NSHashTable<AVAudioNode *> *targets = [NSHashTable hashTableWithOptions:NSPointerFunctionsObjectPointerPersonality];
+    [self eachOutputNode:nil block:^(AVAudioNode *node, NSNumber *bus) { [targets addObject:node]; }];
+    if (self.avNode) [targets addObject:self.avNode];
+    for (NSInteger attempt = 0; attempt < 16; attempt++) {
+        NSArray<AVAudioNode *> *path = DownstreamPath(engine, starts, targets);
+        if (!path) return YES;
+        // The new connection's ends are on every cycle it closes.
+        if (BreakAt(destination) || BreakAt(self)) return YES;
+        BOOL broke = NO;
+        for (AVAudioNode *node in path) {
+            if (BreakAt([self.context nodeWrapperForAVNode:node])) { broke = YES; break; }
+        }
+        if (!broke) break;
+    }
+    NSCLogError(@"NSCAudioNode: %@ -> %@ would close a cycle without a DelayNode; not connected", NSStringFromClass([self class]), NSStringFromClass([destination class]));
+    return NO;
+}
+
 - (void)connectTo:(NSCAudioNode *)destination {
-    if (!destination) return;
-    [destination handleConnectFrom:self output:nil input:nil];
+    [self connectTo:destination output:nil input:nil];
 }
 
 - (void)connectTo:(NSCAudioNode *)destination output:(NSNumber *)output {
-    if (!destination) return;
-    [destination handleConnectFrom:self output:output input:nil];
+    [self connectTo:destination output:output input:nil];
 }
 
 - (void)connectTo:(NSCAudioNode *)destination output:(NSNumber *)output input:(NSNumber *)input {
-    if (!destination) return;
+    if (!destination || ![self allowsConnectionTo:destination]) return;
     [destination handleConnectFrom:self output:output input:input];
 }
 
@@ -525,6 +584,15 @@ void NSCDisconnectRemoving(NSCAudioContext *context, AVAudioNode *src, NSNumber 
     if (!destination) return;
     [destination handleDisconnectFrom:self output:output input:input];
 }
+
+- (void)setChannelConfig:(NSInteger)count mode:(NSInteger)mode interpretation:(NSInteger)interpretation {
+    if (count >= 1) _channelCount = count;
+    if (mode >= 0 && mode <= 2) _channelCountMode = mode;
+    if (interpretation >= 0 && interpretation <= 1) _channelInterpretation = interpretation;
+    [self channelConfigChanged];
+}
+
+- (void)channelConfigChanged {}
 
 - (void)applyAutomation {}
 

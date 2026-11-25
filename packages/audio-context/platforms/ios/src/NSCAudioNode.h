@@ -42,6 +42,15 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)disconnectTo:(NSCAudioNode *)destination output:(nullable NSNumber *)output;
 - (void)disconnectTo:(NSCAudioNode *)destination output:(nullable NSNumber *)output input:(nullable NSNumber *)input;
 
+/// Web Audio channelCount, channelCountMode (0 max, 1 clamped-max, 2 explicit) and
+/// channelInterpretation (0 speakers, 1 discrete); -1 leaves a value as is.
+- (void)setChannelConfig:(NSInteger)count mode:(NSInteger)mode interpretation:(NSInteger)interpretation;
+@property (nonatomic, readonly) NSInteger channelCount;
+@property (nonatomic, readonly) NSInteger channelCountMode;
+@property (nonatomic, readonly) NSInteger channelInterpretation;
+/// Called after the channel config changes; nodes that mix their inputs apply it.
+- (void)channelConfigChanged;
+
 /// Applies param automation at the context's current time. Offline rendering calls it per quantum.
 - (void)applyAutomation;
 

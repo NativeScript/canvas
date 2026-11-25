@@ -1,6 +1,5 @@
 #include "audio_context.h"
 #include "audio_internal.h"
-#include "hrtf_convolver.h"
 #include "convolver.h"
 
 #include <android/log.h>
@@ -308,6 +307,7 @@ void NativeEngine::applyCommand(Command &c) {
             compressor.attackId = c.compressorAttackId;
             compressor.releaseId = c.compressorReleaseId;
             compressor.reductionId = c.compressorReductionId;
+            compressor.meter = c.meter;
             compressors_[c.id] = std::move(compressor);
             auto ensureGainDefault = [&](const std::string &gid, double value) {
                 if (!gid.empty() && gains_.find(gid) == gains_.end()) gains_[gid] = value;
@@ -324,6 +324,24 @@ void NativeEngine::applyCommand(Command &c) {
         case CMD_SET_GAIN:
             gains_[c.id] = c.gainValue;
             break;
+        case CMD_ATTACH_DETUNE: {
+            sourceExtras_[c.id].detuneId = c.targetId;
+            auto vit = audioVoices_.find(c.id);
+            if (vit != audioVoices_.end()) vit->second.detuneId = c.targetId;
+            break;
+        }
+        case CMD_SET_SOURCE_LOOP: {
+            SourceExtras &ex = sourceExtras_[c.id];
+            ex.loopStart = c.loopStart;
+            ex.loopEnd = c.loopEnd;
+            auto vit = audioVoices_.find(c.id);
+            if (vit != audioVoices_.end()) {
+                vit->second.loop = c.loop;
+                vit->second.loopStart = c.loopStart;
+                vit->second.loopEnd = c.loopEnd;
+            }
+            break;
+        }
         case CMD_ATTACH_PLAYBACK_RATE: {
             auto vit = audioVoices_.find(c.id);
             if (vit != audioVoices_.end()) vit->second.playbackRateId = c.playbackRateId;
@@ -464,22 +482,12 @@ void NativeEngine::applyCommand(Command &c) {
             p.coneOuterAngle = c.pannerConeOuterAngle;
             p.coneOuterGain = c.pannerConeOuterGain;
             p.contextId = c.contextId;
-            auto existing = panners_.find(c.id);
-            if (existing != panners_.end()) {
-                p.hrtf = existing->second.hrtf;
-                p.hrtfPartitionSize = existing->second.hrtfPartitionSize;
-                p.biquadId = existing->second.biquadId;
-            }
             panners_[c.id] = p;
             break;
         }
         case CMD_SET_PANNER_PARAMS: {
             auto it = panners_.find(c.id);
             if (it == panners_.end()) break;
-            if (!c.pannerBiquadId.empty()) {
-                it->second.biquadId = c.pannerBiquadId;
-                break;
-            }
             auto &p = it->second;
             p.positionX = c.pannerPositionX;
             p.positionY = c.pannerPositionY;
@@ -496,28 +504,6 @@ void NativeEngine::applyCommand(Command &c) {
             p.coneInnerAngle = c.pannerConeInnerAngle;
             p.coneOuterAngle = c.pannerConeOuterAngle;
             p.coneOuterGain = c.pannerConeOuterGain;
-            break;
-        }
-        case CMD_SET_PANNER_PARTITION_SIZE: {
-            auto it = panners_.find(c.id);
-            if (it == panners_.end() || c.pannerPartitionSize <= 0) break;
-            it->second.hrtfPartitionSize = c.pannerPartitionSize;
-            if (it->second.hrtf) it->second.hrtf->setPartitionSize(c.pannerPartitionSize);
-            break;
-        }
-        case CMD_SET_PANNER_HRIR: {
-            auto it = panners_.find(c.id);
-            if (it == panners_.end()) break;
-            if (c.clearHrir || !c.hrirLeft || !c.hrirRight || c.hrirLeft->empty() || c.hrirRight->empty()) {
-                delete it->second.hrtf;
-                it->second.hrtf = nullptr;
-                break;
-            }
-            size_t count = std::min(c.hrirLeft->size(), c.hrirRight->size());
-            HRTFConvolver *convolver = it->second.hrtf ? it->second.hrtf : new HRTFConvolver();
-            if (it->second.hrtfPartitionSize > 0) convolver->setPartitionSize(it->second.hrtfPartitionSize);
-            convolver->init(c.hrirLeft->data(), c.hrirRight->data(), count, 48000);
-            it->second.hrtf = convolver;
             break;
         }
         case CMD_SET_LISTENER_PARAMS: {
@@ -537,11 +523,6 @@ void NativeEngine::applyCommand(Command &c) {
             if (deferFree(c)) break;
             auto it = panners_.find(c.id);
             if (it == panners_.end()) break;
-            delete it->second.hrtf;
-            if (!it->second.biquadId.empty()) {
-                biquads_.erase(it->second.biquadId);
-                biquadFilters_.erase(it->second.biquadId);
-            }
             panners_.erase(it);
             break;
         }
@@ -603,6 +584,12 @@ void NativeEngine::applyCommand(Command &c) {
             v.increment = static_cast<double>(v.bufferSampleRate) / sr;
             auto pr = voicePlaybackRate_.find(c.id);
             if (pr != voicePlaybackRate_.end()) v.playbackRateId = pr->second;
+            auto ex = sourceExtras_.find(c.id);
+            if (ex != sourceExtras_.end()) {
+                v.detuneId = ex->second.detuneId;
+                v.loopStart = ex->second.loopStart;
+                v.loopEnd = ex->second.loopEnd;
+            }
             audioVoices_[c.id] = v;
             ensureNode(c.id, NODE_SOURCE, 1);
             break;

@@ -1,7 +1,8 @@
 // The render graph: nodes with inputs and outputs, rendered a quantum at a time in topological order.
 #include "audio_context.h"
 #include "audio_internal.h"
-#include "hrtf_convolver.h"
+#include "hrtf.h"
+#include "oversampler.h"
 #include "convolver.h"
 
 #include <android/log.h>
@@ -18,21 +19,67 @@ constexpr int kMaxChannels = 32;
 // Quanta a filter keeps ringing after its input stops.
 constexpr int kFilterTail = 40;
 
-double eventValueAt(const std::vector<NativeEngine::ParamEvent> &evts, int64_t tNs, double fallback) {
-    auto it = std::upper_bound(evts.begin(), evts.end(), tNs,
+bool isRamp(const NativeEngine::ParamEvent &e) {
+    return e.type == NativeEngine::EVENT_LINEAR || e.type == NativeEngine::EVENT_EXPONENTIAL;
+}
+
+// The spec's automation value at tNs from events [0, end); `depth` bounds setTarget chains.
+double eventValueAt(const std::vector<NativeEngine::ParamEvent> &evts, size_t end, int64_t tNs, double fallback,
+                    int depth = 0) {
+    auto it = std::upper_bound(evts.begin(), evts.begin() + static_cast<std::ptrdiff_t>(end), tNs,
                                [](int64_t time, const NativeEngine::ParamEvent &e) { return time < e.timeNs; });
-    size_t idx = static_cast<size_t>(std::distance(evts.begin(), it));
-    if (idx == 0) return fallback;
-    if (idx >= evts.size()) return evts.back().value;
-    const auto &prev = evts[idx - 1];
-    const auto &next = evts[idx];
-    if (next.type == 1) {
-        if (next.timeNs <= prev.timeNs) return next.value;
-        double ratio = static_cast<double>(tNs - prev.timeNs) / static_cast<double>(next.timeNs - prev.timeNs);
-        ratio = std::max(0.0, std::min(1.0, ratio));
-        return prev.value + (next.value - prev.value) * ratio;
+    const auto idx = static_cast<size_t>(std::distance(evts.begin(), it));
+    // A ramp runs from the end of the event before it, or from when it was called.
+    if (idx < end && isRamp(evts[idx])) {
+        const auto &next = evts[idx];
+        double v0 = fallback;
+        int64_t t0 = next.callNs;
+        if (idx > 0) {
+            const auto &prev = evts[idx - 1];
+            if (prev.type == NativeEngine::EVENT_TARGET) {
+                t0 = std::max(prev.timeNs, next.callNs);
+                v0 = depth < 16 ? eventValueAt(evts, idx, t0, fallback, depth + 1) : prev.value;
+            } else if (prev.type == NativeEngine::EVENT_CURVE) {
+                t0 = prev.timeNs + prev.durationNs;
+                v0 = prev.curve && !prev.curve->empty() ? prev.curve->back() : prev.value;
+            } else {
+                t0 = prev.timeNs;
+                v0 = prev.value;
+            }
+            if (tNs < t0) return eventValueAt(evts, idx, tNs, fallback, depth + 1);
+        }
+        if (tNs < t0 || next.timeNs <= t0) return v0;
+        const double ratio = static_cast<double>(tNs - t0) / static_cast<double>(next.timeNs - t0);
+        if (next.type == NativeEngine::EVENT_LINEAR) return v0 + (next.value - v0) * ratio;
+        if (v0 == 0.0 || v0 * next.value < 0.0) return v0;
+        return v0 * std::pow(next.value / v0, ratio);
     }
-    return prev.value;
+    if (idx == 0) return fallback;
+    const auto &prev = evts[idx - 1];
+    switch (prev.type) {
+        case NativeEngine::EVENT_TARGET: {
+            if (prev.timeConstant <= 0.0) return prev.value;
+            const double start = depth < 16 ? eventValueAt(evts, idx - 1, prev.timeNs, fallback, depth + 1) : prev.value;
+            const double elapsed = static_cast<double>(tNs - prev.timeNs) * 1e-9;
+            return prev.value + (start - prev.value) * std::exp(-elapsed / prev.timeConstant);
+        }
+        case NativeEngine::EVENT_CURVE: {
+            if (!prev.curve || prev.curve->empty()) return prev.value;
+            const auto &c = *prev.curve;
+            const int n = static_cast<int>(c.size());
+            if (prev.durationNs <= 0 || tNs >= prev.timeNs + prev.durationNs) return c.back();
+            const double pos = static_cast<double>(tNs - prev.timeNs) / static_cast<double>(prev.durationNs) * (n - 1);
+            const int k = std::min(n - 1, static_cast<int>(pos));
+            if (k >= n - 1) return c.back();
+            return c[k] + (c[k + 1] - c[k]) * (pos - k);
+        }
+        default:
+            return prev.value;
+    }
+}
+
+double eventValueAt(const std::vector<NativeEngine::ParamEvent> &evts, int64_t tNs, double fallback) {
+    return eventValueAt(evts, evts.size(), tNs, fallback);
 }
 
 // Fills a quantum of automation; true when it holds one value.
@@ -559,7 +606,8 @@ bool NativeEngine::evalParam(const std::string &id, int type, double fallback, i
 }
 
 double *NativeEngine::paramScratch(GraphNode &n, int index) {
-    const size_t need = static_cast<size_t>(index + 1) * Q;
+    // Sized for every param a node reads at once, so earlier pointers stay valid.
+    const size_t need = static_cast<size_t>(std::max(index + 1, 16)) * Q;
     if (n.params.size() < need) n.params.resize(need);
     return n.params.data() + static_cast<size_t>(index) * Q;
 }
@@ -631,6 +679,18 @@ void NativeEngine::renderSource(GraphNode &n, int64_t startNs, double frameNs) {
         auto pw = periodicWaves_.find(v.periodicWaveId);
         if (pw != periodicWaves_.end()) wave = &pw->second;
     }
+    // detune: cents on the oscillator's frequency or the buffer's playbackRate.
+    double *detune = paramScratch(n, 1);
+    const bool detuned = !v.detuneId.empty();
+    if (detuned) evalParam(v.detuneId, kTargetGainParam, valueOr(gains_, v.detuneId, 0.0), startNs, frameNs, detune);
+    // A buffer source's playbackRate and detune are k-rate.
+    const double rate = std::max(0.0, param[0]) * (detuned && detune[0] != 0.0 ? std::exp2(detune[0] / 1200.0) : 1.0);
+    double loopFrom = 0.0, loopTo = bufFrames;
+    if (v.voiceType == Voice::BufferSource && v.loopStart >= 0.0 && v.loopEnd > 0.0 && v.loopStart < v.loopEnd) {
+        loopFrom = std::min(v.loopStart * v.bufferSampleRate, static_cast<double>(bufFrames));
+        loopTo = std::min(v.loopEnd * v.bufferSampleRate, static_cast<double>(bufFrames));
+        if (loopTo <= loopFrom) loopFrom = 0.0, loopTo = bufFrames;
+    }
     enum { SINE, SQUARE, SAW, TRIANGLE } shape = SINE;
     if (v.waveform == "square") shape = SQUARE;
     else if (v.waveform == "sawtooth") shape = SAW;
@@ -652,7 +712,7 @@ void NativeEngine::renderSource(GraphNode &n, int64_t startNs, double frameNs) {
             if (constant) {
                 s = param[f];
             } else {
-                const double freq = param[f];
+                const double freq = detuned && detune[f] != 0.0 ? param[f] * std::exp2(detune[f] / 1200.0) : param[f];
                 if (wave) {
                     s = computePeriodicWaveSample(*wave, v.phase, freq, sr);
                 } else if (shape == SQUARE) {
@@ -673,7 +733,7 @@ void NativeEngine::renderSource(GraphNode &n, int64_t startNs, double frameNs) {
             const int i0 = static_cast<int>(std::floor(v.position));
             const float frac = static_cast<float>(v.position - i0);
             const int s0 = ((i0 % bufFrames) + bufFrames) % bufFrames;
-            const int s1 = (s0 + 1) % bufFrames;
+            const int s1 = v.loop && s0 + 1 >= static_cast<int>(std::ceil(loopTo)) ? static_cast<int>(loopFrom) : (s0 + 1) % bufFrames;
             for (int c = 0; c < channels; c++) {
                 float a = 0.0f, b = 0.0f;
                 if (bd->isPlanar && !bd->planarPtrs.empty()) {
@@ -698,14 +758,12 @@ void NativeEngine::renderSource(GraphNode &n, int64_t startNs, double frameNs) {
                 }
                 o.channel(c)[f] = a * (1.0f - frac) + b * frac;
             }
-            v.position += v.increment * std::max(0.0, param[f]);
-            if (v.position >= bufFrames) {
-                if (v.loop) {
-                    v.position = std::fmod(v.position, static_cast<double>(bufFrames));
-                } else {
-                    v.playing = false;
-                    break;
-                }
+            v.position += v.increment * rate;
+            if (v.loop && v.position >= loopTo) {
+                v.position = loopFrom + std::fmod(v.position - loopFrom, loopTo - loopFrom);
+            } else if (v.position >= bufFrames) {
+                v.playing = false;
+                break;
             }
         } else {
             auto &ring = *v.externalRing;
@@ -813,10 +871,21 @@ void NativeEngine::renderPanner(GraphNode &n, int64_t startNs, double frameNs) {
     Bus &in = n.inBus[0];
     Bus &o = n.outBus[0];
     o.setChannels(2);
-    o.active = active;
-    o.silence();
-    if (!active) return;
+    const double sr = streamSampleRate_ > 0 ? static_cast<double>(streamSampleRate_) : 48000.0;
     auto pit = panners_.find(n.id);
+    const bool hrtf = pit != panners_.end() && pit->second.panningModel == PANNING_HRTF;
+    if (hrtf && !n.hrtf) n.hrtf = std::make_shared<HrtfPanner>(static_cast<int>(sr));
+    else if (!hrtf && n.hrtf) n.hrtf.reset();
+    // HRTF rings for its kernels and interaural delay after its input stops.
+    if (active) {
+        n.delayChannels = in.channels;
+        n.tail = hrtf ? (n.hrtf->tailFrames() + Q - 1) / Q : 0;
+    } else if (n.tail > 0) {
+        n.tail--;
+    }
+    o.active = active || n.tail > 0;
+    o.silence();
+    if (!o.active) return;
     if (pit == panners_.end()) {
         for (int c = 0; c < 2; c++) {
             for (int f = 0; f < Q; f++) {
@@ -826,7 +895,7 @@ void NativeEngine::renderPanner(GraphNode &n, int64_t startNs, double frameNs) {
         return;
     }
     const Panner &base = pit->second;
-    const double sr = streamSampleRate_ > 0 ? static_cast<double>(streamSampleRate_) : 48000.0;
+    const bool stereoPanner = base.panningModel == PANNING_STEREO;
 
     // Panner params, then listener params, a quantum each.
     static constexpr int kPannerParams[] = {kPannerParamPositionX, kPannerParamPositionY, kPannerParamPositionZ,
@@ -853,8 +922,7 @@ void NativeEngine::renderPanner(GraphNode &n, int64_t startNs, double frameNs) {
         constant &= evalParam(base.contextId, kListenerParamPositionX + i, listenerValues[i], startNs, frameNs, values[7 + i]);
     }
 
-    const bool stereo = in.channels > 1;
-    const bool hrtf = base.panningModel == PANNING_HRTF && base.hrtf != nullptr;
+    const bool stereo = (active ? in.channels : n.delayChannels) > 1;
     Panner p = base;
     Listener L = *listenerBase;
     double leftGain = 1.0, rightGain = 1.0, dist = 1.0;
@@ -866,7 +934,6 @@ void NativeEngine::renderPanner(GraphNode &n, int64_t startNs, double frameNs) {
         p.orientationX = values[3][f];
         p.orientationY = values[4][f];
         p.orientationZ = values[5][f];
-        p.pan = values[6][f];
         L.positionX = values[7][f];
         L.positionY = values[8][f];
         L.positionZ = values[9][f];
@@ -876,39 +943,44 @@ void NativeEngine::renderPanner(GraphNode &n, int64_t startNs, double frameNs) {
         L.upX = values[13][f];
         L.upY = values[14][f];
         L.upZ = values[15][f];
-        computePannerGains(p, L, stereo && !hrtf, leftGain, rightGain, dist, &steerLeft);
+        if (stereoPanner) {
+            // StereoPannerNode: pan alone, no distance or cone.
+            const double pan = std::max(-1.0, std::min(1.0, values[6][f]));
+            steerLeft = pan <= 0.0;
+            const double x = stereo ? (steerLeft ? pan + 1.0 : pan) : (pan + 1.0) * 0.5;
+            leftGain = std::cos(x * M_PI / 2.0);
+            rightGain = std::sin(x * M_PI / 2.0);
+            dist = 1.0;
+        } else {
+            p.pan = 0.0;
+            computePannerGains(p, L, stereo && !hrtf, leftGain, rightGain, dist, &steerLeft);
+        }
     };
     resolve(0);
 
-    // Distance-dependent air absorption, when the panner has its low-pass.
-    const bool lowpass = !base.biquadId.empty();
-    if (lowpass) {
-        const double g = std::max(0.0, std::min(1.0, dist));
-        const double cutoff = 800.0 + (22050.0 - 800.0) * std::sqrt(g);
-        if (std::fabs(cutoff - n.lowpassCutoff) >= 1.0) {
-            n.lowpassCoeffs = computeBiquadCoeffs("lowpass", cutoff, 0.707, 0.0, static_cast<int>(sr));
-            n.lowpassCutoff = cutoff;
-        }
-        if (n.lowpass.size() < static_cast<size_t>(in.channels)) n.lowpass.resize(static_cast<size_t>(in.channels));
-        for (int c = 0; c < in.channels; c++) {
-            float *x = in.channel(c);
-            for (int f = 0; f < Q; f++) x[f] = processBiquadSample(n.lowpassCoeffs, n.lowpass[static_cast<size_t>(c)], x[f]);
-        }
-    }
-
     float *outL = o.channel(0);
     float *outR = o.channel(1);
-    const float *inL = in.channel(0);
-    const float *inR = stereo ? in.channel(1) : inL;
+    const float *inL = active ? in.channel(0) : nullptr;
+    const float *inR = active && stereo ? in.channel(1) : inL;
+    if (hrtf) {
+        // Direction is k-rate, from the quantum's first frame, as in Chromium.
+        const Panner local = transformPannerToListenerSpace(p, L);
+        const double x = local.positionX, y = local.positionY, z = local.positionZ;
+        const double horizontal = std::sqrt(x * x + z * z);
+        const double azimuth = horizontal + std::fabs(y) < 1e-12 ? 0.0 : std::atan2(x, z) * 180.0 / M_PI;
+        const double elevation = horizontal + std::fabs(y) < 1e-12 ? 0.0 : std::atan2(y, horizontal) * 180.0 / M_PI;
+        n.hrtf->process(azimuth, elevation, inL, inR, outL, outR);
+        for (int f = 0; f < Q; f++) {
+            if (!constant && f > 0) resolve(f);
+            outL[f] = static_cast<float>(outL[f] * dist);
+            outR[f] = static_cast<float>(outR[f] * dist);
+        }
+        return;
+    }
+    if (!active) return;
     for (int f = 0; f < Q; f++) {
         if (!constant && f > 0) resolve(f);
-        if (hrtf) {
-            float mono = stereo ? 0.5f * (inL[f] + inR[f]) : inL[f];
-            float l = mono, r = mono;
-            base.hrtf->process(&mono, 1, &l, &r);
-            outL[f] = static_cast<float>(l * dist);
-            outR[f] = static_cast<float>(r * dist);
-        } else if (!stereo) {
+        if (!stereo) {
             outL[f] = static_cast<float>(inL[f] * leftGain * dist);
             outR[f] = static_cast<float>(inL[f] * rightGain * dist);
         } else if (steerLeft) {
@@ -925,9 +997,18 @@ void NativeEngine::renderCompressor(GraphNode &n, int64_t startNs, double frameN
     const bool active = mixInput(n, 0, n.channelCount, n.countMode, n.interpretation);
     Bus &in = n.inBus[0];
     Bus &o = n.outBus[0];
+    // Its look-ahead line plays out after the input stops.
+    if (active) {
+        n.tail = 4;
+        n.delayChannels = in.channels;
+    } else if (n.tail > 0) {
+        n.tail--;
+        in.setChannels(n.delayChannels);
+        in.silence();
+    }
     o.setChannels(in.channels);
-    o.active = active;
-    if (!active) {
+    o.active = active || n.tail > 0;
+    if (!o.active) {
         o.silence();
         return;
     }
@@ -948,37 +1029,54 @@ void NativeEngine::renderCompressor(GraphNode &n, int64_t startNs, double frameN
     evalParam(comp.ratioId, kTargetGainParam, valueOr(gains_, comp.ratioId, 12.0), startNs, frameNs, ratio);
     evalParam(comp.attackId, kTargetGainParam, valueOr(gains_, comp.attackId, 0.003), startNs, frameNs, attack);
     evalParam(comp.releaseId, kTargetGainParam, valueOr(gains_, comp.releaseId, 0.25), startNs, frameNs, release);
-    if (n.reductionDb.size() < static_cast<size_t>(in.channels)) n.reductionDb.resize(static_cast<size_t>(in.channels), 0.0f);
-    for (int f = 0; f < Q; f++) {
-        const double r = std::max(1.0, ratio[f]);
-        const double k = std::max(0.0, knee[f]);
-        const double t = threshold[f];
-        const double attackCoeff = std::exp(-1.0 / (std::max(attack[f], 1.0 / sr) * sr));
-        const double releaseCoeff = std::exp(-1.0 / (std::max(release[f], 1.0 / sr) * sr));
-        for (int c = 0; c < in.channels; c++) {
-            const float x = in.channel(c)[f];
-            const double level = 20.0 * std::log10(std::max(1.0e-12, std::fabs(static_cast<double>(x))));
-            const double over = level - t;
-            double compressed = level;
-            if (k > 0.0) {
-                const double half = 0.5 * k;
-                if (over >= half) compressed = t + over / r;
-                else if (over > -half) compressed = level + (1.0 / r - 1.0) * (over + half) * (over + half) / (2.0 * k);
-            } else if (over > 0.0) {
-                compressed = t + over / r;
-            }
-            const double target = std::max(0.0, level - compressed);
-            double current = n.reductionDb[static_cast<size_t>(c)];
-            const double coeff = target > current ? attackCoeff : releaseCoeff;
-            current = coeff * current + (1.0 - coeff) * target;
-            n.reductionDb[static_cast<size_t>(c)] = static_cast<float>(current);
-            o.channel(c)[f] = static_cast<float>(x * std::pow(10.0, -current / 20.0));
+    // k-rate params; one envelope for every channel; 6 ms of look-ahead; the spec's makeup gain.
+    const double r = std::max(1.0, ratio[0]);
+    const double k = std::max(0.0, knee[0]);
+    const double t = threshold[0];
+    const double attackCoeff = std::exp(-1.0 / (std::max(attack[0], 1.0 / sr) * sr));
+    const double releaseCoeff = std::exp(-1.0 / (std::max(release[0], 1.0 / sr) * sr));
+    auto reductionAt = [&](double level) {
+        const double over = level - t;
+        double compressed = level;
+        if (k > 0.0) {
+            const double half = 0.5 * k;
+            if (over >= half) compressed = t + over / r;
+            else if (over > -half) compressed = level + (1.0 / r - 1.0) * (over + half) * (over + half) / (2.0 * k);
+        } else if (over > 0.0) {
+            compressed = t + over / r;
         }
+        return std::max(0.0, level - compressed);
+    };
+    const double makeup = std::pow(10.0, 0.6 * reductionAt(0.0) / 20.0);
+    const int lookahead = std::max(1, static_cast<int>(std::lround(0.006 * sr)));
+    const size_t lineSize = static_cast<size_t>(lookahead) * in.channels;
+    if (n.preDelay.size() != lineSize) {
+        n.preDelay.assign(lineSize, 0.0f);
+        n.preDelayPos = 0;
     }
+    if (n.reductionDb.empty()) n.reductionDb.assign(1, 0.0f);
+    double current = n.reductionDb[0];
+    for (int f = 0; f < Q; f++) {
+        double peak = 0.0;
+        for (int c = 0; c < in.channels; c++) peak = std::max(peak, std::fabs(static_cast<double>(in.channel(c)[f])));
+        const double target = reductionAt(20.0 * std::log10(std::max(1.0e-12, peak)));
+        const double coeff = target > current ? attackCoeff : releaseCoeff;
+        current = coeff * current + (1.0 - coeff) * target;
+        const double gain = makeup * std::pow(10.0, -current / 20.0);
+        for (int c = 0; c < in.channels; c++) {
+            float &slot = n.preDelay[static_cast<size_t>(c) * lookahead + n.preDelayPos];
+            const float delayed = slot;
+            slot = in.channel(c)[f];
+            o.channel(c)[f] = static_cast<float>(delayed * gain);
+        }
+        n.preDelayPos = (n.preDelayPos + 1) % lookahead;
+    }
+    n.reductionDb[0] = static_cast<float>(current);
     if (!comp.reductionId.empty()) {
-        float most = 0.0f;
-        for (int c = 0; c < in.channels; c++) most = std::max(most, n.reductionDb[static_cast<size_t>(c)]);
-        gains_[comp.reductionId] = -most;
+        gains_[comp.reductionId] = -n.reductionDb[0];
+    }
+    if (comp.meter) {
+        comp.meter->store(-n.reductionDb[0], std::memory_order_relaxed);
     }
 }
 
@@ -1151,11 +1249,31 @@ void NativeEngine::processNode(GraphNode &n, int64_t startNs, double frameNs) {
         case NODE_WAVESHAPER: {
             auto it = waveShapers_.find(n.id);
             const bool shape = it != waveShapers_.end() && !it->second.curve.empty();
+            const int factor = !shape ? 1 : (it->second.oversample == "4x" ? 4 : (it->second.oversample == "2x" ? 2 : 1));
+            while (factor > 1 && n.oversamplers.size() < static_cast<size_t>(channels)) {
+                n.oversamplers.push_back(std::make_shared<Oversampler>());
+            }
             for (int c = 0; c < channels; c++) {
                 const float *x = input(c);
                 float *y = o.channel(c);
-                if (!shape) std::memcpy(y, x, Q * sizeof(float));
-                else for (int f = 0; f < Q; f++) y[f] = applyWaveShaperSample(it->second, x[f]);
+                if (!shape) {
+                    std::memcpy(y, x, Q * sizeof(float));
+                } else if (factor == 1) {
+                    for (int f = 0; f < Q; f++) y[f] = applyWaveShaperSample(it->second, x[f]);
+                } else {
+                    // Shapes at 2x or 4x the rate, so the harmonics it adds alias less.
+                    Oversampler &os = *n.oversamplers[static_cast<size_t>(c)];
+                    float twice[2 * Q], fourfold[4 * Q];
+                    os.upsample(0, x, Q, twice);
+                    float *high = twice;
+                    if (factor == 4) {
+                        os.upsample(1, twice, 2 * Q, fourfold);
+                        high = fourfold;
+                    }
+                    for (int f = 0; f < factor * Q; f++) high[f] = applyWaveShaperSample(it->second, high[f]);
+                    if (factor == 4) os.downsample(1, fourfold, 4 * Q, twice);
+                    os.downsample(0, twice, 2 * Q, y);
+                }
             }
             break;
         }
@@ -1300,6 +1418,7 @@ void NativeEngine::renderQuantum(float *out, int64_t startNs) {
     if (!endedScratch_.empty()) {
         for (const std::string &id: endedScratch_) {
             audioVoices_.erase(id);
+            sourceExtras_.erase(id);
             auto it = graph_.find(id);
             if (it != graph_.end() && it->second->kind == NODE_SOURCE) removeNode(it->second.get());
         }

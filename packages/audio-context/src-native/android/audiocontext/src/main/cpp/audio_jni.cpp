@@ -1,7 +1,7 @@
 #include "audio_context.h"
 #include "audio_internal.h"
-#include "hrtf_convolver.h"
 #include "convolver.h"
+#include "hrtf.h"
 
 #include <android/log.h>
 #include <jni.h>
@@ -109,6 +109,7 @@ Java_org_nativescript_audiocontext_AudioContext_nativeCreateDynamicsCompressor(
     cmd.compressorAttackId = aid ? aid : std::string();
     cmd.compressorReleaseId = relid ? relid : std::string();
     cmd.compressorReductionId = redid ? redid : std::string();
+    cmd.meter = NativeEngine::getInstance().compressorMeter(cmd.id, true);
     NativeEngine::getInstance().enqueueCommand(std::move(cmd));
 
     if (nid) env->ReleaseStringUTFChars(jnodeId, nid);
@@ -118,6 +119,13 @@ Java_org_nativescript_audiocontext_AudioContext_nativeCreateDynamicsCompressor(
     if (aid) env->ReleaseStringUTFChars(jattackId, aid);
     if (relid) env->ReleaseStringUTFChars(jreleaseId, relid);
     if (redid) env->ReleaseStringUTFChars(jreductionId, redid);
+}
+
+extern "C" JNIEXPORT jfloat JNICALL
+Java_org_nativescript_audiocontext_AudioContext_nativeGetCompressorReduction(JNIEnv *env, jobject thiz, jstring jid) {
+    NativeEngine::Scope scope__(engineFor(env, jid));
+    auto meter = NativeEngine::getInstance().compressorMeter(jstr(env, jid), false);
+    return meter ? meter->load(std::memory_order_relaxed) : 0.0f;
 }
 
 extern "C" JNIEXPORT void JNICALL
@@ -131,6 +139,27 @@ Java_org_nativescript_audiocontext_AudioContext_nativeSetGain(JNIEnv *env, jobje
     cmd.gainValue = value;
     NativeEngine::getInstance().enqueueCommand(std::move(cmd));
     if (gid) env->ReleaseStringUTFChars(jgainId, gid);
+}
+
+// Exponential ramp, setTarget and setValueCurve events; `curve` is a direct FloatBuffer of curveLength floats.
+extern "C" JNIEXPORT void JNICALL
+Java_org_nativescript_audiocontext_AudioContext_nativeScheduleParamEvent(JNIEnv *env, jobject thiz, jint target,
+                                                                         jstring jid, jint paramType, jint type,
+                                                                         jint rate, jlong timeNs, jdouble value,
+                                                                         jdouble timeConstant, jlong durationNs,
+                                                                         jobject curve, jint curveLength) {
+    NativeEngine::Scope scope__(engineFor(env, jid));
+    const std::string id = jstr(env, jid);
+    if (id.empty()) return;
+    NativeEngine::ParamEvent ev{type, rate, static_cast<int64_t>(timeNs), value};
+    ev.timeConstant = timeConstant;
+    ev.durationNs = static_cast<int64_t>(durationNs);
+    if (curve) {
+        const auto *data = static_cast<const float *>(env->GetDirectBufferAddress(curve));
+        if (!data || curveLength < 2) return;
+        ev.curve = std::make_shared<const std::vector<float>>(data, data + curveLength);
+    }
+    NativeEngine::getInstance().scheduleParamEvent(target, id, paramType, ev);
 }
 
 extern "C" JNIEXPORT void JNICALL
@@ -305,6 +334,31 @@ Java_org_nativescript_audiocontext_AudioContext_nativeCancelAndHoldPannerEvents(
                                                               static_cast<int64_t>(timeNs));
         env->ReleaseStringUTFChars(jpannerId, pid);
     }
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_org_nativescript_audiocontext_AudioContext_nativeAttachDetune(JNIEnv *env, jobject thiz, jstring jvoiceId,
+                                                                   jstring jdetuneId) {
+    NativeEngine::Scope scope__(engineFor(env, jvoiceId));
+    NativeEngine::Command cmd;
+    cmd.type = NativeEngine::CMD_ATTACH_DETUNE;
+    cmd.id = jstr(env, jvoiceId);
+    cmd.targetId = jstr(env, jdetuneId);
+    if (!cmd.id.empty()) NativeEngine::getInstance().enqueueCommand(std::move(cmd));
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_org_nativescript_audiocontext_AudioContext_nativeSetSourceLoop(JNIEnv *env, jobject thiz, jstring jid,
+                                                                    jboolean loop, jdouble loopStart,
+                                                                    jdouble loopEnd) {
+    NativeEngine::Scope scope__(engineFor(env, jid));
+    NativeEngine::Command cmd;
+    cmd.type = NativeEngine::CMD_SET_SOURCE_LOOP;
+    cmd.id = jstr(env, jid);
+    cmd.loop = loop == JNI_TRUE;
+    cmd.loopStart = loopStart;
+    cmd.loopEnd = loopEnd;
+    if (!cmd.id.empty()) NativeEngine::getInstance().enqueueCommand(std::move(cmd));
 }
 
 // The long name: a short one would also bind the (voice, gain, output, input) overload.
@@ -630,6 +684,37 @@ Java_org_nativescript_audiocontext_AudioContext_nativeGetIIRFrequencyResponseDir
     }
 }
 
+// The spec's PeriodicWave: no DC term, and a peak of 1 unless normalization is disabled.
+static void preparePeriodicWave(NativeEngine::Command &cmd) {
+    auto &re = cmd.periodicReal;
+    auto &im = cmd.periodicImag;
+    const size_t n = std::min(re.size(), im.size());
+    re.resize(n);
+    im.resize(n);
+    if (n > 0) re[0] = im[0] = 0.0;
+    if (cmd.periodicDisableNormalization || n < 2) return;
+    constexpr int kPoints = 4096;
+    const size_t harmonics = std::min(n, static_cast<size_t>(kPoints / 2));
+    double peak = 0.0;
+    for (int i = 0; i < kPoints; i++) {
+        const double x = 2.0 * M_PI * i / kPoints;
+        const double c1 = std::cos(x), s1 = std::sin(x);
+        double c = c1, s = s1, v = 0.0;
+        for (size_t k = 1; k < harmonics; k++) {
+            v += re[k] * c + im[k] * s;
+            const double nc = c * c1 - s * s1;
+            s = s * c1 + c * s1;
+            c = nc;
+        }
+        peak = std::max(peak, std::fabs(v));
+    }
+    if (peak <= 0.0) return;
+    for (size_t k = 1; k < n; k++) {
+        re[k] /= peak;
+        im[k] /= peak;
+    }
+}
+
 extern "C" JNIEXPORT jstring JNICALL
 Java_org_nativescript_audiocontext_AudioContext_nativeCreatePeriodicWave(JNIEnv *env, jobject thiz, jstring jcontextId,
                                                                          jdoubleArray jreal,
@@ -661,6 +746,7 @@ Java_org_nativescript_audiocontext_AudioContext_nativeCreatePeriodicWave(JNIEnv 
         }
     }
     cmd.periodicDisableNormalization = (jdisable != JNI_FALSE);
+    preparePeriodicWave(cmd);
     NativeEngine::getInstance().enqueueCommand(std::move(cmd));
     return env->NewStringUTF(id.c_str());
 }
@@ -701,6 +787,7 @@ Java_org_nativescript_audiocontext_AudioContext_nativeCreatePeriodicWaveDirect(J
         }
     }
     cmd.periodicDisableNormalization = (jdisable != JNI_FALSE);
+    preparePeriodicWave(cmd);
     NativeEngine::getInstance().enqueueCommand(std::move(cmd));
     return env->NewStringUTF(id.c_str());
 }
@@ -779,8 +866,10 @@ Java_org_nativescript_audiocontext_AudioContext_nativeSetConvolverBuffer(JNIEnv 
             if (!data || capacity < static_cast<jlong>(frames) * 4) return;
             channels.push_back(data);
         }
+        // Offline contexts render the long partitions inline, so their output is deterministic.
         cmd.convolver = std::make_shared<Convolver>(channels.data(), static_cast<int>(channels.size()), frames,
-                                                    sampleRate, normalize == JNI_TRUE);
+                                                    sampleRate, normalize == JNI_TRUE,
+                                                    !NativeEngine::getInstance().isOffline());
     }
     NativeEngine::getInstance().enqueueCommand(std::move(cmd));
 }
@@ -916,6 +1005,8 @@ Java_org_nativescript_audiocontext_AudioContext_nativeCreatePanner(JNIEnv *env, 
     cmd.pannerPan = pan;
     cmd.pannerDistanceModel = distanceModel;
     cmd.pannerPanningModel = panningModel;
+    // Builds the HRTF set for this rate here rather than on the render thread.
+    if (panningModel == 1) HrtfDatabase::forRate(NativeEngine::getInstance().getStreamSampleRate());
     cmd.pannerRefDistance = refDistance;
     cmd.pannerMaxDistance = maxDistance;
     cmd.pannerRolloffFactor = rolloffFactor;
@@ -958,6 +1049,8 @@ Java_org_nativescript_audiocontext_AudioContext_nativeSetPannerParams(JNIEnv *en
     cmd.pannerPan = pan;
     cmd.pannerDistanceModel = distanceModel;
     cmd.pannerPanningModel = panningModel;
+    // Builds the HRTF set for this rate here rather than on the render thread.
+    if (panningModel == 1) HrtfDatabase::forRate(NativeEngine::getInstance().getStreamSampleRate());
     cmd.pannerRefDistance = refDistance;
     cmd.pannerMaxDistance = maxDistance;
     cmd.pannerRolloffFactor = rolloffFactor;
@@ -1106,24 +1199,6 @@ Java_org_nativescript_audiocontext_AudioContext_nativeGetListenerParamValue(JNIE
                                                                  static_cast<int>(jparamType));
     env->ReleaseStringUTFChars(jcontextId, cid);
     return static_cast<jdouble>(v);
-}
-
-extern "C" JNIEXPORT void JNICALL
-Java_org_nativescript_audiocontext_AudioContext_nativeAttachBiquadToPanner(JNIEnv *env, jobject thiz,
-                                                                          jstring jpannerId,
-                                                                          jstring jbiquadId) {
-    NativeEngine::Scope scope__(engineFor(env, jpannerId));
-    const char *pid = env->GetStringUTFChars(jpannerId, nullptr);
-    const char *bid = env->GetStringUTFChars(jbiquadId, nullptr);
-    if (pid && bid) {
-        NativeEngine::Command cmd;
-        cmd.type = NativeEngine::CMD_SET_PANNER_PARAMS;
-        cmd.id = std::string(pid);
-        cmd.pannerBiquadId = std::string(bid);
-        NativeEngine::getInstance().enqueueCommand(std::move(cmd));
-    }
-    if (pid) env->ReleaseStringUTFChars(jpannerId, pid);
-    if (bid) env->ReleaseStringUTFChars(jbiquadId, bid);
 }
 
 extern "C" JNIEXPORT void JNICALL
@@ -1327,132 +1402,6 @@ Java_org_nativescript_audiocontext_AudioContext_nativeSetOutputDeviceId(JNIEnv *
     (void) env;
     (void) thiz;
     NativeEngine::getInstance().setOutputDeviceId(static_cast<int>(deviceId));
-}
-
-extern "C" JNIEXPORT void JNICALL
-Java_org_nativescript_audiocontext_AudioContext_nativeSetPannerHRIR(JNIEnv *env, jobject thiz,
-                                                                    jstring jpannerId,
-                                                                    jfloatArray jleft,
-                                                                    jfloatArray jright) {
-    NativeEngine::Scope scope__(engineFor(env, jpannerId));
-    if (!jpannerId) return;
-    const char *pid = env->GetStringUTFChars(jpannerId, nullptr);
-    if (!pid) return;
-    std::string pannerId(pid);
-
-    jsize leftLen = jleft ? env->GetArrayLength(jleft) : 0;
-    jsize rightLen = jright ? env->GetArrayLength(jright) : 0;
-    if (leftLen <= 0 || rightLen <= 0 || leftLen != rightLen) {
-        env->ReleaseStringUTFChars(jpannerId, pid);
-        return;
-    }
-
-    jfloat *leftArr = (jfloat *) env->GetPrimitiveArrayCritical(jleft, nullptr);
-    jfloat *rightArr = (jfloat *) env->GetPrimitiveArrayCritical(jright, nullptr);
-    if (!leftArr || !rightArr) {
-        if (leftArr) env->ReleasePrimitiveArrayCritical(jleft, leftArr, JNI_ABORT);
-        if (rightArr) env->ReleasePrimitiveArrayCritical(jright, rightArr, JNI_ABORT);
-        env->ReleaseStringUTFChars(jpannerId, pid);
-        return;
-    }
-
-    std::vector<float> left(static_cast<size_t>(leftLen));
-    std::vector<float> right(static_cast<size_t>(rightLen));
-    std::memcpy(left.data(), leftArr, static_cast<size_t>(leftLen) * sizeof(float));
-    std::memcpy(right.data(), rightArr, static_cast<size_t>(rightLen) * sizeof(float));
-
-    env->ReleasePrimitiveArrayCritical(jleft, leftArr, JNI_ABORT);
-    env->ReleasePrimitiveArrayCritical(jright, rightArr, JNI_ABORT);
-
-    NativeEngine::Command cmd;
-    cmd.type = NativeEngine::CMD_SET_PANNER_HRIR;
-    cmd.id = pannerId;
-    cmd.hrirLeft = std::make_shared<std::vector<float>>(std::move(left));
-    cmd.hrirRight = std::make_shared<std::vector<float>>(std::move(right));
-    NativeEngine::getInstance().enqueueCommand(std::move(cmd));
-
-    env->ReleaseStringUTFChars(jpannerId, pid);
-}
-
-extern "C" JNIEXPORT void JNICALL
-Java_org_nativescript_audiocontext_AudioContext_nativeSetPannerHRIRDirect(JNIEnv *env, jobject thiz,
-                                                                          jstring jpannerId,
-                                                                          jobject jleft,
-                                                                          jobject jright) {
-    NativeEngine::Scope scope__(engineFor(env, jpannerId));
-    if (!jpannerId) return;
-    const char *pid = env->GetStringUTFChars(jpannerId, nullptr);
-    if (!pid) return;
-    std::string pannerId(pid);
-
-    if (jleft == nullptr && jright == nullptr) {
-        NativeEngine::Command cmd;
-        cmd.type = NativeEngine::CMD_SET_PANNER_HRIR;
-        cmd.id = pannerId;
-        cmd.clearHrir = true;
-        NativeEngine::getInstance().enqueueCommand(std::move(cmd));
-        env->ReleaseStringUTFChars(jpannerId, pid);
-        return;
-    }
-
-    jlong leftCap = jleft ? env->GetDirectBufferCapacity(jleft) : 0;
-    jlong rightCap = jright ? env->GetDirectBufferCapacity(jright) : 0;
-    if (leftCap <= 0 || rightCap <= 0 || leftCap != rightCap) {
-        env->ReleaseStringUTFChars(jpannerId, pid);
-        return;
-    }
-
-    float *leftArr = reinterpret_cast<float *>(env->GetDirectBufferAddress(jleft));
-    float *rightArr = reinterpret_cast<float *>(env->GetDirectBufferAddress(jright));
-    if (!leftArr || !rightArr) {
-        env->ReleaseStringUTFChars(jpannerId, pid);
-        return;
-    }
-
-    size_t count = static_cast<size_t>(std::min(leftCap, rightCap));
-    if (count == 0) {
-        env->ReleaseStringUTFChars(jpannerId, pid);
-        return;
-    }
-
-    std::vector<float> left(count);
-    std::vector<float> right(count);
-    std::memcpy(left.data(), leftArr, count * sizeof(float));
-    std::memcpy(right.data(), rightArr, count * sizeof(float));
-
-    NativeEngine::Command cmd;
-    cmd.type = NativeEngine::CMD_SET_PANNER_HRIR;
-    cmd.id = pannerId;
-    cmd.hrirLeft = std::make_shared<std::vector<float>>(std::move(left));
-    cmd.hrirRight = std::make_shared<std::vector<float>>(std::move(right));
-    NativeEngine::getInstance().enqueueCommand(std::move(cmd));
-
-    env->ReleaseStringUTFChars(jpannerId, pid);
-}
-
-extern "C" JNIEXPORT void JNICALL
-Java_org_nativescript_audiocontext_AudioContext_nativeSetPannerPartitionSize(JNIEnv *env,
-                                                                             jobject thiz,
-                                                                             jstring jpannerId,
-                                                                             jint jpartitionSize) {
-    NativeEngine::Scope scope__(engineFor(env, jpannerId));
-    if (!jpannerId) return;
-    const char *pid = env->GetStringUTFChars(jpannerId, nullptr);
-    if (!pid) return;
-
-    int part = static_cast<int>(jpartitionSize);
-    if (part <= 0) {
-        env->ReleaseStringUTFChars(jpannerId, pid);
-        return;
-    }
-
-    NativeEngine::Command cmd;
-    cmd.type = NativeEngine::CMD_SET_PANNER_PARTITION_SIZE;
-    cmd.id = pid;
-    cmd.pannerPartitionSize = part;
-    NativeEngine::getInstance().enqueueCommand(std::move(cmd));
-
-    env->ReleaseStringUTFChars(jpannerId, pid);
 }
 
 extern "C" JNIEXPORT void JNICALL

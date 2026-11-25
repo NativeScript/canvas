@@ -75,18 +75,6 @@ public class AudioContext {
 		}
 	}
 
-	public void setPannerPartitionSize(AudioPannerNode panner, int partitionSize) {
-		if (panner == null) return;
-		String id = panner.getId();
-		if (id == null) return;
-		if (nativeAvailable) {
-			try {
-				nativeSetPannerPartitionSize(id, partitionSize);
-			} catch (Throwable ignored) {
-			}
-		}
-	}
-
 	public void removeEndedListener(String trackId, @NonNull EndedListener listener) {
 		if (trackId == null) return;
 		java.util.concurrent.CopyOnWriteArrayList<EndedListener> list = trackEndedListeners.get(trackId);
@@ -163,8 +151,6 @@ public class AudioContext {
 	private final ConcurrentHashMap<String, java.nio.FloatBuffer> waveShaperCurveBuffers = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<String, String> waveShaperOversamples = new ConcurrentHashMap<>();
 
-	private final ConcurrentHashMap<String, java.nio.FloatBuffer> pannerHrirLeftBuffers = new ConcurrentHashMap<>();
-	private final ConcurrentHashMap<String, java.nio.FloatBuffer> pannerHrirRightBuffers = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<String, Set<String>> contextPanners = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<String, String> pannerContexts = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<String, String> contextDestination = new ConcurrentHashMap<>();
@@ -223,7 +209,6 @@ public class AudioContext {
 
 	private static native void nativeSetGlobalAudioThreadLoggingEnabled(boolean enabled);
 
-	private native void nativeAttachBiquadToPanner(String pannerId, String biquadId);
 
 	private native void nativeCancelGainEvents(String gainId, long timeNs);
 
@@ -733,6 +718,19 @@ public class AudioContext {
 
 	private native void nativeSetAudioThreadLoggingEnabled(boolean enabled);
 
+	private native void nativeScheduleParamEvent(int target, String id, int paramType, int type, int rate, long timeNs,
+																							 double value, double timeConstant, long durationNs, java.nio.FloatBuffer curve, int curveLength);
+
+	private native void nativeAttachDetune(String voiceId, String detuneId);
+
+	private native float nativeGetCompressorReduction(String id);
+
+	float getCompressorReduction(String id) {
+		return nativeAvailable && id != null ? nativeGetCompressorReduction(id) : 0.0f;
+	}
+
+	private native void nativeSetSourceLoop(String id, boolean loop, double loopStart, double loopEnd);
+
 	private native void nativeScheduleGainSet(String gainId, int rate, long timeNs, double value);
 
 	private native void nativeScheduleGainRamp(String gainId, int rate, long timeNs, double value);
@@ -775,7 +773,6 @@ public class AudioContext {
 																						double refDistance, double maxDistance, double rolloffFactor,
 																						double coneInnerAngle, double coneOuterAngle, double coneOuterGain);
 
-	private native void nativeSetPannerPartitionSize(String pannerId, int partitionSize);
 
 	private native void nativeSetListenerParams(String contextId, double positionX, double positionY, double positionZ,
 																							double forwardX, double forwardY, double forwardZ,
@@ -820,7 +817,6 @@ public class AudioContext {
 
 	private native void nativeSetWaveShaperCurveDirect(String id, java.nio.FloatBuffer data, String oversample);
 
-	private native void nativeSetPannerHRIRDirect(String pannerId, java.nio.FloatBuffer left, java.nio.FloatBuffer right);
 
 	private native String nativeCreateAnalyser(String contextId, int fftSize, double smoothingTimeConstant, double minDecibels, double maxDecibels);
 
@@ -1088,14 +1084,11 @@ public class AudioContext {
 	public double getContextCurrentTime(String contextId) {
 		if (contextId == null) return 0.0;
 		if (nativeAvailable && isOfflineId(contextId)) return (double) nativeGetContextCurrentTimeNanos(contextId) / 1e9;
-		if (nativeAvailable) {
-			long ns = nativeGetContextCurrentTimeNanos(contextId);
-			if (ns > 0L) return (double) ns / 1e9;
-		}
+		// The render clock: 0 until the context's first frame plays, never negative.
+		if (nativeAvailable) return (double) Math.max(0L, nativeGetContextCurrentTimeNanos(contextId)) / 1e9;
 		Long start = contextStartNanos.get(contextId);
 		if (start == null) return 0.0;
-		long now = System.nanoTime();
-		return (double) (now - start) / 1e9;
+		return (double) Math.max(0L, System.nanoTime() - start) / 1e9;
 	}
 
 	private AudioBuffer tryDecodeWithMediaExtractorFromFile(String path) {
@@ -2092,13 +2085,34 @@ public class AudioContext {
 			pannerContexts.put(id, contextId);
 		}
 
-		if (nativeAvailable) {
-			try {
-				attachLowpassBiquadToPanner(id);
-			} catch (Throwable ignored) {}
-		}
-
 		return new AudioPannerNode(id);
+	}
+
+	// Exponential ramp (2), setTarget (3) or setValueCurve (4) on a gain-style (0), panner (1) or listener (2) param.
+	void scheduleParamEvent(int target, String id, int paramType, int type, int rate, double time, double value,
+													double timeConstant, double duration, java.nio.FloatBuffer curve) {
+		if (id == null || !nativeAvailable) return;
+		String ctx = target == 0 ? gainContexts.get(id) : (target == 1 ? pannerContexts.get(id) : id);
+		Long startNs = ctx != null ? contextStartNanos.get(ctx) : null;
+		if (startNs == null) return;
+		nativeScheduleParamEvent(target, id, paramType, type, rate, startNs + (long) (time * 1000000000.0), value,
+			timeConstant, (long) (duration * 1000000000.0), curve, curve != null ? curve.remaining() : 0);
+	}
+
+	// A detune param (cents, default 0) for source `voiceId`; returns its id.
+	String createDetune(String voiceId, String contextId) {
+		GainNode detune = createGain(contextId);
+		setGain(detune.getId(), 0.0);
+		attachDetune(voiceId, detune.getId());
+		return detune.getId();
+	}
+
+	void attachDetune(String voiceId, String detuneId) {
+		if (nativeAvailable && voiceId != null && detuneId != null) nativeAttachDetune(voiceId, detuneId);
+	}
+
+	void setSourceLoop(String id, boolean loop, double loopStart, double loopEnd) {
+		if (nativeAvailable && id != null) nativeSetSourceLoop(id, loop, loopStart, loopEnd);
 	}
 
 	void scheduleGainSet(String id, int rate, double value, double time) {
@@ -2389,56 +2403,6 @@ public class AudioContext {
 	}
 
 
-	void setPannerHRIRFromData(String id, java.nio.FloatBuffer left, java.nio.FloatBuffer right) {
-		if (id == null) return;
-		if (left == null || right == null) {
-			pannerHrirLeftBuffers.remove(id);
-			pannerHrirRightBuffers.remove(id);
-			if (nativeAvailable) {
-				try {
-					nativeSetPannerHRIRDirect(id, null, null);
-				} catch (Throwable ignored) {
-				}
-			}
-			return;
-		}
-
-		if (left.isDirect() && right.isDirect()) {
-			try {
-				java.nio.FloatBuffer lview = left.duplicate();
-				lview.position(left.position());
-				lview.limit(left.limit());
-				java.nio.FloatBuffer lslice = lview.slice();
-
-				java.nio.FloatBuffer rview = right.duplicate();
-				rview.position(right.position());
-				rview.limit(right.limit());
-				java.nio.FloatBuffer rslice = rview.slice();
-
-				int lcap = lslice.remaining();
-				int rcap = rslice.remaining();
-				if (lcap <= 0 || rcap <= 0 || lcap != rcap) return;
-
-				if (nativeAvailable) {
-					try {
-						nativeSetPannerHRIRDirect(id, lslice, rslice);
-					} catch (Throwable ignored) {
-					}
-				}
-
-				java.nio.FloatBuffer ldup = left.duplicate();
-				ldup.rewind();
-				java.nio.FloatBuffer rdup = right.duplicate();
-				rdup.rewind();
-				pannerHrirLeftBuffers.put(id, ldup);
-				pannerHrirRightBuffers.put(id, rdup);
-				return;
-			} catch (Throwable ignored) {
-			}
-		}
-	}
-
-
 	void cancelGainScheduledValues(String id, double time) {
 		if (id == null) return;
 		long absNs = -1L;
@@ -2642,19 +2606,6 @@ public class AudioContext {
 		return out;
 	}
 
-
-	void attachLowpassBiquadToPanner(String pannerId) {
-		if (pannerId == null) return;
-		if (!nativeAvailable) return;
-		try {
-			String bid = nativeCreateBiquad(pannerId, "lowpass", 22050.0, 0.707, 0.0);
-			if (bid != null) {
-				addToContextSet(contextBiquads, pannerContexts.get(pannerId), bid);
-				nativeAttachBiquadToPanner(pannerId, bid);
-			}
-		} catch (Throwable ignored) {
-		}
-	}
 
 	void releasePanner(String id) {
 		if (id == null) return;

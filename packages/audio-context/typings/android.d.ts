@@ -95,6 +95,11 @@ declare module org {
 		export module audiocontext {
 			export class AudioBufferSourceNode extends org.nativescript.audiocontext.AudioScheduledSourceNode {
 				public static class: java.lang.Class<org.nativescript.audiocontext.AudioBufferSourceNode>;
+				public getLoopStart(): number;
+				public setLoopStart(value: number): void;
+				public getLoopEnd(): number;
+				public setLoopEnd(value: number): void;
+				public getDetune(): org.nativescript.audiocontext.AudioParam;
 				public startAt(when: number): void;
 				public startAt(when: number, offset: number): void;
 				public connect(node: org.nativescript.audiocontext.AudioNode, output: number): void;
@@ -369,6 +374,7 @@ declare module org {
 		export module audiocontext {
 			export class AudioOscillatorNode extends org.nativescript.audiocontext.AudioScheduledSourceNode {
 				public static class: java.lang.Class<org.nativescript.audiocontext.AudioOscillatorNode>;
+				public getDetune(): org.nativescript.audiocontext.AudioParam;
 				public connect(node: org.nativescript.audiocontext.AudioNode, output: number): void;
 				public getType(): string;
 				public connect(param0: org.nativescript.audiocontext.AudioNode): void;
@@ -464,6 +470,9 @@ declare module org {
 				public cancelAndHoldAtTime(heldValue: number, t: number): void;
 				public cancelScheduledValues(t: number): void;
 				public linearRampToValueAtTime(v: number, t: number): void;
+				public exponentialRampToValueAtTime(v: number, t: number): void;
+				public setTargetAtTime(v: number, t: number, timeConstant: number): void;
+				public setValueCurveAtTime(values: java.nio.FloatBuffer, t: number, duration: number): void;
 				public setValueAtTime(v: number, t: number): void;
 				public getValue(): number;
 				public getValuesForRange(out: number, this_: number, startTime: number): androidNative.Array<number>;
@@ -713,7 +722,7 @@ declare module org {
 				public release(): void;
 				public getKnee(): org.nativescript.audiocontext.AudioParam;
 				public getThreshold(): org.nativescript.audiocontext.AudioParam;
-				public getReduction(): org.nativescript.audiocontext.AudioParam;
+				public getReduction(): number;
 				public getRelease(): org.nativescript.audiocontext.AudioParam;
 				public connect(node: org.nativescript.audiocontext.AudioNode, output: number, input: number): void;
 				public connect(node: org.nativescript.audiocontext.AudioNode): void;

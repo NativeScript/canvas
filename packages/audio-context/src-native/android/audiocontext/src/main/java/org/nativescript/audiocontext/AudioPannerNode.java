@@ -11,7 +11,6 @@ public class AudioPannerNode implements NativeObject, AudioNode {
 	private double _orientationZ = 0.0;
 	private double _pan = 0.0;
 
-
 	private int _distanceModel = 0;
 	private int _panningModel = 0;
 	private double _refDistance = 1.0;
@@ -53,7 +52,6 @@ public class AudioPannerNode implements NativeObject, AudioNode {
 		AudioContext.getInstance().setPannerHRIRFromData(this.getId(), left, right);
 	}
 
-
 	public int getDistanceModel() { return this._distanceModel; }
 	public void setDistanceModel(int v) { this._distanceModel = v; AudioContext.getInstance().setPannerParams(id, this._positionX, this._positionY, this._positionZ, this._orientationX, this._orientationY, this._orientationZ, this._pan, this._distanceModel, this._panningModel, this._refDistance, this._maxDistance, this._rolloffFactor, this._coneInnerAngle, this._coneOuterAngle, this._coneOuterGain); }
 
@@ -78,7 +76,6 @@ public class AudioPannerNode implements NativeObject, AudioNode {
 	public double getConeOuterGain() { return this._coneOuterGain; }
 	public void setConeOuterGain(double v) { this._coneOuterGain = v; AudioContext.getInstance().setPannerParams(id, this._positionX, this._positionY, this._positionZ, this._orientationX, this._orientationY, this._orientationZ, this._pan, this._distanceModel, this._panningModel, this._refDistance, this._maxDistance, this._rolloffFactor, this._coneInnerAngle, this._coneOuterAngle, this._coneOuterGain); }
 
-
 	public AudioParam getPositionXParam() { return new AudioParam(this, AudioParam.Type.PANNER_POSITION_X); }
 	public AudioParam getPositionYParam() { return new AudioParam(this, AudioParam.Type.PANNER_POSITION_Y); }
 	public AudioParam getPositionZParam() { return new AudioParam(this, AudioParam.Type.PANNER_POSITION_Z); }
@@ -87,7 +84,6 @@ public class AudioPannerNode implements NativeObject, AudioNode {
 	public AudioParam getOrientationZParam() { return new AudioParam(this, AudioParam.Type.PANNER_ORIENTATION_Z); }
 
 	public AudioParam getPan() { return new AudioParam(this, AudioParam.Type.PANNER_PAN); }
-
 
 	double __getPositionX() { return this._positionX; }
 	double __getPositionY() { return this._positionY; }
@@ -115,83 +111,6 @@ public class AudioPannerNode implements NativeObject, AudioNode {
 			default: break;
 		}
 		AudioContext.getInstance().setPannerParams(id, this._positionX, this._positionY, this._positionZ, this._orientationX, this._orientationY, this._orientationZ, this._pan, this._distanceModel, this._panningModel, this._refDistance, this._maxDistance, this._rolloffFactor, this._coneInnerAngle, this._coneOuterAngle, this._coneOuterGain);
-	}
-
-	public void attachToVoice(String voiceId) {
-		AudioContext.getInstance().attachPannerToVoice(voiceId, id);
-	}
-
-	public void detach() {
-		AudioContext.getInstance().detachPanner(id);
-	}
-
-	@Override
-	public void connect(AudioNode node) {
-		connect(node, 0, 0);
-	}
-
-	@Override
-	public void connect(AudioNode node, int output) {
-		connect(node, output, 0);
-	}
-
-	@Override
-	public void connect(AudioNode node, int output, int input) {
-		if (node instanceof NativeObject) {
-			AudioContext context = AudioContext.getInstance();
-			String destId = ((NativeObject) node).getId();
-			if (destId != null) {
-				if (context.isDestinationNode(destId)) {
-					return;
-				}
-				java.util.Set<String> sources = context.getNodeSourcesSnapshot(id);
-				if (sources.isEmpty()) {
-					context.attachPannerToVoice(destId, id, output, input);
-					context.registerNodeSource(destId, id);
-					return;
-				}
-				for (String sourceId : sources) {
-					if (node instanceof GainNode) {
-						context.attachGainToVoice(sourceId, destId, output, input);
-					} else if (node instanceof AudioBiquadNode) {
-						context.attachBiquadToVoice(sourceId, destId, output, input);
-					} else {
-						context.attachPannerToVoice(sourceId, destId, output, input);
-					}
-				}
-				context.registerNodeSources(destId, sources);
-			}
-		}
-	}
-
-	@Override
-	public void disconnect(AudioNode node) {
-		if (node == null) disconnect();
-		else AudioContext.getInstance().disconnectNode(id, false, node, -1, -1);
-	}
-
-	@Override
-	public void disconnect() {
-		AudioContext context = AudioContext.getInstance();
-		context.detachPanner(id);
-		context.clearNodeSources(id);
-	}
-
-	@Override
-	public void disconnect(int output) {
-		disconnect();
-	}
-
-	@Override
-	public void disconnect(AudioNode node, int output) {
-		if (node == null) disconnect(output);
-		else AudioContext.getInstance().disconnectNode(id, false, node, -1, -1);
-	}
-
-	@Override
-	public void disconnect(AudioNode node, int output, int input) {
-		if (node == null) disconnect(output);
-		else AudioContext.getInstance().disconnectNode(id, false, node, -1, input);
 	}
 
 	@Override

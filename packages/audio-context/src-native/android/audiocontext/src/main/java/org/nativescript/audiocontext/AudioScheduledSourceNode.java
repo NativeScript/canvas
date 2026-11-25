@@ -46,65 +46,6 @@ public class AudioScheduledSourceNode implements NativeObject, AudioNode {
 	}
 
 	@Override
-	public void connect(AudioNode node) {
-		connect(node, 0, 0);
-	}
-
-	@Override
-	public void connect(AudioNode node, int output) {
-		connect(node, output, 0);
-	}
-
-	@Override
-	public void connect(AudioNode node, int output, int input) {
-		if (node instanceof NativeObject) {
-			String destId = ((NativeObject) node).getId();
-			if (destId != null) {
-				AudioContext context = AudioContext.getInstance();
-				if (context.isDestinationNode(destId)) {
-					return;
-				}
-				if (node instanceof AudioPannerNode) {
-					context.attachPannerToVoice(id, destId, output, input);
-				} else if (node instanceof AudioBiquadNode) {
-					context.attachBiquadToVoice(id, destId, output, input);
-				} else {
-					context.attachGainToVoice(id, destId, output, input);
-				}
-				context.registerNodeSource(destId, id);
-			}
-		}
-	}
-
-	@Override
-	public void disconnect(AudioNode node) {
-		if (node == null) disconnect();
-		else AudioContext.getInstance().disconnectNode(id, true, node, -1, -1);
-	}
-
-	@Override
-	public void disconnect() {
-		AudioContext.getInstance().disconnectNode(id, true, null, -1, -1);
-	}
-
-	@Override
-	public void disconnect(int output) {
-		disconnect();
-	}
-
-	@Override
-	public void disconnect(AudioNode node, int output) {
-		if (node == null) disconnect(output);
-		else AudioContext.getInstance().disconnectNode(id, true, node, -1, -1);
-	}
-
-	@Override
-	public void disconnect(AudioNode node, int output, int input) {
-		if (node == null) disconnect(output);
-		else AudioContext.getInstance().disconnectNode(id, true, node, -1, input);
-	}
-
-	@Override
 	public void release() {
 		stop();
 	}

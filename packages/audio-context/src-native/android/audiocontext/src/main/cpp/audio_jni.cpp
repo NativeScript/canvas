@@ -300,22 +300,6 @@ Java_org_nativescript_audiocontext_AudioContext_nativeCancelAndHoldPannerEvents(
 
 // The long name: a short one would also bind the (voice, gain, output, input) overload.
 extern "C" JNIEXPORT void JNICALL
-Java_org_nativescript_audiocontext_AudioContext_nativeAttachGain__Ljava_lang_String_2Ljava_lang_String_2(JNIEnv *env, jobject thiz,
-                                                                 jstring jvoiceId,
-                                                                 jstring jgainId) {
-    NativeEngine::Scope scope__(engineFor(env, jvoiceId));
-    const char *vid = env->GetStringUTFChars(jvoiceId, nullptr);
-    const char *gid = env->GetStringUTFChars(jgainId, nullptr);
-    NativeEngine::Command cmd;
-    cmd.type = NativeEngine::CMD_ATTACH_GAIN;
-    cmd.id = vid ? vid : std::string();
-    cmd.gainId = gid ? gid : std::string();
-    NativeEngine::getInstance().enqueueCommand(std::move(cmd));
-    if (vid) env->ReleaseStringUTFChars(jvoiceId, vid);
-    if (gid) env->ReleaseStringUTFChars(jgainId, gid);
-}
-
-extern "C" JNIEXPORT void JNICALL
 Java_org_nativescript_audiocontext_AudioContext_nativeAttachPlaybackRate__Ljava_lang_String_2Ljava_lang_String_2(JNIEnv *env, jobject thiz,
                                                                          jstring jvoiceId,
                                                                          jstring jplaybackRateId) {
@@ -353,26 +337,6 @@ Java_org_nativescript_audiocontext_AudioContext_nativeAttachPlaybackRate__Ljava_
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_org_nativescript_audiocontext_AudioContext_nativeDetachFrom(JNIEnv *env, jobject thiz,
-                                                                 jstring jvoiceId,
-                                                                 jstring jtargetId,
-                                                                 jint joutput,
-                                                                 jint jinput) {
-    NativeEngine::Scope scope__(engineFor(env, jvoiceId));
-    const char *vid = env->GetStringUTFChars(jvoiceId, nullptr);
-    const char *tid = env->GetStringUTFChars(jtargetId, nullptr);
-    NativeEngine::Command cmd;
-    cmd.type = NativeEngine::CMD_DETACH_FROM;
-    cmd.id = vid ? vid : std::string();
-    cmd.gainId = tid ? tid : std::string();
-    cmd.outputIndex = static_cast<int>(joutput);
-    cmd.inputIndex = static_cast<int>(jinput);
-    NativeEngine::getInstance().enqueueCommand(std::move(cmd));
-    if (vid) env->ReleaseStringUTFChars(jvoiceId, vid);
-    if (tid) env->ReleaseStringUTFChars(jtargetId, tid);
-}
-
-extern "C" JNIEXPORT void JNICALL
 Java_org_nativescript_audiocontext_AudioContext_nativeDetachPlaybackRate(JNIEnv *env, jobject thiz,
                                                                          jstring jplaybackRateId) {
     NativeEngine::Scope scope__(engineFor(env, jplaybackRateId));
@@ -395,39 +359,6 @@ Java_org_nativescript_audiocontext_AudioContext_nativeReleasePlaybackRate(JNIEnv
     cmd.id = pid ? pid : std::string();
     NativeEngine::getInstance().enqueueCommand(std::move(cmd));
     if (pid) env->ReleaseStringUTFChars(jplaybackRateId, pid);
-}
-
-extern "C" JNIEXPORT void JNICALL
-Java_org_nativescript_audiocontext_AudioContext_nativeAttachGain__Ljava_lang_String_2Ljava_lang_String_2II(
-        JNIEnv *env, jobject thiz,
-        jstring jvoiceId,
-        jstring jgainId,
-        jint joutput,
-        jint jinput) {
-    NativeEngine::Scope scope__(engineFor(env, jvoiceId));
-    const char *vid = env->GetStringUTFChars(jvoiceId, nullptr);
-    const char *gid = env->GetStringUTFChars(jgainId, nullptr);
-    NativeEngine::Command cmd;
-    cmd.type = NativeEngine::CMD_ATTACH_GAIN;
-    cmd.id = vid ? vid : std::string();
-    cmd.gainId = gid ? gid : std::string();
-    cmd.outputIndex = static_cast<int>(joutput);
-    cmd.inputIndex = static_cast<int>(jinput);
-    NativeEngine::getInstance().enqueueCommand(std::move(cmd));
-    if (vid) env->ReleaseStringUTFChars(jvoiceId, vid);
-    if (gid) env->ReleaseStringUTFChars(jgainId, gid);
-}
-
-extern "C" JNIEXPORT void JNICALL
-Java_org_nativescript_audiocontext_AudioContext_nativeDetachGain(JNIEnv *env, jobject thiz,
-                                                                 jstring jgainId) {
-    NativeEngine::Scope scope__(engineFor(env, jgainId));
-    const char *gid = env->GetStringUTFChars(jgainId, nullptr);
-    NativeEngine::Command cmd;
-    cmd.type = NativeEngine::CMD_DETACH_GAIN;
-    cmd.id = gid ? gid : std::string();
-    NativeEngine::getInstance().enqueueCommand(std::move(cmd));
-    if (gid) env->ReleaseStringUTFChars(jgainId, gid);
 }
 
 
@@ -897,77 +828,7 @@ Java_org_nativescript_audiocontext_AudioContext_nativeSetWaveShaperOversample(JN
     if (id) env->ReleaseStringUTFChars(jid, id);
 }
 
-extern "C" JNIEXPORT void JNICALL
-Java_org_nativescript_audiocontext_AudioContext_nativeAttachBiquad__Ljava_lang_String_2Ljava_lang_String_2(JNIEnv *env, jobject thiz,
-                                                                   jstring jvoiceId,
-                                                                   jstring jbiquadId) {
-    NativeEngine::Scope scope__(engineFor(env, jvoiceId));
-    const char *vid = env->GetStringUTFChars(jvoiceId, nullptr);
-    const char *bid = env->GetStringUTFChars(jbiquadId, nullptr);
-    NativeEngine::Command cmd;
-    cmd.type = NativeEngine::CMD_ATTACH_BIQUAD;
-    cmd.id = vid ? vid : std::string();
-    cmd.biquadId = bid ? bid : std::string();
-    NativeEngine::getInstance().enqueueCommand(std::move(cmd));
-    if (vid) env->ReleaseStringUTFChars(jvoiceId, vid);
-    if (bid) env->ReleaseStringUTFChars(jbiquadId, bid);
-}
 
-
-extern "C" JNIEXPORT void JNICALL
-Java_org_nativescript_audiocontext_AudioContext_nativeAttachBiquad__Ljava_lang_String_2Ljava_lang_String_2II(
-        JNIEnv *env, jobject thiz,
-        jstring jvoiceId,
-        jstring jbiquadId,
-        jint joutput,
-        jint jinput) {
-    NativeEngine::Scope scope__(engineFor(env, jvoiceId));
-    const char *vid = env->GetStringUTFChars(jvoiceId, nullptr);
-    const char *bid = env->GetStringUTFChars(jbiquadId, nullptr);
-    NativeEngine::Command cmd;
-    cmd.type = NativeEngine::CMD_ATTACH_BIQUAD;
-    cmd.id = vid ? vid : std::string();
-    cmd.biquadId = bid ? bid : std::string();
-    cmd.outputIndex = static_cast<int>(joutput);
-    cmd.inputIndex = static_cast<int>(jinput);
-    NativeEngine::getInstance().enqueueCommand(std::move(cmd));
-    if (vid) env->ReleaseStringUTFChars(jvoiceId, vid);
-    if (bid) env->ReleaseStringUTFChars(jbiquadId, bid);
-}
-
-extern "C" JNIEXPORT void JNICALL
-Java_org_nativescript_audiocontext_AudioContext_nativeDetachBiquad(JNIEnv *env, jobject thiz,
-                                                                   jstring jbiquadId) {
-    NativeEngine::Scope scope__(engineFor(env, jbiquadId));
-    const char *bid = env->GetStringUTFChars(jbiquadId, nullptr);
-    NativeEngine::Command cmd;
-    cmd.type = NativeEngine::CMD_DETACH_BIQUAD;
-    cmd.id = bid ? bid : std::string();
-    NativeEngine::getInstance().enqueueCommand(std::move(cmd));
-    if (bid) env->ReleaseStringUTFChars(jbiquadId, bid);
-}
-
-
-extern "C" JNIEXPORT void JNICALL
-Java_org_nativescript_audiocontext_AudioContext_nativeAttachPanner__Ljava_lang_String_2Ljava_lang_String_2II(
-        JNIEnv *env, jobject thiz,
-        jstring jvoiceId,
-        jstring jpannerId,
-        jint joutput,
-        jint jinput) {
-    NativeEngine::Scope scope__(engineFor(env, jvoiceId));
-    const char *vid = env->GetStringUTFChars(jvoiceId, nullptr);
-    const char *pid = env->GetStringUTFChars(jpannerId, nullptr);
-    NativeEngine::Command cmd;
-    cmd.type = NativeEngine::CMD_ATTACH_PANNER;
-    cmd.id = vid ? vid : std::string();
-    cmd.pannerId = pid ? pid : std::string();
-    cmd.outputIndex = static_cast<int>(joutput);
-    cmd.inputIndex = static_cast<int>(jinput);
-    NativeEngine::getInstance().enqueueCommand(std::move(cmd));
-    if (vid) env->ReleaseStringUTFChars(jvoiceId, vid);
-    if (pid) env->ReleaseStringUTFChars(jpannerId, pid);
-}
 
 extern "C" JNIEXPORT void JNICALL
 Java_org_nativescript_audiocontext_AudioContext_nativeReleaseBiquad(JNIEnv *env, jobject thiz,
@@ -1209,22 +1070,6 @@ Java_org_nativescript_audiocontext_AudioContext_nativeGetListenerParamValue(JNIE
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_org_nativescript_audiocontext_AudioContext_nativeAttachPanner__Ljava_lang_String_2Ljava_lang_String_2(JNIEnv *env, jobject thiz,
-                                                                   jstring jvoiceId,
-                                                                   jstring jpannerId) {
-    NativeEngine::Scope scope__(engineFor(env, jvoiceId));
-    const char *vid = env->GetStringUTFChars(jvoiceId, nullptr);
-    const char *pid = env->GetStringUTFChars(jpannerId, nullptr);
-    NativeEngine::Command cmd;
-    cmd.type = NativeEngine::CMD_ATTACH_PANNER;
-    cmd.id = vid ? vid : std::string();
-    cmd.pannerId = pid ? pid : std::string();
-    NativeEngine::getInstance().enqueueCommand(std::move(cmd));
-    if (vid) env->ReleaseStringUTFChars(jvoiceId, vid);
-    if (pid) env->ReleaseStringUTFChars(jpannerId, pid);
-}
-
-extern "C" JNIEXPORT void JNICALL
 Java_org_nativescript_audiocontext_AudioContext_nativeAttachBiquadToPanner(JNIEnv *env, jobject thiz,
                                                                           jstring jpannerId,
                                                                           jstring jbiquadId) {
@@ -1240,18 +1085,6 @@ Java_org_nativescript_audiocontext_AudioContext_nativeAttachBiquadToPanner(JNIEn
     }
     if (pid) env->ReleaseStringUTFChars(jpannerId, pid);
     if (bid) env->ReleaseStringUTFChars(jbiquadId, bid);
-}
-
-extern "C" JNIEXPORT void JNICALL
-Java_org_nativescript_audiocontext_AudioContext_nativeDetachPanner(JNIEnv *env, jobject thiz,
-                                                                   jstring jpannerId) {
-    NativeEngine::Scope scope__(engineFor(env, jpannerId));
-    const char *pid = env->GetStringUTFChars(jpannerId, nullptr);
-    NativeEngine::Command cmd;
-    cmd.type = NativeEngine::CMD_DETACH_PANNER;
-    cmd.id = pid ? pid : std::string();
-    NativeEngine::getInstance().enqueueCommand(std::move(cmd));
-    if (pid) env->ReleaseStringUTFChars(jpannerId, pid);
 }
 
 extern "C" JNIEXPORT void JNICALL
@@ -2109,14 +1942,82 @@ Java_org_nativescript_audiocontext_AudioContext_nativeCreateWorklet(JNIEnv *env,
     return id.empty() ? nullptr : env->NewStringUTF(id.c_str());
 }
 
+static std::string jstr(JNIEnv *env, jstring js) {
+    if (!js) return {};
+    const char *chars = env->GetStringUTFChars(js, nullptr);
+    std::string out = chars ? chars : "";
+    if (chars) env->ReleaseStringUTFChars(js, chars);
+    return out;
+}
+
+// Graph edges: `src` output -> `dst` input, or into a param (paramType -1 gain-style, else a panner param).
 extern "C" JNIEXPORT void JNICALL
-Java_org_nativescript_audiocontext_AudioContext_nativeSetWorkletOutputConnected(JNIEnv *env, jobject thiz,
-                                                                               jstring jid, jint output,
-                                                                               jboolean connected) {
+Java_org_nativescript_audiocontext_AudioContext_nativeConnect(JNIEnv *env, jobject thiz, jstring jsrc,
+                                                              jint kind, jint ports, jint output,
+                                                              jstring jdst, jint dstKind,
+                                                              jint dstPorts, jint input,
+                                                              jint paramType) {
+    NativeEngine::Scope scope__(engineFor(env, jsrc));
+    NativeEngine::Command cmd;
+    cmd.type = NativeEngine::CMD_CONNECT;
+    cmd.id = jstr(env, jsrc);
+    cmd.kind = kind;
+    cmd.ports = ports;
+    cmd.outputIndex = output;
+    cmd.targetId = jstr(env, jdst);
+    cmd.targetKind = dstKind;
+    cmd.targetPorts = dstPorts;
+    cmd.inputIndex = input;
+    cmd.targetType = paramType;
+    if (cmd.id.empty() || cmd.targetId.empty()) return;
+    NativeEngine::getInstance().enqueueCommand(std::move(cmd));
+}
+
+// Negative indices and a null target match any.
+extern "C" JNIEXPORT void JNICALL
+Java_org_nativescript_audiocontext_AudioContext_nativeDisconnect(JNIEnv *env, jobject thiz, jstring jsrc,
+                                                                 jint output, jstring jdst, jint input,
+                                                                 jint paramType) {
+    NativeEngine::Scope scope__(engineFor(env, jsrc));
+    NativeEngine::Command cmd;
+    cmd.type = NativeEngine::CMD_DISCONNECT;
+    cmd.id = jstr(env, jsrc);
+    cmd.outputIndex = output;
+    cmd.targetId = jstr(env, jdst);
+    cmd.inputIndex = input;
+    cmd.targetType = paramType;
+    if (cmd.id.empty()) return;
+    NativeEngine::getInstance().enqueueCommand(std::move(cmd));
+}
+
+// channelCount, channelCountMode and channelInterpretation; negative leaves a value as it is.
+extern "C" JNIEXPORT void JNICALL
+Java_org_nativescript_audiocontext_AudioContext_nativeConfigureNode(JNIEnv *env, jobject thiz, jstring jid,
+                                                                    jint kind, jint ports,
+                                                                    jint channelCount, jint countMode,
+                                                                    jint interpretation) {
     NativeEngine::Scope scope__(engineFor(env, jid));
-    if (!jid) return;
-    const char *id = env->GetStringUTFChars(jid, nullptr);
-    if (!id) return;
-    NativeEngine::getInstance().setWorkletOutputConnected(id, (int) output, connected == JNI_TRUE);
-    env->ReleaseStringUTFChars(jid, id);
+    NativeEngine::Command cmd;
+    cmd.type = NativeEngine::CMD_NODE_CONFIG;
+    cmd.id = jstr(env, jid);
+    cmd.kind = kind;
+    cmd.ports = ports;
+    cmd.channelCount = channelCount;
+    cmd.countMode = countMode;
+    cmd.interpretation = interpretation;
+    if (cmd.id.empty()) return;
+    NativeEngine::getInstance().enqueueCommand(std::move(cmd));
+}
+
+// A buffer source taking a new buffer: the old voice stops and its connections carry over to `newId`.
+extern "C" JNIEXPORT void JNICALL
+Java_org_nativescript_audiocontext_AudioContext_nativeReplaceSource(JNIEnv *env, jobject thiz, jstring jold,
+                                                                    jstring jnew) {
+    NativeEngine::Scope scope__(engineFor(env, jold));
+    NativeEngine::Command cmd;
+    cmd.type = NativeEngine::CMD_REPLACE_SOURCE;
+    cmd.id = jstr(env, jold);
+    cmd.targetId = jstr(env, jnew);
+    if (cmd.id.empty()) return;
+    NativeEngine::getInstance().enqueueCommand(std::move(cmd));
 }

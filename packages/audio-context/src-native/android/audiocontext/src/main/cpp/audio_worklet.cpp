@@ -23,10 +23,6 @@ constexpr auto kOfflineStall = std::chrono::seconds(5);
 // Header words after the slots (audio-worklet-ring.ts).
 enum { REQUESTED = 0, DONE = 1, READ = 2, CLOSED = 3, NATIVE_MARK = 5 };
 enum { ALIVE = 2 };
-
-std::string outputVoiceId(const std::string &id, int output) {
-    return output == 0 ? id : id + "#" + std::to_string(output);
-}
 }
 
 std::string NativeEngine::createWorklet(float *ring, const std::vector<int> &inputChannels,
@@ -74,15 +70,6 @@ std::string NativeEngine::createWorklet(float *ring, const std::vector<int> &inp
     cmd.worklet = std::move(w);
     enqueueCommand(std::move(cmd));
     return id;
-}
-
-void NativeEngine::setWorkletOutputConnected(const std::string &id, int output, bool connected) {
-    Command cmd;
-    cmd.type = CMD_WORKLET_OUTPUT;
-    cmd.id = id;
-    cmd.outputIndex = output;
-    cmd.loop = connected;
-    enqueueCommand(std::move(cmd));
 }
 
 // Worker wakers: an eventfd on each AudioWorklet Worker's looper, written when a quantum is requested.
@@ -167,22 +154,26 @@ Java_org_nativescript_audiocontext_WorkletWaker_nativeDetach(JNIEnv *env, jclass
     delete w;
 }
 
-void NativeEngine::removeWorklet(const std::string &id) {
+void NativeEngine::removeWorklet(const std::string &workletId) {
+    const std::string id = workletId;
     auto it = worklets_.find(id);
     if (it == worklets_.end()) return;
     WorkletNode &w = *it->second;
     w.header[CLOSED].store(1, std::memory_order_release);
     wakeWorkletWorkers();
-    // Voices routed into it stay routed, and silent.
-    for (int o = 0; o < w.outputs; o++) audioVoices_.erase(outputVoiceId(id, o));
     worklets_.erase(it);
+#ifdef HAS_OBOE
+    auto node = graph_.find(id);
+    if (node != graph_.end()) removeNode(node->second.get());
+#endif
 }
 
 static float paramValueAt(const std::vector<NativeEngine::ParamEvent> *events, int64_t ns, double fallback) {
     return events ? getScheduledGainValueAt(*events, ns, fallback) : static_cast<float>(fallback);
 }
 
-bool NativeEngine::workletPush(WorkletNode &w, uint64_t frame, int64_t paramNs, bool withInputs) {
+bool NativeEngine::workletPush(WorkletNode &w, uint64_t frame, int64_t paramNs, bool withInputs,
+                               const float *paramValues) {
     uint32_t requested = w.header[REQUESTED].load(std::memory_order_relaxed);
     uint32_t read = w.header[READ].load(std::memory_order_acquire);
     if (requested - read >= kSlots) return false;
@@ -206,7 +197,18 @@ bool NativeEngine::workletPush(WorkletNode &w, uint64_t frame, int64_t paramNs, 
     }
     for (int o = 0; o < w.outputs; o++) words[w.outputCounts + o] = static_cast<uint32_t>(w.outChannels[o]);
 
-    if (!w.paramIds.empty()) {
+    if (!w.paramIds.empty() && paramValues) {
+        for (size_t p = 0; p < w.paramIds.size(); p++) {
+            const float *src = paramValues + p * kQuantum;
+            float *values = slot + w.paramData + p * kQuantum;
+            uint32_t length = 1;
+            for (int k = 0; k < kQuantum; k++) {
+                values[k] = src[k];
+                if (src[k] != src[0]) length = kQuantum;
+            }
+            words[w.paramLengths + p] = length;
+        }
+    } else if (!w.paramIds.empty()) {
 #ifdef HAS_OBOE
         const double frameNs = 1e9 / static_cast<double>(streamSampleRate_ > 0 ? streamSampleRate_ : 48000);
 #else
@@ -261,11 +263,11 @@ static void clearInputs(Worklet &w) {
     std::fill(std::begin(w.inActive), std::end(w.inActive), false);
 }
 
-void NativeEngine::workletEndQuantum(WorkletNode &w, int64_t paramNs) {
+void NativeEngine::workletEndQuantum(WorkletNode &w, int64_t paramNs, const float *paramValues) {
     // process() returned false: a source ends once its last quantum has played.
     if (w.inputs == 0 && w.drained) w.ended = true;
     if (!w.finished && w.header[CLOSED].load(std::memory_order_acquire) == 0) {
-        workletPush(w, w.nextFrame, paramNs, true);
+        workletPush(w, w.nextFrame, paramNs, true, paramValues);
     }
     w.nextFrame += kQuantum;
 
@@ -294,10 +296,9 @@ void NativeEngine::workletEndQuantum(WorkletNode &w, int64_t paramNs) {
     w.header[READ].store(read, std::memory_order_release);
     w.drained = w.finished && done == read;
     clearInputs(w);
-    w.position = 0;
 }
 
-void NativeEngine::workletRenderOffline(WorkletNode &w) {
+void NativeEngine::workletRenderOffline(WorkletNode &w, const float *paramValues) {
     const auto frame = static_cast<uint64_t>(offlineFrame_);
 #ifdef HAS_OBOE
     const double frameNs = 1e9 / static_cast<double>(streamSampleRate_ > 0 ? streamSampleRate_ : 48000);
@@ -312,7 +313,7 @@ void NativeEngine::workletRenderOffline(WorkletNode &w) {
     if (!w.finished && !closed()) {
         if (w.inputs > 0) {
             // This quantum's inputs exist only now.
-            workletPush(w, frame, paramNs(frame), true);
+            workletPush(w, frame, paramNs(frame), true, paramValues);
         } else {
             // A source's requests run ahead to the end of this render call; params can't change before it.
             if (!w.requesting || w.requestFrame < frame) {

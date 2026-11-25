@@ -130,21 +130,75 @@ export class AudioParam extends AudioParamBase {
 	}
 }
 
+const COUNT_MODES = ['max', 'clamped-max', 'explicit'];
+const INTERPRETATIONS = ['speakers', 'discrete'];
+
 export class AudioNode extends AudioNodeBase {
+	private _channelCount?: number;
+	private _channelCountMode?: string;
+	private _channelInterpretation?: string;
+
 	constructor(context: NativeBaseAudioContext) {
 		super(context);
+	}
+
+	private get _graphNative(): org.nativescript.audiocontext.AudioNode {
+		return (this as never as { native: org.nativescript.audiocontext.AudioNode }).native;
+	}
+
+	// The Web Audio defaults for this node's kind.
+	private _channelDefaults(): [number, string, string] {
+		if (this instanceof ChannelSplitterNode) return [this.numberOfOutputs, 'explicit', 'discrete'];
+		if (this instanceof ChannelMergerNode) return [1, 'explicit', 'speakers'];
+		if (this instanceof AudioDestinationNode) return [this.context instanceof OfflineAudioContext ? (this.context as any)._channels : 2, 'explicit', 'speakers'];
+		if (this instanceof PannerNode || this instanceof StereoPannerNode || this instanceof ConvolverNode || this instanceof DynamicsCompressorNode) return [2, 'clamped-max', 'speakers'];
+		return [2, 'max', 'speakers'];
+	}
+
+	get channelCount(): number {
+		return this._channelCount ?? this._channelDefaults()[0];
+	}
+
+	set channelCount(value: number) {
+		const count = Math.floor(Number(value));
+		if (!(count >= 1 && count <= 32)) throw domError('NotSupportedError', `AudioNode.channelCount: ${value} is out of range`);
+		this._channelCount = count;
+		this._graphNative?.setChannelConfig(count, -1, -1);
+	}
+
+	get channelCountMode(): string {
+		return this._channelCountMode ?? this._channelDefaults()[1];
+	}
+
+	set channelCountMode(value: string) {
+		const mode = COUNT_MODES.indexOf(value);
+		if (mode < 0) return;
+		this._channelCountMode = value;
+		this._graphNative?.setChannelConfig(-1, mode, -1);
+	}
+
+	get channelInterpretation(): string {
+		return this._channelInterpretation ?? this._channelDefaults()[2];
+	}
+
+	set channelInterpretation(value: string) {
+		const interpretation = INTERPRETATIONS.indexOf(value);
+		if (interpretation < 0) return;
+		this._channelInterpretation = value;
+		this._graphNative?.setChannelConfig(-1, -1, interpretation);
 	}
 
 	connect(node: any, output?: number, input?: number) {
 		if (node instanceof AudioWorkletNode && ((input ?? 0) < 0 || (input ?? 0) >= node.numberOfInputs)) {
 			throw domError('IndexSizeError', `AudioNode.connect: input ${input ?? 0} is out of range`);
 		}
-		const that = this as never as AudioNode & { native: org.nativescript.audiocontext.AudioNode };
+		const native = this._graphNative;
 		const target = node?.native || node;
 		try {
-			if (typeof output === 'number' && typeof input === 'number') that.native.connect(target, output, input);
-			else if (typeof output === 'number') that.native.connect(target, output);
-			else that.native.connect(target);
+			if (node instanceof AudioParamBase) native.connect(target as org.nativescript.audiocontext.AudioParam, output ?? 0);
+			else if (typeof output === 'number' && typeof input === 'number') native.connect(target, output, input);
+			else if (typeof output === 'number') native.connect(target, output);
+			else native.connect(target);
 		} catch (e) {
 			console.warn('AudioNode.connect failed:', e);
 		}
@@ -153,7 +207,7 @@ export class AudioNode extends AudioNodeBase {
 	}
 
 	disconnect(destinationOrOutput?: any, output?: number, input?: number) {
-		const native = (this as never as { native: org.nativescript.audiocontext.AudioNode }).native;
+		const native = this._graphNative;
 		if (destinationOrOutput === undefined || destinationOrOutput === null) {
 			native.disconnect();
 			return;
@@ -162,9 +216,12 @@ export class AudioNode extends AudioNodeBase {
 			native.disconnect(destinationOrOutput);
 			return;
 		}
-		// AudioParam inputs are never wired natively.
-		if (destinationOrOutput instanceof AudioParamBase) return;
 		const target = destinationOrOutput.native ?? destinationOrOutput;
+		if (destinationOrOutput instanceof AudioParamBase) {
+			if (typeof output === 'number') native.disconnect(target as org.nativescript.audiocontext.AudioParam, output);
+			else native.disconnect(target as org.nativescript.audiocontext.AudioParam);
+			return;
+		}
 		if (typeof output !== 'number') native.disconnect(target);
 		else if (typeof input !== 'number') native.disconnect(target, output);
 		else native.disconnect(target, output, input);

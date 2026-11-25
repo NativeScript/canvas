@@ -53,6 +53,7 @@ public class AudioBufferSourceNode extends AudioScheduledSourceNode {
 		AudioContext ctx = AudioContext.getInstance();
 		String newId = ctx.switchBufferSource(id, buffer);
 		if (newId != null && !newId.equals(id)) {
+			ctx.replaceSource(id, newId);
 			if (playbackRateId != null) {
 				ctx.attachPlaybackRateToVoice(id, "");
 				ctx.attachPlaybackRateToVoice(newId, playbackRateId);

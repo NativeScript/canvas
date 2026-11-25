@@ -1,5 +1,5 @@
 import { AudioBuffer, OfflineAudioContext } from '@nativescript/audio-context';
-import { isAndroid, isIOS } from '@nativescript/core';
+import { isIOS } from '@nativescript/core';
 import { suite, test, skip, equal, closeTo, ok } from './harness';
 
 // OfflineAudioContext rendering, against what Chrome does.
@@ -185,34 +185,30 @@ export function registerAudioOfflineRenderSpec() {
 		});
 
 		const PARAM_INPUT = 'a node connected to a gain or delayTime param adds to it per frame';
-		if (isAndroid) {
-			skip(PARAM_INPUT, 'no AudioNode.connect(AudioParam) on Android');
-		} else {
-			test(PARAM_INPUT, async () => {
-				const context = new OfflineAudioContext(1, Q * 4, RATE);
-				const gain = context.createGain();
-				gain.gain.value = 0.5;
-				constant(context, 1).connect(gain);
-				constant(context, 0.25, (Q * 2) / RATE).connect(gain.gain);
-				gain.connect(context.destination);
-				const samples = (await context.startRendering()).getChannelData(0);
-				equal(samples[Q * 2 - 1], 0.5, 'the intrinsic value alone');
-				equal(samples[Q * 2], 0.75, 'plus the input from its first frame');
+		test(PARAM_INPUT, async () => {
+			const context = new OfflineAudioContext(1, Q * 4, RATE);
+			const gain = context.createGain();
+			gain.gain.value = 0.5;
+			constant(context, 1).connect(gain);
+			constant(context, 0.25, (Q * 2) / RATE).connect(gain.gain);
+			gain.connect(context.destination);
+			const samples = (await context.startRendering()).getChannelData(0);
+			equal(samples[Q * 2 - 1], 0.5, 'the intrinsic value alone');
+			equal(samples[Q * 2], 0.75, 'plus the input from its first frame');
 
-				// 1/1024 s is 32 frames at this rate, exact in float.
-				const rate = 32768;
-				const other = new OfflineAudioContext(1, Q * 4, rate);
-				const delay = other.createDelay(1);
-				constant(other, 1 / 1024).connect(delay.delayTime);
-				const source = constant(other, 0.5);
-				source.stop(Q / rate);
-				source.connect(delay);
-				delay.connect(other.destination);
-				const delayed = (await other.startRendering()).getChannelData(0);
-				equal(delayed[31], 0, 'silent for the connected delayTime');
-				equal(delayed[32], 0.5, 'delayed by it');
-				equal(delayed[Q + 32], 0, 'and ends that long after the source');
-			});
-		}
+			// 1/1024 s is 32 frames at this rate, exact in float.
+			const rate = 32768;
+			const other = new OfflineAudioContext(1, Q * 4, rate);
+			const delay = other.createDelay(1);
+			constant(other, 1 / 1024).connect(delay.delayTime);
+			const source = constant(other, 0.5);
+			source.stop(Q / rate);
+			source.connect(delay);
+			delay.connect(other.destination);
+			const delayed = (await other.startRendering()).getChannelData(0);
+			equal(delayed[31], 0, 'silent for the connected delayTime');
+			equal(delayed[32], 0.5, 'delayed by it');
+			equal(delayed[Q + 32], 0, 'and ends that long after the source');
+		});
 	});
 }

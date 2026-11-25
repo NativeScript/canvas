@@ -98,7 +98,7 @@ public class AudioContextInstance {
 	}
 
 	public void closeAsync(@androidx.annotation.Nullable AudioContext.AsyncCallback cb) {
-		AudioContext.getInstance().closeAsync(cb);
+		AudioContext.getInstance().closeAsync(id, cb);
 	}
 
 	public AudioOscillatorNode createOscillatorNodeFrequency(String type, double frequency) {

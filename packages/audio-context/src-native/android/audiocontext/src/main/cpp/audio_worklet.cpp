@@ -7,6 +7,11 @@
 #include <cmath>
 #include <cstring>
 #include <unistd.h>
+#include <thread>
+#include <atomic>
+#include <jni.h>
+#include <android/looper.h>
+#include <sys/eventfd.h>
 
 namespace {
 constexpr int kQuantum = 128;
@@ -55,7 +60,7 @@ std::string NativeEngine::createWorklet(float *ring, const std::vector<int> &inp
     }
     w->paramIds = std::move(paramIds);
 #ifdef HAS_OBOE
-    w->mixChannels = std::max(1, std::min(streamChannels_, kWorkletMaxChannels));
+    w->mixChannels = kWorkletMaxChannels;
 #endif
     w->inMix.assign(static_cast<size_t>(std::max(inputs, 1) * w->mixChannels * kQuantum), 0.0f);
     w->outQ.assign(static_cast<size_t>(std::max(outputs, 1) * kWorkletMaxChannels * kQuantum), 0.0f);
@@ -80,11 +85,94 @@ void NativeEngine::setWorkletOutputConnected(const std::string &id, int output, 
     enqueueCommand(std::move(cmd));
 }
 
+// Worker wakers: an eventfd on each AudioWorklet Worker's looper, written when a quantum is requested.
+namespace {
+    constexpr int kMaxWakers = 16;
+    std::atomic<int> g_wakeFds[kMaxWakers]{};  // fd + 1; 0 is free
+    std::atomic<int> g_wakeWriters{0};
+
+    struct Waker {
+        int fd;
+        int slot;
+        ALooper *looper;
+        JavaVM *vm;
+        jobject drain;
+        jmethodID run;
+    };
+
+    int onWake(int fd, int, void *data) {
+        auto *w = static_cast<Waker *>(data);
+        uint64_t n;
+        (void) read(fd, &n, sizeof n);
+        JNIEnv *env = nullptr;
+        if (w->vm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6) != JNI_OK || !env) return 1;
+        env->CallVoidMethod(w->drain, w->run);
+        if (env->ExceptionCheck()) env->ExceptionClear();
+        return 1;
+    }
+}
+
+static void wakeWorkletWorkers() {
+    g_wakeWriters.fetch_add(1, std::memory_order_acquire);
+    const uint64_t one = 1;
+    for (auto &slot: g_wakeFds) {
+        int fd = slot.load(std::memory_order_acquire) - 1;
+        if (fd >= 0) (void) write(fd, &one, sizeof one);
+    }
+    g_wakeWriters.fetch_sub(1, std::memory_order_release);
+}
+
+// Called on the Worker thread: `drain.run()` runs there whenever the engine requests a quantum.
+extern "C" JNIEXPORT jlong JNICALL
+Java_org_nativescript_audiocontext_WorkletWaker_nativeAttach(JNIEnv *env, jclass, jobject drain) {
+    ALooper *looper = ALooper_forThread();
+    if (!looper || !drain) return 0;
+    JavaVM *vm = nullptr;
+    if (env->GetJavaVM(&vm) != JNI_OK) return 0;
+    jclass cls = env->GetObjectClass(drain);
+    jmethodID run = env->GetMethodID(cls, "run", "()V");
+    env->DeleteLocalRef(cls);
+    if (!run) {
+        env->ExceptionClear();
+        return 0;
+    }
+    int fd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
+    if (fd < 0) return 0;
+    int slot = -1;
+    for (int i = 0; i < kMaxWakers && slot < 0; i++) {
+        int expected = 0;
+        if (g_wakeFds[i].compare_exchange_strong(expected, fd + 1)) slot = i;
+    }
+    if (slot < 0) {
+        close(fd);
+        return 0;
+    }
+    auto *w = new Waker{fd, slot, looper, vm, env->NewGlobalRef(drain), run};
+    ALooper_acquire(looper);
+    ALooper_addFd(looper, fd, ALOOPER_POLL_CALLBACK, ALOOPER_EVENT_INPUT, onWake, w);
+    return reinterpret_cast<jlong>(w);
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_org_nativescript_audiocontext_WorkletWaker_nativeDetach(JNIEnv *env, jclass, jlong handle) {
+    auto *w = reinterpret_cast<Waker *>(handle);
+    if (!w) return;
+    g_wakeFds[w->slot].store(0, std::memory_order_release);
+    // No writer may still hold the fd once it closes.
+    while (g_wakeWriters.load(std::memory_order_acquire) != 0) std::this_thread::yield();
+    ALooper_removeFd(w->looper, w->fd);
+    ALooper_release(w->looper);
+    close(w->fd);
+    env->DeleteGlobalRef(w->drain);
+    delete w;
+}
+
 void NativeEngine::removeWorklet(const std::string &id) {
     auto it = worklets_.find(id);
     if (it == worklets_.end()) return;
     WorkletNode &w = *it->second;
     w.header[CLOSED].store(1, std::memory_order_release);
+    wakeWorkletWorkers();
     // Voices routed into it stay routed, and silent.
     for (int o = 0; o < w.outputs; o++) audioVoices_.erase(outputVoiceId(id, o));
     worklets_.erase(it);
@@ -104,29 +192,16 @@ bool NativeEngine::workletPush(WorkletNode &w, uint64_t frame, int64_t paramNs, 
     std::memcpy(slot, &frameValue, sizeof frameValue);
     words[ALIVE] = 1;
 
-    // Web Audio "speakers" mixing from the context's channels to the input's channelCount.
-    const int have = w.mixChannels;
+    // The mixer already rendered each input at its own channelCount.
+    const int stride = w.mixChannels;
     for (int i = 0; i < w.inputs; i++) {
         const int want = w.inChannels[i];
         const uint32_t count = withInputs && w.inActive[i] ? static_cast<uint32_t>(want) : 0u;
         words[w.inputCounts + i] = count;
-        const float *mix = w.inMix.data() + static_cast<size_t>(i * have * kQuantum);
+        const float *mix = w.inMix.data() + static_cast<size_t>(i * stride * kQuantum);
         for (int c = 0; c < static_cast<int>(count); c++) {
             float *dst = slot + w.inputData + (i * kWorkletMaxChannels + c) * kQuantum;
-            if (want == 1 && have > 1) {
-                const float scale = 1.0f / static_cast<float>(have);
-                for (int k = 0; k < kQuantum; k++) {
-                    float sum = 0.0f;
-                    for (int h = 0; h < have; h++) sum += mix[h * kQuantum + k];
-                    dst[k] = sum * scale;
-                }
-            } else if (c < have) {
-                std::memcpy(dst, mix + c * kQuantum, kQuantum * sizeof(float));
-            } else if (have == 1) {
-                std::memcpy(dst, mix, kQuantum * sizeof(float));
-            } else {
-                std::memset(dst, 0, kQuantum * sizeof(float));
-            }
+            std::memcpy(dst, mix + c * kQuantum, kQuantum * sizeof(float));
         }
     }
     for (int o = 0; o < w.outputs; o++) words[w.outputCounts + o] = static_cast<uint32_t>(w.outChannels[o]);
@@ -158,6 +233,7 @@ bool NativeEngine::workletPush(WorkletNode &w, uint64_t frame, int64_t paramNs, 
         }
     }
     w.header[REQUESTED].store(requested + 1, std::memory_order_release);
+    wakeWorkletWorkers();
     return true;
 }
 

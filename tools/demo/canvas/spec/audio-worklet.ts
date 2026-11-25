@@ -1,4 +1,5 @@
-import { AudioContext, AudioWorkletNode, OfflineAudioContext } from '@nativescript/audio-context';
+import { AudioBuffer, AudioContext, AudioWorkletNode, OfflineAudioContext } from '@nativescript/audio-context';
+import { isIOS } from '@nativescript/core';
 import { suite, test, skip, equal, closeTo, ok } from './harness';
 
 // AudioWorkletNode inputs, outputs and fan-in, against what Chrome does.
@@ -43,6 +44,20 @@ class SumInputs extends AudioWorkletProcessor {
 	}
 }
 registerProcessor('sum-inputs', SumInputs);
+
+// The picked input channel; -1 unless the input has the expected channel count.
+class PickChannel extends AudioWorkletProcessor {
+	constructor(options) {
+		super();
+		this.pick = options.processorOptions;
+	}
+	process(inputs, outputs) {
+		const input = inputs[0];
+		outputs[0][0].fill(input.length === this.pick.count ? input[this.pick.channel][0] : -1);
+		return true;
+	}
+}
+registerProcessor('pick-channel', PickChannel);
 `;
 
 const MODULE = 'data:text/javascript,' + encodeURIComponent(PROCESSORS);
@@ -60,6 +75,16 @@ function constant(context: any, offset: number, when = 0) {
 }
 
 const MONO = { channelCount: 1, channelCountMode: 'explicit' } as any;
+
+/** A buffer source playing `levels[c]` on channel c. */
+function levelSource(context: any, levels: number[]) {
+	const buffer = new AudioBuffer({ numberOfChannels: levels.length, length: Q * 2, sampleRate: RATE });
+	levels.forEach((level, c) => buffer.copyToChannel(new Float32Array(Q * 2).fill(level), c));
+	const source = context.createBufferSource();
+	source.buffer = buffer;
+	source.start(0);
+	return source;
+}
 
 export function registerAudioWorkletSpec() {
 	suite('audio.worklet', () => {
@@ -130,6 +155,39 @@ export function registerAudioWorkletSpec() {
 			const samples = (await context.startRendering()).getChannelData(0);
 			// 1 * 0.25 + 2 * 0.5
 			closeTo(samples[Q * 4], 1.25, 1e-6, 'weighted sum of the inputs');
+		});
+
+		const SPEAKERS = 'mixes each input to its own channelCount with the speaker rules';
+		if (isIOS) skip(SPEAKERS, "iOS mixes an input at the context's channel count first");
+		else test(SPEAKERS, async () => {
+			const h = Math.SQRT1_2;
+			// [source channel levels, channelCount, the input's channels]
+			const cases: [number[], number, number[]][] = [
+				[[1, 0.5], 2, [1, 0.5]],
+				[[0.25], 2, [0.25, 0.25]],
+				[[0.25], 4, [0.25, 0.25, 0, 0]],
+				[[0.25], 6, [0, 0, 0.25, 0, 0, 0]],
+				[[1, 0.5], 1, [0.75]],
+				[[1, 0.5], 4, [1, 0.5, 0, 0]],
+				[[0.1, 0.2, 0.3, 0.4], 1, [0.25]],
+				[[0.1, 0.2, 0.3, 0.4], 2, [0.2, 0.3]],
+				[[0.1, 0.2, 0.3, 0.4], 6, [0.1, 0.2, 0, 0, 0.3, 0.4]],
+				[[0.1, 0.2, 0.3, 0.4, 0.5, 0.6], 1, [h * 0.3 + 0.3 + 0.5 * 1.1]],
+				[[0.1, 0.2, 0.3, 0.4, 0.5, 0.6], 2, [0.1 + h * 0.8, 0.2 + h * 0.9]],
+				[[0.1, 0.2, 0.3, 0.4, 0.5, 0.6], 4, [0.1 + h * 0.3, 0.2 + h * 0.3, 0.5, 0.6]],
+			];
+			// A mono context: the input still gets every source channel.
+			for (const [levels, channelCount, expected] of cases) {
+				for (let c = 0; c < channelCount; c++) {
+					const context = await offline(Q * 2, 1);
+					const processorOptions = { channel: c, count: channelCount };
+					const node = new AudioWorkletNode(context, 'pick-channel', { channelCount, channelCountMode: 'explicit', outputChannelCount: [1], processorOptions } as any);
+					levelSource(context, levels).connect(node);
+					node.connect(context.destination);
+					const got = (await context.startRendering()).getChannelData(0)[Q];
+					closeTo(got, expected[c], 1e-5, `${levels.length} channels into ${channelCount}, channel ${c}`);
+				}
+			}
 		});
 
 		test('plays each output from its own bus', async () => {

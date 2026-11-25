@@ -63,8 +63,8 @@ export function createWorkletRing(layout: WorkletRingLayout): SharedArrayBuffer 
 	return new SharedArrayBuffer((layout.header + WORKLET_HEADER_WORDS) * 4);
 }
 
-// Worker-side bridge over the shared rings: prepended to AUDIO_WORKLET_SCOPE. The render thread
-// can't wake a Worker here, so it polls.
+// Worker-side bridge over the shared rings: prepended to AUDIO_WORKLET_SCOPE. On Android the engine
+// wakes the Worker's looper per requested quantum; elsewhere the Worker polls.
 export const SHARED_RING_BRIDGE = String.raw`(function (global) {
 	var REQUESTED = 0, DONE = 1, CLOSED = 3, RELEASED = 4;
 	function Ring(ring) {
@@ -80,15 +80,27 @@ export const SHARED_RING_BRIDGE = String.raw`(function (global) {
 	Ring.prototype.commit = function (count) { Atomics.add(this._h, DONE, Math.min(count, this.pending())); };
 	Ring.prototype.release = function () { Atomics.store(this._h, RELEASED, 1); };
 
+	function nativeWaker(drain) {
+		try {
+			var ns = global.org && global.org.nativescript;
+			var Waker = ns && ns.audiocontext && ns.audiocontext.WorkletWaker;
+			return Waker ? Waker.attach(new java.lang.Runnable({ run: drain })) : null;
+		} catch (e) {
+			return null;
+		}
+	}
+
 	function Bridge(drain) {
 		this.rings = new Map();
-		this.timer = setInterval(drain, 2);
+		this.waker = nativeWaker(drain);
+		this.timer = this.waker ? 0 : setInterval(drain, 2);
 	}
 	Bridge.prototype.adopt = function (id, ring) { this.rings.set(id, new Ring(ring)); };
 	Bridge.prototype.node = function (id) { return this.rings.get(id) || null; };
 	Bridge.prototype.beginDrain = function () {};
 	Bridge.prototype.close = function () {
-		clearInterval(this.timer);
+		if (this.waker) this.waker.detach();
+		else clearInterval(this.timer);
 		this.rings.clear();
 	};
 

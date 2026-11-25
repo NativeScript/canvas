@@ -1,5 +1,5 @@
-import { OfflineAudioContext } from '@nativescript/audio-context';
-import { isAndroid } from '@nativescript/core';
+import { AudioBuffer, OfflineAudioContext } from '@nativescript/audio-context';
+import { isAndroid, isIOS } from '@nativescript/core';
 import { suite, test, skip, equal, closeTo, ok } from './harness';
 
 // OfflineAudioContext rendering, against what Chrome does.
@@ -11,6 +11,13 @@ function constant(context: any, offset: number, when = 0) {
 	const source = context.createConstantSource({ offset });
 	source.start(when);
 	return source;
+}
+
+function stereo(length: number, left: number, right: number) {
+	const buffer = new AudioBuffer({ numberOfChannels: 2, length, sampleRate: RATE });
+	buffer.copyToChannel(new Float32Array(length).fill(left), 0);
+	buffer.copyToChannel(new Float32Array(length).fill(right), 1);
+	return buffer;
 }
 
 export function registerAudioOfflineRenderSpec() {
@@ -109,6 +116,72 @@ export function registerAudioOfflineRenderSpec() {
 			constant(context, 0.125).connect(context.destination, 0, 0);
 			const samples = (await context.startRendering()).getChannelData(0);
 			equal(samples[Q], 0.875);
+		});
+
+		const SPLIT_FILTER = 'a splitter output into a filter filters only that channel';
+		if (isIOS) skip(SPLIT_FILTER, "iOS doesn't filter a single splitter output");
+		else test(SPLIT_FILTER, async () => {
+			const context = new OfflineAudioContext(2, Q * 32, RATE);
+			const source: any = context.createBufferSource();
+			source.buffer = stereo(Q * 32, 1, 1);
+			const splitter = context.createChannelSplitter({ numberOfOutputs: 2 });
+			const merger = context.createChannelMerger({ numberOfInputs: 2 });
+			// A highpass blocks DC: only the right channel goes through it.
+			const filter = context.createBiquadFilter();
+			filter.type = 'highpass';
+			filter.frequency.value = 1000;
+			source.connect(splitter);
+			splitter.connect(merger, 0, 0);
+			splitter.connect(filter, 1);
+			filter.connect(merger, 0, 1);
+			merger.connect(context.destination);
+			source.start(0);
+			const rendered = await context.startRendering();
+			const last = Q * 32 - 1;
+			closeTo(rendered.getChannelData(0)[last], 1, 1e-4, 'left passes');
+			closeTo(rendered.getChannelData(1)[last], 0, 1e-3, 'right is filtered');
+		});
+
+		test('disconnect(node) cuts only that connection', async () => {
+			const context = new OfflineAudioContext(1, Q * 2, RATE);
+			const first = context.createGain();
+			const half = context.createGain({ gain: 0.5 } as any);
+			const quarter = context.createGain({ gain: 0.25 } as any);
+			half.connect(context.destination);
+			quarter.connect(context.destination);
+			constant(context, 1).connect(first);
+			first.connect(half);
+			first.disconnect(half);
+			first.connect(quarter);
+			const samples = (await context.startRendering()).getChannelData(0);
+			equal(samples[0], 0.25, 'through the remaining connection');
+			equal(samples[Q], 0.25, 'and only it');
+		});
+
+		test('a source disconnected from a delay plays undelayed', async () => {
+			const context = new OfflineAudioContext(1, Q * 2, RATE);
+			const delay = context.createDelay(1);
+			delay.delayTime.value = Q / RATE;
+			delay.connect(context.destination);
+			const gain = context.createGain({ gain: 0.5 } as any);
+			gain.connect(context.destination);
+			const source = constant(context, 1);
+			source.connect(delay);
+			source.disconnect(delay);
+			source.connect(gain);
+			const samples = (await context.startRendering()).getChannelData(0);
+			equal(samples[0], 0.5, 'from the first frame');
+			equal(samples[Q], 0.5, 'and not doubled by the delay');
+		});
+
+		test('a stereo buffer plays its mono down-mix in a mono context', async () => {
+			const context = new OfflineAudioContext(1, Q * 2, RATE);
+			const source: any = context.createBufferSource();
+			source.buffer = stereo(Q * 2, 1, 0.5);
+			source.connect(context.destination);
+			source.start(0);
+			const samples = (await context.startRendering()).getChannelData(0);
+			equal(samples[0], 0.75, 'the average of left and right');
 		});
 
 		const PARAM_INPUT = 'a node connected to a gain or delayTime param adds to it per frame';

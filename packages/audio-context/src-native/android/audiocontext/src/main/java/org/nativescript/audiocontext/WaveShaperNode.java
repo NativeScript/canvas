@@ -65,30 +65,8 @@ public class WaveShaperNode implements NativeObject, AudioNode {
 
 	@Override
 	public void disconnect(AudioNode node) {
-		if (node instanceof NativeObject) {
-			AudioContext context = AudioContext.getInstance();
-			NativeObject object = (NativeObject) node;
-			String destId = object.getId();
-			if (destId != null) {
-				java.util.Set<String> sources = context.getNodeSourcesSnapshot(id);
-				for (String sourceId : sources) {
-					if (node instanceof AudioPannerNode) {
-						context.attachPannerToVoice(sourceId, "", 0, 0);
-					} else if (node instanceof AudioBiquadNode) {
-						context.attachBiquadToVoice(sourceId, "", 0, 0);
-					} else if (!context.isDestinationNode(destId)) {
-						context.attachGainToVoice(sourceId, "", 0, 0);
-					}
-					context.unregisterNodeSource(destId, sourceId);
-				}
-				if (sources.isEmpty() && !context.isDestinationNode(destId)) {
-					context.attachGainToVoice(destId, "", 0, 0);
-					context.unregisterNodeSource(destId, id);
-				}
-				return;
-			}
-		}
-		disconnect();
+		if (node == null) disconnect();
+		else AudioContext.getInstance().disconnectNode(id, false, node, -1, -1);
 	}
 
 	@Override
@@ -105,12 +83,14 @@ public class WaveShaperNode implements NativeObject, AudioNode {
 
 	@Override
 	public void disconnect(AudioNode node, int output) {
-		disconnect(node);
+		if (node == null) disconnect(output);
+		else AudioContext.getInstance().disconnectNode(id, false, node, -1, -1);
 	}
 
 	@Override
 	public void disconnect(AudioNode node, int output, int input) {
-		disconnect(node);
+		if (node == null) disconnect(output);
+		else AudioContext.getInstance().disconnectNode(id, false, node, -1, input);
 	}
 
 	@Override

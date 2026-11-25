@@ -31,49 +31,42 @@ public class AudioParam implements NativeObject {
 	private final String id;
 	private final Type type;
 	private final AudioPannerNode owner;
-	private final AudioBiquadNode biquadOwner;
 	private final AudioContextInstance contextOwner;
 
 	// 0 = k-rate, 1 = a-rate
 	private int automationRate = 1;
 
 	AudioParam(String id) {
-		this(id, Type.GAIN, null, null);
+		this(id, Type.GAIN, (AudioPannerNode) null);
 	}
 
 	AudioParam(String id, Type type) {
-		this(id, type, null, null);
+		this(id, type, (AudioPannerNode) null);
 	}
 
-	private AudioParam(String id, Type type, AudioPannerNode owner, AudioBiquadNode biquadOwner) {
+	private AudioParam(String id, Type type, AudioPannerNode owner) {
 		this.id = id;
 		this.type = type;
 		this.owner = owner;
-		this.biquadOwner = biquadOwner;
 		this.contextOwner = null;
-		if (owner == null && biquadOwner == null && type == Type.GAIN) {
+		if (owner == null && type == Type.GAIN) {
 			NativeFinalizer.register(this, NativeFinalizer.ResourceKind.GAIN, id);
 		}
 	}
 
-	private AudioParam(String id, Type type, AudioPannerNode owner, AudioBiquadNode biquadOwner, AudioContextInstance contextOwner) {
+	private AudioParam(String id, Type type, AudioContextInstance contextOwner) {
 		this.id = id;
 		this.type = type;
-		this.owner = owner;
-		this.biquadOwner = biquadOwner;
+		this.owner = null;
 		this.contextOwner = contextOwner;
 	}
 
 	AudioParam(AudioPannerNode owner, Type type) {
-		this(owner.getId(), type, owner, null);
-	}
-
-	AudioParam(AudioBiquadNode owner, Type type) {
-		this(owner.getId(), type, null, owner);
+		this(owner.getId(), type, owner);
 	}
 
 	AudioParam(AudioContextInstance owner, Type type) {
-		this(owner.getId(), type, null, null, owner);
+		this(owner.getId(), type, owner);
 	}
 
 	@Override
@@ -131,10 +124,6 @@ public class AudioParam implements NativeObject {
 			contextOwner.setListenerParams(px, py, pz, fx, fy, fz, ux, uy, uz);
 			return;
 		}
-		if (biquadOwner != null) {
-			biquadOwner.setParam(type, v);
-			return;
-		}
 		AudioContext.getInstance().setGain(id, v);
 	}
 
@@ -162,17 +151,10 @@ public class AudioParam implements NativeObject {
 		if (contextOwner != null) {
 			return AudioContext.getInstance().getListenerParamValue(contextOwner.getId(), this.type.ordinal());
 		}
-		if (biquadOwner != null) {
-			return biquadOwner.getParam(type);
-		}
 		return AudioContext.getInstance().getGain(id);
 	}
 
 	public void setValueAtTime(double v, double t) {
-		if (biquadOwner != null) {
-			setValue(v);
-			return;
-		}
 		if (owner != null) {
 			AudioContext.getInstance().schedulePannerSet(owner.getId(), this.type.ordinal(), this.automationRate, v, t);
 			if (t <= 0.0) setValue(v);
@@ -188,10 +170,6 @@ public class AudioParam implements NativeObject {
 	}
 
 	public void linearRampToValueAtTime(double v, double t) {
-		if (biquadOwner != null) {
-			setValue(v);
-			return;
-		}
 		if (owner != null) {
 			AudioContext.getInstance().schedulePannerRamp(owner.getId(), this.type.ordinal(), this.automationRate, v, t);
 			if (t <= 0.0) setValue(v);
@@ -219,9 +197,6 @@ public class AudioParam implements NativeObject {
 	}
 
 	public void cancelScheduledValues(double t) {
-		if (biquadOwner != null) {
-			return;
-		}
 		if (owner != null) {
 			AudioContext.getInstance().cancelPannerScheduledValues(owner.getId(), this.type.ordinal(), t);
 			return;
@@ -234,10 +209,6 @@ public class AudioParam implements NativeObject {
 	}
 
 	public void cancelAndHoldAtTime(double heldValue, double t) {
-		if (biquadOwner != null) {
-			setValue(heldValue);
-			return;
-		}
 		if (owner != null) {
 			AudioContext.getInstance().cancelAndHoldPannerScheduledValues(owner.getId(), this.type.ordinal(), this.automationRate, heldValue, t);
 			return;
@@ -250,12 +221,6 @@ public class AudioParam implements NativeObject {
 	}
 
 	public double[] getValuesForRange(double startTime, double sampleRate, int frameCount) {
-		if (biquadOwner != null) {
-			double value = biquadOwner.getParam(type);
-			double[] out = new double[frameCount];
-			Arrays.fill(out, value);
-			return out;
-		}
 		if (owner != null) {
 			return AudioContext.getInstance().getPannerParamValues(owner.getId(), this.type.ordinal(), startTime, sampleRate, frameCount);
 		}
@@ -267,7 +232,7 @@ public class AudioParam implements NativeObject {
 
 	@Override
 	public void release() {
-		if (owner == null && biquadOwner == null && type == Type.GAIN) {
+		if (owner == null && contextOwner == null && type == Type.GAIN) {
 			AudioContext.getInstance().releaseGain(id);
 		}
 	}

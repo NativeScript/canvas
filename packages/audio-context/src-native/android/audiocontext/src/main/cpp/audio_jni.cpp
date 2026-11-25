@@ -1,6 +1,7 @@
 #include "audio_context.h"
 #include "audio_internal.h"
 #include "hrtf_convolver.h"
+#include "convolver.h"
 
 #include <android/log.h>
 #include <jni.h>
@@ -27,6 +28,8 @@ static std::shared_ptr<NativeEngine> engineFor(JNIEnv *env, jstring jid) {
     if (id) env->ReleaseStringUTFChars(jid, id);
     return engine;
 }
+
+static std::string jstr(JNIEnv *env, jstring js);
 
 extern "C" JNIEXPORT jstring JNICALL
 Java_org_nativescript_audiocontext_AudioContext_nativeDecodeAudioData(JNIEnv *env, jobject thiz,
@@ -69,6 +72,12 @@ Java_org_nativescript_audiocontext_AudioContext_nativeCreateGain(JNIEnv *env, jo
     cmd.gainValue = 1.0;
     NativeEngine::getInstance().enqueueCommand(std::move(cmd));
     return env->NewStringUTF(id.c_str());
+}
+
+extern "C" JNIEXPORT jstring JNICALL
+Java_org_nativescript_audiocontext_AudioContext_nativeNewId(JNIEnv *env, jobject thiz, jstring jcontextId) {
+    NativeEngine::Scope scope__(engineFor(env, jcontextId));
+    return env->NewStringUTF(genId().c_str());
 }
 
 extern "C" JNIEXPORT void JNICALL
@@ -725,25 +734,55 @@ Java_org_nativescript_audiocontext_AudioContext_nativeAttachPeriodicWave(JNIEnv 
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_org_nativescript_audiocontext_AudioContext_nativeSetBiquadParams(JNIEnv *env, jobject thiz,
-                                                                      jstring jbiquadId,
-                                                                      jdouble frequency,
-                                                                      jdouble Q,
-                                                                      jdouble gain,
-                                                                      jstring jtype) {
+Java_org_nativescript_audiocontext_AudioContext_nativeSetBiquadType(JNIEnv *env, jobject thiz, jstring jbiquadId,
+                                                                    jstring jtype) {
     NativeEngine::Scope scope__(engineFor(env, jbiquadId));
-    const char *bid = env->GetStringUTFChars(jbiquadId, nullptr);
-    const char *type = env->GetStringUTFChars(jtype, nullptr);
     NativeEngine::Command cmd;
     cmd.type = NativeEngine::CMD_SET_BIQUAD_PARAMS;
-    cmd.id = bid ? bid : std::string();
-    cmd.biquadFrequency = frequency;
-    cmd.biquadQ = Q;
-    cmd.biquadGain = gain;
-    cmd.biquadType = type ? type : std::string();
+    cmd.id = jstr(env, jbiquadId);
+    cmd.biquadType = jstr(env, jtype);
+    if (cmd.id.empty()) return;
     NativeEngine::getInstance().enqueueCommand(std::move(cmd));
-    if (bid) env->ReleaseStringUTFChars(jbiquadId, bid);
-    if (type) env->ReleaseStringUTFChars(jtype, type);
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_org_nativescript_audiocontext_AudioContext_nativeSetBiquadParamIds(JNIEnv *env, jobject thiz, jstring jbiquadId,
+                                                                        jstring jfrequency, jstring jq, jstring jgain,
+                                                                        jstring jdetune) {
+    NativeEngine::Scope scope__(engineFor(env, jbiquadId));
+    NativeEngine::Command cmd;
+    cmd.type = NativeEngine::CMD_SET_BIQUAD_PARAM_IDS;
+    cmd.id = jstr(env, jbiquadId);
+    cmd.paramIds = {jstr(env, jfrequency), jstr(env, jq), jstr(env, jgain), jstr(env, jdetune)};
+    if (cmd.id.empty()) return;
+    NativeEngine::getInstance().enqueueCommand(std::move(cmd));
+}
+
+// The response is copied and transformed here, off the audio thread; null channels clear it.
+extern "C" JNIEXPORT void JNICALL
+Java_org_nativescript_audiocontext_AudioContext_nativeSetConvolverBuffer(JNIEnv *env, jobject thiz, jstring jid,
+                                                                         jobjectArray jchannels, jint frames,
+                                                                         jfloat sampleRate, jboolean normalize) {
+    NativeEngine::Scope scope__(engineFor(env, jid));
+    NativeEngine::Command cmd;
+    cmd.type = NativeEngine::CMD_SET_CONVOLVER;
+    cmd.id = jstr(env, jid);
+    if (cmd.id.empty()) return;
+    const jsize count = jchannels ? env->GetArrayLength(jchannels) : 0;
+    if (count > 0 && frames > 0) {
+        std::vector<const float *> channels;
+        for (jsize c = 0; c < count; c++) {
+            jobject bb = env->GetObjectArrayElement(jchannels, c);
+            const auto *data = bb ? static_cast<const float *>(env->GetDirectBufferAddress(bb)) : nullptr;
+            const jlong capacity = bb ? env->GetDirectBufferCapacity(bb) : 0;
+            if (bb) env->DeleteLocalRef(bb);
+            if (!data || capacity < static_cast<jlong>(frames) * 4) return;
+            channels.push_back(data);
+        }
+        cmd.convolver = std::make_shared<Convolver>(channels.data(), static_cast<int>(channels.size()), frames,
+                                                    sampleRate, normalize == JNI_TRUE);
+    }
+    NativeEngine::getInstance().enqueueCommand(std::move(cmd));
 }
 
 extern "C" JNIEXPORT void JNICALL

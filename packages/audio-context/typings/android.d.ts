@@ -44,24 +44,20 @@ declare module org {
 				public connect(node: org.nativescript.audiocontext.AudioNode, output: number): void;
 				public connect(param0: org.nativescript.audiocontext.AudioNode): void;
 				public disconnect(param0: org.nativescript.audiocontext.AudioNode): void;
-				public constructor(context: org.nativescript.audiocontext.AudioContextInstance);
 				public getId(): string;
 				public release(): void;
 				public connect(node: org.nativescript.audiocontext.AudioNode, output: number, input: number): void;
 				public connect(node: org.nativescript.audiocontext.AudioNode): void;
 				public getQ(): org.nativescript.audiocontext.AudioParam;
 				public disconnect(node: org.nativescript.audiocontext.AudioNode, output: number): void;
-				public setParams(type: string, frequency: number, Q: number, gain: number): void;
 				public connect(sources: org.nativescript.audiocontext.AudioNode, context: number, object: number): void;
 				public getGain(): org.nativescript.audiocontext.AudioParam;
 				public disconnect(sources: org.nativescript.audiocontext.AudioNode): void;
 				public disconnect(sources: org.nativescript.audiocontext.AudioNode, context: number): void;
 				public disconnect(): void;
 				public disconnect(output: number): void;
-				public constructor(context: org.nativescript.audiocontext.AudioContextInstance, type: string, frequency: number, Q: number, gain: number, detune: number);
 				public getFrequency(): org.nativescript.audiocontext.AudioParam;
 				public disconnect(node: org.nativescript.audiocontext.AudioNode, output: number, input: number): void;
-				public constructor(context: org.nativescript.audiocontext.AudioContextInstance, type: string, frequency: number, Q: number, gain: number);
 				public getDetune(): org.nativescript.audiocontext.AudioParam;
 				public disconnect(sources: org.nativescript.audiocontext.AudioNode, context: number, object: number): void;
 			}

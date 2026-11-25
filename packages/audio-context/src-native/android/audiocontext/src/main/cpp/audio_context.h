@@ -19,6 +19,7 @@
 #include "kiss_fft.h"
 
 struct HRTFConvolver;
+class Convolver;
 
 #ifdef HAS_OBOE
 
@@ -361,7 +362,11 @@ public:
         CMD_DISCONNECT,
         CMD_NODE_CONFIG,
         // Stops source `id`'s voice; its graph node lives on as `targetId` when given.
-        CMD_REPLACE_SOURCE
+        CMD_REPLACE_SOURCE,
+        // A biquad's frequency, Q, gain and detune params, in paramIds.
+        CMD_SET_BIQUAD_PARAM_IDS,
+        // A convolver's response; null clears it.
+        CMD_SET_CONVOLVER
     };
 
     // Graph node kinds; AudioContext.java's NODE_* match.
@@ -452,6 +457,8 @@ public:
         std::vector<float> waveShaperCurve;
         std::string waveShaperOversample;
         std::string pannerBiquadId;
+        std::vector<std::string> paramIds;
+        std::shared_ptr<Convolver> convolver;
         // CMD_CONNECT / CMD_DISCONNECT: id output -> targetId input (or param targetType).
         // Disconnect wildcards: empty targetId, negative indices.
         std::string targetId;
@@ -575,6 +582,8 @@ private:
     void renderPanner(GraphNode &n, int64_t startNs, double frameNs);
     void renderCompressor(GraphNode &n, int64_t startNs, double frameNs);
     void renderWorklet(GraphNode &n, int64_t startNs, double frameNs);
+    void renderBiquad(GraphNode &n, int64_t startNs, double frameNs, int channels, bool active);
+    void renderConvolver(GraphNode &n);
 
     std::vector<Command> pendingCommands_;
     std::mutex commandMutex_;
@@ -647,6 +656,15 @@ public:
     int desiredDeviceId_ = 0; // oboe::kUnspecified
 
     std::unordered_map<std::string, BiquadCoeffs> biquads_;
+    // A BiquadFilterNode: its type and frequency, Q, gain and detune params.
+    struct BiquadFilter {
+        std::string type = "lowpass";
+        std::string paramIds[4];
+        double last[4] = {-1.0, -1.0, -1.0, -1.0};
+        BiquadCoeffs coeffs;
+    };
+    std::unordered_map<std::string, BiquadFilter> biquadFilters_;
+    std::unordered_map<std::string, std::shared_ptr<Convolver>> convolvers_;
     struct IIRData {
         std::vector<double> feedforward;
         std::vector<double> feedback;

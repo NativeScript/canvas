@@ -2,6 +2,7 @@
 #include "audio_context.h"
 #include "audio_internal.h"
 #include "hrtf_convolver.h"
+#include "convolver.h"
 
 #include <android/log.h>
 #include <algorithm>
@@ -62,6 +63,77 @@ inline float monoAt(const float *const *ch, int channels, int f) {
 double valueOr(const std::unordered_map<std::string, double> &values, const std::string &id, double fallback) {
     auto it = values.find(id);
     return it != values.end() ? it->second : fallback;
+}
+
+bool isListenerParam(int type) {
+    return type >= kListenerParamPositionX && type <= kListenerParamUpZ;
+}
+
+// A BiquadFilterNode's coefficients, as the spec gives them (lowpass and highpass Q in dB).
+NativeEngine::BiquadCoeffs biquadCoeffs(const std::string &type, double frequency, double Q, double gain,
+                                        double detune, double sampleRate) {
+    NativeEngine::BiquadCoeffs c;
+    auto set = [&](double b0, double b1, double b2, double a0, double a1, double a2) {
+        c.b0 = b0 / a0;
+        c.b1 = b1 / a0;
+        c.b2 = b2 / a0;
+        c.a1 = a1 / a0;
+        c.a2 = a2 / a0;
+    };
+    auto scale = [&](double k) { set(k, 0.0, 0.0, 1.0, 0.0, 0.0); };
+    const double nyquist = sampleRate / 2.0;
+    const double f = std::max(0.0, std::min(frequency * std::pow(2.0, detune / 1200.0), nyquist)) / nyquist;
+    const double w0 = M_PI * f;
+    const double cs = std::cos(w0);
+    const double sn = std::sin(w0);
+    const double A = std::pow(10.0, gain / 40.0);
+    const bool inside = f > 0.0 && f < 1.0;
+    if (type == "lowpass" || type == "highpass") {
+        const bool low = type == "lowpass";
+        if (f >= 1.0) { scale(low ? 1.0 : 0.0); return c; }
+        if (f <= 0.0) { scale(low ? 0.0 : 1.0); return c; }
+        const double alpha = sn / (2.0 * std::pow(10.0, Q / 20.0));
+        if (low) set((1.0 - cs) / 2.0, 1.0 - cs, (1.0 - cs) / 2.0, 1.0 + alpha, -2.0 * cs, 1.0 - alpha);
+        else set((1.0 + cs) / 2.0, -(1.0 + cs), (1.0 + cs) / 2.0, 1.0 + alpha, -2.0 * cs, 1.0 - alpha);
+    } else if (type == "bandpass") {
+        if (!inside) { scale(0.0); return c; }
+        if (Q <= 0.0) { scale(1.0); return c; }
+        const double alpha = sn / (2.0 * Q);
+        set(alpha, 0.0, -alpha, 1.0 + alpha, -2.0 * cs, 1.0 - alpha);
+    } else if (type == "notch") {
+        if (!inside) { scale(1.0); return c; }
+        if (Q <= 0.0) { scale(0.0); return c; }
+        const double alpha = sn / (2.0 * Q);
+        set(1.0, -2.0 * cs, 1.0, 1.0 + alpha, -2.0 * cs, 1.0 - alpha);
+    } else if (type == "peaking") {
+        if (!inside) { scale(1.0); return c; }
+        if (Q <= 0.0) { scale(A * A); return c; }
+        const double alpha = sn / (2.0 * Q);
+        set(1.0 + alpha * A, -2.0 * cs, 1.0 - alpha * A, 1.0 + alpha / A, -2.0 * cs, 1.0 - alpha / A);
+    } else if (type == "allpass") {
+        if (!inside) { scale(1.0); return c; }
+        if (Q <= 0.0) { scale(-1.0); return c; }
+        const double alpha = sn / (2.0 * Q);
+        set(1.0 - alpha, -2.0 * cs, 1.0 + alpha, 1.0 + alpha, -2.0 * cs, 1.0 - alpha);
+    } else if (type == "lowshelf" || type == "highshelf") {
+        const bool low = type == "lowshelf";
+        if (f >= 1.0) { scale(low ? A * A : 1.0); return c; }
+        if (f <= 0.0) { scale(low ? 1.0 : A * A); return c; }
+        // Shelf slope 1.
+        const double k = 2.0 * std::sqrt(A) * sn / 2.0 * std::sqrt(2.0);
+        if (low) {
+            set(A * ((A + 1.0) - (A - 1.0) * cs + k), 2.0 * A * ((A - 1.0) - (A + 1.0) * cs),
+                A * ((A + 1.0) - (A - 1.0) * cs - k), (A + 1.0) + (A - 1.0) * cs + k,
+                -2.0 * ((A - 1.0) + (A + 1.0) * cs), (A + 1.0) + (A - 1.0) * cs - k);
+        } else {
+            set(A * ((A + 1.0) + (A - 1.0) * cs + k), -2.0 * A * ((A - 1.0) + (A + 1.0) * cs),
+                A * ((A + 1.0) + (A - 1.0) * cs - k), (A + 1.0) - (A - 1.0) * cs + k,
+                2.0 * ((A - 1.0) - (A + 1.0) * cs), (A + 1.0) - (A - 1.0) * cs - k);
+        }
+    } else {
+        scale(1.0);
+    }
+    return c;
 }
 }
 
@@ -270,11 +342,18 @@ void NativeEngine::rebuildOrder() {
         if (it != graph_.end()) {
             const int k = it->second->kind;
             if (p.type == kTargetGainParam && (k == NODE_GAIN || k == NODE_DELAY || k == NODE_SOURCE)) return it->second.get();
-            if (p.type != kTargetGainParam && k == NODE_PANNER) return it->second.get();
+            if (p.type != kTargetGainParam && !isListenerParam(p.type) && k == NODE_PANNER) return it->second.get();
         }
         if (p.type != kTargetGainParam) return nullptr;
         for (const auto &kv: voicePlaybackRate_) {
             if (kv.second == p.id) {
+                auto v = graph_.find(kv.first);
+                if (v != graph_.end()) return v->second.get();
+            }
+        }
+        for (const auto &kv: biquadFilters_) {
+            const std::string *ids = kv.second.paramIds;
+            if (std::find(ids, ids + 4, p.id) != ids + 4) {
                 auto v = graph_.find(kv.first);
                 if (v != graph_.end()) return v->second.get();
             }
@@ -306,6 +385,13 @@ void NativeEngine::rebuildOrder() {
     }
     for (const auto &p: paramInputs_) {
         if (p.owner) deps[static_cast<size_t>(p.owner->index)].push_back(p.src);
+        // A listener param is read by every panner of its context.
+        if (!isListenerParam(p.type)) continue;
+        for (GraphNode *n: nodes) {
+            if (n->kind != NODE_PANNER) continue;
+            auto panner = panners_.find(n->id);
+            if (panner != panners_.end() && panner->second.contextId == p.id) deps[static_cast<size_t>(n->index)].push_back(p.src);
+        }
     }
 
     // Tarjan's strongly connected components: a cycle plays only through a DelayNode.
@@ -444,6 +530,12 @@ bool NativeEngine::evalParam(const std::string &id, int type, double fallback, i
         if (type == kTargetGainParam) {
             auto it = scheduledGainEvents_.find(id);
             if (it != scheduledGainEvents_.end()) ev = &it->second;
+        } else if (isListenerParam(type)) {
+            auto it = scheduledListenerEvents_.find(id);
+            if (it != scheduledListenerEvents_.end()) {
+                auto jt = it->second.find(type);
+                if (jt != it->second.end()) ev = &jt->second;
+            }
         } else {
             auto it = scheduledPannerEvents_.find(id);
             if (it != scheduledPannerEvents_.end()) {
@@ -756,18 +848,9 @@ void NativeEngine::renderPanner(GraphNode &n, int64_t startNs, double frameNs) {
     const double listenerValues[] = {listenerBase->positionX, listenerBase->positionY, listenerBase->positionZ,
                                      listenerBase->forwardX, listenerBase->forwardY, listenerBase->forwardZ,
                                      listenerBase->upX, listenerBase->upY, listenerBase->upZ};
-    {
-        std::lock_guard<std::mutex> lock(scheduledEventsMutex_);
-        auto lit = scheduledListenerEvents_.find(base.contextId);
-        for (int i = 0; i < 9; i++) {
-            values[7 + i] = paramScratch(n, 7 + i);
-            const std::vector<ParamEvent> *ev = nullptr;
-            if (lit != scheduledListenerEvents_.end()) {
-                auto jt = lit->second.find(kListenerParamPositionX + i);
-                if (jt != lit->second.end()) ev = &jt->second;
-            }
-            constant &= fillAutomation(ev, listenerValues[i], startNs, frameNs, values[7 + i]);
-        }
+    for (int i = 0; i < 9; i++) {
+        values[7 + i] = paramScratch(n, 7 + i);
+        constant &= evalParam(base.contextId, kListenerParamPositionX + i, listenerValues[i], startNs, frameNs, values[7 + i]);
     }
 
     const bool stereo = in.channels > 1;
@@ -974,6 +1057,9 @@ void NativeEngine::processNode(GraphNode &n, int64_t startNs, double frameNs) {
         case NODE_WORKLET:
             renderWorklet(n, startNs, frameNs);
             return;
+        case NODE_CONVOLVER:
+            renderConvolver(n);
+            return;
         case NODE_DESTINATION:
             mixInput(n, 0, n.channelCount, COUNT_EXPLICIT, n.interpretation);
             return;
@@ -1048,17 +1134,9 @@ void NativeEngine::processNode(GraphNode &n, int64_t startNs, double frameNs) {
             }
             break;
         }
-        case NODE_BIQUAD: {
-            auto it = biquads_.find(n.id);
-            if (n.biquad.size() < static_cast<size_t>(channels)) n.biquad.resize(static_cast<size_t>(channels));
-            for (int c = 0; c < channels; c++) {
-                const float *x = input(c);
-                float *y = o.channel(c);
-                if (it == biquads_.end()) std::memcpy(y, x, Q * sizeof(float));
-                else for (int f = 0; f < Q; f++) y[f] = processBiquadSample(it->second, n.biquad[static_cast<size_t>(c)], x[f]);
-            }
+        case NODE_BIQUAD:
+            renderBiquad(n, startNs, frameNs, channels, active);
             break;
-        }
         case NODE_IIR: {
             auto it = iirs_.find(n.id);
             if (n.iir.size() < static_cast<size_t>(channels)) n.iir.resize(static_cast<size_t>(channels));
@@ -1098,10 +1176,88 @@ void NativeEngine::processNode(GraphNode &n, int64_t startNs, double frameNs) {
             break;
         }
         default:
-            // A convolver passes its input through.
             for (int c = 0; c < channels; c++) std::memcpy(o.channel(c), input(c), Q * sizeof(float));
             break;
     }
+}
+
+void NativeEngine::renderBiquad(GraphNode &n, int64_t startNs, double frameNs, int channels, bool active) {
+    static const float kSilence[Q] = {};
+    const Bus &in = n.inBus[0];
+    Bus &o = n.outBus[0];
+    const float *x[kMaxChannels];
+    for (int c = 0; c < channels; c++) x[c] = active && c < in.channels ? in.channel(c) : kSilence;
+    if (n.biquad.size() < static_cast<size_t>(channels)) n.biquad.resize(static_cast<size_t>(channels));
+    auto fit = biquadFilters_.find(n.id);
+    if (fit == biquadFilters_.end() || fit->second.paramIds[0].empty()) {
+        auto it = biquads_.find(n.id);
+        for (int c = 0; c < channels; c++) {
+            float *y = o.channel(c);
+            if (it == biquads_.end()) std::memcpy(y, x[c], Q * sizeof(float));
+            else for (int f = 0; f < Q; f++) y[f] = processBiquadSample(it->second, n.biquad[static_cast<size_t>(c)], x[c][f]);
+        }
+        return;
+    }
+    BiquadFilter &bf = fit->second;
+    const double sr = streamSampleRate_ > 0 ? static_cast<double>(streamSampleRate_) : 48000.0;
+    // frequency, Q, gain, detune.
+    static constexpr double kDefaults[4] = {350.0, 1.0, 0.0, 0.0};
+    double *v[4];
+    bool constant = true;
+    for (int i = 0; i < 4; i++) {
+        v[i] = paramScratch(n, i);
+        constant &= evalParam(bf.paramIds[i], kTargetGainParam, valueOr(gains_, bf.paramIds[i], kDefaults[i]), startNs,
+                              frameNs, v[i]);
+    }
+    if (constant) {
+        if (v[0][0] != bf.last[0] || v[1][0] != bf.last[1] || v[2][0] != bf.last[2] || v[3][0] != bf.last[3]) {
+            bf.coeffs = biquadCoeffs(bf.type, v[0][0], v[1][0], v[2][0], v[3][0], sr);
+            for (int i = 0; i < 4; i++) bf.last[i] = v[i][0];
+        }
+        for (int c = 0; c < channels; c++) {
+            float *y = o.channel(c);
+            for (int f = 0; f < Q; f++) y[f] = processBiquadSample(bf.coeffs, n.biquad[static_cast<size_t>(c)], x[c][f]);
+        }
+        return;
+    }
+    // Automated or driven by audio: new coefficients every frame.
+    for (int f = 0; f < Q; f++) {
+        bf.coeffs = biquadCoeffs(bf.type, v[0][f], v[1][f], v[2][f], v[3][f], sr);
+        for (int c = 0; c < channels; c++) {
+            o.channel(c)[f] = processBiquadSample(bf.coeffs, n.biquad[static_cast<size_t>(c)], x[c][f]);
+        }
+    }
+    bf.last[0] = -1.0;
+}
+
+void NativeEngine::renderConvolver(GraphNode &n) {
+    const bool active = mixInput(n, 0, n.channelCount, n.countMode, n.interpretation);
+    const Bus &in = n.inBus[0];
+    Bus &o = n.outBus[0];
+    auto it = convolvers_.find(n.id);
+    if (it != convolvers_.end() && active) {
+        n.tail = it->second->tail();
+        // The input channels it convolves, kept for its tail.
+        n.delayChannels = std::min(2, in.channels);
+    } else if (n.tail > 0) {
+        n.tail--;
+    }
+    // No response, or nothing left ringing: silent.
+    if (it == convolvers_.end() || (!active && n.tail == 0)) {
+        if (it == convolvers_.end()) n.tail = 0;
+        o.setChannels(1);
+        o.active = false;
+        o.silence();
+        return;
+    }
+    Convolver &cv = *it->second;
+    const int inputs = std::max(1, n.delayChannels);
+    const float *src[2] = {nullptr, nullptr};
+    for (int c = 0; c < inputs && active; c++) src[c] = in.channel(std::min(c, in.channels - 1));
+    o.setChannels(cv.outputChannels(inputs));
+    o.active = true;
+    float *dst[2] = {o.channel(0), o.channels > 1 ? o.channel(1) : nullptr};
+    cv.process(src, inputs, dst);
 }
 
 void NativeEngine::renderQuantum(float *out, int64_t startNs) {

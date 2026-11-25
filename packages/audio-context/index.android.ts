@@ -1551,6 +1551,7 @@ export class ConvolverNode extends AudioNode {
 		return new AudioBuffer(nativeCtor_, buffer);
 	}
 	set buffer(value: AudioBuffer | null) {
+		if (value && ![1, 2, 4].includes(value.numberOfChannels)) throw domError('NotSupportedError', `ConvolverNode.buffer: ${value.numberOfChannels} channels`);
 		this.native.setBuffer(value?.native ?? (null as never));
 	}
 	get normalize(): boolean {

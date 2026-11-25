@@ -798,7 +798,11 @@ public class AudioContext {
 
 	private native void nativeReleasePanner(String pannerId);
 
-	private native void nativeSetBiquadParams(String biquadId, double frequency, double Q, double gain, String type);
+	private native void nativeSetBiquadType(String biquadId, String type);
+
+	private native void nativeSetConvolverBuffer(String id, @Nullable java.nio.ByteBuffer[] channels, int frames, float sampleRate, boolean normalize);
+
+	private native void nativeSetBiquadParamIds(String biquadId, String frequencyId, String qId, String gainId, String detuneId);
 
 	private native String nativeCreateIIR(String contextId, double[] feedforward, double[] feedback);
 
@@ -912,7 +916,7 @@ public class AudioContext {
 	// A connection into a node input rather than a param.
 	private static final int TARGET_NODE = -2;
 	private static final int TARGET_GAIN_PARAM = -1;
-	// audio_internal.h's kPannerParamPositionX; the panner params follow it in AudioParam.Type order.
+	// audio_internal.h's kPannerParamPositionX; the panner, then listener, params follow it in AudioParam.Type order.
 	private static final int PANNER_PARAM_BASE = 5;
 
 	@Nullable
@@ -943,14 +947,14 @@ public class AudioContext {
 		return 1;
 	}
 
-	/** The param's target code: -1 for a gain-style param, the panner param type, or null when it takes no audio. */
+	/** The param's target code: -1 for a gain-style param, the panner or listener param type, or null when it takes no audio. */
 	@Nullable
 	private static Integer paramTarget(AudioParam param) {
 		AudioParam.Type type = param.getType();
 		if (type == AudioParam.Type.GAIN) return TARGET_GAIN_PARAM;
 		int ordinal = type.ordinal();
 		int first = AudioParam.Type.PANNER_POSITION_X.ordinal();
-		if (ordinal >= first && ordinal <= AudioParam.Type.PANNER_PAN.ordinal()) return PANNER_PARAM_BASE + ordinal - first;
+		if (ordinal >= first && ordinal <= AudioParam.Type.LISTENER_UP_Z.ordinal()) return PANNER_PARAM_BASE + ordinal - first;
 		return null;
 	}
 
@@ -993,6 +997,9 @@ public class AudioContext {
 	private native void nativeDisconnect(String src, int output, @Nullable String dst, int input, int paramType);
 
 	private native void nativeReplaceSource(String oldId, @Nullable String newId);
+
+	// A fresh id in the engine of `contextId`.
+	private native String nativeNewId(@Nullable String contextId);
 
 	void replaceSource(String oldId, String newId) {
 		if (nativeAvailable && oldId != null) nativeReplaceSource(oldId, newId);
@@ -1791,6 +1798,8 @@ public class AudioContext {
 			String id = nativeCreateOscillator(contextId, type, frequency);
 			if (id != null) {
 				addToContextSet(contextTracksMap, contextId, id);
+				// frequency (or offset) automation resolves its time against the context.
+				if (contextId != null) gainContexts.put(id, contextId);
 				return id;
 			}
 		}
@@ -1969,7 +1978,7 @@ public class AudioContext {
 	}
 
 	public AudioBiquadNode createBiquad(AudioContextInstance context, String type, double frequency, double Q, double gain) {
-		return new AudioBiquadNode(createBiquad(context.getId(), type, frequency, Q, gain));
+		return createBiquad(context, type, frequency, Q, gain, 0.0);
 	}
 
 	public ConvolverNode createConvolver(AudioContextInstance context) {
@@ -2039,7 +2048,16 @@ public class AudioContext {
 	}
 
 	public AudioBiquadNode createBiquad(AudioContextInstance context, String type, double frequency, double Q, double gain, double detune) {
-		return new AudioBiquadNode(createBiquad(context.getId(), type, frequency, Q, gain));
+		String contextId = context.getId();
+		String resolved = type != null ? type : "lowpass";
+		String id = createBiquad(contextId, resolved, frequency, Q, gain);
+		String frequencyId = createGainBackedNodeId(contextId, frequency);
+		String qId = createGainBackedNodeId(contextId, Q);
+		String gainId = createGainBackedNodeId(contextId, gain);
+		String detuneId = createGainBackedNodeId(contextId, detune);
+		for (String param : new String[]{frequencyId, qId, gainId, detuneId}) registerGainForContext(contextId, param);
+		if (nativeAvailable) nativeSetBiquadParamIds(id, frequencyId, qId, gainId, detuneId);
+		return new AudioBiquadNode(id, resolved, frequencyId, qId, gainId, detuneId);
 	}
 
 	String createBiquad(String contextId, String type, double frequency, double Q, double gain) {
@@ -2332,11 +2350,17 @@ public class AudioContext {
 		return v == null ? 1.0 : v;
 	}
 
-	void setBiquadParams(String id, double frequency, double Q, double gain, String type) {
-		if (id == null) return;
-		if (nativeAvailable) {
-			nativeSetBiquadParams(id, frequency, Q, gain, type);
-		}
+	void setConvolverBuffer(String id, @Nullable AudioBuffer buffer, boolean normalize) {
+		if (!nativeAvailable || id == null) return;
+		java.nio.ByteBuffer[] channels = buffer != null ? buffer.channelBuffers() : null;
+		int frames = buffer != null ? buffer.getLength() : 0;
+		float sampleRate = buffer != null ? buffer.getSampleRate() : 0;
+		nativeSetConvolverBuffer(id, channels, frames, sampleRate, normalize);
+	}
+
+	void setBiquadType(String id, String type) {
+		if (id == null || type == null) return;
+		if (nativeAvailable) nativeSetBiquadType(id, type);
 	}
 
 	public void setPannerParams(AudioPannerNode panner,
@@ -2993,6 +3017,14 @@ public class AudioContext {
 		String bufferId = "";
 		if (buffer != null) {
 			bufferId = buffer.id;
+		}
+		// No buffer yet: an id in the context's engine, swapped for a voice by setBuffer.
+		if (nativeAvailable && buffer == null) {
+			String id = nativeNewId(contextId);
+			if (id != null) {
+				if (contextId != null) addToContextSet(contextTracksMap, contextId, id);
+				return id;
+			}
 		}
 		java.nio.ByteBuffer src = directBuffers.get(bufferId);
 		// An offline context renders on its own engine, so its sources copy the data in.

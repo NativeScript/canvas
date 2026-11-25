@@ -81,6 +81,14 @@ public class AudioBuffer implements NativeObject {
 		return pcm;
 	}
 
+	/** Each channel's float samples, in native memory. */
+	@Nullable
+	java.nio.ByteBuffer[] channelBuffers() {
+		NativePcm pcm = this.pcm;
+		if (pcm != null) return pcm.channels;
+		return getAllChannelDataRaw();
+	}
+
 	/**
 	 * Lets the samples go now rather than when the GC finds this buffer, and
 	 * empties it. Sources still playing it, and channel data still held from

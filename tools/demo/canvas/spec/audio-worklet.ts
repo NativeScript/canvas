@@ -197,6 +197,15 @@ export function registerAudioWorkletSpec() {
 			}
 		});
 
+		test('plays both outputs at once', async () => {
+			const context = await offline();
+			const node = new AudioWorkletNode(context, 'constant', { numberOfInputs: 0, numberOfOutputs: 2, outputChannelCount: [1, 1] });
+			node.connect(context.destination, 0);
+			node.connect(context.destination, 1);
+			const samples = (await context.startRendering()).getChannelData(0);
+			equal(samples[Q * 4], 0.75, 'output 0 and output 1 summed');
+		});
+
 		async function realtimeLevel(wire: (context: any, analyser: any) => void, expected: number) {
 			const context = new AudioContext();
 			try {

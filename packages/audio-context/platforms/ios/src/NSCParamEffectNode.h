@@ -28,6 +28,10 @@ typedef NS_ENUM(NSInteger, NSCParamEffectKind) {
                    maxDelayTime:(double)maxDelayTime;
 - (instancetype)initWithContext:(NSCAudioContext *)context node:(nullable AVAudioNode *)node NS_UNAVAILABLE;
 
+/// A delay only: moves the delay's input onto a writer so it can sit in a cycle; the delay then
+/// reads only earlier render calls, clamping delayTime to at least one call. YES once split.
+- (BOOL)breakCycle;
+
 /// The biquad's filter type, read by the render thread.
 - (void)setFilterType:(NSInteger)type;
 

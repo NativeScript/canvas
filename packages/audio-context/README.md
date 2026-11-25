@@ -165,10 +165,16 @@ On iOS `disconnect(destination)`, `disconnect(output)`, `disconnect(destination,
 and `disconnect(param)` remove only the matching connections. Each connection into a
 `ChannelMergerNode`, `ChannelSplitterNode` or `AudioWorkletNode` input gets its own bus, mixed by
 the speaker rules for mono, stereo, quad and 5.1 (other counts mix discretely); each splitter
-output plays its own channel, and the merger puts each input on its channel. Other nodes take no
-`channelCount` or `channelCountMode`, and a cycle doesn't render, even through a `DelayNode`
-(AVAudioEngine can't render one). An `AudioBuffer` with more channels than the context plays all
-of them.
+output plays its own channel, and the merger puts each input on its channel. Each output of a
+multi-output `AudioWorkletNode` plays from its own node, so any number of them can be connected.
+`GainNode`, `DelayNode` and `BiquadFilterNode` mix their inputs to `channelCount` when
+`channelCountMode` is `'clamped-max'` or `'explicit'` (up to 8 channels); other nodes keep the
+`channelCount`, `channelCountMode` and `channelInterpretation` you set without applying them. A
+`PannerNode` mixes its inputs to at most two channels and pans with the spec's equal-power law; a
+`'HRTF'` panner pans the same way. A cycle plays only through a `DelayNode`, whose delay is then
+at least one render call (one quantum offline, the device's buffer in a realtime context); a
+connection that would close a cycle without one is not made. An `AudioBuffer` with more channels
+than the context plays all of them.
 
 On iOS `node.connect(param)` adds the node's output, mixed down to mono, to the param every frame
 for `GainNode.gain`, `DelayNode.delayTime`, the `BiquadFilterNode` params, oscillator `frequency`

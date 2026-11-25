@@ -1,6 +1,5 @@
 import { AudioBuffer, OfflineAudioContext } from '@nativescript/audio-context';
-import { isIOS } from '@nativescript/core';
-import { suite, test, skip, equal, closeTo, ok } from './harness';
+import { suite, test, equal, closeTo, ok } from './harness';
 
 // Graph routing in an OfflineAudioContext, frame-exact, against what Chrome does.
 
@@ -63,27 +62,25 @@ export function registerAudioGraphSpec() {
 		});
 
 		const FEEDBACK = 'a DelayNode in a feedback loop echoes, decaying by the loop gain';
-		if (isIOS) skip(FEEDBACK, "AVAudioEngine can't render a cycle");
-		else
-			test(FEEDBACK, async () => {
-				const context = new OfflineAudioContext(1, Q * 8, RATE);
-				const delay = context.createDelay(1);
-				delay.delayTime.value = (Q * 2) / RATE;
-				const feedback = gain(context, 0.5);
-				const source = constant(context, 1);
-				source.stop(Q / RATE);
-				source.connect(delay);
-				delay.connect(feedback);
-				feedback.connect(delay);
-				delay.connect(context.destination);
-				const samples = (await context.startRendering()).getChannelData(0);
-				equal(samples[Q * 2 - 1], 0, 'silent for delayTime');
-				equal(samples[Q * 2], 1, 'the first echo');
-				equal(samples[Q * 3], 0, 'as long as the source');
-				equal(samples[Q * 4], 0.5, 'the second, halved');
-				equal(samples[Q * 6], 0.25, 'the third, halved again');
-				equal(samples[Q * 7 - 1], 0.25, 'each a quantum long');
-			});
+		test(FEEDBACK, async () => {
+			const context = new OfflineAudioContext(1, Q * 8, RATE);
+			const delay = context.createDelay(1);
+			delay.delayTime.value = (Q * 2) / RATE;
+			const feedback = gain(context, 0.5);
+			const source = constant(context, 1);
+			source.stop(Q / RATE);
+			source.connect(delay);
+			delay.connect(feedback);
+			feedback.connect(delay);
+			delay.connect(context.destination);
+			const samples = (await context.startRendering()).getChannelData(0);
+			equal(samples[Q * 2 - 1], 0, 'silent for delayTime');
+			equal(samples[Q * 2], 1, 'the first echo');
+			equal(samples[Q * 3], 0, 'as long as the source');
+			equal(samples[Q * 4], 0.5, 'the second, halved');
+			equal(samples[Q * 6], 0.25, 'the third, halved again');
+			equal(samples[Q * 7 - 1], 0.25, 'each a quantum long');
+		});
 
 		test('source.disconnect(node) in a chain silences the source', async () => {
 			const context = new OfflineAudioContext(1, Q * 2, RATE);
@@ -117,24 +114,42 @@ export function registerAudioGraphSpec() {
 		});
 
 		const EXPLICIT = 'a gain with channelCount 1, explicit, mixes a stereo source down to mono';
-		if (isIOS) skip(EXPLICIT, 'no channelCount or channelCountMode on iOS');
-		else
-			test(EXPLICIT, async () => {
-				const context = new OfflineAudioContext(2, Q, RATE);
-				const buffer = new AudioBuffer({ numberOfChannels: 2, length: Q, sampleRate: RATE });
-				buffer.copyToChannel(new Float32Array(Q).fill(1), 0);
-				buffer.copyToChannel(new Float32Array(Q).fill(0.5), 1);
-				const source: any = context.createBufferSource();
-				source.buffer = buffer;
-				const node: any = gain(context, 1);
-				node.channelCount = 1;
-				node.channelCountMode = 'explicit';
-				source.connect(node);
-				node.connect(context.destination);
-				source.start(0);
-				const rendered = await context.startRendering();
-				closeTo(rendered.getChannelData(0)[0], 0.75, 1e-6, 'left gets the mono mix');
-				closeTo(rendered.getChannelData(1)[0], 0.75, 1e-6, 'and so does right');
-			});
+		test(EXPLICIT, async () => {
+			const context = new OfflineAudioContext(2, Q, RATE);
+			const buffer = new AudioBuffer({ numberOfChannels: 2, length: Q, sampleRate: RATE });
+			buffer.copyToChannel(new Float32Array(Q).fill(1), 0);
+			buffer.copyToChannel(new Float32Array(Q).fill(0.5), 1);
+			const source: any = context.createBufferSource();
+			source.buffer = buffer;
+			const node: any = gain(context, 1);
+			node.channelCount = 1;
+			node.channelCountMode = 'explicit';
+			source.connect(node);
+			node.connect(context.destination);
+			source.start(0);
+			const rendered = await context.startRendering();
+			closeTo(rendered.getChannelData(0)[0], 0.75, 1e-6, 'left gets the mono mix');
+			closeTo(rendered.getChannelData(1)[0], 0.75, 1e-6, 'and so does right');
+		});
+
+		async function pannerLevel(outputs: number) {
+			const context = new OfflineAudioContext(1, Q * 2, RATE);
+			const source = constant(context, 1);
+			const quarter = gain(context, 0.25);
+			quarter.connect(context.destination);
+			source.connect(quarter);
+			const panner = context.createPanner();
+			source.connect(panner);
+			for (let i = 0; i < outputs; i++) panner.connect(gain(context, 1)).connect(context.destination);
+			const samples = (await context.startRendering()).getChannelData(0);
+			return samples[Q];
+		}
+
+		test("connecting to a PannerNode keeps the source's and the panner's other connections", async () => {
+			const one = await pannerLevel(1);
+			const two = await pannerLevel(2);
+			ok(one - 0.25 > 0.1, `the panner plays (${one})`);
+			closeTo(two - 0.25, 2 * (one - 0.25), 1e-4, 'a second panner output adds to the first, beside the direct path');
+		});
 	});
 }

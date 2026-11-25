@@ -2,6 +2,8 @@
 #import <QuartzCore/QuartzCore.h>
 #import "NSCAudioLog.h"
 #import "NSCAudioContext.h"
+#import "NSCChannelMixerNode.h"
+#import <stdatomic.h>
 
 //#ifdef NSCLogDebug
 //#undef NSCLogDebug
@@ -35,14 +37,155 @@ static inline double NSCWrapPannerAzimuthDegrees(double azimuth) {
     return azimuth;
 }
 
+#pragma mark - The pan unit
+
+typedef struct {
+    _Atomic float gain;
+    // Azimuth in degrees, -90 to 90.
+    _Atomic float azimuth;
+    const UInt32 *inputChannels;
+    float *pulled;
+    // A mono output's right channel before the down-mix.
+    float *right;
+    UInt32 maxFrames;
+    AudioBufferList *pullList;
+} PanRender;
+
+static AVAudioFormat *pendingPanFormat;
+
+// Web Audio's equal-power panning of a mono or stereo input, times the distance and cone gain.
+@interface NSCPanUnit : AUAudioUnit
+@property (nonatomic, readonly) PanRender *render;
+@end
+
+@implementation NSCPanUnit {
+    AUAudioUnitBusArray *_inputBusses;
+    AUAudioUnitBusArray *_outputBusses;
+    PanRender *_render;
+}
+
+- (instancetype)initWithComponentDescription:(AudioComponentDescription)description options:(AudioComponentInstantiationOptions)options error:(NSError **)outError {
+    if (!(self = [super initWithComponentDescription:description options:options error:outError])) return nil;
+    AUAudioUnitBus *input = [[AUAudioUnitBus alloc] initWithFormat:pendingPanFormat error:outError];
+    AUAudioUnitBus *output = [[AUAudioUnitBus alloc] initWithFormat:pendingPanFormat error:outError];
+    if (!input || !output) return nil;
+    _inputBusses = [[AUAudioUnitBusArray alloc] initWithAudioUnit:self busType:AUAudioUnitBusTypeInput busses:@[ input ]];
+    _outputBusses = [[AUAudioUnitBusArray alloc] initWithAudioUnit:self busType:AUAudioUnitBusTypeOutput busses:@[ output ]];
+    _render = calloc(1, sizeof(PanRender));
+    _render->pullList = calloc(1, sizeof(AudioBufferList) + sizeof(AudioBuffer));
+    atomic_init(&_render->gain, 1.0f);
+    self.maximumFramesToRender = 4096;
+    return self;
+}
+
+- (AUAudioUnitBusArray *)inputBusses { return _inputBusses; }
+- (AUAudioUnitBusArray *)outputBusses { return _outputBusses; }
+- (BOOL)canProcessInPlace { return NO; }
+
+// Two channels in; one or two out, a mono output taking the down-mix.
+- (BOOL)shouldChangeToFormat:(AVAudioFormat *)format forBus:(AUAudioUnitBus *)bus {
+    if (bus.busType == AUAudioUnitBusTypeInput) return format.channelCount == 2;
+    return format.channelCount == 1 || format.channelCount == 2;
+}
+
+- (BOOL)allocateRenderResourcesAndReturnError:(NSError **)outError {
+    if (![super allocateRenderResourcesAndReturnError:outError]) return NO;
+    PanRender *r = _render;
+    UInt32 frames = MAX((UInt32)self.maximumFramesToRender, 128u);
+    if (frames > r->maxFrames) {
+        free(r->pulled);
+        free(r->right);
+        r->pulled = calloc((size_t)2 * frames, sizeof(float));
+        r->right = calloc(frames, sizeof(float));
+        r->maxFrames = frames;
+    }
+    return r->pulled && r->right;
+}
+
+- (AUInternalRenderBlock)internalRenderBlock {
+    PanRender *r = _render;
+    return ^AUAudioUnitStatus(AudioUnitRenderActionFlags *flags, const AudioTimeStamp *ts, AUAudioFrameCount frames, NSInteger bus, AudioBufferList *out, const AURenderEvent *events, AURenderPullInputBlock pull) {
+        if (!r->pulled || frames > r->maxFrames || out->mNumberBuffers < 1) return kAudioUnitErr_TooManyFramesToProcess;
+        AudioBufferList *abl = r->pullList;
+        abl->mNumberBuffers = 2;
+        for (UInt32 c = 0; c < 2; c++) {
+            abl->mBuffers[c].mNumberChannels = 1;
+            abl->mBuffers[c].mData = r->pulled + c * r->maxFrames;
+            abl->mBuffers[c].mDataByteSize = frames * sizeof(float);
+        }
+        AudioUnitRenderActionFlags pullFlags = 0;
+        OSStatus status = pull ? pull(&pullFlags, ts, frames, 0, abl) : kAudioUnitErr_NoConnection;
+        BOOL monoOut = out->mNumberBuffers == 1;
+        float *outL = (float *)out->mBuffers[0].mData, *outR = monoOut ? r->right : (float *)out->mBuffers[1].mData;
+        if (!outL) outL = out->mBuffers[0].mData = r->pulled;
+        if (!outR) outR = out->mBuffers[1].mData = r->pulled + r->maxFrames;
+        for (UInt32 c = 0; c < out->mNumberBuffers; c++) out->mBuffers[c].mDataByteSize = frames * sizeof(float);
+        if (status != noErr || (pullFlags & kAudioUnitRenderAction_OutputIsSilence)) {
+            memset(outL, 0, frames * sizeof(float));
+            memset(outR, 0, frames * sizeof(float));
+            *flags |= kAudioUnitRenderAction_OutputIsSilence;
+            return noErr;
+        }
+        const float *inL = abl->mBuffers[0].mData ?: r->pulled, *inR = abl->mBuffers[1].mData ?: r->pulled + r->maxFrames;
+        float g = atomic_load_explicit(&r->gain, memory_order_relaxed);
+        double az = atomic_load_explicit(&r->azimuth, memory_order_relaxed);
+        // Sources here play at the context's channel count, so identical channels are taken as mono.
+        BOOL mono = r->inputChannels && *r->inputChannels == 1;
+        if (!mono) {
+            mono = YES;
+            for (AUAudioFrameCount k = 0; k < frames && mono; k++) mono = inL[k] == inR[k];
+        }
+        if (mono) {
+            double x = (az + 90.0) / 180.0;
+            float gl = (float)cos(x * M_PI_2) * g, gr = (float)sin(x * M_PI_2) * g;
+            for (AUAudioFrameCount k = 0; k < frames; k++) {
+                float m = inL[k];
+                outL[k] = m * gl;
+                outR[k] = m * gr;
+            }
+        } else if (az <= 0.0) {
+            double x = (az + 90.0) / 90.0;
+            float gl = (float)cos(x * M_PI_2), gr = (float)sin(x * M_PI_2);
+            for (AUAudioFrameCount k = 0; k < frames; k++) {
+                float l = inL[k], rr = inR[k];
+                outL[k] = (l + rr * gl) * g;
+                outR[k] = rr * gr * g;
+            }
+        } else {
+            double x = az / 90.0;
+            float gl = (float)cos(x * M_PI_2), gr = (float)sin(x * M_PI_2);
+            for (AUAudioFrameCount k = 0; k < frames; k++) {
+                float l = inL[k], rr = inR[k];
+                outL[k] = l * gl * g;
+                outR[k] = (rr + l * gr) * g;
+            }
+        }
+        if (monoOut) for (AUAudioFrameCount k = 0; k < frames; k++) outL[k] = 0.5f * (outL[k] + outR[k]);
+        return noErr;
+    };
+}
+
+- (void)dealloc {
+    free(_render->pulled);
+    free(_render->right);
+    free(_render->pullList);
+    free(_render);
+}
+
+@end
+
+static AudioComponentDescription PanDescription(void) {
+    AudioComponentDescription description = {0};
+    description.componentType = kAudioUnitType_Effect;
+    description.componentSubType = 'nscn';
+    description.componentManufacturer = 'NSCa';
+    return description;
+}
+
 @implementation NSCAudioPannerNode {
-    AVAudioUnit *_au;
-    AVAudioMixerNode *_panMixer;
-    AVAudioUnitEQ *_occlusionEq;
-    AVAudioEnvironmentNode *_envNode;
-    BOOL _envNodeOwned;
-    AVAudioFormat *_monoFormat;
-    BOOL _connectedDownstream;
+    AVAudioUnitEffect *_unit;
+    // Connections into the panner mix here: clamped-max, two channels.
+    NSCChannelMixerNode *_input;
     float _positionX, _positionY, _positionZ;
     float _orientationX, _orientationY, _orientationZ;
     float _pan;
@@ -50,8 +193,6 @@ static inline double NSCWrapPannerAzimuthDegrees(double azimuth) {
     int _panningModel;
     float _refDistance, _maxDistance, _rolloffFactor;
     float _coneInnerAngle, _coneOuterAngle, _coneOuterGain;
-    NSMutableDictionary<NSValue *, NSCAudioNode *> *_attachedSourcesMap;
-    NSMutableDictionary<NSValue *, NSString *> *_sourceRouting;
     dispatch_source_t _automationTimer;
     CFTimeInterval _automationAnchorHostTime;
     double _automationAnchorAudioTime;
@@ -71,37 +212,28 @@ static inline double NSCWrapPannerAzimuthDegrees(double azimuth) {
                       positionY:(double)positionY
                       positionZ:(double)positionZ
                    panningModel:(int)panningModel {
-    BOOL useHRTF = (panningModel == 1);
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{
+        [AUAudioUnit registerSubclass:[NSCPanUnit class] asComponentDescription:PanDescription() name:@"NativeScript: panner" version:1];
+    });
     double sr = context.sampleRate > 0 ? context.sampleRate : 44100.0;
-    AVAudioFormat *monoFmt = [[AVAudioFormat alloc] initWithCommonFormat:AVAudioPCMFormatFloat32
-                                                              sampleRate:sr
-                                                                channels:1
-                                                             interleaved:NO];
+    AVAudioFormat *stereo = [[AVAudioFormat alloc] initStandardFormatWithSampleRate:sr channels:2];
+    pendingPanFormat = stereo;
+    // A registered in-process unit instantiates synchronously.
+    AVAudioUnitEffect *unit = [[AVAudioUnitEffect alloc] initWithAudioComponentDescription:PanDescription()];
+    pendingPanFormat = nil;
+    if (![unit.AUAudioUnit isKindOfClass:[NSCPanUnit class]]) return nil;
+    NSCChannelMixerNode *input = [[NSCChannelMixerNode alloc] initWithContext:context mode:NSCMixModeSum channels:2 discrete:NO];
+    if (!input) return nil;
+    [input setClamp:YES];
+    if ([context isKindOfClass:[NSCOfflineAudioContext class]]) [(NSCOfflineAudioContext *)context willConnect];
+    @try { [context.engine attachNode:unit]; } @catch (NSException *e) { return nil; }
 
-    AVAudioNode *avNode = nil;
-    AVAudioMixerNode *mixer = [[AVAudioMixerNode alloc] init];
-    @try { [context.engine attachNode:mixer]; } @catch (NSException *e) { mixer = nil; }
-    AVAudioUnitEQ *occlEq = nil;
-    AVAudioEnvironmentNode *env = nil;
-
-    if (useHRTF) {
-        [context ensureEnvironmentNodeAttached];
-        env = context.environmentNode;
-        avNode = env ?: mixer;
-    } else {
-        avNode = mixer;
-    }
-
-    if (!avNode) return nil;
-
-    if (self = [super initWithContext:context node:avNode]) {
-        _au = nil;
-        _panMixer = mixer;
-        _occlusionEq = occlEq;
-        _envNode = env;
-        _envNodeOwned = (env && env != context.environmentNode) ? YES : NO;
-        _monoFormat = monoFmt;
-        _connectedDownstream = NO;
+    if (self = [super initWithContext:context node:unit]) {
+        _unit = unit;
+        _input = input;
+        ((NSCPanUnit *)unit.AUAudioUnit).render->inputChannels = [input mixedChannels];
+        NSCConnectAdding(context, input.avNode, 0, unit, 0, stereo);
         _positionX = (float)positionX; _positionY = (float)positionY; _positionZ = (float)positionZ;
         _pan = 0.0f;
         _positionXParam = [[NSCAudioParam alloc] initWithContext:context defaultValue:positionX];
@@ -112,9 +244,7 @@ static inline double NSCWrapPannerAzimuthDegrees(double azimuth) {
         _orientationZParam = [[NSCAudioParam alloc] initWithContext:context defaultValue:0.0];
         for (NSCAudioParam *param in @[ _positionXParam, _positionYParam, _positionZParam, _orientationXParam, _orientationYParam, _orientationZParam ]) param.owner = self;
         _orientationX = 1.0f; _orientationY = 0.0f; _orientationZ = 0.0f;
-        _attachedSourcesMap = [NSMutableDictionary dictionary];
-        _sourceRouting = [NSMutableDictionary dictionary];
-        _panningModel = panningModel;
+        _panningModel = panningModel == 1 ? 1 : 0;
         _distanceModel = 0;
         _refDistance = 1.0f;
         _maxDistance = 10000.0f;
@@ -135,40 +265,11 @@ static inline double NSCWrapPannerAzimuthDegrees(double azimuth) {
 - (void)dealloc {
     [self stopAutomationLink];
     [self clearAudioParamHooks];
-    if (_occlusionEq) {
-        AVAudioEngine *engine = self.context.engine;
-        if (engine) {
-            @try {
-                [engine disconnectNodeInput:_occlusionEq];
-                [engine disconnectNodeOutput:_occlusionEq];
-                [self.context detachNode:_occlusionEq fromEngine:engine];
-            } @catch (NSException *e) {}
-        }
-        _occlusionEq = nil;
-    }
-    if (_panMixer) {
-        AVAudioEngine *engine = self.context.engine;
-        if (engine) {
-            @try {
-                [engine disconnectNodeInput:_panMixer];
-                [engine disconnectNodeOutput:_panMixer];
-                [self.context detachNode:_panMixer fromEngine:engine];
-            } @catch (NSException *e) {}
-        }
-        _panMixer = nil;
-    }
-    if (_envNode) {
-        if (_envNodeOwned) {
-            AVAudioEngine *engine = self.context.engine;
-            if (engine) {
-                @try {
-                    [engine disconnectNodeInput:_envNode];
-                    [engine disconnectNodeOutput:_envNode];
-                    [self.context detachNode:_envNode fromEngine:engine];
-                } @catch (NSException *e) {}
-            }
-        }
-        _envNode = nil;
+    NSCAudioContext *ctx = self.context;
+    AVAudioEngine *engine = ctx.engine;
+    if (engine && _unit && [ctx isNode:_unit attachedToEngine:engine]) {
+        @try { [engine disconnectNodeOutput:_unit]; } @catch (NSException *e) {}
+        @try { [ctx detachNode:_unit fromEngine:engine]; } @catch (NSException *e) {}
     }
 }
 
@@ -317,15 +418,6 @@ static inline double NSCWrapPannerAzimuthDegrees(double azimuth) {
     return synthetic >= 0.0 ? synthetic : 0.0;
 }
 
-- (void)ensureEnvironmentNodeForCurrentModel {
-    if (_panningModel != 1 || _envNode) return;
-    NSCAudioContext *ctx = self.context;
-    if (!ctx) return;
-    [ctx ensureEnvironmentNodeAttached];
-    _envNode = ctx.environmentNode;
-    _envNodeOwned = NO;
-}
-
 - (void)readListenerStateAtTime:(double)t
                       positionX:(double *)listenerX
                       positionY:(double *)listenerY
@@ -465,8 +557,6 @@ static inline double NSCWrapPannerAzimuthDegrees(double azimuth) {
 }
 
 - (void)applySpatial {
-    [self ensureEnvironmentNodeForCurrentModel];
-
     double t = [self currentTimeForApply];
 
     _positionX = (float)[_positionXParam valueAtTime:t];
@@ -509,328 +599,31 @@ static inline double NSCWrapPannerAzimuthDegrees(double azimuth) {
                                               upY:upY
                                               upZ:upZ];
 
-    AVAudio3DPoint pos = AVAudioMake3DPoint(_positionX, _positionY, _positionZ);
-    AVAudio3DMixingRenderingAlgorithm renderAlgo = _panningModel == 1
-        ? AVAudio3DMixingRenderingAlgorithmHRTF
-        : AVAudio3DMixingRenderingAlgorithmEqualPowerPanning;
-
-    if (_envNode) {
-        for (NSValue *idv in _attachedSourcesMap) {
-            NSCAudioNode *src = _attachedSourcesMap[idv];
-            if ([src.avNode conformsToProtocol:@protocol(AVAudio3DMixing)]) {
-                id<AVAudio3DMixing> mix3d = (id<AVAudio3DMixing>)src.avNode;
-                mix3d.position = pos;
-                mix3d.renderingAlgorithm = renderAlgo;
-            }
-        }
-        _envNode.outputVolume = 1.0f;
-    }
-
-    if (_panMixer) {
-        _panMixer.pan = (float)panVal;
-        _panMixer.outputVolume = (float)gain;
-        NSCLogDebug(@"NSCAudioPannerNode: applySpatial pan=%f gain=%f model=%d", panVal, gain, _panningModel);
-    }
-
-    if (_occlusionEq) {
-        double g = NSCClampDouble(gain, 0.0, 1.0);
-        double lowFreq = 800.0;
-        double highFreq = 22050.0;
-        double cutoff = lowFreq + (highFreq - lowFreq) * pow(g, 0.5);
-        AVAudioUnitEQFilterParameters *band = _occlusionEq.bands[0];
-        band.filterType = AVAudioUnitEQFilterTypeLowPass;
-        band.frequency = (float)cutoff;
-        band.bandwidth = 0.5f;
-        band.bypass = (g >= 0.999);
-    }
+    PanRender *r = ((NSCPanUnit *)_unit.AUAudioUnit).render;
+    atomic_store_explicit(&r->gain, (float)gain, memory_order_relaxed);
+    atomic_store_explicit(&r->azimuth, (float)(panVal * 90.0), memory_order_relaxed);
 }
 
 #pragma mark - Source attach / connect
 
-- (AVAudioNode *)activeAVNode {
-    return (AVAudioNode *)(_envNode ?: _panMixer);
-}
-
 - (void)attachSource:(NSCAudioNode *)source output:(NSNumber *)output input:(NSNumber *)input {
-    NSCAudioContext *ctx = self.context;
-    AVAudioNode *target = [self activeAVNode];
-    if (!ctx || !target) return;
-    NSCLogDebug(@"NSCAudioPannerNode: attachSource called source=%@(avNode=%@) attachedCount=%lu", NSStringFromClass([source class]), NSStringFromClass([source.avNode class]), (unsigned long)(_attachedSourcesMap ? _attachedSourcesMap.count : 0));
-    NSValue *idv = [NSValue valueWithPointer:(__bridge const void *)(source)];
-    if (_attachedSourcesMap[idv]) return;
-    [ctx.engine disconnectNodeOutput:source.avNode];
-    AVAudioNodeBus fromBus = (AVAudioNodeBus)MAX(0, output ? output.intValue : 0);
-    AVAudioNodeBus toBus = 0;
-    if (input) toBus = (AVAudioNodeBus)MAX(0, input.intValue);
-    else if ([target isKindOfClass:[AVAudioMixerNode class]]) {
-        toBus = ((AVAudioMixerNode *)target).nextAvailableInputBus;
-    }
-    AVAudioConnectionPoint *destPoint = [[AVAudioConnectionPoint alloc] initWithNode:target bus:toBus];
-
-        if (_envNode) {
-        if ([source.avNode conformsToProtocol:@protocol(AVAudio3DMixing)] && ![source.avNode isKindOfClass:[AVAudioSourceNode class]]) {
-            BOOL connected = NO;
-            @try {
-                [ctx.engine connect:source.avNode toConnectionPoints:@[destPoint] fromBus:fromBus format:_monoFormat];
-                connected = YES;
-            } @catch (NSException *e) {
-                NSCLogDebug(@"NSCAudioPannerNode: attachSource env connect threw: %@", e);
-                @try {
-                    [ctx.engine connect:source.avNode toConnectionPoints:@[destPoint] fromBus:fromBus format:nil];
-                    connected = YES;
-                } @catch (NSException *e2) {
-                    NSCLogDebug(@"NSCAudioPannerNode: attachSource env connect fallback threw: %@", e2);
-                }
-            }
-            if (connected) {
-                NSCLogDebug(@"NSCAudioPannerNode: attachSource connected source=%@ -> env dest=%@ fromBus=%d toBus=%d", NSStringFromClass([source.avNode class]), NSStringFromClass([((AVAudioNode *)destPoint.node) class]), (int)fromBus, (int)toBus);
-            }
-            if (!connected) {
-                NSCLogDebug(@"NSCAudioPannerNode: attachSource failed env route source=%@", NSStringFromClass([source.avNode class]));
-                return;
-            }
-            id<AVAudio3DMixing> mix3d = (id<AVAudio3DMixing>)source.avNode;
-            mix3d.position = AVAudioMake3DPoint(_positionX, _positionY, _positionZ);
-            mix3d.renderingAlgorithm = _panningModel == 1
-                ? AVAudio3DMixingRenderingAlgorithmHRTF
-                : AVAudio3DMixingRenderingAlgorithmEqualPowerPanning;
-            _sourceRouting[idv] = @"env";
-        } else if (_panMixer) {
-            NSCLogDebug(@"NSCAudioPannerNode: attachSource: source does not support 3D mixing; falling back to mixer (source=%@)", NSStringFromClass([source.avNode class]));
-            AVAudioConnectionPoint *fallbackDest = [[AVAudioConnectionPoint alloc] initWithNode:_panMixer bus:((AVAudioMixerNode *)_panMixer).nextAvailableInputBus];
-            BOOL connected = NO;
-            @try {
-                [ctx.engine connect:source.avNode toConnectionPoints:@[fallbackDest] fromBus:fromBus format:nil];
-                connected = YES;
-            } @catch (NSException *e) {
-                NSCLogDebug(@"NSCAudioPannerNode: attachSource mixer connect threw: %@", e);
-                @try {
-                    [ctx.engine connect:source.avNode toConnectionPoints:@[fallbackDest] fromBus:fromBus format:_monoFormat];
-                    connected = YES;
-                } @catch (NSException *e2) {
-                    NSCLogDebug(@"NSCAudioPannerNode: attachSource mixer connect fallback threw: %@", e2);
-                }
-            }
-            if (connected) NSCLogDebug(@"NSCAudioPannerNode: attachSource connected source=%@ -> panMixer (bus=%lu)", NSStringFromClass([source.avNode class]), (unsigned long)(((AVAudioMixerNode *)_panMixer).nextAvailableInputBus - 1));
-            if (!connected) {
-                NSCLogDebug(@"NSCAudioPannerNode: attachSource failed mixer fallback source=%@", NSStringFromClass([source.avNode class]));
-                return;
-            }
-            _sourceRouting[idv] = @"mix";
-        } else {
-            BOOL connected = NO;
-            @try {
-                [ctx.engine connect:source.avNode toConnectionPoints:@[destPoint] fromBus:fromBus format:nil];
-                connected = YES;
-            } @catch (NSException *e) {
-                NSCLogDebug(@"NSCAudioPannerNode: attachSource generic connect threw: %@", e);
-                @try {
-                    [ctx.engine connect:source.avNode toConnectionPoints:@[destPoint] fromBus:fromBus format:_monoFormat];
-                    connected = YES;
-                } @catch (NSException *e2) {
-                    NSCLogDebug(@"NSCAudioPannerNode: attachSource generic connect fallback threw: %@", e2);
-                }
-            }
-            if (connected) NSCLogDebug(@"NSCAudioPannerNode: attachSource connected source=%@ -> dest=%@", NSStringFromClass([source.avNode class]), NSStringFromClass([((AVAudioNode *)destPoint.node) class]));
-            if (!connected) {
-                NSCLogDebug(@"NSCAudioPannerNode: attachSource failed generic env source=%@", NSStringFromClass([source.avNode class]));
-                return;
-            }
-            _sourceRouting[idv] = @"env";
-        }
-    } else {
-        BOOL connected = NO;
-        @try {
-            [ctx.engine connect:source.avNode toConnectionPoints:@[destPoint] fromBus:fromBus format:nil];
-            connected = YES;
-        } @catch (NSException *e) {
-            NSCLogDebug(@"NSCAudioPannerNode: attachSource default connect threw: %@", e);
-            @try {
-                [ctx.engine connect:source.avNode toConnectionPoints:@[destPoint] fromBus:fromBus format:ctx.format];
-                connected = YES;
-            } @catch (NSException *e2) {
-                NSCLogDebug(@"NSCAudioPannerNode: attachSource ctx.format fallback threw: %@", e2);
-                @try {
-                    [ctx.engine connect:source.avNode toConnectionPoints:@[destPoint] fromBus:fromBus format:_monoFormat];
-                    connected = YES;
-                } @catch (NSException *e3) {
-                    NSCLogDebug(@"NSCAudioPannerNode: attachSource mono fallback threw: %@", e3);
-                }
-            }
-        }
-        if (connected) {
-            NSCLogDebug(@"NSCAudioPannerNode: attachSource connected source=%@ -> panMixer/default (fromBus=%d toBus=%d)", NSStringFromClass([source.avNode class]), (int)fromBus, (int)toBus);
-        }
-        if (!connected) {
-            NSCLogDebug(@"NSCAudioPannerNode: attachSource failed default route source=%@", NSStringFromClass([source.avNode class]));
-            return;
-        }
-        _sourceRouting[idv] = @"mix";
-    }
-
-    _attachedSourcesMap[idv] = source;
-    NSMutableDictionary *pmap = ctx.voicePannerByOutput[idv];
-    if (!pmap) pmap = [NSMutableDictionary dictionary];
-    pmap[@(output ? output.intValue : 0)] = self;
-    ctx.voicePannerByOutput[idv] = pmap;
-
-    [self applySpatial];
-}
-
-
-- (void)connectTo:(NSCAudioNode *)destination {
-    [self connectTo:destination output:nil input:nil];
-}
-
-- (void)connectTo:(NSCAudioNode *)destination output:(NSNumber *)output {
-    [self connectTo:destination output:output input:@(0)];
-}
-
-- (void)connectTo:(NSCAudioNode *)destination output:(NSNumber *)output input:(NSNumber *)input {
-    NSCAudioContext *ctx = self.context ?: destination.context;
-    AVAudioEngine *engine = ctx.engine;
-    AVAudioNode *src = [self activeAVNode];
-    if (!engine || !src || !destination.avNode) return;
-
-    AVAudioNodeBus fromBus = (AVAudioNodeBus)MAX(0, output ? output.intValue : 0);
-    AVAudioNodeBus toBus = 0;
-    if (input) toBus = (AVAudioNodeBus)MAX(0, input.intValue);
-    else if ([destination.avNode isKindOfClass:[AVAudioMixerNode class]]) {
-        toBus = ((AVAudioMixerNode *)destination.avNode).nextAvailableInputBus;
-    }
-    AVAudioConnectionPoint *destPoint = [[AVAudioConnectionPoint alloc] initWithNode:destination.avNode bus:toBus];
-
-    if (_envNode) {
-        BOOL connected = NO;
-        @try {
-            [engine connect:_envNode toConnectionPoints:@[destPoint] fromBus:fromBus format:nil];
-            NSCLogDebug(@"NSCAudioPannerNode: connected envNode -> %@ (fromBus=%d toBus=%d)", NSStringFromClass([destination.avNode class]), (int)fromBus, (int)toBus);
-            connected = YES;
-        } @catch (NSException *e) {
-            NSCLogDebug(@"NSCAudioPannerNode: envNode connect to destination threw: %@", e);
-            @try {
-                [engine connect:_envNode toConnectionPoints:@[destPoint] fromBus:fromBus format:_monoFormat];
-                connected = YES;
-            } @catch (NSException *e2) { NSCLogDebug(@"NSCAudioPannerNode: envNode connect fallback also threw: %@", e2); }
-        }
-
-        if (_panMixer) {
-            @try {
-                [engine connect:_panMixer toConnectionPoints:@[destPoint] fromBus:0 format:_monoFormat];
-                NSCLogDebug(@"NSCAudioPannerNode: connected panMixer -> %@ (fromBus=0 toBus=%d)", NSStringFromClass([destination.avNode class]), (int)toBus);
-                connected = YES;
-            } @catch (NSException *e) {
-                NSCLogDebug(@"NSCAudioPannerNode: panMixer connect to destination threw: %@", e);
-                @try {
-                    [engine connect:_panMixer toConnectionPoints:@[destPoint] fromBus:0 format:nil];
-                    connected = YES;
-                } @catch (NSException *e2) { NSCLogDebug(@"NSCAudioPannerNode: panMixer connect fallback also threw: %@", e2); }
-            }
-        }
-
-        if (!connected) {
-            NSCLogDebug(@"NSCAudioPannerNode: connectTo failed env src path dest=%@", NSStringFromClass([destination.avNode class]));
-            return;
-        }
-    } else {
-        BOOL connected = NO;
-        @try {
-            [engine connect:src toConnectionPoints:@[destPoint] fromBus:fromBus format:nil];
-            connected = YES;
-        } @catch (NSException *e) {
-            NSCLogDebug(@"NSCAudioPannerNode: connectTo default connect threw: %@", e);
-            @try {
-                [engine connect:src toConnectionPoints:@[destPoint] fromBus:fromBus format:ctx ? ctx.format : nil];
-                connected = YES;
-            } @catch (NSException *e2) {
-                NSCLogDebug(@"NSCAudioPannerNode: connectTo ctx.format fallback threw: %@", e2);
-                @try {
-                    [engine connect:src toConnectionPoints:@[destPoint] fromBus:fromBus format:_monoFormat];
-                    connected = YES;
-                } @catch (NSException *e3) {
-                    NSCLogDebug(@"NSCAudioPannerNode: connectTo mono fallback threw: %@", e3);
-                }
-            }
-        }
-        if (!connected) {
-            NSCLogDebug(@"NSCAudioPannerNode: connectTo failed src=%@ dest=%@", NSStringFromClass([src class]), NSStringFromClass([destination.avNode class]));
-            return;
-        }
-    }
-    _connectedDownstream = YES;
-    [self applySpatial];
-}
-
-// Cuts only the source's connections into this panner.
-- (void)cutSource:(NSCAudioNode *)source output:(NSNumber *)output {
-    NSCAudioContext *ctx = self.context;
-    NSMutableArray<AVAudioNode *> *mine = [NSMutableArray array];
-    for (AVAudioNode *node in @[ [self activeAVNode] ?: [NSNull null], _panMixer ?: [NSNull null], _envNode ?: [NSNull null], self.avNode ?: [NSNull null] ]) {
-        if ([node isKindOfClass:[AVAudioNode class]] && ![mine containsObject:node]) [mine addObject:node];
-    }
-    for (AVAudioNode *node in mine) NSCDisconnectRemoving(ctx, source.avNode, output, node, nil);
+    [_input handleConnectFrom:source output:output input:nil];
 }
 
 - (void)detachSource:(NSCAudioNode *)source {
-    NSCAudioContext *ctx = self.context;
-    if (!ctx) return;
-    NSValue *idv = [NSValue valueWithPointer:(__bridge const void *)(source)];
-    [self cutSource:source output:nil];
-    [_attachedSourcesMap removeObjectForKey:idv];
-    [_sourceRouting removeObjectForKey:idv];
-    NSMutableDictionary *pmap = ctx.voicePannerByOutput[idv];
-    if (pmap) {
-        NSMutableArray *keysToRemove = [NSMutableArray array];
-        for (NSNumber *k in pmap) {
-            NSCAudioNode *v = pmap[k];
-            if (v == self) [keysToRemove addObject:k];
-        }
-        for (NSNumber *k in keysToRemove) [pmap removeObjectForKey:k];
-        ctx.voicePannerByOutput[idv] = pmap;
-    }
+    [_input handleDisconnectFrom:source output:nil input:nil];
 }
 
 - (void)disconnectPanner {
-    NSCAudioContext *ctx = self.context;
-    if (!ctx) return;
-    for (NSValue *v in _attachedSourcesMap) {
-        NSCAudioNode *src = _attachedSourcesMap[v];
-        [ctx.engine disconnectNodeOutput:src.avNode];
-    }
-    for (NSValue *idv in _attachedSourcesMap) {
-        NSMutableDictionary *pmap = ctx.voicePannerByOutput[idv];
-        if (pmap) {
-            NSMutableArray *keysToRemove = [NSMutableArray array];
-            for (NSNumber *k in pmap) {
-                NSCAudioNode *val = pmap[k];
-                if (val == self) [keysToRemove addObject:k];
-            }
-            for (NSNumber *k in keysToRemove) [pmap removeObjectForKey:k];
-            ctx.voicePannerByOutput[idv] = pmap;
-        }
-    }
-    [_attachedSourcesMap removeAllObjects];
-    [_sourceRouting removeAllObjects];
-    [ctx.engine disconnectNodeOutput:self.avNode];
+    [self disconnect];
 }
 
 - (void)handleConnectFrom:(NSCAudioNode *)source output:(NSNumber *)output input:(NSNumber *)input {
-    [self attachSource:source output:output input:input];
+    [_input handleConnectFrom:source output:output input:nil];
 }
 
 - (void)handleDisconnectFrom:(NSCAudioNode *)source output:(NSNumber *)output input:(NSNumber *)input {
-    NSCAudioContext *ctx = self.context;
-    if (!ctx) return;
-    NSValue *idv = [NSValue valueWithPointer:(__bridge const void *)(source)];
-    if (output) {
-        [self cutSource:source output:output];
-        NSMutableDictionary *pmap = ctx.voicePannerByOutput[idv];
-        if (pmap) [pmap removeObjectForKey:@(output.intValue)];
-        [_attachedSourcesMap removeObjectForKey:idv];
-        [_sourceRouting removeObjectForKey:idv];
-    } else {
-        [self detachSource:source];
-    }
+    [_input handleDisconnectFrom:source output:output input:nil];
 }
 
 #pragma mark - Setters / getters
@@ -838,7 +631,6 @@ static inline double NSCWrapPannerAzimuthDegrees(double azimuth) {
 - (void)setPan:(NSNumber *)p {
     _pan = (float)NSCClampDouble([p doubleValue], -1.0, 1.0);
     [self applySpatial];
-    NSCLogDebug(@"NSCAudioPannerNode: setPan -> %f env=%@ panMixer=%@", _pan, _envNode ? @"YES" : @"NO", _panMixer ? @"YES" : @"NO");
 }
 
 - (void)setDistanceModel:(NSNumber *)v { _distanceModel = v.intValue; [self applySpatial]; }
@@ -848,21 +640,8 @@ static inline double NSCWrapPannerAzimuthDegrees(double azimuth) {
     int newPM = v.intValue == 1 ? 1 : 0;
     if (newPM == _panningModel) return;
 
+    // HRTF renders as equalpower.
     _panningModel = newPM;
-    if (_panningModel == 1) {
-        [self ensureEnvironmentNodeForCurrentModel];
-    }
-
-    if (_attachedSourcesMap.count > 0) {
-        NSArray<NSCAudioNode *> *sources = _attachedSourcesMap.allValues.copy;
-        for (NSCAudioNode *source in sources) {
-            [self detachSource:source];
-        }
-        for (NSCAudioNode *source in sources) {
-            [self attachSource:source output:nil input:nil];
-        }
-    }
-
     [self applySpatial];
     NSCLogDebug(@"NSCAudioPannerNode: setPanningModel -> %d", _panningModel);
 }

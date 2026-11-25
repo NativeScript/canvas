@@ -24,6 +24,7 @@ endif()
 add_library(native-audio SHARED
     audio_context.cpp
     audio_render.cpp
+    audio_graph.cpp
     audio_offline.cpp
     audio_jni.cpp
     audio_worklet.cpp

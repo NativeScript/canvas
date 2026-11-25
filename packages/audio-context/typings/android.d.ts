@@ -358,6 +358,11 @@ declare module org {
 				public disconnect(output: number): void;
 				public connect(node: org.nativescript.audiocontext.AudioNode, output: number, input: number): void;
 				public disconnect(node: org.nativescript.audiocontext.AudioNode, output: number, input: number): void;
+				public connect(param: org.nativescript.audiocontext.AudioParam): void;
+				public connect(param: org.nativescript.audiocontext.AudioParam, output: number): void;
+				public disconnect(param: org.nativescript.audiocontext.AudioParam): void;
+				public disconnect(param: org.nativescript.audiocontext.AudioParam, output: number): void;
+				public setChannelConfig(channelCount: number, countMode: number, interpretation: number): void;
 			}
 		}
 	}
@@ -440,7 +445,6 @@ declare module org {
 				public getMaxDistance(): number;
 				public disconnect(sources: org.nativescript.audiocontext.AudioNode): void;
 				public disconnect(output: number): void;
-				public attachToVoice(voiceId: string): void;
 				public disconnect(node: org.nativescript.audiocontext.AudioNode, output: number, input: number): void;
 				public setConeOuterGain(v: number): void;
 				public getOrientationXParam(): org.nativescript.audiocontext.AudioParam;
@@ -738,7 +742,6 @@ declare module org {
 			export class WorkletNode extends java.lang.Object implements org.nativescript.audiocontext.AudioNode {
 				public static class: java.lang.Class<org.nativescript.audiocontext.WorkletNode>;
 				public getId(): string;
-				public getOutputId(output: number): string;
 				public getParamCount(): number;
 				public getParam(index: number): org.nativescript.audiocontext.AudioParam;
 				public stop(): void;

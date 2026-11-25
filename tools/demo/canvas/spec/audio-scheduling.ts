@@ -1,6 +1,5 @@
 import { AudioContext } from '@nativescript/audio-context';
-import { isAndroid } from '@nativescript/core';
-import { suite, test, skip, ok } from './harness';
+import { suite, test, ok } from './harness';
 import { wavBase64 } from './audio';
 
 // start(when, offset) / stop(when) against a running context, read back through an analyser.
@@ -256,30 +255,26 @@ export function registerAudioSchedulingSpec() {
 		});
 
 		const PARAM_INPUT = 'a source connected to gain.gain while running opens it';
-		if (isAndroid) {
-			skip(PARAM_INPUT, 'no AudioNode.connect(AudioParam) on Android');
-		} else {
-			test(PARAM_INPUT, async () => {
-				const { context, analyser } = await runningContext();
-				const gain = context.createGain();
-				gain.gain.value = 0;
-				gain.connect(analyser);
-				const source = context.createConstantSource({ offset: 1 });
-				source.connect(gain);
-				source.start();
-				const t0 = context.currentTime;
-				const modulator = context.createConstantSource({ offset: 1 });
-				modulator.connect(gain.gain);
-				modulator.start(t0 + 0.3);
-				await until(context, t0 + 0.15);
-				const before = rmsOf(analyser);
-				await until(context, t0 + 0.45);
-				const after = rmsOf(analyser);
-				await context.close();
-				ok(quiet(before), `silent before the input starts, rms ${before}`);
-				ok(Math.abs(after - 1) < 0.05, `gain 0 plus input 1, rms ${after}`);
-			});
-		}
+		test(PARAM_INPUT, async () => {
+			const { context, analyser } = await runningContext();
+			const gain = context.createGain();
+			gain.gain.value = 0;
+			gain.connect(analyser);
+			const source = context.createConstantSource({ offset: 1 });
+			source.connect(gain);
+			source.start();
+			const t0 = context.currentTime;
+			const modulator = context.createConstantSource({ offset: 1 });
+			modulator.connect(gain.gain);
+			modulator.start(t0 + 0.3);
+			await until(context, t0 + 0.15);
+			const before = rmsOf(analyser);
+			await until(context, t0 + 0.45);
+			const after = rmsOf(analyser);
+			await context.close();
+			ok(quiet(before), `silent before the input starts, rms ${before}`);
+			ok(Math.abs(after - 1) < 0.05, `gain 0 plus input 1, rms ${after}`);
+		});
 
 		test("close stops the context's sources", async () => {
 			const closed = new AudioContext();

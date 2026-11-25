@@ -147,9 +147,14 @@ Context lifecycle and routing:
 - `state`, `onstatechange`
 - `sinkId`, `setSinkId(deviceId)`
 
-On Android an `OfflineAudioContext` renders on its own engine, the same mixer as the realtime
-one, with nothing reaching the device. A source connected to it reads an `AudioBuffer` in place.
-A `DelayNode` there can't be part of a feedback loop: its output doesn't reach its own input.
+On Android the engine renders the node graph itself, a 128-frame quantum at a time in
+topological order: a node's inputs sum every connection, an output can feed any number of nodes,
+and each input mixes up or down by its `channelCount`, `channelCountMode` and
+`channelInterpretation` (the speaker rules for mono, stereo, quad and 5.1). A cycle plays only
+through a `DelayNode`, whose delay is then at least one quantum, as in the spec; a cycle without
+one is silent. An `OfflineAudioContext` renders on its own engine with nothing reaching the
+device, and a source connected to it reads an `AudioBuffer` in place. A `ConvolverNode` passes its
+input through.
 
 On iOS a `GainNode` and a `DelayNode` evaluate `gain` and `delayTime` every frame, so automation
 lands on its frame, in an `OfflineAudioContext` and a realtime one, and `gain` can go above 1 or
@@ -159,8 +164,13 @@ between two frames interpolates linearly.
 On iOS `node.connect(param)` works for those two params, `GainNode.gain` and `DelayNode.delayTime`:
 the node's output, mixed down to mono, adds to the param's value every frame. Other params
 (oscillator `frequency`, `BiquadFilterNode`, panner and `ConstantSourceNode.offset` params, and
-the rest) aren't evaluated per frame and ignore audio connected to them. Android doesn't
-support `node.connect(param)`.
+the rest) aren't evaluated per frame and ignore audio connected to them.
+
+On Android `node.connect(param)` adds the node's output, mixed down to mono, to the param every
+frame for `GainNode.gain`, `DelayNode.delayTime`, `ConstantSourceNode.offset`, oscillator
+`frequency`, `AudioBufferSourceNode.playbackRate`, the `DynamicsCompressorNode` params, panner
+params and `AudioWorkletNode` params (for a worklet with inputs). `BiquadFilterNode` and listener
+params ignore audio connected to them.
 
 ## Android memory
 
@@ -218,8 +228,7 @@ on the app's JS thread.
   (`Atomics.notify` can't come from the render thread, so the wake is native.)
 - On Android each input is mixed from every source's own channels straight to its
   `channelCount`, with the speaker rules for mono, stereo, quad and 5.1 (other counts mix
-  discretely), in any context. A node connected into a worklet input plays only into it, as with
-  `DelayNode`.
+  discretely), in any context.
 
 ## Linux
 

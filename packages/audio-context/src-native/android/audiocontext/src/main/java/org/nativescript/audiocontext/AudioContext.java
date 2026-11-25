@@ -156,7 +156,6 @@ public class AudioContext {
 
 	private final ConcurrentHashMap<String, Set<String>> contextGains = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<String, String> gainContexts = new ConcurrentHashMap<>();
-	private final ConcurrentHashMap<String, ConcurrentHashMap<Integer, String>> voiceGainMapByOutput = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<String, Set<String>> contextBiquads = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<String, Set<String>> contextIirs = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<String, Set<String>> contextPeriodicWaves = new ConcurrentHashMap<>();
@@ -170,7 +169,6 @@ public class AudioContext {
 	private final ConcurrentHashMap<String, String> pannerContexts = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<String, String> contextDestination = new ConcurrentHashMap<>();
 	private final Set<String> destinationIds = createConcurrentSet();
-	private final ConcurrentHashMap<String, Set<String>> nodeSources = new ConcurrentHashMap<>();
 	private final ExecutorService decodeExecutor = Executors.newFixedThreadPool(Math.max(2, Runtime.getRuntime().availableProcessors()));
 
 
@@ -338,7 +336,6 @@ public class AudioContext {
 		String did = contextDestination.remove(contextId);
 		if (did != null) {
 			destinationIds.remove(did);
-			clearNodeSources(did);
 			releaseGain(did);
 		}
 		if (closing) return;
@@ -748,9 +745,7 @@ public class AudioContext {
 
 	private native double[] nativeGetGainParamValues(String gainId, long startNs, double sampleRate, int frameCount);
 
-	private native void nativeAttachGain(String voiceId, String gainId);
 
-	private native void nativeAttachGain(String voiceId, String gainId, int output, int input);
 
 	private native void nativeAttachPlaybackRate(String voiceId, String playbackRateId);
 
@@ -760,7 +755,6 @@ public class AudioContext {
 
 	private native void nativeReleasePlaybackRate(String playbackRateId);
 
-	private native void nativeDetachGain(String gainId);
 
 	private native void nativeReleaseGain(String gainId);
 
@@ -799,11 +793,8 @@ public class AudioContext {
 
 	private native double nativeGetListenerParamValue(String contextId, int paramType);
 
-	private native void nativeAttachPanner(String voiceId, String pannerId);
 
-	private native void nativeAttachPanner(String voiceId, String pannerId, int output, int input);
 
-	private native void nativeDetachPanner(String pannerId);
 
 	private native void nativeReleasePanner(String pannerId);
 
@@ -855,15 +846,11 @@ public class AudioContext {
 
 	private native void nativeAttachPeriodicWave(String voiceId, String waveId);
 
-	private native void nativeAttachBiquad(String voiceId, String biquadId);
 
-	private native void nativeAttachBiquad(String voiceId, String biquadId, int output, int input);
 
-	private native void nativeDetachBiquad(String biquadId);
 
 	private native void nativeReleaseBiquad(String biquadId);
 
-	private final ConcurrentHashMap<String, String> voiceGainMap = new ConcurrentHashMap<>();
 
 	private AtomicInteger getOrCreate(String id) {
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -902,46 +889,116 @@ public class AudioContext {
 		getOrCreateContextSet(map, contextId).add(value);
 	}
 
-	private Set<String> getOrCreateNodeSources(String nodeId) {
-		return getOrCreateContextSet(nodeSources, nodeId);
-	}
-
-	void registerNodeSource(String nodeId, String sourceId) {
-		if (nodeId == null || nodeId.isEmpty() || sourceId == null || sourceId.isEmpty()) return;
-		getOrCreateNodeSources(nodeId).add(sourceId);
-	}
-
-	void registerNodeSources(String nodeId, Set<String> sourceIds) {
-		if (nodeId == null || nodeId.isEmpty() || sourceIds == null || sourceIds.isEmpty()) return;
-		getOrCreateNodeSources(nodeId).addAll(sourceIds);
-	}
-
-	Set<String> getNodeSourcesSnapshot(String nodeId) {
-		Set<String> sources = nodeSources.get(nodeId);
-		if (sources == null || sources.isEmpty()) {
-			return Collections.emptySet();
-		}
-		return new HashSet<>(sources);
-	}
-
-	void unregisterNodeSource(String nodeId, String sourceId) {
-		if (nodeId == null || sourceId == null) return;
-		Set<String> sources = nodeSources.get(nodeId);
-		if (sources == null) return;
-		sources.remove(sourceId);
-		if (sources.isEmpty()) {
-			nodeSources.remove(nodeId);
-		}
-	}
-
-	void clearNodeSources(String nodeId) {
-		if (nodeId == null) return;
-		nodeSources.remove(nodeId);
-	}
-
 	boolean isDestinationNode(String nodeId) {
 		return nodeId != null && destinationIds.contains(nodeId);
 	}
+
+	// Graph node kinds; audio_context.h's NODE_* match.
+	static final int NODE_SOURCE = 0;
+	static final int NODE_GAIN = 1;
+	static final int NODE_DELAY = 2;
+	static final int NODE_BIQUAD = 3;
+	static final int NODE_IIR = 4;
+	static final int NODE_PANNER = 5;
+	static final int NODE_COMPRESSOR = 6;
+	static final int NODE_WAVESHAPER = 7;
+	static final int NODE_CONVOLVER = 8;
+	static final int NODE_ANALYSER = 9;
+	static final int NODE_SPLITTER = 10;
+	static final int NODE_MERGER = 11;
+	static final int NODE_WORKLET = 12;
+	static final int NODE_DESTINATION = 13;
+
+	// A connection into a node input rather than a param.
+	private static final int TARGET_NODE = -2;
+	private static final int TARGET_GAIN_PARAM = -1;
+	// audio_internal.h's kPannerParamPositionX; the panner params follow it in AudioParam.Type order.
+	private static final int PANNER_PARAM_BASE = 5;
+
+	@Nullable
+	private static String nodeId(@Nullable AudioNode node) {
+		return node instanceof NativeObject ? ((NativeObject) node).getId() : null;
+	}
+
+	private int kindOf(AudioNode node, String id) {
+		if (isDestinationNode(id)) return NODE_DESTINATION;
+		if (node instanceof AudioScheduledSourceNode) return NODE_SOURCE;
+		if (node instanceof WorkletNode) return NODE_WORKLET;
+		if (node instanceof DelayNode) return NODE_DELAY;
+		if (node instanceof AudioBiquadNode) return NODE_BIQUAD;
+		if (node instanceof AudioIIRNode) return NODE_IIR;
+		if (node instanceof AudioPannerNode) return NODE_PANNER;
+		if (node instanceof DynamicsCompressorNode) return NODE_COMPRESSOR;
+		if (node instanceof WaveShaperNode) return NODE_WAVESHAPER;
+		if (node instanceof ConvolverNode) return NODE_CONVOLVER;
+		if (node instanceof AnalyserNode) return NODE_ANALYSER;
+		if (node instanceof ChannelSplitterNode) return NODE_SPLITTER;
+		if (node instanceof ChannelMergerNode) return NODE_MERGER;
+		return NODE_GAIN;
+	}
+
+	private static int portsOf(AudioNode node) {
+		if (node instanceof ChannelSplitterNode) return ((ChannelSplitterNode) node).getNumberOfOutputs();
+		if (node instanceof ChannelMergerNode) return ((ChannelMergerNode) node).getNumberOfInputs();
+		return 1;
+	}
+
+	/** The param's target code: -1 for a gain-style param, the panner param type, or null when it takes no audio. */
+	@Nullable
+	private static Integer paramTarget(AudioParam param) {
+		AudioParam.Type type = param.getType();
+		if (type == AudioParam.Type.GAIN) return TARGET_GAIN_PARAM;
+		int ordinal = type.ordinal();
+		int first = AudioParam.Type.PANNER_POSITION_X.ordinal();
+		if (ordinal >= first && ordinal <= AudioParam.Type.PANNER_PAN.ordinal()) return PANNER_PARAM_BASE + ordinal - first;
+		return null;
+	}
+
+	void connectNodes(AudioNode source, int output, @Nullable AudioNode destination, int input) {
+		String src = nodeId(source);
+		String dst = nodeId(destination);
+		if (!nativeAvailable || src == null || dst == null) return;
+		nativeConnect(src, kindOf(source, src), portsOf(source), output, dst, kindOf(destination, dst), portsOf(destination), input, TARGET_NODE);
+	}
+
+	void disconnectNodes(AudioNode source, int output, @Nullable AudioNode destination, int input) {
+		String src = nodeId(source);
+		String dst = destination == null ? null : nodeId(destination);
+		if (!nativeAvailable || src == null || (destination != null && dst == null)) return;
+		nativeDisconnect(src, output, dst, input, TARGET_NODE);
+	}
+
+	void connectParam(AudioNode source, int output, @Nullable AudioParam param) {
+		String src = nodeId(source);
+		Integer target = param == null ? null : paramTarget(param);
+		if (!nativeAvailable || src == null || target == null || param.getId() == null) return;
+		nativeConnect(src, kindOf(source, src), portsOf(source), output, param.getId(), 0, 1, 0, target);
+	}
+
+	void disconnectParam(AudioNode source, int output, @Nullable AudioParam param) {
+		String src = nodeId(source);
+		Integer target = param == null ? null : paramTarget(param);
+		if (!nativeAvailable || src == null || target == null || param.getId() == null) return;
+		nativeDisconnect(src, output, param.getId(), -1, target);
+	}
+
+	void configureNode(AudioNode node, int channelCount, int countMode, int interpretation) {
+		String id = nodeId(node);
+		if (!nativeAvailable || id == null) return;
+		nativeConfigureNode(id, kindOf(node, id), portsOf(node), channelCount, countMode, interpretation);
+	}
+
+	private native void nativeConnect(String src, int kind, int ports, int output, String dst, int dstKind, int dstPorts, int input, int paramType);
+
+	private native void nativeDisconnect(String src, int output, @Nullable String dst, int input, int paramType);
+
+	private native void nativeReplaceSource(String oldId, @Nullable String newId);
+
+	void replaceSource(String oldId, String newId) {
+		if (nativeAvailable && oldId != null) nativeReplaceSource(oldId, newId);
+	}
+
+	private native void nativeConfigureNode(String id, int kind, int ports, int channelCount, int countMode, int interpretation);
 
 	public AudioBuffer decodeAudioData(String base64) {
 		try {
@@ -1772,15 +1829,7 @@ public class AudioContext {
 			short[] buffer = new short[bufSize];
 			double phase = 0.0;
 			while (t.getPlayState() == AudioTrack.PLAYSTATE_PLAYING) {
-				double g = 1.0;
-				String gid = null;
-				ConcurrentHashMap<Integer, String> om = voiceGainMapByOutput.get(id);
-				if (om != null) gid = om.get(0);
-				if (gid == null) gid = voiceGainMap.get(id);
-				if (gid != null) {
-					Double gf = gains.get(gid);
-					if (gf != null) g = gf;
-				}
+				final double g = 1.0;
 				for (int i = 0; i < bufSize; i++) {
 					double value = Math.sin(phase * 2.0 * Math.PI);
 					int sample = (int) Math.round(value * Short.MAX_VALUE * g);
@@ -2569,39 +2618,6 @@ public class AudioContext {
 		return out;
 	}
 
-	private native void nativeDetachFrom(String voiceId, String targetId, int output, int input);
-
-	/**
-	 * AudioNode.disconnect for node {@code nodeId}: detaches the voices feeding it from {@code node}
-	 * (every target when null) at {@code output}/{@code input} (any when negative).
-	 * A source node is its own voice.
-	 */
-	void disconnectNode(String nodeId, boolean isSource, @Nullable AudioNode node, int output, int input) {
-		if (nodeId == null) return;
-		String destId = node instanceof NativeObject ? ((NativeObject) node).getId() : null;
-		if (node != null && destId == null) return;
-		if (destId != null && isDestinationNode(destId)) return;
-		Set<String> voices = isSource ? java.util.Collections.singleton(nodeId) : getNodeSourcesSnapshot(nodeId);
-		if (!isSource && voices.isEmpty()) {
-			// Connected before it had sources: the target was attached as a voice fed by this node.
-			if (destId != null) {
-				if (nativeAvailable) nativeDetachFrom(destId, nodeId, output, input);
-				unregisterNodeSource(destId, nodeId);
-			}
-			return;
-		}
-		for (String voice : voices) {
-			if (nativeAvailable) nativeDetachFrom(voice, destId == null ? "" : destId, output, input);
-			if (destId != null) unregisterNodeSource(destId, voice);
-		}
-	}
-
-	void attachPannerToVoice(String voiceId, String pannerId) {
-		if (voiceId == null || pannerId == null) return;
-		if (nativeAvailable) {
-			nativeAttachPanner(voiceId, pannerId);
-		}
-	}
 
 	void attachLowpassBiquadToPanner(String pannerId) {
 		if (pannerId == null) return;
@@ -2616,52 +2632,12 @@ public class AudioContext {
 		}
 	}
 
-	void attachPannerToVoice(String voiceId, String pannerId, int output, int input) {
-		if (voiceId == null || pannerId == null) return;
-		if (nativeAvailable) {
-			nativeAttachPanner(voiceId, pannerId, output, input);
-			return;
-		}
-		attachPannerToVoice(voiceId, pannerId);
-	}
-
-	void detachPanner(String pannerId) {
-		if (pannerId == null) return;
-		if (nativeAvailable) {
-			nativeDetachPanner(pannerId);
-		}
-	}
-
 	void releasePanner(String id) {
 		if (id == null) return;
 		if (nativeAvailable) {
 			nativeReleasePanner(id);
 		}
 		pannerContexts.remove(id);
-		clearNodeSources(id);
-	}
-
-	void attachBiquadToVoice(String voiceId, String biquadId) {
-		if (voiceId == null || biquadId == null) return;
-		if (nativeAvailable) {
-			nativeAttachBiquad(voiceId, biquadId);
-		}
-	}
-
-	void attachBiquadToVoice(String voiceId, String biquadId, int output, int input) {
-		if (voiceId == null || biquadId == null) return;
-		if (nativeAvailable) {
-			nativeAttachBiquad(voiceId, biquadId, output, input);
-			return;
-		}
-		attachBiquadToVoice(voiceId, biquadId);
-	}
-
-	void detachBiquad(String biquadId) {
-		if (biquadId == null) return;
-		if (nativeAvailable) {
-			nativeDetachBiquad(biquadId);
-		}
 	}
 
 	void releaseBiquad(String id) {
@@ -2669,7 +2645,6 @@ public class AudioContext {
 		if (nativeAvailable) {
 			nativeReleaseBiquad(id);
 		}
-		clearNodeSources(id);
 	}
 
 	void releaseIIR(String id) {
@@ -2677,11 +2652,12 @@ public class AudioContext {
 		if (nativeAvailable) {
 			nativeReleaseIIR(id);
 		}
-		clearNodeSources(id);
 	}
 
 	void releaseGain(String id) {
 		if (id == null) return;
+		// A destination goes with its context, not with one of its wrappers.
+		if (destinationIds.contains(id)) return;
 		if (nativeAvailable) {
 			nativeReleaseGain(id);
 		}
@@ -2691,33 +2667,6 @@ public class AudioContext {
 		waveShaperCurveBuffers.remove(id);
 		waveShaperOversamples.remove(id);
 		destinationIds.remove(id);
-		clearNodeSources(id);
-	}
-
-	void detachGain(String gainId) {
-		if (gainId == null) return;
-		if (nativeAvailable) {
-			nativeDetachGain(gainId);
-			return;
-		}
-
-		for (String vid : voiceGainMap.keySet()) {
-			String gid = voiceGainMap.get(vid);
-			if (gid != null && gid.equals(gainId)) {
-				voiceGainMap.remove(vid);
-			}
-		}
-
-		for (String vid : voiceGainMapByOutput.keySet()) {
-			ConcurrentHashMap<Integer, String> map = voiceGainMapByOutput.get(vid);
-			if (map != null) {
-				for (Integer out : map.keySet()) {
-					String gid = map.get(out);
-					if (gid != null && gid.equals(gainId)) map.remove(out);
-				}
-				if (map.isEmpty()) voiceGainMapByOutput.remove(vid);
-			}
-		}
 	}
 
 	void detachPlaybackRate(String playbackRateId) {
@@ -2766,53 +2715,6 @@ public class AudioContext {
 				}
 				if (map.isEmpty()) voicePlaybackRateMapByOutput.remove(vid);
 			}
-		}
-	}
-
-	void attachGainToVoice(String voiceId, String gainId) {
-		if (voiceId == null || gainId == null) return;
-		if (nativeAvailable) {
-			nativeAttachGain(voiceId, gainId);
-			return;
-		}
-		voiceGainMap.put(voiceId, gainId);
-	}
-
-	void attachGainToVoice(String voiceId, String gainId, int output, int input) {
-		if (voiceId == null || gainId == null) return;
-		if (nativeAvailable) {
-			nativeAttachGain(voiceId, gainId, output, input);
-			return;
-		}
-
-		if (gainId.isEmpty()) {
-			ConcurrentHashMap<Integer, String> map = voiceGainMapByOutput.get(voiceId);
-			if (map != null) {
-				map.remove(output);
-				if (map.isEmpty()) voiceGainMapByOutput.remove(voiceId);
-			}
-			ConcurrentHashMap<Integer, String> current = voiceGainMapByOutput.get(voiceId);
-			if (current != null && !current.isEmpty()) {
-				String resolved = current.get(0);
-				if (resolved == null) {
-					java.util.Iterator<String> it = current.values().iterator();
-					resolved = it.hasNext() ? it.next() : null;
-				}
-				if (resolved != null) voiceGainMap.put(voiceId, resolved);
-				else voiceGainMap.remove(voiceId);
-			} else {
-				voiceGainMap.remove(voiceId);
-			}
-			return;
-		}
-		ConcurrentHashMap<Integer, String> map = voiceGainMapByOutput.get(voiceId);
-		if (map == null) {
-			map = new ConcurrentHashMap<>();
-			voiceGainMapByOutput.put(voiceId, map);
-		}
-		map.put(output, gainId);
-		if (output == 0 || !voiceGainMap.containsKey(voiceId)) {
-			voiceGainMap.put(voiceId, gainId);
 		}
 	}
 
@@ -2922,7 +2824,6 @@ public class AudioContext {
 
 	private native String nativeCreateWorklet(String contextId, java.nio.ByteBuffer ring, int[] inputChannels, int[] outputChannels, int[] layout, int[] outputData, String[] paramIds);
 
-	private native void nativeSetWorkletOutputConnected(String id, int output, boolean connected);
 
 	@Nullable
 	String createWorkletNative(String contextId, java.nio.ByteBuffer ring, int[] inputChannels, int[] outputChannels, int[] layout, int[] outputData, String[] paramIds) {
@@ -2930,10 +2831,6 @@ public class AudioContext {
 		// Param automation times are the context's.
 		for (String paramId : paramIds) registerGainForContext(contextId, paramId);
 		return nativeCreateWorklet(contextId, ring, inputChannels, outputChannels, layout, outputData, paramIds);
-	}
-
-	void setWorkletOutputConnected(String id, int output, boolean connected) {
-		if (nativeAvailable) nativeSetWorkletOutputConnected(id, output, connected);
 	}
 
 	/** An AudioWorkletNode over `ring` (a SharedArrayBuffer); layout: slotWords, header, inputCounts, inputData, outputCounts, paramLengths, paramData. */
@@ -3019,7 +2916,13 @@ public class AudioContext {
 	@Nullable
 	String switchBufferSource(String trackId, @Nullable AudioBuffer buffer) {
 		if (trackId == null) return null;
-		stopTrack(trackId);
+		if (nativeAvailable) {
+			// Stops the voice but keeps the source's connections.
+			nativeReplaceSource(trackId, null);
+			fireEnded(trackId);
+		} else {
+			stopTrack(trackId);
+		}
 
 		if (buffer == null) {
 			directBuffers.remove(trackId + "::buffer");
@@ -3203,15 +3106,7 @@ public class AudioContext {
 					final int totalFrames = byteLen / bytesPerSample;
 
 					do {
-						double g = 1.0;
-						String gid = null;
-						ConcurrentHashMap<Integer, String> om = voiceGainMapByOutput.get(trackId);
-						if (om != null) gid = om.get(0);
-						if (gid == null) gid = voiceGainMap.get(trackId);
-						if (gid != null) {
-							Double gf = gains.get(gid);
-							if (gf != null) g = gf;
-						}
+						final double g = 1.0;
 
 						int offset = 0;
 						while (offset < totalFrames) {

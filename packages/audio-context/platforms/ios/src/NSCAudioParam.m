@@ -31,11 +31,13 @@ typedef struct {
 } NSCParamEventSnapshot;
 
 @implementation NSCAudioParam {
-    __strong NSCAudioContext *_context;
+    __weak NSCAudioContext *_context;
     NSMutableArray<ParamEvent *> *_events;
     double _defaultValue;
     double _currentValueInternal;
     NSLock *_lock;
+    NSMutableData *_inputData;
+    _Atomic(NSCParamInputBlock *) _input;
 }
 
 - (instancetype)initWithContext:(NSCAudioContext *)context defaultValue:(double)defaultValue {
@@ -144,6 +146,34 @@ static inline void NSCAudioParam_insertSorted(NSMutableArray<ParamEvent *> *even
     [self notifyScheduleChanged];
 }
 
+- (NSMutableData *)inputData {
+    if (_inputData) return _inputData;
+    NSMutableData *data = [NSMutableData dataWithLength:sizeof(NSCParamInputBlock)];
+    NSCParamInputBlock *block = (NSCParamInputBlock *)data.mutableBytes;
+    atomic_init(&block->frame, -1.0);
+    atomic_init(&block->frames, 0);
+    _inputData = data;
+    atomic_store_explicit(&_input, block, memory_order_release);
+    return data;
+}
+
+// Adds the connected audio for frames first...; a frame just past the block holds its last value.
+static BOOL AddInput(NSCParamInputBlock *in, int64_t first, NSInteger count, double *out, BOOL kRate) {
+    if (!in) return NO;
+    double frame = atomic_load_explicit(&in->frame, memory_order_acquire);
+    uint32_t frames = atomic_load_explicit(&in->frames, memory_order_relaxed);
+    if (frame < 0.0 || frames == 0) return NO;
+    int64_t start = llround(frame);
+    BOOL added = NO;
+    for (NSInteger i = 0; i < count; i++) {
+        int64_t at = (kRate ? first : first + i) - start;
+        if (at < 0 || at >= 2 * (int64_t)frames) continue;
+        out[i] += in->values[MIN(at, (int64_t)frames - 1)];
+        added = YES;
+    }
+    return added;
+}
+
 - (double)currentScalarValue {
     [_lock lock];
     double v = _currentValueInternal;
@@ -153,16 +183,14 @@ static inline void NSCAudioParam_insertSorted(NSMutableArray<ParamEvent *> *even
 
 - (double)valueAtTime:(double)t {
     double v = 0.0;
-    BOOL ok = [self fillValuesForRange:t sampleRate:1.0 frameCount:1 into:&v];
-    if (!ok) {
-        [_lock lock];
-        v = _currentValueInternal;
-        [_lock unlock];
-    }
+    double rate = _context ? _context.sampleRate : 0.0;
+    [self fillValuesForRange:t sampleRate:(rate > 0.0 ? rate : 1.0) frameCount:1 into:&v];
     return v;
 }
 
 - (BOOL)hasEventsAfter:(double)t {
+    // Connected audio changes it every quantum.
+    if (self.inputNode) return YES;
     [_lock lock];
     BOOL has = NO;
     for (ParamEvent *e in _events) {
@@ -176,7 +204,38 @@ static inline void NSCAudioParam_insertSorted(NSMutableArray<ParamEvent *> *even
                                 sampleRate:(double)sampleRate
                                 frameCount:(NSInteger)frameCount
                                             into:(double *)outValues {
+    return [self fillValues:startTime byFrame:NO sampleRate:sampleRate frameCount:frameCount into:outValues];
+}
+
+- (BOOL)fillValuesFromFrame:(double)startFrame
+                 sampleRate:(double)sampleRate
+                 frameCount:(NSInteger)frameCount
+                       into:(double *)outValues {
+    if (sampleRate <= 0.0) return [self fillValuesForRange:0.0 sampleRate:1.0 frameCount:frameCount into:outValues];
+    return [self fillValues:startFrame byFrame:YES sampleRate:sampleRate frameCount:frameCount into:outValues];
+}
+
+- (BOOL)fillValues:(double)start
+           byFrame:(BOOL)byFrame
+        sampleRate:(double)sampleRate
+        frameCount:(NSInteger)frameCount
+              into:(double *)outValues {
+    BOOL automated = [self fillScheduled:start byFrame:byFrame sampleRate:sampleRate frameCount:frameCount into:outValues];
+    NSCParamInputBlock *in = atomic_load_explicit(&_input, memory_order_acquire);
+    if (!in || !outValues || frameCount <= 0) return automated;
+    int64_t first = llround(byFrame ? start : start * sampleRate);
+    BOOL kRate = [_automationRate isEqualToString:@"k-rate"];
+    return AddInput(in, first, frameCount, outValues, kRate) || automated;
+}
+
+// byFrame: frame i is at (start + i) / sampleRate, so an event on a frame lands exactly on it.
+- (BOOL)fillScheduled:(double)start
+              byFrame:(BOOL)byFrame
+           sampleRate:(double)sampleRate
+           frameCount:(NSInteger)frameCount
+                 into:(double *)outValues {
     if (!outValues || frameCount <= 0) return NO;
+    double startTime = byFrame ? start / sampleRate : start;
     
     [_lock lock];
     NSUInteger evtCount = _events.count;
@@ -239,7 +298,7 @@ static inline void NSCAudioParam_insertSorted(NSMutableArray<ParamEvent *> *even
     NSInteger nextIdx = 0;
     NSInteger prevIdx = -1;
     for (NSInteger i = 0; i < frameCount; ++i) {
-        double t = startTime + (double)i / sampleRate;
+        double t = byFrame ? (start + (double)i) / sampleRate : startTime + (double)i / sampleRate;
         while (nextIdx < (NSInteger)evtCount && evts[nextIdx].time <= t) {
             prevIdx = nextIdx;
             nextIdx += 1;

@@ -3,7 +3,6 @@ use std::ffi::CStr;
 use std::os::raw::c_char;
 use std::sync::Arc;
 
-use crate::webgpu::error::handle_error;
 use crate::webgpu::gpu_bind_group::CanvasGPUBindGroup;
 use crate::webgpu::gpu_buffer::CanvasGPUBuffer;
 use crate::webgpu::gpu_compute_pipeline::CanvasGPUComputePipeline;
@@ -13,9 +12,11 @@ use super::gpu::CanvasWebGPUInstance;
 
 pub struct CanvasGPUComputePassEncoder {
     pub(crate) label: Option<Cow<'static, str>>,
+    #[allow(dead_code)]
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
     pub(crate) pass:
         parking_lot::Mutex<Option<wgpu_core::command::ComputePass>>,
+    #[allow(dead_code)]
     pub(crate) error_sink: super::gpu_device::ErrorSink,
 }
 

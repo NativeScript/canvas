@@ -29,6 +29,12 @@ pub(crate) enum Kind {
   ChannelSplitter(node::ChannelSplitterNode),
   ChannelMerger(node::ChannelMergerNode),
   MediaElementSource(node::MediaStreamTrackAudioSourceNode),
+  Worklet(WorkletNode),
+}
+
+pub(crate) struct WorkletNode {
+  pub node: web_audio_api::worklet::AudioWorkletNode,
+  pub id: u32,
 }
 
 /// Evaluates `$body` with `$node` bound to whichever node `$kind` holds.
@@ -52,6 +58,7 @@ macro_rules! any_node {
       Kind::ChannelSplitter($node) => $body,
       Kind::ChannelMerger($node) => $body,
       Kind::MediaElementSource($node) => $body,
+      Kind::Worklet(WorkletNode { node: $node, .. }) => $body,
     }
   };
 }
@@ -105,6 +112,7 @@ impl AudioNode {
       Kind::ChannelSplitter(_) => "ChannelSplitterNode",
       Kind::ChannelMerger(_) => "ChannelMergerNode",
       Kind::MediaElementSource(_) => "MediaElementAudioSourceNode",
+      Kind::Worklet(_) => "AudioWorkletNode",
     }
   }
 
@@ -280,9 +288,18 @@ impl AudioNode {
       (Kind::DynamicsCompressor(node), "ratio") => node.ratio(),
       (Kind::DynamicsCompressor(node), "attack") => node.attack(),
       (Kind::DynamicsCompressor(node), "release") => node.release(),
+      (Kind::Worklet(worklet), name) => worklet.node.parameters().get(name)?,
       _ => return None,
     };
     Some(AudioParam::wrap(param))
+  }
+
+  #[napi(getter)]
+  pub fn worklet_id(&self) -> Result<u32> {
+    match &self.kind {
+      Kind::Worklet(worklet) => Ok(worklet.id),
+      _ => Err(self.unsupported("workletId")),
+    }
   }
 
   // Scheduled sources.

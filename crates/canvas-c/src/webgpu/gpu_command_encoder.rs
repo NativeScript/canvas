@@ -281,7 +281,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_clear_buffer(
     let offset: u64 = offset.try_into().unwrap_or_default();
     let size = size.try_into().ok();
 
-    let error_sink = command_encoder.error_sink.as_ref();
 
     command_encoder.encoder.clear_buffer(buffer_id, offset, size);}
 
@@ -306,7 +305,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_copy_buffer_to_buf
     let dst = &*dst;
     let dst_id = Arc::clone(&dst.buffer);
     let dst_offset: u64 = dst_offset.try_into().unwrap_or_default();
-    let error_sink = command_encoder.error_sink.as_ref();
     let size = size.try_into().ok();
     command_encoder.encoder.copy_buffer_to_buffer(src_id,
         src_offset,
@@ -455,7 +453,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_copy_texture_to_bu
 
     let copy_size = *copy_size;
     let copy_size: wgt::Extent3d = copy_size.into();
-    let error_sink = command_encoder.error_sink.as_ref();
     command_encoder.encoder.copy_texture_to_buffer(&image_copy_texture,
         &image_copy_buffer,
         &copy_size);}
@@ -500,7 +497,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_copy_texture_to_te
     let copy_size = *copy_size;
     let copy_size: wgt::Extent3d = copy_size.into();
 
-    let error_sink = command_encoder.error_sink.as_ref();
     command_encoder.encoder.copy_texture_to_texture(&image_copy_texture_src,
         &image_copy_texture_dst,
         &copy_size);}
@@ -548,7 +544,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_insert_debug_marke
 
     let label = CStr::from_ptr(label);
     let label = label.to_str().unwrap();
-    let error_sink = command_encoder.error_sink.as_ref();
     command_encoder.encoder.insert_debug_marker(label);}
 
 #[no_mangle]
@@ -560,7 +555,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_pop_debug_group(
     }
 
     let command_encoder = &*command_encoder;
-    let error_sink = command_encoder.error_sink.as_ref();
     command_encoder.encoder.pop_debug_group();}
 
 #[no_mangle]
@@ -576,7 +570,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_push_debug_group(
 
     let label = CStr::from_ptr(label);
     let label = label.to_str().unwrap();
-    let error_sink = command_encoder.error_sink.as_ref();
     command_encoder.encoder.push_debug_group(label);}
 
 #[no_mangle]
@@ -599,7 +592,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_resolve_query_set(
 
     let dst = &*dst;
     let dst_id = Arc::clone(&dst.buffer);
-    let error_sink = command_encoder.error_sink.as_ref();
     command_encoder.encoder.resolve_query_set(query_set_id,
         first_query,
         query_count,
@@ -620,5 +612,4 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_write_timestamp(
 
     let query_set = &*query_set;
     let query_set_id = Arc::clone(&query_set.query);
-    let error_sink = command_encoder.error_sink.as_ref();
     command_encoder.encoder.write_timestamp(query_set_id, query_index);}

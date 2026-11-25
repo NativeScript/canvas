@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::io::Cursor;
 
 use base64::Engine as _;
@@ -11,11 +12,15 @@ use web_audio_api::context::{
   AudioContextLatencyCategory, AudioContextOptions, AudioContextState, BaseAudioContext, ConcreteBaseAudioContext,
   OfflineAudioContext,
 };
-use web_audio_api::PeriodicWaveOptions;
+use web_audio_api::node::{AudioNodeOptions, ChannelCountMode, ChannelInterpretation};
+use web_audio_api::worklet::{AudioWorkletNode, AudioWorkletNodeOptions};
+use web_audio_api::{AudioParamDescriptor, PeriodicWaveOptions};
 
 use crate::buffer::{AudioBuffer, PeriodicWave};
-use crate::node::{AudioNode, Kind};
+use crate::node::{AudioNode, Kind, WorkletNode};
+use crate::worklet::{self, AudioWorkletScope, JsProcessor, Layout, ProcessorOptions, Ring, Scope};
 use crate::param::AudioParam;
+use crate::suspend::{SuspendProcessor, Suspends};
 use crate::{error, guard};
 
 #[napi(object)]
@@ -29,13 +34,44 @@ pub struct ContextOptions {
   pub sink_id: Option<String>,
 }
 
+#[napi(object)]
+pub struct WorkletParamDescriptor {
+  pub name: String,
+  pub default_value: Option<f64>,
+  pub min_value: Option<f64>,
+  pub max_value: Option<f64>,
+  pub automation_rate: Option<String>,
+}
+
+/// `AudioWorkletNodeOptions` plus the processor's `parameterDescriptors`.
+#[napi(object)]
+pub struct WorkletNodeOptions {
+  pub number_of_inputs: Option<u32>,
+  pub number_of_outputs: Option<u32>,
+  pub output_channel_count: Option<Vec<u32>>,
+  pub parameter_data: Option<HashMap<String, f64>>,
+  pub channel_count: Option<u32>,
+  pub channel_count_mode: Option<String>,
+  pub channel_interpretation: Option<String>,
+  pub descriptors: Vec<WorkletParamDescriptor>,
+}
+
 enum Backing {
   Online(Arc<web_audio_api::context::AudioContext>),
+  Offline(Box<Offline>),
+}
+
+struct Offline {
   /// Taken by `startRendering`.
-  Offline(Mutex<Option<OfflineAudioContext>>, usize),
+  context: Mutex<Option<OfflineAudioContext>>,
+  length: usize,
+  suspends: Arc<Suspends>,
+  /// Holds the render thread at suspends.
+  _holder: AudioWorkletNode,
 }
 
 type StateChangeCallback<'a> = Function<'a, (), UnknownReturnValue>;
+type SuspendCallback<'a> = Function<'a, f64, UnknownReturnValue>;
 
 /// An `AudioContext` or an `OfflineAudioContext`. Nodes are made on the shared base, so both
 /// kinds build graphs the same way.
@@ -50,6 +86,13 @@ impl AudioContext {
     match &self.backing {
       Backing::Online(context) => Ok(context),
       Backing::Offline(..) => Err(error("InvalidStateError: not supported by an OfflineAudioContext")),
+    }
+  }
+
+  fn suspends(&self) -> Result<&Arc<Suspends>> {
+    match &self.backing {
+      Backing::Offline(offline) => Ok(&offline.suspends),
+      Backing::Online(_) => Err(error("InvalidStateError: only an OfflineAudioContext suspends at a time")),
     }
   }
 
@@ -90,9 +133,28 @@ impl AudioContext {
   #[napi(factory)]
   pub fn offline(number_of_channels: u32, length: u32, sample_rate: f64) -> Result<Self> {
     let context = guard(|| OfflineAudioContext::new(number_of_channels as usize, length as usize, sample_rate as f32))?;
+    let suspends = Suspends::new(length as u64, context.sample_rate() as f64);
+    let holder = guard(|| {
+      AudioWorkletNode::new::<SuspendProcessor>(
+        &context,
+        AudioWorkletNodeOptions {
+          number_of_inputs: 0,
+          number_of_outputs: 1,
+          output_channel_count: vec![1],
+          parameter_data: HashMap::new(),
+          processor_options: suspends.clone(),
+          audio_node_options: AudioNodeOptions::default(),
+        },
+      )
+    })?;
     Ok(Self {
       base: context.base().clone(),
-      backing: Backing::Offline(Mutex::new(Some(context)), length as usize),
+      backing: Backing::Offline(Box::new(Offline {
+        context: Mutex::new(Some(context)),
+        length: length as usize,
+        suspends,
+        _holder: holder,
+      })),
     })
   }
 
@@ -134,7 +196,7 @@ impl AudioContext {
   #[napi(getter)]
   pub fn length(&self) -> u32 {
     match &self.backing {
-      Backing::Offline(_, length) => *length as u32,
+      Backing::Offline(offline) => offline.length as u32,
       Backing::Online(_) => 0,
     }
   }
@@ -181,14 +243,48 @@ impl AudioContext {
   /// Renders the graph once, off the JS thread.
   #[napi(ts_return_type = "Promise<AudioBuffer>")]
   pub fn start_rendering(&self) -> Result<AsyncTask<RenderTask>> {
-    let Backing::Offline(context, _) = &self.backing else {
+    let Backing::Offline(offline) = &self.backing else {
       return Err(error("InvalidStateError: only an OfflineAudioContext renders"));
     };
-    let context = context.lock().ok().and_then(|mut context| context.take());
+    let suspends = &offline.suspends;
+    let context = offline.context.lock().ok().and_then(|mut context| context.take());
     match context {
-      Some(context) => Ok(AsyncTask::new(RenderTask { context: Some(context) })),
+      Some(context) => {
+        suspends.start();
+        Ok(AsyncTask::new(RenderTask { context: Some(context), suspends: suspends.clone() }))
+      }
       None => Err(error("InvalidStateError: startRendering can only be called once")),
     }
+  }
+
+  /// Offline: schedules a suspend at `time`, rounded up to a quantum; returns its frame.
+  #[napi]
+  pub fn suspend_at(&self, time: f64) -> Result<f64> {
+    let suspends = self.suspends()?;
+    let current = (self.base.current_time() * self.base.sample_rate() as f64).round() as u64;
+    suspends.schedule(time, current).map(|frame| frame as f64).map_err(error)
+  }
+
+  /// Offline: continues a render held at a suspend.
+  #[napi]
+  pub fn resume_rendering(&self) -> Result<()> {
+    self.suspends()?.resume().map_err(error)
+  }
+
+  /// Offline: `callback` runs on the JS thread with the frame each suspend holds at.
+  #[napi(ts_args_type = "callback: ((frame: number) => void) | null")]
+  pub fn set_onsuspend(&self, callback: Option<SuspendCallback>) -> Result<()> {
+    let suspends = self.suspends()?;
+    match callback {
+      Some(callback) => {
+        let tsfn = callback.build_threadsafe_function::<f64>().weak::<true>().build_callback(|ctx| Ok(ctx.value))?;
+        suspends.set_notify(Some(Box::new(move |frame| {
+          tsfn.call(frame as f64, ThreadsafeFunctionCallMode::NonBlocking);
+        })));
+      }
+      None => suspends.set_notify(None),
+    }
+    Ok(())
   }
 
   /// Decodes a complete encoded file (wav, mp3, ogg/vorbis, flac, aac, ...) to the context's
@@ -240,6 +336,75 @@ impl AudioContext {
       .ok_or_else(|| error("InvalidStateError: the media element has no audio tap"))?;
     let track = web_audio_api::media_streams::MediaStreamTrack::from_iter(stream);
     guard(|| AudioNode::new(Kind::MediaElementSource(context.create_media_stream_track_source(&track))))
+  }
+
+  #[napi]
+  pub fn audio_worklet_scope(&self) -> AudioWorkletScope {
+    AudioWorkletScope { scope: Scope::new() }
+  }
+
+  #[napi]
+  pub fn create_audio_worklet_node(&self, scope: &AudioWorkletScope, options: WorkletNodeOptions) -> Result<AudioNode> {
+    let inputs = options.number_of_inputs.unwrap_or(1) as usize;
+    let outputs = options.number_of_outputs.unwrap_or(1) as usize;
+    let output_channel_count: Vec<usize> =
+      options.output_channel_count.unwrap_or_default().into_iter().map(|count| count as usize).collect();
+    let mut names = Vec::with_capacity(options.descriptors.len());
+    let mut descriptors = Vec::with_capacity(options.descriptors.len());
+    for descriptor in options.descriptors {
+      if names.contains(&descriptor.name) {
+        return Err(error(format!("NotSupportedError: duplicate parameter name '{}'", descriptor.name)));
+      }
+      let min = descriptor.min_value.unwrap_or(f32::MIN as f64);
+      let max = descriptor.max_value.unwrap_or(f32::MAX as f64);
+      let default = descriptor.default_value.unwrap_or(0.);
+      if !(min <= default && default <= max) {
+        return Err(error(format!("InvalidStateError: '{}' defaultValue is out of its range", descriptor.name)));
+      }
+      names.push(descriptor.name.clone());
+      descriptors.push(AudioParamDescriptor {
+        name: descriptor.name,
+        automation_rate: worklet::automation_rate(descriptor.automation_rate.as_deref())?,
+        default_value: default as f32,
+        min_value: min as f32,
+        max_value: max as f32,
+      });
+    }
+    let mut channels = AudioNodeOptions::default();
+    if let Some(count) = options.channel_count {
+      channels.channel_count = count as usize;
+    }
+    if let Some(mode) = options.channel_count_mode {
+      channels.channel_count_mode = match mode.as_str() {
+        "max" => ChannelCountMode::Max,
+        "clamped-max" => ChannelCountMode::ClampedMax,
+        "explicit" => ChannelCountMode::Explicit,
+        _ => return Err(invalid_enum(&mode, "ChannelCountMode")),
+      };
+    }
+    if let Some(interpretation) = options.channel_interpretation {
+      channels.channel_interpretation = match interpretation.as_str() {
+        "speakers" => ChannelInterpretation::Speakers,
+        "discrete" => ChannelInterpretation::Discrete,
+        _ => return Err(invalid_enum(&interpretation, "ChannelInterpretation")),
+      };
+    }
+    let layout = Layout::new(inputs, worklet::output_capacity(inputs, outputs, &output_channel_count), names.len());
+    let ring = Arc::new(Ring::new(layout, matches!(self.backing, Backing::Offline(..))));
+    let processor_options = ProcessorOptions { ring: ring.clone(), scope: scope.scope.clone(), param_names: names };
+    let worklet_options = AudioWorkletNodeOptions {
+      number_of_inputs: inputs,
+      number_of_outputs: outputs,
+      output_channel_count,
+      parameter_data: options.parameter_data.unwrap_or_default(),
+      processor_options,
+      audio_node_options: channels,
+    };
+    let node = guard(|| {
+      worklet::with_descriptors(descriptors, || AudioWorkletNode::new::<JsProcessor>(&self.base, worklet_options))
+    })?;
+    let id = scope.scope.add(&ring);
+    Ok(AudioNode::new(Kind::Worklet(WorkletNode { node, id })))
   }
 
   #[napi]
@@ -333,6 +498,10 @@ impl AudioContext {
   }
 }
 
+fn invalid_enum(value: &str, name: &str) -> napi::Error {
+  error(format!("TypeError: '{value}' is not a valid value for enumeration {name}"))
+}
+
 pub enum StateChange {
   Resume,
   Suspend,
@@ -368,6 +537,7 @@ impl Task for StateTask {
 
 pub struct RenderTask {
   context: Option<OfflineAudioContext>,
+  suspends: Arc<Suspends>,
 }
 
 impl Task for RenderTask {
@@ -376,7 +546,10 @@ impl Task for RenderTask {
 
   fn compute(&mut self) -> Result<Self::Output> {
     let mut context = self.context.take().ok_or_else(|| error("InvalidStateError: already rendered"))?;
-    guard(|| context.start_rendering_sync())
+    self.suspends.reach(0);
+    let rendered = guard(|| context.start_rendering_sync());
+    self.suspends.finish();
+    rendered
   }
 
   fn resolve(&mut self, _: Env, buffer: Self::Output) -> Result<AudioBuffer> {
@@ -420,5 +593,14 @@ impl Task for DecodeTask {
 
   fn resolve(&mut self, _: Env, buffer: Self::Output) -> Result<AudioBuffer> {
     Ok(AudioBuffer { inner: buffer })
+  }
+}
+
+impl Drop for AudioContext {
+  /// A render held at a suspend would otherwise wait forever.
+  fn drop(&mut self) {
+    if let Backing::Offline(offline) = &self.backing {
+      offline.suspends.finish();
+    }
   }
 }

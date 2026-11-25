@@ -6,13 +6,11 @@ use super::{
     structs::{CanvasExtent3d, CanvasImageCopyExternalImage, CanvasImageDataLayout},
 };
 use crate::webgpu::enums::CanvasGPUTextureFormat;
-use crate::webgpu::error::{handle_error, handle_error_fatal};
 use crate::webgpu::prelude::label_to_ptr;
 use crate::webgpu::structs::{
     CanvasImageCopyCanvasRenderingContext2D, CanvasImageCopyGPUContext, CanvasImageCopyImageAsset,
     CanvasImageCopyWebGL,
 };
-use canvas_webgl::utils::gl::bytes_per_pixel;
 use std::borrow::Cow;
 use std::os::raw::{c_char, c_void};
 use std::sync::{Arc, Mutex, OnceLock};
@@ -37,6 +35,9 @@ pub struct CanvasGPUQueue {
     #[cfg(target_os = "linux")]
     pub(crate) linux_frames:
         Arc<parking_lot::Mutex<crate::webgpu::linux_video_frame::LinuxFrameCache>>,
+    #[cfg(all(feature = "gl", target_os = "android"))]
+    pub(crate) android_canvases:
+        Arc<parking_lot::Mutex<crate::webgpu::android_canvas_copy::AndroidCanvasCache>>,
 }
 
 unsafe impl Send for CanvasGPUQueue {}
@@ -71,43 +72,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_release(queue: *const Canvas
     Arc::decrement_strong_count(queue);
 }
 
-fn get_offset_image(
-    buffer: &[u8],
-    img_width: usize,
-    img_height: usize,
-    x_offset: usize,
-    y_offset: usize,
-    width: usize,
-    height: usize,
-) -> Vec<u8> {
-    // todo pass bytes per pixel
-    let bytes_per_pixel = buffer.len() / (img_width * img_height);
-
-    let mut result = vec![0u8; width * height * bytes_per_pixel];
-
-    let src_bytes_per_row = img_width * bytes_per_pixel;
-
-    for row in 0..height {
-        let src_y = y_offset + row;
-        if src_y >= img_height {
-            break;
-        }
-
-        let src_start = (src_y * img_width + x_offset) * bytes_per_pixel;
-        let src_end = src_start + width * bytes_per_pixel;
-
-        let src_row_end = std::cmp::min(src_end, (src_y + 1) * src_bytes_per_row);
-        let src_row_data = &buffer[src_start..src_row_end];
-
-        let dst_start = row * width * bytes_per_pixel;
-        let copy_len = src_row_data.len().min(width * bytes_per_pixel);
-
-        result[dst_start..dst_start + copy_len].copy_from_slice(&src_row_data[0..copy_len]);
-    }
-
-    result
-}
-
+#[cfg(test)]
 fn prepare_external_image_upload(data: &[u8], width: u32, height: u32) -> (Vec<u8>, u32) {
     let mut bpp = 0usize;
     if width != 0 && height != 0 {
@@ -333,13 +298,26 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_context_to_texture(
         return;
     }
 
-    #[cfg(any(
-        target_os = "ios",
-        target_os = "macos",
-        target_os = "visionos",
-        target_os = "tvos"
+    #[cfg(all(
+        feature = "metal",
+        any(
+            target_os = "ios",
+            target_os = "macos",
+            target_os = "visionos",
+            target_os = "tvos"
+        )
     ))]
     if copy_context_on_gpu(&*queue, copy, &*destination, *size) {
+        return;
+    }
+
+    #[cfg(all(feature = "gl", target_os = "linux"))]
+    if copy_context_on_gpu_linux(&*queue, copy, &*destination, *size) {
+        return;
+    }
+
+    #[cfg(all(feature = "gl", target_os = "android"))]
+    if super::android_canvas_copy::copy_context_on_gpu(&*queue, copy, &*destination, *size) {
         return;
     }
 
@@ -387,12 +365,115 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_context_to_texture(
     canvas_native_webgpu_queue_copy_external_image_to_texture(queue, &image, destination, size);
 }
 
+/// Linux: the 2D canvas (GL) draws itself into an exportable Vulkan image of ours, as a video
+/// frame producer does, and the submit sampling it waits for its semaphore. `false` leaves the
+/// copy to the readback path.
+#[cfg(all(feature = "gl", target_os = "linux"))]
+unsafe fn copy_context_on_gpu_linux(
+    queue: &CanvasGPUQueue,
+    copy: &CanvasImageCopyCanvasRenderingContext2D,
+    destination: &CanvasImageCopyTexture,
+    size: CanvasExtent3d,
+) -> bool {
+    use crate::linux_video_frame::{CanvasLinuxFrameTarget, CanvasLinuxVideoFrame, KIND_GL};
+
+    unsafe extern "C" fn draw(frame: *mut CanvasLinuxVideoFrame, target: *const CanvasLinuxFrameTarget) -> bool {
+        let (Some(frame), Some(target)) = (frame.as_ref(), target.as_ref()) else {
+            return false;
+        };
+        let context = &mut *(frame.user as *mut crate::c2d::CanvasRenderingContext2D);
+        context
+            .get_context_mut()
+            .draw_into_vulkan_image(&canvas_2d::context::vulkan_interop::VulkanImageTarget {
+                id: target.id,
+                memory_fd: target.memory_fd,
+                allocation_size: target.allocation_size,
+                width: target.width as i32,
+                height: target.height as i32,
+                ready_fd: target.ready_fd,
+                release_fd: target.release_fd,
+                wait_release: target.wait_release != 0,
+            })
+    }
+
+    let destination_texture = &(*destination.texture).texture;
+    if !destination_texture
+        .descriptor()
+        .usage
+        .contains(wgt::TextureUsages::RENDER_ATTACHMENT)
+    {
+        return false;
+    }
+    let size: wgt::Extent3d = size.into();
+    let context = &mut *(copy.source as *mut crate::c2d::CanvasRenderingContext2D);
+    if context.is_threaded() || context.engine() != crate::c2d::Engine::GL {
+        return false;
+    }
+    let (width, height) = context.get_context().dimensions();
+    let (width, height) = (width as u32, height as u32);
+    if width == 0
+        || height == 0
+        || size.width == 0
+        || size.height == 0
+        || copy.origin.x + size.width > width
+        || copy.origin.y + size.height > height
+    {
+        return false;
+    }
+    let Some(device_uuid) = context.get_context_mut().gl_device_uuid() else {
+        return false;
+    };
+    let mut frame = CanvasLinuxVideoFrame {
+        size: std::mem::size_of::<CanvasLinuxVideoFrame>() as u32,
+        kind: KIND_GL,
+        width,
+        height,
+        producer: context.get_context().vulkan_producer(),
+        egl_display: std::ptr::null_mut(),
+        egl_image: std::ptr::null_mut(),
+        image_id: 0,
+        data: std::ptr::null(),
+        stride: 0,
+        reserved: 0,
+        device_uuid,
+        copy_to: Some(draw),
+        release_sync: std::ptr::null_mut(),
+        user: context as *mut crate::c2d::CanvasRenderingContext2D as *mut c_void,
+    };
+
+    // Queued work goes first, so the semaphore wait lands on the blit's submit.
+    super::gpu_device::timeline_of(&queue.error_sink).drain();
+    let Some(source) = super::linux_video_frame::shared(queue, &mut frame, true) else {
+        return false;
+    };
+
+    // Skia's surface is premultiplied.
+    super::gpu_native_texture::blit_texture_with(
+        queue,
+        &source,
+        width,
+        height,
+        copy.origin.x,
+        copy.origin.y,
+        copy.flip_y,
+        !copy.premultiplied_alpha,
+        destination_texture,
+        destination.mip_level,
+        destination.origin.z,
+        (destination.origin.x, destination.origin.y),
+        size,
+    )
+}
+
 /// Signalled by a 2D canvas's queue once its copy for WebGPU is written; wgpu's queue waits on it.
-#[cfg(any(
-    target_os = "ios",
-    target_os = "macos",
-    target_os = "visionos",
-    target_os = "tvos"
+#[cfg(all(
+    feature = "metal",
+    any(
+        target_os = "ios",
+        target_os = "macos",
+        target_os = "visionos",
+        target_os = "tvos"
+    )
 ))]
 struct CopyEvent {
     device: usize,
@@ -400,54 +481,72 @@ struct CopyEvent {
     value: u64,
 }
 
-#[cfg(any(
-    target_os = "ios",
-    target_os = "macos",
-    target_os = "visionos",
-    target_os = "tvos"
+#[cfg(all(
+    feature = "metal",
+    any(
+        target_os = "ios",
+        target_os = "macos",
+        target_os = "visionos",
+        target_os = "tvos"
+    )
 ))]
 unsafe impl Send for CopyEvent {}
 
 /// Metal objects are thread safe; these only cross to the 2D render thread.
-#[cfg(any(
-    target_os = "ios",
-    target_os = "macos",
-    target_os = "visionos",
-    target_os = "tvos"
+#[cfg(all(
+    feature = "metal",
+    any(
+        target_os = "ios",
+        target_os = "macos",
+        target_os = "visionos",
+        target_os = "tvos"
+    )
 ))]
 #[derive(Clone, Copy)]
 struct SendPtr(*const c_void);
-#[cfg(any(
-    target_os = "ios",
-    target_os = "macos",
-    target_os = "visionos",
-    target_os = "tvos"
+#[cfg(all(
+    feature = "metal",
+    any(
+        target_os = "ios",
+        target_os = "macos",
+        target_os = "visionos",
+        target_os = "tvos"
+    )
 ))]
 unsafe impl Send for SendPtr {}
 
-#[cfg(any(
-    target_os = "ios",
-    target_os = "macos",
-    target_os = "visionos",
-    target_os = "tvos"
+#[cfg(all(
+    feature = "metal",
+    any(
+        target_os = "ios",
+        target_os = "macos",
+        target_os = "visionos",
+        target_os = "tvos"
+    )
 ))]
 struct SendRetained<T: ?Sized>(objc2::rc::Retained<T>);
-#[cfg(any(
-    target_os = "ios",
-    target_os = "macos",
-    target_os = "visionos",
-    target_os = "tvos"
+#[cfg(all(
+    feature = "metal",
+    any(
+        target_os = "ios",
+        target_os = "macos",
+        target_os = "visionos",
+        target_os = "tvos"
+    )
 ))]
 unsafe impl<T: ?Sized> Send for SendRetained<T> {}
 
 /// The 2D canvas copied on the GPU, with no readback: its queue blits it into a new texture and
 /// signals an `MTLEvent` that wgpu's queue waits on before sampling it. `false` leaves the copy
 /// to the readback path.
-#[cfg(any(
-    target_os = "ios",
-    target_os = "macos",
-    target_os = "visionos",
-    target_os = "tvos"
+#[cfg(all(
+    feature = "metal",
+    any(
+        target_os = "ios",
+        target_os = "macos",
+        target_os = "visionos",
+        target_os = "tvos"
+    )
 ))]
 unsafe fn copy_context_on_gpu(
     queue: &CanvasGPUQueue,
@@ -537,7 +636,7 @@ unsafe fn copy_context_on_gpu(
     let (keep_texture, keep_event) = (SendRetained(texture.clone()), SendRetained(event.clone()));
     context.post_to_pixels_source(move |context| {
         let (target, signal) = (target, signal);
-        context.copy_to_metal_texture(target.0, signal.0, value);
+        context.copy_to_metal_texture(target.0, signal.0, value, false);
         drop((keep_texture, keep_event));
     });
 

@@ -6,7 +6,7 @@ use std::{
     os::raw::{c_char, c_void},
 };
 use wgpu_core::binding_model::BufferBinding;
-use wgpu_core::pipeline::{CreatePipelineError as CreateRenderPipelineError, RenderPipelineDescriptor};
+use wgpu_core::pipeline::RenderPipelineDescriptor;
 use wgpu_core::resource::CreateBufferError;
 use wgt::{Features, PrimitiveTopology};
 
@@ -17,7 +17,7 @@ use crate::webgpu::enums::{
     CanvasOptionalCompareFunction, CanvasOptionalGPUTextureFormat, CanvasOptionalPrimitiveTopology,
     CanvasQueryType, SurfaceGetCurrentTextureStatus,
 };
-use crate::webgpu::error::{handle_error, handle_error_fatal, CanvasGPUError, CanvasGPUErrorType};
+use crate::webgpu::error::{handle_error, CanvasGPUError, CanvasGPUErrorType};
 use crate::webgpu::gpu_bind_group::CanvasGPUBindGroup;
 use crate::webgpu::gpu_bind_group_layout::CanvasGPUBindGroupLayout;
 use crate::webgpu::gpu_compute_pipeline::CanvasGPUComputePipeline;
@@ -42,8 +42,6 @@ use super::{
     prelude::*,
     structs::{CanvasColorTargetState, CanvasMultisampleState, CanvasVertexAttribute},
 };
-
-const MAX_BIND_GROUPS: usize = 8;
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq, PartialOrd)]
@@ -294,6 +292,7 @@ pub struct CanvasGPUDevice {
     /// the only way back to the adapter from a device we already own.
     pub(crate) adapter: Arc<wgpu_core::instance::Adapter>,
     pub(crate) queue: Arc<CanvasGPUQueue>,
+    #[allow(dead_code)]
     pub(crate) user_data: *mut c_void,
     pub(crate) error_sink: ErrorSink,
     pub(crate) feature_level: wgt::FeatureLevel,

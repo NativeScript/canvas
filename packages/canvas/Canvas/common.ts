@@ -2,6 +2,9 @@ import { CSSType, View, Property, booleanConverter, Screen, ContainerView } from
 import type { CanvasRenderingContext } from '../common';
 import { CANVAS_VIEW, removeItemFromArray } from './utils';
 import { OffscreenCanvas } from '../OffscreenCanvas';
+import { createDrawableController, DrawableController, ElementImage, ElementSource, elementImageSource, isDrawable, mat4 } from './drawable';
+
+export { ElementImage } from './drawable';
 
 export interface ICanvasBase {
 	/** @deprecated The canvas is usable as soon as it exists; call getContext() directly. */
@@ -81,6 +84,33 @@ export class CustomEvent extends Event {
 	constructor(type: string, options?: EventOptions & { detail?: any }) {
 		super(type, options);
 		this.detail = options?.detail ?? null;
+	}
+}
+
+export class CanvasPaintEvent extends Event {
+	readonly changedElements: ReadonlyArray<View>;
+	/** For Observable listeners. */
+	readonly eventName: string;
+	readonly object: any;
+
+	constructor(type: string, options?: EventOptions & { changedElements?: View[] }) {
+		super(type, options);
+		this.changedElements = Object.freeze([...(options?.changedElements ?? [])]);
+		this.eventName = type;
+		this.object = options?.target ?? null;
+	}
+}
+
+export class ElementGeometryUpdateEvent extends Event {
+	readonly elements: ReadonlyArray<View>;
+	readonly eventName: string;
+	readonly object: any;
+
+	constructor(type: string, options?: EventOptions & { elements?: View[] }) {
+		super(type, options);
+		this.elements = Object.freeze([...(options?.elements ?? [])]);
+		this.eventName = type;
+		this.object = options?.target ?? null;
 	}
 }
 
@@ -329,6 +359,10 @@ interface KeyboardEventOptions extends UIEventOptions {
 	key?: string;
 	code?: string;
 	repeat?: boolean;
+	shiftKey?: boolean;
+	ctrlKey?: boolean;
+	altKey?: boolean;
+	metaKey?: boolean;
 }
 
 /**
@@ -339,12 +373,97 @@ export class KeyboardEvent extends UIEvent {
 	readonly key: string;
 	readonly code: string;
 	readonly repeat: boolean;
+	readonly shiftKey: boolean;
+	readonly ctrlKey: boolean;
+	readonly altKey: boolean;
+	readonly metaKey: boolean;
 
 	constructor(type: 'keydown' | 'keyup', options?: KeyboardEventOptions) {
 		super(type as any, options);
 		this.key = options?.key ?? '';
 		this.code = options?.code ?? '';
 		this.repeat = options?.repeat ?? false;
+		this.shiftKey = options?.shiftKey ?? false;
+		this.ctrlKey = options?.ctrlKey ?? false;
+		this.altKey = options?.altKey ?? false;
+		this.metaKey = options?.metaKey ?? false;
+	}
+}
+
+/** A key as a host reports it (`event: 'key'`). */
+export interface HostKey {
+	phase: 'down' | 'up';
+	key: string;
+	code: string;
+	repeat?: boolean;
+	shiftKey?: boolean;
+	ctrlKey?: boolean;
+	altKey?: boolean;
+	metaKey?: boolean;
+}
+
+function keyboardEvent(data: HostKey, options: EventOptions) {
+	return new KeyboardEvent(data.phase === 'up' ? 'keyup' : 'keydown', {
+		...options,
+		key: data.key,
+		code: data.code,
+		repeat: !!data.repeat,
+		shiftKey: !!data.shiftKey,
+		ctrlKey: !!data.ctrlKey,
+		altKey: !!data.altKey,
+		metaKey: !!data.metaKey,
+		cancelable: true,
+	});
+}
+
+/**
+ * A key the window got, raised as a browser bubbles it: on `canvas` (the focused one, if any),
+ * then `document`, then `window`. Returns whether a listener called preventDefault().
+ * @internal
+ */
+export function dispatchWindowKey(data: HostKey, canvas?: CanvasBase | null): boolean {
+	const g = global as any;
+	let defaultPrevented = false;
+	let stopped = false;
+	const event = keyboardEvent(data, {
+		bubbles: true,
+		target: canvas ? (canvas.__target ?? canvas) : (g.document?.body ?? null),
+		preventDefault: () => {
+			defaultPrevented = true;
+		},
+		stopPropagation: () => {
+			stopped = true;
+		},
+	});
+	try {
+		canvas?._raiseKey(event);
+		for (const node of [g.document, g.window]) {
+			if (stopped) {
+				break;
+			}
+			if (typeof node?.dispatchEvent === 'function') {
+				node.dispatchEvent(event);
+			}
+		}
+	} catch (error) {
+		console.error(error);
+	}
+	return defaultPrevented;
+}
+
+let pointerLockCanvas: CanvasBase | null = null;
+
+function firePointerLockEvent(type: 'pointerlockchange' | 'pointerlockerror', canvas: CanvasBase) {
+	const g = global as any;
+	const event = new Event(type, { bubbles: true, target: g.document ?? null });
+	try {
+		if (typeof g.document?.dispatchEvent === 'function') {
+			g.document.dispatchEvent(event);
+		}
+		// Listeners added through the canvas' ownerDocument.
+		canvas.notify(Object.create(event, { eventName: { value: type }, object: { value: canvas, writable: true } }));
+	} catch (error) {
+		console.error(error);
 	}
 }
 
@@ -481,6 +600,26 @@ export function lengthToDevicePixels(value: any, parent: any, isWidth: boolean):
 
 let warnedReady = false;
 
+type PointerType = 'mouse' | 'pen' | 'touch';
+
+/**
+ * A pointer as a host reports it to `_handleEvents`. Touch-only hosts leave out `pointerType`
+ * (touch) and the buttons; a move with `buttons: 0` is a hovering mouse or pen.
+ */
+interface HostPointer {
+	ptrId: number;
+	x: number;
+	y: number;
+	isPrimary?: boolean;
+	pointerType?: PointerType;
+	/** Web numbering: 0 left (or contact), 1 middle, 2 right. */
+	button?: number;
+	buttons?: number;
+	/** Under pointer lock: the travel, while `x`/`y` stay where the lock began. */
+	movementX?: number;
+	movementY?: number;
+}
+
 function domError(name: string, message: string) {
 	const error: any = new Error(message);
 	error.name = name;
@@ -499,6 +638,8 @@ export abstract class CanvasBase extends ContainerView implements ICanvasBase {
 	_pointerUpCallbacks = [];
 	_pointerOutCallbacks = [];
 	_pointerLeaveCallbacks = [];
+	_pointerOverCallbacks = [];
+	_pointerEnterCallbacks = [];
 	_pointerDownCallbacks = [];
 	_pointerCancelCallbacks = [];
 
@@ -520,6 +661,8 @@ export abstract class CanvasBase extends ContainerView implements ICanvasBase {
 	_touchesById: Touch[] = [];
 
 	_lastPointerEventById: Map<number, { pointerId: number; x: number; y: number }> = new Map();
+	/** Mice and pens over the canvas: they get pointerover/enter once, and pointerout/leave when they go. */
+	private _hovering = new Set<number>();
 
 	private _nodeName = 'CANVAS';
 
@@ -551,6 +694,12 @@ export abstract class CanvasBase extends ContainerView implements ICanvasBase {
 				defaultView: doc_?.defaultView ?? doc.defaultView,
 				body: doc_?.body ?? null,
 				documentElement: doc_?.documentElement ?? null,
+				get pointerLockElement() {
+					return CanvasBase.pointerLockElement;
+				},
+				exitPointerLock() {
+					CanvasBase.exitPointerLock();
+				},
 				addEventListener(type: string, cb: any, opts?: any) {
 					self.addEventListener(type, cb, opts);
 				},
@@ -620,6 +769,12 @@ export abstract class CanvasBase extends ContainerView implements ICanvasBase {
 				break;
 			case 'pointerleave':
 				this._pointerLeaveCallbacks.push(callback);
+				break;
+			case 'pointerover':
+				this._pointerOverCallbacks.push(callback);
+				break;
+			case 'pointerenter':
+				this._pointerEnterCallbacks.push(callback);
 				break;
 			case 'mouseout':
 			case 'mousecancel':
@@ -697,6 +852,12 @@ export abstract class CanvasBase extends ContainerView implements ICanvasBase {
 			case 'pointerleave':
 				removeItemFromArray(this._pointerLeaveCallbacks, callback);
 				break;
+			case 'pointerover':
+				removeItemFromArray(this._pointerOverCallbacks, callback);
+				break;
+			case 'pointerenter':
+				removeItemFromArray(this._pointerEnterCallbacks, callback);
+				break;
 			case 'mouseout':
 			case 'mousecancel':
 				removeItemFromArray(this._mouseCancelCallbacks, callback);
@@ -730,20 +891,28 @@ export abstract class CanvasBase extends ContainerView implements ICanvasBase {
 		}
 	}
 
-	private _moveCallback(pointers: { ptrId: number; x: number; y: number; isPrimary: boolean }[]) {
+	private _moveCallback(pointers: HostPointer[]) {
+		for (const pointer of pointers) {
+			if (pointer.buttons === 0) {
+				this._enterCallback(pointer);
+			}
+		}
 		const hasPointerCallbacks = this._pointerMoveCallbacks.length > 0;
 		const hasMouseCallbacks = this._mouseMoveCallbacks.length > 0;
 		const hasTouchCallbacks = this._touchMoveCallbacks.length > 0;
 		if (hasPointerCallbacks || hasMouseCallbacks || hasTouchCallbacks) {
 			let preventDefault = false;
 			const changedTouches = hasTouchCallbacks ? TouchList.empty() : null;
+			const movements: { x: number; y: number }[] = [];
 			for (const pointer of pointers) {
 				const pointerId = pointer.ptrId;
 				const previousEvent = this._lastPointerEventById.get(pointerId) ?? { pointerId, x: 0, y: 0 };
+				const movement = pointer.movementX !== undefined ? { x: pointer.movementX, y: pointer.movementY ?? 0 } : { x: pointer.x - previousEvent.x, y: pointer.y - previousEvent.y };
+				movements.push(movement);
 
 				if (hasPointerCallbacks) {
 					const event = new PointerEvent('pointermove', {
-						pointerType: 'touch',
+						pointerType: pointer.pointerType ?? 'touch',
 						pointerId,
 						clientX: pointer.x,
 						clientY: pointer.y,
@@ -751,10 +920,11 @@ export abstract class CanvasBase extends ContainerView implements ICanvasBase {
 						screenY: pointer.y,
 						pageX: pointer.x,
 						pageY: pointer.y,
-						movementX: pointer.x - previousEvent.x,
-						movementY: pointer.y - previousEvent.y,
+						movementX: movement.x,
+						movementY: movement.y,
 						isPrimary: pointer.isPrimary,
-						button: -1,
+						button: pointer.button ?? -1,
+						buttons: pointer.buttons,
 						target: this.__target ?? this,
 						cancelable: true,
 						preventDefault: () => {
@@ -767,7 +937,8 @@ export abstract class CanvasBase extends ContainerView implements ICanvasBase {
 					}
 				}
 
-				if (!preventDefault && hasTouchCallbacks) {
+				// A hovering mouse or pen is not a touch, as on the web.
+				if (!preventDefault && hasTouchCallbacks && pointer.buttons !== 0) {
 					changedTouches.push(
 						new Touch({
 							identifier: pointer.ptrId,
@@ -805,9 +976,7 @@ export abstract class CanvasBase extends ContainerView implements ICanvasBase {
 			}
 
 			if (!preventDefault && hasMouseCallbacks) {
-				for (const pointer of pointers) {
-					const pointerId = pointer.ptrId;
-					const previousEvent = this._lastPointerEventById.get(pointerId) ?? { pointerId, x: 0, y: 0 };
+				pointers.forEach((pointer, i) => {
 					const event = new MouseEvent('mousemove', {
 						clientX: pointer.x,
 						clientY: pointer.y,
@@ -815,9 +984,10 @@ export abstract class CanvasBase extends ContainerView implements ICanvasBase {
 						screenY: pointer.y,
 						pageX: pointer.x,
 						pageY: pointer.y,
-						movementX: pointer.x - previousEvent.x,
-						movementY: pointer.y - previousEvent.y,
-						button: -1,
+						movementX: movements[i].x,
+						movementY: movements[i].y,
+						button: pointer.button ?? -1,
+						buttons: pointer.buttons,
 						target: this.__target ?? this,
 						preventDefault: () => {
 							preventDefault = true;
@@ -826,15 +996,17 @@ export abstract class CanvasBase extends ContainerView implements ICanvasBase {
 					for (const callback of this._mouseMoveCallbacks.slice()) {
 						callback(event);
 					}
-				}
+				});
 			}
 		}
 	}
 
-	private _upCallback(ptrId: number, x: number, y: number, isPrimary: boolean = false) {
+	private _upCallback({ ptrId, x, y, isPrimary = false, pointerType = 'touch', button = 0, buttons }: HostPointer) {
 		const upSubs = this._pointerUpCallbacks.slice();
-		const outSubs = this._pointerOutCallbacks.slice();
-		const leaveSubs = this._pointerLeaveCallbacks.slice();
+		// A lifted touch leaves; a mouse or pen leaves when the host reports it (`leave`).
+		const isTouch = pointerType === 'touch';
+		const outSubs = isTouch ? this._pointerOutCallbacks.slice() : [];
+		const leaveSubs = isTouch ? this._pointerLeaveCallbacks.slice() : [];
 		const hasPointerCallbacks = upSubs.length > 0 || outSubs.length > 0 || leaveSubs.length > 0;
 		const hasMouseCallbacks = this._mouseUpCallbacks.length > 0;
 		const hasTouchCallbacks = this._touchEndCallbacks.length > 0;
@@ -843,7 +1015,7 @@ export abstract class CanvasBase extends ContainerView implements ICanvasBase {
 			let preventDefault = false;
 			if (hasPointerCallbacks) {
 				const up = new PointerEvent('pointerup', {
-					pointerType: 'touch',
+					pointerType,
 					pointerId,
 					clientX: x,
 					clientY: y,
@@ -852,6 +1024,8 @@ export abstract class CanvasBase extends ContainerView implements ICanvasBase {
 					isPrimary,
 					pageX: x,
 					pageY: y,
+					button,
+					buttons,
 					target: this.__target ?? this,
 					cancelable: true,
 					preventDefault: () => {
@@ -936,6 +1110,8 @@ export abstract class CanvasBase extends ContainerView implements ICanvasBase {
 					screenY: y,
 					pageX: x,
 					pageY: y,
+					button,
+					buttons,
 					target: this.__target ?? this,
 					preventDefault: () => {
 						preventDefault = true;
@@ -956,10 +1132,17 @@ export abstract class CanvasBase extends ContainerView implements ICanvasBase {
 			}
 		}
 
-		this._lastPointerEventById.delete(pointerId);
+		// A mouse or pen keeps its last position for the hover moves that follow.
+		if (isTouch) {
+			this._lastPointerEventById.delete(pointerId);
+		}
 	}
 
-	private _downCallback(ptrId: number, x: number, y: number, isPrimary = false) {
+	private _downCallback(pointer: HostPointer) {
+		const { ptrId, x, y, isPrimary = false, pointerType = 'touch', button = 0, buttons } = pointer;
+		if (pointerType !== 'touch') {
+			this._enterCallback(pointer);
+		}
 		const hasPointerCallbacks = this._pointerDownCallbacks.length > 0;
 		const hasMouseCallbacks = this._mouseDownCallbacks.length > 0;
 		const hasTouchCallbacks = this._touchStartCallbacks.length > 0;
@@ -968,7 +1151,7 @@ export abstract class CanvasBase extends ContainerView implements ICanvasBase {
 			const pointerId = ptrId;
 			if (hasPointerCallbacks) {
 				const event = new PointerEvent('pointerdown', {
-					pointerType: 'touch',
+					pointerType,
 					pointerId,
 					clientX: x,
 					clientY: y,
@@ -977,6 +1160,8 @@ export abstract class CanvasBase extends ContainerView implements ICanvasBase {
 					isPrimary,
 					pageX: x,
 					pageY: y,
+					button,
+					buttons,
 					target: this.__target ?? this,
 					cancelable: true,
 					preventDefault: () => {
@@ -1028,6 +1213,8 @@ export abstract class CanvasBase extends ContainerView implements ICanvasBase {
 					screenY: y,
 					pageX: x,
 					pageY: y,
+					button,
+					buttons,
 					target: this.__target ?? this,
 					preventDefault: () => {
 						preventDefault = true;
@@ -1043,7 +1230,7 @@ export abstract class CanvasBase extends ContainerView implements ICanvasBase {
 		}
 	}
 
-	private _cancelCallback(ptrId: number, x: number, y: number, isPrimary = false) {
+	private _cancelCallback({ ptrId, x, y, isPrimary = false, pointerType = 'touch' }: HostPointer) {
 		const hasPointerCallbacks = this._pointerCancelCallbacks.length > 0;
 		const hasMouseCallbacks = this._mouseCancelCallbacks.length > 0;
 		const hasTouchCallbacks = this._touchCancelCallbacks.length > 0;
@@ -1053,7 +1240,7 @@ export abstract class CanvasBase extends ContainerView implements ICanvasBase {
 			const pointerId = ptrId;
 			if (hasPointerCallbacks) {
 				const event = new PointerEvent('pointercancel', {
-					pointerType: 'touch',
+					pointerType,
 					pointerId,
 					clientX: x,
 					clientY: y,
@@ -1128,21 +1315,121 @@ export abstract class CanvasBase extends ContainerView implements ICanvasBase {
 		}
 	}
 
-	private _keyCallback(data: { phase: string; key: string; code: string; repeat?: boolean }) {
+	/** pointerover and pointerenter, once per mouse or pen coming over the canvas. */
+	private _enterCallback({ ptrId, x, y, isPrimary = false, pointerType = 'mouse' }: HostPointer) {
+		if (this._hovering.has(ptrId)) {
+			return;
+		}
+		this._hovering.add(ptrId);
+		this._lastPointerEventById.set(ptrId, { pointerId: ptrId, x, y });
+		this._boundaryEvent('pointerover', this._pointerOverCallbacks, { ptrId, x, y, isPrimary, pointerType });
+		this._boundaryEvent('pointerenter', this._pointerEnterCallbacks, { ptrId, x, y, isPrimary, pointerType });
+	}
+
+	private _leaveCallback({ ptrId, x, y, isPrimary = false, pointerType = 'mouse' }: HostPointer) {
+		if (!this._hovering.delete(ptrId)) {
+			return;
+		}
+		this._lastPointerEventById.delete(ptrId);
+		this._boundaryEvent('pointerout', this._pointerOutCallbacks, { ptrId, x, y, isPrimary, pointerType });
+		this._boundaryEvent('pointerleave', this._pointerLeaveCallbacks, { ptrId, x, y, isPrimary, pointerType });
+	}
+
+	private _boundaryEvent(type: 'pointerover' | 'pointerenter' | 'pointerout' | 'pointerleave', callbacks: any[], { ptrId, x, y, isPrimary, pointerType }: HostPointer) {
+		if (callbacks.length === 0) {
+			return;
+		}
+		const event = new PointerEvent(type, {
+			pointerType,
+			pointerId: ptrId,
+			clientX: x,
+			clientY: y,
+			screenX: x,
+			screenY: y,
+			pageX: x,
+			pageY: y,
+			isPrimary,
+			button: -1,
+			target: this.__target ?? this,
+		});
+		for (const callback of callbacks.slice()) {
+			callback(event);
+		}
+	}
+
+	private _keyCallback(data: HostKey) {
 		const callbacks = data.phase === 'up' ? this._keyUpCallbacks : this._keyDownCallbacks;
 		if (callbacks.length === 0) {
 			return;
 		}
-		const event = new KeyboardEvent(data.phase === 'up' ? 'keyup' : 'keydown', {
-			key: data.key,
-			code: data.code,
-			repeat: !!data.repeat,
-			target: this.__target ?? this,
-			cancelable: true,
-		} as any);
+		this._raiseKey(keyboardEvent(data, { target: this.__target ?? this }));
+	}
+
+	/** @internal */
+	_raiseKey(event: KeyboardEvent) {
+		const callbacks = event.type === 'keyup' ? this._keyUpCallbacks : this._keyDownCallbacks;
 		for (const callback of callbacks.slice()) {
 			callback(event);
 		}
+	}
+
+	/** The canvas holding the pointer lock (its DOM element when it has one), or null. */
+	static get pointerLockElement(): any {
+		return pointerLockCanvas ? (pointerLockCanvas.__target ?? pointerLockCanvas) : null;
+	}
+
+	static exitPointerLock() {
+		const canvas = pointerLockCanvas;
+		if (!canvas) {
+			return;
+		}
+		pointerLockCanvas = null;
+		canvas._releasePointerLock();
+		Promise.resolve().then(() => firePointerLockEvent('pointerlockchange', canvas));
+	}
+
+	/** @internal */
+	get _pointerLocked() {
+		return pointerLockCanvas === this;
+	}
+
+	/**
+	 * Overridden by hosts that can lock the pointer: hide it, hold it in place and report travel.
+	 * `unadjustedMovement` asks for travel without pointer acceleration, where the host supports it.
+	 */
+	protected _acquirePointerLock(options?: { unadjustedMovement?: boolean }): boolean {
+		return false;
+	}
+
+	protected _releasePointerLock() {}
+
+	/** The host lost the lock: Esc, the window was deactivated or the canvas unloaded. */
+	protected _pointerLockLost() {
+		if (pointerLockCanvas === this) {
+			CanvasBase.exitPointerLock();
+		}
+	}
+
+	protected _requestPointerLock(options?: { unadjustedMovement?: boolean }): Promise<void> {
+		if (pointerLockCanvas === this) {
+			return Promise.resolve();
+		}
+		const previous = pointerLockCanvas;
+		if (previous) {
+			pointerLockCanvas = null;
+			previous._releasePointerLock();
+		}
+		if (!this._acquirePointerLock(options)) {
+			return Promise.resolve().then(() => {
+				if (previous) {
+					firePointerLockEvent('pointerlockchange', previous);
+				}
+				firePointerLockEvent('pointerlockerror', this);
+				throw domError('WrongDocumentError', "Failed to execute 'requestPointerLock' on 'Element': The pointer could not be locked; the canvas must be in an active window.");
+			});
+		}
+		pointerLockCanvas = this;
+		return Promise.resolve().then(() => firePointerLockEvent('pointerlockchange', this));
 	}
 
 	private _pinchCallback(data: { event: string; deltaX: number; deltaY: number; deltaMode: number; pointers: { ptrId: number; x: number; y: number }[]; isInProgress: boolean }) {
@@ -1273,13 +1560,19 @@ export abstract class CanvasBase extends ContainerView implements ICanvasBase {
 			const data = typeof event === 'string' ? JSON.parse(event) : event;
 			switch (data.event) {
 				case 'down':
-					this._downCallback(data.ptrId, data.x, data.y, data.isPrimary);
+					this._downCallback(data);
 					break;
 				case 'move':
 					this._moveCallback(data.pointers);
 					break;
 				case 'up':
-					this._upCallback(data.ptrId, data.x, data.y, data.isPrimary);
+					this._upCallback(data);
+					break;
+				case 'enter':
+					this._enterCallback(data);
+					break;
+				case 'leave':
+					this._leaveCallback(data);
 					break;
 				case 'scale':
 					this._pinchCallback(data);
@@ -1288,7 +1581,7 @@ export abstract class CanvasBase extends ContainerView implements ICanvasBase {
 					this._keyCallback(data);
 					break;
 				case 'cancel':
-					this._cancelCallback(data.ptrId, data.x, data.y, data.isPrimary);
+					this._cancelCallback(data);
 					break;
 				default:
 					break;
@@ -1313,6 +1606,313 @@ export abstract class CanvasBase extends ContainerView implements ICanvasBase {
 
 	setAttribute(attrib, value?) {
 		this[attrib] = value ?? attrib;
+	}
+
+	private _subViews: View[] = [];
+	private _content: 'fallback' | 'drawable' = 'fallback';
+	/** @internal */
+	_drawables: DrawableController | null = null;
+	private _paintRequested = false;
+	private _pendingGeometry: Map<View, any> | null = null;
+
+	onpaint: ((event: CanvasPaintEvent) => void) | null = null;
+
+	onelementgeometryupdate: ((event: ElementGeometryUpdateEvent) => void) | null = null;
+
+	get content(): 'fallback' | 'drawable' {
+		return this._content;
+	}
+
+	set content(value: string) {
+		const next =
+			String(value ?? '')
+				.trim()
+				.toLowerCase() === 'drawable'
+				? 'drawable'
+				: 'fallback';
+		if (next === this._content) {
+			return;
+		}
+		this._content = next;
+		this._updateDrawableActivity();
+	}
+
+	/** @internal */
+	_ensureDrawables(): DrawableController | null {
+		if (!this._drawables && this.nativeViewProtected) {
+			this._drawables = createDrawableController(this);
+			if (this._drawables && this._paintRequested) {
+				this._paintRequested = false;
+				this._drawables.requestPaint();
+			}
+		}
+		return this._drawables;
+	}
+
+	private _updateDrawableActivity() {
+		// Only a drawable canvas, or one with children, gets a host view.
+		const controller = this._content === 'drawable' ? this._ensureDrawables() : this._drawables;
+		if (!controller) {
+			return;
+		}
+		if (this._content === 'drawable' && this.isLoaded) {
+			DrawableController.activate(controller);
+		} else {
+			DrawableController.deactivate(controller);
+		}
+	}
+
+	onLoaded() {
+		super.onLoaded();
+		this._updateDrawableActivity();
+	}
+
+	onUnloaded() {
+		super.onUnloaded();
+		this._updateDrawableActivity();
+	}
+
+	disposeNativeView() {
+		this._drawables?.dispose();
+		this._drawables = null;
+		super.disposeNativeView();
+	}
+
+	requestLayout() {
+		super.requestLayout();
+		this._drawables?.markHot();
+	}
+
+	_addChildFromBuilder(name: string, value: any) {
+		if (value instanceof View) {
+			this.addChild(value);
+		}
+	}
+
+	addChild(child: View) {
+		this.insertChild(child, this._subViews.length);
+	}
+
+	insertChild(child: View, atIndex: number) {
+		const index = Math.max(0, Math.min(atIndex ?? this._subViews.length, this._subViews.length));
+		this._subViews.splice(index, 0, child);
+		this._addView(child, index);
+		this._drawables?.markHot();
+	}
+
+	removeChild(child: View) {
+		this._removeView(child);
+	}
+
+	removeChildren() {
+		while (this._subViews.length) {
+			this._removeView(this._subViews[this._subViews.length - 1]);
+		}
+	}
+
+	// Frameworks remove children of non-layout views through this.
+	_removeView(child: any) {
+		const index = this._subViews.indexOf(child);
+		if (index > -1) {
+			this._subViews.splice(index, 1);
+		}
+		this._drawables?.clearGeometry(child);
+		super._removeView(child);
+	}
+
+	getChildrenCount(): number {
+		return this._subViews.length;
+	}
+
+	get _childrenCount(): number {
+		return this._subViews.length;
+	}
+
+	getChildAt(index: number): View {
+		return this._subViews[index];
+	}
+
+	getChildIndex(child: View): number {
+		return this._subViews.indexOf(child);
+	}
+
+	eachChildView(callback: (child: View) => boolean) {
+		for (const child of this._subViews.slice()) {
+			if (callback(child) === false) {
+				break;
+			}
+		}
+	}
+
+	_addViewToNativeVisualTree(child: any, atIndex?: number): boolean {
+		super._addViewToNativeVisualTree(child, atIndex);
+		return this._ensureDrawables()?.attachChild(child, atIndex) ?? false;
+	}
+
+	_removeViewFromNativeVisualTree(child: any) {
+		super._removeViewFromNativeVisualTree(child);
+		this._drawables?.detachChild(child);
+	}
+
+	requestPaint() {
+		const controller = this._ensureDrawables();
+		if (controller) {
+			controller.requestPaint();
+		} else {
+			this._paintRequested = true;
+		}
+	}
+
+	/** @internal */
+	_dispatchPaint(changed: View[]) {
+		const event = new CanvasPaintEvent('paint', { changedElements: changed, target: this });
+		if (typeof this.onpaint === 'function') {
+			this.onpaint.call(this, event);
+		}
+		this.notify(event as any);
+	}
+
+	private _drawableTarget(element: any, method: string): View {
+		const view = element instanceof ElementImage ? element._element?.deref() : element;
+		if (!(view instanceof View)) {
+			throw new TypeError(`Failed to execute '${method}' on 'HTMLCanvasElement': parameter 1 is not of type 'Element' or 'ElementImage'.`);
+		}
+		if (!this._isOwnDescendant(view)) {
+			throw domError('InvalidStateError', `Failed to execute '${method}' on 'HTMLCanvasElement': The element is not a descendant of this canvas.`);
+		}
+		const controller = this._ensureDrawables();
+		if (!controller) {
+			throw domError('NotSupportedError', `Failed to execute '${method}' on 'HTMLCanvasElement': Drawable elements are not supported on this platform.`);
+		}
+		return view;
+	}
+
+	/** Not through another canvas. */
+	private _isOwnDescendant(view: View): boolean {
+		let node: any = view.parent;
+		while (node) {
+			if (node === this) {
+				return true;
+			}
+			if (node instanceof CanvasBase) {
+				return false;
+			}
+			node = node.parent;
+		}
+		return false;
+	}
+
+	/** @internal */
+	_elementSource(element: any, method: string): ElementSource {
+		if (element instanceof ElementImage) {
+			return elementImageSource(element, method);
+		}
+		if (!(element instanceof View)) {
+			throw new TypeError(`Failed to execute '${method}': parameter 1 is not of type 'Element' or 'ElementImage'.`);
+		}
+		if (this._content !== 'drawable') {
+			throw domError('InvalidStateError', `Failed to execute '${method}': The canvas's content attribute is not "drawable".`);
+		}
+		if (!isDrawable(element)) {
+			throw domError('InvalidStateError', `Failed to execute '${method}': The element is not drawable.`);
+		}
+		const view = this._drawableTarget(element, method);
+		const rec = this._drawables.snapshot(view);
+		if (!rec) {
+			throw domError('InvalidStateError', `Failed to execute '${method}': The element has no snapshot yet; draw it from a paint event.`);
+		}
+		const controller = this._drawables;
+		return {
+			get asset() {
+				return controller.assetOf(view, rec);
+			},
+			nativeSnapshot: () => controller.nativeSnapshot(view),
+			width: rec.width,
+			height: rec.height,
+			defaultWidth: rec.defaultWidth,
+			defaultHeight: rec.defaultHeight,
+			cssWidth: rec.cssWidth,
+			cssHeight: rec.cssHeight,
+			view,
+			canvas: this,
+		};
+	}
+
+	captureElementImage(element: View): ElementImage {
+		const source = this._elementSource(element, 'captureElementImage');
+		const asset = this._drawables.render(source.view, source.width, source.height);
+		if (!asset) {
+			throw domError('InvalidStateError', "Failed to execute 'captureElementImage': The element could not be captured.");
+		}
+		const image = ElementImage._create();
+		image._asset = asset;
+		image._width = source.width;
+		image._height = source.height;
+		image._defaultWidth = source.defaultWidth;
+		image._defaultHeight = source.defaultHeight;
+		image._cssWidth = source.cssWidth;
+		image._cssHeight = source.cssHeight;
+		image._element = new WeakRef(source.view);
+		image._canvas = new WeakRef(this);
+		return image;
+	}
+
+	updateElementGeometry(element: View | ElementImage, options: { canvasTransform?: any; canvasClip?: any; preserveHitTestOrder?: boolean } = {}) {
+		const view = this._drawableTarget(element, 'updateElementGeometry');
+		this._drawables.updateGeometry(view, options);
+	}
+
+	clearElementGeometry(element: View | ElementImage) {
+		const view = this._drawableTarget(element, 'clearElementGeometry');
+		this._drawables.clearGeometry(view);
+	}
+
+	getElementTransform(element: View | ElementImage): any {
+		const view = this._drawableTarget(element, 'getElementTransform');
+		return mat4.toDOMMatrix(this._drawables.getGeometry(view)?.transform ?? null) as any;
+	}
+
+	getElementImageDefaultSize(element: View | ElementImage): { width: number; height: number } {
+		if (element instanceof ElementImage) {
+			return { width: element._defaultWidth, height: element._defaultHeight };
+		}
+		const view = this._drawableTarget(element, 'getElementImageDefaultSize');
+		return this._drawables.defaultSize(view);
+	}
+
+	/** @internal From this canvas's OffscreenCanvas, batched into a microtask. */
+	_queueElementGeometry(element: View | ElementImage, options: any) {
+		const view = element instanceof ElementImage ? element._element?.deref() : element;
+		if (!(view instanceof View)) {
+			return;
+		}
+		const first = !this._pendingGeometry;
+		this._pendingGeometry ??= new Map();
+		this._pendingGeometry.set(view, options === null ? null : { ...(this._pendingGeometry.get(view) ?? {}), ...options });
+		if (!first) {
+			return;
+		}
+		queueMicrotask(() => {
+			const pending = this._pendingGeometry;
+			this._pendingGeometry = null;
+			const elements: View[] = [];
+			for (const [target, opts] of pending ?? []) {
+				if (!this._isOwnDescendant(target) || !this._ensureDrawables()) {
+					continue;
+				}
+				if (opts === null) {
+					this._drawables.clearGeometry(target);
+				} else {
+					this._drawables.updateGeometry(target, opts);
+				}
+				elements.push(target);
+			}
+			const event = new ElementGeometryUpdateEvent('elementgeometryupdate', { elements, target: this });
+			if (typeof this.onelementgeometryupdate === 'function') {
+				this.onelementgeometryupdate.call(this, event);
+			}
+			this.notify(event as any);
+		});
 	}
 
 	/** Set by `transferControlToOffscreen()`: the canvas then only shows its OffscreenCanvas's frames. */

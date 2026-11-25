@@ -51,8 +51,16 @@ export class EventTarget {
 	dispatchEvent(event): boolean {
 		const emitter = this._getEmitter();
 		if (emitter != null) {
-			emitter.notify({ ...event, eventName: event.type, object: emitter });
+			emitter.notify(eventData(event, emitter));
 		}
 		return !event?.defaultPrevented;
 	}
+}
+
+/** `event` as Observable data. A class instance (a KeyboardEvent) keeps its prototype, so its methods still work. */
+export function eventData(event: any, emitter: Observable) {
+	if (Object.getPrototypeOf(event) === Object.prototype) {
+		return { ...event, eventName: event.type, object: emitter };
+	}
+	return Object.create(event, { eventName: { value: event.type }, object: { value: emitter, writable: true } });
 }

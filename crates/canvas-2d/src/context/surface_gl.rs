@@ -85,6 +85,21 @@ const GR_GL_RGBA8: u32 = 0x8058;
 /// An opaque config's buffer, which RGB888x wraps.
 const GR_GL_RGB8: u32 = 0x8051;
 
+/// Divides each colour by its alpha. Drawn with `BlendMode::Src` into an 8-bit target, Skia
+/// writes what the filter returns, so the texture holds straight alpha.
+#[cfg(all(feature = "gl", any(target_os = "linux", target_os = "android")))]
+fn unpremultiply() -> Option<skia_safe::ColorFilter> {
+    thread_local! {
+        static FILTER: Option<skia_safe::ColorFilter> =
+            skia_safe::RuntimeEffect::make_for_color_filter("half4 main(half4 color) { return unpremul(color); }", None)
+                .ok()
+                .and_then(|effect| {
+                    effect.make_color_filter(skia_safe::Data::new_empty(), None::<&[skia_safe::runtime_effect::ChildPtr]>)
+                });
+    }
+    FILTER.with(Clone::clone)
+}
+
 #[cfg(feature = "gl")]
 impl Context {
     pub fn new_gl(
@@ -115,7 +130,7 @@ impl Context {
         );
 
         let bounds = skia_safe::Rect::from_wh(width, height);
-        let mut engine = SurfaceEngine::GL;
+        let engine = SurfaceEngine::GL;
         let mut zero_size = false;
         let mut width = width;
         if width <= 0. {
@@ -186,14 +201,18 @@ impl Context {
             Some(&surface_props),
         )?;
 
-        let (mut surface, window_surface) = if draws_to_window(&gl_context) {
+        let (surface, window_surface) = if draws_to_window(&gl_context) {
             with_offscreen(&mut ctx, surface, alpha, color_space.into())
         } else {
             (surface, None)
         };
         // Linux: a new pbuffer holds whatever was in its memory; a canvas starts transparent.
         #[cfg(target_os = "linux")]
-        surface.canvas().clear(Color::TRANSPARENT);
+        let surface = {
+            let mut surface = surface;
+            surface.canvas().clear(Color::TRANSPARENT);
+            surface
+        };
 
         let direct_context = Some(ctx);
 
@@ -233,15 +252,19 @@ impl Context {
             font_color: Color::new(font_color as u32),
             recording: None,
             snapshot: None,
+            #[cfg(all(feature = "gl", any(target_os = "linux", target_os = "android")))]
+            vulkan_interop: Default::default(),
             surface_state: SurfaceState::None,
         })
     }
 
     /// Call after raw GL made behind Skia's back.
-    /// The canvas, top row first (bottom row first with `flip_y`) and premultiplied, in a new
-    /// texture another context on this EGL display can read once it waits on the share.
-    #[cfg(target_os = "linux")]
-    pub fn share_gl_texture(&mut self, flip_y: bool) -> Option<canvas_core::gpu::gl::SharedTexture> {
+    /// The canvas, top row first (bottom row first with `flip_y`) and premultiplied unless
+    /// `premultiplied` is false, in a new texture another context on this EGL display can read
+    /// once it waits on the share.
+    #[cfg(any(target_os = "linux", target_os = "android"))]
+    pub fn share_gl_texture(&mut self, flip_y: bool, premultiplied: bool) -> Option<canvas_core::gpu::gl::SharedTexture> {
+        let unpremultiply = if premultiplied { None } else { Some(unpremultiply()?) };
         let gl = self.gl_context.as_ref()?;
         if !gl.make_current() {
             return None;
@@ -270,7 +293,32 @@ impl Context {
             );
             gl_bindings::BindTexture(gl_bindings::TEXTURE_2D, bound as u32);
         }
-        let ctx = self.direct_context.as_mut()?;
+        let shared = self
+            .draw_into_gl_texture(texture, width, height, flip_y, unpremultiply)
+            .then(|| canvas_core::gpu::gl::SharedTexture::new(texture))
+            .flatten();
+        unsafe { gl_bindings::DeleteTextures(1, &texture) };
+        if let Some(ctx) = self.direct_context.as_mut() {
+            ctx.reset(None);
+        }
+        shared
+    }
+
+    /// The canvas into `texture`, an RGBA8 `TEXTURE_2D` of this context, replacing its contents:
+    /// top row first (bottom row first with `flip_y`), through `color_filter` when given.
+    /// Submitted, not flushed.
+    #[cfg(any(target_os = "linux", target_os = "android"))]
+    pub(crate) fn draw_into_gl_texture(
+        &mut self,
+        texture: u32,
+        width: i32,
+        height: i32,
+        flip_y: bool,
+        color_filter: Option<skia_safe::ColorFilter>,
+    ) -> bool {
+        let Some(ctx) = self.direct_context.as_mut() else {
+            return false;
+        };
         ctx.reset(None);
         let info = gpu::gl::TextureInfo {
             target: gl_bindings::TEXTURE_2D,
@@ -279,7 +327,7 @@ impl Context {
             protected: gpu::Protected::No,
         };
         let backend = unsafe { gpu::backend_textures::make_gl((width, height), gpu::Mipmapped::No, info, "") };
-        let shared = gpu::surfaces::wrap_backend_texture(
+        let Some(mut copy) = gpu::surfaces::wrap_backend_texture(
             ctx,
             &backend,
             gpu::SurfaceOrigin::TopLeft,
@@ -287,23 +335,22 @@ impl Context {
             ColorType::RGBA8888,
             None,
             None,
-        )
-        .and_then(|mut copy| {
-            let canvas = copy.canvas();
-            if flip_y {
-                canvas.translate((0., height as f32));
-                canvas.scale((1., -1.));
-            }
-            let mut paint = skia_safe::Paint::default();
-            paint.set_blend_mode(skia_safe::BlendMode::Src);
-            self.surface.draw(canvas, (0., 0.), skia_safe::SamplingOptions::default(), Some(&paint));
-            ctx.flush_and_submit_surface(&mut copy, None);
-            drop(copy);
-            canvas_core::gpu::gl::SharedTexture::new(texture)
-        });
-        unsafe { gl_bindings::DeleteTextures(1, &texture) };
+        ) else {
+            return false;
+        };
+        let canvas = copy.canvas();
+        if flip_y {
+            canvas.translate((0., height as f32));
+            canvas.scale((1., -1.));
+        }
+        let mut paint = skia_safe::Paint::default();
+        paint.set_blend_mode(skia_safe::BlendMode::Src);
+        paint.set_color_filter(color_filter);
+        self.surface.draw(canvas, (0., 0.), skia_safe::SamplingOptions::default(), Some(&paint));
+        ctx.flush_and_submit_surface(&mut copy, None);
+        drop(copy);
         ctx.reset(None);
-        shared
+        true
     }
 
     pub fn reset_gpu_state(&mut self) {
@@ -467,9 +514,13 @@ impl Context {
             surface
         };
 
-        if let Some(mut surface) = surface {
+        if let Some(surface) = surface {
             #[cfg(target_os = "linux")]
-            surface.canvas().clear(Color::TRANSPARENT);
+            let surface = {
+                let mut surface = surface;
+                surface.canvas().clear(Color::TRANSPARENT);
+                surface
+            };
             context.window_surface = window_surface;
             context.direct_context = direct_context;
             context.surface_state = SurfaceState::None;

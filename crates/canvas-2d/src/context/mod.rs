@@ -23,7 +23,6 @@ use text_styles::{
 use crate::context::drawing_text::typography::Font;
 
 use bitflags::bitflags;
-use bytes::Buf;
 use canvas_core::context_attributes::ColorSpace;
 use skia_safe::gpu::RecordingContext;
 
@@ -51,6 +50,11 @@ pub mod matrix;
 pub mod non_standard;
 pub mod surface;
 pub mod surface_gl;
+#[cfg(all(feature = "gl", target_os = "linux"))]
+pub mod vulkan_interop;
+#[cfg(all(feature = "gl", target_os = "android"))]
+#[path = "vulkan_interop_android.rs"]
+pub mod vulkan_interop;
 pub mod text_decoder;
 pub mod text_encoder;
 pub mod transformations;
@@ -90,6 +94,7 @@ pub struct State {
     pub(crate) letter_spacing_value: Arc<str>,
     pub(crate) letter_spacing: f32,
     pub(crate) matrix: skia_safe::Matrix,
+    #[allow(dead_code)]
     pub(crate) clip: Option<Path>,
     /// Device space; re-applied at picture boundaries.
     pub(crate) clips: Vec<recording::DeviceClip>,
@@ -248,6 +253,8 @@ pub struct Context {
     pub(crate) recording: Option<recording::Recording>,
     /// GPU readback of the surface, with the generation it was read at
     pub(crate) snapshot: Option<(u32, Image)>,
+    #[cfg(all(feature = "gl", any(target_os = "linux", target_os = "android")))]
+    pub(crate) vulkan_interop: vulkan_interop::VulkanInterop,
 }
 
 impl Drop for Context {
@@ -256,7 +263,12 @@ impl Drop for Context {
         // may be another canvas's; its names would then delete that canvas's objects.
         #[cfg(feature = "gl")]
         if let Some(ref context) = self.gl_context {
-            context.make_current();
+            let _current = context.make_current();
+            // The buffer's image and texture keep its memory alive.
+            #[cfg(target_os = "android")]
+            if _current {
+                self.vulkan_interop.release();
+            }
         }
     }
 }
@@ -486,7 +498,7 @@ impl Context {
         self.surface_state = self.surface_state | SurfaceState::Pending;
     }
 
-    pub fn set_bounds(&mut self, bounds: skia_safe::Rect) {}
+    pub fn set_bounds(&mut self, _bounds: skia_safe::Rect) {}
 
     #[inline]
     pub fn update_bounds(&mut self, bounds: skia_safe::Rect) {

@@ -45,6 +45,8 @@ pub struct CanvasGPURequestAdapterOptions {
     pub power_preference: CanvasGPUPowerPreference,
     pub force_fallback_adapter: bool,
     pub feature_level: CanvasGPUFeatureLevel,
+    /// Report the backend's own limits, not the capped ones ([`browser_limits`]).
+    pub native_limits: bool,
 }
 
 impl Default for CanvasGPURequestAdapterOptions {
@@ -53,8 +55,26 @@ impl Default for CanvasGPURequestAdapterOptions {
             power_preference: CanvasGPUPowerPreference::None,
             force_fallback_adapter: false,
             feature_level: CanvasGPUFeatureLevel::Core,
+            native_limits: false,
         }
     }
+}
+
+/// Binding limits capped as browsers cap them (1000 per group, 64 per stage and kind), so that
+/// bind groups sized from them fit; wgpu reports the backend's (2048 samplers on D3D12).
+pub(crate) fn browser_limits(mut limits: wgt::Limits) -> wgt::Limits {
+    limits.max_bindings_per_bind_group = limits.max_bindings_per_bind_group.min(1000);
+    let cap = (limits.max_bindings_per_bind_group / 10).min(64);
+    for count in [
+        &mut limits.max_sampled_textures_per_shader_stage,
+        &mut limits.max_samplers_per_shader_stage,
+        &mut limits.max_storage_buffers_per_shader_stage,
+        &mut limits.max_storage_textures_per_shader_stage,
+        &mut limits.max_uniform_buffers_per_shader_stage,
+    ] {
+        *count = (*count).min(cap);
+    }
+    limits
 }
 
 #[derive(Clone)]
@@ -220,7 +240,11 @@ pub unsafe extern "C" fn canvas_native_webgpu_request_adapter(
             if feature_level != CanvasGPUFeatureLevel::Compatibility {
                 features.push("core-features-and-limits");
             }
-            let limits = adapter.limits();
+            let limits = if options.native_limits {
+                adapter.limits()
+            } else {
+                browser_limits(adapter.limits())
+            };
             let ret = CanvasGPUAdapter {
                 instance,
                 adapter,
@@ -240,4 +264,40 @@ pub unsafe extern "C" fn canvas_native_webgpu_request_adapter(
         let callback_data = callback_data as *mut c_void;
         callback(adapter.unwrap_or(std::ptr::null()), callback_data);
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::browser_limits;
+
+    fn per_stage_bindings(limits: &wgt::Limits) -> u32 {
+        limits.max_sampled_textures_per_shader_stage
+            + limits.max_samplers_per_shader_stage
+            + limits.max_storage_buffers_per_shader_stage
+            + limits.max_storage_textures_per_shader_stage
+            + limits.max_uniform_buffers_per_shader_stage
+    }
+
+    #[test]
+    fn browser_limits_fit_bind_groups() {
+        // What wgpu reports on D3D12 (Intel Iris Xe).
+        let d3d12 = wgt::Limits {
+            max_bindings_per_bind_group: u32::MAX,
+            max_sampled_textures_per_shader_stage: 786_424,
+            max_samplers_per_shader_stage: 2048,
+            max_storage_buffers_per_shader_stage: 262_144,
+            ..wgt::Limits::default()
+        };
+        let limits = browser_limits(d3d12);
+        assert_eq!(limits.max_bindings_per_bind_group, 1000);
+        assert_eq!(limits.max_samplers_per_shader_stage, 64);
+        assert_eq!(limits.max_sampled_textures_per_shader_stage, 64);
+        assert!(2 * per_stage_bindings(&limits) <= limits.max_bindings_per_bind_group);
+    }
+
+    #[test]
+    fn browser_limits_keep_smaller_counts() {
+        let defaults = wgt::Limits::default();
+        assert_eq!(browser_limits(defaults.clone()), defaults);
+    }
 }

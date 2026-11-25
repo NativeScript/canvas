@@ -89,6 +89,10 @@ declare class NSCAudioBufferSourceNode extends NSCAudioScheduledSourceNode {
 
 	getPlaybackRateParam(): NSCAudioParam;
 
+	readonly detuneParam: NSCAudioParam;
+
+	startAtOffset(when: number, offset: number): void;
+
 	initWithContextBuffer(context: NSCAudioContext, buffer: NSCAudioBuffer): this;
 }
 
@@ -259,11 +263,17 @@ declare class NSCAudioNode extends NSObject {
 
 	constructor(o: { context: NSCAudioContext; node: AVAudioNode });
 
+	applyAutomation(): void;
+
 	connectTo(destination: NSCAudioNode): void;
 
 	connectToOutput(destination: NSCAudioNode, output: number): void;
 
 	connectToOutputInput(destination: NSCAudioNode, output: number, input: number): void;
+
+	connectToParamOutput(param: NSCAudioParam, output: number): void;
+
+	disconnectFromParamOutput(param: NSCAudioParam, output: number): void;
 
 	disconnect(): void;
 
@@ -294,6 +304,8 @@ declare class NSCAudioOscillatorNode extends NSCAudioScheduledSourceNode {
 	frequency: number;
 
 	readonly frequencyParam: NSCAudioParam;
+
+	readonly detuneParam: NSCAudioParam;
 
 	type: string;
 
@@ -458,7 +470,15 @@ declare class NSCBiquadNode extends NSCAudioNode {
 	setType(type: string): void;
 }
 
-declare class NSCChannelMergerNode extends NSCAudioNode {
+declare class NSCChannelMixerNode extends NSCAudioNode {
+	static alloc(): NSCChannelMixerNode; // inherited from NSObject
+
+	static new(): NSCChannelMixerNode; // inherited from NSObject
+
+	readonly channels: number;
+}
+
+declare class NSCChannelMergerNode extends NSCChannelMixerNode {
 	static alloc(): NSCChannelMergerNode; // inherited from NSObject
 
 	static new(): NSCChannelMergerNode; // inherited from NSObject
@@ -470,7 +490,7 @@ declare class NSCChannelMergerNode extends NSCAudioNode {
 	initWithContextNumberOfInputs(context: NSCAudioContext, numberOfInputs: number): this;
 }
 
-declare class NSCChannelSplitterNode extends NSCAudioNode {
+declare class NSCChannelSplitterNode extends NSCChannelMixerNode {
 	static alloc(): NSCChannelSplitterNode; // inherited from NSObject
 
 	static new(): NSCChannelSplitterNode; // inherited from NSObject
@@ -492,6 +512,26 @@ declare class NSCConstantSourceNode extends NSCAudioScheduledSourceNode {
 	constructor(o: { context: NSCAudioContext; offset: number });
 
 	initWithContextOffset(context: NSCAudioContext, offset: number): this;
+}
+
+declare class NSCAudioWorkletNode extends NSCAudioNode {
+	static alloc(): NSCAudioWorkletNode; // inherited from NSObject
+
+	static new(): NSCAudioWorkletNode; // inherited from NSObject
+
+	readonly numberOfInputs: number;
+
+	readonly numberOfOutputs: number;
+
+	readonly params: NSArray<NSCAudioParam>;
+
+	initWithContextRingInputChannelsOutputChannelsSlotWordsHeaderInputCountsInputDataOutputCountsOutputDataParamLengthsParamDataParamDefaults(context: NSCAudioContext, ring: NSData, inputChannels: NSArray<number> | number[], outputChannels: NSArray<number> | number[], slotWords: number, header: number, inputCounts: number, inputData: number, outputCounts: number, outputData: NSArray<number> | number[], paramLengths: number, paramData: number, paramDefaults: NSArray<number> | number[]): this;
+
+	abandonOffline(): void;
+
+	close(): void;
+
+	prepareOfflineQuantumBefore(limit: number): boolean;
 }
 
 declare class NSCConvolverNode extends NSCAudioNode {
@@ -597,6 +637,8 @@ declare class NSCOfflineAudioContext extends NSCAudioContext {
 
 	static new(): NSCOfflineAudioContext; // inherited from NSObject
 
+	readonly length: number;
+
 	configure(channels: number, lengthInFrames: number, sampleRate: number): void;
 
 	createBufferSourceNodeOffline(buffer: NSCAudioBuffer): NSCAudioBufferSourceNode;
@@ -605,7 +647,25 @@ declare class NSCOfflineAudioContext extends NSCAudioContext {
 
 	decodeAudioDataFromFileAsyncOffline(path: string, completion: (p1: NSCAudioBuffer) => void): void;
 
+	onSuspend: (frame: number) => void;
+
+	resumeRendering(): void;
+
+	scheduleSuspend(time: number): number;
+
 	startRenderingAsync(completion: (p1: NSCAudioBuffer) => void): void;
+}
+
+declare const enum NSCOfflineSuspendError {
+	InvalidTime = -1,
+
+	Finished = -2,
+
+	PastEnd = -3,
+
+	NotAfterCurrent = -4,
+
+	Duplicate = -5,
 }
 
 declare class NSCPeriodicWave extends NSObject {

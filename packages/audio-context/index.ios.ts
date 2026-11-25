@@ -25,9 +25,10 @@ import {
 	StereoPannerOptions,
 	WaveShaperOptions,
 	context_,
-	looksLikePath,
+	isBase64Source,
 	native_,
 	nativeCtor_,
+	OfflineSuspends,
 	normalizeSourcePath,
 	resolveLatencyHint,
 	resolvePannerOptions,
@@ -38,6 +39,11 @@ import {
 	resolveNativePlayer,
 	throwInvalidMediaElement,
 } from './common';
+import { File, knownFolders } from '@nativescript/core';
+import { AUDIO_WORKLET_SCOPE } from './audio-worklet-scope';
+import { SHARED_RING_BRIDGE, createWorkletRing, workletRingLayout } from './audio-worklet-ring';
+import { AudioParamMap, AudioWorkletNodeOptions, AudioWorkletPort, WorkletHost, closeWithContext, domError, isWorkerSupported, loadWorkletModule, resolveWorkletNodeOptions } from './audio-worklet-host';
+export { AudioWorkletNodeOptions };
 
 type NativeBaseAudioContext = BaseAudioContext & { native: NSCAudioContext };
 
@@ -116,7 +122,8 @@ export class AudioNode extends AudioNodeBase {
 		const that = this as never as AudioNode & { native: NSCAudioNode };
 		const target = node?.native || node;
 		try {
-			if (typeof output === 'number' && typeof input === 'number') that.native.connectToOutputInput(target, output, input);
+			if (target instanceof NSCAudioParam) that.native.connectToParamOutput(target, typeof output === 'number' ? output : (null as never));
+			else if (typeof output === 'number' && typeof input === 'number') that.native.connectToOutputInput(target, output, input);
 			else if (typeof output === 'number') that.native.connectToOutput(target, output);
 			else that.native.connectTo(target);
 		} catch (e) {
@@ -142,7 +149,8 @@ export class AudioNode extends AudioNodeBase {
 			}
 			const dest = destinationOrOutput.native || destinationOrOutput;
 			try {
-				if (typeof output === 'number' && typeof input === 'number') that.native.disconnectToOutputInput(dest, output, input);
+				if (dest instanceof NSCAudioParam) that.native.disconnectFromParamOutput(dest, typeof output === 'number' ? output : (null as never));
+				else if (typeof output === 'number' && typeof input === 'number') that.native.disconnectToOutputInput(dest, output, input);
 				else if (typeof output === 'number') that.native.disconnectToOutput(dest, output);
 				else that.native.disconnectTo(dest);
 			} catch (e) {
@@ -233,7 +241,10 @@ export class GainNode extends AudioNode {
 	constructor(context: NativeBaseAudioContext, options: { gain?: number } = {}) {
 		super(context);
 		this._native = context.native.createGainNode();
-		this._initialGain = typeof options?.gain === 'number' ? options!.gain! : (this._native.gain ?? 1);
+		this._initialGain = typeof options?.gain === 'number' ? options.gain : (this._native.gain ?? 1);
+		if (typeof options?.gain === 'number') {
+			this._native.gain = options.gain;
+		}
 	}
 	get native() {
 		return this._native;
@@ -440,21 +451,42 @@ export class AudioScheduledSourceNode extends AudioNode {
 		this.dispatchEvent({ type: 'ended', target: this });
 	}
 
-	start() {
+	start(when?: number, offset?: number, duration?: number) {
 		this._endedFired = false;
-		this.native.start();
+		const at = typeof when === 'number' && Number.isFinite(when) && when > 0 ? when : 0;
+		if (at > 0) this._ensureNativeEndedWired();
+		this._startNative(at, typeof offset === 'number' && Number.isFinite(offset) ? Math.max(0, offset) : 0);
+		if (typeof duration === 'number' && Number.isFinite(duration) && duration >= 0) {
+			const now = (this.context as any)?.currentTime ?? 0;
+			const startAt = typeof when === 'number' && Number.isFinite(when) ? Math.max(now, when) : now;
+			this.stop(startAt + duration);
+		}
 	}
 
-	stop() {
-		this.native.stop();
-		setTimeout(() => this._fireEnded(), 0);
+	protected _startNative(when: number, _offset: number) {
+		if (when > 0) {
+			this.native.startAt(when);
+		} else {
+			this.native.start();
+		}
+	}
+
+	stop(when?: number) {
+		const now = (this.context as any)?.currentTime ?? 0;
+		if (typeof when === 'number' && Number.isFinite(when) && when > now) {
+			this._ensureNativeEndedWired();
+			this.native.stopAt(when);
+		} else {
+			this.native.stop();
+			setTimeout(() => this._fireEnded(), 0);
+		}
 	}
 }
 
 export class OscillatorNode extends AudioScheduledSourceNode {
 	constructor(context: NativeBaseAudioContext, options: { type?: string; frequency?: number } = {}) {
 		const type = options?.type || 'sine';
-		const freq = options?.frequency || 440;
+		const freq = typeof options?.frequency === 'number' ? options.frequency : 440;
 		super(context, context.native.createOscillatorNodeFrequency(type, freq));
 	}
 
@@ -462,10 +494,24 @@ export class OscillatorNode extends AudioScheduledSourceNode {
 		return this[native_] as NSCAudioOscillatorNode;
 	}
 
+	get type(): string {
+		return this.native.type;
+	}
+
+	set type(v: string) {
+		this.native.type = v;
+	}
+
 	private _frequencyParam!: AudioParam;
 	get frequency(): AudioParam {
 		if (!this._frequencyParam) this._frequencyParam = new AudioParam(nativeCtor_, this.native.frequencyParam);
 		return this._frequencyParam;
+	}
+
+	private _detuneParam!: AudioParam;
+	get detune(): AudioParam {
+		if (!this._detuneParam) this._detuneParam = new AudioParam(nativeCtor_, this.native.detuneParam);
+		return this._detuneParam;
 	}
 
 	setPeriodicWave(wave: PeriodicWave) {
@@ -823,6 +869,10 @@ export class AudioBufferSourceNode extends AudioScheduledSourceNode {
 		return this[native_] as NSCAudioBufferSourceNode;
 	}
 
+	protected _startNative(when: number, offset: number) {
+		this.native.startAtOffset(when > 0 ? when : (null as never), offset);
+	}
+
 	set loop(v: boolean) {
 		this.native.loop = v;
 	}
@@ -842,6 +892,12 @@ export class AudioBufferSourceNode extends AudioScheduledSourceNode {
 		if (this._playbackRateParam) return this._playbackRateParam;
 		this._playbackRateParam = new AudioParam(nativeCtor_, this.native.getPlaybackRateParam());
 		return this._playbackRateParam;
+	}
+
+	private _detuneParam: AudioParam | null = null;
+	get detune(): AudioParam {
+		if (!this._detuneParam) this._detuneParam = new AudioParam(nativeCtor_, this.native.detuneParam);
+		return this._detuneParam;
 	}
 }
 
@@ -923,12 +979,174 @@ export class MediaElementAudioSourceNode extends AudioNode {
 	}
 }
 
+let workletScriptPath: string | null = null;
+
+function workletScript(): string {
+	if (!workletScriptPath) {
+		const file = knownFolders.temp().getFile('ns-audio-worklet-scope.js');
+		file.writeTextSync(SHARED_RING_BRIDGE + '\n' + AUDIO_WORKLET_SCOPE);
+		workletScriptPath = file.path;
+	}
+	return workletScriptPath;
+}
+
+function readWorkletModule(source: string): Promise<string> {
+	if (source.startsWith('data:')) {
+		const comma = source.indexOf(',');
+		const data = source.slice(comma + 1);
+		return Promise.resolve(/;base64$/i.test(source.slice(0, comma)) ? atob(data) : decodeURIComponent(data));
+	}
+	if (!File.exists(source)) return Promise.reject(new Error(`${source}: no such file`));
+	return File.fromPath(source).readText();
+}
+
+function workletPath(path: string): string {
+	return path.startsWith('~/') ? knownFolders.currentApp().path + path.slice(1) : path;
+}
+
+let nextWorkletNode = 1;
+const IOS_WORKLET_MAX_CHANNELS = 8;
+// Connected nodes keep playing without a JS reference, as in browsers.
+const connectedWorkletNodes = new Set<AudioWorkletNode>();
+
+type WorkletContext = AudioContext | OfflineAudioContext;
+
+export class AudioWorklet {
+	private [context_]: WorkletContext;
+	private _host: WorkletHost | null = null;
+
+	constructor(a?: any, context?: WorkletContext) {
+		if (a !== nativeCtor_ || !context) throw new TypeError('Illegal constructor.');
+		this[context_] = context;
+	}
+
+	/** @internal */
+	_scope(create: boolean): WorkletHost | null {
+		if (!this._host && create) {
+			const context = this[context_];
+			this._host = new WorkletHost(workletScript(), { scope: 0, sampleRate: context.sampleRate, addon: '' });
+			closeWithContext?.register(context, this._host);
+		}
+		return this._host;
+	}
+
+	addModule(moduleURL: string | { href: string }, _options?: { credentials?: string }): Promise<void> {
+		let host: WorkletHost;
+		try {
+			if (this[context_].state === 'closed') throw domError('InvalidStateError', 'The AudioContext is closed');
+			host = this._scope(true);
+		} catch (e) {
+			return Promise.reject(e);
+		}
+		const url = typeof moduleURL === 'string' ? moduleURL : String(moduleURL?.href ?? moduleURL);
+		return loadWorkletModule(url, readWorkletModule, workletPath).then(({ source, url }) => host.addModule(source, url));
+	}
+}
+
+export class AudioWorkletNode extends AudioNode {
+	readonly port: AudioWorkletPort;
+	readonly parameters: AudioParamMap<AudioParam>;
+	private _native: NSCAudioWorkletNode;
+	private _ring: SharedArrayBuffer;
+	private _numberOfInputs: number;
+	private _numberOfOutputs: number;
+	private _onprocessorerror: ((event: any) => void) | null = null;
+
+	constructor(context: WorkletContext, name: string, options: AudioWorkletNodeOptions = {}) {
+		const worklet = context?.audioWorklet;
+		const resolved = resolveWorkletNodeOptions(worklet?._scope(false), name, options);
+		const { host, descriptors, numberOfInputs, numberOfOutputs, parameterData } = resolved;
+		// Each input sums into channelCount channels.
+		const inputChannels = Array.from({ length: numberOfInputs }, () => Math.max(1, (options as any).channelCount ?? 2) | 0);
+		// One input and one output: the output follows the input; otherwise one channel per output.
+		const outputChannelCount = resolved.outputChannelCount ?? Array.from({ length: numberOfOutputs }, () => (numberOfInputs === 1 && numberOfOutputs === 1 ? inputChannels[0] : 1));
+		if ([...inputChannels, ...outputChannelCount].some((count) => count > IOS_WORKLET_MAX_CHANNELS)) {
+			throw domError('NotSupportedError', `AudioWorkletNode: at most ${IOS_WORKLET_MAX_CHANNELS} channels per input or output on iOS`);
+		}
+		super(context);
+		const layout = workletRingLayout(numberOfInputs, outputChannelCount, descriptors.length);
+		const ring = createWorkletRing(layout);
+		const defaults = descriptors.map((d) => parameterData?.[d.name] ?? d.defaultValue);
+		this._ring = ring;
+		this._numberOfInputs = numberOfInputs;
+		this._numberOfOutputs = numberOfOutputs;
+		this._native = NSCAudioWorkletNode.alloc().initWithContextRingInputChannelsOutputChannelsSlotWordsHeaderInputCountsInputDataOutputCountsOutputDataParamLengthsParamDataParamDefaults(
+			context.native,
+			ring as any,
+			inputChannels,
+			outputChannelCount,
+			layout.slotWords,
+			layout.header,
+			layout.inputCounts,
+			layout.inputData,
+			layout.outputCounts,
+			layout.outputData,
+			layout.paramLengths,
+			layout.paramData,
+			defaults,
+		);
+		if (!this._native) throw domError('NotSupportedError', 'AudioWorkletNode: the audio unit could not be created');
+		const params = this._native.params;
+		this.parameters = new AudioParamMap(new Map(descriptors.map((d, i) => [d.name, new AudioParam(nativeCtor_, params.objectAtIndex(i))])));
+		const id = nextWorkletNode++;
+		this.port = new AudioWorkletPort(host, id);
+		host.create(this, id, String(name), { ...options, numberOfInputs, numberOfOutputs, outputChannelCount, parameterData }, { buffer: ring, layout });
+	}
+
+	get numberOfInputs() {
+		return this._numberOfInputs;
+	}
+
+	get numberOfOutputs() {
+		return this._numberOfOutputs;
+	}
+
+	get native() {
+		return this._native;
+	}
+
+	connect(node: any, output?: number, input?: number) {
+		if (output !== undefined && (output < 0 || output >= this._numberOfOutputs)) throw domError('IndexSizeError', `AudioWorkletNode.connect: output ${output} is out of range`);
+		connectedWorkletNodes.add(this);
+		return super.connect(node, output, input);
+	}
+
+	disconnect(...args: any[]) {
+		if (args.length === 0) connectedWorkletNodes.delete(this);
+		return (super.disconnect as any)(...args);
+	}
+
+	get onprocessorerror() {
+		return this._onprocessorerror;
+	}
+
+	set onprocessorerror(callback: ((event: any) => void) | null) {
+		if (this._onprocessorerror) this.removeEventListener('processorerror', this._onprocessorerror);
+		this._onprocessorerror = typeof callback === 'function' ? callback : null;
+		if (this._onprocessorerror) this.addEventListener('processorerror', this._onprocessorerror);
+	}
+
+	/** @internal */
+	_processorError(message: string) {
+		// An offline render stops waiting on a failed processor.
+		this._native?.close();
+		this.dispatchEvent({ type: 'processorerror', message, error: new Error(message), target: this } as any);
+	}
+}
+
 export class AudioContext extends BaseAudioContext {
 	private [native_]: NSCAudioContext;
 
 	private _destination: AudioDestinationNode | null = null;
 
 	private _listener: AudioListener | null = null;
+
+	private _audioWorklet: AudioWorklet | null = null;
+
+	get audioWorklet(): AudioWorklet | undefined {
+		if (!this._audioWorklet && isWorkerSupported()) this._audioWorklet = new AudioWorklet(nativeCtor_, this);
+		return this._audioWorklet ?? undefined;
+	}
 
 	constructor(options?: AudioContextOptions) {
 		super();
@@ -1084,6 +1302,10 @@ export class AudioContext extends BaseAudioContext {
 
 	close(): Promise<void> {
 		if (this._state === 'closed') return Promise.resolve();
+		this._audioWorklet?._scope(false)?.close();
+		connectedWorkletNodes.forEach((node) => {
+			if (node.context === this) connectedWorkletNodes.delete(node);
+		});
 		const native = this.native;
 		return new Promise((resolve) => {
 			const finish = () => {
@@ -1122,7 +1344,7 @@ export class AudioContext extends BaseAudioContext {
 		const ret = new Promise<AudioBuffer>((resolve, reject) => {
 			try {
 				if (typeof source === 'string') {
-					if (looksLikePath(source)) {
+					if (!isBase64Source(source)) {
 						const filePath = normalizeSourcePath(source);
 						this.native.decodeAudioDataFromFileAsync(filePath, (wrapper) => {
 							if (!wrapper) return reject(new Error('decodeAudioData failed'));
@@ -1153,24 +1375,87 @@ export class AudioContext extends BaseAudioContext {
 	}
 }
 
+const offlineSuspendErrors: Record<number, string> = {
+	[-1]: 'suspendTime must be a non-negative number',
+	[-2]: 'rendering has finished',
+	[-3]: 'suspendTime is at or past the end of the render',
+	[-4]: 'suspendTime is not after the current time',
+	[-5]: 'a suspend is already scheduled at that time',
+};
+
 export class OfflineAudioContext extends BaseAudioContext {
 	private [native_]: NSCOfflineAudioContext;
 	destination: AudioDestinationNode | null = null;
+	private _listener: AudioListener | null = null;
+	private _audioWorklet: AudioWorklet | null = null;
+	private _rendering: Promise<AudioBuffer> | null = null;
+	private _suspends = new OfflineSuspends();
 
-	constructor(numberOfChannels: number, lengthInFrames: number, sampleRate: number) {
+	constructor(numberOfChannels: number | { numberOfChannels?: number; length: number; sampleRate: number }, lengthInFrames?: number, sampleRate?: number) {
 		super();
+		const options = typeof numberOfChannels === 'object' ? numberOfChannels : { numberOfChannels, length: lengthInFrames, sampleRate };
 		this[native_] = NSCOfflineAudioContext.new();
-		this[native_].configure(numberOfChannels, lengthInFrames, sampleRate);
+		this[native_].configure(Math.max(1, (options.numberOfChannels ?? 1) | 0), Math.max(0, options.length | 0), options.sampleRate && Number.isFinite(options.sampleRate) ? options.sampleRate : 48000);
 		try {
 			const nd = this[native_].destination;
 			this.destination = nd ? new AudioDestinationNode(this, nd) : null;
 		} catch (e) {
 			this.destination = null;
 		}
+		this._state = 'suspended';
+		const ref = new WeakRef(this);
+		this[native_].onSuspend = (frame) => ref.deref()?._reached(frame);
+	}
+
+	private _reached(frame: number) {
+		this._setState('suspended');
+		this._suspends.reached(frame);
+	}
+
+	/** Holds rendering at `suspendTime`, rounded up to a 128-frame quantum. */
+	suspend(suspendTime: number): Promise<void> {
+		if (this._state === 'closed') return Promise.reject(domError('InvalidStateError', 'OfflineAudioContext: rendering has finished'));
+		const frame = this.native.scheduleSuspend(Number(suspendTime));
+		if (frame < 0) return Promise.reject(domError('InvalidStateError', `OfflineAudioContext.suspend: ${offlineSuspendErrors[frame] ?? 'invalid suspendTime'}`));
+		return this._suspends.add(frame);
+	}
+
+	resume(): Promise<void> {
+		if (this._state === 'closed') return Promise.reject(domError('InvalidStateError', 'OfflineAudioContext: rendering has finished'));
+		if (!this._rendering) return Promise.reject(domError('InvalidStateError', 'OfflineAudioContext: rendering has not started'));
+		this._setState('running');
+		this.native.resumeRendering();
+		return Promise.resolve();
 	}
 
 	get native() {
 		return this[native_];
+	}
+
+	get sampleRate(): number {
+		return this.native.sampleRate;
+	}
+
+	get currentTime(): number {
+		return this.native.currentTime;
+	}
+
+	get length(): number {
+		return this.native.length;
+	}
+
+	get listener() {
+		if (!this._listener) this._listener = new AudioListener(nativeCtor_, this as unknown as NativeBaseAudioContext);
+		return this._listener;
+	}
+
+	get audioWorklet(): AudioWorklet | undefined {
+		if (!this._audioWorklet && isWorkerSupported()) this._audioWorklet = new AudioWorklet(nativeCtor_, this);
+		return this._audioWorklet ?? undefined;
+	}
+
+	createBuffer(options: { length: number; numberOfChannels: number; sampleRate: number }) {
+		return new AudioBuffer(options);
 	}
 
 	createGain(options?: { gain?: number }) {
@@ -1226,7 +1511,7 @@ export class OfflineAudioContext extends BaseAudioContext {
 		const ret = new Promise<AudioBuffer>((resolve, reject) => {
 			try {
 				if (typeof source === 'string') {
-					if (looksLikePath(source)) {
+					if (!isBase64Source(source)) {
 						const filePath = normalizeSourcePath(source);
 						this.native.decodeAudioDataFromFileAsyncOffline(filePath, (wrapper) => {
 							if (!wrapper) return reject(new Error('decodeAudioData failed'));
@@ -1257,12 +1542,21 @@ export class OfflineAudioContext extends BaseAudioContext {
 	}
 
 	startRendering(): Promise<AudioBuffer> {
-		return new Promise((resolve, reject) => {
+		if (this._rendering) return Promise.reject(domError('InvalidStateError', 'OfflineAudioContext: rendering has already started'));
+		this._setState('running');
+		this._rendering = new Promise<AudioBuffer>((resolve, reject) => {
 			this.native.startRenderingAsync((wrapper: any) => {
+				this._audioWorklet?._scope(false)?.close();
+				connectedWorkletNodes.forEach((node) => {
+					if (node.context === this) connectedWorkletNodes.delete(node);
+				});
+				this._setState('closed');
+				this._suspends.rejectAll(() => domError('InvalidStateError', 'OfflineAudioContext: rendering finished before the suspend'));
 				if (!wrapper) return reject(new Error('startRendering failed'));
 				resolve(new AudioBuffer(nativeCtor_, wrapper));
 			});
 		});
+		return this._rendering;
 	}
 }
 

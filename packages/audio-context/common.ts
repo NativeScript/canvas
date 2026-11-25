@@ -43,6 +43,32 @@ export class AudioEventTarget extends Observable {
 	protected _onLastListenerRemoved?(type: string): void;
 }
 
+/** An OfflineAudioContext's pending suspend promises, by the frame each holds at. */
+export class OfflineSuspends {
+	private _pending = new Map<number, { resolve: () => void; reject: (error: unknown) => void }>();
+
+	add(frame: number): Promise<void> {
+		return new Promise((resolve, reject) => this._pending.set(frame, { resolve, reject }));
+	}
+
+	has(frame: number) {
+		return this._pending.has(frame);
+	}
+
+	reached(frame: number) {
+		const pending = this._pending.get(frame);
+		this._pending.delete(frame);
+		pending?.resolve();
+	}
+
+	/** Suspends rendering never reached. */
+	rejectAll(error: () => unknown) {
+		const pending = [...this._pending.values()];
+		this._pending.clear();
+		pending.forEach((p) => p.reject(error()));
+	}
+}
+
 export class BaseAudioContext extends AudioEventTarget {
 	protected _state: AudioContextState = 'running';
 	private _onstatechange: ((ev: { type: 'statechange' }) => void) | null = null;
@@ -97,6 +123,20 @@ export function normalizeSourcePath(source: string) {
 
 export function looksLikePath(source: string): boolean {
 	return source.indexOf('/') >= 0 || source.indexOf('file:') === 0 || source.indexOf('~') === 0;
+}
+
+const BASE64_PATTERN = /^[A-Za-z0-9+/\s]{16,}={0,2}$/;
+
+/** Whether a decodeAudioData string is base64 rather than a path; base64 has '/' too, so it is checked first. */
+export function isBase64Source(source: string): boolean {
+	return source.startsWith('data:') || BASE64_PATTERN.test(source) || !looksLikePath(source);
+}
+
+/** The base64 after a `data:` URL's comma, or the string itself. */
+export function base64Payload(source: string): string {
+	if (!source.startsWith('data:')) return source;
+	const comma = source.indexOf(',');
+	return comma >= 0 ? source.substring(comma + 1) : source;
 }
 
 export type LatencyHint = 'interactive' | 'balanced' | 'playback' | number;

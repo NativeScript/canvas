@@ -12,6 +12,9 @@
 #include <memory>
 #include <atomic>
 #include <cstdint>
+#include <condition_variable>
+#include <thread>
+#include <algorithm>
 
 #include "kiss_fft.h"
 
@@ -25,7 +28,37 @@ struct HRTFConvolver;
 
 class NativeEngine {
 public:
+    // The engine this thread's calls reach: an offline context's inside its Scope, else realtime().
     static NativeEngine &getInstance();
+
+    static NativeEngine &realtime();
+
+    // An OfflineAudioContext's own engine, with no stream; returns its context id.
+    static std::string createOffline(int sampleRate, int channels);
+
+    static void releaseOffline(const std::string &contextId);
+
+    // The offline engine whose prefix `id` carries, if any.
+    static std::shared_ptr<NativeEngine> offlineFor(const char *id);
+
+    // Routes getInstance() on this thread to `engine` (null: realtime) for the scope's lifetime.
+    struct Scope {
+        explicit Scope(std::shared_ptr<NativeEngine> engine);
+        ~Scope();
+        Scope(const Scope &) = delete;
+        Scope &operator=(const Scope &) = delete;
+    private:
+        std::shared_ptr<NativeEngine> engine_;
+        NativeEngine *previous_;
+    };
+
+    const std::string &idPrefix() const { return idPrefix_; }
+
+    bool isOffline() const { return offline_; }
+
+    // Offline: renders `frames` context frames from `startFrame`, channel c into `out[c]`.
+    // Commands queued since the last call apply from `startFrame`.
+    void renderOfflineFrames(int64_t startFrame, int frames, const std::vector<float *> &out);
 
     void resume();
 
@@ -39,6 +72,14 @@ public:
 
     void stopTrack(const std::string &id);
 
+    // `when` is in the context's currentTime seconds; at or before now starts/stops immediately.
+    void startOscillatorAt(const std::string &id, const std::string &type, double frequency,
+                           const std::string &contextId, double when);
+
+    void stopTrackAt(const std::string &id, const std::string &contextId, double when);
+
+    void setOscillatorType(const std::string &id, const std::string &type);
+
     std::string createBufferSource(std::vector<int16_t> &&pcm, int sampleRate, int channels);
 
     std::string createBufferSourceFromExisting(const std::string &bufferId);
@@ -47,9 +88,9 @@ public:
 
     void startBufferSource(const std::string &id, bool loop);
 
-    std::string
-    renderOfflineForTracks(const std::vector<std::string> &trackIds, int frames, int sampleRate,
-                           int channels);
+    // `offset` is in seconds into the buffer.
+    void startBufferSourceAt(const std::string &id, bool loop, const std::string &contextId,
+                             double when, double offset);
 
     void setJavaVM(JavaVM *vm);
 
@@ -87,6 +128,13 @@ public:
     void pushPcmFrames(const std::string &id, const float *interleaved, size_t sampleCount);
     void endExternalPcmSource(const std::string &id);
 
+    // An AudioWorkletNode over its ring (audio-worklet-ring.ts); offsets are in 4-byte words.
+    std::string createWorklet(float *ring, const std::vector<int> &inputChannels,
+                              const std::vector<int> &outputChannels, int slotWords, int header,
+                              int inputCounts, int inputData, int outputCounts,
+                              const std::vector<int> &outputData, int paramLengths, int paramData,
+                              std::vector<std::string> paramIds);
+
 #ifdef HAS_OBOE
 
     oboe::DataCallbackResult
@@ -107,6 +155,19 @@ private:
     NativeEngine();
 
     ~NativeEngine();
+
+    bool offline_ = false;
+    std::string idPrefix_;
+    int64_t offlineBaseNs_ = 0;
+    std::mutex offlineRenderMutex_;
+    std::vector<float> offlineScratch_;
+    // Offline: the quantum being rendered and the end of the current render call, in frames.
+    int64_t offlineFrame_ = 0;
+    int64_t offlineLimitFrame_ = 0;
+    // The render clock: CLOCK_MONOTONIC ns for realtime, virtual for offline.
+    std::atomic<int64_t> nowNs_{0};
+    // Realtime: the next block's first frame on the render thread's frame clock.
+    int64_t renderClockNs_ = 0;
 
     void ensureStream();
 
@@ -154,6 +215,42 @@ private:
         std::atomic<bool> ended{false};
     };
 
+    static constexpr int kWorkletMaxPorts = 16;
+    static constexpr int kWorkletMaxChannels = 8;
+
+    struct WorkletNode {
+        std::string id;
+        float *words = nullptr;
+        std::atomic<uint32_t> *header = nullptr;
+        int slotWords = 0;
+        int inputCounts = 0;
+        int inputData = 0;
+        int outputCounts = 0;
+        int paramLengths = 0;
+        int paramData = 0;
+        int inputs = 0;
+        int outputs = 0;
+        int inChannels[kWorkletMaxPorts] = {};
+        int outChannels[kWorkletMaxPorts] = {};
+        int outputData[kWorkletMaxPorts] = {};
+        std::vector<std::string> paramIds;
+        // Each input at its channelCount, a quantum per channel: inputs x mixChannels x 128.
+        int mixChannels = 1;
+        std::vector<float> inMix;
+        bool inActive[kWorkletMaxPorts] = {};
+        // The quantum playing: outputs x kWorkletMaxChannels x 128.
+        std::vector<float> outQ;
+        uint64_t nextFrame = 0;
+        uint32_t lowWater = UINT32_MAX;
+        uint32_t window = 0;
+        bool finished = false;
+        bool drained = false;
+        bool ended = false;
+        // Offline sources: requests run ahead of the render to here.
+        bool requesting = false;
+        uint64_t requestFrame = 0;
+    };
+
     struct Voice {
         enum Type {
             Oscillator, BufferSource, ExternalPCM
@@ -167,16 +264,12 @@ private:
         double position = 0.0;
         double increment = 1.0;
         bool loop = false;
-        double gain = 1.0;
-        std::string gainId;
         std::string playbackRateId;
-        std::string filterId;
-        std::vector<BiquadState> filterState;
-        std::vector<std::vector<double>> iirState;
         std::string periodicWaveId;
-        std::string panId;
-        double pan = 0.0;
         bool playing = false;
+        // CLOCK_MONOTONIC ns, the same clock as g_audioTimeNanos; 0 means unscheduled.
+        int64_t startAtNs = 0;
+        int64_t stopAtNs = 0;
         int bufferChannels = 0;
         int bufferSampleRate = 0;
 
@@ -187,6 +280,30 @@ private:
         bool externalPrimed = false;
     };
 
+    // A DelayNode's line; its delayTime is a gain-style param under the node's id.
+    struct DelayLine {
+        int channels = 0;
+        int size = 0;
+        int writePos = 0;
+        // `channels` runs of `size` frames.
+        std::vector<float> data;
+    };
+    std::unordered_map<std::string, DelayLine> delays_;
+
+    std::unordered_map<std::string, std::shared_ptr<WorkletNode>> worklets_;
+
+    // Pushes a request for the quantum at `frame`, with params from `paramValues` (params x 128)
+    // or else from automation at `paramNs`; false if the ring is full.
+    bool workletPush(WorkletNode &w, uint64_t frame, int64_t paramNs, bool withInputs,
+                     const float *paramValues = nullptr);
+    void workletReadSlot(WorkletNode &w, uint32_t read);
+    void workletSilence(WorkletNode &w);
+    // Realtime: pushes the quantum just filled and plays the newest response.
+    void workletEndQuantum(WorkletNode &w, int64_t paramNs, const float *paramValues);
+    // Offline: renders the quantum at offlineFrame_ into outQ, waiting for the Worker.
+    void workletRenderOffline(WorkletNode &w, const float *paramValues);
+    void removeWorklet(const std::string &id);
+
     std::unordered_map<std::string, BufferData> audioBuffers_;
     std::unordered_map<std::string, Voice> audioVoices_;
     // Buffers to free once no playing voice reads them; render thread only.
@@ -196,12 +313,13 @@ private:
                            const std::shared_ptr<std::promise<void>> &completion = nullptr);
 
     bool bufferInUse(const std::string &id) const;
-    std::unordered_set<std::string> debugLoggedVoices_;
 public:
     enum CommandType {
         CMD_CREATE_OSC,
         CMD_START_OSC,
         CMD_STOP_TRACK,
+        CMD_STOP_TRACK_AT,
+        CMD_SET_OSC_TYPE,
         CMD_CREATE_BUFFER_DIRECT,
         CMD_CREATE_BUFFER_PLANAR,
         CMD_CREATE_BUFFER_COPY,
@@ -211,19 +329,13 @@ public:
         CMD_CREATE_GAIN,
         CMD_CREATE_DYNAMICS_COMPRESSOR,
         CMD_SET_GAIN,
-        CMD_ATTACH_GAIN,
-        CMD_DETACH_GAIN,
         CMD_FREE_GAIN,
         CMD_CREATE_BIQUAD,
         CMD_SET_BIQUAD_PARAMS,
-        CMD_ATTACH_BIQUAD,
-        CMD_DETACH_BIQUAD,
         CMD_FREE_BIQUAD,
         CMD_CREATE_PANNER,
         CMD_SET_PANNER_PARAMS,
         CMD_SET_LISTENER_PARAMS,
-        CMD_ATTACH_PANNER,
-        CMD_DETACH_PANNER,
         CMD_FREE_PANNER,
         CMD_CREATE_IIR,
         CMD_FREE_IIR,
@@ -242,8 +354,27 @@ public:
         CMD_DETACH_PLAYBACK_RATE,
         CMD_FREE_PLAYBACK_RATE,
         CMD_SET_PANNER_HRIR,
-        CMD_SET_PANNER_PARTITION_SIZE
+        CMD_SET_PANNER_PARTITION_SIZE,
+        CMD_CREATE_WORKLET,
+        CMD_CREATE_DELAY,
+        CMD_CONNECT,
+        CMD_DISCONNECT,
+        CMD_NODE_CONFIG,
+        // Stops source `id`'s voice; its graph node lives on as `targetId` when given.
+        CMD_REPLACE_SOURCE
     };
+
+    // Graph node kinds; AudioContext.java's NODE_* match.
+    enum NodeKind {
+        NODE_SOURCE = 0, NODE_GAIN, NODE_DELAY, NODE_BIQUAD, NODE_IIR, NODE_PANNER, NODE_COMPRESSOR,
+        NODE_WAVESHAPER, NODE_CONVOLVER, NODE_ANALYSER, NODE_SPLITTER, NODE_MERGER, NODE_WORKLET,
+        NODE_DESTINATION
+    };
+    enum CountMode { COUNT_MAX = 0, COUNT_CLAMPED_MAX = 1, COUNT_EXPLICIT = 2 };
+    enum Interpretation { INTERP_SPEAKERS = 0, INTERP_DISCRETE = 1 };
+    // A connection's target: a node input, or a param (-1 gain-style, else a panner param type).
+    static constexpr int kTargetNode = -2;
+    static constexpr int kTargetGainParam = -1;
 
     struct Command {
         CommandType type;
@@ -251,6 +382,8 @@ public:
         std::string contextId;
         std::string waveform;
         double frequency = 0.0;
+        int64_t timeNs = 0;
+        double startOffset = 0.0;
         std::string gainId;
         std::string compressorThresholdId;
         std::string compressorKneeId;
@@ -260,6 +393,7 @@ public:
         std::string compressorReductionId;
         std::string playbackRateId;
         double gainValue = 1.0;
+        double maxDelayTime = 1.0;
         std::string biquadId;
         std::string biquadType;
         double biquadFrequency = 440.0;
@@ -300,6 +434,7 @@ public:
         std::shared_ptr<std::vector<int16_t>> pcm;
         std::shared_ptr<std::vector<float>> pcmFloat;
         std::shared_ptr<ExternalRing> externalRing;
+        std::shared_ptr<WorkletNode> worklet;
         std::shared_ptr<std::vector<float>> hrirLeft;
         std::shared_ptr<std::vector<float>> hrirRight;
         bool clearHrir = false;
@@ -317,11 +452,130 @@ public:
         std::vector<float> waveShaperCurve;
         std::string waveShaperOversample;
         std::string pannerBiquadId;
+        // CMD_CONNECT / CMD_DISCONNECT: id output -> targetId input (or param targetType).
+        // Disconnect wildcards: empty targetId, negative indices.
+        std::string targetId;
+        int kind = 0;
+        int ports = 1;
+        int targetKind = 0;
+        int targetPorts = 1;
+        int targetType = kTargetNode;
+        int channelCount = 0;
+        int countMode = -1;
+        int interpretation = -1;
     };
 
     void enqueueCommand(Command &&cmd);
 
 private:
+    static constexpr int kQuantum = 128;
+
+    struct Bus {
+        int channels = 1;
+        // Whether anything is playing into it this quantum.
+        bool active = false;
+        std::vector<float> data;
+
+        void setChannels(int n) {
+            channels = std::max(1, n);
+            const size_t need = static_cast<size_t>(channels) * kQuantum;
+            if (data.size() < need) data.resize(need);
+        }
+
+        float *channel(int c) { return data.data() + static_cast<size_t>(c) * kQuantum; }
+
+        const float *channel(int c) const { return data.data() + static_cast<size_t>(c) * kQuantum; }
+
+        void silence() { std::fill(data.begin(), data.begin() + channels * kQuantum, 0.0f); }
+    };
+
+    struct GraphNode {
+        int kind = NODE_GAIN;
+        std::string id;
+        int inputs = 1;
+        int outputs = 1;
+        int channelCount = 2;
+        int countMode = COUNT_MAX;
+        int interpretation = INTERP_SPEAKERS;
+        // Per input: (source, source output).
+        std::vector<std::vector<std::pair<GraphNode *, int>>> in;
+        std::vector<Bus> inBus;
+        std::vector<Bus> outBus;
+        std::shared_ptr<WorkletNode> worklet;
+        std::vector<BiquadState> biquad;
+        std::vector<std::vector<double>> iir;
+        std::vector<BiquadState> lowpass;
+        BiquadCoeffs lowpassCoeffs;
+        double lowpassCutoff = -1.0;
+        std::vector<float> reductionDb;
+        // Param values for this quantum, kQuantum per param.
+        std::vector<double> params;
+        std::vector<float> paramValues;
+        int delayChannels = 1;
+        // Quanta it keeps ringing with nothing playing into it.
+        int tail = 0;
+        // A DelayNode in a cycle: its output is read before its input is written.
+        bool delayInCycle = false;
+        // In a cycle without a DelayNode: silent.
+        bool muted = false;
+        // Freed by the app; goes once nothing plays into it, then runs `deferred`.
+        bool released = false;
+        std::vector<Command> deferred;
+        int index = -1;
+        int low = 0;
+        bool onStack = false;
+        int pending = 0;
+    };
+
+    struct ParamInput {
+        std::string id;
+        int type;
+        GraphNode *src;
+        int output;
+        // The node reading the param, found when the order is rebuilt.
+        GraphNode *owner;
+    };
+
+    std::unordered_map<std::string, std::unique_ptr<GraphNode>> graph_;
+    std::vector<ParamInput> paramInputs_;
+    std::vector<GraphNode *> order_;
+    std::vector<GraphNode *> destinations_;
+    std::vector<GraphNode *> scratchNodes_;
+    bool orderDirty_ = true;
+    // Realtime: the quantum being played out, interleaved.
+    std::vector<float> quantum_;
+    int quantumPos_ = kQuantum;
+    std::vector<std::string> endedScratch_;
+    // Frees deferred until a node left the graph.
+    std::vector<Command> deferredRun_;
+    // Buffer source id -> its playbackRate param.
+    std::unordered_map<std::string, std::string> voicePlaybackRate_;
+
+    GraphNode *ensureNode(const std::string &id, int kind, int ports);
+    void removeNode(GraphNode *node);
+    void connectNodes(const Command &c);
+    void disconnectNodes(const Command &c);
+    void configureNode(const Command &c);
+    bool deferFree(const Command &c);
+    bool nodeBusy(const GraphNode &n) const;
+    void runDeferred();
+    double *paramScratch(GraphNode &n, int index);
+    void rebuildOrder();
+    void applyCommand(Command &c);
+    void drainCommands();
+    // Renders one quantum starting at `startNs` into `out`, interleaved at the stream's channels.
+    void renderQuantum(float *out, int64_t startNs);
+    void processNode(GraphNode &n, int64_t startNs, double frameNs);
+    bool mixInput(GraphNode &n, int input, int channels, int mode, int interpretation);
+    // A quantum of a param: automation plus audio connected to it; true when constant.
+    bool evalParam(const std::string &id, int type, double fallback, int64_t startNs,
+                   double frameNs, double *out);
+    void renderSource(GraphNode &n, int64_t startNs, double frameNs);
+    void renderDelay(GraphNode &n, int64_t startNs, double frameNs, bool write, bool read);
+    void renderPanner(GraphNode &n, int64_t startNs, double frameNs);
+    void renderCompressor(GraphNode &n, int64_t startNs, double frameNs);
+    void renderWorklet(GraphNode &n, int64_t startNs, double frameNs);
+
     std::vector<Command> pendingCommands_;
     std::mutex commandMutex_;
 
@@ -334,8 +588,6 @@ private:
         std::string attackId;
         std::string releaseId;
         std::string reductionId;
-        std::vector<float> envelopeByChannel;
-        std::vector<float> reductionDbByChannel;
     };
     std::unordered_map<std::string, DynamicsCompressor> compressors_;
 
@@ -395,9 +647,6 @@ public:
     int desiredDeviceId_ = 0; // oboe::kUnspecified
 
     std::unordered_map<std::string, BiquadCoeffs> biquads_;
-    std::unordered_map<std::string, std::unordered_map<int, std::string>> voiceGainByOutput_;
-    std::unordered_map<std::string, std::unordered_map<int, std::string>> voicePlaybackRateByOutput_;
-    std::unordered_map<std::string, std::unordered_map<int, std::string>> voiceFilterByOutput_;
     struct IIRData {
         std::vector<double> feedforward;
         std::vector<double> feedback;
@@ -414,7 +663,6 @@ public:
         std::string oversample = "none";
     };
     std::unordered_map<std::string, WaveShaperData> waveShapers_;
-    std::unordered_map<std::string, std::unordered_map<int, std::string>> voicePannerByOutput_;
     enum PannerPanningModel {
         PANNING_EQUALPOWER = 0, PANNING_HRTF = 1
     };
@@ -582,6 +830,19 @@ public:
     jclass audioContextClassGlobalRef = nullptr;
     jmethodID onNativeBufferHeldMethod = nullptr;
     jmethodID onNativeBufferReleasedMethod = nullptr;
+    jmethodID onNativeTrackEndedMethod = nullptr;
+
+    int64_t contextTimeToNanos(const std::string &contextId, double when);
+
+    // Voices that stop on the render thread are reported to Java from this thread, so the
+    // audio callback never attaches to the JVM.
+    void queueEnded(const std::vector<std::string> &ids);
+    void endedNotifierLoop();
+    std::mutex endedMutex_;
+    std::condition_variable endedCv_;
+    std::vector<std::string> endedQueue_;
+    std::thread endedThread_;
+    bool endedStop_ = false;
 
     std::unordered_map<std::string, int64_t> contextStartNanos_;
     std::mutex contextMutex_;

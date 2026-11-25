@@ -10,7 +10,7 @@ function rms(samples: Float32Array): number {
 }
 
 /** A mono 16-bit WAV of `samples`, base64. */
-function wavBase64(samples: Float32Array, sampleRate: number): string {
+export function wavBase64(samples: Float32Array, sampleRate: number): string {
 	const bytes = new DataView(new ArrayBuffer(44 + samples.length * 2));
 	const text = (offset: number, value: string) => {
 		for (let i = 0; i < value.length; i++) bytes.setUint8(offset + i, value.charCodeAt(i));
@@ -54,7 +54,8 @@ export function registerAudioSpec() {
 			oscillator.start();
 			const buffer = await context.startRendering();
 			equal(buffer.length, 4800);
-			closeTo(rms(buffer.getChannelData(0).subarray(480)), 0.5, 0.02, 'square wave rms');
+			// The square is the spec's normalized PeriodicWave (peak 1, RMS about 0.83), as in Chrome.
+			closeTo(rms(buffer.getChannelData(0).subarray(480)), 0.415, 0.01, 'square wave rms');
 			equal(context.state, 'closed');
 		});
 
@@ -100,6 +101,9 @@ export function registerAudioSpec() {
 			const oscillator = context.createOscillator();
 			oscillator.connect(gain).connect(context.destination);
 			oscillator.start();
+			// Rendering starts asynchronously, so `running` can lag construction.
+			const startBy = Date.now() + 2000;
+			while (context.state !== 'running' && Date.now() < startBy) await wait(10);
 			equal(context.state, 'running');
 			ok(context.sampleRate > 0, `sampleRate ${context.sampleRate}`);
 			const start = context.currentTime;

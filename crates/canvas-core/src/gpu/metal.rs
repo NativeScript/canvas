@@ -1,4 +1,3 @@
-use objc2::ffi::BOOL;
 use objc2::msg_send;
 use objc2::rc::Retained;
 use objc2::runtime::{AnyObject, ProtocolObject};
@@ -104,9 +103,9 @@ impl MetalContext {
             let layer: Retained<CAMetalLayer> = unsafe { msg_send![&view, layer] };
 
             if let Some(clazz) = objc2::runtime::AnyClass::get(c"CAMetalLayer") {
-                let is_metal: BOOL = unsafe { msg_send![&layer, isKindOfClass: clazz] };
-                if is_metal == objc2::ffi::NO {
-                    let _: () = unsafe { msg_send![&view,  setWantsLayer: objc2::ffi::YES] };
+                let is_metal: bool = unsafe { msg_send![&layer, isKindOfClass: clazz] };
+                if !is_metal {
+                    let _: () = unsafe { msg_send![&view,  setWantsLayer: true] };
                     let mtl_layer = CAMetalLayer::new();
                     mtl_layer.setDevice(Some(&device));
                     mtl_layer.setPixelFormat(MTLPixelFormat::BGRA8Unorm);
@@ -331,9 +330,9 @@ impl MetalContext {
                 let layer: Retained<CAMetalLayer> = unsafe { msg_send![&view, layer] };
 
                 if let Some(clazz) = objc2::runtime::AnyClass::get(c"CAMetalLayer") {
-                    let is_metal: BOOL = unsafe { msg_send![&layer, isKindOfClass: clazz] };
-                    if is_metal == objc2::ffi::YES {
-                        let _: () = unsafe { msg_send![&view,  setWantsLayer: objc2::ffi::YES] };
+                    let is_metal: bool = unsafe { msg_send![&layer, isKindOfClass: clazz] };
+                    if is_metal {
+                        let _: () = unsafe { msg_send![&view,  setWantsLayer: true] };
                         let mtl_layer = CAMetalLayer::new();
                         mtl_layer.setDevice(Some(self.device.as_ref()));
                         mtl_layer.setPixelFormat(MTLPixelFormat::BGRA8Unorm);
@@ -385,22 +384,14 @@ impl MetalContext {
 
     pub fn current_drawable(&mut self) -> Option<&Retained<ProtocolObject<dyn CAMetalDrawable>>> {
         if self.current_drawable.is_none() {
-            self.current_drawable = unsafe {
-                self.layer
-                    .nextDrawable()
-                    .map(|drawable| drawable.to_owned())
-            }
+            self.current_drawable = self.layer.nextDrawable().map(|drawable| drawable.to_owned());
         }
         self.current_drawable.as_ref()
     }
 
     pub fn next_drawable(&mut self) -> Option<&Retained<ProtocolObject<dyn CAMetalDrawable>>> {
         let _ = unsafe { NSAutoreleasePool::new() };
-        self.current_drawable = unsafe {
-            self.layer
-                .nextDrawable()
-                .map(|drawable| drawable.to_owned())
-        };
+        self.current_drawable = self.layer.nextDrawable().map(|drawable| drawable.to_owned());
         self.current_drawable.as_ref()
     }
 

@@ -2,10 +2,72 @@
 #include "audio_internal.h"
 #include "hrtf_convolver.h"
 
+#include <cstring>
 
-NativeEngine &NativeEngine::getInstance() {
+
+namespace {
+thread_local NativeEngine *tlsEngine = nullptr;
+std::mutex offlineMutex;
+// Prefix -> engine.
+std::unordered_map<std::string, std::shared_ptr<NativeEngine>> offlineEngines;
+uint64_t offlineSerial = 0;
+// Offline context time 0; nonzero, as a start time of 0 means unscheduled.
+constexpr int64_t kOfflineBaseNs = 1000000000LL;
+}
+
+NativeEngine &NativeEngine::realtime() {
     static NativeEngine inst;
     return inst;
+}
+
+NativeEngine &NativeEngine::getInstance() {
+    return tlsEngine ? *tlsEngine : realtime();
+}
+
+NativeEngine::Scope::Scope(std::shared_ptr<NativeEngine> engine) : engine_(std::move(engine)), previous_(tlsEngine) {
+    tlsEngine = engine_.get();
+}
+
+NativeEngine::Scope::~Scope() {
+    tlsEngine = previous_;
+}
+
+std::string NativeEngine::createOffline(int sampleRate, int channels) {
+    std::shared_ptr<NativeEngine> engine(new NativeEngine(), [](NativeEngine *e) { delete e; });
+    engine->offline_ = true;
+#ifdef HAS_OBOE
+    engine->streamSampleRate_ = sampleRate > 0 ? sampleRate : 48000;
+    engine->streamChannels_ = std::max(1, channels);
+#endif
+    engine->offlineBaseNs_ = kOfflineBaseNs;
+    engine->nowNs_.store(kOfflineBaseNs, std::memory_order_relaxed);
+    std::string contextId;
+    {
+        std::lock_guard<std::mutex> lock(offlineMutex);
+        engine->idPrefix_ = "o" + std::to_string(++offlineSerial) + "_";
+        contextId = engine->idPrefix_ + "context";
+        offlineEngines[engine->idPrefix_] = engine;
+    }
+    engine->registerContextStart(contextId, kOfflineBaseNs);
+    if (realtime().jvm_) engine->setJavaVM(realtime().jvm_);
+    return contextId;
+}
+
+void NativeEngine::releaseOffline(const std::string &contextId) {
+    auto engine = offlineFor(contextId.c_str());
+    if (!engine) return;
+    std::lock_guard<std::mutex> lock(offlineMutex);
+    offlineEngines.erase(engine->idPrefix_);
+}
+
+std::shared_ptr<NativeEngine> NativeEngine::offlineFor(const char *id) {
+    if (!id || id[0] != 'o') return nullptr;
+    const char *end = std::strchr(id, '_');
+    if (!end) return nullptr;
+    std::string prefix(id, static_cast<size_t>(end - id) + 1);
+    std::lock_guard<std::mutex> lock(offlineMutex);
+    auto it = offlineEngines.find(prefix);
+    return it != offlineEngines.end() ? it->second : nullptr;
 }
 
 NativeEngine::NativeEngine() = default;
@@ -303,7 +365,8 @@ NativeEngine::getIIRCoefficients(const std::string &iirId) {
 }
 
 int64_t NativeEngine::getContextCurrentTimeNanos(const std::string &contextId) {
-    int64_t audioNs = g_audioTimeNanos.load(std::memory_order_relaxed);
+    int64_t audioNs = offline_ ? nowNs_.load(std::memory_order_relaxed)
+                               : g_audioTimeNanos.load(std::memory_order_relaxed);
     if (audioNs == 0) {
         audioNs = std::chrono::duration_cast<std::chrono::nanoseconds>(
                 std::chrono::steady_clock::now().time_since_epoch()).count();
@@ -341,14 +404,62 @@ void NativeEngine::setJavaVM(JavaVM *vm) {
         onNativeBufferReleasedMethod = env->GetStaticMethodID(audioContextClassGlobalRef,
                                                               "onNativeBufferReleased",
                                                               "(Ljava/lang/String;)V");
+        onNativeTrackEndedMethod = env->GetStaticMethodID(audioContextClassGlobalRef,
+                                                          "onNativeTrackEnded",
+                                                          "(Ljava/lang/String;)V");
+        if (env->ExceptionCheck()) {
+            env->ExceptionClear();
+            onNativeTrackEndedMethod = nullptr;
+        }
     }
     if (attached) jvm_->DetachCurrentThread();
+    if (onNativeTrackEndedMethod && !endedThread_.joinable()) {
+        endedThread_ = std::thread([this] { endedNotifierLoop(); });
+    }
+}
+
+void NativeEngine::queueEnded(const std::vector<std::string> &ids) {
+    if (ids.empty() || !onNativeTrackEndedMethod) return;
+    {
+        std::lock_guard<std::mutex> lock(endedMutex_);
+        endedQueue_.insert(endedQueue_.end(), ids.begin(), ids.end());
+    }
+    endedCv_.notify_one();
+}
+
+void NativeEngine::endedNotifierLoop() {
+    JNIEnv *env = nullptr;
+    if (!jvm_ || jvm_->AttachCurrentThread(&env, nullptr) != JNI_OK || !env) return;
+    std::vector<std::string> batch;
+    for (;;) {
+        {
+            std::unique_lock<std::mutex> lock(endedMutex_);
+            endedCv_.wait(lock, [this] { return endedStop_ || !endedQueue_.empty(); });
+            if (endedStop_) break;
+            batch.swap(endedQueue_);
+        }
+        for (const auto &id: batch) {
+            if (!audioContextClassGlobalRef || !onNativeTrackEndedMethod) break;
+            jstring js = env->NewStringUTF(id.c_str());
+            env->CallStaticVoidMethod(audioContextClassGlobalRef, onNativeTrackEndedMethod, js);
+            if (env->ExceptionCheck()) env->ExceptionClear();
+            env->DeleteLocalRef(js);
+        }
+        batch.clear();
+    }
+    jvm_->DetachCurrentThread();
 }
 
 NativeEngine::~NativeEngine() {
 #ifdef HAS_OBOE
     stopStream();
 #endif
+    {
+        std::lock_guard<std::mutex> lock(endedMutex_);
+        endedStop_ = true;
+    }
+    endedCv_.notify_one();
+    if (endedThread_.joinable()) endedThread_.join();
     {
         std::lock_guard<std::recursive_mutex> lock(mutex_);
         for (auto &kv: audioBuffers_) {
@@ -381,6 +492,7 @@ NativeEngine::~NativeEngine() {
             audioContextClassGlobalRef = nullptr;
             onNativeBufferHeldMethod = nullptr;
             onNativeBufferReleasedMethod = nullptr;
+            onNativeTrackEndedMethod = nullptr;
         }
         if (attached) jvm_->DetachCurrentThread();
     }
@@ -905,6 +1017,47 @@ void NativeEngine::stopTrack(const std::string &id) {
     enqueueCommand(std::move(cmd));
 }
 
+int64_t NativeEngine::contextTimeToNanos(const std::string &contextId, double when) {
+    if (!std::isfinite(when) || when <= 0.0) return 0;
+    std::lock_guard<std::mutex> lock(contextMutex_);
+    auto it = contextStartNanos_.find(contextId);
+    if (it == contextStartNanos_.end()) return 0;
+    return it->second + static_cast<int64_t>(std::llround(when * 1e9));
+}
+
+void NativeEngine::startOscillatorAt(const std::string &id, const std::string &type,
+                                     double frequency, const std::string &contextId,
+                                     double when) {
+    NativeEngine::Command cmd;
+    cmd.type = NativeEngine::CMD_START_OSC;
+    cmd.id = id;
+    cmd.waveform = type;
+    cmd.frequency = frequency;
+    cmd.timeNs = contextTimeToNanos(contextId, when);
+    enqueueCommand(std::move(cmd));
+}
+
+void NativeEngine::stopTrackAt(const std::string &id, const std::string &contextId, double when) {
+    int64_t timeNs = contextTimeToNanos(contextId, when);
+    if (timeNs <= 0) {
+        stopTrack(id);
+        return;
+    }
+    NativeEngine::Command cmd;
+    cmd.type = NativeEngine::CMD_STOP_TRACK_AT;
+    cmd.id = id;
+    cmd.timeNs = timeNs;
+    enqueueCommand(std::move(cmd));
+}
+
+void NativeEngine::setOscillatorType(const std::string &id, const std::string &type) {
+    NativeEngine::Command cmd;
+    cmd.type = NativeEngine::CMD_SET_OSC_TYPE;
+    cmd.id = id;
+    cmd.waveform = type;
+    enqueueCommand(std::move(cmd));
+}
+
 std::string
 NativeEngine::createBufferSource(std::vector<int16_t> &&pcm, int sampleRate, int channels) {
     std::string id = genId();
@@ -990,6 +1143,18 @@ void NativeEngine::startBufferSource(const std::string &id, bool loop) {
     cmd.type = NativeEngine::CMD_START_BUFFER;
     cmd.id = id;
     cmd.loop = loop;
+    enqueueCommand(std::move(cmd));
+}
+
+void NativeEngine::startBufferSourceAt(const std::string &id, bool loop,
+                                       const std::string &contextId, double when,
+                                       double offset) {
+    NativeEngine::Command cmd;
+    cmd.type = NativeEngine::CMD_START_BUFFER;
+    cmd.id = id;
+    cmd.loop = loop;
+    cmd.timeNs = contextTimeToNanos(contextId, when);
+    cmd.startOffset = std::isfinite(offset) && offset > 0.0 ? offset : 0.0;
     enqueueCommand(std::move(cmd));
 }
 

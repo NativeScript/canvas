@@ -233,4 +233,8 @@
     }
 }
 
+- (void)applyAutomation {
+    [self applyCompressorParams];
+}
+
 @end

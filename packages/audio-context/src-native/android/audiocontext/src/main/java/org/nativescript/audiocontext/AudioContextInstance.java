@@ -72,8 +72,13 @@ public class AudioContextInstance {
 	}
 
 
-	public void renderOfflineAsync(int frames, int sampleRate, int channels, DecodeCallback cb) {
-		AudioContext.getInstance().renderOfflineForContext(id, frames, sampleRate, channels, cb);
+	/** An OfflineAudioContext of {@code channels} channels at {@code sampleRate}. */
+	public static AudioContextInstance createOffline(int sampleRate, int channels) {
+		return AudioContext.getInstance().createOfflineContextInstance(sampleRate, channels);
+	}
+
+	public OfflineRenderer createRenderer(int frames, int channels, int sampleRate) {
+		return new OfflineRenderer(id, frames, channels, sampleRate);
 	}
 
 	public void release() {
@@ -93,13 +98,15 @@ public class AudioContextInstance {
 	}
 
 	public void closeAsync(@androidx.annotation.Nullable AudioContext.AsyncCallback cb) {
-		AudioContext.getInstance().closeAsync(cb);
+		AudioContext.getInstance().closeAsync(id, cb);
 	}
 
 	public AudioOscillatorNode createOscillatorNodeFrequency(String type, double frequency) {
 		String id = AudioContext.getInstance().createOscillator(getId(), type, frequency);
 		if (id == null) return null;
-		return new AudioOscillatorNode(id, type, frequency);
+		AudioOscillatorNode node = new AudioOscillatorNode(id, type, frequency);
+		node.contextId = getId();
+		return node;
 	}
 
 	public ExternalPcmSourceNode createExternalPcmSource(int sampleRate, int channels) {

@@ -5,7 +5,6 @@ use std::sync::Arc;
 
 //use wgpu_core::gfx_select;
 use crate::webgpu::enums::CanvasIndexFormat;
-use crate::webgpu::error::handle_error_fatal;
 use crate::webgpu::gpu::CanvasWebGPUInstance;
 use crate::webgpu::gpu_bind_group::CanvasGPUBindGroup;
 use crate::webgpu::gpu_buffer::CanvasGPUBuffer;

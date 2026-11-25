@@ -1,6 +1,6 @@
 use std::os::raw::c_float;
 
-use skia_safe::gradient_shader::GradientShaderColors;
+use skia_safe::gradient as sk_gradient;
 use skia_safe::{Color, Color4f, Point, Shader, TileMode};
 use canvas_core::context_attributes::ColorSpace;
 use crate::context::matrix::Matrix;
@@ -44,20 +44,6 @@ impl Gradient {
             Gradient::Linear { .. } => {}
             Gradient::Radial { .. } => {}
             Gradient::Conic { .. } => {}
-        }
-    }
-
-    pub(crate) fn set_tile_mode(&mut self, mode: TileMode) {
-        match self {
-            Gradient::Linear {
-                ref mut tile_mode, ..
-            } => *tile_mode = mode,
-            Gradient::Radial {
-                ref mut tile_mode, ..
-            } => *tile_mode = mode,
-            Gradient::Conic {
-                ref mut tile_mode, ..
-            } => *tile_mode = mode,
         }
     }
 
@@ -172,18 +158,12 @@ impl Gradient {
         matrix: Option<&skia_safe::Matrix>,
         tile_mode: TileMode,
     ) -> Option<Shader> {
-        let color_array = GradientShaderColors::Colors(colors);
-        Shader::two_point_conical_gradient(
-            start,
-            start_radius,
-            stop,
-            stop_radius,
-            color_array,
-            Some(stops),
-            tile_mode,
-            None,
-            matrix,
-        )
+        let colors = to_color4f(colors);
+        let gradient = sk_gradient::Gradient::new(
+            sk_gradient::Colors::new(&colors, Some(stops), tile_mode, None),
+            sk_gradient::Interpolation::default(),
+        );
+        sk_gradient::shaders::two_point_conical_gradient((start, start_radius), (stop, stop_radius), &gradient, matrix)
     }
 
     fn linear_gradient_shader(
@@ -194,16 +174,12 @@ impl Gradient {
         matrix: Option<&skia_safe::Matrix>,
         tile_mode: TileMode,
     ) -> Option<Shader> {
-        let color_array = GradientShaderColors::Colors(colors);
-
-        Shader::linear_gradient(
-            (start, stop),
-            color_array,
-            Some(stops),
-            tile_mode,
-            None,
-            matrix,
-        )
+        let colors = to_color4f(colors);
+        let gradient = sk_gradient::Gradient::new(
+            sk_gradient::Colors::new(&colors, Some(stops), tile_mode, None),
+            sk_gradient::Interpolation::default(),
+        );
+        sk_gradient::shaders::linear_gradient((start, stop), &gradient, matrix)
     }
 
     fn conic_gradient_shader(
@@ -214,7 +190,11 @@ impl Gradient {
         matrix: Option<&skia_safe::Matrix>,
         tile_mode: TileMode,
     ) -> Option<Shader> {
-        let color_array = GradientShaderColors::Colors(colors);
+        let colors = to_color4f(colors);
+        let gradient = sk_gradient::Gradient::new(
+            sk_gradient::Colors::new(&colors, Some(stops), tile_mode, None),
+            sk_gradient::Interpolation::default(),
+        );
 
         let mut rotated = skia_safe::Matrix::new_identity();
         rotated.pre_translate((center.x, center.y))
@@ -227,15 +207,7 @@ impl Gradient {
 
         //   rotated
 
-        Shader::sweep_gradient(
-            center,
-            color_array,
-            Some(stops),
-            tile_mode,
-            None,
-            None,
-            Some(&rotated),
-        )
+        sk_gradient::shaders::sweep_gradient(center, (0., 360.), &gradient, Some(&rotated))
     }
 
     pub fn add_color_stop_str(&mut self, offset: c_float, color: &str) {
@@ -282,4 +254,8 @@ impl Gradient {
     pub fn add_color_stop_with_argb(&mut self, offset: c_float, argb: u32) {
         self.add_color_stop(offset, Color::from(argb));
     }
+}
+
+fn to_color4f(colors: &[Color]) -> Vec<Color4f> {
+    colors.iter().map(|&color| Color4f::from(color)).collect()
 }

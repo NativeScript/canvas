@@ -60,7 +60,42 @@ static FONT_CACHE: OnceLock<parking_lot::RwLock<HashMap<String, Font>>> = OnceLo
 /// Once full it stops accepting entries rather than evicting.
 const FONT_CACHE_CAPACITY: usize = 256;
 
+/// Chrome's Windows defaults for the CSS generic families, which DirectWrite does not know.
+#[cfg(target_os = "windows")]
+fn windows_generic_family(name: &str) -> Option<&'static str> {
+    Some(match name.to_ascii_lowercase().as_str() {
+        "serif" | "ui-serif" => "Times New Roman",
+        "sans-serif" | "ui-sans-serif" => "Arial",
+        "monospace" | "ui-monospace" => "Consolas",
+        "cursive" => "Comic Sans MS",
+        "fantasy" => "Impact",
+        "system-ui" => "Segoe UI",
+        _ => return None,
+    })
+}
+
 impl Font {
+    /// The families to hand Skia. On Windows Chrome's standard font ends the list, or SkParagraph
+    /// falls back to the last registered web font when DirectWrite matches nothing.
+    pub(crate) fn skia_families(&self) -> Vec<&str> {
+        #[cfg(target_os = "windows")]
+        {
+            let mut families: Vec<&str> = self
+                .family
+                .iter()
+                .map(|f| windows_generic_family(f.as_str()).unwrap_or(f.as_str()))
+                .collect();
+            if !families.contains(&"Times New Roman") {
+                families.push("Times New Roman");
+            }
+            families
+        }
+        #[cfg(not(target_os = "windows"))]
+        {
+            self.family.iter().map(|s| s.as_str()).collect()
+        }
+    }
+
     pub fn new(font_rules: &str) -> Result<Font, String> {
         let cache = FONT_CACHE.get_or_init(|| parking_lot::RwLock::new(HashMap::new()));
 
@@ -169,11 +204,6 @@ pub(crate) fn init_font_regexp() -> Regex {
 
 // color(display-p3 0.5 0 0 / 0.75); || color(display-p3 0.5 0 0);
 
-pub(crate) fn init_color_p3_regexp()-> Regex {
-    Regex::new(
-        r"color\(display-p3\s+([0-9]*\.?[0-9]+)\s+([0-9]*\.?[0-9]+)\s+([0-9]*\.?[0-9]+)(?:\s*/\s*([0-9]*\.?[0-9]+))?\)"
-    ).unwrap()
-}
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum FontStyle {
     Normal,
@@ -182,13 +212,6 @@ pub enum FontStyle {
 }
 
 impl FontStyle {
-    pub fn as_str(&self) -> &str {
-        match *self {
-            Self::Italic => "italic",
-            Self::Normal => "normal",
-            Self::Oblique => "oblique",
-        }
-    }
 }
 
 impl FromStr for FontStyle {
@@ -274,19 +297,6 @@ impl From<i32> for FontStretch {
 }
 
 impl FontStretch {
-    pub fn as_str(&self) -> &str {
-        match *self {
-            FontStretch::UltraCondensed => "ultra-condensed",
-            FontStretch::ExtraCondensed => "extra-condensed",
-            FontStretch::Condensed => "condensed",
-            FontStretch::SemiCondensed => "semi-condensed",
-            FontStretch::Normal => "normal",
-            FontStretch::SemiExpanded => "semi-expanded",
-            FontStretch::Expanded => "expanded",
-            FontStretch::ExtraExpanded => "extra-expanded",
-            FontStretch::UltraExpanded => "ultra-expanded",
-        }
-    }
 }
 
 impl From<Width> for FontStretch {

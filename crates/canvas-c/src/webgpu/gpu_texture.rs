@@ -4,7 +4,6 @@ use std::sync::Arc;
 
 use crate::webgpu::enums::SurfaceGetCurrentTextureStatus;
 //use wgpu_core::gfx_select;
-use crate::webgpu::error::{handle_error, handle_error_fatal};
 use crate::webgpu::prelude::{label_to_ptr, ptr_into_label};
 
 use super::{
@@ -23,6 +22,7 @@ pub struct CanvasGPUTexture {
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
     pub(crate) texture: Arc<wgpu_core::resource::Texture>,
     pub(crate) surface_id: Option<Arc<wgpu_core::instance::Surface>>,
+    #[allow(dead_code)]
     pub(crate) owned: bool,
     pub(crate) depth_or_array_layers: u32,
     pub(crate) dimension: CanvasTextureDimension,

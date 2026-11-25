@@ -8,7 +8,6 @@ pub use gl::*;
 use canvas_2d::context::fill_and_stroke_styles::pattern::Repetition;
 use canvas_2d::utils::image::{from_image_slice, from_image_slice_bgra};
 pub use canvas_c::*;
-use skia_safe::gpu;
 use canvas_core::context_attributes::PowerPreference;
 use canvas_core::gpu::gl::GLContext;
 use canvas_webgl::prelude::WebGLVersion;

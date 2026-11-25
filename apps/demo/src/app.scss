@@ -1,6 +1,40 @@
 @import 'nativescript-theme-core/scss/light';
 @import 'nativescript-theme-core/scss/index';
 
+// Follow the system theme: core sets .ns-dark on the root view (theme-core's dark skin colors).
+.ns-dark {
+	.page {
+		background-color: #303030;
+		color: #fff;
+	}
+
+	.action-bar {
+		background-color: #303030;
+		color: #fff;
+	}
+}
+
+// canvas-html: the card drawn into the canvas.
+.drawable-card {
+	background-color: #fff;
+	border-radius: 16;
+	padding: 20;
+}
+
+.drawable-card-note {
+	color: #666;
+}
+
+.ns-dark {
+	.drawable-card {
+		background-color: #2b2b2b;
+	}
+
+	.drawable-card-note {
+		color: #b3b3b3;
+	}
+}
+
 .gameover {
 	font-weight: bold;
 	text-transform: uppercase;

@@ -1,9 +1,16 @@
+#[cfg(feature = "vulkan")]
 use crate::context::paths::path::Path;
+#[cfg(feature = "vulkan")]
 use crate::context::text_styles::text_direction::TextDirection;
+#[cfg(feature = "vulkan")]
 use crate::context::{ColorSpace, Context, State, SurfaceData, SurfaceEngine, SurfaceState};
+#[cfg(feature = "vulkan")]
 use skia_safe::wrapper::PointerWrapper;
+#[cfg(feature = "vulkan")]
 use skia_safe::{gpu, ColorType};
+#[cfg(feature = "vulkan")]
 use std::ffi::CStr;
+#[cfg(feature = "vulkan")]
 use std::os::raw::c_void;
 
 #[cfg(feature = "vulkan")]
@@ -144,6 +151,8 @@ impl Context {
             font_color: skia_safe::Color::new(font_color as u32),
             recording: None,
             snapshot: None,
+            #[cfg(all(feature = "gl", any(target_os = "linux", target_os = "android")))]
+            vulkan_interop: Default::default(),
             #[cfg(feature = "gl")]
             window_surface: None,
             #[cfg(any(feature = "gl", feature = "vulkan", feature = "metal"))]

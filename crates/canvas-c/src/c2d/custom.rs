@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 #[derive(Clone)]
-pub struct ImageFilter(canvas_2d::context::filters::ImageFilter);
+pub struct ImageFilter(#[allow(dead_code)] canvas_2d::context::filters::ImageFilter);
 
 #[no_mangle]
 pub extern "C" fn canvas_native_image_filter_reference(value: *const ImageFilter) {

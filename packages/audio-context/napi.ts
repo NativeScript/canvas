@@ -26,10 +26,11 @@ import {
 	context_,
 	distanceModelFromNumber,
 	distanceModelToNumber,
-	looksLikePath,
+	isBase64Source,
 	markMediaElementUsed,
 	native_,
 	nativeCtor_,
+	OfflineSuspends,
 	panningModelFromNumber,
 	panningModelToNumber,
 	resolveLatencyHint,
@@ -37,7 +38,15 @@ import {
 	unmarkMediaElementUsed,
 } from './common';
 
-import { Native, nativePath } from './native-module';
+import { AUDIO_WORKLET_SCOPE } from './audio-worklet-scope';
+import { AudioParamMap, AudioWorkletNodeOptions, AudioWorkletPort, WorkletHost, closeWithContext, domError, isWorkerSupported, loadWorkletModule, resolveWorkletNodeOptions } from './audio-worklet-host';
+import { ADDON, Native, nativePath } from './native-module';
+
+/** The addon throws "<Name>Error: message"; as a DOMException. */
+function nativeDomError(e: unknown): unknown {
+	const match = e instanceof Error ? /^([A-Za-z]+Error): ([\s\S]*)$/.exec(e.message) : null;
+	return match && match[1] !== 'TypeError' ? domError(match[1], match[2]) : e;
+}
 
 interface NativeParam {
 	value: number;
@@ -89,11 +98,16 @@ interface NativeContext {
 	readonly sinkId: string;
 	readonly length: number;
 	setOnstatechange(callback: (() => void) | null): void;
+	audioWorkletScope(): { readonly id: number };
+	createAudioWorkletNode(scope: { readonly id: number }, options: any): NativeNode;
 	resume(): Promise<void>;
 	suspend(): Promise<void>;
 	close(): Promise<void>;
 	setSinkId(sinkId: string): Promise<void>;
 	startRendering(): Promise<NativeBuffer>;
+	suspendAt(time: number): number;
+	resumeRendering(): void;
+	setOnsuspend(callback: ((frame: number) => void) | null): void;
 	decodeAudioData(data: Uint8Array): Promise<NativeBuffer>;
 	decodeAudioBase64(data: string): Promise<NativeBuffer>;
 	decodeAudioFile(path: string): Promise<NativeBuffer>;
@@ -1020,11 +1034,93 @@ export class AudioListener extends AudioListenerBase {
 	}
 }
 
+export { AudioWorkletNodeOptions };
+
+export class AudioWorklet {
+	private [context_]: NativeAudioContextBase;
+	private _host: WorkletHost | null = null;
+
+	constructor(a?: any, context?: NativeAudioContextBase) {
+		if (a !== nativeCtor_ || !context) throw new TypeError('Illegal constructor.');
+		this[context_] = context;
+	}
+
+	/** @internal */
+	_scope(create: boolean): WorkletHost | null {
+		if (!this._host && create) {
+			const context = this[context_];
+			const scope = context.native.audioWorkletScope();
+			this._host = new WorkletHost(Native.audioWorkletScript(AUDIO_WORKLET_SCOPE), { scope: scope.id, sampleRate: context.sampleRate, addon: ADDON });
+			this._nativeScope = scope;
+			closeWithContext?.register(context, this._host);
+		}
+		return this._host;
+	}
+
+	/** @internal */
+	_nativeScope: { readonly id: number } | null = null;
+
+	addModule(moduleURL: string | { href: string }, _options?: { credentials?: string }): Promise<void> {
+		let host: WorkletHost;
+		try {
+			if (this[context_].state === 'closed') throw domError('InvalidStateError', 'The AudioContext is closed');
+			host = this._scope(true);
+		} catch (e) {
+			return Promise.reject(e);
+		}
+		const url = typeof moduleURL === 'string' ? moduleURL : String(moduleURL?.href ?? moduleURL);
+		return loadWorkletModule(url, (source) => Native.readAudioWorkletModule(source), nativePath).then(({ source, url }) => host.addModule(source, url));
+	}
+}
+
+export class AudioWorkletNode extends AudioNode {
+	readonly port: AudioWorkletPort;
+	readonly parameters: AudioParamMap<AudioParam>;
+	private _onprocessorerror: ((event: any) => void) | null = null;
+
+	constructor(context: BaseAudioContext, name: string, options: AudioWorkletNodeOptions = {}) {
+		const worklet = (context as NativeAudioContextBase)?.audioWorklet;
+		const resolved = resolveWorkletNodeOptions(worklet?._scope(false), name, options);
+		const { host, descriptors, numberOfInputs, numberOfOutputs, outputChannelCount, parameterData } = resolved;
+		const native = nativeContext(context).createAudioWorkletNode(worklet._nativeScope, {
+			numberOfInputs,
+			numberOfOutputs,
+			outputChannelCount,
+			parameterData,
+			channelCount: options.channelCount,
+			channelCountMode: options.channelCountMode,
+			channelInterpretation: options.channelInterpretation,
+			descriptors,
+		});
+		super(context, native);
+		const id: number = native.workletId;
+		this.parameters = new AudioParamMap(new Map(descriptors.map((descriptor) => [descriptor.name, this._param(descriptor.name)])));
+		this.port = new AudioWorkletPort(host, id);
+		host.create(this, id, String(name), { ...options, numberOfInputs, numberOfOutputs, outputChannelCount, parameterData });
+	}
+
+	get onprocessorerror() {
+		return this._onprocessorerror;
+	}
+
+	set onprocessorerror(callback: ((event: any) => void) | null) {
+		if (this._onprocessorerror) this.removeEventListener('processorerror', this._onprocessorerror);
+		this._onprocessorerror = typeof callback === 'function' ? callback : null;
+		if (this._onprocessorerror) this.addEventListener('processorerror', this._onprocessorerror);
+	}
+
+	/** @internal */
+	_processorError(message: string) {
+		this.dispatchEvent({ type: 'processorerror', message, error: new Error(message), target: this });
+	}
+}
+
 /** What AudioContext and OfflineAudioContext share: node factories, decoding, the listener. */
 abstract class NativeAudioContextBase extends BaseAudioContext {
 	protected [native_]: NativeContext;
 	readonly destination: AudioDestinationNode;
 	private _listener: AudioListener | null = null;
+	private _audioWorklet: AudioWorklet | null = null;
 
 	protected constructor(native: NativeContext) {
 		super();
@@ -1055,6 +1151,16 @@ abstract class NativeAudioContextBase extends BaseAudioContext {
 	get listener() {
 		if (!this._listener) this._listener = new AudioListener(nativeCtor_, this);
 		return this._listener;
+	}
+
+	get audioWorklet(): AudioWorklet | undefined {
+		if (!this._audioWorklet && isWorkerSupported()) this._audioWorklet = new AudioWorklet(nativeCtor_, this);
+		return this._audioWorklet ?? undefined;
+	}
+
+	/** @internal */
+	protected _closeWorklet(): Promise<void> {
+		return this._audioWorklet?._scope(false)?.close() ?? Promise.resolve();
 	}
 
 	createGain(options?: { gain?: number }) {
@@ -1116,9 +1222,7 @@ abstract class NativeAudioContextBase extends BaseAudioContext {
 		let decoded: Promise<NativeBuffer>;
 		try {
 			if (typeof source === 'string') {
-				// base64 has '/' too, so it is recognised before looksLikePath.
-				const base64 = source.startsWith('data:') || /^[A-Za-z0-9+/\s]{16,}={0,2}$/.test(source) || !looksLikePath(source);
-				decoded = base64 ? native.decodeAudioBase64(source) : native.decodeAudioFile(nativePath(source));
+				decoded = isBase64Source(source) ? native.decodeAudioBase64(source) : native.decodeAudioFile(nativePath(source));
 			} else if (source instanceof ArrayBuffer) {
 				decoded = native.decodeAudioData(new Uint8Array(source));
 			} else if (ArrayBuffer.isView(source)) {
@@ -1137,26 +1241,76 @@ abstract class NativeAudioContextBase extends BaseAudioContext {
 }
 
 export class OfflineAudioContext extends NativeAudioContextBase {
+	private _suspends = new OfflineSuspends();
+	private _rendering: Promise<AudioBuffer> | null = null;
+
 	constructor(numberOfChannels: number | { numberOfChannels?: number; length: number; sampleRate: number }, lengthInFrames?: number, sampleRate?: number) {
 		const options = typeof numberOfChannels === 'object' ? numberOfChannels : { numberOfChannels, length: lengthInFrames, sampleRate };
 		super(Native.AudioContext.offline(Math.max(1, (options.numberOfChannels ?? 1) | 0), Math.max(0, options.length | 0), options.sampleRate && Number.isFinite(options.sampleRate) ? options.sampleRate : 48000));
+		const native = this[native_];
+		// State follows startRendering, suspends and resume, not the engine's events.
+		native.setOnstatechange(null);
+		const ref = new WeakRef(this);
+		native.setOnsuspend((frame) => ref.deref()?._reached(frame));
 	}
 
 	get length(): number {
 		return this[native_].length;
 	}
 
+	private _reached(frame: number) {
+		this._setState('suspended');
+		this._suspends.reached(frame);
+	}
+
+	/** Holds rendering at `suspendTime`, rounded up to a 128-frame quantum. */
+	suspend(suspendTime: number): Promise<void> {
+		if (this._state === 'closed') return Promise.reject(domError('InvalidStateError', 'OfflineAudioContext: rendering has finished'));
+		let frame: number;
+		try {
+			frame = this[native_].suspendAt(Number(suspendTime));
+		} catch (e) {
+			return Promise.reject(nativeDomError(e));
+		}
+		return this._suspends.add(frame);
+	}
+
+	resume(): Promise<void> {
+		if (this._state === 'closed') return Promise.reject(domError('InvalidStateError', 'OfflineAudioContext: rendering has finished'));
+		if (!this._rendering) return Promise.reject(domError('InvalidStateError', 'OfflineAudioContext: rendering has not started'));
+		try {
+			this[native_].resumeRendering();
+		} catch (e) {
+			return Promise.reject(nativeDomError(e));
+		}
+		this._setState('running');
+		return Promise.resolve();
+	}
+
 	startRendering(): Promise<AudioBuffer> {
+		if (this._rendering) return Promise.reject(domError('InvalidStateError', 'OfflineAudioContext: rendering has already started'));
 		let rendering: Promise<NativeBuffer>;
 		try {
 			rendering = this[native_].startRendering();
 		} catch (e) {
-			return Promise.reject(e);
+			return Promise.reject(nativeDomError(e));
 		}
-		return rendering.then((buffer) => {
-			this._syncState();
-			return new AudioBuffer(nativeCtor_, buffer);
-		});
+		this._setState('running');
+		const finish = () => {
+			this._setState('closed');
+			this._suspends.rejectAll(() => domError('InvalidStateError', 'OfflineAudioContext: rendering finished before the suspend'));
+		};
+		this._rendering = rendering.then(
+			(buffer) => {
+				finish();
+				return new AudioBuffer(nativeCtor_, buffer);
+			},
+			(e) => {
+				finish();
+				throw nativeDomError(e);
+			},
+		);
+		return this._rendering;
 	}
 }
 
@@ -1204,7 +1358,7 @@ export class AudioContext extends NativeAudioContextBase {
 
 	close(): Promise<void> {
 		if (this._state === 'closed') return Promise.resolve();
-		return this._changeState((native) => native.close());
+		return this._changeState((native) => native.close()).then(() => this._closeWorklet());
 	}
 
 	private _changeState(change: (native: NativeContext) => Promise<void>): Promise<void> {

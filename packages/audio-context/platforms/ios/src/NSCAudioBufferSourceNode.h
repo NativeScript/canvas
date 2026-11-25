@@ -14,6 +14,10 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic) BOOL loop;
 
 - (NSCAudioParam *)getPlaybackRateParam;
+@property (nonatomic, readonly) NSCAudioParam *detuneParam;
+
+// `offset` is in seconds into the buffer.
+- (void)startAt:(nullable NSNumber *)when offset:(double)offset;
 
 - (instancetype)initWithContext:(NSCAudioContext *)context
                          buffer:(nullable NSCAudioBuffer *)buffer NS_DESIGNATED_INITIALIZER;

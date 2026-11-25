@@ -22,20 +22,6 @@ pub(crate) fn ptr_into_label<'a>(ptr: *const std::ffi::c_char) -> wgpu_core::Lab
 }
 
 #[inline]
-pub(crate) fn ptr_into_cstring(ptr: *const std::ffi::c_char) -> Option<CString> {
-    unsafe {
-        if ptr.is_null() {
-            return None;
-        }
-        CStr::from_ptr(ptr)
-            .to_str()
-            .map(|value| CString::new(value.to_string()).ok())
-            .ok()
-            .flatten()
-    }
-}
-
-#[inline]
 pub(crate) fn ptr_into_string(ptr: *const std::ffi::c_char) -> Option<Cow<'static, str>> {
     unsafe {
         if ptr.is_null() {

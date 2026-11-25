@@ -10,6 +10,7 @@ use super::gpu::CanvasWebGPUInstance;
 #[derive(Clone, Debug)]
 pub struct CanvasGPUTextureView {
     pub(crate) label: Option<Cow<'static, str>>,
+    #[allow(dead_code)]
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
     pub(crate) texture_view: Arc<wgpu_core::resource::TextureView>,
 }

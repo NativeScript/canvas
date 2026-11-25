@@ -200,4 +200,8 @@ try {
 	defineGlobalIfAbsent('AudioBufferSourceNode', canvasMedia.AudioBufferSourceNode, true);
 	defineGlobalIfAbsent('OfflineAudioContext', canvasMedia.OfflineAudioContext, true);
 	defineGlobalIfAbsent('AudioListener', canvasMedia.AudioListener, true);
+	if (canvasMedia.AudioWorkletNode) {
+		defineGlobalIfAbsent('AudioWorklet', canvasMedia.AudioWorklet, true);
+		defineGlobalIfAbsent('AudioWorkletNode', canvasMedia.AudioWorkletNode, true);
+	}
 } catch (_e) {}

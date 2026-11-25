@@ -25,6 +25,7 @@
 #import "NSCChannelSplitterNode.h"
 #import "NSCChannelMergerNode.h"
 #import "AudioModule.h"
+#import "NSCAudioWorkletNode.h"
 
 static void *bufferKey = &bufferKey;
 void *NSCProducerTokenKey = &NSCProducerTokenKey;
@@ -34,6 +35,8 @@ void *NSCProducerTokenKey = &NSCProducerTokenKey;
 - (void)unregisterPendingNode:(NSCAudioBufferSourceNode *)node;
 - (void)resumeAllPendingNodes;
 - (void)ensureMainMixerConnectedToOutput;
+- (void)adoptFormat:(AVAudioFormat *)format;
+- (NSArray<NSCAudioNode *> *)allNodeWrappers;
 @end
 
 #import "NSCAudioContext.h"
@@ -58,20 +61,19 @@ static void NSCAudioContext_prepareAudioSessionForPlayback(void) {
     AVAudioSession *session = [AVAudioSession sharedInstance];
     if (!session) return;
 
-    AVAudioSessionCategoryOptions options = 0;
-#ifdef AVAudioSessionCategoryOptionDefaultToSpeaker
-    options |= AVAudioSessionCategoryOptionDefaultToSpeaker;
-#endif
-#ifdef AVAudioSessionCategoryOptionAllowBluetoothA2DP
-    options |= AVAudioSessionCategoryOptionAllowBluetoothA2DP;
-#endif
-#ifdef AVAudioSessionCategoryOptionAllowAirPlay
-    options |= AVAudioSessionCategoryOptionAllowAirPlay;
-#endif
-
     void (^configure)(void) = ^{
+        // DefaultToSpeaker / AllowBluetoothA2DP / AllowAirPlay are invalid with
+        // AVAudioSessionCategoryPlayback (OSStatus -50 BadParam); preserve only valid mixing flags.
+        AVAudioSessionCategoryOptions options = 0;
+        if ([session.category isEqualToString:AVAudioSessionCategoryPlayback]) {
+            AVAudioSessionCategoryOptions validPlaybackMask = AVAudioSessionCategoryOptionMixWithOthers | AVAudioSessionCategoryOptionDuckOthers;
+            options = session.categoryOptions & validPlaybackMask;
+        }
         NSError *catErr = nil;
-        if (![session setCategory:AVAudioSessionCategoryPlayback withOptions:options error:&catErr]) {
+        BOOL catOK = (options != 0)
+            ? [session setCategory:AVAudioSessionCategoryPlayback withOptions:options error:&catErr]
+            : [session setCategory:AVAudioSessionCategoryPlayback error:&catErr];
+        if (!catOK) {
             NSCLogDebug(@"NSCAudioContext: prepare session setCategory failed: %@", catErr);
         }
 
@@ -154,6 +156,9 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
     NSCAudioParam *_listenerUpYParam;
     NSCAudioParam *_listenerUpZParam;
     dispatch_source_t _listenerAutomationTimer;
+    NSMutableData *_timelineCell;
+    AVAudioSourceNode *_clock;
+    id _configurationObserver;
 }
 
 - (instancetype)initWithSampleRate:(double)sampleRate {
@@ -187,6 +192,13 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
         }
 
           NSCAudioContext_registerEngine(_engine, self);
+        _timelineCell = [NSMutableData dataWithLength:NSCTimelineSlots * sizeof(double)];
+        [self refreshTimelineRate];
+        if (![self isKindOfClass:[NSCOfflineAudioContext class]]) [self attachClock];
+        __weak NSCAudioContext *weakSelf = self;
+        _configurationObserver = [[NSNotificationCenter defaultCenter] addObserverForName:AVAudioEngineConfigurationChangeNotification object:_engine queue:nil usingBlock:^(NSNotification *note) {
+            [weakSelf refreshTimelineRate];
+        }];
         @try {
             if (_engine.mainMixerNode) {
                 _destination = [[NSCAudioNode alloc] initWithContext:self node:_engine.mainMixerNode];
@@ -194,9 +206,11 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
         } @catch (NSException *e) {
             _destination = nil;
         }
-        @try {
-            [[NSCAudioSessionManager sharedManager] registerContext:self sampleRate:_format.sampleRate latencyHint:latencyHint];
-        } @catch (NSException *e) {}
+        if (![self isKindOfClass:[NSCOfflineAudioContext class]]) {
+            @try {
+                [[NSCAudioSessionManager sharedManager] registerContext:self sampleRate:_format.sampleRate latencyHint:latencyHint];
+            } @catch (NSException *e) {}
+        }
 
     }
     return self;
@@ -222,6 +236,7 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
     return [AVAudioSession sharedInstance].outputLatency;
 }
 - (AVAudioFormat *)format { return _format; }
+- (void)adoptFormat:(AVAudioFormat *)format { _format = format; }
 
 - (void)registerPendingNode:(NSCAudioBufferSourceNode *)node {
     if (!node) return;
@@ -275,6 +290,12 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
         NSCLogDebug(@"NSCAudioContext: nodeWrapperForAVNode avNode=%p class=%@ -> wrap=%p wrapClass=%@",
               avNode, NSStringFromClass([avNode class]), wrap, (wrap ? NSStringFromClass([wrap class]) : @"(nil)"));
         return wrap;
+    }
+}
+
+- (NSArray<NSCAudioNode *> *)allNodeWrappers {
+    @synchronized(_nodeWrappers) {
+        return _nodeWrappers ? [[_nodeWrappers objectEnumerator] allObjects] : @[];
     }
 }
 
@@ -616,7 +637,11 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
 }
 - (NSCBiquadNode *)createBiquadNode { return [[NSCBiquadNode alloc] initWithContext:self]; }
 - (NSCAudioPannerNode *)createPannerNode { return [[NSCAudioPannerNode alloc] initWithContext:self]; }
-- (NSCAudioOscillatorNode *)createOscillatorNode:(nullable NSString *)type frequency:(double)frequency { return [[NSCAudioOscillatorNode alloc] initWithContext:self]; }
+- (NSCAudioOscillatorNode *)createOscillatorNode:(nullable NSString *)type frequency:(double)frequency {
+    NSString *resolvedType = (type.length > 0) ? type : @"sine";
+    double resolvedFreq = (isfinite(frequency) && frequency > 0.0) ? frequency : 440.0;
+    return [[NSCAudioOscillatorNode alloc] initWithContext:self type:resolvedType frequency:resolvedFreq];
+}
 - (nullable NSCAudioBufferSourceNode *)createBufferSourceNode:(nullable NSCAudioBuffer *)buffer { return [[NSCAudioBufferSourceNode alloc] initWithContext:self buffer:buffer]; }
 - (NSCStereoPannerNode *)createStereoPannerNode:(double)pan { return [[NSCStereoPannerNode alloc] initWithContext:self pan:pan]; }
 - (NSCDelayNode *)createDelayNode:(double)delayTime maxDelayTime:(double)maxDelayTime { return [[NSCDelayNode alloc] initWithContext:self delayTime:delayTime maxDelayTime:maxDelayTime]; }
@@ -924,10 +949,16 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
         if (completion) completion(NO);
         return NO;
     }
+    // An offline engine runs only while it renders.
+    if (engine.isInManualRenderingMode) {
+        BOOL running = engine.isRunning;
+        if (completion) dispatch_async(dispatch_get_main_queue(), ^{ completion(running); });
+        return running;
+    }
     __block NSError *err = nil;
     __block BOOL ok = NO;
     @try {
-        NSCAudioContext_prepareAudioSessionForPlayback();
+        if (!engine.isInManualRenderingMode) NSCAudioContext_prepareAudioSessionForPlayback();
         if ([NSThread isMainThread]) {
             ok = [engine startAndReturnError:&err];
         } else {
@@ -970,7 +1001,7 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
         __block NSError *e = nil;
         __block BOOL ok2 = NO;
         @try {
-            NSCAudioContext_prepareAudioSessionForPlayback();
+            if (!eng.isInManualRenderingMode) NSCAudioContext_prepareAudioSessionForPlayback();
             if ([NSThread isMainThread]) {
                 ok2 = [eng startAndReturnError:&e];
             } else {
@@ -1010,7 +1041,58 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
 + (NSMutableData *)marshalMutableData:(NSMutableData *)data { return data; }
 
 - (void)dealloc {
+    if (_configurationObserver) [[NSNotificationCenter defaultCenter] removeObserver:_configurationObserver];
     @try { [[NSCAudioSessionManager sharedManager] unregisterContext:self]; } @catch (NSException *e) {}
+}
+
+#pragma mark - Render timeline
+
+- (NSMutableData *)timelineCell { return _timelineCell; }
+
+static void UpdateTimelineOffset(double *timeline, double contextRate) {
+    double device = timeline[NSCTimelineDeviceRate];
+    timeline[NSCTimelineOffset] = device > 0.0 && contextRate > 0.0 ? timeline[NSCTimelineStart] * (1.0 - contextRate / device) : 0.0;
+}
+
+- (void)refreshTimelineRate {
+    AVAudioEngine *engine = _engine;
+    if (!engine || !_timelineCell) return;
+    double *timeline = (double *)_timelineCell.mutableBytes;
+    timeline[NSCTimelineDeviceRate] = engine.isInManualRenderingMode ? 0.0 : [engine.outputNode outputFormatForBus:0].sampleRate;
+    UpdateTimelineOffset(timeline, self.sampleRate);
+}
+
+// currentTime counts device samples, but render timestamps start at the device sample the engine
+// started on and then count context frames; this silent input tracks that start.
+- (void)attachClock {
+    NSMutableData *cell = _timelineCell;
+    double contextRate = self.sampleRate;
+    __block double expected = -1.0;
+    _clock = [[AVAudioSourceNode alloc] initWithFormat:_format renderBlock:^OSStatus(BOOL *isSilence, const AudioTimeStamp *ts, AVAudioFrameCount frames, AudioBufferList *abl) {
+        for (UInt32 b = 0; b < abl->mNumberBuffers; b++) if (abl->mBuffers[b].mData) memset(abl->mBuffers[b].mData, 0, abl->mBuffers[b].mDataByteSize);
+        if (isSilence) *isSilence = YES;
+        if (ts && (ts->mFlags & kAudioTimeStampSampleTimeValid)) {
+            double *timeline = (double *)cell.mutableBytes;
+            if (fabs(ts->mSampleTime - expected) > 0.5) {
+                timeline[NSCTimelineStart] = ts->mSampleTime;
+                UpdateTimelineOffset(timeline, contextRate);
+            }
+            expected = ts->mSampleTime + frames;
+        }
+        return noErr;
+    }];
+    @try {
+        [_engine attachNode:_clock];
+        [_engine connect:_clock to:_engine.mainMixerNode format:_format];
+    } @catch (NSException *e) {
+        NSCLogDebug(@"NSCAudioContext: the clock input did not connect: %@", e);
+    }
+}
+
+- (int64_t)frameForTime:(double)when {
+    double rate = self.sampleRate;
+    double now = self.currentTime;
+    return (int64_t)llround(MAX(when, now) * rate);
 }
 
 #pragma mark - setSinkId
@@ -1058,5 +1140,223 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
     return p.UID ?: @"default";
 }
 
+
+@end
+
+#pragma mark - NSCOfflineAudioContext
+
+// One render quantum per renderOffline call, so automation and worklets advance per quantum.
+static const AVAudioFrameCount NSCOfflineQuantum = 128;
+// Main-thread time per turn before yielding to the run loop.
+static const CFTimeInterval NSCOfflineSliceSeconds = 0.008;
+// A worklet whose Worker answers nothing for this long renders silence.
+static const CFTimeInterval NSCOfflineWorkletStallSeconds = 5.0;
+
+@implementation NSCOfflineAudioContext {
+    AVAudioFrameCount _length;
+    BOOL _started;
+    AVAudioPCMBuffer *_rendered;
+    AVAudioPCMBuffer *_chunk;
+    CFAbsoluteTime _lastProgress;
+    void (^_completion)(NSCAudioBuffer * _Nullable);
+    NSMutableIndexSet *_suspends;
+    BOOL _paused;
+    BOOL _finished;
+}
+
+- (instancetype)init {
+    return [super initWithSampleRate:44100.0 latencyHint:0.0];
+}
+
+- (void)configure:(NSNumber *)channels :(NSNumber *)lengthInFrames :(NSNumber *)sampleRate {
+    AVAudioEngine *engine = self.engine;
+    if (!engine || _started) return;
+    AVAudioChannelCount count = (AVAudioChannelCount)MAX(1, MIN(32, channels.integerValue));
+    double rate = sampleRate.doubleValue > 0.0 ? sampleRate.doubleValue : 44100.0;
+    _length = (AVAudioFrameCount)MAX(0LL, MIN((long long)UINT32_MAX, lengthInFrames.longLongValue));
+    AVAudioFormat *format = count <= 2
+        ? [[AVAudioFormat alloc] initStandardFormatWithSampleRate:rate channels:count]
+        : [[AVAudioFormat alloc] initStandardFormatWithSampleRate:rate channelLayout:[AVAudioChannelLayout layoutWithLayoutTag:kAudioChannelLayoutTag_DiscreteInOrder | count]];
+    @try { [engine stop]; } @catch (NSException *e) {}
+    NSError *err = nil;
+    if (![engine enableManualRenderingMode:AVAudioEngineManualRenderingModeOffline format:format maximumFrameCount:NSCOfflineQuantum error:&err]) {
+        NSCLogError(@"NSCOfflineAudioContext: enableManualRenderingMode failed: %@", err);
+        return;
+    }
+    // The mixer keeps the hardware format it was created with otherwise.
+    [engine connect:engine.mainMixerNode to:engine.outputNode format:format];
+    [self adoptFormat:format];
+    [self refreshTimelineRate];
+}
+
+- (NSInteger)length { return _length; }
+
+- (NSInteger)scheduleSuspend:(double)time {
+    double rate = self.sampleRate;
+    if (!isfinite(time) || time < 0.0 || rate <= 0.0) return NSCOfflineSuspendErrorInvalidTime;
+    if (_finished) return NSCOfflineSuspendErrorFinished;
+    // The epsilon keeps an exact boundary from rounding up a quantum.
+    NSUInteger frame = (NSUInteger)MAX(0.0, ceil(time * rate / NSCOfflineQuantum - 1e-9)) * NSCOfflineQuantum;
+    if (frame >= _length) return NSCOfflineSuspendErrorPastEnd;
+    NSUInteger current = _started ? _rendered.frameLength : 0;
+    if (frame < current || (_started && frame <= current)) return NSCOfflineSuspendErrorNotAfterCurrent;
+    if (!_suspends) _suspends = [NSMutableIndexSet indexSet];
+    if ([_suspends containsIndex:frame]) return NSCOfflineSuspendErrorDuplicate;
+    [_suspends addIndex:frame];
+    return (NSInteger)frame;
+}
+
+// An initialized mixer keeps a new input at its default format (44.1 kHz stereo: resampled,
+// +3 dB), so a render stops the engine before a connect and restarts it for the next quantum.
+// Stopping keeps the sample time but clears effect state (delay lines, filters, reverb tails).
+- (void)willConnect {
+    // A paused engine is still initialized.
+    if (_started && !_finished) {
+        @try { [self.engine stop]; } @catch (NSException *e) {}
+    }
+}
+
+- (void)resumeRendering {
+    if (!_paused || _finished) return;
+    _paused = NO;
+    // Time spent held is not a worklet stall.
+    _lastProgress = CFAbsoluteTimeGetCurrent();
+    dispatch_async(dispatch_get_main_queue(), ^{ [self renderSlice]; });
+}
+
+- (double)currentTime {
+    AVAudioEngine *engine = self.engine;
+    double rate = self.sampleRate;
+    if (!engine.isInManualRenderingMode || rate <= 0.0) return 0.0;
+    return (double)engine.manualRenderingSampleTime / rate;
+}
+
+- (double)baseLatency { return 0.0; }
+- (double)outputLatency { return 0.0; }
+
+// Nothing here touches the audio session.
+- (void)incrementActiveCount {}
+- (void)decrementActiveCount {}
+- (BOOL)hasActiveAudio { return NO; }
+
+- (void)decodeAudioDataFromFileAsyncOffline:(NSString *)path :(void (^)(NSCAudioBuffer * _Nullable))completion {
+    [self decodeAudioDataFromFileAsync:path :completion];
+}
+
+- (void)decodeAudioDataFromDataAsyncOffline:(NSData *)data :(void (^)(NSCAudioBuffer * _Nullable))completion {
+    [self decodeAudioDataFromDataAsync:data :completion];
+}
+
+- (nullable NSCAudioBufferSourceNode *)createBufferSourceNodeOffline:(nullable NSCAudioBuffer *)buffer {
+    return [self createBufferSourceNode:buffer];
+}
+
+- (void)startRenderingAsync:(void (^)(NSCAudioBuffer * _Nullable))completion {
+    AVAudioEngine *engine = self.engine;
+    if (_started || !engine.isInManualRenderingMode) {
+        if (completion) completion(nil);
+        return;
+    }
+    _started = YES;
+    _completion = [completion copy];
+    _rendered = [[AVAudioPCMBuffer alloc] initWithPCMFormat:engine.manualRenderingFormat frameCapacity:MAX(_length, 1u)];
+    _rendered.frameLength = 0;
+    _chunk = [[AVAudioPCMBuffer alloc] initWithPCMFormat:engine.manualRenderingFormat frameCapacity:engine.manualRenderingMaximumFrameCount];
+    NSError *err = nil;
+    if (!_rendered || !_chunk || (!engine.isRunning && ![engine startAndReturnError:&err])) {
+        NSCLogError(@"NSCOfflineAudioContext: could not start rendering: %@", err);
+        [self finishRendering:NO];
+        return;
+    }
+    _lastProgress = CFAbsoluteTimeGetCurrent();
+    dispatch_async(dispatch_get_main_queue(), ^{ [self renderSlice]; });
+}
+
+// Renders on the main thread, where nodes apply automation, a quantum at a time.
+- (void)renderSlice {
+    if (_paused || !_rendered) return;
+    AVAudioEngine *engine = self.engine;
+    NSError *startErr = nil;
+    if (!engine.isRunning && ![engine startAndReturnError:&startErr]) {
+        NSCLogError(@"NSCOfflineAudioContext: could not restart rendering: %@", startErr);
+        [self finishRendering:NO];
+        return;
+    }
+    CFAbsoluteTime deadline = CFAbsoluteTimeGetCurrent() + NSCOfflineSliceSeconds;
+    while (_rendered.frameLength < _length) {
+        if ([_suspends containsIndex:_rendered.frameLength]) {
+            [_suspends removeIndex:_rendered.frameLength];
+            _paused = YES;
+            @try { [engine pause]; } @catch (NSException *e) {}
+            if (self.onSuspend) self.onSuspend((NSInteger)_rendered.frameLength);
+            return;
+        }
+        NSArray<NSCAudioNode *> *nodes = [self allNodeWrappers];
+        // Worklets don't run past a suspend, where the graph may change.
+        NSUInteger next = _suspends ? [_suspends indexGreaterThanIndex:_rendered.frameLength] : NSNotFound;
+        uint64_t limit = next == NSNotFound ? UINT64_MAX : next;
+        BOOL ready = YES;
+        for (NSCAudioNode *node in nodes) {
+            if ([node isKindOfClass:[NSCAudioWorkletNode class]] && ![(NSCAudioWorkletNode *)node prepareOfflineQuantumBefore:limit]) ready = NO;
+        }
+        if (!ready) {
+            if (CFAbsoluteTimeGetCurrent() - _lastProgress < NSCOfflineWorkletStallSeconds) {
+                [self renderSliceAfter:0.001];
+                return;
+            }
+            NSCLogError(@"NSCOfflineAudioContext: an AudioWorklet stopped answering; rendering it as silence");
+            for (NSCAudioNode *node in nodes) {
+                if ([node isKindOfClass:[NSCAudioWorkletNode class]]) [(NSCAudioWorkletNode *)node abandonOffline];
+            }
+        }
+        for (NSCAudioNode *node in nodes) [node applyAutomation];
+
+        AVAudioFrameCount frames = MIN(_chunk.frameCapacity, _length - _rendered.frameLength);
+        NSError *err = nil;
+        AVAudioEngineManualRenderingStatus status = [engine renderOffline:frames toBuffer:_chunk error:&err];
+        if (status == AVAudioEngineManualRenderingStatusCannotDoInCurrentContext) {
+            [self renderSliceAfter:0.001];
+            return;
+        }
+        if (status != AVAudioEngineManualRenderingStatusSuccess) {
+            NSCLogError(@"NSCOfflineAudioContext: renderOffline failed (%ld): %@", (long)status, err);
+            [self finishRendering:NO];
+            return;
+        }
+        AVAudioFrameCount offset = _rendered.frameLength;
+        AVAudioFrameCount got = MIN(_chunk.frameLength, _length - offset);
+        for (AVAudioChannelCount c = 0; c < _rendered.format.channelCount; c++) {
+            memcpy(_rendered.floatChannelData[c] + offset, _chunk.floatChannelData[c], got * sizeof(float));
+        }
+        _rendered.frameLength = offset + got;
+        _lastProgress = CFAbsoluteTimeGetCurrent();
+        if (_lastProgress > deadline && _rendered.frameLength < _length) {
+            dispatch_async(dispatch_get_main_queue(), ^{ [self renderSlice]; });
+            return;
+        }
+    }
+    [self finishRendering:YES];
+}
+
+- (void)renderSliceAfter:(double)seconds {
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(seconds * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{ [self renderSlice]; });
+}
+
+- (void)finishRendering:(BOOL)ok {
+    _finished = YES;
+    _paused = NO;
+    [_suspends removeAllIndexes];
+    @try { [self.engine stop]; } @catch (NSException *e) {}
+    NSCAudioBuffer *buffer = nil;
+    if (ok && _rendered) {
+        _rendered.frameLength = _length;
+        buffer = [[NSCAudioBuffer alloc] initWithContext:self id:[[NSUUID UUID] UUIDString] buffer:_rendered];
+    }
+    _rendered = nil;
+    _chunk = nil;
+    void (^completion)(NSCAudioBuffer * _Nullable) = _completion;
+    _completion = nil;
+    if (completion) completion(buffer);
+}
 
 @end

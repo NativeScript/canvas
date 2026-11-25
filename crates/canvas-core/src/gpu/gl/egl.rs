@@ -29,14 +29,23 @@ type EglInstance = egl::DynamicInstance<egl::EGL1_5>;
 
 // EGL_ANGLE_platform_angle / EGL_ANGLE_device_d3d / EGL_ANGLE_d3d_texture_client_buffer /
 // EGL_ANGLE_create_context_webgl_compatibility / EGL_ANGLE_robust_resource_initialization.
+#[cfg(target_os = "windows")]
 const EGL_PLATFORM_ANGLE_ANGLE: egl::Enum = 0x3202;
+#[cfg(target_os = "windows")]
 const EGL_PLATFORM_ANGLE_TYPE_ANGLE: egl::Attrib = 0x3203;
+#[cfg(target_os = "windows")]
 const EGL_PLATFORM_ANGLE_TYPE_D3D11_ANGLE: egl::Attrib = 0x3208;
+#[cfg(target_os = "windows")]
 const EGL_PLATFORM_ANGLE_DEVICE_TYPE_ANGLE: egl::Attrib = 0x3209;
+#[cfg(target_os = "windows")]
 const EGL_PLATFORM_ANGLE_DEVICE_TYPE_HARDWARE_ANGLE: egl::Attrib = 0x320A;
+#[cfg(target_os = "windows")]
 const EGL_PLATFORM_ANGLE_DEVICE_TYPE_D3D_WARP_ANGLE: egl::Attrib = 0x320B;
+#[cfg(target_os = "windows")]
 const EGL_DEVICE_EXT: egl::Int = 0x322C;
+#[cfg(target_os = "windows")]
 const EGL_D3D11_DEVICE_ANGLE: egl::Int = 0x33A1;
+#[cfg(target_os = "windows")]
 const EGL_D3D_TEXTURE_ANGLE: egl::Enum = 0x33A3;
 const EGL_CONTEXT_WEBGL_COMPATIBILITY_ANGLE: egl::Int = 0x33AC;
 const EGL_ROBUST_RESOURCE_INITIALIZATION_ANGLE: egl::Int = 0x3453;
@@ -45,8 +54,10 @@ const EGL_ROBUST_RESOURCE_INITIALIZATION_ANGLE: egl::Int = 0x3453;
 const EGL_CONTEXT_OPENGL_RESET_NOTIFICATION_STRATEGY_EXT: egl::Int = 0x3138;
 const EGL_LOSE_CONTEXT_ON_RESET_EXT: egl::Int = 0x31BF;
 
+#[cfg(target_os = "windows")]
 type QueryDisplayAttribExt =
     unsafe extern "system" fn(egl::EGLDisplay, egl::Int, *mut egl::Attrib) -> egl::Boolean;
+#[cfg(target_os = "windows")]
 type QueryDeviceAttribExt =
     unsafe extern "system" fn(*mut c_void, egl::Int, *mut egl::Attrib) -> egl::Boolean;
 
@@ -66,6 +77,7 @@ unsafe impl Sync for Egl {}
 
 static EGL: OnceLock<Option<Egl>> = OnceLock::new();
 
+#[cfg(target_os = "windows")]
 fn env_flag(name: &str) -> bool {
     std::env::var_os(name).is_some_and(|v| !v.is_empty() && v != "0")
 }
@@ -440,7 +452,14 @@ impl SharedTexture {
         let buffer = unsafe { egl::ClientBuffer::from_ptr(texture as usize as *mut c_void) };
         let image = egl
             .instance
-            .create_image(egl.display, context, egl::GL_TEXTURE_2D as egl::Enum, buffer, &[egl::ATTRIB_NONE])
+            .create_image(
+                egl.display,
+                context,
+                egl::GL_TEXTURE_2D as egl::Enum,
+                buffer,
+                // Without it the texture's contents are undefined once the image exists.
+                &[egl::IMAGE_PRESERVED as egl::Attrib, egl::TRUE as egl::Attrib, egl::ATTRIB_NONE],
+            )
             .ok()?;
         let sync = unsafe { egl.instance.create_sync(egl.display, egl::SYNC_FENCE as egl::Enum, &[egl::ATTRIB_NONE]) }.ok();
         unsafe { gl_bindings::Flush() };

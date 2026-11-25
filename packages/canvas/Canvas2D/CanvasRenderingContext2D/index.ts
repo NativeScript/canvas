@@ -13,6 +13,7 @@ import type { CanvasRenderingContext } from '../../common';
 import { NAPI_HOST } from '../../platform';
 import { imageAssetFor } from '../../platform/index';
 import { isCanvasView, isOffscreenCanvas } from '../../Canvas/utils';
+import { ElementImage, mat4, resolveElementSource } from '../../Canvas/drawable/common';
 declare const NSCCanvasRenderingContext2D;
 
 const REPETITIONS = ['repeat', 'repeat-x', 'repeat-y', 'no-repeat'];
@@ -963,6 +964,98 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 			this.context.drawImage(image, args[1], args[2], args[3], args[4]);
 		} else if (args.length === 9) {
 			this.context.drawImage(image, args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]);
+		}
+	}
+
+	drawElementImage(element: any, dx: number, dy: number, options?: { preserveElementGeometry?: boolean }): void;
+
+	drawElementImage(element: any, dx: number, dy: number, dWidth: number, dHeight: number, options?: { preserveElementGeometry?: boolean }): void;
+
+	drawElementImage(element: any, sx: number, sy: number, sWidth: number, sHeight: number, dx: number, dy: number, options?: { preserveElementGeometry?: boolean }): void;
+
+	drawElementImage(element: any, sx: number, sy: number, sWidth: number, sHeight: number, dx: number, dy: number, dWidth: number, dHeight: number, options?: { preserveElementGeometry?: boolean }): void;
+
+	drawElementImage(element: any, ...args: any[]): void {
+		let options: { preserveElementGeometry?: boolean } | undefined;
+		const last = args[args.length - 1];
+		if (last !== null && typeof last === 'object') {
+			options = args.pop();
+		}
+		const count = args.length;
+		if (count !== 2 && count !== 4 && count !== 6 && count !== 8) {
+			throw new TypeError(`Failed to execute 'drawElementImage' on 'CanvasRenderingContext2D': Valid arities are: [3, 5, 7, 9], but ${count + 1} arguments provided.`);
+		}
+		const owner = this._canvas;
+		const offscreen = isOffscreenCanvas(owner);
+		if (offscreen && !(element instanceof ElementImage)) {
+			throw new TypeError("Failed to execute 'drawElementImage' on 'OffscreenCanvasRenderingContext2D': parameter 1 is not of type 'ElementImage'.");
+		}
+		const source = resolveElementSource(owner, element, 'drawElementImage');
+		const values = args.map(Number);
+		let sx = 0,
+			sy = 0,
+			sw = source.width,
+			sh = source.height,
+			dx: number,
+			dy: number,
+			dw = source.defaultWidth,
+			dh = source.defaultHeight;
+		if (count === 2) {
+			[dx, dy] = values;
+		} else if (count === 4) {
+			[dx, dy, dw, dh] = values;
+		} else if (count === 6) {
+			[sx, sy, sw, sh, dx, dy] = values;
+			dw = sw;
+			dh = sh;
+		} else {
+			[sx, sy, sw, sh, dx, dy, dw, dh] = values;
+		}
+		if (![sx, sy, sw, sh, dx, dy, dw, dh].every(Number.isFinite) || !sw || !sh || !dw || !dh) {
+			return;
+		}
+		let drawn = false;
+		if (__ANDROID__) {
+			const snapshot = source.nativeSnapshot?.();
+			if (snapshot) {
+				try {
+					drawn = (<any>org).nativescript.canvas.NSCDrawableHost.draw2D(long(this.context.__getPointer()), snapshot, sx, sy, sw, sh, dx, dy, dw, dh);
+				} finally {
+					snapshot.close();
+				}
+				if (drawn) {
+					this.context.__makeDirty();
+				}
+			}
+		} else if (__APPLE__) {
+			const snapshot = source.nativeSnapshot?.();
+			if (snapshot) {
+				drawn = snapshot.draw2D(this.context.__getPointer(), sx, sy, sw, sh, dx, dy, dw, dh);
+				if (drawn) {
+					this.context.__makeDirty();
+				}
+			}
+		}
+		if (!drawn) {
+			this.context.drawImage(source.asset.native, sx, sy, sw, sh, dx, dy, dw, dh);
+		}
+
+		if (options?.preserveElementGeometry) {
+			return;
+		}
+		// Border box -> snapshot pixels -> source rect -> destination -> current transform.
+		const rx = source.width / (source.cssWidth || 1);
+		const ry = source.height / (source.cssHeight || 1);
+		const t = this.getTransform();
+		const canvasTransform = mat4.chain(mat4.from({ a: t.a, b: t.b, c: t.c, d: t.d, e: t.e, f: t.f }), mat4.translate(dx, dy), mat4.scale(dw / sw, dh / sh), mat4.translate(-sx, -sy), mat4.scale(rx, ry));
+		const geometry: any = { canvasTransform };
+		if (count >= 6) {
+			geometry.canvasClip = { x: sx / rx, y: sy / ry, width: sw / rx, height: sh / ry };
+		}
+		if (offscreen) {
+			owner.updateElementGeometry(element, geometry);
+		} else if (source.canvas === owner && source.view) {
+			owner.updateElementGeometry(source.view, geometry);
 		}
 	}
 

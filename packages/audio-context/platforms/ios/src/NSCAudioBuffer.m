@@ -39,6 +39,10 @@ static inline NSUInteger NSCResolveByteLength(NSInteger byteLength, NSUInteger a
     AVAudioChannelCount ch = (AVAudioChannelCount)MAX(1, numberOfChannels);
     double sr = sampleRate > 0 ? sampleRate : 48000.0;
     AVAudioFormat *fmt = [[AVAudioFormat alloc] initWithCommonFormat:AVAudioPCMFormatFloat32 sampleRate:sr channels:ch interleaved:NO];
+    if (!fmt) {
+        AVAudioChannelLayout *layout = [AVAudioChannelLayout layoutWithLayoutTag:kAudioChannelLayoutTag_DiscreteInOrder | ch];
+        fmt = [[AVAudioFormat alloc] initStandardFormatWithSampleRate:sr channelLayout:layout];
+    }
     AVAudioFrameCount frames = (AVAudioFrameCount)MAX(0, length);
     AVAudioPCMBuffer *buf = [[AVAudioPCMBuffer alloc] initWithPCMFormat:fmt frameCapacity:frames];
     buf.frameLength = frames;

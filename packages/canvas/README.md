@@ -148,6 +148,52 @@ const canvas = OffscreenCanvas._fromHandle(data.canvas);
 - `2d`, `bitmaprenderer`, `webgl`, `webgl2` and `webgpu` all work there, as does `new OffscreenCanvas(w, h)` made in the Worker, which can be transferred back.
 - Resizing it in the Worker resizes the view on the UI thread a moment later.
 
+### Views in the canvas (HTML-in-Canvas)
+
+The [HTML-in-Canvas](https://github.com/WICG/html-in-canvas) API, with NativeScript views as the elements (iOS, Android, Linux and Windows). With `content="drawable"` the canvas lays its children out (stacked, at its width) but never shows them; a context draws a snapshot of any descendant marked `drawable`, and touches reach the real view where it was drawn.
+
+```xml
+<canvas:Canvas content="drawable" loaded="onLoaded">
+	<StackLayout id="form" drawable="true" width="280">
+		<TextField hint="Name" />
+		<Button text="Send" tap="send" />
+	</StackLayout>
+</canvas:Canvas>
+```
+
+```ts
+const ctx = canvas.getContext('2d');
+const form = canvas.getViewById('form');
+canvas.on('paint', () => {
+	ctx.reset();
+	ctx.rotate(0.1);
+	ctx.drawElementImage(form, 40, 40); // also makes the form hit-testable there
+});
+```
+
+- `paint` fires after a frame's `requestAnimationFrame` callbacks when drawable views changed (`event.changedElements`), or after `canvas.requestPaint()`. Draw a view only once it has had its first snapshot, so from a `paint` event; earlier, `drawElementImage` throws `InvalidStateError`.
+- Sizes are in canvas grid units: `canvas.getElementImageDefaultSize(view)` is the view's size there.
+- WebGL: `gl.texElementSubImage2D(target, level, x, y, view)`. WebGPU: `device.queue.drawElementImageToTexture({ source: view }, { texture })`. Neither sets hit testing: call `canvas.updateElementGeometry(view, { canvasTransform })` yourself.
+- `canvas.captureElementImage(view)` returns an `ElementImage` that outlives the frame and is what an OffscreenCanvas's 2D context draws.
+- On Linux, GTK renders the snapshots from each view's render nodes, so GL content (other canvases) is in them. Hit testing follows the geometry of the canvas's own children only: a drawable view nested deeper gets input through its top-level ancestor's geometry.
+- On Windows, snapshots come from XAML's `RenderTargetBitmap`, which is asynchronous: a `paint` event follows a change by a frame or more, and views are re-rendered and compared to notice changes. Other canvases (SwapChainPanel content) are not in them. As on Linux, hit testing follows the geometry of the canvas's own children only.
+
+### Keyboard, cursor and pointer lock (Windows and Linux)
+
+While a canvas is loaded, its window's keys reach `window` and `document` listeners (with the polyfill) whatever has focus: `keydown`/`keyup` go to the focused canvas first, then `document`, then `window`, with `key`, `code`, `repeat` and the modifier flags. `stopPropagation()` stops it at the current target; `preventDefault()` keeps the key from the focused view (a text field, a button).
+
+`canvas.style.cursor` (or CSS `cursor`) sets the cursor over the canvas: `none`, `default`, `pointer`, `crosshair`, `grab`, `grabbing`, `text`, `move`, the resize cursors and others.
+
+```ts
+canvas.addEventListener('pointerdown', () => canvas.requestPointerLock());
+document.addEventListener('pointerlockchange', () => {
+	const locked = document.pointerLockElement != null;
+});
+canvas.addEventListener('pointermove', (e) => camera.turn(e.movementX, e.movementY));
+```
+
+While locked the cursor is hidden and moves report their travel in `movementX`/`movementY` (`clientX`/`clientY` stay where the lock began). Esc, `document.exitPointerLock()` or the window losing focus release it. Under Wayland the compositor holds the pointer in place (`zwp_pointer_constraints_v1`) and reports its travel (`zwp_relative_pointer_v1`), so moves never stop at a screen edge, and `{ unadjustedMovement: true }` reports it without pointer acceleration; a compositor without these protocols rejects the request with `pointerlockerror`. Under X11 the pointer is grabbed in the window and on Windows clipped to the canvas; on both it goes back to the canvas center after each move and back where it was when the lock ends.
+
 ## Linux
 
 On NativeScript Linux the canvas is a GTK 4 (>= 4.6) widget and `canvasnative.node` (a Node-API

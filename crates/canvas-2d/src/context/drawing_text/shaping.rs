@@ -234,7 +234,7 @@ fn layout(
         font_style.style.into(),
     );
 
-    let families: Vec<&str> = font_style.family.iter().map(|s| s.as_str()).collect();
+    let families = font_style.skia_families();
 
     let mut text_style = skia_safe::textlayout::TextStyle::new();
     text_style.set_font_families(families.as_slice());
@@ -351,7 +351,7 @@ mod tests {
         let weight = skia_safe::font_style::Weight::from(font.weight as i32);
         let sk_font_style =
             skia_safe::FontStyle::new(weight, font.stretch.into(), font.style.into());
-        let families: Vec<&str> = font.family.iter().map(|s| s.as_str()).collect();
+        let families = font.skia_families();
         let mut ts = skia_safe::textlayout::TextStyle::new();
         ts.set_font_families(families.as_slice());
         ts.set_font_size(font.size);

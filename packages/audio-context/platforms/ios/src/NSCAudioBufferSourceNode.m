@@ -1,65 +1,229 @@
+#import <stdatomic.h>
+#import <math.h>
 #import "NSCAudioContext.h"
 #import "NSCAudioLog.h"
-#import <objc/message.h>
-#import <objc/runtime.h>
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wimplicit-retain-self"
-
-@interface NSCAudioBufferSourceNode ()
-- (nullable NSCAudioBuffer *)processBuffer:(nullable NSCAudioBuffer *)input context:(NSCAudioContext *)context;
-- (void)scheduleRetryWithContext:(NSCAudioContext *)ctx;
-- (void)registerPendingIfNeededWithContext:(NSCAudioContext *)ctx;
-@end
+// Shared with the render block; the block keeps it alive after the node is gone.
+typedef struct {
+  atomic_uint_least8_t playing;
+  atomic_uint_least8_t loop;
+  atomic_int_least64_t startSample;
+  atomic_int_least64_t stopSample;
+  // Set with the start offset (in buffer frames) before `playing`; the render thread
+  // consumes it and owns `position` from then on.
+  atomic_uint_least8_t resetPending;
+  double pendingOffsetFrames;
+  double position;
+  _Atomic(void *) pcm;
+} NSCBufferSourceState;
 
 @implementation NSCAudioBufferSourceNode {
-  AVAudioPlayerNode *_player;
+  AVAudioSourceNode *_sourceNode;
+  NSMutableData *_stateData;
+  NSCBufferSourceState *_state;
+  // Every buffer the render block may still be reading; the block holds this array.
+  NSMutableArray<AVAudioPCMBuffer *> *_keepAlive;
   NSCAudioBuffer *_buffer;
-  BOOL _isPlaying;
-  BOOL _pendingStart;
-  int _retryCount;
-  BOOL _didFallbackConnect;
-  BOOL _gaveUp;
-  __weak NSCAudioNode *_lastDestination;
-  NSInteger _lastDestinationBus;
-  NSInteger _lastSourceBus;
-  int _transientRetryAttempts;
-
   NSCAudioParam *_playbackRateParam;
-  AVAudioUnitVarispeed *_varispeed;
-  dispatch_source_t _playbackRateAutomationTimer;
+  NSMutableData *_timelineCell;
+  AVAudioChannelCount _channels;
 }
 
 @synthesize buffer = _buffer;
 
+static void NSCBufferSourceSilence(AudioBufferList *abl) {
+  for (UInt32 b = 0; b < abl->mNumberBuffers; ++b) {
+    if (abl->mBuffers[b].mData) memset(abl->mBuffers[b].mData, 0, abl->mBuffers[b].mDataByteSize);
+  }
+}
+
+static AVAudioFormat *SourceFormat(double rate, AVAudioChannelCount channels) {
+  if (channels <= 2) return [[AVAudioFormat alloc] initStandardFormatWithSampleRate:rate channels:MAX(1u, channels)];
+  AVAudioChannelLayout *layout = [AVAudioChannelLayout layoutWithLayoutTag:kAudioChannelLayoutTag_DiscreteInOrder | channels];
+  return [[AVAudioFormat alloc] initStandardFormatWithSampleRate:rate channelLayout:layout];
+}
+
+static AVAudioSourceNode *MakeSource(AVAudioFormat *format, NSMutableData *stateData, NSMutableArray<AVAudioPCMBuffer *> *keepAlive,
+                                     NSCAudioParam *rateParam, NSCAudioParam *detuneParam, NSMutableData *timelineCell,
+                                     __weak NSCAudioBufferSourceNode *weakSelf) {
+  return [[AVAudioSourceNode alloc] initWithFormat:format renderBlock:^OSStatus(BOOL *_Nonnull isSilence, const AudioTimeStamp *_Nonnull timestamp, AVAudioFrameCount frameCount, AudioBufferList *_Nonnull abl) {
+    (void)keepAlive;
+    NSCBufferSourceState *st = (NSCBufferSourceState *)stateData.mutableBytes;
+    if (atomic_load_explicit(&st->playing, memory_order_acquire) != 1) {
+      if (isSilence) *isSilence = YES;
+      NSCBufferSourceSilence(abl);
+      return noErr;
+    }
+    if (atomic_load_explicit(&st->resetPending, memory_order_acquire)) {
+      st->position = st->pendingOffsetFrames;
+      atomic_store_explicit(&st->resetPending, 0, memory_order_release);
+    }
+
+    int64_t startSample = atomic_load_explicit(&st->startSample, memory_order_acquire);
+    int64_t stopSample = atomic_load_explicit(&st->stopSample, memory_order_acquire);
+    BOOL loop = atomic_load_explicit(&st->loop, memory_order_acquire) == 1;
+    AVAudioPCMBuffer *pcm = (__bridge AVAudioPCMBuffer *)atomic_load_explicit(&st->pcm, memory_order_acquire);
+
+    AVAudioFrameCount first = 0;
+    AVAudioFrameCount end = frameCount;
+    BOOL finished = NO;
+    BOOL hasSampleTime = timestamp && (timestamp->mFlags & kAudioTimeStampSampleTimeValid);
+    double sampleRate = format.sampleRate;
+    double blockFrame = hasSampleTime ? NSCContextFrame(timestamp->mSampleTime, (const double *)timelineCell.bytes) : 0.0;
+    if (hasSampleTime) {
+      int64_t blockStart = llround(blockFrame);
+      int64_t blockEnd = blockStart + (int64_t)frameCount;
+      if (stopSample >= 0 && stopSample <= blockStart) {
+        end = 0;
+        finished = YES;
+      } else if (stopSample >= 0 && stopSample < blockEnd) {
+        end = (AVAudioFrameCount)(stopSample - blockStart);
+        finished = YES;
+      }
+      if (startSample >= blockEnd && !finished) {
+        if (isSilence) *isSilence = YES;
+        NSCBufferSourceSilence(abl);
+        return noErr;
+      }
+      if (startSample > blockStart) first = (AVAudioFrameCount)MIN((int64_t)frameCount, startSample - blockStart);
+    }
+
+    NSCBufferSourceSilence(abl);
+    AVAudioFrameCount frames = pcm ? pcm.frameLength : 0;
+    AVAudioChannelCount pcmChannels = pcm ? pcm.format.channelCount : 0;
+    float *const *src = pcm ? pcm.floatChannelData : NULL;
+
+    if (first < end && src && frames > 0) {
+      double rates[frameCount];
+      double detunes[frameCount];
+      BOOL rateAutomated = [rateParam fillValuesFromFrame:blockFrame sampleRate:sampleRate frameCount:(NSInteger)frameCount into:rates];
+      BOOL detuneAutomated = [detuneParam fillValuesFromFrame:blockFrame sampleRate:sampleRate frameCount:(NSInteger)frameCount into:detunes];
+      if (detuneAutomated) {
+        for (AVAudioFrameCount k = 0; k < frameCount; ++k) rates[k] *= exp2(detunes[k] / 1200.0);
+        rateAutomated = YES;
+      } else if (detunes[0] != 0.0) {
+        for (AVAudioFrameCount k = 0; k < frameCount; ++k) rates[k] *= exp2(detunes[0] / 1200.0);
+      }
+      double pos = st->position;
+      AVAudioFrameCount f = first;
+      for (; f < end; ++f) {
+        if (pos >= (double)frames) {
+          if (loop) {
+            pos = fmod(pos, (double)frames);
+          } else {
+            finished = YES;
+            break;
+          }
+        }
+        AVAudioFrameCount i0 = (AVAudioFrameCount)pos;
+        AVAudioFrameCount i1 = i0 + 1 < frames ? i0 + 1 : (loop ? 0 : i0);
+        float frac = (float)(pos - (double)i0);
+        for (UInt32 b = 0; b < abl->mNumberBuffers; ++b) {
+          float *dst = (float *)abl->mBuffers[b].mData;
+          if (!dst) continue;
+          const float *s = src[pcmChannels == 1 ? 0 : MIN(b, pcmChannels - 1)];
+          dst[f] = s[i0] + (s[i1] - s[i0]) * frac;
+        }
+        double rate = rateAutomated ? rates[f] : rates[0];
+        if (!(rate >= 0.0)) rate = 0.0;
+        pos += rate;
+      }
+      st->position = pos;
+    }
+
+    if (finished) {
+      atomic_store_explicit(&st->playing, 0, memory_order_release);
+      atomic_store_explicit(&st->startSample, (int_least64_t)-1, memory_order_release);
+      atomic_store_explicit(&st->stopSample, (int_least64_t)-1, memory_order_release);
+      dispatch_async(dispatch_get_main_queue(), ^{
+        NSCAudioBufferSourceNode *s = weakSelf;
+        if (!s) return;
+        if (s.context) [s.context decrementActiveCount];
+        if (s.onended) s.onended();
+      });
+    }
+    return noErr;
+  }];
+}
+
 - (instancetype)initWithContext:(NSCAudioContext *)context
                          buffer:(NSCAudioBuffer *)buffer {
-  AVAudioPlayerNode *p = [[AVAudioPlayerNode alloc] init];
-  if (self = [super initWithContext:context node:p]) {
-    _player = p;
-    if ([NSThread isMainThread]) {
-      [context.engine attachNode:_player];
-    } else {
-      dispatch_sync(dispatch_get_main_queue(), ^{
-        [context.engine attachNode:_player];
-      });
-    }
+  NSMutableData *stateData = [NSMutableData dataWithLength:sizeof(NSCBufferSourceState)];
+  NSCBufferSourceState *state = (NSCBufferSourceState *)stateData.mutableBytes;
+  atomic_init(&state->playing, 0);
+  atomic_init(&state->loop, 0);
+  atomic_init(&state->startSample, (int_least64_t)-1);
+  atomic_init(&state->stopSample, (int_least64_t)-1);
+  atomic_init(&state->resetPending, 0);
+  atomic_init(&state->pcm, NULL);
 
-    AVAudioUnitVarispeed *vs = [[AVAudioUnitVarispeed alloc] init];
-    _varispeed = vs;
-    if ([NSThread isMainThread]) {
-      [context.engine attachNode:_varispeed];
-    } else {
-      dispatch_sync(dispatch_get_main_queue(), ^{
-        [context.engine attachNode:_varispeed];
-      });
-    }
-    _varispeed.rate = 1.0f;
+  NSMutableArray<AVAudioPCMBuffer *> *keepAlive = [NSMutableArray array];
+  NSCAudioParam *rateParam = [[NSCAudioParam alloc] initWithContext:context defaultValue:1.0];
+  NSCAudioParam *detuneParam = [[NSCAudioParam alloc] initWithContext:context defaultValue:0.0];
+  AVAudioFormat *format = context.format
+      ?: [[AVAudioFormat alloc] initWithCommonFormat:AVAudioPCMFormatFloat32 sampleRate:44100.0 channels:2 interleaved:NO];
+  NSMutableData *timelineCell = context.timelineCell ?: [NSMutableData dataWithLength:NSCTimelineSlots * sizeof(double)];
+  __weak NSCAudioBufferSourceNode *weakSelf = self;
+  AVAudioSourceNode *source = MakeSource(format, stateData, keepAlive, rateParam, detuneParam, timelineCell, weakSelf);
 
-    _playbackRateParam = nil;
-    _buffer = [self processBuffer:buffer context:context];
+  if (self = [super initWithContext:context node:source]) {
+    _sourceNode = source;
+    _stateData = stateData;
+    _state = state;
+    _keepAlive = keepAlive;
+    _playbackRateParam = rateParam;
+    _detuneParam = detuneParam;
+    _timelineCell = timelineCell;
+    _channels = format.channelCount;
+    self.nativeFormat = format;
+    rateParam.owner = self;
+    detuneParam.owner = self;
+    [self attachSource:source];
+    [self setBuffer:buffer];
   }
   return self;
+}
+
+- (void)attachSource:(AVAudioSourceNode *)source {
+  AVAudioEngine *engine = self.context.engine;
+  if ([NSThread isMainThread]) {
+    [engine attachNode:source];
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), ^{
+      [engine attachNode:source];
+    });
+  }
+}
+
+- (BOOL)usesOutputStage { return YES; }
+
+// A buffer with more channels than the context plays them all while the source can still change;
+// its stage down-mixes them to each destination with the speakers rules.
+- (AVAudioChannelCount)channelsForBuffer:(NSCAudioBuffer *)buffer {
+  NSCAudioContext *ctx = self.context;
+  AVAudioChannelCount current = _channels;
+  AVAudioChannelCount wanted = MIN((AVAudioChannelCount)8, [buffer getBuffer].format.channelCount);
+  if (!ctx || ctx.format.channelCount == 0) return current;
+  wanted = MAX(wanted, ctx.format.channelCount);
+  if (wanted == current) return current;
+  AVAudioEngine *engine = ctx.engine;
+  BOOL staged = [self outputAVNode] != _sourceNode;
+  NSArray *points = @[];
+  @try { points = [engine outputConnectionPointsForNode:_sourceNode outputBus:0]; } @catch (NSException *e) {}
+  if (points.count > 0 && !staged) return current;
+  AVAudioFormat *format = SourceFormat(ctx.format.sampleRate, wanted);
+  AVAudioSourceNode *source = MakeSource(format, _stateData, _keepAlive, _playbackRateParam, _detuneParam, _timelineCell, self);
+  if (!source) return current;
+  AVAudioSourceNode *old = _sourceNode;
+  [self attachSource:source];
+  _sourceNode = source;
+  _channels = wanted;
+  self.nativeFormat = format;
+  [self replaceAVNode:source];
+  @try { [engine disconnectNodeOutput:old]; } @catch (NSException *e) {}
+  @try { [ctx detachNode:old fromEngine:engine]; } @catch (NSException *e) {}
+  if (wanted != ctx.format.channelCount) [self ensureOutputStageWithChannels:wanted];
+  return wanted;
 }
 
 - (instancetype)initWithContext:(NSCAudioContext *)context
@@ -67,963 +231,115 @@
   return [self initWithContext:context buffer:nil];
 }
 
+- (void)dealloc {
+  NSCAudioContext *ctx = self.context;
+  if (ctx && _sourceNode) {
+    AVAudioEngine *eng = ctx.engine;
+    if (eng && [ctx isNode:_sourceNode attachedToEngine:eng]) {
+      @try { [eng disconnectNodeOutput:_sourceNode]; } @catch (NSException *e) {}
+      @try { [ctx detachNode:_sourceNode fromEngine:eng]; } @catch (NSException *e) {}
+    }
+  }
+  _state = NULL;
+}
+
 - (NSCAudioBuffer *)buffer {
   return _buffer;
 }
 
 - (void)setBuffer:(NSCAudioBuffer *)newBuffer {
-  _buffer = [self processBuffer:newBuffer context:self.context];
+  AVAudioChannelCount channels = newBuffer ? [self channelsForBuffer:newBuffer] : 0;
+  _buffer = newBuffer ? [self processBuffer:newBuffer context:self.context channels:channels] : nil;
+  AVAudioPCMBuffer *pcm = [_buffer getBuffer];
+  if (pcm && pcm.floatChannelData == NULL) pcm = nil;
+  if (pcm) [_keepAlive addObject:pcm];
+  if (_state) atomic_store_explicit(&_state->pcm, (__bridge void *)pcm, memory_order_release);
+}
+
+- (BOOL)loop {
+  return _state ? atomic_load_explicit(&_state->loop, memory_order_acquire) == 1 : NO;
+}
+
+- (void)setLoop:(BOOL)loop {
+  if (_state) atomic_store_explicit(&_state->loop, loop ? 1 : 0, memory_order_release);
 }
 
 - (NSCAudioParam *)getPlaybackRateParam {
-  if (!_playbackRateParam) {
-    _playbackRateParam = [[NSCAudioParam alloc] initWithContext:self.context defaultValue:1.0];
-    __weak typeof(self) weakSelf = self;
-    _playbackRateParam.onScheduleChanged = ^(NSCAudioParam *p) {
-      __strong typeof(weakSelf) s = weakSelf;
-      if (!s) return;
-      [s ensurePlaybackRateAutomationLink];
-    };
-  }
   return _playbackRateParam;
 }
 
-- (BOOL)_playbackRateHasFutureEvents {
+- (BOOL)isPlaying {
+  return _state ? atomic_load_explicit(&_state->playing, memory_order_acquire) == 1 : NO;
+}
+
+- (void)beginAtSample:(int64_t)startSample offset:(double)offset {
   NSCAudioContext *ctx = self.context;
-  double t = ctx ? ctx.currentTime : 0.0;
-  return _playbackRateParam && [_playbackRateParam hasEventsAfter:t];
-}
-
-- (void)ensurePlaybackRateAutomationLink {
-  if (![NSThread isMainThread]) {
-    __weak typeof(self) weakSelf = self;
-    dispatch_async(dispatch_get_main_queue(), ^{ __strong typeof(weakSelf) s = weakSelf; if (s) [s ensurePlaybackRateAutomationLink]; });
-    return;
+  if (!ctx || !_state || [self isPlaying]) return;
+  AVAudioPCMBuffer *pcm = (__bridge AVAudioPCMBuffer *)atomic_load_explicit(&_state->pcm, memory_order_acquire);
+  double rate = pcm ? pcm.format.sampleRate : ctx.sampleRate;
+  _state->pendingOffsetFrames = (isfinite(offset) && offset > 0.0) ? offset * rate : 0.0;
+  atomic_store_explicit(&_state->resetPending, 1, memory_order_release);
+  atomic_store_explicit(&_state->stopSample, (int_least64_t)-1, memory_order_release);
+  atomic_store_explicit(&_state->startSample, startSample, memory_order_release);
+  atomic_store_explicit(&_state->playing, 1, memory_order_release);
+  [ctx incrementActiveCount];
+  if (!ctx.engine.isRunning) {
+    [NSCAudioContext startEngineWithRetry:ctx.engine attempts:3 label:@"bufferSource" asyncCompletion:nil];
   }
-  if (_playbackRateAutomationTimer) return;
-  if (![self _playbackRateHasFutureEvents]) return;
-  uint64_t intervalNs = (uint64_t)(NSEC_PER_SEC / 60.0);
-  uint64_t leeway = (uint64_t)(NSEC_PER_SEC / 240.0);
-  dispatch_source_t timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
-  dispatch_source_set_timer(timer, dispatch_time(DISPATCH_TIME_NOW, 0), intervalNs, leeway);
-  __weak typeof(self) weakSelf = self;
-  dispatch_source_set_event_handler(timer, ^{
-    __strong typeof(weakSelf) s = weakSelf;
-    if (!s) return;
-    [s _applyPlaybackRateAutomationOnce];
-    if (![s _playbackRateHasFutureEvents]) [s stopPlaybackRateAutomationLink];
-  });
-  _playbackRateAutomationTimer = timer;
-  dispatch_resume(_playbackRateAutomationTimer);
 }
 
-- (void)stopPlaybackRateAutomationLink {
-  if (!_playbackRateAutomationTimer) return;
-  dispatch_source_cancel(_playbackRateAutomationTimer);
-  _playbackRateAutomationTimer = nil;
+- (void)start {
+  [self startAt:nil offset:0.0];
 }
 
-- (void)_applyPlaybackRateAutomationOnce {
+- (void)startAt:(NSNumber *)when {
+  [self startAt:when offset:0.0];
+}
+
+- (void)startAt:(NSNumber *)when offset:(double)offset {
   NSCAudioContext *ctx = self.context;
-  double t = ctx ? ctx.currentTime : 0.0;
-  double pr = _playbackRateParam ? [_playbackRateParam valueAtTime:t] : 1.0;
-  if (!_varispeed) return;
-  dispatch_async(dispatch_get_main_queue(), ^{
-    @try {
-      float v = (float)pr;
-      if (isnan(v)) v = 1.0f;
-      if (v < 0.0f) v = 0.0f;
-      _varispeed.rate = v;
-    } @catch (NSException *e) {}
-  });
+  if (!ctx) return;
+  int64_t startSample = -1;
+  double extra = [ctx extraLatencySeconds];
+  double t = when ? when.doubleValue : 0.0;
+  if (t > ctx.currentTime || extra > 0.0) {
+    startSample = [ctx frameForTime:MAX(t, ctx.currentTime) + extra];
+  }
+  [self beginAtSample:startSample offset:offset];
 }
 
-
-- (BOOL)tryStartPlayer:(AVAudioPlayerNode *)player
-               context:(NSCAudioContext *)ctx {
-  if (!player || !ctx)
-    return NO;
-  if (_gaveUp) {
-    NSCLogDebug(
-        @"NSCAudioBufferSourceNode: tryStartPlayer skipping because _gaveUp=1");
-    return NO;
-  }
-
-  if (!_isPlaying) {
-    NSCLogDebug(@"NSCAudioBufferSourceNode: tryStartPlayer skipping because "
-          @"_isPlaying=0");
-    return NO;
-  }
-  AVAudioEngine *eng = ctx.engine;
-  if (!eng)
-    return NO;
-  if (!eng.isRunning) {
-    NSCLogError(@"NSCAudioBSN: tryStartPlayer engine NOT running – returning NO");
-    return NO;
-  }
-
-  NSCLogError(@"NSCAudioBSN: tryStartPlayer engine running, checking connection");
-
-  if (player.engine != eng) {
-    @try {
-      if (player.engine) {
-        [ctx detachNode:player fromEngine:player.engine];
-      }
-    } @catch (NSException *e) {
-    }
-    @try {
-      [eng attachNode:player];
-    } @catch (NSException *e) {
-    }
-  }
-
-  BOOL isConnected = NO;
-  SEL ocpSel = NSSelectorFromString(@"outputConnectionPointsForNode:outputBus:");
-  if (eng && [eng respondsToSelector:ocpSel]) {
-    @try {
-      typedef NSArray *(*MsgSendFn)(id, SEL, id, AVAudioNodeBus);
-      MsgSendFn fn = (MsgSendFn)objc_msgSend;
-      NSArray *pts = fn(eng, ocpSel, player, (AVAudioNodeBus)0);
-      isConnected = pts && pts.count > 0;
-      NSCLogError(@"NSCAudioBSN: connectionPoints count=%lu isConnected=%d",
-            (unsigned long)(pts ? pts.count : 0), (int)isConnected);
-    } @catch (NSException *e) {
-      isConnected = NO;
-    }
-  } else {
-    isConnected = (player.engine == eng);
-  }
-
-  if (!isConnected) {
-    AVAudioNode *targetNode = nil;
-    BOOL usingMainMixerFallback = NO;
-    if (_lastDestination)
-      targetNode = _lastDestination.avNode;
-    if (!targetNode) {
-      NSCLogDebug(@"NSCAudioBufferSourceNode: deferring start until connected to a real destination");
-      return NO;
-    }
-    __block BOOL didImmediateConnect = NO;
-    void (^immediateConnectBlock)(void) = ^{
-      @try {
-        if (player.engine && player.engine != eng) {
-          @try {
-            [ctx detachNode:player fromEngine:player.engine];
-          } @catch (NSException *e) {
-          }
-        }
-        @try {
-          [eng attachNode:player];
-        } @catch (NSException *e) {
-        }
-        if (eng && player && targetNode) {
-          @try {
-            if (_lastDestination && targetNode) {
-              AVAudioConnectionPoint *destPoint =
-                  [[AVAudioConnectionPoint alloc]
-                      initWithNode:targetNode
-                               bus:(AVAudioNodeBus)MAX(
-                                       0, (int)_lastDestinationBus)];
-              [eng connect:player to:_varispeed format:ctx.format];
-              [eng connect:_varispeed
-                  toConnectionPoints:@[ destPoint ]
-                             fromBus:(AVAudioNodeBus)0
-                              format:ctx.format];
-            } else {
-              [eng connect:player to:_varispeed format:ctx.format];
-              [eng connect:_varispeed to:targetNode format:ctx.format];
-            }
-            @try {
-              [eng prepare];
-            } @catch (NSException *e) {
-            }
-            didImmediateConnect = YES;
-            NSCLogDebug(@"NSCAudioBufferSourceNode: immediate fallback connect to %@ "
-                  @"(usingMain=%d)",
-                  NSStringFromClass([targetNode class]),
-                  (int)usingMainMixerFallback);
-          } @catch (NSException *e) {
-            didImmediateConnect = NO;
-            NSCLogDebug(@"NSCAudioBufferSourceNode: immediate fallback connect "
-                  @"failed: %@",
-                  e);
-          }
-        }
-      } @catch (NSException *e) {
-      }
-    };
-    if ([NSThread isMainThread])
-      immediateConnectBlock();
-    else
-      dispatch_sync(dispatch_get_main_queue(), immediateConnectBlock);
-
-    if (didImmediateConnect) {
-      _transientRetryAttempts = 0;
-      __weak typeof(self) weakSelf2 = self;
-      __block int pollAttempts = 8;
-      __block void (^pollBlock)(void) = nil;
-      __block __weak void (^weakPollBlock)(void) = nil;
-      pollBlock = ^{
-        __strong typeof(weakSelf2) strongSelf = weakSelf2;
-        if (!strongSelf)
-          return;
-        BOOL nowConnected = NO;
-        @try {
-            SEL ocpSel2 =
-              NSSelectorFromString(@"outputConnectionPointsForNode:outputBus:");
-          if (eng && [eng respondsToSelector:ocpSel2]) {
-            typedef NSArray *(*MsgSendFn)(id, SEL, id, AVAudioNodeBus);
-            MsgSendFn fn = (MsgSendFn)objc_msgSend;
-            NSArray *pts = fn(eng, ocpSel2, player, (AVAudioNodeBus)0);
-            nowConnected = pts && pts.count > 0;
-          } else {
-            nowConnected = (player.engine == eng);
-          }
-        } @catch (NSException *e) {
-          nowConnected = NO;
-        }
-
-        if (nowConnected) {
-          BOOL safeToPlay = NO;
-          @try {
-            AVAudioTime *now = eng.outputNode.lastRenderTime;
-            if (now) {
-              AVAudioTime *playerTime = nil;
-              @try {
-                playerTime = [player playerTimeForNodeTime:now];
-              } @catch (NSException *e) {
-                playerTime = nil;
-              }
-              if (playerTime) {
-                NSCLogDebug(@"NSCAudioBufferSourceNode: poll immediate now=%p "
-                      @"sampleTime=%lld sampleRate=%f playerTime=%p "
-                      @"player.sampleTime=%lld player.sampleRate=%f",
-                      now, (long long)now.sampleTime, now.sampleRate,
-                      playerTime, (long long)playerTime.sampleTime,
-                      playerTime.sampleRate);
-                safeToPlay = YES;
-              } else {
-                NSCLogDebug(@"NSCAudioBufferSourceNode: poll immediate now=%p "
-                      @"playerTime=nil, forcing play",
-                      now);
-                safeToPlay = YES;
-              }
-            }
-          } @catch (NSException *e) {
-            safeToPlay = NO;
-          }
-
-          if (safeToPlay) {
-            @try {
-              const char *forceImpulseEnv =
-                  getenv("NSC_ANALYSER_FORCE_IMPULSE");
-              int diagEnv = getenv("NSC_ANALYSER_DIAG") ? 1 : 0;
-              if (forceImpulseEnv || diagEnv) {
-                AVAudioFormat *fmt = ctx.format;
-                NSCLogDebug(@"NSCAudioBufferSourceNode: impulse env force=%s diag=%d "
-                      @"ctx=%p fmt=%p",
-                      forceImpulseEnv ? forceImpulseEnv : "NULL", diagEnv, ctx,
-                      fmt);
-                if (fmt) {
-                  NSCLogDebug(@"NSCAudioBufferSourceNode: ctx.format channels=%u "
-                        @"sampleRate=%f commonFormat=%ld",
-                        (unsigned int)fmt.channelCount, fmt.sampleRate,
-                        (long)fmt.commonFormat);
-                } else {
-                  NSCLogDebug(@"NSCAudioBufferSourceNode: ctx.format is NULL — "
-                        @"cannot allocate impulse buffer");
-                }
-                if (fmt && ctx && ctx.engine) {
-                  AVAudioFormat *useFmt = fmt;
-                  const AudioStreamBasicDescription *u_asbd =
-                      useFmt.streamDescription;
-                  if (!u_asbd || u_asbd->mFormatID != kAudioFormatLinearPCM) {
-                    useFmt = [[AVAudioFormat alloc]
-                        initWithCommonFormat:AVAudioPCMFormatFloat32
-                                  sampleRate:(useFmt.sampleRate > 0
-                                                  ? useFmt.sampleRate
-                                                  : 44100.0)
-                                    channels:useFmt.channelCount
-                                 interleaved:NO];
-                  }
-                  AVAudioFrameCount impFrames = 128;
-                  AVAudioPCMBuffer *imp =
-                      [[AVAudioPCMBuffer alloc] initWithPCMFormat:useFmt
-                                                    frameCapacity:impFrames];
-                  if (imp) {
-                    imp.frameLength = impFrames;
-                    if (imp.floatChannelData) {
-                      for (AVAudioChannelCount c = 0; c < fmt.channelCount;
-                           ++c) {
-                        float *ch = imp.floatChannelData[c];
-                        memset(ch, 0, (size_t)impFrames * sizeof(float));
-                        ch[0] = 0.5f;
-                      }
-                    }
-                 
-                    NSObject *prodToken_imp = [[NSObject alloc] init];
-                    objc_setAssociatedObject(imp, NSCProducerTokenKey,
-                                             prodToken_imp,
-                                             OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-                    NSCLogDebug(@"NSCAudioBufferSourceNode: attached prodToken=%p to "
-                          @"imp=%p",
-                          (__bridge void *)prodToken_imp, (__bridge void *)imp);
-                    @try {
-                      NSArray<NSCAnalyserNode *> *analysers =
-                          [ctx allAnalyserWrappers];
-                      for (NSCAnalyserNode *an in analysers) {
-                        @try {
-                          [an appendBufferToRing:imp];
-                          NSCLogDebug(@"NSCAudioBufferSourceNode: injected impulse "
-                                @"into analyser %@ (direct) token=%p buf=%p",
-                                NSStringFromClass([an class]),
-                                (__bridge void *)prodToken_imp,
-                                (__bridge void *)imp);
-                        } @catch (NSException *e) {
-                          NSCLogDebug(@"NSCAudioBufferSourceNode: appendBufferToRing "
-                                @"exception: %@",
-                                e);
-                        }
-                      }
-                    } @catch (NSException *e) {
-                    }
-                    @try {
-                      AVAudioEngine *e = ctx.engine;
-                      NSMutableArray *queue = [NSMutableArray
-                          arrayWithObject:(AVAudioNode *)player];
-                      NSMutableSet *seen = [NSMutableSet set];
-                      while (queue.count > 0) {
-                        AVAudioNode *n = queue.firstObject;
-                        [queue removeObjectAtIndex:0];
-                        if (!n)
-                          continue;
-                        NSCAudioNode *wrap = [ctx nodeWrapperForAVNode:n];
-                        if (wrap &&
-                            [wrap isKindOfClass:[NSCAnalyserNode class]]) {
-                          NSCAnalyserNode *an = (NSCAnalyserNode *)wrap;
-                          @try {
-                            [an appendBufferToRing:imp];
-                            NSCLogDebug(@"NSCAudioBufferSourceNode: injected impulse "
-                                  @"into analyser %@ token=%p buf=%p",
-                                  NSStringFromClass([an class]),
-                                  (__bridge void *)prodToken_imp,
-                                  (__bridge void *)imp);
-                          } @catch (NSException *e) {
-                            NSCLogDebug(@"NSCAudioBufferSourceNode: "
-                                  @"appendBufferToRing exception: %@",
-                                  e);
-                          }
-                        }
-                        SEL ocpSel = NSSelectorFromString(
-                          @"outputConnectionPointsForNode:outputBus:");
-                        if (e && [e respondsToSelector:ocpSel]) {
-                          typedef NSArray *(*MsgSendFn)(id, SEL, id,
-                                                        AVAudioNodeBus);
-                          MsgSendFn fn = (MsgSendFn)objc_msgSend;
-                          NSArray *pts = fn(e, ocpSel, n, (AVAudioNodeBus)0);
-                          for (AVAudioConnectionPoint *p in pts) {
-                            if (!p.node)
-                              continue;
-                            NSValue *v =
-                                [NSValue valueWithPointer:(__bridge const void
-                                                               *)(p.node)];
-                            if ([seen containsObject:v])
-                              continue;
-                            [seen addObject:v];
-                            [queue addObject:p.node];
-                          }
-                        }
-                      }
-                    } @catch (NSException *e) {
-                    }
-                  }
-                }
-              }
-#if TARGET_OS_SIMULATOR
-              
-              AVAudioPCMBuffer *localPcm = [_buffer getBuffer];
-              if (localPcm && ctx && ctx.engine) {
-                
-                NSObject *prodToken_local = [[NSObject alloc] init];
-                objc_setAssociatedObject(localPcm, NSCProducerTokenKey,
-                                         prodToken_local,
-                                         OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-                NSCLogDebug(@"NSCAudioBufferSourceNode: attached prodToken=%p to "
-                      @"localPcm=%p",
-                      (__bridge void *)prodToken_local,
-                      (__bridge void *)localPcm);
-                
-                AVAudioFrameCount lf = localPcm.frameLength;
-                float *const *ldata = localPcm.floatChannelData;
-                AVAudioChannelCount lch = localPcm.format.channelCount;
-                int snapN = (int)MIN((AVAudioFrameCount)8, lf);
-                NSMutableString *ls = [NSMutableString
-                    stringWithFormat:@"NSCAudioBufferSourceNode: localPcm "
-                                     @"frames=%u ch=%u buf=%p chData=%p first:",
-                                     (unsigned)lf, (unsigned)lch,
-                                     (void *)localPcm, (void *)ldata];
-                if (ldata && ldata[0]) {
-                  for (int i = 0; i < snapN; ++i)
-                    [ls appendFormat:@" %f", ldata[0][i]];
-                } else {
-                  [ls appendString:@" (NULL)"];
-                }
-                NSCLogDebug(@"%@", ls);
-
-                AVAudioEngine *e = ctx.engine;
-                NSMutableArray *queue =
-                    [NSMutableArray arrayWithObject:(AVAudioNode *)player];
-                NSMutableSet *seen = [NSMutableSet set];
-                while (queue.count > 0) {
-                  AVAudioNode *n = queue.firstObject;
-                  [queue removeObjectAtIndex:0];
-                  if (!n)
-                    continue;
-                  NSCAudioNode *wrap = [ctx nodeWrapperForAVNode:n];
-                  NSCLogDebug(@"NSCAudioBufferSourceNode: traverse node %p class=%@ "
-                        @"-> wrap=%p wrapClass=%@",
-                        n, NSStringFromClass([n class]), wrap,
-                        (wrap ? NSStringFromClass([wrap class]) : @"(nil)"));
-                  if (wrap && [wrap isKindOfClass:[NSCAnalyserNode class]]) {
-                    NSCAnalyserNode *an = (NSCAnalyserNode *)wrap;
-                    @try {
-                      [an appendBufferToRing:localPcm];
-                      NSCLogDebug(@"NSCAudioBufferSourceNode: appended buffer to "
-                            @"analyser %@ token=%p buf=%p (direct)",
-                            NSStringFromClass([an class]),
-                            (__bridge void *)prodToken_local,
-                            (__bridge void *)localPcm);
-                    } @catch (NSException *e) {
-                      NSCLogDebug(@"NSCAudioBufferSourceNode: appendBufferToRing "
-                            @"exception: %@",
-                            e);
-                    }
-                  }
-                    SEL ocpSel = NSSelectorFromString(
-                      @"outputConnectionPointsForNode:outputBus:");
-                  if (e && [e respondsToSelector:ocpSel]) {
-                    typedef NSArray *(*MsgSendFn)(id, SEL, id, AVAudioNodeBus);
-                    MsgSendFn fn = (MsgSendFn)objc_msgSend;
-                    NSArray *pts = fn(e, ocpSel, n, (AVAudioNodeBus)0);
-                    for (AVAudioConnectionPoint *p in pts) {
-                      if (!p.node)
-                        continue;
-                      NSValue *v = [NSValue
-                          valueWithPointer:(__bridge const void *)(p.node)];
-                      if ([seen containsObject:v])
-                        continue;
-                      [seen addObject:v];
-                      [queue addObject:p.node];
-                    }
-                  }
-                }
-              }
-#endif
-              NSCLogError(@"NSCAudioBSN: POLL-1 calling [player play]");
-              [player play];
-              if (_pendingStart) {
-                _pendingStart = NO;
-                if (ctx)
-                  [ctx unregisterPendingNode:strongSelf];
-              }
-              _retryCount = 0;
-            } @catch (NSException *ex) {
-              AVAudioEngine *eng2 = ctx.engine;
-              BOOL engRunning = eng2 ? eng2.isRunning : NO;
-              id attachedNodes = nil;
-              if (eng2 && [eng2 respondsToSelector:@selector(attachedNodes)]) {
-                @try {
-                  attachedNodes = [eng2 attachedNodes];
-                } @catch (NSException *e) {
-                  attachedNodes = nil;
-                }
-              }
-              NSCLogDebug(@"NSCAudioBufferSourceNode: deferred play exception: %@; "
-                    @"ctx=%p eng=%p engRunning=%d player=%p player.engine=%p "
-                    @"attachedNodesCount=%lu",
-                    ex, ctx, eng2, engRunning, player, player.engine,
-                    attachedNodes ? (unsigned long)[attachedNodes count] : 0ul);
-              @try {
-                [player stop];
-              } @catch (NSException *inner) {
-              }
-              [strongSelf scheduleRetryWithContext:ctx];
-            }
-            return;
-          }
-        }
-        pollAttempts -= 1;
-        if (pollAttempts > 0) {
-          void (^nextPoll)(void) = weakPollBlock;
-          if (nextPoll) {
-            dispatch_after(
-                dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.01 * NSEC_PER_SEC)),
-                dispatch_get_main_queue(), nextPoll);
-          }
-          return;
-        }
-        [strongSelf scheduleRetryWithContext:ctx];
-      };
-      weakPollBlock = pollBlock;
-      if (weakPollBlock) {
-        dispatch_after(
-            dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.01 * NSEC_PER_SEC)),
-            dispatch_get_main_queue(), weakPollBlock);
-      }
-      return YES;
-    }
-
-    if (_transientRetryAttempts < 3) {
-      _transientRetryAttempts += 1;
-      NSCLogDebug(@"NSCAudioBufferSourceNode: transient recheck %d waiting for "
-            @"connection",
-            _transientRetryAttempts);
-      dispatch_after(
-          dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.02 * NSEC_PER_SEC)),
-          dispatch_get_main_queue(), ^{
-            @try {
-              [self tryStartPlayer:player context:ctx];
-            } @catch (NSException *e) {
-              NSCLogDebug(@"NSCAudioBufferSourceNode: transient tryStartPlayer "
-                    @"threw: %@",
-                    e);
-            }
-          });
-      return NO;
-    }
-    _transientRetryAttempts = 0;
-    [self scheduleRetryWithContext:ctx];
-    return NO;
-  }
-
-  _transientRetryAttempts = 0;
-  __weak typeof(self) weakSelf3 = self;
-  __block int pollAttempts2 = 8;
-  __block void (^pollBlock2)(void) = nil;
-  __block __weak void (^weakPollBlock2)(void) = nil;
-  pollBlock2 = ^{
-    __strong typeof(weakSelf3) strongSelf = weakSelf3;
-    if (!strongSelf)
-      return;
-    BOOL nowConnected = NO;
-    @try {
-      SEL ocpSel3 = NSSelectorFromString(@"outputConnectionPointsForNode:outputBus:");
-      if (eng && [eng respondsToSelector:ocpSel3]) {
-        typedef NSArray *(*MsgSendFn)(id, SEL, id, AVAudioNodeBus);
-        MsgSendFn fn = (MsgSendFn)objc_msgSend;
-        NSArray *pts = fn(eng, ocpSel3, player, (AVAudioNodeBus)0);
-        nowConnected = pts && pts.count > 0;
-      } else {
-        nowConnected = (player.engine == eng);
-      }
-    } @catch (NSException *e) {
-      nowConnected = NO;
-    }
-
-    if (nowConnected) {
-      BOOL safeToPlay = NO;
-      @try {
-        AVAudioTime *now = eng.outputNode.lastRenderTime;
-        if (now) {
-          AVAudioTime *playerTime = nil;
-          @try {
-            playerTime = [player playerTimeForNodeTime:now];
-          } @catch (NSException *e) {
-            playerTime = nil;
-          }
-          if (playerTime) {
-            NSCLogDebug(@"NSCAudioBufferSourceNode: poll now=%p sampleTime=%lld "
-                  @"sampleRate=%f playerTime=%p player.sampleTime=%lld "
-                  @"player.sampleRate=%f",
-                  now, (long long)now.sampleTime, now.sampleRate, playerTime,
-                  (long long)playerTime.sampleTime, playerTime.sampleRate);
-            safeToPlay = YES;
-          } else {
-            NSCLogDebug(@"NSCAudioBufferSourceNode: poll now=%p playerTime=nil, forcing play", now);
-            safeToPlay = YES;
-          }
-        }
-      } @catch (NSException *e) {
-        safeToPlay = NO;
-      }
-
-      if (safeToPlay) {
-        @try {
-          const char *forceImpulseEnv = getenv("NSC_ANALYSER_FORCE_IMPULSE");
-          int diagEnv = getenv("NSC_ANALYSER_DIAG") ? 1 : 0;
-          if (forceImpulseEnv || diagEnv) {
-            AVAudioFormat *fmt = ctx.format;
-            NSCLogDebug(@"NSCAudioBufferSourceNode: impulse env force=%s diag=%d "
-                  @"ctx=%p fmt=%p",
-                  forceImpulseEnv ? forceImpulseEnv : "NULL", diagEnv, ctx,
-                  fmt);
-            if (fmt) {
-              NSCLogDebug(@"NSCAudioBufferSourceNode: ctx.format channels=%u "
-                    @"sampleRate=%f commonFormat=%ld",
-                    (unsigned int)fmt.channelCount, fmt.sampleRate,
-                    (long)fmt.commonFormat);
-            } else {
-              NSCLogDebug(@"NSCAudioBufferSourceNode: ctx.format is NULL — cannot "
-                    @"allocate impulse buffer");
-            }
-            if (fmt && ctx && ctx.engine) {
-              AVAudioFormat *useFmt2 = fmt;
-              const AudioStreamBasicDescription *u2_asbd =
-                  useFmt2.streamDescription;
-              if (!u2_asbd || u2_asbd->mFormatID != kAudioFormatLinearPCM) {
-                useFmt2 = [[AVAudioFormat alloc]
-                    initWithCommonFormat:AVAudioPCMFormatFloat32
-                              sampleRate:(useFmt2.sampleRate > 0
-                                              ? useFmt2.sampleRate
-                                              : 44100.0)
-                                channels:useFmt2.channelCount
-                             interleaved:NO];
-              }
-              AVAudioFrameCount impFrames = 128;
-              AVAudioPCMBuffer *imp =
-                  [[AVAudioPCMBuffer alloc] initWithPCMFormat:useFmt2
-                                                frameCapacity:impFrames];
-              if (imp) {
-                imp.frameLength = impFrames;
-                if (imp.floatChannelData) {
-                  for (AVAudioChannelCount c = 0; c < fmt.channelCount; ++c) {
-                    float *ch = imp.floatChannelData[c];
-                    memset(ch, 0, (size_t)impFrames * sizeof(float));
-                    ch[0] = 0.5f;
-                  }
-                }
-               
-
-                NSObject *prodToken_imp2 = [[NSObject alloc] init];
-                objc_setAssociatedObject(imp, NSCProducerTokenKey,
-                                         prodToken_imp2,
-                                         OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-                NSCLogDebug(@"NSCAudioBufferSourceNode: attached prodToken=%p to "
-                      @"imp=%p (branch2)",
-                      (__bridge void *)prodToken_imp2, (__bridge void *)imp);
-                @try {
-                  AVAudioEngine *e = ctx.engine;
-                  NSMutableArray *queue =
-                      [NSMutableArray arrayWithObject:(AVAudioNode *)player];
-                  NSMutableSet *seen = [NSMutableSet set];
-                  while (queue.count > 0) {
-                    AVAudioNode *n = queue.firstObject;
-                    [queue removeObjectAtIndex:0];
-                    if (!n)
-                      continue;
-                    NSCAudioNode *wrap = [ctx nodeWrapperForAVNode:n];
-                    NSCLogDebug(@"NSCAudioBufferSourceNode: traverse node %p "
-                          @"class=%@ -> wrap=%p wrapClass=%@",
-                          n, NSStringFromClass([n class]), wrap,
-                          (wrap ? NSStringFromClass([wrap class]) : @"(nil)"));
-                    if (wrap && [wrap isKindOfClass:[NSCAnalyserNode class]]) {
-                      NSCAnalyserNode *an = (NSCAnalyserNode *)wrap;
-                      @try {
-                        [an appendBufferToRing:imp];
-                        NSCLogDebug(@"NSCAudioBufferSourceNode: injected impulse "
-                              @"into analyser %@ token=%p buf=%p",
-                              NSStringFromClass([an class]),
-                              (__bridge void *)prodToken_imp2,
-                              (__bridge void *)imp);
-                      } @catch (NSException *e) {
-                        NSCLogDebug(@"NSCAudioBufferSourceNode: appendBufferToRing "
-                              @"exception: %@",
-                              e);
-                      }
-                    }
-                    SEL ocpSel = NSSelectorFromString(
-                      @"outputConnectionPointsForNode:outputBus:");
-                    if (e && [e respondsToSelector:ocpSel]) {
-                      typedef NSArray *(*MsgSendFn)(id, SEL, id,
-                                                    AVAudioNodeBus);
-                      MsgSendFn fn = (MsgSendFn)objc_msgSend;
-                      NSArray *pts = fn(e, ocpSel, n, (AVAudioNodeBus)0);
-                      for (AVAudioConnectionPoint *p in pts) {
-                        if (!p.node)
-                          continue;
-                        NSValue *v = [NSValue
-                            valueWithPointer:(__bridge const void *)(p.node)];
-                        if ([seen containsObject:v])
-                          continue;
-                        [seen addObject:v];
-                        [queue addObject:p.node];
-                      }
-                    }
-                  }
-                } @catch (NSException *e) {
-                }
-              }
-            }
-          }
-          NSCLogError(@"NSCAudioBSN: [player play] POLL-2 called engRunning=%d", (int)(ctx.engine.isRunning));
-          [player play];
-          if (_pendingStart) {
-            _pendingStart = NO;
-            if (ctx)
-              [ctx unregisterPendingNode:strongSelf];
-          }
-          _retryCount = 0;
-#if TARGET_OS_SIMULATOR
-          
-          AVAudioPCMBuffer *localPcm = [_buffer getBuffer];
-          if (localPcm && ctx && ctx.engine) {
-            AVAudioEngine *e = ctx.engine;
-            NSObject *prodToken_local2 = [[NSObject alloc] init];
-            objc_setAssociatedObject(localPcm, NSCProducerTokenKey,
-                                     prodToken_local2,
-                                     OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-            NSCLogDebug(@"NSCAudioBufferSourceNode: attached prodToken=%p to "
-                  @"localPcm=%p (post-play)",
-                  (__bridge void *)prodToken_local2, (__bridge void *)localPcm);
-            NSMutableArray *queue =
-                [NSMutableArray arrayWithObject:(AVAudioNode *)player];
-            NSMutableSet *seen = [NSMutableSet set];
-            while (queue.count > 0) {
-              AVAudioNode *n = queue.firstObject;
-              [queue removeObjectAtIndex:0];
-              if (!n)
-                continue;
-              NSCAudioNode *wrap = [ctx nodeWrapperForAVNode:n];
-              NSCLogDebug(@"NSCAudioBufferSourceNode: traverse node %p class=%@ -> "
-                    @"wrap=%p wrapClass=%@",
-                    n, NSStringFromClass([n class]), wrap,
-                    (wrap ? NSStringFromClass([wrap class]) : @"(nil)"));
-              if (wrap && [wrap isKindOfClass:[NSCAnalyserNode class]]) {
-                NSCAnalyserNode *an = (NSCAnalyserNode *)wrap;
-                @try {
-                  [an appendBufferToRing:localPcm];
-                  NSCLogDebug(@"NSCAudioBufferSourceNode: appended buffer to "
-                        @"analyser %@ token=%p buf=%p (post-play)",
-                        NSStringFromClass([an class]),
-                        (__bridge void *)prodToken_local2,
-                        (__bridge void *)localPcm);
-                } @catch (NSException *e) {
-                  NSCLogDebug(@"NSCAudioBufferSourceNode: appendBufferToRing "
-                        @"exception: %@",
-                        e);
-                }
-              }
-                SEL ocpSel =
-                  NSSelectorFromString(@"outputConnectionPointsForNode:outputBus:");
-              if (e && [e respondsToSelector:ocpSel]) {
-                typedef NSArray *(*MsgSendFn)(id, SEL, id, AVAudioNodeBus);
-                MsgSendFn fn = (MsgSendFn)objc_msgSend;
-                NSArray *pts = fn(e, ocpSel, n, (AVAudioNodeBus)0);
-                for (AVAudioConnectionPoint *p in pts) {
-                  if (!p.node)
-                    continue;
-                  NSValue *v = [NSValue
-                      valueWithPointer:(__bridge const void *)(p.node)];
-                  if ([seen containsObject:v])
-                    continue;
-                  [seen addObject:v];
-                  [queue addObject:p.node];
-                }
-              }
-            }
-          }
-#endif
-        } @catch (NSException *ex) {
-          AVAudioEngine *eng2 = ctx.engine;
-          BOOL engRunning = eng2 ? eng2.isRunning : NO;
-          id attachedNodes = nil;
-          if (eng2 && [eng2 respondsToSelector:@selector(attachedNodes)]) {
-            @try {
-              attachedNodes = [eng2 attachedNodes];
-            } @catch (NSException *e) {
-              attachedNodes = nil;
-            }
-          }
-          NSCLogDebug(@"NSCAudioBufferSourceNode: deferred play exception: %@; "
-                @"ctx=%p eng=%p engRunning=%d player=%p player.engine=%p "
-                @"attachedNodesCount=%lu",
-                ex, ctx, eng2, engRunning, player, player.engine,
-                attachedNodes ? (unsigned long)[attachedNodes count] : 0ul);
-          @try {
-            [player stop];
-          } @catch (NSException *inner) {
-          }
-          [strongSelf scheduleRetryWithContext:ctx];
-        }
-        return;
-      }
-    }
-
-    pollAttempts2 -= 1;
-    if (pollAttempts2 > 0) {
-      void (^nextPoll2)(void) = weakPollBlock2;
-      if (nextPoll2) {
-        dispatch_after(
-            dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.01 * NSEC_PER_SEC)),
-            dispatch_get_main_queue(), nextPoll2);
-      }
-      return;
-    }
-
-    [strongSelf scheduleRetryWithContext:ctx];
-  };
-  weakPollBlock2 = pollBlock2;
-  if (weakPollBlock2) {
-    dispatch_after(
-        dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.01 * NSEC_PER_SEC)),
-        dispatch_get_main_queue(), weakPollBlock2);
-  }
-  return YES;
+- (void)stop {
+  if (!_state || ![self isPlaying]) return;
+  atomic_store_explicit(&_state->playing, 0, memory_order_release);
+  atomic_store_explicit(&_state->startSample, (int_least64_t)-1, memory_order_release);
+  atomic_store_explicit(&_state->stopSample, (int_least64_t)-1, memory_order_release);
+  NSCAudioContext *ctx = self.context;
+  if (ctx) [ctx decrementActiveCount];
 }
 
-- (void)registerPendingIfNeededWithContext:(NSCAudioContext *)ctx {
-  if (_gaveUp)
-    return;
-  if (!_pendingStart) {
-    _pendingStart = YES;
-    if (ctx)
-      [ctx registerPendingNode:self];
-  }
-  if (ctx && ctx.engine) {
-    NSCAudioContext_scheduleResumeOnEngineStart(ctx.engine, 0.05);
-    NSCLogDebug(@"NSCAudioBufferSourceNode: registered pending node %@ (retry=%d)",
-          self, _retryCount);
-  }
-}
-
-- (void)scheduleRetryWithContext:(NSCAudioContext *)ctx {
-  if (!ctx)
-    return;
-  if (_gaveUp)
-    return;
-  if (_retryCount >= 6) {
-    NSCLogError(@"NSCAudioBufferSourceNode: giving up after %d retries", _retryCount);
-    _pendingStart = NO;
-    _gaveUp = YES;
-    if (ctx)
-      [ctx unregisterPendingNode:self];
-    if (_isPlaying) {
-      _isPlaying = NO;
-      if (self.context)
-        [self.context decrementActiveCount];
-    }
-    if (self.onended)
-      self.onended();
+- (void)stopAt:(NSNumber *)when {
+  NSCAudioContext *ctx = self.context;
+  if (!when || !ctx || when.doubleValue <= ctx.currentTime) {
+    BOOL wasPlaying = [self isPlaying];
+    [self stop];
+    if (wasPlaying && self.onended) self.onended();
     return;
   }
-  double delay = 0.05 * pow(2.0, (double)_retryCount);
-  if (delay < 0.05)
-    delay = 0.05;
-  if (delay > 1.0)
-    delay = 1.0;
-  _retryCount += 1;
-  if (_retryCount >= 3 && !_didFallbackConnect) {
-    _didFallbackConnect = YES;
-    AVAudioEngine *eng = ctx.engine;
-    AVAudioPlayerNode *player = (AVAudioPlayerNode *)self.avNode;
-    AVAudioNode *targetNode = nil;
-    BOOL usingMainMixerFallback = NO;
-    if (_lastDestination)
-      targetNode = _lastDestination.avNode;
-    if (!targetNode) {
-      targetNode = eng.mainMixerNode;
-      usingMainMixerFallback = YES;
-    }
-    NSCLogDebug(@"NSCAudioBufferSourceNode: fallback path: _lastDestination=%@ "
-          @"targetNode=%@ usingMainMixer=%d",
-          _lastDestination ? NSStringFromClass([_lastDestination class])
-                           : @"(nil)",
-          NSStringFromClass([targetNode class]), (int)usingMainMixerFallback);
-    void (^fallbackConnectBlock)(void) = ^{
-      @try {
-        if (eng && player && targetNode) {
-                    if (player.engine && player.engine != eng) {
-            @try {
-              [ctx detachNode:player fromEngine:player.engine];
-            } @catch (NSException *e) {
-            }
-          }
-          @try {
-            [eng attachNode:player];
-          } @catch (NSException *e) {
-          }
-          if (_lastDestination && targetNode) {
-            AVAudioConnectionPoint *destPoint = [[AVAudioConnectionPoint alloc]
-                initWithNode:targetNode
-                         bus:(AVAudioNodeBus)MAX(0, (int)_lastDestinationBus)];
-            @try {
-              [eng connect:player to:_varispeed format:ctx.format];
-              [eng connect:_varispeed
-                  toConnectionPoints:@[ destPoint ]
-                             fromBus:(AVAudioNodeBus)0
-                              format:ctx.format];
-            } @catch (NSException *e) {
-              @try {
-                [eng connect:player to:_varispeed format:ctx.format];
-                [eng connect:_varispeed to:targetNode format:ctx.format];
-              } @catch (NSException *e2) {
-              }
-            }
-          } else {
-            @try {
-              [eng connect:player to:_varispeed format:ctx.format];
-              [eng connect:_varispeed to:targetNode format:ctx.format];
-            } @catch (NSException *e) {
-            }
-          }
-          @try {
-            [eng prepare];
-          } @catch (NSException *e) {
-          }
-          NSCLogDebug(@"NSCAudioBufferSourceNode: fallback connected player to %@",
-                targetNode);
-        }
-      } @catch (NSException *e) {
-        NSCLogDebug(@"NSCAudioBufferSourceNode: fallback connect failed: %@", e);
-      }
-    };
-    if ([NSThread isMainThread])
-      fallbackConnectBlock();
-    else
-      dispatch_sync(dispatch_get_main_queue(), fallbackConnectBlock);
-  }
-  if (!_pendingStart) {
-    _pendingStart = YES;
-    if (ctx)
-      [ctx registerPendingNode:self];
-  }
-  @try {
-    AVAudioTime *lrt =
-        ctx && ctx.engine ? ctx.engine.outputNode.lastRenderTime : nil;
-    if (lrt) {
-      NSCLogDebug(@"NSCAudioBufferSourceNode: scheduling retry %d after %.3fs "
-            @"engRunning=%d lastRender=%p sampleTime=%lld sampleRate=%f",
-            _retryCount, delay, (int)(ctx.engine.isRunning), lrt,
-            (long long)lrt.sampleTime, lrt.sampleRate);
-    } else {
-      NSCLogDebug(@"NSCAudioBufferSourceNode: scheduling retry %d after %.3fs "
-            @"engRunning=%d lastRender=NULL",
-            _retryCount, delay, (int)(ctx.engine ? ctx.engine.isRunning : 0));
-    }
-  } @catch (NSException *e) {
-    NSCLogDebug(@"NSCAudioBufferSourceNode: scheduling retry %d after %.3fs",
-          _retryCount, delay);
-  }
-  dispatch_after(
-      dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delay * NSEC_PER_SEC)),
-      dispatch_get_main_queue(), ^{
-        @try {
-          [self handleConnectedTo:nil output:nil input:nil];
-        } @catch (NSException *e) {
-          NSCLogDebug(@"NSCAudioBufferSourceNode: scheduled retry threw: %@", e);
-        }
-      });
+  if (!_state || ![self isPlaying]) return;
+  int64_t stopSample = [ctx frameForTime:when.doubleValue];
+  atomic_store_explicit(&_state->stopSample, stopSample, memory_order_release);
 }
 
 - (NSCAudioBuffer *)processBuffer:(NSCAudioBuffer *)input
-                          context:(NSCAudioContext *)context {
+                          context:(NSCAudioContext *)context
+                         channels:(AVAudioChannelCount)channels {
   if (!context)
     return nil;
   AVAudioPCMBuffer *srcBuf = [input getBuffer];
   if (!srcBuf)
     return nil;
   AVAudioFormat *mixerFmt = context.format;
-  AVAudioChannelCount targetChannels = mixerFmt.channelCount;
+  AVAudioChannelCount targetChannels = channels ?: mixerFmt.channelCount;
   double targetSampleRate = mixerFmt.sampleRate;
   AVAudioCommonFormat targetCommon = mixerFmt.commonFormat;
 
@@ -1130,276 +446,4 @@
                                           buffer:outBuf];
 }
 
-- (void)start {
-  NSCAudioContext *ctx = self.context;
-  if (!ctx)
-    return;
-  _gaveUp = NO;
-  AVAudioPlayerNode *player = (AVAudioPlayerNode *)self.avNode;
-  AVAudioPCMBuffer *pcm = [_buffer getBuffer];
-  NSCLogError(@"NSCAudioBSN: start called buffer=%p engRunning=%d", pcm, (int)(ctx.engine.isRunning));
-  if (pcm != nil) {
-    __weak typeof(self) weakSelf = self;
-
-    if (!_isPlaying) {
-      _isPlaying = YES;
-      [ctx incrementActiveCount];
-    }
-
-    AVAudioTime *startTime = nil;
-    double extra = [ctx extraLatencySeconds];
-    if (extra > 0.0 && ctx.engine.isRunning) {
-      AVAudioTime *now = ctx.engine.outputNode.lastRenderTime;
-      if (now) {
-        AVAudioTime *playerTime = [player playerTimeForNodeTime:now];
-        if (playerTime) {
-          AVAudioFramePosition offset =
-              (AVAudioFramePosition)llround(extra * playerTime.sampleRate);
-          AVAudioFramePosition startSample = playerTime.sampleTime + offset;
-          startTime = [AVAudioTime timeWithSampleTime:startSample
-                                               atRate:playerTime.sampleRate];
-        }
-      }
-    }
-
-    [player scheduleBuffer:pcm
-                    atTime:startTime
-                   options:(self.loop ? AVAudioPlayerNodeBufferLoops
-                                      : 0)completionHandler:^{
-                     dispatch_async(dispatch_get_main_queue(), ^{
-                       __strong typeof(weakSelf) strongSelf = weakSelf;
-                       if (!strongSelf)
-                         return;
-                       if (strongSelf->_isPlaying) {
-                         strongSelf->_isPlaying = NO;
-                         [strongSelf.context decrementActiveCount];
-                       }
-                       if (strongSelf.onended)
-                         strongSelf.onended();
-                     });
-                   }];
-  }
-  __weak typeof(self) weakSelf = self;
-
-  NSCLogError(@"NSCAudioBSN: start engRunning=%d before tryStart", (int)(ctx.engine.isRunning));
-  if (ctx.engine.isRunning) {
-    if ([self tryStartPlayer:player context:ctx]) {
-      return;
-    } else {
-      [self registerPendingIfNeededWithContext:ctx];
-      return;
-    }
-  }
-
-  BOOL syncStarted = [NSCAudioContext
-      startEngineWithRetry:ctx.engine
-                  attempts:3
-                     label:@"bufferSource"
-           asyncCompletion:^(BOOL ok) {
-             if (!ok)
-               return;
-             __strong typeof(weakSelf) strongSelf = weakSelf;
-             if (!strongSelf)
-               return;
-             NSCAudioContext *sctx = strongSelf.context;
-             AVAudioPlayerNode *splayer =
-                 (AVAudioPlayerNode *)strongSelf.avNode;
-             if (![strongSelf tryStartPlayer:splayer context:sctx]) {
-               [strongSelf registerPendingIfNeededWithContext:sctx];
-             }
-           }];
-  if (syncStarted) {
-    if (![self tryStartPlayer:player context:ctx]) {
-      [self registerPendingIfNeededWithContext:ctx];
-    }
-  }
-}
-
-- (void)stop {
-  AVAudioPlayerNode *player = (AVAudioPlayerNode *)self.avNode;
-  [player stop];
-  if (_isPlaying) {
-    _isPlaying = NO;
-    if (self.context)
-      [self.context decrementActiveCount];
-  }
-  _gaveUp = YES;
-  NSCLogDebug(@"NSCAudioBufferSourceNode: stop called — _gaveUp=1, _isPlaying=%d",
-        (int)_isPlaying);
-
-  if (_pendingStart) {
-    _pendingStart = NO;
-    if (self.context)
-      [self.context unregisterPendingNode:self];
-  }
-  _retryCount = 0;
-
-  AVAudioEngine *eng = self.context ? self.context.engine : nil;
-  if (eng) {
-    void (^detachBlock)(void) = ^{
-      AVAudioPlayerNode *p = _player;
-      if (p) {
-        @try {
-          if (p.engine && p.engine != eng) {
-            @try {
-              [self.context detachNode:p fromEngine:p.engine];
-            } @catch (NSException *e) {
-            }
-          }
-        } @catch (NSException *e) {
-        }
-        @try {
-          if (p.engine == eng) {
-            [self.context detachNode:p fromEngine:eng];
-          }
-        } @catch (NSException *e) {
-        }
-        if (_varispeed) {
-          @try {
-            if (_varispeed.engine && _varispeed.engine != eng) {
-              @try {
-                [self.context detachNode:_varispeed fromEngine:_varispeed.engine];
-              } @catch (NSException *e) {}
-            }
-          } @catch (NSException *e) {}
-          @try {
-            if (_varispeed.engine == eng) {
-              [self.context detachNode:_varispeed fromEngine:eng];
-            }
-          } @catch (NSException *e) {}
-        }
-        [self stopPlaybackRateAutomationLink];
-      }
-    };
-    if ([NSThread isMainThread]) {
-      detachBlock();
-    } else {
-      dispatch_sync(dispatch_get_main_queue(), detachBlock);
-    }
-    NSCLogDebug(@"NSCAudioBufferSourceNode: stop requested "
-          @"context.stopManualRenderer and detached player");
-  }
-}
-
-- (void)handleConnectedTo:(NSCAudioNode *)destination
-                   output:(NSNumber *)output
-                    input:(NSNumber *)input {
-  if (destination) {
-    _lastDestination = destination;
-    _didFallbackConnect = NO;
-    _lastDestinationBus = input ? input.intValue : 0;
-    _lastSourceBus = output ? output.intValue : 0;
-  }
-  dispatch_async(dispatch_get_main_queue(), ^{
-    if (!_pendingStart)
-      return;
-    NSCLogDebug(@"NSCAudioBufferSourceNode: handleConnectedTo dest=%p pending=%d",
-          destination, _pendingStart);
-    NSCAudioContext *ctx = self.context;
-    AVAudioPlayerNode *player = (AVAudioPlayerNode *)self.avNode;
-    AVAudioPCMBuffer *pcm = [_buffer getBuffer];
-    if (!pcm) {
-      if (_isPlaying) {
-        _isPlaying = NO;
-        if (self.context)
-          [self.context decrementActiveCount];
-      }
-      _pendingStart = NO;
-      if (self.context)
-        [self.context unregisterPendingNode:self];
-      return;
-    }
-
-    @try {
-      [player stop];
-    } @catch (NSException *e) {
-    }
-
-    __weak typeof(self) weakSelf = self;
-
-    AVAudioTime *startTime = nil;
-    double extra = [ctx extraLatencySeconds];
-    if (extra > 0.0 && ctx.engine.isRunning) {
-      AVAudioTime *now = ctx.engine.outputNode.lastRenderTime;
-      if (now) {
-        AVAudioTime *playerTime = [player playerTimeForNodeTime:now];
-        if (playerTime) {
-          AVAudioFramePosition offset =
-              (AVAudioFramePosition)llround(extra * playerTime.sampleRate);
-          AVAudioFramePosition startSample = playerTime.sampleTime + offset;
-          startTime = [AVAudioTime timeWithSampleTime:startSample
-                                               atRate:playerTime.sampleRate];
-        }
-      }
-    }
-
-    [player scheduleBuffer:pcm
-                    atTime:startTime
-                   options:(self.loop ? AVAudioPlayerNodeBufferLoops
-                                      : 0)completionHandler:^{
-                     dispatch_async(dispatch_get_main_queue(), ^{
-                       __strong typeof(weakSelf) strongSelf = weakSelf;
-                       if (!strongSelf)
-                         return;
-                       if (strongSelf->_isPlaying) {
-                         strongSelf->_isPlaying = NO;
-                         [strongSelf.context decrementActiveCount];
-                       }
-                       if (strongSelf.onended)
-                         strongSelf.onended();
-                     });
-                   }];
-
-    if (ctx.engine.isRunning) {
-      if ([self tryStartPlayer:player context:ctx]) {
-        return;
-      } else {
-        [self registerPendingIfNeededWithContext:ctx];
-        return;
-      }
-    }
-
-    BOOL syncStarted = [NSCAudioContext
-        startEngineWithRetry:ctx.engine
-                    attempts:3
-                       label:@"bufferSource"
-             asyncCompletion:^(BOOL ok) {
-               if (!ok)
-                 return;
-               __strong typeof(weakSelf) strongSelf = weakSelf;
-               if (!strongSelf)
-                 return;
-               NSCAudioContext *sctx = strongSelf.context;
-               AVAudioPlayerNode *splayer =
-                   (AVAudioPlayerNode *)strongSelf.avNode;
-               if (![strongSelf tryStartPlayer:splayer context:sctx]) {
-                 [strongSelf registerPendingIfNeededWithContext:sctx];
-               }
-             }];
-    if (syncStarted) {
-      if (![self tryStartPlayer:player context:ctx]) {
-        [self registerPendingIfNeededWithContext:ctx];
-      }
-    }
-  });
-}
-
-- (void)dealloc {
-  [self stopPlaybackRateAutomationLink];
-  if (_varispeed) {
-    AVAudioEngine *eng = self.context ? self.context.engine : nil;
-    if (eng) {
-      @try {
-        if (_varispeed.engine && _varispeed.engine != eng) {
-          @try { [self.context detachNode:_varispeed fromEngine:_varispeed.engine]; } @catch (NSException *e) {}
-        }
-      } @catch (NSException *e) {}
-      @try { if (_varispeed.engine == eng) { [self.context detachNode:_varispeed fromEngine:eng]; } } @catch (NSException *e) {}
-    }
-    _varispeed = nil;
-  }
-}
-
 @end
-
-#pragma clang diagnostic pop

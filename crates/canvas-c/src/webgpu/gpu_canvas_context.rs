@@ -3,12 +3,16 @@ use crate::webgpu::error::handle_error_fatal;
 use crate::webgpu::gpu_adapter::CanvasGPUAdapter;
 use crate::webgpu::gpu_device::ErrorSink;
 use crate::webgpu::structs::{CanvasExtent3d, CanvasSurfaceCapabilities};
-use base64::Engine;
 use parking_lot::lock_api::Mutex;
-use raw_window_handle::{AppKitDisplayHandle, RawDisplayHandle, RawWindowHandle};
+#[cfg(not(target_os = "linux"))]
+use raw_window_handle::{RawDisplayHandle, RawWindowHandle};
+#[cfg(target_os = "macos")]
+use raw_window_handle::AppKitDisplayHandle;
 use std::borrow::Cow;
 use std::ffi::{CStr, CString};
-use std::os::raw::{c_char, c_void};
+use std::os::raw::c_char;
+#[cfg(not(target_os = "linux"))]
+use std::os::raw::c_void;
 use std::sync::Arc;
 use wgpu_core::present::SurfaceError;
 use wgt::{SurfaceCapabilities, SurfaceStatus, TextureFormat};
@@ -970,15 +974,14 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize(
                 new_config.height = height;
 
                 let mut read_back_texture_lock = context.read_back_texture.lock();
-                if let Some(texture) = read_back_texture_lock.take() {
-                }
+                read_back_texture_lock.take();
 
                 let (read_back, texture_data) = {
                     #[cfg(not(target_os = "android"))]
-                    let mut format = wgt::TextureFormat::Bgra8Unorm;
+                    let format = wgt::TextureFormat::Bgra8Unorm;
 
                     #[cfg(any(target_os = "android"))]
-                    let mut format = wgt::TextureFormat::Rgba8Unorm;
+                    let format = wgt::TextureFormat::Rgba8Unorm;
 
                     let desc = wgt::TextureDescriptor {
                         label: Some(Cow::Borrowed("ContextReadBack")),
@@ -1095,7 +1098,16 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create_swap_chain_panel(
     width: u32,
     height: u32,
 ) -> *const CanvasGPUCanvasContext {
-    create_swap_chain_panel(instance, panel, None, width, height)
+    // The queue thread presents, and so applies reconfigurations (resizes): wgpu binds the new
+    // swapchain from there, and only this thread may hand it to the panel.
+    let ui = match canvas_core::gpu::dxgi::UiThread::current() {
+        Ok(ui) => Some(ui),
+        Err(error) => {
+            log::warn!("canvas_native_webgpu_context_create_swap_chain_panel: no UI thread handle: {error}");
+            None
+        }
+    };
+    create_swap_chain_panel(instance, panel, ui, width, height)
 }
 
 /// `ui`: where the panel lives, when called from another thread.
@@ -1323,15 +1335,14 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize_uiview(
                 new_config.height = height;
 
                 let mut read_back_texture_lock = context.read_back_texture.lock();
-                if let Some(texture) = read_back_texture_lock.take() {
-                }
+                read_back_texture_lock.take();
 
                 let (read_back, texture_data) = {
                     #[cfg(not(target_os = "android"))]
-                    let mut format = wgt::TextureFormat::Bgra8Unorm;
+                    let format = wgt::TextureFormat::Bgra8Unorm;
 
                     #[cfg(any(target_os = "android"))]
-                    let mut format = wgt::TextureFormat::Rgba8Unorm;
+                    let format = wgt::TextureFormat::Rgba8Unorm;
 
                     let desc = wgt::TextureDescriptor {
                         label: Some(Cow::Borrowed("ContextReadBack")),
@@ -1482,15 +1493,14 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize_nsview(
                 new_config.height = height;
 
                 let mut read_back_texture_lock = context.read_back_texture.lock();
-                if let Some(texture) = read_back_texture_lock.take() {
-                }
+                read_back_texture_lock.take();
 
                 let (read_back, texture_data) = {
                     #[cfg(not(target_os = "android"))]
-                    let mut format = wgt::TextureFormat::Bgra8Unorm;
+                    let format = wgt::TextureFormat::Bgra8Unorm;
 
                     #[cfg(any(target_os = "android"))]
-                    let mut format = wgt::TextureFormat::Rgba8Unorm;
+                    let format = wgt::TextureFormat::Rgba8Unorm;
 
                     let desc = wgt::TextureDescriptor {
                         label: Some(Cow::Borrowed("ContextReadBack")),
@@ -1588,15 +1598,14 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize_layer(
                 new_config.height = height;
 
                 let mut read_back_texture_lock = context.read_back_texture.lock();
-                if let Some(texture) = read_back_texture_lock.take() {
-                }
+                read_back_texture_lock.take();
 
                 let (read_back, texture_data) = {
                     #[cfg(not(target_os = "android"))]
-                    let mut format = wgt::TextureFormat::Bgra8Unorm;
+                    let format = wgt::TextureFormat::Bgra8Unorm;
 
                     #[cfg(any(target_os = "android"))]
-                    let mut format = wgt::TextureFormat::Rgba8Unorm;
+                    let format = wgt::TextureFormat::Rgba8Unorm;
 
                     let desc = wgt::TextureDescriptor {
                         label: Some(Cow::Borrowed("ContextReadBack")),
@@ -1853,19 +1862,18 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_configure(
     };
 
     let mut read_back_texture_lock = context.read_back_texture.lock();
-    if let Some(texture) = read_back_texture_lock.take() {
-    }
+    read_back_texture_lock.take();
 
     let (read_back, texture_data) = {
         #[cfg(not(any(target_os = "android", target_os = "linux")))]
-        let mut format = wgt::TextureFormat::Bgra8Unorm;
+        let format = wgt::TextureFormat::Bgra8Unorm;
 
         #[cfg(any(target_os = "android"))]
-        let mut format = wgt::TextureFormat::Rgba8Unorm;
+        let format = wgt::TextureFormat::Rgba8Unorm;
 
         // Linux: frames are copied into it as they are, whatever the page configured.
         #[cfg(target_os = "linux")]
-        let mut format = config.format;
+        let format = config.format;
 
         let desc = wgt::TextureDescriptor {
             label: Some(Cow::Borrowed("ContextReadBack")),
@@ -2427,9 +2435,7 @@ pub fn canvas_native_webgpu_context_get_capabilities_rust(
     context: &Arc<CanvasGPUCanvasContext>,
     adapter: &Arc<CanvasGPUAdapter>,
 ) -> Option<SurfaceCapabilities> {
-    let adapter = unsafe { &*adapter };
     let adapter_id = Arc::clone(&adapter.adapter);
-    let context = unsafe { &*context };
 
     let surface = context.surface.lock();
 

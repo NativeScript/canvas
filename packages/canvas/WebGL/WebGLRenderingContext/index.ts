@@ -45,6 +45,14 @@ import { Helpers } from '../../helpers';
 import { NAPI_HOST, POINTER_CONTEXT_HOST } from '../../platform';
 import { imageAssetFor } from '../../platform/index';
 import { isCanvasView, isOffscreenCanvas } from '../../Canvas/utils';
+import { ElementImage, elementAsset, resolveElementSource } from '../../Canvas/drawable/common';
+
+/** Node-API bindings take a WebGPU canvas as a canvas source, other contexts as they are. */
+function canvasTextureSource(canvas: any) {
+	const native = canvas.native;
+	const webgpu = canvas._contextId === 'webgpu' || (!!canvas._gpuContext && canvas._gpuContext.native === native);
+	return NAPI_HOST && native && webgpu ? { __native__context: native } : native;
+}
 
 /** An image, canvas, video, bitmap or ImageData: not pixels in a buffer, an offset or null. */
 function isTexImageSource(value: unknown): boolean {
@@ -371,6 +379,9 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 
 	@profile
 	deleteBuffer(buffer: WebGLBuffer): void {
+		if (!buffer) {
+			return;
+		}
 		const value = buffer.native;
 		this.native.deleteBuffer(value);
 		if (this._pixelPackBuffer === buffer) {
@@ -387,6 +398,9 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 
 	@profile
 	deleteFramebuffer(frameBuffer: WebGLFramebuffer): void {
+		if (!frameBuffer) {
+			return;
+		}
 		const value = frameBuffer.native;
 		this.native.deleteFramebuffer(value);
 		// Deleting a bound framebuffer unbinds it.
@@ -400,12 +414,18 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 
 	@profile
 	deleteProgram(program: WebGLProgram): void {
+		if (!program) {
+			return;
+		}
 		const value = program.native;
 		this.native.deleteProgram(value);
 	}
 
 	@profile
 	deleteRenderbuffer(renderBuffer: WebGLRenderbuffer): void {
+		if (!renderBuffer) {
+			return;
+		}
 		const value = renderBuffer.native;
 		this.native.deleteRenderbuffer(value);
 		if (this._renderbuffer === renderBuffer) {
@@ -423,6 +443,9 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 
 	@profile
 	deleteTexture(texture: WebGLTexture): void {
+		if (!texture) {
+			return;
+		}
 		const value = texture.native;
 		this.native.deleteTexture(value);
 		// Deleting a texture unbinds it from every unit.
@@ -775,6 +798,9 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 
 	@profile
 	isBuffer(buffer: WebGLBuffer): boolean {
+		if (!buffer) {
+			return false;
+		}
 		const value = buffer.native;
 		return this.native.isBuffer(value);
 	}
@@ -797,24 +823,36 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 
 	@profile
 	isProgram(program: WebGLProgram): boolean {
+		if (!program) {
+			return false;
+		}
 		const value = program.native;
 		return this.native.isProgram(value);
 	}
 
 	@profile
 	isRenderbuffer(renderbuffer: WebGLRenderbuffer): boolean {
+		if (!renderbuffer) {
+			return false;
+		}
 		const value = renderbuffer.native;
 		return this.native.isRenderbuffer(value);
 	}
 
 	@profile
 	isShader(shader: WebGLShader): boolean {
+		if (!shader) {
+			return false;
+		}
 		const value = shader.native;
 		return this.native.isShader(value);
 	}
 
 	@profile
 	isTexture(texture: WebGLTexture): boolean {
+		if (!texture) {
+			return false;
+		}
 		const value = texture.native;
 		return this.native.isTexture(value);
 	}
@@ -940,7 +978,7 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 			} else if (pixels instanceof ImageBitmap) {
 				this.native.texImage2D(target, level, internalformat, width, height, border, format, type ?? internalformat, pixels.native);
 			} else if (isCanvasView(pixels) || isOffscreenCanvas(pixels)) {
-				this.native.texImage2D(target, level, internalformat, width, height, border, format, type ?? internalformat, pixels.native);
+				this.native.texImage2D(target, level, internalformat, width, height, border, format, type ?? internalformat, canvasTextureSource(pixels));
 			} else if (__ANDROID__ && pixels instanceof android.graphics.Bitmap) {
 				(<any>org).nativescript.canvas.NSCWebGLRenderingContext.texImage2D(java.lang.Long.valueOf(this._contextPtr), target, level, internalformat, width, height, pixels, this.native.__flipY);
 				//this.native.texImage2D(target, level, internalformat, width, height, pixels);
@@ -996,7 +1034,7 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 			} else if (border instanceof ImageBitmap) {
 				this.native.texImage2D(target, level, internalformat, width, height, border.native);
 			} else if (isCanvasView(border) || isOffscreenCanvas(border)) {
-				this.native.texImage2D(target, level, internalformat, width, height, border.native);
+				this.native.texImage2D(target, level, internalformat, width, height, canvasTextureSource(border));
 			} else if (__ANDROID__ && border instanceof android.graphics.Bitmap) {
 				(<any>org).nativescript.canvas.NSCWebGLRenderingContext.texImage2D(java.lang.Long.valueOf(this._contextPtr), target, level, internalformat, width, height, border, this.native.__flipY);
 				this.native.texImage2D(target, level, internalformat, width, height, border);
@@ -1040,6 +1078,18 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 		this.native.texParameteri(target, pname, param);
 	}
 
+	texElementSubImage2D(target: number, level: number, xoffset: number, yoffset: number, element: any, config: { sx?: number; sy?: number; swidth?: number; sheight?: number; width?: number; height?: number } = {}): void {
+		const owner = (this as any)._canvas;
+		if (isOffscreenCanvas(owner) && !(element instanceof ElementImage)) {
+			throw new TypeError("Failed to execute 'texElementSubImage2D' on 'WebGLRenderingContext': parameter 5 is not of type 'ElementImage'.");
+		}
+		const source = resolveElementSource(owner, element, 'texElementSubImage2D');
+		const cropped = config.sx !== undefined || config.sy !== undefined || config.swidth !== undefined || config.sheight !== undefined;
+		const crop = cropped ? { x: config.sx ?? 0, y: config.sy ?? 0, width: config.swidth ?? source.width - (config.sx ?? 0), height: config.sheight ?? source.height - (config.sy ?? 0) } : null;
+		const { asset } = elementAsset(source, 'texElementSubImage2D', crop, config.width, config.height);
+		this.texSubImage2D(target, level, xoffset, yoffset, this.RGBA, this.UNSIGNED_BYTE, asset);
+	}
+
 	texSubImage2D(target: number, level: number, xoffset: number, yoffset: number, width: number, height: number, format: number, type: number, pixels: ArrayBufferView): void;
 
 	texSubImage2D(target: number, level: number, xoffset: number, yoffset: number, format: number, type: number, pixels: any): void;
@@ -1080,7 +1130,7 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 			} else if (format instanceof ImageAsset) {
 				this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, format.native);
 			} else if (isCanvasView(format) || isOffscreenCanvas(format)) {
-				this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, format.native);
+				this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, canvasTextureSource(format));
 			} else if (format instanceof ImageBitmap) {
 				this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, format.native);
 			} else if (format && typeof format.tagName === 'string' && (format.tagName === 'IMG' || format.tagName === 'IMAGE')) {
@@ -1116,114 +1166,171 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 
 	@profile
 	uniform1f(location: WebGLUniformLocation, v0: number): void {
+		if (!location) {
+			return;
+		}
 		const loc = location.native;
 		this.native.uniform1f(loc, v0);
 	}
 
 	@profile
 	uniform1iv(location: WebGLUniformLocation, value: number[] | Int32Array): void {
+		if (!location) {
+			return;
+		}
 		const loc = location.native;
 		this.native.uniform1iv(loc, value);
 	}
 
 	@profile
 	uniform1fv(location: WebGLUniformLocation, value: number[] | Float32Array): void {
+		if (!location) {
+			return;
+		}
 		const loc = location.native;
 		this.native.uniform1fv(loc, value);
 	}
 
 	@profile
 	uniform1i(location: WebGLUniformLocation, v0: number): void {
+		if (!location) {
+			return;
+		}
 		const loc = location.native;
 		this.native.uniform1i(loc, Number(v0));
 	}
 
 	@profile
 	uniform2f(location: WebGLUniformLocation, v0: number, v1: number): void {
+		if (!location) {
+			return;
+		}
 		const loc = location.native;
 		this.native.uniform2f(loc, v0, v1);
 	}
 
 	@profile
 	uniform2iv(location: WebGLUniformLocation, value: number[] | Int32Array): void {
+		if (!location) {
+			return;
+		}
 		const loc = location.native;
 		this.native.uniform2iv(loc, value);
 	}
 
 	@profile
 	uniform2fv(location: WebGLUniformLocation, value: number[] | Float32Array): void {
+		if (!location) {
+			return;
+		}
 		const loc = location.native;
 		this.native.uniform2fv(loc, value);
 	}
 
 	@profile
 	uniform2i(location: WebGLUniformLocation, v0: number, v1: number): void {
+		if (!location) {
+			return;
+		}
 		const loc = location.native;
 		this.native.uniform2i(loc, v0, v1);
 	}
 
 	@profile
 	uniform3f(location: WebGLUniformLocation, v0: number, v1: number, v2: number): void {
+		if (!location) {
+			return;
+		}
 		const loc = location.native;
 		this.native.uniform3f(loc, v0, v1, v2);
 	}
 
 	@profile
 	uniform3iv(location: WebGLUniformLocation, value: number[] | Int32Array): void {
+		if (!location) {
+			return;
+		}
 		const loc = location.native;
 		this.native.uniform3iv(loc, value);
 	}
 
 	@profile
 	uniform3fv(location: WebGLUniformLocation, value: number[] | Float32Array): void {
+		if (!location) {
+			return;
+		}
 		const loc = location.native;
 		this.native.uniform3fv(loc, value);
 	}
 
 	@profile
 	uniform3i(location: WebGLUniformLocation, v0: number, v1: number, v2: number): void {
+		if (!location) {
+			return;
+		}
 		const loc = location.native;
 		this.native.uniform3i(loc, v0, v1, v2);
 	}
 
 	@profile
 	uniform4f(location: WebGLUniformLocation, v0: number, v1: number, v2: number, v3: number): void {
+		if (!location) {
+			return;
+		}
 		const loc = location.native;
 		this.native.uniform4f(loc, v0, v1, v2, v3);
 	}
 
 	@profile
 	uniform4iv(location: WebGLUniformLocation, value: number[] | Int32Array): void {
+		if (!location) {
+			return;
+		}
 		const loc = location.native;
 		this.native.uniform4iv(loc, value);
 	}
 
 	@profile
 	uniform4fv(location: WebGLUniformLocation, value: number[] | Float32Array): void {
+		if (!location) {
+			return;
+		}
 		const loc = location.native;
 		this.native.uniform4fv(loc, value);
 	}
 
 	@profile
 	uniform4i(location: WebGLUniformLocation, v0: number, v1: number, v2: number, v3: number): void {
+		if (!location) {
+			return;
+		}
 		const loc = location.native;
 		this.native.uniform4i(loc, v0, v1, v2, v3);
 	}
 
 	@profile
 	uniformMatrix2fv(location: WebGLUniformLocation, transpose: boolean, value: number[] | Float32Array): void {
+		if (!location) {
+			return;
+		}
 		const loc = location.native;
 		this.native.uniformMatrix2fv(loc, transpose, value);
 	}
 
 	@profile
 	uniformMatrix3fv(location: WebGLUniformLocation, transpose: boolean, value: number[] | Float32Array): void {
+		if (!location) {
+			return;
+		}
 		const loc = location.native;
 		this.native.uniformMatrix3fv(loc, transpose, value);
 	}
 
 	@profile
 	uniformMatrix4fv(location: WebGLUniformLocation, transpose: boolean, value: number[] | Float32Array): void {
+		if (!location) {
+			return;
+		}
 		const loc = location.native;
 		this.native.uniformMatrix4fv(loc, transpose, value);
 	}

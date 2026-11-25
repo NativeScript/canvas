@@ -411,6 +411,29 @@ function registerCommon(version: 1 | 2) {
 			closeTo(value[3], 0.4, 1e-3, 'w');
 		});
 
+		test('uniform setters ignore a null location', () => {
+			const { gl } = makeGL(version);
+			gl.useProgram(buildProgram(gl));
+			gl.uniform1f(null, 1);
+			gl.uniform2f(null, 1, 2);
+			gl.uniform3f(null, 1, 2, 3);
+			gl.uniform4f(null, 1, 2, 3, 4);
+			gl.uniform1i(null, 1);
+			gl.uniform4fv(null, [1, 2, 3, 4]);
+			gl.uniformMatrix4fv(null, false, new Float32Array(16));
+			gl.uniform4f(gl.getUniformLocation(gl.getParameter(gl.CURRENT_PROGRAM), 'nope'), 1, 2, 3, 4);
+			equal(gl.getError(), gl.NO_ERROR);
+		});
+
+		test('delete and is accept null', () => {
+			const { gl } = makeGL(version);
+			for (const name of ['Buffer', 'Framebuffer', 'Program', 'Renderbuffer', 'Shader', 'Texture']) {
+				gl[`delete${name}`](null);
+				equal(gl[`is${name}`](null), false, `is${name}(null)`);
+			}
+			equal(gl.getError(), gl.NO_ERROR);
+		});
+
 		test('createTexture / isTexture / deleteTexture', () => {
 			const { gl } = makeGL(version);
 			const texture = gl.createTexture();
@@ -633,6 +656,19 @@ export function registerWebGLSpec() {
 	});
 
 	suite('webgl2.only', () => {
+		test('the WebGL2 setters ignore a null location; delete and is accept null', () => {
+			const { gl } = makeGL(2);
+			gl.useProgram(buildProgram(gl));
+			gl.uniform1ui(null, 1);
+			gl.uniform4uiv(null, [1, 2, 3, 4]);
+			gl.uniformMatrix2x3fv(null, false, new Float32Array(6));
+			for (const name of ['Query', 'Sampler', 'Sync', 'TransformFeedback', 'VertexArray']) {
+				gl[`delete${name}`](null);
+				equal(gl[`is${name}`](null), false, `is${name}(null)`);
+			}
+			equal(gl.getError(), gl.NO_ERROR);
+		});
+
 		test('texImage2D takes a sized internal format', () => {
 			const { gl } = makeGL(2);
 			gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());

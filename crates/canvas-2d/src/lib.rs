@@ -2,9 +2,7 @@ use std::ffi::c_uint;
 
 use base64::Engine;
 use skia_safe::gpu::BackendTexture;
-use skia_safe::{
-    images, surfaces, AlphaType, ColorType, EncodedImageFormat, ISize, ImageInfo, Point,
-};
+use skia_safe::{images, AlphaType, ColorType, EncodedImageFormat, ImageInfo};
 
 use context::Context;
 
@@ -13,7 +11,6 @@ pub mod image_bitmap;
 pub mod prelude;
 pub mod utils;
 
-const GR_GL_TEXTURE_2D: c_uint = 0x0DE1;
 const IMAGE_JPG: &'static str = "image/jpg";
 const IMAGE_JPEG: &'static str = "image/jpeg";
 const IMAGE_GIF: &'static str = "image/gif";
@@ -145,26 +142,4 @@ pub fn bytes_to_data_rgba8_url(
     }
 
     "data:,".to_string()
-}
-
-pub(crate) fn flush_custom_surface(context: &mut Context, width: i32, height: i32, dst: &mut [u8]) {
-    context.flush();
-    let info = ImageInfo::new(
-        ISize::new(width, height),
-        ColorType::RGBA8888,
-        AlphaType::Premul,
-        None,
-    );
-
-    if let Some(mut dst_surface) = surfaces::wrap_pixels(&info, dst, None, None) {
-        let dst_canvas = dst_surface.canvas();
-
-        if let Some(image) = context.get_image() {
-            dst_canvas.draw_image(image, Point::new(0., 0.), None);
-
-            if let Some(mut context) = dst_surface.direct_context() {
-                context.flush_and_submit();
-            }
-        }
-    }
 }

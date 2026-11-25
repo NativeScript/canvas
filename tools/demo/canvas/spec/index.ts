@@ -6,7 +6,7 @@
  *   adb logcat -d | grep 'SPEC|'
  *
  * `--es suite <prefix>` narrows the run: a group (`2d`, `webgl`, `webgpu`,
- * `imagebitmap`, `bitmaprenderer`, `lifecycle`, `offscreen` (with `offscreen.worker`), `audio` and `media` on Windows and Linux) or a single suite (`2d.path2d`).
+ * `imagebitmap`, `bitmaprenderer`, `lifecycle`, `offscreen` (with `offscreen.worker`), `htmlincanvas`, `audio` and `media` on Windows and Linux) or a single suite (`2d.path2d`).
  * `contextlost` (Windows) runs on its own: it removes the GPU device.
  */
 
@@ -19,10 +19,17 @@ import { registerCanvasSourceSpec } from './canvassource';
 import { registerScalingSpec } from './scaling';
 import { registerContextLossSpec } from './contextloss';
 import { registerAudioSpec } from './audio';
+import { registerAudioSchedulingSpec } from './audio-scheduling';
+import { registerAudioDecodeSpec } from './audio-decode';
+import { registerAudioOfflineSuspendSpec } from './audio-offline-suspend';
+import { registerAudioWorkletSpec } from './audio-worklet';
+import { registerAudioOfflineRenderSpec } from './audio-offline-render';
+import { registerAudioGraphSpec } from './audio-graph';
 import { registerMediaSpec } from './media';
 import { registerLifecycleSpec } from './lifecycle';
 import { registerOffscreenCanvasSpec } from './offscreen';
 import { registerOffscreenWorkerSpec } from './offscreen-worker';
+import { registerHtmlInCanvasSpec } from './htmlincanvas';
 
 declare const __WINDOWS__: boolean, __LINUX__: boolean;
 
@@ -42,6 +49,13 @@ export async function runSpecTests(group: SpecGroup = 'all') {
 	registerLifecycleSpec();
 	registerOffscreenCanvasSpec();
 	registerOffscreenWorkerSpec();
+	registerHtmlInCanvasSpec();
+	registerAudioSchedulingSpec();
+	registerAudioDecodeSpec();
+	registerAudioOfflineSuspendSpec();
+	registerAudioOfflineRenderSpec();
+	registerAudioGraphSpec();
+	registerAudioWorkletSpec();
 	if ((typeof __WINDOWS__ !== 'undefined' && __WINDOWS__) || (typeof __LINUX__ !== 'undefined' && __LINUX__)) {
 		registerAudioSpec();
 		registerMediaSpec();

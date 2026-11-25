@@ -25,96 +25,6 @@ public class AudioIIRNode implements NativeObject, AudioNode {
 	}
 
 	@Override
-	public void connect(AudioNode node) {
-		connect(node, 0, 0);
-	}
-
-	@Override
-	public void connect(AudioNode node, int output) {
-		connect(node, output, 0);
-	}
-
-	@Override
-	public void connect(AudioNode node, int output, int input) {
-		if (node instanceof NativeObject) {
-			AudioContext context = AudioContext.getInstance();
-			NativeObject object = (NativeObject) node;
-			String destId = object.getId();
-			if (destId != null) {
-				if (context.isDestinationNode(destId)) {
-					return;
-				}
-				java.util.Set<String> sources = context.getNodeSourcesSnapshot(id);
-				if (sources.isEmpty()) {
-					context.attachBiquadToVoice(destId, id, output, input);
-					context.registerNodeSource(destId, id);
-					return;
-				}
-				for (String sourceId : sources) {
-					if (node instanceof AudioPannerNode) {
-						context.attachPannerToVoice(sourceId, destId, output, input);
-					} else if (node instanceof GainNode) {
-						context.attachGainToVoice(sourceId, destId, output, input);
-					} else {
-						context.attachBiquadToVoice(sourceId, destId, output, input);
-					}
-				}
-				context.registerNodeSources(destId, sources);
-			}
-		}
-	}
-
-	@Override
-	public void disconnect(AudioNode node) {
-		if (node instanceof NativeObject) {
-			AudioContext context = AudioContext.getInstance();
-			NativeObject object = (NativeObject) node;
-			String destId = object.getId();
-			if (destId != null) {
-				java.util.Set<String> sources = context.getNodeSourcesSnapshot(id);
-				for (String sourceId : sources) {
-					if (node instanceof AudioPannerNode) {
-						context.attachPannerToVoice(sourceId, "", 0, 0);
-					} else if (node instanceof GainNode) {
-						context.attachGainToVoice(sourceId, "", 0, 0);
-					} else if (!context.isDestinationNode(destId)) {
-						context.attachBiquadToVoice(sourceId, "", 0, 0);
-					}
-					context.unregisterNodeSource(destId, sourceId);
-				}
-				if (sources.isEmpty() && !context.isDestinationNode(destId)) {
-					context.attachBiquadToVoice(destId, "", 0, 0);
-					context.unregisterNodeSource(destId, id);
-				}
-				return;
-			}
-		}
-		disconnect();
-	}
-
-	@Override
-	public void disconnect() {
-		AudioContext context = AudioContext.getInstance();
-		context.detachBiquad(id);
-		context.clearNodeSources(id);
-	}
-
-	@Override
-	public void disconnect(int output) {
-		disconnect();
-	}
-
-	@Override
-	public void disconnect(AudioNode node, int output) {
-		disconnect(node);
-	}
-
-	@Override
-	public void disconnect(AudioNode node, int output, int input) {
-		disconnect(node);
-	}
-
-	@Override
 	public void release() {
 		AudioContext.getInstance().releaseIIR(id);
 	}
@@ -123,7 +33,6 @@ public class AudioIIRNode implements NativeObject, AudioNode {
 		if (frequencyHz == null || magResponse == null || phaseResponse == null) return;
 		int n = Math.min(Math.min(frequencyHz.length, magResponse.length), phaseResponse.length);
 		if (n <= 0) return;
-
 
 		double sr = 48000.0;
 		if (contextId != null) {

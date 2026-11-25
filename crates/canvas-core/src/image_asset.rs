@@ -103,13 +103,6 @@ impl CanvasImage {
         }
     }
 
-    pub fn with_bytes<F>(&self, f: F)
-    where
-        F: FnOnce(&[u8]),
-    {
-        self.with_bytes_dimension(|bytes, _| f(bytes))
-    }
-
     pub fn with_bytes_mut_dimension<F>(&mut self, f: F)
     where
         F: FnOnce(&mut [u8], (u32, u32)),
@@ -130,13 +123,6 @@ impl CanvasImage {
             #[cfg(feature = "2d")]
             CanvasImage::Encoded(_) => f(&mut [], (0, 0)),
         }
-    }
-
-    pub fn with_bytes_mut<F>(&mut self, f: F)
-    where
-        F: FnOnce(&mut [u8]),
-    {
-        self.with_bytes_mut_dimension(|bytes, _| f(bytes))
     }
 
     #[cfg(feature = "2d")]

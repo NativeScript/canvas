@@ -125,7 +125,9 @@ export declare class MediaElementAudioSourceNode extends AudioNode {
 }
 
 export declare class OscillatorNode extends AudioScheduledSourceNode {
-	constructor(context: BaseAudioContext, options: { type?: string; frequency?: number });
+	constructor(context: BaseAudioContext, options?: { type?: string; frequency?: number });
+
+	type: string;
 
 	readonly frequency: AudioParam;
 
@@ -209,10 +211,36 @@ export declare class AudioBufferSourceNode extends AudioScheduledSourceNode {
 	readonly playbackRate: AudioParam;
 }
 
+export interface AudioWorkletNodeOptions {
+	numberOfInputs?: number;
+	numberOfOutputs?: number;
+	outputChannelCount?: number[];
+	parameterData?: Record<string, number>;
+	processorOptions?: any;
+	channelCount?: number;
+	channelCountMode?: string;
+	channelInterpretation?: string;
+}
+
+/** Windows, Linux and Android. */
+export declare class AudioWorklet {
+	addModule(moduleURL: string | URL, options?: { credentials?: string }): Promise<void>;
+}
+
+/** Windows, Linux and Android (a source there: no inputs, one output). */
+export declare class AudioWorkletNode extends AudioNode {
+	constructor(context: BaseAudioContext, name: string, options?: AudioWorkletNodeOptions);
+	readonly port: MessagePort;
+	readonly parameters: ReadonlyMap<string, AudioParam>;
+	onprocessorerror: ((event: { type: 'processorerror'; message: string; error: Error }) => void) | null;
+}
+
 export declare class AudioContext extends BaseAudioContext {
 	constructor(options?: AudioContextOptions);
 
 	readonly destination: AudioDestinationNode;
+	/** Undefined where the runtime has no Worker. */
+	readonly audioWorklet: AudioWorklet | undefined;
 
 	createGain(options?: { gain?: number }): GainNode;
 	createBiquadFilter(options?: { type?: string; frequency?: number; Q?: number; gain?: number }): BiquadFilterNode;
@@ -254,6 +282,7 @@ export declare class AudioContext extends BaseAudioContext {
 
 export declare class OfflineAudioContext extends BaseAudioContext {
 	readonly destination: AudioDestinationNode;
+	readonly audioWorklet: AudioWorklet | undefined;
 
 	constructor(numberOfChannels: number, lengthInFrames: number, sampleRate: number);
 
@@ -277,6 +306,11 @@ export declare class OfflineAudioContext extends BaseAudioContext {
 	decodeAudioData(source: string | ArrayBuffer | ArrayBufferView, successCallback?: (buffer: AudioBuffer) => void, errorCallback?: (error: Error) => void): Promise<AudioBuffer>;
 
 	startRendering(): Promise<AudioBuffer>;
+	/** Holds rendering at `suspendTime`, rounded up to a 128-frame quantum; resolves once held there. */
+	suspend(suspendTime: number): Promise<void>;
+	/** Continues a render held at a suspend. Rejects before `startRendering`. */
+	resume(): Promise<void>;
+	readonly length: number;
 }
 
 export class AudioListener {

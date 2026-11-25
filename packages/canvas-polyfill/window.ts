@@ -13,6 +13,7 @@ import { HTMLCollection } from './DOM/HTMLCollection';
 import { HTMLUnknownElement } from './DOM/HTMLUnknownElement';
 import { Navigator } from './navigator';
 import { hookGamepadListeners } from './gamepad';
+import { eventData } from './DOM/EventTarget';
 (global as any).CANVAS_RENDERER = 'true';
 (global as any).WEBGL_RENDERER = 'true';
 (global as any).window = (global as any).window || {
@@ -149,6 +150,20 @@ for (const method of ['addEventListener', 'removeEventListener']) {
 	if (typeof host[method] !== 'function') host[method] = host.window[method].bind(host.window);
 }
 hookGamepadListeners();
+
+// Window keys from the canvas (dispatchWindowKey) reach window listeners through this.
+if (typeof (global as any).window.dispatchEvent !== 'function') {
+	const host = global as any;
+	host.window.dispatchEvent =
+		typeof host.dispatchEvent === 'function'
+			? host.dispatchEvent.bind(host)
+			: (event: any) => {
+					const emitter = host.emitter;
+					if (typeof emitter?.notify === 'function') emitter.notify(eventData(event, emitter));
+					else emitter?.emit?.(event?.type, event);
+					return !event?.defaultPrevented;
+				};
+}
 
 import { DOMParser as Parser } from '@xmldom/xmldom';
 

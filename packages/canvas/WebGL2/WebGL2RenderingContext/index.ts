@@ -158,26 +158,41 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 	}
 
 	deleteQuery(query: WebGLQuery): void {
+		if (!query) {
+			return;
+		}
 		const value = query.native;
 		this.native.deleteQuery(value);
 	}
 
 	deleteSampler(sampler: WebGLSampler): void {
+		if (!sampler) {
+			return;
+		}
 		const value = sampler.native;
 		this.native.deleteSampler(value);
 	}
 
 	deleteSync(sync: WebGLSync): void {
+		if (!sync) {
+			return;
+		}
 		const value = sync.native;
 		this.native.deleteSync(value);
 	}
 
 	deleteTransformFeedback(transformFeedback: WebGLTransformFeedback): void {
+		if (!transformFeedback) {
+			return;
+		}
 		const value = transformFeedback.native;
 		this.native.deleteTransformFeedback(value);
 	}
 
 	deleteVertexArray(vertexArray: WebGLVertexArrayObject): void {
+		if (!vertexArray) {
+			return;
+		}
 		const value = vertexArray.native;
 		this.native.deleteVertexArray(value);
 		if (this._vertexArray === vertexArray) {
@@ -338,26 +353,41 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 	}
 
 	isQuery(query: WebGLQuery): boolean {
+		if (!query) {
+			return false;
+		}
 		const value = query.native;
 		return this.native.isQuery(value);
 	}
 
 	isSampler(sampler: WebGLSampler): boolean {
+		if (!sampler) {
+			return false;
+		}
 		const value = sampler.native;
 		return this.native.isSampler(value);
 	}
 
 	isSync(sync: WebGLSync): boolean {
+		if (!sync) {
+			return false;
+		}
 		const value = sync.native;
 		return this.native.isSync(value);
 	}
 
 	isTransformFeedback(transformFeedback: WebGLTransformFeedback): boolean {
+		if (!transformFeedback) {
+			return false;
+		}
 		const value = transformFeedback.native;
 		return this.native.isTransformFeedback(value);
 	}
 
 	isVertexArray(vertexArray: WebGLVertexArrayObject): boolean {
+		if (!vertexArray) {
+			return false;
+		}
 		const value = vertexArray.native;
 		return this.native.isVertexArray(value);
 	}
@@ -503,21 +533,33 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 	}
 
 	uniform1ui(location: WebGLUniformLocation, v0: number): void {
+		if (!location) {
+			return;
+		}
 		const value = location.native;
 		this.native.uniform1ui(value, v0);
 	}
 
 	uniform1uiv(location: WebGLUniformLocation, data: Uint32Array): void {
+		if (!location) {
+			return;
+		}
 		const value = location.native;
 		this.native.uniform1uiv(value, data);
 	}
 
 	uniform2ui(location: WebGLUniformLocation, v0: number, v1: number): void {
+		if (!location) {
+			return;
+		}
 		const value = location.native;
 		this.native.uniform2ui(value, v0, v1);
 	}
 
 	uniform2uiv(location: WebGLUniformLocation, data: Uint32Array): void {
+		if (!location) {
+			return;
+		}
 		const value = location.native;
 		this.native.uniform2uiv(value, data);
 	}
@@ -527,21 +569,33 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 	/* Miscellaneous constants */
 
 	uniform3ui(location: WebGLUniformLocation, v0: number, v1: number, v2: number): void {
+		if (!location) {
+			return;
+		}
 		const value = location.native;
 		this.native.uniform3ui(value, v0, v1, v2);
 	}
 
 	uniform3uiv(location: WebGLUniformLocation, data: Uint32Array): void {
+		if (!location) {
+			return;
+		}
 		const value = location.native;
 		this.native.uniform3uiv(value, data);
 	}
 
 	uniform4ui(location: WebGLUniformLocation, v0: number, v1: number, v2: number, v3: number): void {
+		if (!location) {
+			return;
+		}
 		const value = location.native;
 		this.native.uniform4ui(value, v0, v1, v2, v3);
 	}
 
 	uniform4uiv(location: WebGLUniformLocation, data: Uint32Array): void {
+		if (!location) {
+			return;
+		}
 		const value = location.native;
 		this.native.uniform4uiv(value, data);
 	}
@@ -552,31 +606,49 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 	}
 
 	uniformMatrix2x3fv(location: WebGLUniformLocation, transpose: boolean, data: Float32Array): void {
+		if (!location) {
+			return;
+		}
 		const value = location.native;
 		this.native.uniformMatrix2x3fv(value, transpose, data);
 	}
 
 	uniformMatrix2x4fv(location: WebGLUniformLocation, transpose: boolean, data: Float32Array): void {
+		if (!location) {
+			return;
+		}
 		const value = location.native;
 		this.native.uniformMatrix2x4fv(value, transpose, data);
 	}
 
 	uniformMatrix3x2fv(location: WebGLUniformLocation, transpose: boolean, data: Float32Array): void {
+		if (!location) {
+			return;
+		}
 		const value = location.native;
 		this.native.uniformMatrix3x2fv(value, transpose, data);
 	}
 
 	uniformMatrix3x4fv(location: WebGLUniformLocation, transpose: boolean, data: Float32Array): void {
+		if (!location) {
+			return;
+		}
 		const value = location.native;
 		this.native.uniformMatrix3x4fv(value, transpose, data);
 	}
 
 	uniformMatrix4x2fv(location: WebGLUniformLocation, transpose: boolean, data: Float32Array): void {
+		if (!location) {
+			return;
+		}
 		const value = location.native;
 		this.native.uniformMatrix4x2fv(value, transpose, data);
 	}
 
 	uniformMatrix4x3fv(location: WebGLUniformLocation, transpose: boolean, data: Float32Array): void {
+		if (!location) {
+			return;
+		}
 		const value = location.native;
 		this.native.uniformMatrix4x3fv(value, transpose, data);
 	}

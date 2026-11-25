@@ -8,14 +8,10 @@ use crate::context::Context;
 use crate::utils::color::{to_parsed_color, to_parsed_color_4f};
 use canvas_core::context_attributes::ColorSpace;
 use csscolorparser::parse;
-use regex_lite::Regex;
 use skia_safe::paint::{Cap, Style};
 pub use skia_safe::Color;
 use skia_safe::{BlendMode, Color4f, Point};
 use std::os::raw::c_float;
-use std::sync::OnceLock;
-
-pub(crate) static COLOR_P3_REGEXP: OnceLock<Regex> = OnceLock::new();
 
 #[derive(Clone)]
 pub enum PaintStyle {

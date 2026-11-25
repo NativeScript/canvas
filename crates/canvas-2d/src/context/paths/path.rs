@@ -1,6 +1,5 @@
 use std::cell::UnsafeCell;
 use std::f32::consts::PI;
-use std::f32::EPSILON;
 use std::os::raw::c_float;
 
 use skia_safe::{PathBuilder, PathEffect, Point, RRect, Rect};
@@ -223,9 +222,9 @@ impl Path {
         let start_deg = (to_degrees(start_angle) * 10000.0).round() / 10000.0;
 
         // Full circle: use add_oval for a single efficient Skia path verb instead of two arc_to calls
-        if sweep_deg >= 360.0 - EPSILON {
+        if sweep_deg >= 360.0 - f32::EPSILON {
             self.builder.add_oval(oval, skia_safe::PathDirection::CW, 0);
-        } else if sweep_deg <= -360.0 + EPSILON {
+        } else if sweep_deg <= -360.0 + f32::EPSILON {
             self.builder.add_oval(oval, skia_safe::PathDirection::CCW, 0);
         } else {
             self.builder.arc_to(oval, start_deg, sweep_deg, false);

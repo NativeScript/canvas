@@ -36,12 +36,12 @@
 
 
 - (void)setDrawableSize:(CGSize)newDrawableSize {
-    CAMetalLayer* layer = self.layer;
+    CAMetalLayer *layer = (CAMetalLayer *)self.layer;
     layer.drawableSize = newDrawableSize;
 }
 
 - (CGSize)drawableSize {
-    CAMetalLayer* layer = self.layer;
+    CAMetalLayer *layer = (CAMetalLayer *)self.layer;
     return layer.drawableSize;
 }
 
@@ -56,7 +56,7 @@
 
 
 -(void) setup {
-    CAMetalLayer* layer = self.layer;
+    CAMetalLayer *layer = (CAMetalLayer *)self.layer;
     [layer setDevice: MTLCreateSystemDefaultDevice()];
     _queue = [[layer device] newCommandQueue];
     layer.presentsWithTransaction = NO;
@@ -89,7 +89,7 @@
     if (![NSThread isMainThread]) {
         __block void *dev = NULL;
         dispatch_sync(dispatch_get_main_queue(), ^{
-            CAMetalLayer *layer = self.layer;
+            CAMetalLayer *layer = (CAMetalLayer *)self.layer;
             if ([layer device] == nil) {
                 [layer setDevice: MTLCreateSystemDefaultDevice()];
             }
@@ -98,7 +98,7 @@
         return dev;
     }
 
-    CAMetalLayer* layer = self.layer;
+    CAMetalLayer *layer = (CAMetalLayer *)self.layer;
     if([layer device] == nil){
         [layer setDevice: MTLCreateSystemDefaultDevice()];
     }
@@ -111,7 +111,7 @@
     if (![NSThread isMainThread]) {
         __block void *q = NULL;
         dispatch_sync(dispatch_get_main_queue(), ^{
-            CAMetalLayer *layer = self.layer;
+            CAMetalLayer *layer = (CAMetalLayer *)self.layer;
             if (_queue == nil && [layer device] != nil) {
                 _queue = [[layer device] newCommandQueue];
             }
@@ -120,7 +120,7 @@
         return q;
     }
 
-    CAMetalLayer* layer = self.layer;
+    CAMetalLayer *layer = (CAMetalLayer *)self.layer;
     if(_queue == nil && [layer device] != nil){
         _queue = [[layer device] newCommandQueue];
     }

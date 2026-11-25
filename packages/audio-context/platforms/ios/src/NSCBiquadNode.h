@@ -1,17 +1,18 @@
 #import <Foundation/Foundation.h>
-#import "NSCAudioNode.h"
+#import "NSCParamEffectNode.h"
 #import "NSCAudioParam.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 @class NSCAudioContext;
 
-@interface NSCBiquadNode : NSCAudioNode
+/// Web Audio's biquad filter, its params applied per frame.
+@interface NSCBiquadNode : NSCParamEffectNode
 
-@property (nonatomic, strong) NSCAudioParam *frequencyParam;
-@property (nonatomic, strong) NSCAudioParam *qParam;
-@property (nonatomic, strong) NSCAudioParam *gainParam;
-@property (nonatomic, strong) NSCAudioParam *detuneParam;
+@property (nonatomic, readonly) NSCAudioParam *frequencyParam;
+@property (nonatomic, readonly) NSCAudioParam *qParam;
+@property (nonatomic, readonly) NSCAudioParam *gainParam;
+@property (nonatomic, readonly) NSCAudioParam *detuneParam;
 
 - (instancetype)initWithContext:(NSCAudioContext *)context;
 - (instancetype)initWithContext:(NSCAudioContext *)context
@@ -19,7 +20,7 @@ NS_ASSUME_NONNULL_BEGIN
                       frequency:(double)frequency
                               Q:(double)Q
                            gain:(double)gain
-                         detune:(double)detune NS_DESIGNATED_INITIALIZER;
+                         detune:(double)detune;
 
 - (void)setType:(NSString *)type;
 - (NSString *)getType;

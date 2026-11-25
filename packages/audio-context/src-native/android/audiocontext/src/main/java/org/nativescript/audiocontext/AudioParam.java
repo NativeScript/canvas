@@ -81,6 +81,10 @@ public class AudioParam implements NativeObject {
 		return id;
 	}
 
+	public Type getType() {
+		return type;
+	}
+
 	public void setValue(double v) {
 		if (owner != null) {
 			switch (type) {

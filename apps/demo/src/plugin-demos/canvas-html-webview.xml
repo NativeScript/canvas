@@ -1,0 +1,11 @@
+<Page xmlns="http://schemas.nativescript.org/tns.xsd" xmlns:canvas="@nativescript/canvas" navigatingTo="navigatingTo" class="page">
+	<Page.actionBar>
+		<ActionBar title="webview in canvas" icon="" class="action-bar" />
+	</Page.actionBar>
+	<GridLayout rows="*, auto">
+		<canvas:Canvas row="0" content="drawable" loaded="{{ canvasLoaded }}" unloaded="{{ canvasUnloaded }}">
+			<WebView id="web" drawable="true" width="300" height="440" src="{{ html }}" />
+		</canvas:Canvas>
+		<Label row="1" text="{{ status }}" class="p-10" />
+	</GridLayout>
+</Page>

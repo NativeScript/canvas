@@ -53,6 +53,7 @@ public class AudioBufferSourceNode extends AudioScheduledSourceNode {
 		AudioContext ctx = AudioContext.getInstance();
 		String newId = ctx.switchBufferSource(id, buffer);
 		if (newId != null && !newId.equals(id)) {
+			ctx.replaceSource(id, newId);
 			if (playbackRateId != null) {
 				ctx.attachPlaybackRateToVoice(id, "");
 				ctx.attachPlaybackRateToVoice(newId, playbackRateId);
@@ -80,6 +81,16 @@ public class AudioBufferSourceNode extends AudioScheduledSourceNode {
 	@Override
 	public void start() {
 		AudioContext.getInstance().startBufferSource(id, mLoop);
+	}
+
+	@Override
+	public void startAt(double when) {
+		startAt(when, 0.0);
+	}
+
+	// `offset` is in seconds into the buffer.
+	public void startAt(double when, double offset) {
+		AudioContext.getInstance().startBufferSourceAt(id, mLoop, resolveContextId(), when, offset);
 	}
 
 	@Nullable

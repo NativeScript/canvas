@@ -27,7 +27,8 @@ export class GPU {
 		return 'rgba8unorm';
 	}
 
-	requestAdapter(options: { powerPreference?: 'low-power' | 'high-performance'; isFallbackAdapter?: boolean; featureLevel?: 'core' | 'compatibility' } = { powerPreference: undefined, isFallbackAdapter: false }) {
+	/** `nativeLimits` (non-standard): `adapter.limits` reports the backend's own binding limits, not browser-capped ones. */
+	requestAdapter(options: { powerPreference?: 'low-power' | 'high-performance'; isFallbackAdapter?: boolean; featureLevel?: 'core' | 'compatibility'; nativeLimits?: boolean } = { powerPreference: undefined, isFallbackAdapter: false }) {
 		return new Promise<GPUAdapter | null>((resolve, reject) => {
 			this.native.requestAdapter(options, (error: any, adapter: any) => {
 				if (error) {

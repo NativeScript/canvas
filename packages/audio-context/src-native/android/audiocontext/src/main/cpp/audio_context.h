@@ -18,7 +18,8 @@
 
 #include "kiss_fft.h"
 
-struct HRTFConvolver;
+class HrtfPanner;
+struct Oversampler;
 class Convolver;
 
 #ifdef HAS_OBOE
@@ -267,6 +268,10 @@ private:
         bool loop = false;
         std::string playbackRateId;
         std::string periodicWaveId;
+        std::string detuneId;
+        // Seconds into the buffer; used when loopStart < loopEnd.
+        double loopStart = 0.0;
+        double loopEnd = 0.0;
         bool playing = false;
         // CLOCK_MONOTONIC ns, the same clock as g_audioTimeNanos; 0 means unscheduled.
         int64_t startAtNs = 0;
@@ -307,6 +312,13 @@ private:
 
     std::unordered_map<std::string, BufferData> audioBuffers_;
     std::unordered_map<std::string, Voice> audioVoices_;
+    // A source's detune param and loop points, kept until its voice exists.
+    struct SourceExtras {
+        std::string detuneId;
+        double loopStart = 0.0;
+        double loopEnd = 0.0;
+    };
+    std::unordered_map<std::string, SourceExtras> sourceExtras_;
     // Buffers to free once no playing voice reads them; render thread only.
     std::vector<std::string> idleFrees_;
 
@@ -354,8 +366,6 @@ public:
         CMD_ATTACH_PLAYBACK_RATE,
         CMD_DETACH_PLAYBACK_RATE,
         CMD_FREE_PLAYBACK_RATE,
-        CMD_SET_PANNER_HRIR,
-        CMD_SET_PANNER_PARTITION_SIZE,
         CMD_CREATE_WORKLET,
         CMD_CREATE_DELAY,
         CMD_CONNECT,
@@ -366,7 +376,11 @@ public:
         // A biquad's frequency, Q, gain and detune params, in paramIds.
         CMD_SET_BIQUAD_PARAM_IDS,
         // A convolver's response; null clears it.
-        CMD_SET_CONVOLVER
+        CMD_SET_CONVOLVER,
+        // A source's detune param, in targetId.
+        CMD_ATTACH_DETUNE,
+        // A buffer source's loop flag and points.
+        CMD_SET_SOURCE_LOOP
     };
 
     // Graph node kinds; AudioContext.java's NODE_* match.
@@ -396,6 +410,7 @@ public:
         std::string compressorAttackId;
         std::string compressorReleaseId;
         std::string compressorReductionId;
+        std::shared_ptr<std::atomic<float>> meter;
         std::string playbackRateId;
         double gainValue = 1.0;
         double maxDelayTime = 1.0;
@@ -440,11 +455,9 @@ public:
         std::shared_ptr<std::vector<float>> pcmFloat;
         std::shared_ptr<ExternalRing> externalRing;
         std::shared_ptr<WorkletNode> worklet;
-        std::shared_ptr<std::vector<float>> hrirLeft;
-        std::shared_ptr<std::vector<float>> hrirRight;
-        bool clearHrir = false;
-        int pannerPartitionSize = 0;
         bool loop = false;
+        double loopStart = 0.0;
+        double loopEnd = 0.0;
         std::shared_ptr<std::promise<void>> completion;
         int outputIndex = 0;
         int inputIndex = 0;
@@ -456,7 +469,6 @@ public:
         std::string periodicWaveId;
         std::vector<float> waveShaperCurve;
         std::string waveShaperOversample;
-        std::string pannerBiquadId;
         std::vector<std::string> paramIds;
         std::shared_ptr<Convolver> convolver;
         // CMD_CONNECT / CMD_DISCONNECT: id output -> targetId input (or param targetType).
@@ -473,6 +485,9 @@ public:
     };
 
     void enqueueCommand(Command &&cmd);
+
+    // A DynamicsCompressorNode's reduction meter, by node id.
+    std::shared_ptr<std::atomic<float>> compressorMeter(const std::string &id, bool create);
 
 private:
     static constexpr int kQuantum = 128;
@@ -511,10 +526,14 @@ private:
         std::shared_ptr<WorkletNode> worklet;
         std::vector<BiquadState> biquad;
         std::vector<std::vector<double>> iir;
-        std::vector<BiquadState> lowpass;
-        BiquadCoeffs lowpassCoeffs;
-        double lowpassCutoff = -1.0;
+        // A PannerNode's HRTF state, made when it first pans with 'HRTF'.
+        std::shared_ptr<HrtfPanner> hrtf;
+        // A WaveShaperNode's per-channel oversampling state.
+        std::vector<std::shared_ptr<Oversampler>> oversamplers;
         std::vector<float> reductionDb;
+        // A compressor's look-ahead line, channel-major.
+        std::vector<float> preDelay;
+        int preDelayPos = 0;
         // Param values for this quantum, kQuantum per param.
         std::vector<double> params;
         std::vector<float> paramValues;
@@ -597,19 +616,30 @@ private:
         std::string attackId;
         std::string releaseId;
         std::string reductionId;
+        // Its reduction in dB, read from other threads.
+        std::shared_ptr<std::atomic<float>> meter;
     };
     std::unordered_map<std::string, DynamicsCompressor> compressors_;
+    std::mutex meterMutex_;
+    std::unordered_map<std::string, std::shared_ptr<std::atomic<float>>> meters_;
 
 public:
     enum AutomationRate {
         RATE_K = 0, RATE_A = 1
     };
 
+    enum ParamEventType { EVENT_SET = 0, EVENT_LINEAR, EVENT_EXPONENTIAL, EVENT_TARGET, EVENT_CURVE };
+
     struct ParamEvent {
-        int type; // 0 = set, 1 = linearRamp
+        int type; // ParamEventType
         int rate; // AutomationRate
         int64_t timeNs;
         double value;
+        double timeConstant = 0.0;
+        int64_t durationNs = 0;
+        // When it was scheduled: a ramp with no event before it starts here.
+        int64_t callNs = 0;
+        std::shared_ptr<const std::vector<float>> curve;
     };
 private:
     std::unordered_map<std::string, std::vector<ParamEvent>> scheduledGainEvents_;
@@ -623,6 +653,9 @@ public:
 
     void schedulePannerEvent(const std::string &pannerId, int paramType, int type, int rate,
                              double value, int64_t timeNs);
+
+    // Any event on a gain-style (0), panner (1) or listener (2) param.
+    void scheduleParamEvent(int target, const std::string &id, int paramType, const ParamEvent &event);
 
     void cancelGainEvents(const std::string &gainId, int64_t timeNs);
 
@@ -682,7 +715,8 @@ public:
     };
     std::unordered_map<std::string, WaveShaperData> waveShapers_;
     enum PannerPanningModel {
-        PANNING_EQUALPOWER = 0, PANNING_HRTF = 1
+        // PANNING_STEREO: a StereoPannerNode, panned by `pan` alone.
+        PANNING_EQUALPOWER = 0, PANNING_HRTF = 1, PANNING_STEREO = 2
     };
     struct Panner {
         double positionX = 0.0;
@@ -701,9 +735,6 @@ public:
         double coneOuterAngle = 360.0;
         double coneOuterGain = 0.0;
         std::string contextId;
-        HRTFConvolver *hrtf = nullptr;
-        int hrtfPartitionSize = 0;
-        std::string biquadId;
     };
     std::unordered_map<std::string, Panner> panners_;
 

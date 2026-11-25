@@ -228,7 +228,7 @@ export class AudioNode extends AudioNodeBase {
 		}
 	}
 
-	private get _stereoOnly() {
+	private get _stereoOnly(): any {
 		return this instanceof PannerNode || this instanceof StereoPannerNode || this instanceof ConvolverNode || this instanceof DynamicsCompressorNode;
 	}
 
@@ -405,7 +405,7 @@ export class GainNode extends AudioNode {
 }
 
 export class AudioDestinationNode extends AudioNode {
-	[native_]: org.nativescript.audiocontext.AudioNode;
+	[native_]: org.nativescript.audiocontext.GainNode;
 	constructor(context: NativeBaseAudioContext, node: org.nativescript.audiocontext.GainNode) {
 		super(context);
 		this[native_] = node;
@@ -894,7 +894,7 @@ export class MediaElementAudioSourceNode extends AudioNode {
 const QUANTUM = 128;
 
 function createAudioBuffer(numberOfChannels: number | { length: number; numberOfChannels?: number; sampleRate: number }, length?: number, sampleRate?: number) {
-	return new AudioBuffer(typeof numberOfChannels === 'object' ? numberOfChannels : { numberOfChannels, length, sampleRate });
+	return new AudioBuffer(typeof numberOfChannels === 'object' ? numberOfChannels : { numberOfChannels, length: length ?? 0, sampleRate });
 }
 
 function decodeAudioData(ctx: org.nativescript.audiocontext.AudioContextInstance, source: string | ArrayBuffer | ArrayBufferView, successCallback?: (buffer: AudioBuffer) => void, errorCallback?: (error: Error) => void): Promise<AudioBuffer> {
@@ -942,7 +942,7 @@ export class OfflineAudioContext extends BaseAudioContext {
 		super();
 		const options = typeof numberOfChannels === 'object' ? numberOfChannels : { numberOfChannels, length: lengthInFrames, sampleRate };
 		const channels = Math.floor(options.numberOfChannels ?? 1);
-		const length = Math.floor(options.length);
+		const length = Math.floor(options?.length ?? 0);
 		const rate = options.sampleRate ?? 48000;
 		checkChannels('OfflineAudioContext', channels);
 		if (!(length >= 1)) throw domError('NotSupportedError', `OfflineAudioContext: length ${options.length} must be at least 1`);
@@ -1099,7 +1099,6 @@ export class OfflineAudioContext extends BaseAudioContext {
 	decodeAudioData(source: string | ArrayBuffer | ArrayBufferView, successCallback?: (buffer: AudioBuffer) => void, errorCallback?: (error: Error) => void): Promise<AudioBuffer> {
 		return decodeAudioData(this.native, source, successCallback, errorCallback);
 	}
-
 }
 
 let workletScriptPath: string | null = null;
@@ -1164,10 +1163,14 @@ export class AudioWorklet {
 	}
 
 	addModule(moduleURL: string | { href: string }, _options?: { credentials?: string }): Promise<void> {
-		let host: WorkletHost;
+		let host: WorkletHost | null = null;
 		try {
 			if (this[context_].state === 'closed') throw domError('InvalidStateError', 'The AudioContext is closed');
 			host = this._scope(true);
+
+			if (!host) {
+				throw domError('InvalidStateError', 'Unable to initialize AudioWorklet');
+			}
 		} catch (e) {
 			return Promise.reject(e);
 		}
@@ -1209,15 +1212,7 @@ export class AudioWorkletNode extends AudioNode {
 		};
 		const defaults = (Array as any).create('double', descriptors.length);
 		descriptors.forEach((d, i) => (defaults[i] = parameterData?.[d.name] ?? d.defaultValue));
-		const native = AudioContext.getInstance().createWorklet(
-			context.native,
-			ring as any,
-			ints(inputChannels),
-			ints(outputChannelCount),
-			ints([layout.slotWords, layout.header, layout.inputCounts, layout.inputData, layout.outputCounts, layout.paramLengths, layout.paramData]),
-			ints(layout.outputData),
-			defaults,
-		);
+		const native = AudioContext.getInstance().createWorklet(context.native, ring as any, ints(inputChannels), ints(outputChannelCount), ints([layout.slotWords, layout.header, layout.inputCounts, layout.inputData, layout.outputCounts, layout.paramLengths, layout.paramData]), ints(layout.outputData), defaults);
 		if (!native) throw domError('NotSupportedError', 'AudioWorkletNode: the audio engine is unavailable');
 		const header = new Uint32Array(ring, layout.header * 4, 8);
 		if (Atomics.load(header, RING_NATIVE_MARK) !== 0x574b4c54) {
@@ -1425,7 +1420,6 @@ export class AudioContext extends BaseAudioContext {
 	createBufferSource(options?: { buffer?: AudioBuffer }) {
 		return new AudioBufferSourceNode(this, options);
 	}
-
 
 	decodeAudioData(source: string | ArrayBuffer | ArrayBufferView, successCallback?: (buffer: AudioBuffer) => void, errorCallback?: (error: Error) => void): Promise<AudioBuffer> {
 		return decodeAudioData(this.native, source, successCallback, errorCallback);
@@ -1918,8 +1912,8 @@ export class PeriodicWave {
 	private imag: Float32Array;
 	private disableNormalization: boolean;
 	constructor(_context: NativeBaseAudioContext, options: PeriodicWaveOptions = {}) {
-		const imagOnly = !options.real && options.imag;
-		this.real = options.real ? Float32Array.from(options.real) : new Float32Array(imagOnly ? options.imag.length : 2);
+		const imagOnly = !options.real ? options.imag : undefined;
+		this.real = options.real ? Float32Array.from(options.real) : new Float32Array(imagOnly ? imagOnly.length : 2);
 		this.imag = options.imag ? Float32Array.from(options.imag) : new Float32Array(this.real.length);
 		if (this.real.length !== this.imag.length || this.real.length < 2) throw domError('IndexSizeError', `PeriodicWave: real (${this.real.length}) and imag (${this.imag.length}) must match and be at least 2 long`);
 		this.disableNormalization = !!options.disableNormalization;

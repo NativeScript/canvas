@@ -39,11 +39,12 @@ void RealFft::transform(float *re, float *im) const {
     }
     for (int len = 2; len <= m; len <<= 1) {
         const int half = len >> 1;
-        const int step = 2 * (m / len);
+        const size_t step = 2u * static_cast<size_t>(m / len);
         for (int i = 0; i < m; i += len) {
             for (int k = 0; k < half; k++) {
-                const float wr = cos_[k * step];
-                const float wi = sin_[k * step];
+                const size_t idx = static_cast<size_t>(k) * step;
+                const float wr = cos_[idx];
+                const float wi = sin_[idx];
                 const int a = i + k;
                 const int b = a + half;
                 const float vr = re[b] * wr - im[b] * wi;

@@ -1,6 +1,7 @@
 #include "audio_context.h"
 #include "audio_internal.h"
 #include "hrtf_convolver.h"
+#include "convolver.h"
 
 #include <android/log.h>
 #include <jni.h>
@@ -348,6 +349,7 @@ void NativeEngine::applyCommand(Command &c) {
             delays_.erase(c.id);
             gains_.erase(c.id);
             waveShapers_.erase(c.id);
+            convolvers_.erase(c.id);
             auto compressorIt = compressors_.find(c.id);
             if (compressorIt != compressors_.end()) {
                 for (const std::string *paramId: {&compressorIt->second.thresholdId, &compressorIt->second.kneeId,
@@ -359,19 +361,41 @@ void NativeEngine::applyCommand(Command &c) {
             }
             break;
         }
-        case CMD_CREATE_BIQUAD:
-        case CMD_SET_BIQUAD_PARAMS: {
-            const std::string &type = c.type == CMD_CREATE_BIQUAD
-                                      ? (!c.waveform.empty() ? c.waveform : c.biquadType)
-                                      : (!c.biquadType.empty() ? c.biquadType : c.waveform);
+        case CMD_CREATE_BIQUAD: {
+            const std::string &type = !c.waveform.empty() ? c.waveform : c.biquadType;
             biquads_[c.id] = computeBiquadCoeffs(type, c.biquadFrequency > 0.0 ? c.biquadFrequency : 440.0,
                                                  c.biquadQ > 0.0 ? c.biquadQ : 1.0, c.biquadGain,
                                                  static_cast<int>(sr));
+            biquadFilters_[c.id].type = type;
             break;
         }
-        case CMD_FREE_BIQUAD:
+        case CMD_SET_BIQUAD_PARAMS: {
+            BiquadFilter &f = biquadFilters_[c.id];
+            if (!c.biquadType.empty()) f.type = c.biquadType;
+            f.last[0] = -1.0;
+            break;
+        }
+        case CMD_SET_BIQUAD_PARAM_IDS: {
+            BiquadFilter &f = biquadFilters_[c.id];
+            for (size_t i = 0; i < 4 && i < c.paramIds.size(); i++) f.paramIds[i] = c.paramIds[i];
+            f.last[0] = -1.0;
+            break;
+        }
+        case CMD_FREE_BIQUAD: {
             if (deferFree(c)) break;
             biquads_.erase(c.id);
+            auto f = biquadFilters_.find(c.id);
+            if (f != biquadFilters_.end()) {
+                for (const std::string &param: f->second.paramIds) {
+                    if (!param.empty()) gains_.erase(param);
+                }
+                biquadFilters_.erase(f);
+            }
+            break;
+        }
+        case CMD_SET_CONVOLVER:
+            if (c.convolver) convolvers_[c.id] = c.convolver;
+            else convolvers_.erase(c.id);
             break;
         case CMD_CREATE_IIR: {
             IIRData d;
@@ -514,7 +538,10 @@ void NativeEngine::applyCommand(Command &c) {
             auto it = panners_.find(c.id);
             if (it == panners_.end()) break;
             delete it->second.hrtf;
-            if (!it->second.biquadId.empty()) biquads_.erase(it->second.biquadId);
+            if (!it->second.biquadId.empty()) {
+                biquads_.erase(it->second.biquadId);
+                biquadFilters_.erase(it->second.biquadId);
+            }
             panners_.erase(it);
             break;
         }

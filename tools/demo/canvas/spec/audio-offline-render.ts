@@ -1,6 +1,5 @@
 import { AudioBuffer, OfflineAudioContext } from '@nativescript/audio-context';
-import { isAndroid } from '@nativescript/core';
-import { suite, test, skip, equal, closeTo, ok } from './harness';
+import { suite, test, equal, closeTo, ok } from './harness';
 
 // OfflineAudioContext rendering, against what Chrome does.
 
@@ -171,8 +170,7 @@ export function registerAudioOfflineRenderSpec() {
 			equal(samples[Q], 0.25, 'and only through the other gain');
 		});
 
-		if (isAndroid) skip('disconnect(output) cuts only that output', 'disconnecting a splitter output on Android silences later realtime worklets');
-		else test('disconnect(output) cuts only that output', async () => {
+		test('disconnect(output) cuts only that output', async () => {
 			const context = new OfflineAudioContext(1, Q * 2, RATE);
 			const source: any = context.createBufferSource();
 			source.buffer = stereo(Q * 2, 1, 0.5);
@@ -186,8 +184,7 @@ export function registerAudioOfflineRenderSpec() {
 			equal(samples[Q], 1, 'output 0 alone');
 		});
 
-		if (isAndroid) skip('disconnect(node, output, input) cuts only that connection', 'disconnecting a splitter output on Android silences later realtime worklets');
-		else test('disconnect(node, output, input) cuts only that connection', async () => {
+		test('disconnect(node, output, input) cuts only that connection', async () => {
 			const context = new OfflineAudioContext(2, Q * 2, RATE);
 			const source: any = context.createBufferSource();
 			source.buffer = stereo(Q * 2, 1, 0.5);
@@ -296,8 +293,7 @@ export function registerAudioOfflineRenderSpec() {
 			equal(samples[Q], 0.125, 'through the gain at its own value');
 		});
 
-		if (isAndroid) skip(OSC_PARAM, 'connected audio drifts from automation on Android oscillator frequency');
-		else test(OSC_PARAM, () =>
+		test(OSC_PARAM, () =>
 			sameOnEveryFrame((context, merger) => {
 				const driven = context.createOscillator({ frequency: 441 } as any);
 				constant(context, 441, ON / RATE).connect(driven.frequency);
@@ -309,8 +305,7 @@ export function registerAudioOfflineRenderSpec() {
 				reference.start(0);
 			}, 'frequency'));
 
-		if (isAndroid) skip(BIQUAD_PARAM, 'BiquadFilterNode params ignore audio on Android');
-		else test(BIQUAD_PARAM, () =>
+		test(BIQUAD_PARAM, () =>
 			sameOnEveryFrame((context, merger) => {
 				const source = context.createOscillator({ type: 'sawtooth', frequency: 441 } as any);
 				const driven = context.createBiquadFilter();
@@ -326,6 +321,28 @@ export function registerAudioOfflineRenderSpec() {
 				source.start(0);
 			}, 'biquad'));
 
+		test('a node connected to AudioListener.positionX adds to it per frame', async () => {
+			const render = async (drive: boolean) => {
+				const context = new OfflineAudioContext(2, Q * 8, RATE);
+				const panner = context.createPanner();
+				panner.positionZ.value = -1;
+				constant(context, 1).connect(panner);
+				panner.connect(context.destination);
+				if (drive) constant(context, 2, ON / RATE).connect(context.listener.positionX);
+				else context.listener.positionX.setValueAtTime(2, ON / RATE);
+				return context.startRendering();
+			};
+			const [driven, reference] = [await render(true), await render(false)];
+			let worst = 0;
+			for (let c = 0; c < 2; c++) {
+				const got = driven.getChannelData(c);
+				const want = reference.getChannelData(c);
+				for (let i = 0; i < got.length; i++) worst = Math.max(worst, Math.abs(got[i] - want[i]));
+			}
+			const left = reference.getChannelData(0);
+			ok(worst < 1e-5 && left[ON - 1] !== left[ON], `differs by ${worst}, moves from ${left[ON - 1]} to ${left[ON]}`);
+		});
+
 		test(OFFSET_PARAM, async () => {
 			const context = new OfflineAudioContext(1, Q * 8, RATE);
 			const source = constant(context, 0.25);
@@ -334,6 +351,103 @@ export function registerAudioOfflineRenderSpec() {
 			const samples = (await context.startRendering()).getChannelData(0);
 			equal(samples[ON - 1], 0.25, 'its own offset before the input starts');
 			equal(samples[ON], 0.75, 'plus the input from its first frame');
+		});
+	});
+
+	suite('audio.offline.convolver', () => {
+		// A decaying wave over several quanta, so it spans more than one partition.
+		function wave(length: number, rate = 0.1, decay = 200) {
+			return Float32Array.from({ length }, (_, i) => Math.sin(i * rate) * Math.exp(-i / decay));
+		}
+
+		function buffer(...channels: Float32Array[]) {
+			const out = new AudioBuffer({ numberOfChannels: channels.length, length: channels[0].length, sampleRate: RATE });
+			channels.forEach((data, c) => out.copyToChannel(data, c));
+			return out;
+		}
+
+		// Renders `input` through a convolver holding `response`, in a context of `channels` channels.
+		async function convolve(input: Float32Array, response: AudioBuffer | null, channels = 1, normalize = false) {
+			const context = new OfflineAudioContext(channels, input.length, RATE);
+			const convolver = context.createConvolver();
+			convolver.normalize = normalize;
+			if (response) convolver.buffer = response;
+			const source: any = context.createBufferSource();
+			source.buffer = buffer(input);
+			source.connect(convolver);
+			convolver.connect(context.destination);
+			source.start(0);
+			return context.startRendering();
+		}
+
+		function direct(input: Float32Array, response: Float32Array) {
+			return Float32Array.from({ length: input.length }, (_, n) => {
+				let sum = 0;
+				for (let k = 0; k < response.length && k <= n; k++) sum += input[n - k] * response[k];
+				return sum;
+			});
+		}
+
+		function worst(got: Float32Array, want: Float32Array) {
+			let diff = 0;
+			let at = 0;
+			for (let i = 0; i < want.length; i++) {
+				const d = Math.abs(got[i] - want[i]);
+				if (d > diff) [diff, at] = [d, i];
+			}
+			return { diff, at };
+		}
+
+		test('an impulse plays the response, from the impulse on', async () => {
+			const response = wave(300);
+			const input = new Float32Array(Q * 8);
+			input[5] = 1;
+			const got = (await convolve(input, buffer(response))).getChannelData(0);
+			const want = new Float32Array(input.length);
+			want.set(response, 5);
+			const { diff, at } = worst(got, want);
+			ok(diff < 1e-5, `frame ${at} differs by ${diff}`);
+		});
+
+		test('convolves its input with the response', async () => {
+			const input = Float32Array.from({ length: Q * 16 }, (_, i) => (i < 1000 ? Math.sin(i * 0.05) + 0.5 * Math.sin(i * 0.31) : 0));
+			const response = wave(700, 0.23, 150);
+			const got = (await convolve(input, buffer(response))).getChannelData(0);
+			const { diff, at } = worst(got, direct(input, response));
+			ok(diff < 1e-4, `frame ${at} differs by ${diff}`);
+		});
+
+		test('normalizes the response unless normalize is false', async () => {
+			const response = new Float32Array(256).fill(0.5);
+			const input = new Float32Array(Q * 4);
+			input[0] = 1;
+			// The spec's equal-power scale: 0.00125 / rms, times 44100 / sampleRate.
+			const scale = (0.00125 / 0.5) * (44100 / RATE);
+			const normalized = (await convolve(input, buffer(response), 1, true)).getChannelData(0);
+			closeTo(normalized[10], 0.5 * scale, 1e-7, 'normalized');
+			const raw = (await convolve(input, buffer(response), 1, false)).getChannelData(0);
+			closeTo(raw[10], 0.5, 1e-6, 'as is');
+		});
+
+		test('a stereo response convolves a mono input into each channel', async () => {
+			const left = wave(200);
+			const right = wave(200, 0.3, 50);
+			const input = new Float32Array(Q * 4);
+			input[0] = 1;
+			const rendered = await convolve(input, buffer(left, right), 2);
+			const want = (data: Float32Array) => Float32Array.from({ length: input.length }, (_, i) => (i < data.length ? data[i] : 0));
+			const l = worst(rendered.getChannelData(0), want(left));
+			const r = worst(rendered.getChannelData(1), want(right));
+			ok(l.diff < 1e-5 && r.diff < 1e-5, `left ${l.diff} at ${l.at}, right ${r.diff} at ${r.at}`);
+		});
+
+		test('is silent with no buffer', async () => {
+			const input = new Float32Array(Q * 2).fill(0.5);
+			const samples = (await convolve(input, null)).getChannelData(0);
+			ok(
+				samples.every((v) => v === 0),
+				`first ${samples[0]}`,
+			);
 		});
 	});
 }

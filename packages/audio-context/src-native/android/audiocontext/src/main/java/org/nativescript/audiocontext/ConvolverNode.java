@@ -33,11 +33,13 @@ public class ConvolverNode implements NativeObject, AudioNode {
         return buffer;
     }
 
+    /** The response is taken, normalized or not, when it's set, as in the spec. */
     public void setBuffer(@Nullable AudioBuffer buffer) {
         this.buffer = buffer;
         if (buffer != null && contextId != null) {
             AudioContext.getInstance().assignBufferToContext(buffer, contextId);
         }
+        AudioContext.getInstance().setConvolverBuffer(id, buffer, normalize);
     }
 
     public boolean getNormalize() { return normalize; }

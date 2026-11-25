@@ -2,10 +2,10 @@
 #
 # All native artifacts (Android AARs + iOS/visionOS/tvOS xcframeworks for
 # canvas, canvas-svg and audio-context; the Windows and Linux x64/arm64
-# Node-API modules) are built by the reusable build-native.yml workflow, or
-# restored from its cache when nothing they are built from has changed. On
+# Node-API modules) are built by the reusable build-native.yml workflow. On
 # pushes to master (and manual dispatch) the npm job then packages everything
-# with those artifacts and publishes a `pr`-tagged prerelease of each package.
+# with those freshly built artifacts and publishes a `pr`-tagged prerelease of
+# each package.
 name: Canvas Native
 
 permissions:
@@ -17,27 +17,17 @@ on:
       - master
   pull_request:
   workflow_dispatch:
-    inputs:
-      fresh:
-        description: Build every native output instead of restoring it, to check a cached one. Saves no native-cache entry; publishes the prerelease as any dispatch does
-        type: boolean
-        default: false
-
-env:
-  # Read by .github/actions/native-cache.
-  NATIVE_CACHE_FRESH: ${{ inputs.fresh }}
 
 # A pull request push cancels the run it supersedes. On master a running build finishes (it
-# saves the caches pull requests read) and only the newest waiting run starts after it, so runs
-# that publish the prerelease, a `fresh` one too, publish in order.
+# saves the caches pull requests read) and only the newest waiting push runs after it.
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  # Guards for the class of regression that merges introduce silently (see
-  # tools/tests/check-v8-bridge-invariants.py), on one Linux runner in a few
-  # minutes; the native cache check needs the runner's cargo and make.
+  # Fast, dependency-free guards. These run first because they catch the class
+  # of regression that merges introduce silently -- see
+  # tools/tests/check-v8-bridge-invariants.py.
   static-checks:
     name: Static Checks
     runs-on: ubuntu-22.04
@@ -45,28 +35,14 @@ jobs:
       - uses: actions/checkout@v4
       - name: V8 bridge invariants
         run: python3 tools/tests/check-v8-bridge-invariants.py
-      # Every native cache key resolves and holds what its job reads, and every cached job skips
-      # its build on a hit. The npm job waits for this, so a key that misses a read publishes nothing.
-      - name: Native cache inputs
-        run: |
-          python3 tools/tests/test_native_inputs.py
-          python3 tools/tests/check-native-inputs.py
 
   unit-tests:
     name: Unit Tests
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
-      # A pass is cached under the hash of what the tests build from, so unchanged code isn't
-      # retested.
-      - uses: ./.github/actions/native-cache
-        id: native
-        with:
-          artifact: unit-tests
-          path: .native-cache/unit-tests-passed
       # ~1.8 GB per entry: only master saves one, so pull requests don't crowd the 10 GB cache.
       - uses: actions/cache/restore@v4
-        if: steps.native.outputs.hit != 'true'
         id: test-cache
         with:
           path: |
@@ -82,15 +58,11 @@ jobs:
       # the macOS dylib build, and libtest cannot link against that, so the
       # rustflags are overridden for this run only.
       - name: Rust unit tests
-        if: steps.native.outputs.hit != 'true'
         env:
           RUSTFLAGS: '-C link-arg=-undefined -C link-arg=dynamic_lookup'
-        # The marker the cache saves is the pass: written last, in the same step, after the tests.
-        run: |
-          cargo test -p canvas-c --features 2d,webgl,gl
-          mkdir -p .native-cache && date -u > .native-cache/unit-tests-passed
+        run: cargo test -p canvas-c --features 2d,webgl,gl
       - uses: actions/cache/save@v4
-        if: steps.native.outputs.hit != 'true' && steps.test-cache.outputs.cache-hit != 'true' && github.event_name == 'push' && github.ref == 'refs/heads/master'
+        if: steps.test-cache.outputs.cache-hit != 'true' && github.event_name == 'push' && github.ref == 'refs/heads/master'
         with:
           path: |
             ~/.cargo/registry
@@ -101,14 +73,12 @@ jobs:
   build-native:
     name: Build Native
     uses: ./.github/workflows/build-native.yml
-    with:
-      fresh: ${{ inputs.fresh == true }}
 
   npm:
     name: Npm Build
     if: ${{ github.event_name != 'pull_request' }}
     runs-on: ubuntu-22.04
-    needs: [static-checks, build-native]
+    needs: [build-native]
     env:
       NPM_TAG: pr
       # Space separated; must match the packages/<name> directories.

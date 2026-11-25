@@ -290,6 +290,20 @@ export function registerAudioSchedulingSpec() {
 			ok(quiet(rms), `silent in the next context, rms ${rms}`);
 		});
 
+		test("close stops the context's sources", async () => {
+			const closed = new AudioContext();
+			const source = closed.createConstantSource({ offset: 1 });
+			source.connect(closed.destination);
+			source.start();
+			await until(closed, closed.currentTime + 0.1);
+			await closed.close();
+			const { context, analyser } = await runningContext();
+			await until(context, context.currentTime + 0.2);
+			const rms = rmsOf(analyser);
+			await context.close();
+			ok(quiet(rms), `silent in the next context, rms ${rms}`);
+		});
+
 		test('oscillator sounds only between start(when) and stop(when)', async () => {
 			const { context, analyser } = await runningContext();
 			const oscillator = context.createOscillator({ type: 'square', frequency: 440 });

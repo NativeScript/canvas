@@ -509,4 +509,36 @@ inline float getScheduledGainValueAt(const std::vector<NativeEngine::ParamEvent>
     return static_cast<float>(prev.value);
 }
 
+// Web Audio "speakers" up/down-mix: output channel `out` of `outCh` from `in` channels read by `read(c)`.
+// Layouts are mono, stereo, quad (L R SL SR) and 5.1 (L R C LFE SL SR); other counts mix discretely.
+template<typename Read>
+static inline float speakerMix(Read &&read, int in, int outCh, int out) {
+    constexpr float h = 0.7071067811865476f;
+    if (in == outCh) return read(out);
+    auto known = [](int n) { return n == 1 || n == 2 || n == 4 || n == 6; };
+    if (!known(in) || !known(outCh)) return out < in ? read(out) : 0.0f;
+    if (in == 1) {
+        if (outCh == 6) return out == 2 ? read(0) : 0.0f;
+        return out < 2 ? read(0) : 0.0f;
+    }
+    if (outCh == 1) {
+        if (in == 2) return 0.5f * (read(0) + read(1));
+        if (in == 4) return 0.25f * (read(0) + read(1) + read(2) + read(3));
+        return h * (read(0) + read(1)) + read(2) + 0.5f * (read(4) + read(5));
+    }
+    if (in < outCh) {
+        // Up-mix: L R copy; quad surrounds land on 5.1's SL SR.
+        if (out < 2) return read(out);
+        if (in == 4 && outCh == 6 && out >= 4) return read(out - 2);
+        return 0.0f;
+    }
+    if (outCh == 2) {
+        if (in == 4) return 0.5f * (read(out) + read(out + 2));
+        return read(out) + h * (read(2) + read(out + 4));
+    }
+    // 5.1 to quad.
+    if (out < 2) return read(out) + h * read(2);
+    return read(out + 2);
+}
+
 #endif // AUDIO_INTERNAL_H

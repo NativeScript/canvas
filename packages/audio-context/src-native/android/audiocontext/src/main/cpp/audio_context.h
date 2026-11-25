@@ -169,6 +169,8 @@ private:
     int64_t offlineLimitFrame_ = 0;
     // The render clock: CLOCK_MONOTONIC ns for realtime, virtual for offline.
     std::atomic<int64_t> nowNs_{0};
+    // Realtime: the next block's first frame on the render thread's frame clock.
+    int64_t renderClockNs_ = 0;
 
     void ensureStream();
 
@@ -237,7 +239,7 @@ private:
         std::vector<std::string> paramIds;
         // Render thread only.
         bool connected[kWorkletMaxPorts] = {};
-        // The context's channels of each input, a quantum each: inputs x mixChannels x 128.
+        // Each input at its channelCount, a quantum per channel: inputs x mixChannels x 128.
         int mixChannels = 1;
         std::vector<float> inMix;
         bool inActive[kWorkletMaxPorts] = {};
@@ -384,7 +386,8 @@ public:
         CMD_SET_PANNER_PARTITION_SIZE,
         CMD_CREATE_WORKLET,
         CMD_CREATE_DELAY,
-        CMD_WORKLET_OUTPUT
+        CMD_WORKLET_OUTPUT,
+        CMD_DETACH_FROM
     };
 
     struct Command {

@@ -153,37 +153,21 @@ export class AudioNode extends AudioNodeBase {
 	}
 
 	disconnect(destinationOrOutput?: any, output?: number, input?: number) {
-		const that = this as never as AudioNode & { native: org.nativescript.audiocontext.AudioNode };
-		try {
-			if (!destinationOrOutput) {
-				that.native.disconnect();
-				return;
-			}
-			if (typeof destinationOrOutput === 'number') {
-				try {
-					(that.native as any).disconnectOutput(destinationOrOutput);
-				} catch (e) {
-					console.warn('AudioNode.disconnect(output): falling back to full disconnect:', e);
-					that.native.disconnect();
-				}
-				return;
-			}
-			const dest = destinationOrOutput.native || destinationOrOutput;
-			try {
-				if (typeof output === 'number' && typeof input === 'number') (that.native as any).disconnectTo(dest, output, input);
-				else if (typeof output === 'number') (that.native as any).disconnectTo(dest, output);
-				else (that.native as any).disconnectTo(dest);
-			} catch (e) {
-				console.warn('AudioNode.disconnect(target): falling back to full disconnect:', e);
-				try {
-					that.native.disconnect();
-				} catch (ee) {
-					console.warn('AudioNode.disconnect fallback also failed:', ee);
-				}
-			}
-		} catch (e) {
-			console.warn('AudioNode.disconnect failed:', e);
+		const native = (this as never as { native: org.nativescript.audiocontext.AudioNode }).native;
+		if (destinationOrOutput === undefined || destinationOrOutput === null) {
+			native.disconnect();
+			return;
 		}
+		if (typeof destinationOrOutput === 'number') {
+			native.disconnect(destinationOrOutput);
+			return;
+		}
+		// AudioParam inputs are never wired natively.
+		if (destinationOrOutput instanceof AudioParamBase) return;
+		const target = destinationOrOutput.native ?? destinationOrOutput;
+		if (typeof output !== 'number') native.disconnect(target);
+		else if (typeof input !== 'number') native.disconnect(target, output);
+		else native.disconnect(target, output, input);
 	}
 }
 
@@ -294,6 +278,12 @@ export class BiquadFilterNode extends AudioNode {
 
 	get native() {
 		return this[native_];
+	}
+	get type(): string {
+		return this.native.getType();
+	}
+	set type(value: string) {
+		this.native.setType(value);
 	}
 	get frequency(): AudioParam {
 		if (!this._frequencyParam) this._frequencyParam = new AudioParam(nativeCtor_, this.native.getFrequency());
@@ -1237,7 +1227,7 @@ export class AudioContext extends BaseAudioContext {
 		});
 		return new Promise((resolve, reject) => {
 			const ref = new WeakRef(this);
-			AudioContext.getInstance().closeAsync(
+			this.native.closeAsync(
 				new org.nativescript.audiocontext.AudioContext.AsyncCallback({
 					onComplete(ok) {
 						if (ok) {

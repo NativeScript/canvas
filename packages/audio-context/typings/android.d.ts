@@ -39,6 +39,8 @@ declare module org {
 		export module audiocontext {
 			export class AudioBiquadNode implements org.nativescript.audiocontext.NativeObject, org.nativescript.audiocontext.AudioNode {
 				public static class: java.lang.Class<org.nativescript.audiocontext.AudioBiquadNode>;
+				public getType(): string;
+				public setType(type: string): void;
 				public connect(node: org.nativescript.audiocontext.AudioNode, output: number): void;
 				public connect(param0: org.nativescript.audiocontext.AudioNode): void;
 				public disconnect(param0: org.nativescript.audiocontext.AudioNode): void;

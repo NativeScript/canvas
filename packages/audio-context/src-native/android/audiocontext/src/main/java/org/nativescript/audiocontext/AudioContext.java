@@ -265,6 +265,7 @@ public class AudioContext {
 		}
 		if (start == 0L) start = System.nanoTime();
 		contextStartNanos.put(id, start);
+		openRealtimeContexts.add(id);
 		try {
 			nativeRegisterContextStart(id, start);
 		} catch (Throwable ignored) {
@@ -281,8 +282,16 @@ public class AudioContext {
 		return new AudioContextInstance(createContext(sampleRate, latencyHintSec));
 	}
 
+	private final Set<String> openRealtimeContexts = createConcurrentSet();
+
 	void releaseContext(String contextId) {
+		releaseContext(contextId, false);
+	}
+
+	// Closing keeps buffers (they outlive contexts) and the clock (currentTime stays readable).
+	private void releaseContext(String contextId, boolean closing) {
 		if (contextId == null) return;
+		openRealtimeContexts.remove(contextId);
 		Set<String> tracksSet = contextTracksMap.remove(contextId);
 		if (tracksSet != null) {
 			for (String tid : tracksSet) {
@@ -290,7 +299,7 @@ public class AudioContext {
 				tracks.remove(tid);
 			}
 		}
-		Set<String> bufs = contextBuffers.remove(contextId);
+		Set<String> bufs = closing ? null : contextBuffers.remove(contextId);
 		if (bufs != null) {
 			for (String bid : bufs) {
 				releaseBuffer(bid);
@@ -332,6 +341,7 @@ public class AudioContext {
 			clearNodeSources(did);
 			releaseGain(did);
 		}
+		if (closing) return;
 		contextSampleRates.remove(contextId);
 		try {
 			nativeUnregisterContextStart(contextId);
@@ -1687,11 +1697,22 @@ public class AudioContext {
 	}
 
 	public void closeAsync(@Nullable AsyncCallback cb) {
+		closeAsync(null, cb);
+	}
+
+	// Frees `contextId`'s voices and nodes; the shared engine suspends once no realtime context is open.
+	public void closeAsync(@Nullable String contextId, @Nullable AsyncCallback cb) {
 		final Looper callerLooper = captureCallerLooper();
+		if (contextId != null) {
+			try {
+				releaseContext(contextId, true);
+			} catch (Throwable ignored) {
+			}
+		}
 		decodeExecutor.submit(() -> {
 			boolean ok = true;
 			try {
-				if (nativeAvailable) nativeSuspend();
+				if (nativeAvailable && (contextId == null || openRealtimeContexts.isEmpty())) nativeSuspend();
 			} catch (Throwable t) {
 				ok = false;
 			}
@@ -2548,6 +2569,33 @@ public class AudioContext {
 		return out;
 	}
 
+	private native void nativeDetachFrom(String voiceId, String targetId, int output, int input);
+
+	/**
+	 * AudioNode.disconnect for node {@code nodeId}: detaches the voices feeding it from {@code node}
+	 * (every target when null) at {@code output}/{@code input} (any when negative).
+	 * A source node is its own voice.
+	 */
+	void disconnectNode(String nodeId, boolean isSource, @Nullable AudioNode node, int output, int input) {
+		if (nodeId == null) return;
+		String destId = node instanceof NativeObject ? ((NativeObject) node).getId() : null;
+		if (node != null && destId == null) return;
+		if (destId != null && isDestinationNode(destId)) return;
+		Set<String> voices = isSource ? java.util.Collections.singleton(nodeId) : getNodeSourcesSnapshot(nodeId);
+		if (!isSource && voices.isEmpty()) {
+			// Connected before it had sources: the target was attached as a voice fed by this node.
+			if (destId != null) {
+				if (nativeAvailable) nativeDetachFrom(destId, nodeId, output, input);
+				unregisterNodeSource(destId, nodeId);
+			}
+			return;
+		}
+		for (String voice : voices) {
+			if (nativeAvailable) nativeDetachFrom(voice, destId == null ? "" : destId, output, input);
+			if (destId != null) unregisterNodeSource(destId, voice);
+		}
+	}
+
 	void attachPannerToVoice(String voiceId, String pannerId) {
 		if (voiceId == null || pannerId == null) return;
 		if (nativeAvailable) {
@@ -2979,6 +3027,9 @@ public class AudioContext {
 			return null;
 		}
 
+		// The new voice belongs to the track's context, and its engine (an offline one has its own).
+		String contextId = findContextForTrack(trackId);
+		String scope = contextId != null ? contextId : trackId;
 		if (nativeAvailable) {
 			try {
 				int sampleRate = sampleRates.containsKey(buffer.id) ? sampleRates.get(buffer.id) : 48000;
@@ -2989,7 +3040,7 @@ public class AudioContext {
 					int resolvedChannels = channels > 0 ? channels : channelData.length;
 					resolvedChannels = Math.min(resolvedChannels, channelData.length);
 					if (resolvedChannels > 0) {
-						String newId = nativeCreateBufferSourcePlanar(trackId, channelData, sampleRate, resolvedChannels);
+						String newId = nativeCreateBufferSourcePlanar(scope, channelData, sampleRate, resolvedChannels);
 						if (newId != null && !newId.isEmpty()) {
 							java.nio.ByteBuffer src = directBuffers.get(buffer.id);
 							if (src != null) directBuffers.put(newId, src);
@@ -2998,6 +3049,7 @@ public class AudioContext {
 							getOrCreate(newId).incrementAndGet();
 							sampleRates.put(newId, sampleRate);
 							bufferChannels.put(newId, resolvedChannels);
+							if (contextId != null) addToContextSet(contextTracksMap, contextId, newId);
 							return newId;
 						}
 					}
@@ -3011,12 +3063,13 @@ public class AudioContext {
 				srcView.position(src.position());
 				srcView.limit(src.limit());
 				java.nio.ByteBuffer srcSlice = srcView.slice();
-				String newId = nativeCreateBufferSourceDirect(trackId, srcSlice, sampleRate, channels, bytesPerSample);
+				String newId = nativeCreateBufferSourceDirect(scope, srcSlice, sampleRate, channels, bytesPerSample);
 				if (newId == null || newId.isEmpty()) return null;
 				directBuffers.put(newId, src);
 				getOrCreate(newId).incrementAndGet();
 				sampleRates.put(newId, sampleRate);
 				bufferChannels.put(newId, channels);
+				if (contextId != null) addToContextSet(contextTracksMap, contextId, newId);
 				return newId;
 			} catch (Throwable ignored) {
 				return null;

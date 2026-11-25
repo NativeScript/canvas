@@ -119,21 +119,7 @@ public class WorkletNode implements NativeObject, AudioNode {
 			}
 			if (destinations[output].isEmpty()) context.setWorkletOutputConnected(id, output, false);
 		}
-		String voice = getOutputId(output);
-		if (destId == null) {
-			context.attachPannerToVoice(voice, "", 0, 0);
-			context.attachBiquadToVoice(voice, "", 0, 0);
-			context.attachGainToVoice(voice, "", 0, 0);
-			return;
-		}
-		if (node instanceof AudioPannerNode) {
-			context.attachPannerToVoice(voice, "", 0, 0);
-		} else if (node instanceof AudioBiquadNode) {
-			context.attachBiquadToVoice(voice, "", 0, 0);
-		} else if (!context.isDestinationNode(destId)) {
-			context.attachGainToVoice(voice, "", 0, 0);
-		}
-		context.unregisterNodeSource(destId, voice);
+		AudioContext.getInstance().disconnectNode(getOutputId(output), true, destId == null ? null : node, -1, -1);
 	}
 
 	@Override

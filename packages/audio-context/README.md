@@ -213,12 +213,13 @@ on the app's JS thread.
   builds).
 - On Android an `AudioWorkletNode` has up to 16 inputs and 16 outputs of up to 8 channels each,
   with the same input mixing as iOS, and works in an `OfflineAudioContext`. Its ring is a
-  `SharedArrayBuffer` the Worker polls every 2 ms, so realtime output plays up to a device buffer
-  plus 2 ms late, and an offline render waits up to 2 ms per 128-frame quantum for a worklet with
-  inputs (a source's quanta are requested ahead).
-- On Android an input is mixed at the context's channel count before it is up- or down-mixed to
-  `channelCount`, so in a mono context a stereo source reaches the worklet as its mono mix. A node
-  connected into a worklet input plays only into it, as with `DelayNode`.
+  `SharedArrayBuffer`; the engine wakes the Worker's looper each time it requests a quantum, so
+  realtime output plays up to a device buffer late and an offline render doesn't wait on a timer.
+  (`Atomics.notify` can't come from the render thread, so the wake is native.)
+- On Android each input is mixed from every source's own channels straight to its
+  `channelCount`, with the speaker rules for mono, stereo, quad and 5.1 (other counts mix
+  discretely), in any context. A node connected into a worklet input plays only into it, as with
+  `DelayNode`.
 
 ## Linux
 

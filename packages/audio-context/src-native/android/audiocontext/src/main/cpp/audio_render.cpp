@@ -272,20 +272,17 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
     static std::atomic<unsigned long long> sGraphTraceSeq{0};
 
     if (!offline_) {
-        if (stream) {
-            auto tsRes = stream->getTimestamp(CLOCK_MONOTONIC);
-            if (tsRes) {
-                auto frameTs = tsRes.value();
-                g_audioTimeNanos.store(frameTs.timestamp, std::memory_order_relaxed);
-            } else {
-                int64_t nowNs = monotonicNowNs();
-                g_audioTimeNanos.store(nowNs, std::memory_order_relaxed);
-            }
-        } else {
-            int64_t nowNs = monotonicNowNs();
-            g_audioTimeNanos.store(nowNs, std::memory_order_relaxed);
-        }
-        nowNs_.store(g_audioTimeNanos.load(std::memory_order_relaxed), std::memory_order_relaxed);
+        // A frame clock, so automation and source positions advance together; device timestamps
+        // jitter between callbacks. It re-anchors to the monotonic clock after a stall or restart.
+        constexpr int64_t kClockBehindNs = 50000000;
+        constexpr int64_t kClockAheadNs = 500000000;
+        const int64_t now = monotonicNowNs();
+        int64_t clock = renderClockNs_;
+        if (clock == 0 || now - clock > kClockBehindNs || clock - now > kClockAheadNs) clock = now;
+        const double rate = streamSampleRate_ > 0 ? static_cast<double>(streamSampleRate_) : 48000.0;
+        renderClockNs_ = clock + std::llround(static_cast<double>(numFrames) * 1e9 / rate);
+        g_audioTimeNanos.store(clock, std::memory_order_relaxed);
+        nowNs_.store(clock, std::memory_order_relaxed);
     }
 
 
@@ -523,7 +520,10 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                     voiceWorklet_.erase(c.id);
                     break;
                 }
-                if (c.gainId.empty()) voiceWorklet_.erase(c.id);
+                if (c.gainId.empty()) {
+                    voiceWorklet_.erase(c.id);
+                    voiceDelay_.erase(c.id);
+                }
                 auto vit = audioVoices_.find(c.id);
                 std::string prevGainId;
                 bool voiceExists = vit != audioVoices_.end();
@@ -578,6 +578,55 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                                    traceSeq, c.id.c_str(), voiceExists ? 1 : 0,
                                    prevGainId.c_str(), c.gainId.c_str(), c.outputIndex,
                                    c.inputIndex, mappedRefs, fieldRefs, outputsForVoice);
+                }
+                break;
+            }
+            case NativeEngine::CMD_DETACH_FROM: {
+                // Clears voice c.id's slots holding c.gainId (any target when empty, any output when < 0).
+                const std::string &target = c.gainId;
+                std::string pannerFilter;
+                auto pfIt = panners_.find(target);
+                if (pfIt != panners_.end()) pannerFilter = pfIt->second.biquadId;
+                auto matches = [&](const std::string &slot) {
+                    return target.empty() || slot == target ||
+                           (!pannerFilter.empty() && slot == pannerFilter);
+                };
+                auto eraseFrom = [&](std::unordered_map<std::string, std::unordered_map<int, std::string>> &byOutput) {
+                    auto it = byOutput.find(c.id);
+                    if (it == byOutput.end()) return;
+                    for (auto o = it->second.begin(); o != it->second.end();) {
+                        if (matches(o->second) && (c.outputIndex < 0 || o->first == c.outputIndex))
+                            o = it->second.erase(o);
+                        else ++o;
+                    }
+                    if (it->second.empty()) byOutput.erase(it);
+                };
+                auto firstOf = [&](std::unordered_map<std::string, std::unordered_map<int, std::string>> &byOutput) {
+                    auto it = byOutput.find(c.id);
+                    if (it == byOutput.end() || it->second.empty()) return std::string();
+                    auto o = it->second.find(0);
+                    return o != it->second.end() ? o->second : it->second.begin()->second;
+                };
+                eraseFrom(voiceGainByOutput_);
+                eraseFrom(voiceFilterByOutput_);
+                eraseFrom(voicePannerByOutput_);
+                bool anyOutput = c.outputIndex <= 0;
+                auto dIt = voiceDelay_.find(c.id);
+                if (anyOutput && dIt != voiceDelay_.end() && matches(dIt->second)) voiceDelay_.erase(dIt);
+                auto wIt = voiceWorklet_.find(c.id);
+                if (anyOutput && wIt != voiceWorklet_.end() && matches(wIt->second.first) &&
+                    (c.inputIndex < 0 || wIt->second.second == c.inputIndex))
+                    voiceWorklet_.erase(wIt);
+                auto vit = audioVoices_.find(c.id);
+                if (vit != audioVoices_.end()) {
+                    Voice &v = vit->second;
+                    if (!v.gainId.empty() && matches(v.gainId)) {
+                        v.gainId = firstOf(voiceGainByOutput_);
+                        auto git = gains_.find(v.gainId);
+                        v.gain = git != gains_.end() ? git->second : 1.0;
+                    }
+                    if (!v.filterId.empty() && matches(v.filterId)) v.filterId = firstOf(voiceFilterByOutput_);
+                    if (!v.panId.empty() && matches(v.panId)) v.panId = firstOf(voicePannerByOutput_);
                 }
                 break;
             }
@@ -2427,15 +2476,22 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
 
     // Mixes `pass`'s voices into `out`; realtime worklets step a frame at a time.
     auto renderPass = [&](const std::vector<ActiveVoiceView *> &pass) {
+    int passChannels = channels;
+    for (const ActiveVoiceView *view: pass) {
+        if (view->into) passChannels = std::max(passChannels, view->into->inChannels[view->intoInput]);
+    }
     for (int frame = 0; frame < numFrames; ++frame) {
         pannerCutoffByBiquad.clear();
         pannerFrameCache.clear();
         stereoInputCache.clear();
         hrtfOutputCache.clear();
-        for (int ch = 0; ch < channels; ++ch) {
+        for (int ch = 0; ch < passChannels; ++ch) {
             float mixed = 0.0f;
             for (const ActiveVoiceView *voiceViewPtr: pass) {
                 const ActiveVoiceView &voiceView = *voiceViewPtr;
+                // A voice feeding a worklet input renders at that input's channelCount.
+                const int vch = voiceView.into ? voiceView.into->inChannels[voiceView.intoInput] : channels;
+                if (ch >= vch) continue;
                 Voice &v = *voiceView.voice;
                 const BufferData *voiceBuffer = voiceView.bufferData;
                 const auto *gainRoute = voiceView.gainRoute;
@@ -2515,7 +2571,7 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                         if (filterRef.biquad) {
                             int fsIndex = ch;
                             if (v.filterState.size() <= static_cast<size_t>(fsIndex))
-                                v.filterState.assign(channels, NativeEngine::BiquadState());
+                                v.filterState.assign(vch, NativeEngine::BiquadState());
                             auto in = static_cast<float>(s);
                             float outS = processBiquadSample(*filterRef.biquad,
                                                              v.filterState[fsIndex],
@@ -2523,7 +2579,7 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                             s = outS;
                         } else if (filterRef.iir) {
                             int fsIndex = ch;
-                            size_t chCount = static_cast<size_t>(channels);
+                            size_t chCount = static_cast<size_t>(vch);
                             if (v.iirState.size() < chCount)
                                 v.iirState.assign(chCount, std::vector<double>());
                             if (v.iirState.size() <= static_cast<size_t>(fsIndex))
@@ -2559,7 +2615,9 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                             : resolveOutputMappedId(gainRoute, ch, v.gainId);
                     double scheduled = resolveGainValueForFrame(effGainId, v.gain, frame);
 
-                    if (channels <= 1) {
+                    // Mono up-mix: quad leaves the surrounds silent, 5.1 plays only the centre.
+                    s *= static_cast<double>(speakerMix([](int) { return 1.0f; }, 1, vch, ch));
+                    if (vch <= 1) {
                         if (!effGainId.empty()) {
                             auto wsIt = waveShapers_.find(effGainId);
                             if (wsIt != waveShapers_.end() && !wsIt->second.curve.empty()) {
@@ -2593,7 +2651,7 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                             emitVoice(voiceView, ch, frame, voiceOut, mixed);
                         }
                     }
-                    if (ch == channels - 1) {
+                    if (ch == vch - 1) {
                         v.phase += v.phaseIncrement;
                         if (v.phase >= 1.0) v.phase -= 1.0;
                     }
@@ -2633,72 +2691,69 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                         double frac = pos - i0;
 
                         if (bufChannels == 1) chIdx = 0;
-                        else if (bufChannels >= channels) chIdx = ch;
+                        else if (bufChannels >= vch) chIdx = ch;
                         else chIdx = ch % bufChannels;
 
-                        int idx0 = (i0 % bufFrames) * bufChannels + chIdx;
-                        int idx1 = ((i0 + 1) % bufFrames) * bufChannels + chIdx;
-                        idx0_dbg = idx0;
-                        idx1_dbg = idx1;
-                        float fs0 = 0.0f;
-                        float fs1 = 0.0f;
-                        if (bd.isPlanar && !bd.planarPtrs.empty() && bd.planarFrames > 0) {
-                            int planarChannel = std::max(0, std::min(
-                                    static_cast<int>(bd.planarPtrs.size()) - 1,
-                                    chIdx));
-                            const float *fptr = bd.planarPtrs[static_cast<size_t>(planarChannel)];
-                            if (fptr) {
-                                int maxIndex = bd.planarFrames - 1;
-                                int sample0 = i0 % bufFrames;
-                                int sample1 = (i0 + 1) % bufFrames;
-                                int safe0 = std::max(0, std::min(maxIndex, sample0));
-                                int safe1 = std::max(0, std::min(maxIndex, sample1));
-                                fs0 = fptr[safe0];
-                                fs1 = fptr[safe1];
-                            }
-                        } else if (bd.isDirect && bd.directPtr) {
-                            if (bd.bytesPerSample == 4) {
-                                const auto *fptr = reinterpret_cast<const float *>(bd.directPtr);
-                                int maxIndex = static_cast<int>((bd.byteLength / 4) - 1);
-                                int safe0 = std::max(0, std::min(maxIndex, idx0));
-                                int safe1 = std::max(0, std::min(maxIndex, idx1));
-                                fs0 = fptr[safe0];
-                                fs1 = fptr[safe1];
+                        auto readChannel = [&](int bc) -> float {
+                            int idx0 = (i0 % bufFrames) * bufChannels + bc;
+                            int idx1 = ((i0 + 1) % bufFrames) * bufChannels + bc;
+                            float fs0 = 0.0f;
+                            float fs1 = 0.0f;
+                            if (bd.isPlanar && !bd.planarPtrs.empty() && bd.planarFrames > 0) {
+                                int planarChannel = std::max(0, std::min(
+                                        static_cast<int>(bd.planarPtrs.size()) - 1,
+                                        bc));
+                                const float *fptr = bd.planarPtrs[static_cast<size_t>(planarChannel)];
+                                if (fptr) {
+                                    int maxIndex = bd.planarFrames - 1;
+                                    int sample0 = i0 % bufFrames;
+                                    int sample1 = (i0 + 1) % bufFrames;
+                                    int safe0 = std::max(0, std::min(maxIndex, sample0));
+                                    int safe1 = std::max(0, std::min(maxIndex, sample1));
+                                    fs0 = fptr[safe0];
+                                    fs1 = fptr[safe1];
+                                }
+                            } else if (bd.isDirect && bd.directPtr) {
+                                if (bd.bytesPerSample == 4) {
+                                    const auto *fptr = reinterpret_cast<const float *>(bd.directPtr);
+                                    int maxIndex = static_cast<int>((bd.byteLength / 4) - 1);
+                                    int safe0 = std::max(0, std::min(maxIndex, idx0));
+                                    int safe1 = std::max(0, std::min(maxIndex, idx1));
+                                    fs0 = fptr[safe0];
+                                    fs1 = fptr[safe1];
+                                } else {
+                                    const auto *iptr = reinterpret_cast<const int16_t *>(bd.directPtr);
+                                    int maxIndex = static_cast<int>((bd.byteLength / 2) - 1);
+                                    int safe0 = std::max(0, std::min(maxIndex, idx0));
+                                    int safe1 = std::max(0, std::min(maxIndex, idx1));
+                                    fs0 = static_cast<float>(iptr[safe0]) / 32768.0f;
+                                    fs1 = static_cast<float>(iptr[safe1]) / 32768.0f;
+                                }
                             } else {
-                                const auto *iptr = reinterpret_cast<const int16_t *>(bd.directPtr);
-                                int maxIndex = static_cast<int>((bd.byteLength / 2) - 1);
+                                int maxIndex = static_cast<int>(bd.pcm.size()) - 1;
                                 int safe0 = std::max(0, std::min(maxIndex, idx0));
                                 int safe1 = std::max(0, std::min(maxIndex, idx1));
-                                fs0 = static_cast<float>(iptr[safe0]) / 32768.0f;
-                                fs1 = static_cast<float>(iptr[safe1]) / 32768.0f;
+                                fs0 = static_cast<float>(bd.pcm[safe0]) / 32768.0f;
+                                fs1 = static_cast<float>(bd.pcm[safe1]) / 32768.0f;
                             }
-                        } else {
-                            int maxIndex = static_cast<int>(bd.pcm.size()) - 1;
-                            int safe0 = std::max(0, std::min(maxIndex, idx0));
-                            int safe1 = std::max(0, std::min(maxIndex, idx1));
-                            fs0 = static_cast<float>(bd.pcm[safe0]) / 32768.0f;
-                            fs1 = static_cast<float>(bd.pcm[safe1]) / 32768.0f;
-                        }
-                        sample = fs0 * (1.0f - static_cast<float>(frac)) +
-                                 fs1 * static_cast<float>(frac);
+                            return fs0 * (1.0f - static_cast<float>(frac)) +
+                                   fs1 * static_cast<float>(frac);
+                        };
+                        idx0_dbg = (i0 % bufFrames) * bufChannels + chIdx;
+                        idx1_dbg = ((i0 + 1) % bufFrames) * bufChannels + chIdx;
+                        sample = speakerMix(readChannel, bufChannels, vch, ch);
                     } else if (v.voiceType == Voice::WorkletOutput) {
                         const NativeEngine::WorkletNode &w = *v.worklet;
                         bufChannels = w.outChannels[v.workletOutput];
                         bufFrames = INT32_MAX;
                         if (bufChannels == 1) chIdx = 0;
-                        else if (bufChannels >= channels) chIdx = ch;
+                        else if (bufChannels >= vch) chIdx = ch;
                         else chIdx = ch % bufChannels;
                         workletFrame = w.outQ.data() +
                                        static_cast<size_t>(v.workletOutput * NativeEngine::kWorkletMaxChannels * 128) +
                                        workletAt(w, frame);
-                        if (channels == 1 && bufChannels > 1) {
-                            // Down-mixes by averaging, as Web Audio's "speakers" do.
-                            float sum = 0.0f;
-                            for (int c = 0; c < bufChannels; c++) sum += workletFrame[c * 128];
-                            sample = sum / static_cast<float>(bufChannels);
-                        } else {
-                            sample = workletFrame[chIdx * 128];
-                        }
+                        sample = speakerMix([&](int c) { return workletFrame[c * 128]; },
+                                            bufChannels, vch, ch);
                     } else /* ExternalPCM */ {
                         auto &ring = v.externalRing;
                         if (!ring) continue;
@@ -2716,7 +2771,7 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                             bufChannels = externalChannels;
                             bufFrames = INT32_MAX;
                             if (bufChannels == 1) chIdx = 0;
-                            else if (bufChannels >= channels) chIdx = ch;
+                            else if (bufChannels >= vch) chIdx = ch;
                             else chIdx = ch % bufChannels;
 
                             uint32_t w = ring->writeIdx.load(std::memory_order_acquire);
@@ -2764,7 +2819,7 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                         if (filterRef.biquad) {
                             int fsIndex = outputChannelIndex;
                             if (v.filterState.size() <= static_cast<size_t>(fsIndex)) {
-                                v.filterState.assign(channels, NativeEngine::BiquadState());
+                                v.filterState.assign(vch, NativeEngine::BiquadState());
                             }
                             return processBiquadSample(*filterRef.biquad,
                                                        v.filterState[static_cast<size_t>(fsIndex)],
@@ -2773,7 +2828,7 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
 
                         if (filterRef.iir) {
                             int fsIndex = outputChannelIndex;
-                            auto chCount = static_cast<size_t>(channels);
+                            auto chCount = static_cast<size_t>(vch);
                             if (v.iirState.size() < chCount) {
                                 v.iirState.assign(chCount, std::vector<double>());
                             }
@@ -2855,7 +2910,7 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                         return prev * (1.0f - t) + curr * t;
                     };
 
-                    bool stereoInput = bufChannels > 1 && channels > 1;
+                    bool stereoInput = bufChannels > 1 && vch > 1;
                     float inputLeft = sample;
                     float inputRight = sample;
                     bool hrtfModel = false;
@@ -2864,8 +2919,8 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                         auto cacheIt = stereoInputCache.find(v.id);
                         if (cacheIt == stereoInputCache.end()) {
                             std::array<float, 2> cached{{
-                                    applyVoiceFilter(sampleInputChannel(0), 0),
-                                    applyVoiceFilter(sampleInputChannel(1), 1),
+                                    applyVoiceFilter(speakerMix(sampleInputChannel, bufChannels, vch, 0), 0),
+                                    applyVoiceFilter(speakerMix(sampleInputChannel, bufChannels, vch, 1), 1),
                             }};
                             cacheIt = stereoInputCache.emplace(v.id, cached).first;
                         }
@@ -2909,7 +2964,7 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                     }
 
                     bool useHrtfConvolution =
-                            hrtfModel && hrtfConvolver != nullptr && channels > 1;
+                            hrtfModel && hrtfConvolver != nullptr && vch > 1;
                     bool treatStereoAsMono = stereoInput && useHrtfConvolution;
                     if (useHrtfConvolution && ch < 2) {
                         auto hrtfIt = hrtfOutputCache.find(v.id);
@@ -2936,10 +2991,10 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                             double frac = v.position - i0;
                             int idx0 = idx0_dbg;
                             int idx1 = idx1_dbg;
-                            int chOther = (channels > 1) ? 1 : 0;
+                            int chOther = (vch > 1) ? 1 : 0;
                             int chIdxOther = chOther;
                             if (bufChannels == 1) chIdxOther = 0;
-                            else if (bufChannels >= channels) chIdxOther = chOther;
+                            else if (bufChannels >= vch) chIdxOther = chOther;
                             else chIdxOther = chOther % bufChannels;
                             int idx0Other = (i0 % bufFrames) * bufChannels + chIdxOther;
                             int idx1Other = ((i0 + 1) % bufFrames) * bufChannels + chIdxOther;
@@ -2989,7 +3044,7 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                             (void) idx1;
                             audioThreadLog(ANDROID_LOG_INFO,
                                            "VOICE_DEBUG id=%s buffer=%s bufCh=%d streamCh=%d ch0_chIdx=%d ch0_idx0=%d ch0_idx1=%d ch0_sample=%f ch1_chIdx=%d ch1_idx0=%d ch1_idx1=%d ch1_sample=%f leftGain=%f rightGain=%f panId=%s",
-                                           v.id.c_str(), v.bufferId.c_str(), bufChannels, channels,
+                                           v.id.c_str(), v.bufferId.c_str(), bufChannels, vch,
                                            chIdx, idx0, idx1, sample, chIdxOther, idx0Other,
                                            idx1Other, sampleOther, leftGain, rightGain,
                                            v.panId.c_str());
@@ -3002,7 +3057,7 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                             : resolveOutputMappedId(gainRoute, ch, v.gainId);
                     double scheduled = resolveGainValueForFrame(effGainId3, v.gain, frame);
 
-                    if (channels <= 1) {
+                    if (vch <= 1) {
                         if (!effGainId3.empty()) {
                             auto wsIt3 = waveShapers_.find(effGainId3);
                             if (wsIt3 != waveShapers_.end() && !wsIt3->second.curve.empty()) {
@@ -3085,7 +3140,7 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                         }
                     }
 
-                    if (ch == channels - 1) {
+                    if (ch == vch - 1) {
                         if (v.voiceType == Voice::BufferSource) {
                             double prScale = 1.0;
                             const std::string &resolvedPRId =
@@ -3134,7 +3189,7 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
             }
 
 
-            out[frame * channels + ch] += mixed;
+            if (ch < channels) out[frame * channels + ch] += mixed;
         }
         if (!offline_) {
             for (NativeEngine::WorkletNode *w: worklets) {

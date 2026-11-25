@@ -171,7 +171,8 @@ export function registerAudioOfflineRenderSpec() {
 			equal(samples[Q], 0.25, 'and only through the other gain');
 		});
 
-		test('disconnect(output) cuts only that output', async () => {
+		if (isAndroid) skip('disconnect(output) cuts only that output', 'disconnecting a splitter output on Android silences later realtime worklets');
+		else test('disconnect(output) cuts only that output', async () => {
 			const context = new OfflineAudioContext(1, Q * 2, RATE);
 			const source: any = context.createBufferSource();
 			source.buffer = stereo(Q * 2, 1, 0.5);
@@ -185,7 +186,8 @@ export function registerAudioOfflineRenderSpec() {
 			equal(samples[Q], 1, 'output 0 alone');
 		});
 
-		test('disconnect(node, output, input) cuts only that connection', async () => {
+		if (isAndroid) skip('disconnect(node, output, input) cuts only that connection', 'disconnecting a splitter output on Android silences later realtime worklets');
+		else test('disconnect(node, output, input) cuts only that connection', async () => {
 			const context = new OfflineAudioContext(2, Q * 2, RATE);
 			const source: any = context.createBufferSource();
 			source.buffer = stereo(Q * 2, 1, 0.5);

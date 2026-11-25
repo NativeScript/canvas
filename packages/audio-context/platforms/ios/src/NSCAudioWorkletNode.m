@@ -3,6 +3,8 @@
 #import <AudioToolbox/AudioToolbox.h>
 #import "NSCAudioContext.h"
 #import "NSCAudioLog.h"
+#import "NSCChannelMixerNode.h"
+#import "NSCParamEffectNode.h"
 
 #define QUANTUM 128
 #define SLOTS 64
@@ -40,7 +42,7 @@ typedef struct {
     // One render call's pulled inputs and rendered outputs, `maxFrames` per channel.
     float *pulled;
     float *rendered;
-    AudioBufferList *pullLists[16];
+    AudioBufferList *pullLists[17];
     UInt32 maxFrames;
     double lastSampleTime;
     NSInteger position;
@@ -53,6 +55,9 @@ typedef struct {
     uint64_t requestFrame;
     CFTypeRef params;
     double sampleRate;
+    // The bus whose sinks write the params' audio inputs, pulled first; -1 without params.
+    NSInteger paramBus;
+    _Atomic int paramInputs;
 } WorkletRender;
 
 #define MAX_PORTS 16
@@ -175,7 +180,7 @@ static void ProcessOfflineInputs(WorkletRender *r) {
 
 static void EndQuantum(WorkletRender *r) {
     if (r->offline) {
-        if (r->inputs > 0) ProcessOfflineInputs(r);
+        if (r->inputs > 0 || atomic_load_explicit(&r->paramInputs, memory_order_relaxed)) ProcessOfflineInputs(r);
         else PullOffline(r);
     } else {
         if (!r->finished) PushRequest(r, r->nextFrame, r->nextFrame / r->sampleRate);
@@ -213,6 +218,15 @@ static void DownmixOutputs(WorkletRender *r, AUAudioFrameCount frames) {
 // a call is one quantum, so it is processed before it plays; realtime output trails by a quantum.
 static void Process(WorkletRender *r, const AudioTimeStamp *ts, AUAudioFrameCount frames, AURenderPullInputBlock pull) {
     BOOL silent[MAX_PORTS];
+    if (r->paramBus >= 0 && pull && atomic_load_explicit(&r->paramInputs, memory_order_relaxed)) {
+        AudioBufferList *abl = r->pullLists[r->paramBus];
+        for (UInt32 c = 0; c < abl->mNumberBuffers; c++) {
+            abl->mBuffers[c].mData = Pulled(r, r->paramBus, c);
+            abl->mBuffers[c].mDataByteSize = frames * sizeof(float);
+        }
+        AudioUnitRenderActionFlags flags = 0;
+        pull(&flags, ts, frames, r->paramBus, abl);
+    }
     for (NSInteger i = 0; i < r->inputs; i++) {
         AudioBufferList *abl = r->pullLists[i];
         for (UInt32 c = 0; c < abl->mNumberBuffers; c++) {
@@ -320,7 +334,7 @@ static NSArray<AVAudioFormat *> *pendingOutputs;
     if (frames > r->maxFrames) {
         free(r->pulled);
         free(r->rendered);
-        r->pulled = calloc((size_t)MAX(r->inputs, 1) * MAX_CHANNELS * frames, sizeof(float));
+        r->pulled = calloc((size_t)(r->inputs + 1) * MAX_CHANNELS * frames, sizeof(float));
         r->rendered = calloc((size_t)MAX(r->outputs, 1) * MAX_CHANNELS * frames, sizeof(float));
         r->maxFrames = frames;
     }
@@ -350,7 +364,7 @@ static NSArray<AVAudioFormat *> *pendingOutputs;
 - (void)dealloc {
     WorkletRender *r = _render;
     if (!r) return;
-    for (NSInteger i = 0; i < MAX_PORTS; i++) free(r->pullLists[i]);
+    for (NSInteger i = 0; i <= MAX_PORTS; i++) free(r->pullLists[i]);
     free(r->pulled);
     free(r->rendered);
     free(r->inQ);
@@ -374,9 +388,10 @@ static AudioComponentDescription WorkletDescription(BOOL generator) {
 @implementation NSCAudioWorkletNode {
     NSData *_ring;
     AVAudioUnit *_unit;
-    NSArray<AVAudioMixerNode *> *_inputMixers;
-    // Connections into input i go to this wrapper of its mixer.
+    // Connections into input i go to its channel mixer.
     NSArray<NSCAudioNode *> *_inputPorts;
+    AVAudioMixerNode *_paramMixer;
+    AVAudioFormat *_paramFormat;
     BOOL _active;
 }
 
@@ -410,14 +425,18 @@ static AudioComponentDescription WorkletDescription(BOOL generator) {
     NSMutableArray<AVAudioFormat *> *outFormats = [NSMutableArray array];
     for (NSInteger i = 0; i < inputs; i++) {
         inCounts[i] = MAX(1, MIN(inputChannels[i].integerValue, MAX_CHANNELS));
-        [inFormats addObject:ChannelFormat(sampleRate, PortChannels(inCounts[i], contextChannels))];
+        // Each input's channel mixer gives it exactly channelCount channels.
+        [inFormats addObject:ChannelFormat(sampleRate, inCounts[i])];
     }
     for (NSInteger o = 0; o < outputs; o++) {
         outCounts[o] = MAX(1, MIN(outputChannels[o].integerValue, MAX_CHANNELS));
         [outFormats addObject:ChannelFormat(sampleRate, PortChannels(outCounts[o], contextChannels))];
     }
 
-    pendingInputs = inFormats;
+    // Only an effect pulls a bus; a worklet without inputs reads connected param audio a quantum late.
+    BOOL hasParams = paramDefaults.count > 0 && inputs > 0;
+    AVAudioFormat *paramFormat = ChannelFormat(sampleRate, contextChannels);
+    pendingInputs = hasParams ? [inFormats arrayByAddingObject:paramFormat] : inFormats;
     pendingOutputs = outFormats;
     // A registered in-process unit instantiates synchronously.
     AVAudioUnit *unit = inputs > 0
@@ -456,6 +475,13 @@ static AudioComponentDescription WorkletDescription(BOOL generator) {
         r->outPort[o] = (NSInteger)outFormats[o].channelCount;
         r->outputData[o] = outputData[o].integerValue;
     }
+    r->paramBus = hasParams ? inputs : -1;
+    if (hasParams) {
+        AudioBufferList *abl = calloc(1, sizeof(AudioBufferList) + (MAX_CHANNELS - 1) * sizeof(AudioBuffer));
+        abl->mNumberBuffers = (UInt32)MIN(paramFormat.channelCount, (AVAudioChannelCount)MAX_CHANNELS);
+        for (UInt32 c = 0; c < abl->mNumberBuffers; c++) abl->mBuffers[c].mNumberChannels = 1;
+        r->pullLists[inputs] = abl;
+    }
     r->inQ = calloc((size_t)MAX(inputs, 1) * MAX_CHANNELS * QUANTUM, sizeof(float));
     r->outQ = calloc((size_t)MAX(outputs, 1) * MAX_CHANNELS * QUANTUM, sizeof(float));
     r->position = 0;
@@ -467,6 +493,7 @@ static AudioComponentDescription WorkletDescription(BOOL generator) {
     for (NSNumber *value in paramDefaults) {
         [params addObject:[[NSCAudioParam alloc] initWithContext:context defaultValue:value.doubleValue]];
     }
+    // MAX_PORTS caps inputs, so the param bus's list fits.
     r->params = CFBridgingRetain([params copy]);
 
     if (!(self = [super initWithContext:context node:unit])) return nil;
@@ -475,26 +502,47 @@ static AudioComponentDescription WorkletDescription(BOOL generator) {
     _params = [params copy];
     _numberOfInputs = inputs;
     _numberOfOutputs = outputs;
+    for (NSCAudioParam *param in _params) param.owner = self;
 
     AVAudioEngine *engine = context.engine;
     if ([context isKindOfClass:[NSCOfflineAudioContext class]]) [(NSCOfflineAudioContext *)context willConnect];
     [engine attachNode:unit];
-    NSMutableArray<AVAudioMixerNode *> *mixers = [NSMutableArray array];
     NSMutableArray<NSCAudioNode *> *ports = [NSMutableArray array];
     for (NSInteger i = 0; i < inputs; i++) {
-        AVAudioMixerNode *mixer = [[AVAudioMixerNode alloc] init];
-        [engine attachNode:mixer];
+        NSCChannelMixerNode *port = [[NSCChannelMixerNode alloc] initWithContext:context mode:NSCMixModeSum channels:inCounts[i] discrete:NO];
+        if (!port) continue;
         @try {
-            [engine connect:mixer to:unit fromBus:0 toBus:(AVAudioNodeBus)i format:inFormats[i]];
+            [engine connect:port.avNode to:unit fromBus:0 toBus:(AVAudioNodeBus)i format:inFormats[i]];
         } @catch (NSException *e) {
             NSCLogError(@"NSCAudioWorkletNode: input %ld did not connect: %@", (long)i, e);
         }
-        [mixers addObject:mixer];
-        [ports addObject:[[NSCAudioNode alloc] initWithContext:context node:mixer]];
+        [ports addObject:port];
     }
-    _inputMixers = [mixers copy];
     _inputPorts = [ports copy];
+    if (hasParams) {
+        AVAudioMixerNode *mixer = [[AVAudioMixerNode alloc] init];
+        [engine attachNode:mixer];
+        @try {
+            [engine connect:mixer to:unit fromBus:0 toBus:(AVAudioNodeBus)inputs format:paramFormat];
+        } @catch (NSException *e) {
+            NSCLogError(@"NSCAudioWorkletNode: the param bus did not connect: %@", e);
+        }
+        _paramMixer = mixer;
+        _paramFormat = paramFormat;
+    }
     return self;
+}
+
+// Sinks feed the param bus, which the unit pulls before it reads its params.
+- (void)attachParamSink:(AVAudioNode *)sink {
+    WorkletRender *r = [self render];
+    if (!_paramMixer || !r) {
+        [super attachParamSink:sink];
+        return;
+    }
+    if (NSCConnectAdding(self.context, sink, 0, _paramMixer, _paramMixer.nextAvailableInputBus, _paramFormat)) {
+        atomic_store_explicit(&r->paramInputs, 1, memory_order_release);
+    }
 }
 
 - (void)handleConnectFrom:(NSCAudioNode *)source output:(NSNumber *)output input:(NSNumber *)input {
@@ -536,7 +584,7 @@ static AudioComponentDescription WorkletDescription(BOOL generator) {
 // Called on the thread that renders, between quanta.
 - (BOOL)prepareOfflineQuantumBefore:(uint64_t)limit {
     WorkletRender *r = [self render];
-    if (!r || !r->offline || r->finished || r->inputs > 0) return YES;
+    if (!r || !r->offline || r->finished || r->inputs > 0 || atomic_load(&r->paramInputs)) return YES;
     if (Closed(r)) return YES;
     while (r->requestFrame < limit && PushRequest(r, r->requestFrame, r->requestFrame / r->sampleRate)) r->requestFrame += QUANTUM;
     return atomic_load_explicit(&r->header[DONE], memory_order_acquire) != atomic_load_explicit(&r->header[READ], memory_order_relaxed);
@@ -555,7 +603,8 @@ static AudioComponentDescription WorkletDescription(BOOL generator) {
     if (_active) [ctx decrementActiveCount];
     AVAudioEngine *eng = ctx.engine;
     if (!ctx || !eng) return;
-    NSMutableArray<AVAudioNode *> *nodes = [NSMutableArray arrayWithArray:_inputMixers ?: @[]];
+    NSMutableArray<AVAudioNode *> *nodes = [NSMutableArray array];
+    if (_paramMixer) [nodes addObject:_paramMixer];
     if (_unit) [nodes addObject:_unit];
     for (AVAudioNode *node in nodes) {
         if (![ctx isNode:node attachedToEngine:eng]) continue;

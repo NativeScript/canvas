@@ -45,6 +45,32 @@ NS_ASSUME_NONNULL_BEGIN
 /// Applies param automation at the context's current time. Offline rendering calls it per quantum.
 - (void)applyAutomation;
 
+/// The format this node plays at before it is connected; sources set theirs, else the context's.
+@property (nonatomic, strong, nullable) AVAudioFormat *nativeFormat;
+/// The format a new connection from `bus` should use: the bus's own once it is connected.
+- (AVAudioFormat *)formatForOutput:(AVAudioNodeBus)bus;
+/// The node this one plays from: an output stage once it has one, else `avNode`.
+- (nullable AVAudioNode *)outputAVNode;
+/// The node and bus that play `output` (nil: output 0).
+- (nullable AVAudioNode *)outputNodeFor:(nullable NSNumber *)output bus:(AVAudioNodeBus *)bus;
+/// Calls `block` with each node playing `output` (nil: every output) and its bus (nil: every bus).
+- (void)eachOutputNode:(nullable NSNumber *)output block:(void (NS_NOESCAPE ^)(AVAudioNode *node, NSNumber *_Nullable bus))block;
+/// Swaps the node this wrapper plays from; only before it is connected.
+- (void)replaceAVNode:(AVAudioNode *)node;
+/// Where audio connected to `param` goes; made on first use.
+- (nullable NSCAudioNode *)inputForParam:(NSCAudioParam *)param;
+/// Connects a param's sink where it renders before this node reads the param.
+- (void)attachParamSink:(AVAudioNode *)sink;
+/// YES for nodes that play through an output stage when a param of theirs takes audio.
+@property (nonatomic, readonly) BOOL usesOutputStage;
+/// Plays this node through a stage mixing `channels` to each destination; made once.
+- (void)ensureOutputStageWithChannels:(NSInteger)channels;
+
 @end
+
+/// Adds a connection from `src`'s bus to `dst`'s bus, keeping `src`'s other connections.
+BOOL NSCConnectAdding(NSCAudioContext *_Nullable context, AVAudioNode *src, AVAudioNodeBus fromBus, AVAudioNode *dst, AVAudioNodeBus toBus, AVAudioFormat *_Nullable format);
+/// Removes `src`'s connections from `fromBus` (nil: every bus) to `dst` (nil: any) on `toBus` (nil: any).
+void NSCDisconnectRemoving(NSCAudioContext *_Nullable context, AVAudioNode *src, NSNumber *_Nullable fromBus, AVAudioNode *_Nullable dst, NSNumber *_Nullable toBus);
 
 NS_ASSUME_NONNULL_END

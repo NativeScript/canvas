@@ -65,6 +65,7 @@ static inline NSCOscWaveform NSCOscWaveformFromString(NSString * _Nullable type)
     atomic_init(waveTypeCell, (uint_least8_t)NSCOscWaveformFromString(type));
 
     NSCAudioParam *freqParam = [[NSCAudioParam alloc] initWithContext:context defaultValue:frequency];
+    NSCAudioParam *detuneParam = [[NSCAudioParam alloc] initWithContext:context defaultValue:0.0];
     AVAudioFormat *format = context.format
     ?: [[AVAudioFormat alloc] initWithCommonFormat:AVAudioPCMFormatFloat32 sampleRate:44100.0 channels:1 interleaved:NO];
 
@@ -101,7 +102,6 @@ static inline NSCOscWaveform NSCOscWaveformFromString(NSString * _Nullable type)
         double sampleRate = format.sampleRate;
         BOOL hasSampleTime = (timestamp && (timestamp->mFlags & kAudioTimeStampSampleTimeValid));
         double blockFrame = hasSampleTime ? NSCContextFrame(timestamp->mSampleTime, (const double *)timelineCell.bytes) : 0.0;
-        double startTime = blockFrame / sampleRate;
 
         UInt32 bufCount = audioBufferList->mNumberBuffers;
         float *out0 = (bufCount > 0) ? (float *)audioBufferList->mBuffers[0].mData : NULL;
@@ -155,7 +155,17 @@ static inline NSCOscWaveform NSCOscWaveformFromString(NSString * _Nullable type)
         }
 
         double freqValues[frameCount];
-        BOOL hasAutomation = [freqParam fillValuesForRange:startTime sampleRate:sampleRate frameCount:(NSInteger)frameCount into:freqValues];
+        double detuneValues[frameCount];
+        BOOL freqAutomated = [freqParam fillValuesFromFrame:blockFrame sampleRate:sampleRate frameCount:(NSInteger)frameCount into:freqValues];
+        BOOL detuneAutomated = [detuneParam fillValuesFromFrame:blockFrame sampleRate:sampleRate frameCount:(NSInteger)frameCount into:detuneValues];
+        BOOL hasAutomation = freqAutomated || detuneAutomated;
+        if (hasAutomation) {
+            for (AVAudioFrameCount f = 0; f < frameCount; ++f) {
+                if (detuneValues[f] != 0.0) freqValues[f] *= exp2(detuneValues[f] / 1200.0);
+            }
+        } else if (detuneValues[0] != 0.0) {
+            freqValues[0] *= exp2(detuneValues[0] / 1200.0);
+        }
 
         const double TWO_PI = 2.0 * M_PI;
         const double invTwoPi = 1.0 / TWO_PI;
@@ -223,6 +233,9 @@ static inline NSCOscWaveform NSCOscWaveformFromString(NSString * _Nullable type)
     if (self = [super initWithContext:context node:source]) {
         _type = [type ?: @"sine" copy];
         _frequencyParam = freqParam;
+        _detuneParam = detuneParam;
+        freqParam.owner = self;
+        detuneParam.owner = self;
         _sourceNode = source;
         _phase = 0.0;
         _playingFlagData = playingData;
@@ -310,6 +323,8 @@ static inline NSCOscWaveform NSCOscWaveformFromString(NSString * _Nullable type)
     double now = self.context ? self.context.currentTime : 0.0;
     [_frequencyParam setValueAtTime:@(frequency) :@(now)];
 }
+
+- (BOOL)usesOutputStage { return YES; }
 
 - (void)setPeriodicWave:(NSCPeriodicWave *)wave {
     if (wave) _type = @"custom";

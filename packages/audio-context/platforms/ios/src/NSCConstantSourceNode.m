@@ -48,6 +48,7 @@
     NSMutableData *capturedScheduleData = scheduleData;
     NSMutableData *timelineCell = context.timelineCell ?: [NSMutableData dataWithLength:NSCTimelineSlots * sizeof(double)];
     __weak NSCConstantSourceNode *weakSelf = self;
+    NSCAudioParam *offsetParam = [[NSCAudioParam alloc] initWithContext:context defaultValue:offset];
     AVAudioSourceNode *source = [[AVAudioSourceNode alloc] initWithFormat:format renderBlock:^OSStatus(BOOL *isSilence, const AudioTimeStamp *ts, AVAudioFrameCount frameCount, AudioBufferList *abl) {
         atomic_uint_least8_t *playingCell = (atomic_uint_least8_t *)capturedPlayingData.mutableBytes;
         double *offsetCell = (double *)capturedOffsetData.mutableBytes;
@@ -56,8 +57,10 @@
         AVAudioFrameCount first = 0;
         AVAudioFrameCount end = playing ? frameCount : 0;
         BOOL hitStop = NO;
-        if (playing && ts && (ts->mFlags & kAudioTimeStampSampleTimeValid)) {
-            int64_t blockStart = llround(NSCContextFrame(ts->mSampleTime, (const double *)timelineCell.bytes));
+        BOOL hasSampleTime = ts && (ts->mFlags & kAudioTimeStampSampleTimeValid);
+        double blockFrame = hasSampleTime ? NSCContextFrame(ts->mSampleTime, (const double *)timelineCell.bytes) : 0.0;
+        if (playing && hasSampleTime) {
+            int64_t blockStart = llround(blockFrame);
             int64_t blockEnd = blockStart + (int64_t)frameCount;
             int64_t startSample = atomic_load_explicit(&schedule[0], memory_order_acquire);
             int64_t stopSample = atomic_load_explicit(&schedule[1], memory_order_acquire);
@@ -67,14 +70,19 @@
                 hitStop = YES;
             }
         }
-        float v = (float)(*offsetCell);
+        (void)offsetCell;
+        double values[frameCount];
+        BOOL automated = end > first && [offsetParam fillValuesFromFrame:blockFrame sampleRate:format.sampleRate frameCount:(NSInteger)frameCount into:values];
+        float v = end > first ? (float)values[0] : 0.0f;
         float zero = 0.0f;
         UInt32 bufCount = abl->mNumberBuffers;
         for (UInt32 b = 0; b < bufCount; ++b) {
             float *dst = (float *)abl->mBuffers[b].mData;
             if (!dst) continue;
             vDSP_vfill(&zero, dst, 1, (vDSP_Length)frameCount);
-            if (end > first) vDSP_vfill(&v, dst + first, 1, (vDSP_Length)(end - first));
+            if (end <= first) continue;
+            if (automated) for (AVAudioFrameCount k = first; k < end; ++k) dst[k] = (float)values[k];
+            else vDSP_vfill(&v, dst + first, 1, (vDSP_Length)(end - first));
         }
         if (end <= first && isSilence) *isSilence = YES;
         if (hitStop) {
@@ -99,15 +107,18 @@
         _schedule = scheduleCells;
         _playingFlag = playingCell;
         _offsetCell = offsetCell;
-        _offsetParam = [[NSCAudioParam alloc] initWithContext:context defaultValue:offset];
+        _offsetParam = offsetParam;
+        offsetParam.owner = self;
         [context.engine attachNode:source];
     }
     return self;
 }
 
 - (void)setOffsetScalar:(double)v {
-    if (_offsetCell) *_offsetCell = v;
+    [_offsetParam setValue:@(v)];
 }
+
+- (BOOL)usesOutputStage { return YES; }
 
 - (BOOL)isPlaying {
     return _playingFlag ? atomic_load_explicit(_playingFlag, memory_order_acquire) == 1 : NO;

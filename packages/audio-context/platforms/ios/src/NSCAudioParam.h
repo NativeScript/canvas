@@ -1,6 +1,16 @@
 #import <Foundation/Foundation.h>
+#import <stdatomic.h>
 
 NS_ASSUME_NONNULL_BEGIN
+
+#define NSC_PARAM_INPUT_FRAMES 4096
+
+/// The mono sum of the audio connected to a param for one render call, from context frame `frame`.
+typedef struct {
+    _Atomic double frame;
+    _Atomic uint32_t frames;
+    float values[NSC_PARAM_INPUT_FRAMES];
+} NSCParamInputBlock;
 
 @class NSCAudioContext;
 @class NSCAudioParam;
@@ -14,6 +24,12 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, weak, nullable) NSCAudioNode *owner;
 
 @property (nonatomic, copy, nullable) void (^onScheduleChanged)(NSCAudioParam *param);
+
+/// Where audio connected to this param goes, and the sink that writes its sum into `inputBlock`.
+@property (nonatomic, strong, nullable) NSCAudioNode *inputNode;
+@property (nonatomic, strong, nullable) id inputSink;
+/// Shared with the sink; made on first use. Values read for frames it covers include it.
+- (NSMutableData *)inputData;
 
 - (instancetype)initWithContext:(nullable NSCAudioContext *)context
                    defaultValue:(double)defaultValue NS_DESIGNATED_INITIALIZER;

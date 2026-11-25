@@ -14,6 +14,7 @@
     if (self = [super initWithContext:context node:mixer]) {
         mixer.pan = (float)MAX(-1.0, MIN(1.0, pan));
         _panParam = [[NSCAudioParam alloc] initWithContext:context defaultValue:pan];
+        _panParam.owner = self;
         _automationAnchorHostTime = 0;
         _automationAnchorAudioTime = 0.0;
         _automationUsesHostTime = NO;
@@ -111,6 +112,11 @@
     _automationUsesHostTime = NO;
     _automationAnchorHostTime = 0;
     _automationAnchorAudioTime = 0.0;
+}
+
+- (void)attachParamSink:(AVAudioNode *)sink {
+    [super attachParamSink:sink];
+    [self ensureAutomationLink];
 }
 
 - (void)applyAutomation {

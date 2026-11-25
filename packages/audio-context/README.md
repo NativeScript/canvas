@@ -178,10 +178,11 @@ the `PannerNode` position and orientation and a worklet's params when it has no 
 the connected audio once per quantum, a quantum late.
 
 On Android `node.connect(param)` adds the node's output, mixed down to mono, to the param every
-frame for `GainNode.gain`, `DelayNode.delayTime`, `ConstantSourceNode.offset`, oscillator
-`frequency`, `AudioBufferSourceNode.playbackRate`, the `DynamicsCompressorNode` params, panner
+frame for `GainNode.gain`, `DelayNode.delayTime`, `ConstantSourceNode.offset`,
+`AudioBufferSourceNode.playbackRate`, the `DynamicsCompressorNode` params, panner
 params and `AudioWorkletNode` params (for a worklet with inputs). `BiquadFilterNode` and listener
-params ignore audio connected to them.
+params ignore audio connected to them, and oscillator `frequency` follows it but drifts from
+the automated value.
 
 ## Android memory
 

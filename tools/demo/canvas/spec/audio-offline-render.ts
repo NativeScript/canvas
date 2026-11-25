@@ -294,7 +294,8 @@ export function registerAudioOfflineRenderSpec() {
 			equal(samples[Q], 0.125, 'through the gain at its own value');
 		});
 
-		test(OSC_PARAM, () =>
+		if (isAndroid) skip(OSC_PARAM, 'connected audio drifts from automation on Android oscillator frequency');
+		else test(OSC_PARAM, () =>
 			sameOnEveryFrame((context, merger) => {
 				const driven = context.createOscillator({ frequency: 441 } as any);
 				constant(context, 441, ON / RATE).connect(driven.frequency);

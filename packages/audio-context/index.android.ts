@@ -1336,6 +1336,18 @@ export class AudioContext extends BaseAudioContext {
 		return new MediaElementAudioSourceNode(this, mediaElement);
 	}
 
+	createMediaStreamSource(_stream: any): never {
+		throw domError('NotSupportedError', 'AudioContext.createMediaStreamSource: NativeScript has no MediaStream');
+	}
+
+	createMediaStreamTrackSource(_track: any): never {
+		throw domError('NotSupportedError', 'AudioContext.createMediaStreamTrackSource: NativeScript has no MediaStream');
+	}
+
+	createMediaStreamDestination(_options?: any): never {
+		throw domError('NotSupportedError', 'AudioContext.createMediaStreamDestination: NativeScript has no MediaStream');
+	}
+
 	createSourceNodeFromPlayer(playerNative: any): MediaElementAudioSourceNode | null {
 		try {
 			const native: any = this.native;

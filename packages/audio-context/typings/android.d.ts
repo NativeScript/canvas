@@ -475,6 +475,7 @@ declare module org {
 				public setValueCurveAtTime(values: java.nio.FloatBuffer, t: number, duration: number): void;
 				public setValueAtTime(v: number, t: number): void;
 				public getValue(): number;
+				public getComputedValue(): number;
 				public getValuesForRange(out: number, this_: number, startTime: number): androidNative.Array<number>;
 			}
 			export module AudioParam {

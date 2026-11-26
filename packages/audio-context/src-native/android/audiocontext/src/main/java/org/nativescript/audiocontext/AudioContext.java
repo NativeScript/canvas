@@ -887,6 +887,59 @@ public class AudioContext {
 	private void addToContextSet(ConcurrentHashMap<String, Set<String>> map, String contextId, String value) {
 		if (contextId == null || value == null || value.isEmpty()) return;
 		getOrCreateContextSet(map, contextId).add(value);
+		// Graph nodes take their realtime context's clock, so a suspended context's nodes hold.
+		boolean node = map == contextTracksMap || map == contextGains || map == contextBiquads || map == contextPanners || map == contextIirs;
+		if (node && nativeAvailable && !isOfflineId(contextId)) {
+			try {
+				nativeSetNodeContext(value, contextId);
+			} catch (Throwable ignored) {
+			}
+		}
+	}
+
+	private native void nativeSetNodeContext(String id, String contextId);
+
+	private native void nativeSuspendContext(String contextId);
+
+	private native void nativeResumeContext(String contextId);
+
+	private native double nativeParamComputedValue(String id, int type);
+
+	private native void nativeHoldParamValue(String id, int type, double value);
+
+	double getParamComputedValue(String id, int type) {
+		if (!nativeAvailable || id == null) return Double.NaN;
+		return nativeParamComputedValue(id, type);
+	}
+
+	void holdParamValue(String id, int type, double value) {
+		if (nativeAvailable && id != null) nativeHoldParamValue(id, type, value);
+	}
+
+	// Suspends one realtime context; the stream stops once every context is suspended.
+	public void suspendAsync(String contextId, @Nullable AsyncCallback cb) {
+		runContextAsync(contextId, true, cb);
+	}
+
+	public void resumeAsync(String contextId, @Nullable AsyncCallback cb) {
+		runContextAsync(contextId, false, cb);
+	}
+
+	private void runContextAsync(String contextId, boolean suspend, @Nullable AsyncCallback cb) {
+		final Looper callerLooper = captureCallerLooper();
+		decodeExecutor.submit(() -> {
+			boolean ok = true;
+			try {
+				if (nativeAvailable) {
+					if (suspend) nativeSuspendContext(contextId);
+					else nativeResumeContext(contextId);
+				}
+			} catch (Throwable t) {
+				ok = false;
+			}
+			final boolean result = ok;
+			if (cb != null) dispatch(callerLooper, () -> cb.onComplete(result));
+		});
 	}
 
 	boolean isDestinationNode(String nodeId) {
@@ -972,6 +1025,8 @@ public class AudioContext {
 		String src = nodeId(source);
 		Integer target = param == null ? null : paramTarget(param);
 		if (!nativeAvailable || src == null || target == null || param.getId() == null) return;
+		// Audio drives the param, so it records its rendered value.
+		nativeParamComputedValue(param.getId(), target);
 		nativeConnect(src, kindOf(source, src), portsOf(source), output, param.getId(), 0, 1, 0, target);
 	}
 
@@ -1769,6 +1824,8 @@ public class AudioContext {
 		decodeExecutor.submit(() -> {
 			boolean ok = true;
 			try {
+				// A closed context's clock stops.
+				if (nativeAvailable && contextId != null && !isOfflineId(contextId)) nativeSuspendContext(contextId);
 				if (nativeAvailable && (contextId == null || openRealtimeContexts.isEmpty())) nativeSuspend();
 			} catch (Throwable t) {
 				ok = false;

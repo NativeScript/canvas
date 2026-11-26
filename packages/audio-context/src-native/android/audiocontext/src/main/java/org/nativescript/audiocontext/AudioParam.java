@@ -79,6 +79,7 @@ public class AudioParam implements NativeObject {
 	}
 
 	public void setValue(double v) {
+		AudioContext.getInstance().holdParamValue(id, targetCode(), v);
 		if (owner != null) {
 			switch (type) {
 				case PANNER_POSITION_X:
@@ -154,7 +155,26 @@ public class AudioParam implements NativeObject {
 		return AudioContext.getInstance().getGain(id);
 	}
 
+	// The engine's param code: -1 for a gain-style param, else the panner or listener param type.
+	private int targetCode() {
+		int ordinal = type.ordinal();
+		int first = Type.PANNER_POSITION_X.ordinal();
+		if (ordinal >= first && ordinal <= Type.LISTENER_UP_Z.ordinal()) return 5 + ordinal - first;
+		return -1;
+	}
+
+	/** The value automation and connected audio gave on the last rendered quantum, or one set since; NaN before either. */
+	public double getComputedValue() {
+		return AudioContext.getInstance().getParamComputedValue(id, targetCode());
+	}
+
+	// Automated params record their rendered value from here on.
+	private void track() {
+		AudioContext.getInstance().getParamComputedValue(id, targetCode());
+	}
+
 	public void setValueAtTime(double v, double t) {
+		track();
 		if (owner != null) {
 			AudioContext.getInstance().schedulePannerSet(owner.getId(), this.type.ordinal(), this.automationRate, v, t);
 			if (t <= 0.0) setValue(v);
@@ -170,6 +190,7 @@ public class AudioParam implements NativeObject {
 	}
 
 	public void linearRampToValueAtTime(double v, double t) {
+		track();
 		if (owner != null) {
 			AudioContext.getInstance().schedulePannerRamp(owner.getId(), this.type.ordinal(), this.automationRate, v, t);
 			if (t <= 0.0) setValue(v);
@@ -204,6 +225,7 @@ public class AudioParam implements NativeObject {
 	}
 
 	private void schedule(int type, double v, double t, double timeConstant, double duration, java.nio.FloatBuffer curve) {
+		track();
 		if (owner != null) {
 			AudioContext.getInstance().scheduleParamEvent(1, owner.getId(), this.type.ordinal(), type, this.automationRate, t, v, timeConstant, duration, curve);
 		} else if (contextOwner != null) {

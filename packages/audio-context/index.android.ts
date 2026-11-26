@@ -113,6 +113,9 @@ function makeAndroidHooks(native: org.nativescript.audiocontext.AudioParam): Aud
 		nativeGetValue() {
 			return native.getValue();
 		},
+		nativeComputedValue() {
+			return native.getComputedValue();
+		},
 		nativeSetAutomationRate(rate) {
 			native.setAutomationRate(rate);
 		},
@@ -1441,7 +1444,7 @@ export class AudioContext extends BaseAudioContext {
 		if (this._state === 'closed' || this._closing) return Promise.reject(domError('InvalidStateError', 'AudioContext.resume: the context is closed'));
 		return new Promise((resolve, reject) => {
 			const ref = new WeakRef(this);
-			AudioContext.getInstance().resumeAsync(
+			this.native.resumeAsync(
 				new org.nativescript.audiocontext.AudioContext.AsyncCallback({
 					onComplete(ok) {
 						if (ok) {
@@ -1463,7 +1466,7 @@ export class AudioContext extends BaseAudioContext {
 		if (this._state === 'closed' || this._closing) return Promise.reject(domError('InvalidStateError', 'AudioContext.suspend: the context is closed'));
 		return new Promise((resolve, reject) => {
 			const ref = new WeakRef(this);
-			AudioContext.getInstance().suspendAsync(
+			this.native.suspendAsync(
 				new org.nativescript.audiocontext.AudioContext.AsyncCallback({
 					onComplete(ok) {
 						if (ok) {

@@ -150,6 +150,32 @@ public:
 
     int64_t getContextCurrentTimeNanos(const std::string &contextId);
 
+    // A realtime context's nodes stop rendering and its clock stops; others play on.
+    void suspendContext(const std::string &contextId);
+
+    void resumeContext(const std::string &contextId);
+
+    // Node `id` belongs to `contextId`; nodes connected to it inherit that.
+    void setNodeContext(const std::string &id, const std::string &contextId);
+
+    // Drops what setNodeContext and paramComputedValue kept for a released node.
+    void forgetNode(const std::string &id);
+
+    // The value param (id, type) had on the last quantum rendered, or a value set since; NaN if unknown.
+    double paramComputedValue(const std::string &id, int type);
+
+    void holdParamValue(const std::string &id, int type, double value);
+
+    // A context's clock: the render clock less the time it spent suspended (or not yet started).
+    struct ContextClock {
+        int64_t baseNs = 0;
+        std::atomic<int64_t> offsetNs{0};
+        // The render time it stopped at; 0 while running.
+        std::atomic<int64_t> pausedAtNs{0};
+        // Suspend requested by the app (or closed).
+        bool suspended = false;
+    };
+
     enum PannerDistanceModel {
         DISTANCE_INVERSE = 0, DISTANCE_LINEAR = 1, DISTANCE_EXPONENTIAL = 2
     };
@@ -380,7 +406,11 @@ public:
         // A source's detune param, in targetId.
         CMD_ATTACH_DETUNE,
         // A buffer source's loop flag and points.
-        CMD_SET_SOURCE_LOOP
+        CMD_SET_SOURCE_LOOP,
+        // A context's clock starts, stops or restarts at this quantum.
+        CMD_CONTEXT_START,
+        CMD_CONTEXT_SUSPEND,
+        CMD_CONTEXT_RESUME
     };
 
     // Graph node kinds; AudioContext.java's NODE_* match.
@@ -468,6 +498,7 @@ public:
         bool periodicDisableNormalization = false;
         std::string periodicWaveId;
         std::vector<float> waveShaperCurve;
+        std::shared_ptr<ContextClock> clock;
         std::string waveShaperOversample;
         std::vector<std::string> paramIds;
         std::shared_ptr<Convolver> convolver;
@@ -551,6 +582,8 @@ private:
         int low = 0;
         bool onStack = false;
         int pending = 0;
+        // Its context's clock; null plays on the engine clock.
+        std::shared_ptr<ContextClock> clock;
     };
 
     struct ParamInput {
@@ -893,8 +926,25 @@ public:
     std::thread endedThread_;
     bool endedStop_ = false;
 
-    std::unordered_map<std::string, int64_t> contextStartNanos_;
+    // The context's virtual 'now' on the clock of the node or context `id`, for ramps that start at the call.
+    int64_t callNowNs(const std::string &id);
+
+    std::unordered_map<std::string, std::shared_ptr<ContextClock>> contextClocks_;
+    std::unordered_map<std::string, std::shared_ptr<ContextClock>> nodeClocks_;
+    std::atomic<bool> clocksDirty_{false};
     std::mutex contextMutex_;
+    // The render clock at the start of the quantum being rendered.
+    int64_t quantumStartNs_ = 0;
+
+    struct ParamSlot {
+        int type;
+        std::atomic<double> value;
+        // Render results from before this time don't replace a value the app set.
+        std::atomic<int64_t> holdNs{0};
+        ParamSlot(int t, double v) : type(t), value(v) {}
+    };
+    // Guarded by scheduledEventsMutex_.
+    std::unordered_map<std::string, std::vector<std::unique_ptr<ParamSlot>>> paramSlots_;
 };
 
 #endif // AUDIO_CONTEXT_H

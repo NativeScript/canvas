@@ -2,6 +2,7 @@
 #include "audio_internal.h"
 
 #include <cstring>
+#include <limits>
 
 
 namespace {
@@ -91,45 +92,172 @@ static inline double defaultListenerParamValueForType(int paramType) {
 }
 
 void NativeEngine::registerContextStart(const std::string &contextId, int64_t startNanos) {
-    std::lock_guard<std::mutex> lock(contextMutex_);
-    contextStartNanos_[contextId] = startNanos;
+    auto clock = std::make_shared<ContextClock>();
+    clock->baseNs = startNanos;
+    {
+        std::lock_guard<std::mutex> lock(contextMutex_);
+        contextClocks_[contextId] = clock;
+    }
+    if (offline_) return;
+    // Held at 0 until the first quantum it renders.
+    clock->pausedAtNs.store(startNanos, std::memory_order_relaxed);
+    Command cmd;
+    cmd.type = CMD_CONTEXT_START;
+    cmd.clock = clock;
+    enqueueCommand(std::move(cmd));
 }
 
 void NativeEngine::unregisterContextStart(const std::string &contextId) {
     std::lock_guard<std::mutex> lock(contextMutex_);
-    contextStartNanos_.erase(contextId);
+    auto it = contextClocks_.find(contextId);
+    if (it == contextClocks_.end()) return;
+    const auto clock = it->second;
+    contextClocks_.erase(it);
+    for (auto n = nodeClocks_.begin(); n != nodeClocks_.end();) {
+        if (n->second == clock) n = nodeClocks_.erase(n);
+        else ++n;
+    }
+    clocksDirty_.store(true, std::memory_order_release);
+}
+
+void NativeEngine::setNodeContext(const std::string &id, const std::string &contextId) {
+    std::lock_guard<std::mutex> lock(contextMutex_);
+    auto it = contextClocks_.find(contextId);
+    if (it == contextClocks_.end()) return;
+    nodeClocks_[id] = it->second;
+    clocksDirty_.store(true, std::memory_order_release);
+}
+
+void NativeEngine::forgetNode(const std::string &id) {
+    {
+        std::lock_guard<std::mutex> lock(contextMutex_);
+        if (nodeClocks_.erase(id)) clocksDirty_.store(true, std::memory_order_release);
+    }
+    std::lock_guard<std::mutex> lock(scheduledEventsMutex_);
+    paramSlots_.erase(id);
+}
+
+void NativeEngine::suspendContext(const std::string &contextId) {
+    std::shared_ptr<ContextClock> clock;
+    bool all = true;
+    {
+        std::lock_guard<std::mutex> lock(contextMutex_);
+        auto it = contextClocks_.find(contextId);
+        if (it == contextClocks_.end() || it->second->suspended) return;
+        clock = it->second;
+        clock->suspended = true;
+        for (const auto &kv: contextClocks_) all = all && kv.second->suspended;
+    }
+    if (offline_) return;
+    Command cmd;
+    cmd.type = CMD_CONTEXT_SUSPEND;
+    cmd.clock = clock;
+    enqueueCommand(std::move(cmd));
+    if (!all) return;
+#ifdef HAS_OBOE
+    // With every context stopped, the stream stops once the render thread has taken the suspend.
+    for (int i = 0; i < 250; i++) {
+        {
+            std::lock_guard<std::mutex> cl(commandMutex_);
+            if (pendingCommands_.empty()) break;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    stopStream();
+#endif
+}
+
+void NativeEngine::resumeContext(const std::string &contextId) {
+    std::shared_ptr<ContextClock> clock;
+    {
+        std::lock_guard<std::mutex> lock(contextMutex_);
+        auto it = contextClocks_.find(contextId);
+        if (it == contextClocks_.end()) return;
+        clock = it->second;
+        clock->suspended = false;
+    }
+    if (offline_) return;
+    Command cmd;
+    cmd.type = CMD_CONTEXT_RESUME;
+    cmd.clock = clock;
+    enqueueCommand(std::move(cmd));
+#ifdef HAS_OBOE
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    ensureStream();
+#endif
+}
+
+int64_t NativeEngine::callNowNs(const std::string &id) {
+    const int64_t now = nowNs_.load(std::memory_order_relaxed);
+    if (offline_) return now;
+    std::lock_guard<std::mutex> lock(contextMutex_);
+    auto it = nodeClocks_.find(id);
+    const ContextClock *clock = nullptr;
+    if (it != nodeClocks_.end()) clock = it->second.get();
+    else {
+        auto c = contextClocks_.find(id);
+        if (c != contextClocks_.end()) clock = c->second.get();
+    }
+    if (!clock) return now;
+    const int64_t paused = clock->pausedAtNs.load(std::memory_order_relaxed);
+    return (paused != 0 ? paused : now) - clock->offsetNs.load(std::memory_order_relaxed);
+}
+
+double NativeEngine::paramComputedValue(const std::string &id, int type) {
+    std::lock_guard<std::mutex> lock(scheduledEventsMutex_);
+    auto &slots = paramSlots_[id];
+    for (const auto &slot: slots) {
+        if (slot->type == type) return slot->value.load(std::memory_order_relaxed);
+    }
+    slots.push_back(std::make_unique<ParamSlot>(type, std::numeric_limits<double>::quiet_NaN()));
+    return std::numeric_limits<double>::quiet_NaN();
+}
+
+void NativeEngine::holdParamValue(const std::string &id, int type, double value) {
+    std::lock_guard<std::mutex> lock(scheduledEventsMutex_);
+    auto it = paramSlots_.find(id);
+    if (it == paramSlots_.end()) return;
+    for (const auto &slot: it->second) {
+        if (slot->type != type) continue;
+        slot->value.store(value, std::memory_order_relaxed);
+        slot->holdNs.store(nowNs_.load(std::memory_order_relaxed), std::memory_order_relaxed);
+    }
 }
 
 
 void
 NativeEngine::scheduleGainEvent(const std::string &gainId, int type, int rate, double value,
                                 int64_t timeNs) {
+    const int64_t callNs = callNowNs(gainId);
     std::lock_guard<std::mutex> lock(scheduledEventsMutex_);
     auto &vec = scheduledGainEvents_[gainId];
     ParamEvent ev{type, rate, timeNs, value};
-    ev.callNs = nowNs_.load(std::memory_order_relaxed);
+    ev.callNs = callNs;
     insertSortedByTime(vec, ev);
 }
 
 void
 NativeEngine::schedulePannerEvent(const std::string &pannerId, int paramType, int type, int rate,
                                   double value, int64_t timeNs) {
+    const int64_t callNs = callNowNs(pannerId);
     std::lock_guard<std::mutex> lock(scheduledEventsMutex_);
     auto &map = scheduledPannerEvents_[pannerId];
     auto &vec = map[paramType];
     ParamEvent ev{type, rate, timeNs, value};
-    ev.callNs = nowNs_.load(std::memory_order_relaxed);
+    ev.callNs = callNs;
     insertSortedByTime(vec, ev);
 }
 
 void
 NativeEngine::scheduleListenerEvent(const std::string &contextId, int paramType, int type, int rate,
                                     double value, int64_t timeNs) {
+    const int64_t callNs = callNowNs(contextId);
     std::lock_guard<std::mutex> lock(scheduledEventsMutex_);
     auto &map = scheduledListenerEvents_[contextId];
     auto &vec = map[paramType];
     ParamEvent ev{type, rate, timeNs, value};
-    ev.callNs = nowNs_.load(std::memory_order_relaxed);
+    ev.callNs = callNs;
     insertSortedByTime(vec, ev);
 }
 
@@ -146,7 +274,7 @@ std::shared_ptr<std::atomic<float>> NativeEngine::compressorMeter(const std::str
 
 void NativeEngine::scheduleParamEvent(int target, const std::string &id, int paramType, const ParamEvent &e) {
     ParamEvent event = e;
-    event.callNs = nowNs_.load(std::memory_order_relaxed);
+    event.callNs = callNowNs(id);
     std::lock_guard<std::mutex> lock(scheduledEventsMutex_);
     if (target == 0) insertSortedByTime(scheduledGainEvents_[id], event);
     else if (target == 1) insertSortedByTime(scheduledPannerEvents_[id][paramType], event);
@@ -386,17 +514,15 @@ NativeEngine::getIIRCoefficients(const std::string &iirId) {
 }
 
 int64_t NativeEngine::getContextCurrentTimeNanos(const std::string &contextId) {
+    std::lock_guard<std::mutex> lock(contextMutex_);
+    auto it = contextClocks_.find(contextId);
+    if (it == contextClocks_.end()) return 0;
+    const ContextClock &clock = *it->second;
     int64_t audioNs = offline_ ? nowNs_.load(std::memory_order_relaxed)
                                : g_audioTimeNanos.load(std::memory_order_relaxed);
-    if (audioNs == 0) {
-        audioNs = std::chrono::duration_cast<std::chrono::nanoseconds>(
-                std::chrono::steady_clock::now().time_since_epoch()).count();
-    }
-    std::lock_guard<std::mutex> lock(contextMutex_);
-    auto it = contextStartNanos_.find(contextId);
-    if (it == contextStartNanos_.end()) return 0;
-    int64_t startNs = it->second;
-    int64_t diff = audioNs - startNs;
+    const int64_t paused = clock.pausedAtNs.load(std::memory_order_relaxed);
+    if (paused != 0) audioNs = paused;
+    const int64_t diff = audioNs - clock.offsetNs.load(std::memory_order_relaxed) - clock.baseNs;
     return diff < 0 ? 0 : diff;
 }
 
@@ -459,6 +585,7 @@ void NativeEngine::endedNotifierLoop() {
             if (endedStop_) break;
             batch.swap(endedQueue_);
         }
+        for (const auto &id: batch) forgetNode(id);
         for (const auto &id: batch) {
             if (!audioContextClassGlobalRef || !onNativeTrackEndedMethod) break;
             jstring js = env->NewStringUTF(id.c_str());
@@ -1036,9 +1163,9 @@ void NativeEngine::stopTrack(const std::string &id) {
 int64_t NativeEngine::contextTimeToNanos(const std::string &contextId, double when) {
     if (!std::isfinite(when) || when <= 0.0) return 0;
     std::lock_guard<std::mutex> lock(contextMutex_);
-    auto it = contextStartNanos_.find(contextId);
-    if (it == contextStartNanos_.end()) return 0;
-    return it->second + static_cast<int64_t>(std::llround(when * 1e9));
+    auto it = contextClocks_.find(contextId);
+    if (it == contextClocks_.end()) return 0;
+    return it->second->baseNs + static_cast<int64_t>(std::llround(when * 1e9));
 }
 
 void NativeEngine::startOscillatorAt(const std::string &id, const std::string &type,

@@ -158,8 +158,9 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
 
     if (offline_) {
         // Offline renders one quantum per call, at nowNs_.
+        quantumStartNs_ = nowNs_.load(std::memory_order_relaxed) + kFrameTimeSlackNs;
         drainCommands();
-        renderQuantum(out, nowNs_.load(std::memory_order_relaxed) + kFrameTimeSlackNs);
+        renderQuantum(out, quantumStartNs_);
         return oboe::DataCallbackResult::Continue;
     }
 
@@ -171,8 +172,6 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
     int64_t clock = renderClockNs_;
     if (clock == 0 || now - clock > kClockBehindNs || clock - now > kClockAheadNs) clock = now;
     renderClockNs_ = clock + std::llround(static_cast<double>(numFrames) * 1e9 / rate);
-    g_audioTimeNanos.store(clock, std::memory_order_relaxed);
-    nowNs_.store(clock, std::memory_order_relaxed);
 
     const size_t quantumSamples = static_cast<size_t>(kQuantum * channels);
     if (quantum_.size() != quantumSamples) {
@@ -183,9 +182,14 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
     int written = 0;
     while (written < numFrames) {
         if (quantumPos_ >= kQuantum) {
-            drainCommands();
             const int64_t startNs = clock + std::llround(static_cast<double>(written) * 1e9 / rate);
-            renderQuantum(quantum_.data(), startNs + kFrameTimeSlackNs);
+            quantumStartNs_ = startNs + kFrameTimeSlackNs;
+            drainCommands();
+            // 'Now' is the next quantum: what's queued from here on applies there.
+            const int64_t next = startNs + std::llround(static_cast<double>(kQuantum) * 1e9 / rate);
+            g_audioTimeNanos.store(next, std::memory_order_relaxed);
+            nowNs_.store(next, std::memory_order_relaxed);
+            renderQuantum(quantum_.data(), quantumStartNs_);
             quantumPos_ = 0;
         }
         const int n = std::min(numFrames - written, kQuantum - quantumPos_);
@@ -601,6 +605,24 @@ void NativeEngine::applyCommand(Command &c) {
             if (bufferInUse(c.id)) idleFrees_.push_back(c.id);
             else releaseBufferData(c.id);
             break;
+        case CMD_CONTEXT_START:
+            if (!c.clock) break;
+            c.clock->offsetNs.store(quantumStartNs_ - c.clock->baseNs, std::memory_order_relaxed);
+            c.clock->pausedAtNs.store(0, std::memory_order_relaxed);
+            break;
+        case CMD_CONTEXT_SUSPEND:
+            if (c.clock && c.clock->pausedAtNs.load(std::memory_order_relaxed) == 0) {
+                c.clock->pausedAtNs.store(quantumStartNs_, std::memory_order_relaxed);
+            }
+            break;
+        case CMD_CONTEXT_RESUME: {
+            if (!c.clock) break;
+            const int64_t paused = c.clock->pausedAtNs.load(std::memory_order_relaxed);
+            if (paused == 0) break;
+            c.clock->offsetNs.fetch_add(quantumStartNs_ - paused, std::memory_order_relaxed);
+            c.clock->pausedAtNs.store(0, std::memory_order_relaxed);
+            break;
+        }
         case CMD_RESUME:
             ensureStream();
             break;

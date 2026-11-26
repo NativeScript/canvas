@@ -1,10 +1,12 @@
 #import <Foundation/Foundation.h>
 #import <AVFoundation/AVFoundation.h>
+#import <stdatomic.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
 @class NSCAudioContext;
 @class NSCAudioParam;
+@class NSCChannelMixerNode;
 
 @interface NSCAudioNode : NSObject
 
@@ -48,8 +50,17 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly) NSInteger channelCount;
 @property (nonatomic, readonly) NSInteger channelCountMode;
 @property (nonatomic, readonly) NSInteger channelInterpretation;
-/// Called after the channel config changes; nodes that mix their inputs apply it.
+/// Called after the channel config changes; applies it to `channelPort`.
 - (void)channelConfigChanged;
+/// Where this node's inputs mix, if it has one mixer for them.
+- (nullable NSCChannelMixerNode *)channelPort;
+
+/// The channel count `output` plays at, read on the render thread; NULL when it is its bus's.
+- (nullable const _Atomic UInt32 *)logicalChannelCellForOutput:(NSInteger)output;
+/// Sets this node's own output channel count (sources).
+- (void)setLogicalChannels:(NSInteger)channels;
+/// Removes nodes this one added to the engine for itself; called when the context closes or it is collected.
+- (void)detachHelpers;
 
 /// Applies param automation at the context's current time. Offline rendering calls it per quantum.
 - (void)applyAutomation;
@@ -77,6 +88,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+/// Allocates a unit's render resources if the engine has not.
+void NSCEnsureAllocated(AVAudioNode *node);
+/// Whether audio flows from `from` to `to` in the engine graph.
+BOOL NSCHasPath(AVAudioEngine *engine, AVAudioNode *from, AVAudioNode *to);
 /// Adds a connection from `src`'s bus to `dst`'s bus, keeping `src`'s other connections.
 BOOL NSCConnectAdding(NSCAudioContext *_Nullable context, AVAudioNode *src, AVAudioNodeBus fromBus, AVAudioNode *dst, AVAudioNodeBus toBus, AVAudioFormat *_Nullable format);
 /// Removes `src`'s connections from `fromBus` (nil: every bus) to `dst` (nil: any) on `toBus` (nil: any).

@@ -38,6 +38,11 @@ typedef struct {
 - (void)setValue:(NSNumber *)value;
 - (void)setValueAtTime:(NSNumber *)value :(NSNumber *)time;
 - (void)linearRampToValueAtTime:(NSNumber *)value :(NSNumber *)time;
+- (void)exponentialRampToValueAtTime:(NSNumber *)value :(NSNumber *)time;
+- (void)setTargetAtTime:(NSNumber *)target :(NSNumber *)startTime :(NSNumber *)timeConstant;
+- (void)setValueCurveAtTime:(NSData *)values :(NSNumber *)startTime :(NSNumber *)duration;
+/// The value at the context's current time.
+- (double)computedValue;
 - (void)cancelScheduledValues:(NSNumber *)time;
 - (void)cancelAndHoldAtTime:(NSNumber *)heldValue :(NSNumber *)time;
 - (NSArray<NSNumber *> *)getValuesForRange:(double)startTime :(double)sampleRate :(NSInteger)frameCount;

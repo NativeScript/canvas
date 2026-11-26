@@ -8,12 +8,14 @@ typedef NS_ENUM(uint8_t, NSCOscWaveform) {
     NSCOscWaveformSquare = 1,
     NSCOscWaveformSawtooth = 2,
     NSCOscWaveformTriangle = 3,
+    NSCOscWaveformCustom = 4,
 };
 
 static inline NSCOscWaveform NSCOscWaveformFromString(NSString * _Nullable type) {
     if ([type isEqualToString:@"square"]) return NSCOscWaveformSquare;
     if ([type isEqualToString:@"sawtooth"]) return NSCOscWaveformSawtooth;
     if ([type isEqualToString:@"triangle"]) return NSCOscWaveformTriangle;
+    if ([type isEqualToString:@"custom"]) return NSCOscWaveformCustom;
     return NSCOscWaveformSine;
 }
 
@@ -28,6 +30,16 @@ static inline NSCOscWaveform NSCOscWaveformFromString(NSString * _Nullable type)
     atomic_int_least64_t *_stopSamplePtr;
     atomic_uint_least8_t *_waveTypePtr;
     double _phase;
+    // The tables the render reads, and every wave it may still be reading.
+    NSMutableData *_tablesData;
+    NSMutableArray<NSCPeriodicWave *> *_waves;
+}
+
+- (void)useWave:(NSCPeriodicWave *)wave {
+    if (!wave || !_tablesData) return;
+    const float *const *tables = [wave tables];
+    [_waves addObject:wave];
+    atomic_store_explicit((_Atomic(void *) *)_tablesData.mutableBytes, (void *)tables, memory_order_release);
 }
 
 - (void)dealloc {
@@ -75,6 +87,8 @@ static inline NSCOscWaveform NSCOscWaveformFromString(NSString * _Nullable type)
     NSMutableData *capturedStartSampleData = startSampleData;
     NSMutableData *capturedStopSampleData = stopSampleData;
     NSMutableData *capturedWaveTypeData = waveTypeData;
+    NSMutableData *tablesData = [NSMutableData dataWithLength:sizeof(_Atomic(void *))];
+    NSMutableData *capturedTablesData = tablesData;
     NSMutableData *timelineCell = context.timelineCell ?: [NSMutableData dataWithLength:NSCTimelineSlots * sizeof(double)];
     __weak NSCAudioOscillatorNode *weakSelf = self;
 
@@ -168,44 +182,17 @@ static inline NSCOscWaveform NSCOscWaveformFromString(NSString * _Nullable type)
         }
 
         const double TWO_PI = 2.0 * M_PI;
-        const double invTwoPi = 1.0 / TWO_PI;
         double phase = localPhase;
         const double phaseIncConst = hasAutomation ? 0.0 : (TWO_PI * freqValues[0] / sampleRate);
         const double invSampleRate = 1.0 / sampleRate;
-
-        switch (waveEnum) {
-            case NSCOscWaveformSine: {
-                for (AVAudioFrameCount f = firstRenderIndex; f < endRenderIndex; ++f) {
-                    out0[f] = (float)sin(phase);
-                    phase += hasAutomation ? (TWO_PI * freqValues[f] * invSampleRate) : phaseIncConst;
-                    if (phase >= TWO_PI) phase = fmod(phase, TWO_PI);
-                }
-                break;
-            }
-            case NSCOscWaveformSquare: {
-                for (AVAudioFrameCount f = firstRenderIndex; f < endRenderIndex; ++f) {
-                    out0[f] = (phase < M_PI) ? 1.0f : -1.0f;
-                    phase += hasAutomation ? (TWO_PI * freqValues[f] * invSampleRate) : phaseIncConst;
-                    if (phase >= TWO_PI) phase = fmod(phase, TWO_PI);
-                }
-                break;
-            }
-            case NSCOscWaveformSawtooth: {
-                for (AVAudioFrameCount f = firstRenderIndex; f < endRenderIndex; ++f) {
-                    out0[f] = (float)((2.0 * phase * invTwoPi) - 1.0);
-                    phase += hasAutomation ? (TWO_PI * freqValues[f] * invSampleRate) : phaseIncConst;
-                    if (phase >= TWO_PI) phase = fmod(phase, TWO_PI);
-                }
-                break;
-            }
-            case NSCOscWaveformTriangle: {
-                for (AVAudioFrameCount f = firstRenderIndex; f < endRenderIndex; ++f) {
-                    out0[f] = (float)(1.0 - 4.0 * fabs((phase * invTwoPi) - 0.5));
-                    phase += hasAutomation ? (TWO_PI * freqValues[f] * invSampleRate) : phaseIncConst;
-                    if (phase >= TWO_PI) phase = fmod(phase, TWO_PI);
-                }
-                break;
-            }
+        const double nyquist = sampleRate * 0.5;
+        // Square, sawtooth, triangle and custom read band-limited tables, as Chrome's do.
+        const float *const *tables = waveEnum == NSCOscWaveformSine ? NULL : (const float *const *)atomic_load_explicit((_Atomic(void *) *)capturedTablesData.mutableBytes, memory_order_acquire);
+        for (AVAudioFrameCount f = firstRenderIndex; f < endRenderIndex; ++f) {
+            double freq = hasAutomation ? freqValues[f] : freqValues[0];
+            out0[f] = tables ? NSCWaveSample(tables, phase, freq, nyquist) : (float)sin(phase);
+            phase += hasAutomation ? (TWO_PI * freq * invSampleRate) : phaseIncConst;
+            if (phase >= TWO_PI || phase < 0.0) phase -= TWO_PI * floor(phase / TWO_PI);
         }
         for (AVAudioFrameCount f = endRenderIndex; f < frameCount; ++f) {
             out0[f] = 0.0f;
@@ -246,6 +233,10 @@ static inline NSCOscWaveform NSCOscWaveformFromString(NSString * _Nullable type)
         _startSamplePtr = startSampleCell;
         _stopSamplePtr = stopSampleCell;
         _waveTypePtr = waveTypeCell;
+        _tablesData = tablesData;
+        _waves = [NSMutableArray array];
+        [self setType:_type];
+        [self setLogicalChannels:1];
         [context.engine attachNode:source];
     }
     return self;
@@ -258,6 +249,8 @@ static inline NSCOscWaveform NSCOscWaveformFromString(NSString * _Nullable type)
 - (void)setType:(NSString *)type {
     NSString *resolved = (type.length > 0) ? [type copy] : @"sine";
     _type = resolved;
+    NSCPeriodicWave *builtin = [NSCPeriodicWave waveForType:resolved];
+    if (builtin) [self useWave:builtin];
     if (_waveTypePtr) {
         atomic_store_explicit(_waveTypePtr, (uint_least8_t)NSCOscWaveformFromString(resolved), memory_order_release);
     }
@@ -282,7 +275,7 @@ static inline NSCOscWaveform NSCOscWaveformFromString(NSString * _Nullable type)
     if (_startSamplePtr) atomic_store_explicit(_startSamplePtr, frame, memory_order_release);
     [self setPlaying:YES];
     [ctx incrementActiveCount];
-    if (!ctx.engine.isRunning && !ctx.engine.isInManualRenderingMode) {
+    if (!ctx.engine.isRunning && !ctx.isOffline) {
         [NSCAudioContext startEngineWithRetry:ctx.engine attempts:3 label:@"oscillator" asyncCompletion:nil];
     }
 }
@@ -327,8 +320,10 @@ static inline NSCOscWaveform NSCOscWaveformFromString(NSString * _Nullable type)
 - (BOOL)usesOutputStage { return YES; }
 
 - (void)setPeriodicWave:(NSCPeriodicWave *)wave {
-    if (wave) _type = @"custom";
-    objc_setAssociatedObject(self, (__bridge const void *)@"periodicWave", wave, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    if (!wave) return;
+    [self useWave:wave];
+    _type = @"custom";
+    if (_waveTypePtr) atomic_store_explicit(_waveTypePtr, (uint_least8_t)NSCOscWaveformCustom, memory_order_release);
 }
 
 @end

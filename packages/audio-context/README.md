@@ -153,35 +153,32 @@ and each input mixes up or down by its `channelCount`, `channelCountMode` and
 `channelInterpretation` (the speaker rules for mono, stereo, quad and 5.1). A cycle plays only
 through a `DelayNode`, whose delay is then at least one quantum, as in the spec; a cycle without
 one is silent. An `OfflineAudioContext` renders on its own engine with nothing reaching the
-device, and a source connected to it reads an `AudioBuffer` in place. A `ConvolverNode` passes its
-input through.
+device, and a source connected to it reads an `AudioBuffer` in place.
 
-On iOS a `GainNode` and a `DelayNode` evaluate `gain` and `delayTime` every frame, so automation
-lands on its frame, in an `OfflineAudioContext` and a realtime one, and `gain` can go above 1 or
-below 0. A `DelayNode`'s `maxDelayTime` defaults to 1 s and can be up to 180 s; a `delayTime`
-between two frames interpolates linearly.
+On iOS the engine renders 128-frame quanta in a realtime context too: an `AudioContext` runs from
+construction at the requested `sampleRate` (else the device's), `currentTime` counts its own frames
+from 0, and the device plays the quanta through one more buffer (`baseLatency`). Params are read
+every frame (`exponentialRampToValueAtTime`, `setTargetAtTime`, `setValueCurveAtTime` and
+`cancelAndHoldAtTime` included), and `AudioParam.value` reads the automated value.
 
-On iOS `disconnect(destination)`, `disconnect(output)`, `disconnect(destination, output, input)`
-and `disconnect(param)` remove only the matching connections. Each connection into a
-`ChannelMergerNode`, `ChannelSplitterNode` or `AudioWorkletNode` input gets its own bus, mixed by
-the speaker rules for mono, stereo, quad and 5.1 (other counts mix discretely); each splitter
-output plays its own channel, and the merger puts each input on its channel. Each output of a
-multi-output `AudioWorkletNode` plays from its own node, so any number of them can be connected.
-`GainNode`, `DelayNode` and `BiquadFilterNode` mix their inputs to `channelCount` when
-`channelCountMode` is `'clamped-max'` or `'explicit'` (up to 8 channels); other nodes keep the
-`channelCount`, `channelCountMode` and `channelInterpretation` you set without applying them. A
-`PannerNode` mixes its inputs to at most two channels and pans with the spec's equal-power law; a
-`'HRTF'` panner pans the same way. A cycle plays only through a `DelayNode`, whose delay is then
-at least one render call (one quantum offline, the device's buffer in a realtime context); a
-connection that would close a cycle without one is not made. An `AudioBuffer` with more channels
-than the context plays all of them.
-
-On iOS `node.connect(param)` adds the node's output, mixed down to mono, to the param every frame
-for `GainNode.gain`, `DelayNode.delayTime`, the `BiquadFilterNode` params, oscillator `frequency`
-and `detune`, `ConstantSourceNode.offset`, `AudioBufferSourceNode.playbackRate` and `detune`, and
-the params of an `AudioWorkletNode` with inputs. Other params, such as `StereoPannerNode.pan`,
-the `PannerNode` position and orientation and a worklet's params when it has no inputs, follow
-the connected audio once per quantum, a quantum late.
+On iOS every node mixes its inputs per its `channelCount`, `channelCountMode` and
+`channelInterpretation` (the speaker rules for mono, stereo, quad and 5.1, other counts
+discretely, up to 8 channels), with the spec's limits (`PannerNode`, `StereoPannerNode`,
+`ConvolverNode` and `DynamicsCompressorNode` at most two channels and never `'max'`; splitter and
+merger fixed). Each node's output keeps its own channel count through the graph, so a mono
+source stays mono into a panner. `disconnect(...)` forms remove only the matching connections.
+A `PannerNode` pans with the equal-power law or, for `'HRTF'`, convolves each ear with the MIT
+KEMAR head-related impulse responses (Gardner and Martin, MIT Media Lab, 1994; free to use with
+citation). `ConvolverNode` convolves with its buffer (partitioned FFT, no latency),
+`WaveShaperNode` applies its curve with 2x and 4x oversampling, `IIRFilterNode` filters,
+`AnalyserNode` analyses its input on the render thread (Blackman window, as specified), and
+oscillators play band-limited waves and `PeriodicWave`s. A cycle plays only through a
+`DelayNode`, whose delay is then at least one quantum; it reads its input directly again once
+the cycle is broken. A connection that would close a cycle without one is not made.
+`node.connect(param)` adds the node's output, mixed down to mono, to the param every frame, for
+every param including the `PannerNode` and `AudioListener` ones. `DynamicsCompressorNode` uses
+the system's dynamics processor, and MediaStream nodes throw `NotSupportedError` (NativeScript
+has no `MediaStream`).
 
 On Android `node.connect(param)` adds the node's output, mixed down to mono, to the param every
 frame for `GainNode.gain`, `DelayNode.delayTime`, `ConstantSourceNode.offset`,

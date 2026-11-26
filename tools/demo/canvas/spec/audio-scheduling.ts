@@ -55,6 +55,32 @@ const loud = (rms: number) => rms > 0.5;
 
 export function registerAudioSchedulingSpec() {
 	suite('audio.scheduling', () => {
+		// The analyser holds the last 32768 frames, so it sees the whole short burst.
+		for (const kind of ['constant', 'buffer', 'oscillator']) {
+			test(`${kind} source stopped 20 ms after start plays 20 ms`, async () => {
+				const { context, analyser } = await runningContext();
+				analyser.fftSize = 32768;
+				const source: any = kind === 'constant' ? context.createConstantSource({ offset: 1 }) : kind === 'buffer' ? context.createBufferSource() : context.createOscillator({ type: 'square', frequency: 50 });
+				if (kind === 'buffer') {
+					source.buffer = squareBuffer(context, 1);
+				}
+				source.connect(analyser);
+				const t0 = context.currentTime;
+				source.start();
+				source.stop(t0 + 0.02);
+				await until(context, t0 + 0.3);
+				const data = new Float32Array(32768);
+				analyser.getFloatTimeDomainData(data);
+				const rate = context.sampleRate;
+				await context.close();
+				let loudFrames = 0;
+				for (let i = 0; i < data.length; i++) if (Math.abs(data[i]) > 0.5) loudFrames++;
+				const expected = 0.02 * rate;
+				// Up to a render call either side: start() takes effect at the next one.
+				ok(loudFrames > expected * 0.4 && loudFrames < expected + 1100, `${loudFrames} loud frames, expected about ${expected}`);
+			});
+		}
+
 		test('buffer source sounds only between start(when) and stop(when)', async () => {
 			const { context, analyser } = await runningContext();
 			const source: any = context.createBufferSource();

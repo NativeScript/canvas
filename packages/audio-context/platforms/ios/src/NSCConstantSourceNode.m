@@ -109,6 +109,7 @@
         _offsetCell = offsetCell;
         _offsetParam = offsetParam;
         offsetParam.owner = self;
+        [self setLogicalChannels:1];
         [context.engine attachNode:source];
     }
     return self;

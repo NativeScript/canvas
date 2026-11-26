@@ -11,7 +11,7 @@
 typedef struct {
     NSCMixMode mode;
     _Atomic BOOL discrete;
-    UInt32 channels;
+    _Atomic UInt32 channels;
     // Sum mode: mix to at most the widest connection's channels (clamped-max).
     _Atomic int clamp;
     // Pick mode: the channel of bus 0 this node plays.
@@ -21,13 +21,15 @@ typedef struct {
     _Atomic int busChannels[MIX_BUSSES];
     _Atomic int target[MIX_BUSSES];
     _Atomic int early[MIX_BUSSES];
+    // The source's own channel count when it plays fewer than its bus carries.
+    _Atomic(const _Atomic UInt32 *) logical[MIX_BUSSES];
     UInt32 maxFrames;
     float *pulled;
     float *mixed;
     float *outs;
     AudioBufferList *abl;
     double lastSampleTime;
-    UInt32 mixedChannels;
+    _Atomic UInt32 mixedChannels;
     BOOL silent;
 } MixRender;
 
@@ -80,18 +82,27 @@ static void MixAdd(float *const *src, UInt32 n, float *const *dst, UInt32 m, UIn
 
 static float *Mixed(MixRender *r, UInt32 c) { return r->mixed + c * r->maxFrames; }
 
+// A bus's channels as its source plays them.
+static UInt32 BusChannels(MixRender *r, int b) {
+    UInt32 n = (UInt32)MAX(1, MIN(atomic_load_explicit(&r->busChannels[b], memory_order_relaxed), MIX_CHANNELS));
+    const _Atomic UInt32 *cell = atomic_load_explicit(&r->logical[b], memory_order_acquire);
+    UInt32 logical = cell ? atomic_load_explicit(cell, memory_order_relaxed) : 0;
+    return logical >= 1 && logical < n ? logical : n;
+}
+
 static void Mix(MixRender *r, const AudioTimeStamp *ts, AUAudioFrameCount frames, AURenderPullInputBlock pull) {
-    UInt32 C = r->channels;
+    UInt32 C = atomic_load_explicit(&r->channels, memory_order_relaxed);
     if (r->mode == NSCMixModeSum && atomic_load_explicit(&r->clamp, memory_order_relaxed)) {
         UInt32 widest = 1;
         for (int b = 0; b < MIX_BUSSES; b++) {
             if (!atomic_load_explicit(&r->used[b], memory_order_acquire) || atomic_load_explicit(&r->early[b], memory_order_relaxed)) continue;
-            widest = MAX(widest, (UInt32)atomic_load_explicit(&r->busChannels[b], memory_order_relaxed));
+            widest = MAX(widest, BusChannels(r, b));
         }
         C = MIN(C, widest);
     }
+    if (r->mode == NSCMixModePick) C = 1;
     for (UInt32 c = 0; c < MIX_CHANNELS; c++) memset(Mixed(r, c), 0, frames * sizeof(float));
-    r->mixedChannels = r->mode == NSCMixModePass ? 0 : C;
+    UInt32 mixedCount = r->mode == NSCMixModePass ? 0 : C;
     r->silent = YES;
     float *mixed[MIX_CHANNELS];
     for (UInt32 c = 0; c < MIX_CHANNELS; c++) mixed[c] = Mixed(r, c);
@@ -110,11 +121,13 @@ static void Mix(MixRender *r, const AudioTimeStamp *ts, AUAudioFrameCount frames
             }
             AudioUnitRenderActionFlags flags = 0;
             OSStatus status = pull ? pull(&flags, ts, frames, b, abl) : kAudioUnitErr_NoConnection;
-            if (r->mode == NSCMixModePass && b == 0) r->mixedChannels = n;
+            UInt32 played = BusChannels(r, b);
+            if (r->mode == NSCMixModePass && b == 0) mixedCount = played;
             if (early || status != noErr || (flags & kAudioUnitRenderAction_OutputIsSilence)) continue;
             r->silent = NO;
             float *src[MIX_CHANNELS];
             for (UInt32 c = 0; c < n; c++) src[c] = abl->mBuffers[c].mData ? (float *)abl->mBuffers[c].mData : r->pulled + c * r->maxFrames;
+            n = played;
             if (r->mode == NSCMixModePass) {
                 if (b == 0) MixAdd(src, n, mixed, n, frames, YES);
             } else if (r->mode == NSCMixModePick) {
@@ -128,6 +141,7 @@ static void Mix(MixRender *r, const AudioTimeStamp *ts, AUAudioFrameCount frames
             }
         }
     }
+    atomic_store_explicit(&r->mixedChannels, mixedCount, memory_order_release);
 }
 
 // Bus formats for the unit being instantiated; set around the synchronous instantiation.
@@ -216,7 +230,7 @@ static AVAudioFormat *pendingOutput;
             if (c < MIX_CHANNELS) dst[c] = (float *)out->mBuffers[c].mData;
         }
         float *src[MIX_CHANNELS];
-        UInt32 n = r->mixedChannels;
+        UInt32 n = atomic_load_explicit(&r->mixedChannels, memory_order_relaxed);
         for (UInt32 c = 0; c < n; c++) src[c] = Mixed(r, c);
         if (n > 0 && !r->silent) MixAdd(src, n, dst, k, frames, NO);
         else *flags |= kAudioUnitRenderAction_OutputIsSilence;
@@ -256,6 +270,7 @@ static AVAudioFormat *MixFormat(double rate, NSInteger channels) {
     NSCMixMode _mode;
     // One per connection: source node, its bus, this node's bus.
     NSMutableArray<NSArray *> *_links;
+    AVAudioSourceNode *_silence;
 }
 
 - (instancetype)initWithContext:(NSCAudioContext *)context mode:(NSCMixMode)mode channels:(NSInteger)channels discrete:(BOOL)discrete {
@@ -290,6 +305,15 @@ static AVAudioFormat *MixFormat(double rate, NSInteger channels) {
     _links = [NSMutableArray array];
     if ([context isKindOfClass:[NSCOfflineAudioContext class]]) [(NSCOfflineAudioContext *)context willConnect];
     [context.engine attachNode:unit];
+    if (context.engine.isRunning) NSCEnsureAllocated(unit);
+    // The engine skips an effect with no input.
+    _silence = [[AVAudioSourceNode alloc] initWithFormat:context.format renderBlock:^OSStatus(BOOL *isSilence, const AudioTimeStamp *ts, AVAudioFrameCount frames, AudioBufferList *out) {
+        for (UInt32 c = 0; c < out->mNumberBuffers; c++) memset(out->mBuffers[c].mData, 0, out->mBuffers[c].mDataByteSize);
+        *isSilence = YES;
+        return noErr;
+    }];
+    [context.engine attachNode:_silence];
+    [self connectNode:_silence bus:0 toBus:MIX_BUSSES - 1 format:context.format target:-1 early:YES];
     return self;
 }
 
@@ -297,9 +321,24 @@ static AVAudioFormat *MixFormat(double rate, NSInteger channels) {
     return ((NSCChannelMixUnit *)_unit.AUAudioUnit).render;
 }
 
-- (const UInt32 *)mixedChannels {
+- (const _Atomic UInt32 *)mixedChannels {
     MixRender *r = [self render];
     return r ? &r->mixedChannels : NULL;
+}
+
+- (const _Atomic UInt32 *)logicalChannelCellForOutput:(NSInteger)output {
+    return [self mixedChannels];
+}
+
+- (void)setMixChannels:(NSInteger)channels {
+    MixRender *r = [self render];
+    if (r) atomic_store(&r->channels, (UInt32)MAX(1, MIN(channels, (NSInteger)MIX_CHANNELS)));
+}
+
+- (void)configureCount:(NSInteger)count mode:(NSInteger)mode discrete:(BOOL)discrete {
+    [self setMixChannels:mode == 0 ? MIX_CHANNELS : count];
+    [self setClamp:mode != 2];
+    [self setDiscrete:discrete];
 }
 
 - (void)setDiscrete:(BOOL)discrete {
@@ -350,14 +389,20 @@ static AVAudioFormat *MixFormat(double rate, NSInteger channels) {
     atomic_store(&r->used[b], 0);
     atomic_store(&r->early[b], 0);
     atomic_store(&r->target[b], -1);
+    atomic_store(&r->logical[b], NULL);
     for (NSInteger i = (NSInteger)_links.count - 1; i >= 0; i--) {
         if ([_links[i][2] integerValue] == b) [_links removeObjectAtIndex:(NSUInteger)i];
     }
 }
 
 - (BOOL)connectNode:(AVAudioNode *)node bus:(AVAudioNodeBus)from toBus:(NSInteger)b format:(AVAudioFormat *)format target:(NSInteger)target early:(BOOL)early {
+    return [self connectNode:node bus:from toBus:b format:format target:target early:early logical:NULL];
+}
+
+- (BOOL)connectNode:(AVAudioNode *)node bus:(AVAudioNodeBus)from toBus:(NSInteger)b format:(AVAudioFormat *)format target:(NSInteger)target early:(BOOL)early logical:(const _Atomic UInt32 *)logical {
     MixRender *r = [self render];
     if (b < 0 || !r) return NO;
+    atomic_store(&r->logical[b], logical);
     atomic_store(&r->busChannels[b], (int)MAX(1u, MIN(format.channelCount, (AVAudioChannelCount)MIX_CHANNELS)));
     atomic_store(&r->target[b], (int)target);
     atomic_store(&r->early[b], early ? 1 : 0);
@@ -375,8 +420,12 @@ static AVAudioFormat *MixFormat(double rate, NSInteger channels) {
 }
 
 - (void)connectMain:(AVAudioNode *)node bus:(AVAudioNodeBus)bus format:(AVAudioFormat *)format {
+    [self connectMain:node bus:bus format:format logical:NULL];
+}
+
+- (void)connectMain:(AVAudioNode *)node bus:(AVAudioNodeBus)bus format:(AVAudioFormat *)format logical:(const _Atomic UInt32 *)logical {
     [self forgetBus:0];
-    [self connectNode:node bus:bus toBus:0 format:format target:-1 early:NO];
+    [self connectNode:node bus:bus toBus:0 format:format target:-1 early:NO logical:logical];
 }
 
 - (void)handleConnectFrom:(NSCAudioNode *)source output:(NSNumber *)output input:(NSNumber *)input {
@@ -394,7 +443,8 @@ static AVAudioFormat *MixFormat(double rate, NSInteger channels) {
     }
     AVAudioFormat *format = [source formatForOutput:(AVAudioNodeBus)MAX(0, output ? output.intValue : 0)];
     if (format.channelCount > MIX_CHANNELS) format = self.context.format;
-    if ([self connectNode:node bus:from toBus:[self freeBus] format:format target:target early:NO]) {
+    NSInteger outputIndex = MAX(0, output ? output.intValue : 0);
+    if ([self connectNode:node bus:from toBus:[self freeBus] format:format target:target early:NO logical:[source logicalChannelCellForOutput:outputIndex]]) {
         [source handleConnectedTo:self output:output input:input];
     }
 }

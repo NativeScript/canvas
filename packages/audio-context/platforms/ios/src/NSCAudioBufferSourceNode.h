@@ -23,6 +23,9 @@ NS_ASSUME_NONNULL_BEGIN
                          buffer:(nullable NSCAudioBuffer *)buffer NS_DESIGNATED_INITIALIZER;
 - (instancetype)initWithContext:(NSCAudioContext *)context node:(nullable AVAudioNode *)node NS_UNAVAILABLE;
 
+@property (nonatomic) double loopStart;
+@property (nonatomic) double loopEnd;
+
 @end
 
 NS_ASSUME_NONNULL_END

@@ -1,5 +1,6 @@
 #import <Foundation/Foundation.h>
 #import <AVFoundation/AVFoundation.h>
+#import <stdatomic.h>
 #import "NSCAudioNode.h"
 
 NS_ASSUME_NONNULL_BEGIN
@@ -34,12 +35,17 @@ typedef NS_ENUM(NSInteger, NSCMixMode) {
 - (void)setClamp:(BOOL)clamp;
 - (void)setDiscrete:(BOOL)discrete;
 /// The channels the last render mixed to; read on the render thread after pulling this node.
-- (const UInt32 *)mixedChannels;
+- (const _Atomic UInt32 *)mixedChannels;
+/// Sum mode: mixes to `channels` (at most 8) without changing the output format.
+- (void)setMixChannels:(NSInteger)channels;
+/// Web Audio channelCount / channelCountMode (0 max, 1 clamped-max, 2 explicit) / interpretation.
+- (void)configureCount:(NSInteger)count mode:(NSInteger)mode discrete:(BOOL)discrete;
 
 /// Connects `node`'s bus 0 to a bus rendered before the others; its audio is not mixed.
 - (void)connectEarly:(AVAudioNode *)node format:(AVAudioFormat *)format;
 /// Pass mode: connects `node`'s `bus` as the audio this node plays.
 - (void)connectMain:(AVAudioNode *)node bus:(AVAudioNodeBus)bus format:(AVAudioFormat *)format;
+- (void)connectMain:(AVAudioNode *)node bus:(AVAudioNodeBus)bus format:(AVAudioFormat *)format logical:(nullable const _Atomic UInt32 *)logical;
 
 @end
 

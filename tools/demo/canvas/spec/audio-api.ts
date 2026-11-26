@@ -8,7 +8,7 @@ declare const global: any;
 const RATE = 48000;
 const Q = 128;
 
-const androidTest = (name: string, body: TestBody) => (global.isAndroid ? test(name, body) : skip(name, 'not yet on this platform'));
+const androidTest = (name: string, body: TestBody) => (global.isAndroid || global.isIOS ? test(name, body) : skip(name, 'not yet on this platform'));
 
 const offline = (channels = 1, length = Q): any => new OfflineAudioContext(channels, length, RATE);
 

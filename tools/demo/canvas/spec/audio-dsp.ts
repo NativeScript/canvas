@@ -8,7 +8,8 @@ declare const global: any;
 const RATE = 48000;
 const Q = 128;
 
-const androidTest = (name: string, body: TestBody) => (global.isAndroid ? test(name, body) : skip(name, 'not yet on this platform'));
+const androidTest = (name: string, body: TestBody) => (global.isAndroid || global.isIOS ? test(name, body) : skip(name, 'not yet on this platform'));
+const androidOnlyTest = (name: string, body: TestBody) => (global.isAndroid ? test(name, body) : skip(name, 'not yet on this platform'));
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -333,7 +334,8 @@ export function registerAudioDspSpec() {
 			ok(compressor.reduction < -10, `reduction ${compressor.reduction}`);
 		});
 
-		androidTest('DynamicsCompressorNode looks 6 ms ahead and applies makeup gain', async () => {
+		// iOS uses the system's dynamics processor, not Chromium's compressor.
+		androidOnlyTest('DynamicsCompressorNode looks 6 ms ahead and applies makeup gain', async () => {
 			const context = new OfflineAudioContext(1, Q * 8, RATE);
 			const compressor = context.createDynamicsCompressor();
 			const source = context.createConstantSource({ offset: 0.01 });

@@ -82,8 +82,9 @@ export function registerAudioNodesSpec() {
 			const impulse = new Float32Array(Q * 4);
 			impulse[0] = 1;
 			const source: any = context.createBufferSource();
-			source.buffer = context.createBuffer({ numberOfChannels: 1, length: impulse.length, sampleRate: context.sampleRate });
-			source.buffer.copyToChannel(impulse, 0);
+			const buffer = context.createBuffer({ numberOfChannels: 1, length: impulse.length, sampleRate: context.sampleRate });
+			buffer.copyToChannel(impulse, 0);
+			source.buffer = buffer;
 			source.connect(delay);
 			delay.connect(loop);
 			loop.connect(delay);

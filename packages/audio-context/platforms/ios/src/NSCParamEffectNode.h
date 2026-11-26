@@ -31,6 +31,9 @@ typedef NS_ENUM(NSInteger, NSCParamEffectKind) {
 /// A delay only: moves the delay's input onto a writer so it can sit in a cycle; the delay then
 /// reads only earlier render calls, clamping delayTime to at least one call. YES once split.
 - (BOOL)breakCycle;
+/// Undoes breakCycle once the delay is no longer on a cycle.
+- (void)healCycle;
+@property (nonatomic, readonly) BOOL isSplit;
 
 /// The biquad's filter type, read by the render thread.
 - (void)setFilterType:(NSInteger)type;

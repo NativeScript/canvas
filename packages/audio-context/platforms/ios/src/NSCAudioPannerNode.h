@@ -1,12 +1,12 @@
 #import <Foundation/Foundation.h>
-#import "NSCAudioNode.h"
+#import "NSCProcessorNode.h"
 #import "NSCAudioParam.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 @class NSCAudioContext;
 
-@interface NSCAudioPannerNode : NSCAudioNode
+@interface NSCAudioPannerNode : NSCProcessorNode
 
 @property (nonatomic, strong) NSCAudioParam *positionXParam;
 @property (nonatomic, strong) NSCAudioParam *positionYParam;
@@ -58,5 +58,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)setOrientation:(NSNumber *)x :(NSNumber *)y :(NSNumber *)z;
 
 @end
+
+/// Owns the AudioListener params, so audio connected to them renders before every panner.
+NSCAudioNode *NSCMakeListenerOwner(NSCAudioContext *context);
 
 NS_ASSUME_NONNULL_END

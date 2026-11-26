@@ -1,5 +1,6 @@
 #include "audio_context.h"
 #include "audio_internal.h"
+#include "hrtf_convolver.h"
 
 #include <cstring>
 
@@ -107,7 +108,6 @@ NativeEngine::scheduleGainEvent(const std::string &gainId, int type, int rate, d
     std::lock_guard<std::mutex> lock(scheduledEventsMutex_);
     auto &vec = scheduledGainEvents_[gainId];
     ParamEvent ev{type, rate, timeNs, value};
-    ev.callNs = nowNs_.load(std::memory_order_relaxed);
     insertSortedByTime(vec, ev);
 }
 
@@ -118,7 +118,6 @@ NativeEngine::schedulePannerEvent(const std::string &pannerId, int paramType, in
     auto &map = scheduledPannerEvents_[pannerId];
     auto &vec = map[paramType];
     ParamEvent ev{type, rate, timeNs, value};
-    ev.callNs = nowNs_.load(std::memory_order_relaxed);
     insertSortedByTime(vec, ev);
 }
 
@@ -129,29 +128,9 @@ NativeEngine::scheduleListenerEvent(const std::string &contextId, int paramType,
     auto &map = scheduledListenerEvents_[contextId];
     auto &vec = map[paramType];
     ParamEvent ev{type, rate, timeNs, value};
-    ev.callNs = nowNs_.load(std::memory_order_relaxed);
     insertSortedByTime(vec, ev);
 }
 
-
-std::shared_ptr<std::atomic<float>> NativeEngine::compressorMeter(const std::string &id, bool create) {
-    std::lock_guard<std::mutex> lock(meterMutex_);
-    auto it = meters_.find(id);
-    if (it != meters_.end()) return it->second;
-    if (!create) return nullptr;
-    auto meter = std::make_shared<std::atomic<float>>(0.0f);
-    meters_[id] = meter;
-    return meter;
-}
-
-void NativeEngine::scheduleParamEvent(int target, const std::string &id, int paramType, const ParamEvent &e) {
-    ParamEvent event = e;
-    event.callNs = nowNs_.load(std::memory_order_relaxed);
-    std::lock_guard<std::mutex> lock(scheduledEventsMutex_);
-    if (target == 0) insertSortedByTime(scheduledGainEvents_[id], event);
-    else if (target == 1) insertSortedByTime(scheduledPannerEvents_[id][paramType], event);
-    else insertSortedByTime(scheduledListenerEvents_[id][paramType], event);
-}
 
 void NativeEngine::cancelGainEvents(const std::string &gainId, int64_t timeNs) {
     std::lock_guard<std::mutex> lock(scheduledEventsMutex_);
@@ -492,6 +471,12 @@ NativeEngine::~NativeEngine() {
         }
         audioBuffers_.clear();
 
+        for (auto &pkv: panners_) {
+            if (pkv.second.hrtf) {
+                delete pkv.second.hrtf;
+                pkv.second.hrtf = nullptr;
+            }
+        }
         panners_.clear();
     }
 
@@ -756,10 +741,9 @@ void NativeEngine::rebuildAnalyserCaches(NativeEngine::AnalyserData &ad) {
     ad.fftCfg = kiss_fft_alloc(n, 0, nullptr, nullptr);
 
     ad.window.resize((size_t) n);
-    // The spec's Blackman window, alpha 0.16.
+    const float twoPiOverN = 2.0f * (float) M_PI / (float) n;
     for (int i = 0; i < n; ++i) {
-        const double x = 2.0 * M_PI * i / n;
-        ad.window[(size_t) i] = static_cast<float>(0.42 - 0.5 * std::cos(x) + 0.08 * std::cos(2.0 * x));
+        ad.window[(size_t) i] = 0.5f * (1.0f - std::cos(twoPiOverN * (float) i));
     }
 
     ad.fin.assign((size_t) n, kiss_fft_cpx{0.0f, 0.0f});
@@ -853,17 +837,15 @@ static int ensureSmoothedSpectrum(NativeEngine::AnalyserData &ad) {
         std::memset(fout, 0, (size_t) n * sizeof(kiss_fft_cpx));
     }
 
-    // Smoothed over time on |X[k]| / N, as the spec says.
-    const float invN = 1.0f / (float) n;
+    const float invN2 = 1.0f / ((float) n * (float) n + 1e-30f);
     float tau = (float) std::max(0.0, std::min(1.0, ad.smoothingTimeConstant));
     float oneMinus = 1.0f - tau;
     float *mag = ad.smoothedMag.data();
     for (int i = 0; i < half; ++i) {
         float re = fout[i].r;
         float im = fout[i].i;
-        float m = std::sqrt(re * re + im * im) * invN;
-        float v = tau * mag[i] + oneMinus * m;
-        mag[i] = std::isfinite(v) ? v : 0.0f;
+        float power = (re * re + im * im) * invN2;
+        mag[i] = tau * mag[i] + oneMinus * power;
     }
     ad.spectrumFrameStamp = widx;
     ad.dbCacheFrameStamp = -1;
@@ -878,7 +860,7 @@ static void ensureDbCacheLocked(NativeEngine::AnalyserData &ad, int half) {
     for (int i = 0; i < half; ++i) {
         float m = mag[i];
         if (m < 1e-20f) m = 1e-20f;
-        db[i] = 20.0f * std::log10(m);
+        db[i] = 10.0f * std::log10(m);
     }
     ad.dbCacheFrameStamp = ad.spectrumFrameStamp;
 }
@@ -971,8 +953,10 @@ int NativeEngine::getAnalyserByteTimeDomainDataInto(const std::string &id, uint8
     float *tmp = ad.byteScratch.data();
     copyLatestSamples(ad, tmp, n);
     for (int i = 0; i < n; ++i) {
-        // The spec: floor(128 * (1 + v)), clamped to a byte.
-        int b = (int) std::floor(128.0f * (1.0f + tmp[i]));
+        float v = tmp[i];
+        if (v < -1.0f) v = -1.0f;
+        else if (v > 1.0f) v = 1.0f;
+        int b = (int) ((v * 0.5f + 0.5f) * 255.0f);
         if (b < 0) b = 0;
         else if (b > 255) b = 255;
         dst[i] = (uint8_t) b;

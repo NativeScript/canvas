@@ -183,36 +183,6 @@ public class AudioParam implements NativeObject {
 		AudioContext.getInstance().scheduleGainRamp(id, this.automationRate, v, t);
 	}
 
-	public void exponentialRampToValueAtTime(double v, double t) {
-		schedule(2, v, t, 0.0, 0.0, null);
-	}
-
-	public void setTargetAtTime(double v, double t, double timeConstant) {
-		schedule(3, v, t, timeConstant, 0.0, null);
-	}
-
-	public void setValueCurveAtTime(java.nio.FloatBuffer values, double t, double duration) {
-		if (values == null || values.remaining() < 2) return;
-		java.nio.FloatBuffer curve = values.slice();
-		if (!curve.isDirect()) {
-			java.nio.FloatBuffer direct = java.nio.ByteBuffer.allocateDirect(curve.remaining() * 4).order(java.nio.ByteOrder.nativeOrder()).asFloatBuffer();
-			direct.put(curve);
-			direct.flip();
-			curve = direct;
-		}
-		schedule(4, 0.0, t, 0.0, duration, curve);
-	}
-
-	private void schedule(int type, double v, double t, double timeConstant, double duration, java.nio.FloatBuffer curve) {
-		if (owner != null) {
-			AudioContext.getInstance().scheduleParamEvent(1, owner.getId(), this.type.ordinal(), type, this.automationRate, t, v, timeConstant, duration, curve);
-		} else if (contextOwner != null) {
-			AudioContext.getInstance().scheduleParamEvent(2, contextOwner.getId(), this.type.ordinal(), type, this.automationRate, t, v, timeConstant, duration, curve);
-		} else {
-			AudioContext.getInstance().scheduleParamEvent(0, id, 0, type, this.automationRate, t, v, timeConstant, duration, curve);
-		}
-	}
-
 	public String getAutomationRate() {
 		return this.automationRate == 0 ? "k-rate" : "a-rate";
 	}

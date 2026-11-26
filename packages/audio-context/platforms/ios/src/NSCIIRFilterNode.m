@@ -8,22 +8,56 @@ static inline NSUInteger NSCIIRNormalizeFloatByteOffset(NSInteger byteOffset, NS
     return offset;
 }
 
+#define IIR_CHANNELS 8
+#define IIR_ORDER 20
+
+// Direct form I: x and y histories per channel, newest first.
+typedef struct {
+    double b[IIR_ORDER], a[IIR_ORDER];
+    int nb, na;
+    double x[IIR_CHANNELS][IIR_ORDER], y[IIR_CHANNELS][IIR_ORDER];
+} IIRState;
+
 @implementation NSCIIRFilterNode {
     NSArray<NSNumber *> *_feedforward;
     NSArray<NSNumber *> *_feedback;
-    AVAudioMixerNode *_mixer;
+    NSMutableData *_state;
 }
 
 - (instancetype)initWithContext:(NSCAudioContext *)context
                                         feedforward:(NSArray<NSNumber *> *)feedforward
                                              feedback:(NSArray<NSNumber *> *)feedback {
-    AVAudioMixerNode *mixer = [[AVAudioMixerNode alloc] init];
-    [context.engine attachNode:mixer];
-    if (self = [super initWithContext:context node:mixer]) {
-        _mixer = mixer;
-        _feedforward = [feedforward copy];
-        _feedback = [feedback copy];
-    }
+    if (!(self = [super initWithContext:context outputChannels:2])) return nil;
+    _feedforward = [feedforward copy];
+    _feedback = [feedback copy];
+    _state = [NSMutableData dataWithLength:sizeof(IIRState)];
+    IIRState *st = (IIRState *)_state.mutableBytes;
+    double a0 = feedback.count > 0 ? feedback[0].doubleValue : 1.0;
+    if (a0 == 0.0) a0 = 1.0;
+    st->nb = (int)MIN(feedforward.count, (NSUInteger)IIR_ORDER);
+    st->na = (int)MIN(feedback.count, (NSUInteger)IIR_ORDER);
+    for (int k = 0; k < st->nb; k++) st->b[k] = feedforward[k].doubleValue / a0;
+    for (int k = 0; k < st->na; k++) st->a[k] = feedback[k].doubleValue / a0;
+    NSMutableData *keep = _state;
+    [self setProcess:^UInt32(int64_t frame, UInt32 frames, float *const *in, UInt32 inChannels, float *const *out, UInt32 outChannels) {
+        IIRState *s = (IIRState *)keep.mutableBytes;
+        UInt32 channels = MIN(inChannels, MIN(outChannels, (UInt32)IIR_CHANNELS));
+        for (UInt32 c = 0; c < channels; c++) {
+            double *x = s->x[c], *y = s->y[c];
+            for (UInt32 n = 0; n < frames; n++) {
+                memmove(x + 1, x, (IIR_ORDER - 1) * sizeof(double));
+                x[0] = in[c][n];
+                double v = 0.0;
+                for (int k = 0; k < s->nb; k++) v += s->b[k] * x[k];
+                for (int k = 1; k < s->na; k++) v -= s->a[k] * y[k - 1];
+                if (!isfinite(v)) v = 0.0;
+                memmove(y + 1, y, (IIR_ORDER - 1) * sizeof(double));
+                y[0] = v;
+                out[c][n] = (float)v;
+            }
+        }
+        return channels;
+    }];
     return self;
 }
 
@@ -79,6 +113,11 @@ static inline NSUInteger NSCIIRNormalizeFloatByteOffset(NSInteger byteOffset, NS
 
     const double twoPiOverSr = 2.0 * M_PI / sr;
     for (NSInteger i = 0; i < n; ++i) {
+        if (!(freqs[i] >= 0.0f && freqs[i] <= sr * 0.5)) {
+            mag[i] = NAN;
+            phase[i] = NAN;
+            continue;
+        }
         double w = twoPiOverSr * (double)freqs[i];
         double numR = 0, numI = 0, denR = 0, denI = 0;
         for (NSUInteger k = 0; k < ffCount; ++k) {

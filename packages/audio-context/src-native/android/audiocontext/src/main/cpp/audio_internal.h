@@ -195,7 +195,8 @@ computePeriodicWaveSample(const NativeEngine::PeriodicWaveData &pw, double phase
     const std::vector<double> &imag = pw.imag;
     size_t N = std::min(real.size(), imag.size());
     double val = 0.0;
-    if (N <= 1) return 0.0f;
+    if (N > 0) val += real[0] * 0.5;
+    if (N <= 1) return static_cast<float>(val);
     if (freq <= 0.0) freq = 440.0;
     int maxHarm = 0;
     if (sampleRate > 0.0 && freq > 0.0) {

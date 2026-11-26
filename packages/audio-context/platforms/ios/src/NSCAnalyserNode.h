@@ -1,12 +1,12 @@
 #import <Foundation/Foundation.h>
 #import <AVFoundation/AVFoundation.h>
-#import "NSCAudioNode.h"
+#import "NSCProcessorNode.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 @class NSCAudioContext;
 
-@interface NSCAnalyserNode : NSCAudioNode
+@interface NSCAnalyserNode : NSCProcessorNode
 
 @property (nonatomic) NSInteger fftSize;
 @property (nonatomic, readonly) NSInteger frequencyBinCount;
@@ -14,8 +14,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic) double minDecibels;
 @property (nonatomic) double maxDecibels;
 
-- (instancetype)initWithContext:(NSCAudioContext *)context NS_DESIGNATED_INITIALIZER;
-- (instancetype)initWithContext:(NSCAudioContext *)context node:(nullable AVAudioNode *)node NS_UNAVAILABLE;
+- (instancetype)initWithContext:(NSCAudioContext *)context;
 
 - (void)getFloatTimeDomainData:(NSMutableData *)data;
 - (void)getFloatTimeDomainDataWithByteOffset:(NSMutableData *)data :(NSInteger)byteOffset;
@@ -25,9 +24,6 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)getByteFrequencyData:(NSMutableData *)data;
 - (void)appendBufferToRing:(AVAudioPCMBuffer *)buffer;
 
-- (void)setAcceptingFrames:(BOOL)accept;
-
-- (AVAudioNode *)mixerNode;
 
 @end
 

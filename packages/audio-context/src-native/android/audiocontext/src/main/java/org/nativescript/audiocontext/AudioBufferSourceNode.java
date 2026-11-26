@@ -4,12 +4,6 @@ import androidx.annotation.Nullable;
 
 public class AudioBufferSourceNode extends AudioScheduledSourceNode {
 	private boolean mLoop;
-	private double mLoopStart;
-	private double mLoopEnd;
-	@Nullable
-	private String detuneId;
-	@Nullable
-	private AudioParam mDetune;
 	
 	@Nullable
 	private AudioBuffer mBuffer;
@@ -47,37 +41,6 @@ public class AudioBufferSourceNode extends AudioScheduledSourceNode {
 
 	public void setLoop(boolean loop) {
 		mLoop = loop;
-		syncLoop();
-	}
-
-	public double getLoopStart() {
-		return mLoopStart;
-	}
-
-	public void setLoopStart(double value) {
-		mLoopStart = value;
-		syncLoop();
-	}
-
-	public double getLoopEnd() {
-		return mLoopEnd;
-	}
-
-	public void setLoopEnd(double value) {
-		mLoopEnd = value;
-		syncLoop();
-	}
-
-	private void syncLoop() {
-		AudioContext.getInstance().setSourceLoop(id, mLoop, mLoopStart, mLoopEnd);
-	}
-
-	public AudioParam getDetune() {
-		if (mDetune == null) {
-			detuneId = AudioContext.getInstance().createDetune(id, resolveContextId());
-			mDetune = new AudioParam(detuneId);
-		}
-		return mDetune;
 	}
 
 	@Nullable
@@ -96,8 +59,6 @@ public class AudioBufferSourceNode extends AudioScheduledSourceNode {
 				ctx.attachPlaybackRateToVoice(newId, playbackRateId);
 			}
 			id = newId;
-			if (detuneId != null) ctx.attachDetune(newId, detuneId);
-			syncLoop();
 			if (ctx.ownsSourceBuffer(newId, buffer)) ownBuffer(newId);
 		}
 	}

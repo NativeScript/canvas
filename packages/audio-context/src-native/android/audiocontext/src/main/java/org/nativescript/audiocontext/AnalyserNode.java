@@ -124,7 +124,10 @@ public class AnalyserNode implements NativeObject, AudioNode {
 		int basePos = view.position();
 		int n = Math.min(a.length, view.remaining());
 		for (int i = 0; i < n; ++i) {
-			int b = (int) Math.floor(128.0f * (1.0f + a[i]));
+			float v = a[i];
+			if (v < -1.0f) v = -1.0f;
+			else if (v > 1.0f) v = 1.0f;
+			int b = (int) ((v * 0.5f + 0.5f) * 255.0f);
 			if (b < 0) b = 0;
 			else if (b > 255) b = 255;
 			view.put(basePos + i, (byte) b);

@@ -244,7 +244,55 @@ export interface IIRFilterOptions {
 	feedback: number[];
 }
 export interface ConvolverOptions {
+	buffer?: any;
 	disableNormalization?: boolean;
+}
+
+/** ConvolverOptions per the spec: normalize is set before the buffer, which it scales. */
+export function applyConvolverOptions(node: { normalize: boolean; buffer: any }, options: ConvolverOptions = {}) {
+	node.normalize = !options.disableNormalization;
+	if (options.buffer != null) node.buffer = options.buffer;
+}
+
+export interface AudioNodeChannelOptions {
+	channelCount?: number;
+	channelCountMode?: 'max' | 'clamped-max' | 'explicit';
+	channelInterpretation?: 'speakers' | 'discrete';
+}
+
+/** A node kind's limits on channelCount, channelCountMode and channelInterpretation. */
+export interface ChannelRule {
+	maxCount?: number;
+	fixedCount?: number;
+	noMax?: boolean;
+	fixedMode?: string;
+	fixedInterpretation?: string;
+	/** The error a disallowed value raises. */
+	error?: 'NotSupportedError' | 'InvalidStateError' | 'IndexSizeError';
+}
+
+export const CHANNEL_RULES: Record<string, ChannelRule> = {
+	PannerNode: { maxCount: 2, noMax: true },
+	StereoPannerNode: { maxCount: 2, noMax: true },
+	ConvolverNode: { maxCount: 2, noMax: true },
+	DynamicsCompressorNode: { maxCount: 2, noMax: true },
+	ChannelSplitterNode: { fixedMode: 'explicit', fixedInterpretation: 'discrete', error: 'InvalidStateError' },
+	ChannelMergerNode: { fixedCount: 1, fixedMode: 'explicit', error: 'InvalidStateError' },
+};
+
+/** Throws the spec's error for a channel setting `rule` disallows; `name` is the DOMException name helper. */
+export function checkChannelSetting(rule: ChannelRule | undefined, prop: 'channelCount' | 'channelCountMode' | 'channelInterpretation', value: any, current: number, makeError: (name: string, message: string) => Error) {
+	if (prop === 'channelCount') {
+		if (!(value >= 1 && value <= 32)) throw makeError('NotSupportedError', `channelCount ${value} is out of range`);
+		if (rule?.fixedCount != null && value !== rule.fixedCount) throw makeError(rule.error ?? 'InvalidStateError', `channelCount must be ${rule.fixedCount}`);
+		if (rule?.fixedMode && rule.fixedInterpretation && value !== current) throw makeError(rule.error ?? 'InvalidStateError', 'channelCount cannot change');
+		if (rule?.maxCount != null && value > rule.maxCount) throw makeError('NotSupportedError', `channelCount ${value} is above ${rule.maxCount}`);
+	} else if (prop === 'channelCountMode') {
+		if (rule?.fixedMode && value !== rule.fixedMode) throw makeError(rule.error ?? 'InvalidStateError', `channelCountMode must be '${rule.fixedMode}'`);
+		if (rule?.noMax && value === 'max') throw makeError('NotSupportedError', "channelCountMode cannot be 'max'");
+	} else if (rule?.fixedInterpretation && value !== rule.fixedInterpretation) {
+		throw makeError(rule.error ?? 'InvalidStateError', `channelInterpretation must be '${rule.fixedInterpretation}'`);
+	}
 }
 export interface DynamicsCompressorOptions {
 	threshold?: number;
@@ -274,6 +322,8 @@ export interface AudioParamHooks {
 	nativeScheduleTarget?(value: number, startTime: number, timeConstant: number): void;
 	nativeScheduleCurve?(values: Float32Array, startTime: number, duration: number): void;
 	nativeGetValue?(): number;
+	/** The value automation and connected audio give at the current time. */
+	nativeComputedValue?(): number;
 	nativeSetAutomationRate?(rate: string): void;
 	nativeCancelAndHold(heldValue: number, time: number): void;
 }
@@ -301,6 +351,10 @@ export function makeStubParamHooks(): AudioParamHooks {
 	};
 }
 
+function checkTime(method: string, time: number) {
+	if (typeof time === 'number' && time < 0) throw new RangeError(`AudioParam.${method}: time must be >= 0`);
+}
+
 export class AudioParamBase {
 	private readonly hooks: AudioParamHooks;
 	private _cachedValue: number;
@@ -312,12 +366,16 @@ export class AudioParamBase {
 	}
 
 	get value(): number {
+		if (this.hooks.nativeComputedValue) {
+			const v = this.hooks.nativeComputedValue();
+			if (Number.isFinite(v)) return v;
+		}
 		return this._cachedValue;
 	}
 
 	set value(v: number) {
 		const nv = +v;
-		if (nv === this._cachedValue) return;
+		if (nv === this._cachedValue && !this.hooks.nativeComputedValue) return;
 		this._cachedValue = nv;
 		this.hooks.nativeSet(nv);
 	}
@@ -339,6 +397,7 @@ export class AudioParamBase {
 	}
 
 	setValueAtTime(value: number, time: number = 0): AudioParamBase {
+		checkTime('setValueAtTime', time);
 		const nv = +value;
 		this._cachedValue = nv;
 		this.hooks.nativeScheduleSet(nv, time || 0);
@@ -346,6 +405,7 @@ export class AudioParamBase {
 	}
 
 	linearRampToValueAtTime(value: number, time: number): AudioParamBase {
+		checkTime('linearRampToValueAtTime', time);
 		const nv = +value;
 		this._cachedValue = nv;
 		this.hooks.nativeScheduleLinearRamp(nv, time);
@@ -353,8 +413,9 @@ export class AudioParamBase {
 	}
 
 	exponentialRampToValueAtTime(value: number, time: number): AudioParamBase {
+		checkTime('exponentialRampToValueAtTime', time);
 		const nv = +value;
-		if (nv <= 0) throw new RangeError('exponentialRampToValueAtTime: value must be > 0');
+		if (nv === 0) throw new RangeError('exponentialRampToValueAtTime: value must not be 0');
 		this._cachedValue = nv;
 		if (this.hooks.nativeScheduleExpRamp) {
 			this.hooks.nativeScheduleExpRamp(nv, time);
@@ -365,6 +426,7 @@ export class AudioParamBase {
 	}
 
 	setTargetAtTime(target: number, startTime: number, timeConstant: number): AudioParamBase {
+		checkTime('setTargetAtTime', startTime);
 		const nv = +target;
 		if (timeConstant < 0) throw new RangeError('setTargetAtTime: timeConstant must be >= 0');
 		this._cachedValue = nv;
@@ -381,6 +443,8 @@ export class AudioParamBase {
 		if (!values || (values as { length: number }).length < 2) {
 			throw new RangeError('setValueCurveAtTime: values must have length >= 2');
 		}
+		checkTime('setValueCurveAtTime', startTime);
+		if (!(duration > 0)) throw new RangeError('setValueCurveAtTime: duration must be > 0');
 		const f32 = values instanceof Float32Array ? values : Float32Array.from(values);
 		this._cachedValue = f32[f32.length - 1];
 		if (this.hooks.nativeScheduleCurve) {
@@ -398,11 +462,13 @@ export class AudioParamBase {
 	}
 
 	cancelScheduledValues(time: number): AudioParamBase {
+		checkTime('cancelScheduledValues', time);
 		this.hooks.nativeCancel(time || 0);
 		return this;
 	}
 
 	cancelAndHoldAtTime(time: number): AudioParamBase {
+		checkTime('cancelAndHoldAtTime', time);
 		const t = time || 0;
 		const held = this._cachedValue;
 		this.hooks.nativeCancelAndHold(held, t);

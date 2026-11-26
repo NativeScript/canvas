@@ -586,7 +586,7 @@ static AudioComponentDescription TapDescription(void) {
     r->outQ = calloc((size_t)MAX(outputs, 1) * MAX_CHANNELS * QUANTUM, sizeof(float));
     r->position = 0;
     r->lowWater = UINT32_MAX;
-    r->offline = context.engine.isInManualRenderingMode;
+    r->offline = context.isOffline;
     r->sampleRate = sampleRate;
 
     NSMutableArray<NSCAudioParam *> *params = [NSMutableArray array];
@@ -607,6 +607,7 @@ static AudioComponentDescription TapDescription(void) {
     AVAudioEngine *engine = context.engine;
     if ([context isKindOfClass:[NSCOfflineAudioContext class]]) [(NSCOfflineAudioContext *)context willConnect];
     [engine attachNode:unit];
+    if (engine.isRunning) NSCEnsureAllocated(unit);
     NSMutableArray<NSCAudioNode *> *ports = [NSMutableArray array];
     for (NSInteger i = 0; i < inputs; i++) {
         NSCChannelMixerNode *port = [[NSCChannelMixerNode alloc] initWithContext:context mode:NSCMixModeSum channels:inCounts[i] discrete:NO];
@@ -634,6 +635,7 @@ static AudioComponentDescription TapDescription(void) {
             tapUnit.render = r;
             tapUnit.output = o;
             [engine attachNode:tap];
+            if (engine.isRunning) NSCEnsureAllocated(tap);
             [taps addObject:tap];
             [points addObject:[[AVAudioConnectionPoint alloc] initWithNode:tap bus:0]];
         }
@@ -712,7 +714,7 @@ static AudioComponentDescription TapDescription(void) {
 - (void)handleConnectedTo:(NSCAudioNode *)destination output:(NSNumber *)output input:(NSNumber *)input {
     [super handleConnectedTo:destination output:output input:input];
     NSCAudioContext *ctx = self.context;
-    if (!ctx || ctx.engine.isInManualRenderingMode) return;
+    if (!ctx || ctx.isOffline) return;
     if (!_active) {
         _active = YES;
         [ctx incrementActiveCount];

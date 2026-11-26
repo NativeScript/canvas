@@ -26,6 +26,11 @@ export declare class AudioNode {
 	constructor(context: BaseAudioContext);
 
 	readonly context: BaseAudioContext;
+	readonly numberOfInputs: number;
+	readonly numberOfOutputs: number;
+	channelCount: number;
+	channelCountMode: 'max' | 'clamped-max' | 'explicit';
+	channelInterpretation: 'speakers' | 'discrete';
 
 	connect(): void;
 
@@ -108,7 +113,9 @@ export declare class PannerNode extends AudioNode {
 	setOrientation(x: number, y: number, z: number);
 }
 
-export declare class AudioDestinationNode extends GainNode {}
+export declare class AudioDestinationNode extends AudioNode {
+	readonly maxChannelCount: number;
+}
 
 export class AudioScheduledSourceNode extends AudioNode {
 	start(when?: number, offset?: number, duration?: number);
@@ -125,11 +132,12 @@ export declare class MediaElementAudioSourceNode extends AudioNode {
 }
 
 export declare class OscillatorNode extends AudioScheduledSourceNode {
-	constructor(context: BaseAudioContext, options?: { type?: string; frequency?: number });
+	constructor(context: BaseAudioContext, options?: { type?: string; frequency?: number; detune?: number; periodicWave?: PeriodicWave });
 
 	type: string;
 
 	readonly frequency: AudioParam;
+	readonly detune: AudioParam;
 
 	setPeriodicWave(wave: PeriodicWave): void;
 }
@@ -205,10 +213,13 @@ export declare class PeriodicWave {
 }
 
 export declare class AudioBufferSourceNode extends AudioScheduledSourceNode {
-	constructor(context: BaseAudioContext, options: { buffer?: AudioBuffer });
+	constructor(context: BaseAudioContext, options?: { buffer?: AudioBuffer; loop?: boolean; loopStart?: number; loopEnd?: number; playbackRate?: number; detune?: number });
 	loop: boolean;
+	loopStart: number;
+	loopEnd: number;
 	buffer: AudioBuffer | null;
 	readonly playbackRate: AudioParam;
+	readonly detune: AudioParam;
 }
 
 export interface AudioWorkletNodeOptions {
@@ -247,6 +258,7 @@ export declare class AudioContext extends BaseAudioContext {
 	createPanner(options?: PannerOptions): PannerNode;
 	createOscillator(options?: { type?: string; frequency?: number }): OscillatorNode;
 	createBuffer(options: { length: number; numberOfChannels: number; sampleRate: number }): AudioBuffer;
+	createBuffer(numberOfChannels: number, length: number, sampleRate: number): AudioBuffer;
 	createBufferSource(): AudioBufferSourceNode;
 	createStereoPanner(options?: StereoPannerOptions): StereoPannerNode;
 	createDelay(options?: DelayOptions): DelayNode;
@@ -270,6 +282,14 @@ export declare class AudioContext extends BaseAudioContext {
 
 	readonly sampleRate: number;
 	readonly currentTime: number;
+	readonly baseLatency: number;
+	readonly outputLatency: number;
+	readonly listener: AudioListener;
+	getOutputTimestamp(): { contextTime: number; performanceTime: number };
+	/** Throws NotSupportedError: NativeScript has no MediaStream. */
+	createMediaStreamSource(stream: any): never;
+	createMediaStreamTrackSource(track: any): never;
+	createMediaStreamDestination(options?: any): never;
 
 	resume(): Promise<void>;
 	suspend(): Promise<void>;
@@ -285,6 +305,13 @@ export declare class OfflineAudioContext extends BaseAudioContext {
 	readonly audioWorklet: AudioWorklet | undefined;
 
 	constructor(numberOfChannels: number, lengthInFrames: number, sampleRate: number);
+	constructor(options: { numberOfChannels?: number; length: number; sampleRate: number });
+
+	readonly sampleRate: number;
+	readonly currentTime: number;
+	readonly listener: AudioListener;
+	createBuffer(options: { length: number; numberOfChannels: number; sampleRate: number }): AudioBuffer;
+	createBuffer(numberOfChannels: number, length: number, sampleRate: number): AudioBuffer;
 
 	createGain(options?: { gain?: number }): GainNode;
 	createBiquadFilter(options?: { type?: string; frequency?: number; Q?: number; gain?: number }): BiquadFilterNode;

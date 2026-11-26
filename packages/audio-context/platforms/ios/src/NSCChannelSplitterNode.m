@@ -36,6 +36,10 @@
     }
 }
 
+- (const _Atomic UInt32 *)logicalChannelCellForOutput:(NSInteger)output {
+    return output >= 0 && output < (NSInteger)_outputs.count ? [_outputs[(NSUInteger)output] mixedChannels] : NULL;
+}
+
 - (AVAudioFormat *)formatForOutput:(AVAudioNodeBus)bus {
     NSCChannelMixerNode *output = bus < _outputs.count ? _outputs[bus] : _outputs.firstObject;
     return output ? [output formatForOutput:0] : [super formatForOutput:bus];

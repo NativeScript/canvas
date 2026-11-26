@@ -44,6 +44,14 @@ public class AudioPannerNode implements NativeObject, AudioNode {
 		AudioContext.getInstance().setPannerParams(id, this._positionX, this._positionY, this._positionZ, this._orientationX, this._orientationY, this._orientationZ, this._pan, this._distanceModel, this._panningModel, this._refDistance, this._maxDistance, this._rolloffFactor, this._coneInnerAngle, this._coneOuterAngle, this._coneOuterGain);
 	}
 
+	public void setHRTFPartitionSize(int size) {
+		AudioContext.getInstance().setPannerPartitionSize(this, size);
+	}
+
+	public void setHRTF(java.nio.FloatBuffer left, java.nio.FloatBuffer right) {
+		AudioContext.getInstance().setPannerHRIRFromData(this.getId(), left, right);
+	}
+
 	public int getDistanceModel() { return this._distanceModel; }
 	public void setDistanceModel(int v) { this._distanceModel = v; AudioContext.getInstance().setPannerParams(id, this._positionX, this._positionY, this._positionZ, this._orientationX, this._orientationY, this._orientationZ, this._pan, this._distanceModel, this._panningModel, this._refDistance, this._maxDistance, this._rolloffFactor, this._coneInnerAngle, this._coneOuterAngle, this._coneOuterGain); }
 

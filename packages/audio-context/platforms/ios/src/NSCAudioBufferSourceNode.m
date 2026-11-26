@@ -15,6 +15,9 @@ typedef struct {
   double pendingOffsetFrames;
   double position;
   _Atomic(void *) pcm;
+  // Seconds; the whole buffer loops unless 0 <= loopStart < loopEnd.
+  _Atomic double loopStart;
+  _Atomic double loopEnd;
 } NSCBufferSourceState;
 
 @implementation NSCAudioBufferSourceNode {
@@ -105,18 +108,27 @@ static AVAudioSourceNode *MakeSource(AVAudioFormat *format, NSMutableData *state
         for (AVAudioFrameCount k = 0; k < frameCount; ++k) rates[k] *= exp2(detunes[0] / 1200.0);
       }
       double pos = st->position;
+      double regionStart = 0.0, regionEnd = (double)frames;
+      double ls = atomic_load_explicit(&st->loopStart, memory_order_relaxed), le = atomic_load_explicit(&st->loopEnd, memory_order_relaxed);
+      if (loop && ls >= 0.0 && le > 0.0 && ls < le) {
+        double bufferRate = pcm.format.sampleRate;
+        regionStart = MIN(ls * bufferRate, (double)frames);
+        regionEnd = MIN(le * bufferRate, (double)frames);
+        if (regionEnd <= regionStart) { regionStart = 0.0; regionEnd = (double)frames; }
+      }
       AVAudioFrameCount f = first;
       for (; f < end; ++f) {
-        if (pos >= (double)frames) {
+        if (pos >= (loop ? regionEnd : (double)frames)) {
           if (loop) {
-            pos = fmod(pos, (double)frames);
+            pos = regionStart + fmod(pos - regionStart, regionEnd - regionStart);
           } else {
             finished = YES;
             break;
           }
         }
         AVAudioFrameCount i0 = (AVAudioFrameCount)pos;
-        AVAudioFrameCount i1 = i0 + 1 < frames ? i0 + 1 : (loop ? 0 : i0);
+        AVAudioFrameCount wrapEnd = loop ? (AVAudioFrameCount)ceil(regionEnd) : frames;
+        AVAudioFrameCount i1 = i0 + 1 < wrapEnd ? i0 + 1 : (loop ? (AVAudioFrameCount)regionStart : i0);
         float frac = (float)(pos - (double)i0);
         for (UInt32 b = 0; b < abl->mNumberBuffers; ++b) {
           float *dst = (float *)abl->mBuffers[b].mData;
@@ -254,7 +266,13 @@ static AVAudioSourceNode *MakeSource(AVAudioFormat *format, NSMutableData *state
   if (pcm && pcm.floatChannelData == NULL) pcm = nil;
   if (pcm) [_keepAlive addObject:pcm];
   if (_state) atomic_store_explicit(&_state->pcm, (__bridge void *)pcm, memory_order_release);
+  [self setLogicalChannels:newBuffer ? MAX(1, [newBuffer getBuffer].format.channelCount) : 1];
 }
+
+- (double)loopStart { return _state ? atomic_load(&_state->loopStart) : 0.0; }
+- (void)setLoopStart:(double)v { if (_state) atomic_store(&_state->loopStart, v); }
+- (double)loopEnd { return _state ? atomic_load(&_state->loopEnd) : 0.0; }
+- (void)setLoopEnd:(double)v { if (_state) atomic_store(&_state->loopEnd, v); }
 
 - (BOOL)loop {
   return _state ? atomic_load_explicit(&_state->loop, memory_order_acquire) == 1 : NO;

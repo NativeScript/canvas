@@ -4,7 +4,6 @@ package org.nativescript.audiocontext;
 public class AudioOscillatorNode extends AudioScheduledSourceNode {
 	private String mType = "sine";
 	private AudioParam mFrequency;
-	private AudioParam mDetune;
 
 	private void init(double frequency) {
 		this.mFrequency = new AudioParam(id);
@@ -47,11 +46,6 @@ public class AudioOscillatorNode extends AudioScheduledSourceNode {
 
 	public AudioParam getFrequency() {
 		return mFrequency;
-	}
-
-	public AudioParam getDetune() {
-		if (mDetune == null) mDetune = new AudioParam(AudioContext.getInstance().createDetune(id, resolveContextId()));
-		return mDetune;
 	}
 
 	@Override

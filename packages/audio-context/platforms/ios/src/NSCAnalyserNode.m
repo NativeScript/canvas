@@ -58,13 +58,24 @@ static inline NSUInteger NSCAnalyserNormalizeFloatByteOffset(NSInteger byteOffse
     return offset;
 }
 
-@implementation NSCAnalyserNode {
-    AVAudioMixerNode *_mixer;
+#define ANALYSER_RING 32768
 
+// The last 32768 frames, down-mixed to mono; written on the render thread.
+@interface NSCAnalyserRing : NSObject {
+@public
+    float ring[ANALYSER_RING];
+    atomic_int_least64_t writeIndex;
+    atomic_uint_least64_t framesWritten;
+}
+@end
+
+@implementation NSCAnalyserRing
+@end
+
+@implementation NSCAnalyserNode {
+    NSCAnalyserRing *_ring;
     float *_timeRing;
     NSInteger _timeRingCapacity;
-    atomic_int_least64_t _timeRingWriteIdx;
-    atomic_uint_least64_t _framesWritten;
 
     float *_smoothedMag;
     float *_dbCache;
@@ -83,46 +94,38 @@ static inline NSUInteger NSCAnalyserNormalizeFloatByteOffset(NSInteger byteOffse
 
     int64_t _spectrumFrameStamp;
     int64_t _dbCacheFrameStamp;
-
-    BOOL _tapInstalled;
-    AVAudioFormat *_tapFormat;
-    _Atomic(bool) _acceptingFrames;
-
-    int _quantumFrames;
 }
 
 #pragma mark - Setup / teardown
 
 - (instancetype)initWithContext:(NSCAudioContext *)context {
-    AVAudioMixerNode *mixer = [[AVAudioMixerNode alloc] init];
-    [context.engine attachNode:mixer];
-    if (self = [super initWithContext:context node:mixer]) {
-        _mixer = mixer;
-        _fftSize = 2048;
-        _smoothingTimeConstant = 0.8;
-        _minDecibels = -100.0;
-        _maxDecibels = -30.0;
-        _quantumFrames = 1024;
-        _timeRingCapacity = _fftSize;
-        _timeRing = (float *)calloc((size_t)_timeRingCapacity, sizeof(float));
-        _smoothedMagCount = _fftSize / 2;
-        _smoothedMag = (float *)calloc((size_t)_smoothedMagCount, sizeof(float));
-        _dbCache = (float *)calloc((size_t)_smoothedMagCount, sizeof(float));
-        _magLock = [NSLock new];
-        atomic_init(&_timeRingWriteIdx, 0);
-        atomic_init(&_framesWritten, 0);
-        atomic_store(&_acceptingFrames, false);
-        _spectrumFrameStamp = -1;
-        _dbCacheFrameStamp = -1;
-        [self rebuildFftCachesForSize:_fftSize];
-    }
+    if (!(self = [super initWithContext:context outputChannels:2])) return nil;
+    _fftSize = 2048;
+    _smoothingTimeConstant = 0.8;
+    _minDecibels = -100.0;
+    _maxDecibels = -30.0;
+    _ring = [NSCAnalyserRing new];
+    _timeRing = _ring->ring;
+    _timeRingCapacity = ANALYSER_RING;
+    _smoothedMagCount = _fftSize / 2;
+    _smoothedMag = (float *)calloc((size_t)_smoothedMagCount, sizeof(float));
+    _dbCache = (float *)calloc((size_t)_smoothedMagCount, sizeof(float));
+    _magLock = [NSLock new];
+    _spectrumFrameStamp = -1;
+    _dbCacheFrameStamp = -1;
+    [self rebuildFftCachesForSize:_fftSize];
+    NSCAnalyserRing *ring = _ring;
+    [self setProcess:^UInt32(int64_t frame, UInt32 frames, float *const *in, UInt32 inChannels, float *const *out, UInt32 outChannels) {
+        NSCAnalyser_appendToRing(ring->ring, ANALYSER_RING, &ring->writeIndex, &ring->framesWritten, in, inChannels, frames);
+        UInt32 channels = MIN(inChannels, outChannels);
+        for (UInt32 c = 0; c < channels; c++) memcpy(out[c], in[c], frames * sizeof(float));
+        return channels;
+    }];
+    [self keepPulled];
     return self;
 }
 
 - (void)dealloc {
-    atomic_store_explicit(&_acceptingFrames, false, memory_order_relaxed);
-    [self removeTapIfInstalled];
-    if (_timeRing)    { free(_timeRing); _timeRing = NULL; }
     if (_smoothedMag) { free(_smoothedMag); _smoothedMag = NULL; }
     if (_dbCache)     { free(_dbCache); _dbCache = NULL; }
     [self freeFftCaches];
@@ -152,125 +155,9 @@ static inline NSUInteger NSCAnalyserNormalizeFloatByteOffset(NSInteger byteOffse
     _realOut        = (float *)malloc((size_t)half * sizeof(float));
     _imagOut        = (float *)malloc((size_t)half * sizeof(float));
     _magScratch     = (float *)malloc((size_t)half * sizeof(float));
-    if (_window) vDSP_hann_window(_window, (vDSP_Length)n, vDSP_HANN_NORM);
+    if (_window) vDSP_blkman_window(_window, (vDSP_Length)n, 0);
     _spectrumFrameStamp = -1;
     _dbCacheFrameStamp = -1;
-}
-
-- (AVAudioNode *)mixerNode { return _mixer; }
-
-- (void)setAcceptingFrames:(BOOL)accept {
-    atomic_store_explicit(&_acceptingFrames, accept, memory_order_relaxed);
-}
-
-#pragma mark - Tap lifecycle
-
-- (BOOL)hasAnyInputConnection {
-    if (!_mixer) return NO;
-    AVAudioEngine *engine = self.context.engine;
-    if (!engine) return NO;
-    if (![engine respondsToSelector:@selector(inputConnectionPointForNode:inputBus:)]) return YES;
-    for (AVAudioNodeBus bus = 0; bus < (AVAudioNodeBus)_mixer.numberOfInputs; ++bus) {
-        AVAudioConnectionPoint *p = nil;
-        @try { p = [engine inputConnectionPointForNode:_mixer inputBus:bus]; }
-        @catch (NSException *e) { p = nil; }
-        if (p && p.node) return YES;
-    }
-    return NO;
-}
-
-- (AVAudioFormat *)resolveTapFormat {
-    if (!_mixer) return nil;
-    AVAudioFormat *fmt = nil;
-    @try { fmt = [_mixer outputFormatForBus:0]; }
-    @catch (NSException *e) { fmt = nil; }
-    if (!fmt || fmt.sampleRate <= 0 || fmt.channelCount == 0) {
-        AVAudioEngine *engine = self.context.engine;
-        @try { fmt = engine ? [engine.mainMixerNode outputFormatForBus:0] : nil; }
-        @catch (NSException *e) { fmt = nil; }
-    }
-    if (!fmt || fmt.sampleRate <= 0 || fmt.channelCount == 0) return nil;
-    return fmt;
-}
-
-- (void)installTapIfNeeded {
-    if (!_mixer || _tapInstalled) return;
-    AVAudioFormat *fmt = [self resolveTapFormat];
-    if (!fmt) return;
-
-    __weak typeof(self) weakSelf = self;
-    AVAudioMixerNode *mixer = _mixer;
-    AVAudioNodeTapBlock tapBlock = ^(AVAudioPCMBuffer *buf, AVAudioTime *when) {
-        __strong typeof(weakSelf) s = weakSelf;
-        if (!s) return;
-        if (!atomic_load_explicit(&s->_acceptingFrames, memory_order_relaxed)) return;
-        float * const *cd = buf.floatChannelData;
-        if (!cd) return;
-        AVAudioFrameCount frames = buf.frameLength;
-        if (frames == 0) return;
-        AVAudioChannelCount channels = buf.format.channelCount;
-        NSCAnalyser_appendToRing(s->_timeRing, s->_timeRingCapacity,
-                                 &s->_timeRingWriteIdx, &s->_framesWritten,
-                                 cd, channels, frames);
-    };
-
-    @try {
-        [_mixer installTapOnBus:0
-                     bufferSize:(AVAudioFrameCount)_quantumFrames
-                         format:fmt
-                          block:tapBlock];
-        _tapInstalled = YES;
-        _tapFormat = fmt;
-        atomic_store_explicit(&_acceptingFrames, true, memory_order_release);
-    } @catch (NSException *e) {
-        NSCLogDebug(@"NSCAnalyserNode: installTapOnBus failed: %@ (mixer=%p sr=%.0f ch=%u)",
-              e, mixer, fmt.sampleRate, (unsigned)fmt.channelCount);
-    }
-}
-
-- (void)removeTapIfInstalled {
-    atomic_store_explicit(&_acceptingFrames, false, memory_order_relaxed);
-    if (!_tapInstalled || !_mixer) return;
-    @try { [_mixer removeTapOnBus:0]; } @catch (NSException *e) {}
-    _tapInstalled = NO;
-    _tapFormat = nil;
-}
-
-#pragma mark - Connection hooks
-
-- (void)handleConnectFrom:(NSCAudioNode *)source output:(NSNumber *)output input:(NSNumber *)input {
-    [super handleConnectFrom:source output:output input:input];
-    [self installTapIfNeeded];
-}
-
-- (void)handleConnectedTo:(NSCAudioNode *)destination output:(NSNumber *)output input:(NSNumber *)input {
-    [super handleConnectedTo:destination output:output input:input];
-    [self installTapIfNeeded];
-}
-
-- (void)handleDisconnectFrom:(NSCAudioNode *)source output:(NSNumber *)output input:(NSNumber *)input {
-    [super handleDisconnectFrom:source output:output input:input];
-    if (![self hasAnyInputConnection]) {
-        [self resetAfterDisconnect];
-    }
-}
-
-- (void)disconnect {
-    [super disconnect];
-    if (![self hasAnyInputConnection]) {
-        [self resetAfterDisconnect];
-    }
-}
-
-- (void)resetAfterDisconnect {
-    [self removeTapIfInstalled];
-    atomic_store_explicit(&_timeRingWriteIdx, 0, memory_order_relaxed);
-    atomic_store_explicit(&_framesWritten, 0, memory_order_relaxed);
-    _spectrumFrameStamp = -1;
-    _dbCacheFrameStamp = -1;
-    if (_smoothedMag) memset(_smoothedMag, 0, (size_t)_smoothedMagCount * sizeof(float));
-    if (_dbCache)     memset(_dbCache, 0, (size_t)_smoothedMagCount * sizeof(float));
-    if (_timeRing)    memset(_timeRing, 0, (size_t)_timeRingCapacity * sizeof(float));
 }
 
 #pragma mark - Properties
@@ -282,17 +169,8 @@ static inline NSUInteger NSCAnalyserNormalizeFloatByteOffset(NSInteger byteOffse
     if (fftSize > 32768) fftSize = 32768;
     NSInteger p = 1; while (p < fftSize) p <<= 1;
     if (p == _fftSize && _dftSetupSize == p) return;
-
-    BOOL hadTap = _tapInstalled;
-    if (hadTap) [self removeTapIfInstalled];
-
     [_magLock lock];
     _fftSize = p;
-    _timeRingCapacity = p;
-    if (_timeRing) free(_timeRing);
-    _timeRing = (float *)calloc((size_t)_timeRingCapacity, sizeof(float));
-    atomic_store_explicit(&_timeRingWriteIdx, 0, memory_order_relaxed);
-    atomic_store_explicit(&_framesWritten, 0, memory_order_relaxed);
     if (_smoothedMag) free(_smoothedMag);
     if (_dbCache) free(_dbCache);
     _smoothedMagCount = p / 2;
@@ -302,8 +180,6 @@ static inline NSUInteger NSCAnalyserNormalizeFloatByteOffset(NSInteger byteOffse
     _dbCacheFrameStamp = -1;
     [self rebuildFftCachesForSize:p];
     [_magLock unlock];
-
-    if (hadTap) [self installTapIfNeeded];
 }
 
 - (void)setSmoothingTimeConstant:(double)smoothingTimeConstant {
@@ -319,7 +195,7 @@ static inline NSUInteger NSCAnalyserNormalizeFloatByteOffset(NSInteger byteOffse
 - (void)copyLatestTimeSamplesInto:(float *)dst count:(NSInteger)n {
     NSInteger cap = _timeRingCapacity;
     if (cap <= 0 || n <= 0) return;
-    int64_t widx = atomic_load_explicit(&_timeRingWriteIdx, memory_order_acquire);
+    int64_t widx = atomic_load_explicit(&_ring->writeIndex, memory_order_acquire);
     int64_t start = widx - n;
     NSInteger leadZeros = (start < 0) ? (NSInteger)MIN((int64_t)n, -start) : 0;
     if (leadZeros > 0) memset(dst, 0, (size_t)leadZeros * sizeof(float));
@@ -381,7 +257,7 @@ static inline NSUInteger NSCAnalyserNormalizeFloatByteOffset(NSInteger byteOffse
         [self rebuildFftCachesForSize:n];
         if (!_dftSetup) return;
     }
-    int64_t widx = atomic_load_explicit(&_timeRingWriteIdx, memory_order_acquire);
+    int64_t widx = atomic_load_explicit(&_ring->writeIndex, memory_order_acquire);
 
     [_magLock lock];
     if (_spectrumFrameStamp == widx) { [_magLock unlock]; return; }
@@ -394,8 +270,12 @@ static inline NSUInteger NSCAnalyserNormalizeFloatByteOffset(NSInteger byteOffse
     vDSP_DFT_Execute(_dftSetup, _realIn, _imagIn, _realOut, _imagOut);
     DSPSplitComplex c = { _realOut, _imagOut };
     vDSP_zvmags(&c, 1, _magScratch, 1, (vDSP_Length)half);
-
-    float scale = 1.0f / (float)(n * n);
+    // Bin 0's imaginary slot holds the Nyquist bin.
+    _magScratch[0] = _realOut[0] * _realOut[0];
+    int count = (int)half;
+    vvsqrtf(_magScratch, _magScratch, &count);
+    // |X[k]| / N; vDSP's real DFT is twice the DFT.
+    float scale = 0.5f / (float)n;
     vDSP_vsmul(_magScratch, 1, &scale, _magScratch, 1, (vDSP_Length)half);
 
     float tau = (float)MAX(0.0, MIN(1.0, _smoothingTimeConstant));
@@ -418,7 +298,7 @@ static inline NSUInteger NSCAnalyserNormalizeFloatByteOffset(NSInteger byteOffse
     float floor_ = 1e-20f;
     vDSP_vthr(_smoothedMag, 1, &floor_, _dbCache, 1, (vDSP_Length)lim);
     float ref = 1.0f;
-    vDSP_vdbcon(_dbCache, 1, &ref, _dbCache, 1, (vDSP_Length)lim, 0);
+    vDSP_vdbcon(_dbCache, 1, &ref, _dbCache, 1, (vDSP_Length)lim, 1);
     _dbCacheFrameStamp = _spectrumFrameStamp;
 }
 
@@ -467,15 +347,9 @@ static inline NSUInteger NSCAnalyserNormalizeFloatByteOffset(NSInteger byteOffse
 }
 
 - (void)appendBufferToRing:(AVAudioPCMBuffer *)buffer {
-    if (!buffer) return;
-    if (!atomic_load_explicit(&_acceptingFrames, memory_order_relaxed)) return;
-    float * const *cd = buffer.floatChannelData;
-    if (!cd) return;
-    AVAudioFrameCount frames = buffer.frameLength;
-    if (frames == 0) return;
-    NSCAnalyser_appendToRing(_timeRing, _timeRingCapacity,
-                             &_timeRingWriteIdx, &_framesWritten,
-                             cd, buffer.format.channelCount, frames);
+    if (!buffer.floatChannelData || buffer.frameLength == 0) return;
+    NSCAnalyser_appendToRing(_ring->ring, ANALYSER_RING, &_ring->writeIndex, &_ring->framesWritten,
+                             buffer.floatChannelData, buffer.format.channelCount, buffer.frameLength);
 }
 
 @end

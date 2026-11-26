@@ -48,11 +48,6 @@ public class DynamicsCompressorNode implements NativeObject, AudioNode {
 		return id;
 	}
 
-	// The current reduction in dB, as the render thread last metered it.
-	public float getReduction() {
-		return AudioContext.getInstance().getCompressorReduction(id);
-	}
-
 	public AudioParam getThreshold() {
 		return threshold;
 	}
@@ -73,7 +68,7 @@ public class DynamicsCompressorNode implements NativeObject, AudioNode {
 		return release;
 	}
 
-	public AudioParam getReductionParam() {
+	public AudioParam getReduction() {
 		return reduction;
 	}
 

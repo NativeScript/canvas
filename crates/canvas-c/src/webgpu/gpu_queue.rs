@@ -465,33 +465,6 @@ unsafe fn copy_context_on_gpu_linux(
     )
 }
 
-/// Signalled by a 2D canvas's queue once its copy for WebGPU is written; wgpu's queue waits on it.
-#[cfg(all(
-    feature = "metal",
-    any(
-        target_os = "ios",
-        target_os = "macos",
-        target_os = "visionos",
-        target_os = "tvos"
-    )
-))]
-struct CopyEvent {
-    device: usize,
-    event: objc2::rc::Retained<objc2::runtime::ProtocolObject<dyn objc2_metal::MTLEvent>>,
-    value: u64,
-}
-
-#[cfg(all(
-    feature = "metal",
-    any(
-        target_os = "ios",
-        target_os = "macos",
-        target_os = "visionos",
-        target_os = "tvos"
-    )
-))]
-unsafe impl Send for CopyEvent {}
-
 /// Metal objects are thread safe; these only cross to the 2D render thread.
 #[cfg(all(
     feature = "metal",
@@ -561,8 +534,6 @@ unsafe fn copy_context_on_gpu(
         MTLTextureDescriptor, MTLTextureUsage,
     };
 
-    static EVENT: Mutex<Option<CopyEvent>> = Mutex::new(None);
-
     let destination_texture = &(*destination.texture).texture;
     if !destination_texture
         .descriptor()
@@ -587,27 +558,11 @@ unsafe fn copy_context_on_gpu(
         return false;
     };
 
-    let (event, value) = {
-        let Ok(mut slot) = EVENT.lock() else {
-            return false;
-        };
-        let device_key = Retained::as_ptr(&device) as usize;
-        if slot.as_ref().map(|e| e.device) != Some(device_key) {
-            let Some(event) = device.newEvent() else {
-                return false;
-            };
-            *slot = Some(CopyEvent {
-                device: device_key,
-                event,
-                value: 0,
-            });
-        }
-        let Some(entry) = slot.as_mut() else {
-            return false;
-        };
-        entry.value += 1;
-        (entry.event.clone(), entry.value)
+    // One event per copy: canvases signal from their own queues, in no set order.
+    let Some(event) = device.newEvent() else {
+        return false;
     };
+    let value = 1;
 
     let context = &mut *(copy.source as *mut crate::c2d::CanvasRenderingContext2D);
     if context.metal_device() != Retained::as_ptr(&device) as usize {
@@ -653,31 +608,39 @@ unsafe fn copy_context_on_gpu(
         command_buffer.commit();
     }
 
-    let Some(source) = super::gpu_native_texture::import_platform_texture(
+    let source = super::gpu_native_texture::import_platform_texture(
         &queue.device_id,
         Retained::as_ptr(&texture) as *mut c_void,
         width,
         height,
-    ) else {
-        return false;
-    };
+    );
 
     // Skia's surface is premultiplied.
-    super::gpu_native_texture::blit_texture_with(
-        queue,
-        &source,
-        width,
-        height,
-        copy.origin.x,
-        copy.origin.y,
-        copy.flip_y,
-        !copy.premultiplied_alpha,
-        destination_texture,
-        destination.mip_level,
-        destination.origin.z,
-        (destination.origin.x, destination.origin.y),
-        size,
-    )
+    let copied = source.is_some_and(|source| {
+        super::gpu_native_texture::blit_texture_with(
+            queue,
+            &source,
+            width,
+            height,
+            copy.origin.x,
+            copy.origin.y,
+            copy.flip_y,
+            !copy.premultiplied_alpha,
+            destination_texture,
+            destination.mip_level,
+            destination.origin.z,
+            (destination.origin.x, destination.origin.y),
+            size,
+        )
+    });
+
+    // Metal may not retain an event a command buffer waits on.
+    let keep_event = SendRetained(event);
+    queue
+        .queue
+        .id
+        .on_submitted_work_done(Box::new(move || drop(keep_event)));
+    copied
 }
 
 #[no_mangle]

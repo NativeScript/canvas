@@ -424,6 +424,136 @@ void main() { gl_FragColor = texture2D(tex, uv); }`,
 			}
 		});
 
+		test('copyExternalImageToTexture matches getImageData for many redrawn 2d canvases', async () => {
+			const device = await getDevice();
+			ok(device, 'no webgpu device');
+
+			// Like PixiJS text: many odd sized canvases, redrawn and uploaded back to back with no sync in between.
+			const draw = (ctx: any, i: number, round: number, width: number, height: number) => {
+				ctx.clearRect(0, 0, width, height);
+				ctx.fillStyle = `rgb(${(i * 20) % 256}, ${round * 90}, 160)`;
+				ctx.fillRect(2, 2, width / 2, height - 4);
+				ctx.fillStyle = 'white';
+				ctx.font = '14px sans-serif';
+				ctx.fillText(`T${i}r${round}`, 4, height - 6);
+			};
+			const sources = Array.from({ length: 12 }, (_, i) => make2D(40 + i * 7, 20 + i * 3));
+			const copies: { texture: any; readback: any; bytesPerRow: number; bgra: boolean; width: number; height: number; i: number; round: number }[] = [];
+			for (let round = 0; round < 5; round++) {
+				// Frames go by between rounds, as in a render loop.
+				await new Promise((resolve) => requestAnimationFrame(resolve));
+				for (let i = 0; i < sources.length; i++) {
+					const { canvas, ctx } = sources[i];
+					// PixiJS resizes a text's canvas whenever its text changes.
+					canvas.width = 40 + i * 7 + round * 5;
+					canvas.height = 20 + i * 3 + (round % 2);
+					const { width, height } = canvas;
+					draw(ctx, i, round, width, height);
+					const bgra = i % 2 === 1;
+					const texture = device.createTexture({
+						size: [width, height, 1],
+						format: bgra ? 'bgra8unorm' : 'rgba8unorm',
+						usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.COPY_SRC | GPUTextureUsage.RENDER_ATTACHMENT,
+					});
+					device.queue.copyExternalImageToTexture({ source: canvas }, { texture, premultipliedAlpha: true }, [width, height, 1]);
+					const bytesPerRow = Math.ceil((width * 4) / 256) * 256;
+					const readback = device.createBuffer({ size: bytesPerRow * height, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
+					copies.push({ texture, readback, bytesPerRow, bgra, width, height, i, round });
+				}
+			}
+			const encoder = device.createCommandEncoder();
+			for (const { texture, readback, bytesPerRow, width, height } of copies) {
+				encoder.copyTextureToBuffer({ texture }, { buffer: readback, bytesPerRow }, { width, height, depthOrArrayLayers: 1 });
+			}
+			device.queue.submit([encoder.finish()]);
+
+			for (const { texture, readback, bytesPerRow, bgra, width, height, i, round } of copies) {
+				await readback.mapAsync(GPUMapMode.READ);
+				const pixels = new Uint8Array(readback.getMappedRange().slice(0));
+				readback.unmap();
+				readback.destroy();
+				texture.destroy();
+				const reference = make2D(width, height).ctx;
+				draw(reference, i, round, width, height);
+				const expected = reference.getImageData(0, 0, width, height).data;
+				const label = `canvas ${i}, round ${round}`;
+
+				let bad = 0;
+				let first = '';
+				for (let y = 0; y < height; y++) {
+					for (let x = 0; x < width; x++) {
+						const e = (y * width + x) * 4;
+						const a = expected[e + 3];
+						const want = [Math.round((expected[e] * a) / 255), Math.round((expected[e + 1] * a) / 255), Math.round((expected[e + 2] * a) / 255), a];
+						const o = y * bytesPerRow + x * 4;
+						const got = bgra ? [pixels[o + 2], pixels[o + 1], pixels[o], pixels[o + 3]] : pixels.subarray(o, o + 4);
+						if (!pixelNear(got, want, 12)) {
+							if (!bad) {
+								first = `at ${x},${y} expected ${describePixel(want)}, got ${describePixel(got)}`;
+							}
+							bad++;
+						}
+					}
+				}
+				ok(bad === 0, `${label}: ${bad} of ${width * height} pixels differ, first ${first}`);
+			}
+		});
+
+		test('copyExternalImageToTexture waits for each 2d canvas, not a later one', async () => {
+			const device = await getDevice();
+			ok(device, 'no webgpu device');
+
+			// A slow canvas copied first and a quick one after: the first copy must not finish early.
+			const slow = make2D(1024, 1024);
+			const quick = make2D(16, 16);
+			const pending: { texture: any; readback: any; expected: number[]; label: string }[] = [];
+			for (let round = 0; round < 6; round++) {
+				const { ctx } = slow;
+				ctx.clearRect(0, 0, 1024, 1024);
+				ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+				ctx.shadowBlur = 40;
+				for (let j = 0; j < 60; j++) {
+					ctx.fillStyle = `rgb(${j * 4}, 80, 200)`;
+					ctx.beginPath();
+					ctx.arc((j * 97) % 1024, (j * 61) % 1024, 120, 0, Math.PI * 2);
+					ctx.fill();
+				}
+				ctx.shadowBlur = 0;
+				const expected = [round * 40, 255 - round * 40, 60, 255];
+				ctx.fillStyle = `rgb(${expected[0]}, ${expected[1]}, ${expected[2]})`;
+				ctx.fillRect(480, 480, 64, 64);
+				const texture = device.createTexture({
+					size: [1024, 1024, 1],
+					format: 'rgba8unorm',
+					usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.COPY_SRC | GPUTextureUsage.RENDER_ATTACHMENT,
+				});
+				device.queue.copyExternalImageToTexture({ source: slow.canvas }, { texture, premultipliedAlpha: true }, [1024, 1024, 1]);
+
+				quick.ctx.fillStyle = 'red';
+				quick.ctx.fillRect(0, 0, 16, 16);
+				const other = device.createTexture({
+					size: [16, 16, 1],
+					format: 'rgba8unorm',
+					usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
+				});
+				device.queue.copyExternalImageToTexture({ source: quick.canvas }, { texture: other, premultipliedAlpha: true }, [16, 16, 1]);
+
+				const readback = device.createBuffer({ size: 256, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
+				const encoder = device.createCommandEncoder();
+				encoder.copyTextureToBuffer({ texture, origin: { x: 512, y: 512 } }, { buffer: readback, bytesPerRow: 256 }, { width: 1, height: 1, depthOrArrayLayers: 1 });
+				device.queue.submit([encoder.finish()]);
+				pending.push({ texture, readback, expected, label: `round ${round}` });
+			}
+			for (const { texture, readback, expected, label } of pending) {
+				await readback.mapAsync(GPUMapMode.READ);
+				const pixel = new Uint8Array(readback.getMappedRange().slice(0, 4));
+				readback.unmap();
+				readback.destroy();
+				texture.destroy();
+				ok(pixelNear(pixel, expected), `${label}: expected ${describePixel(expected)}, got ${describePixel(pixel)}`);
+			}
+		});
+
 		test('copyExternalImageToTexture accepts a webgl canvas', async () => {
 			const device = await getDevice();
 			ok(device, 'no webgpu device');

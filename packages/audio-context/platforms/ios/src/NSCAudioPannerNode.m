@@ -3,7 +3,7 @@
 #import "NSCAudioLog.h"
 #import "NSCAudioContext.h"
 #import "NSCChannelMixerNode.h"
-#import "NSCHRTFData.h"
+#import "NSCHRTFKemar.h"
 
 @interface NSCAudioContext (NSCPannerNodes)
 - (NSArray<NSCAudioNode *> *)allNodeWrappers;
@@ -40,8 +40,8 @@ static HRTFDatabase *HRTFDatabaseForRate(double rate) {
         if (found) return (HRTFDatabase *)found.pointerValue;
         HRTFDatabase *db = calloc(1, sizeof(HRTFDatabase));
         db->rate = rate;
-        double ratio = rate / NSC_HRIR_RATE;
-        db->taps = (int)ceil(NSC_HRIR_TAPS * ratio);
+        double ratio = rate / NSCHRIRRate;
+        db->taps = (int)ceil(NSCHRIRTaps * ratio);
         int positions = 0;
         for (int e = 0; e < NSC_HRIR_ELEVATIONS; e++) {
             db->offsets[e] = positions;
@@ -52,13 +52,13 @@ static HRTFDatabase *HRTFDatabaseForRate(double rate) {
         double energy = 0.0;
         for (int p = 0; p < positions; p++) {
             for (int ear = 0; ear < 2; ear++) {
-                const int16_t *src = NSCHRIRData + ((size_t)p * 2 + ear) * NSC_HRIR_TAPS;
+                const int16_t *src = NSCHRIRData + ((size_t)p * 2 + ear) * NSCHRIRTaps;
                 float *dst = db->data + ((size_t)p * 2 + ear) * db->taps;
                 for (int k = 0; k < db->taps; k++) {
                     double at = k / ratio;
                     int i = (int)at;
                     double f = at - i;
-                    double a = i < NSC_HRIR_TAPS ? src[i] : 0.0, b = i + 1 < NSC_HRIR_TAPS ? src[i + 1] : 0.0;
+                    double a = i < NSCHRIRTaps ? src[i] : 0.0, b = i + 1 < NSCHRIRTaps ? src[i + 1] : 0.0;
                     // Resampling up keeps the response's gain; down needs the rate ratio.
                     dst[k] = (float)(((1.0 - f) * a + f * b) / 32768.0 * MIN(1.0, 1.0 / ratio));
                     energy += (double)dst[k] * dst[k];
@@ -79,12 +79,10 @@ static const float *HRIR(HRTFDatabase *db, int position, int ear) {
 // Adds `weight` times the HRIR pair nearest azimuth `az` (0 to 180) at elevation row `e`, interpolated.
 static void AddRow(HRTFDatabase *db, int e, double az, double weight, BOOL swap, float *left, float *right) {
     int count = NSCHRIRAzimuthCount[e], first = db->offsets[e];
-    const int *azimuths = NSCHRIRAzimuth + first;
-    int lo = 0;
-    while (lo + 1 < count && azimuths[lo + 1] <= az) lo++;
+    double step = 360.0 / NSCHRIRCircle[e];
+    int lo = MAX(0, MIN((int)(az / step), count - 1));
     int hi = MIN(lo + 1, count - 1);
-    double span = azimuths[hi] - azimuths[lo];
-    double f = span > 0.0 ? MAX(0.0, MIN(1.0, (az - azimuths[lo]) / span)) : 0.0;
+    double f = hi > lo ? MAX(0.0, MIN(1.0, az / step - lo)) : 0.0;
     float wl = (float)(weight * (1.0 - f)), wh = (float)(weight * f);
     vDSP_vsma(HRIR(db, first + lo, swap ? 1 : 0), 1, &wl, left, 1, left, 1, db->taps);
     vDSP_vsma(HRIR(db, first + lo, swap ? 0 : 1), 1, &wl, right, 1, right, 1, db->taps);

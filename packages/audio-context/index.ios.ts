@@ -1077,7 +1077,7 @@ export class DynamicsCompressorNode extends AudioNode {
 
 	/** The gain reduction in dB the compressor last applied. */
 	get reduction(): number {
-		return this.native.reductionParam.value || 0;
+		return this.native.reduction;
 	}
 }
 
@@ -1409,6 +1409,7 @@ export class AudioWorkletNode extends AudioNode {
 			defaults,
 		);
 		if (!this._native) throw domError('NotSupportedError', 'AudioWorkletNode: the audio unit could not be created');
+		this._applyNodeOptions(options as any);
 		const params = this._native.params;
 		this.parameters = new AudioParamMap(new Map(descriptors.map((d, i) => [d.name, new AudioParam(nativeCtor_, params.objectAtIndex(i))])));
 		const id = nextWorkletNode++;

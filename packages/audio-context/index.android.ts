@@ -1223,6 +1223,10 @@ export class AudioWorkletNode extends AudioNode {
 			throw domError('NotSupportedError', 'AudioWorkletNode: this runtime copies SharedArrayBuffers passed to native code');
 		}
 		this[native_] = native;
+		const config = options as any;
+		if (config.channelCount !== undefined) this.channelCount = config.channelCount;
+		if (config.channelCountMode !== undefined) this.channelCountMode = config.channelCountMode;
+		if (config.channelInterpretation !== undefined) this.channelInterpretation = config.channelInterpretation;
 		this._ring = ring;
 		this._numberOfInputs = numberOfInputs;
 		this._numberOfOutputs = numberOfOutputs;

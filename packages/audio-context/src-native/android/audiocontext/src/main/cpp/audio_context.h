@@ -266,6 +266,8 @@ private:
         int mixChannels = 1;
         std::vector<float> inMix;
         bool inActive[kWorkletMaxPorts] = {};
+        // Each input's computed channels this quantum.
+        int inCount[kWorkletMaxPorts] = {};
         // The quantum playing: outputs x kWorkletMaxChannels x 128.
         std::vector<float> outQ;
         uint64_t nextFrame = 0;

@@ -1128,10 +1128,12 @@ void NativeEngine::renderWorklet(GraphNode &n, int64_t startNs, double frameNs) 
     }
     WorkletNode &w = *n.worklet;
     for (int i = 0; i < w.inputs && i < n.inputs; i++) {
-        const bool active = mixInput(n, i, w.inChannels[i], COUNT_EXPLICIT, n.interpretation);
+        // computedNumberOfChannels from this quantum's connections and the channel config.
+        const bool active = mixInput(n, i, std::min(n.channelCount, kWorkletMaxChannels), n.countMode, n.interpretation);
         w.inActive[i] = active;
         if (!active) continue;
         const Bus &in = n.inBus[static_cast<size_t>(i)];
+        w.inCount[i] = std::min(in.channels, w.mixChannels);
         for (int c = 0; c < std::min(in.channels, w.mixChannels); c++) {
             std::memcpy(w.inMix.data() + static_cast<size_t>((i * w.mixChannels + c) * Q), in.channel(c), Q * sizeof(float));
         }

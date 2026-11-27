@@ -8,8 +8,7 @@ declare const global: any;
 const RATE = 48000;
 const Q = 128;
 
-const androidTest = (name: string, body: TestBody) => (global.isAndroid || global.isIOS ? test(name, body) : skip(name, 'not yet on this platform'));
-const androidOnlyTest = (name: string, body: TestBody) => (global.isAndroid ? test(name, body) : skip(name, 'not yet on this platform'));
+const nativeTest = (name: string, body: TestBody) => (global.isAndroid || global.isIOS ? test(name, body) : skip(name, 'not yet on this platform'));
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -38,7 +37,7 @@ function onset(data: Float32Array, threshold: number) {
 
 export function registerAudioDspSpec() {
 	suite('audio.dsp.convolver', () => {
-		androidTest('a response longer than 32768 frames convolves exactly', async () => {
+		nativeTest('a response longer than 32768 frames convolves exactly', async () => {
 			const length = 50000;
 			const response = Float32Array.from({ length }, (_, i) => Math.sin(i * 0.013) * Math.exp(-i / 20000));
 			const impulses: [number, number][] = [
@@ -67,7 +66,7 @@ export function registerAudioDspSpec() {
 			ok(diff < 1e-4, `frame ${at} differs by ${diff}`);
 		});
 
-		androidTest('a realtime convolver plays the far end of a long response on time', async () => {
+		nativeTest('a realtime convolver plays the far end of a long response on time', async () => {
 			const context = new AudioContext();
 			const rate = context.sampleRate;
 			const response = new Float32Array(Math.round(rate * 1.2));
@@ -117,7 +116,7 @@ export function registerAudioDspSpec() {
 			return [rendered.getChannelData(0), rendered.getChannelData(1)];
 		}
 
-		androidTest('HRTF: a source on the right reaches the right ear first and louder', async () => {
+		nativeTest('HRTF: a source on the right reaches the right ear first and louder', async () => {
 			const [left, right] = await hrtf(1, 0, 0);
 			ok(energy(right) > 4 * energy(left), `right ${energy(right)}, left ${energy(left)}`);
 			const l = onset(left, 0.02);
@@ -125,7 +124,7 @@ export function registerAudioDspSpec() {
 			ok(r >= 0 && l - r > 10, `onsets: left ${l}, right ${r}`);
 		});
 
-		androidTest('HRTF: left and right mirror each other', async () => {
+		nativeTest('HRTF: left and right mirror each other', async () => {
 			const [rightL, rightR] = await hrtf(1, 0, -0.5);
 			const [leftL, leftR] = await hrtf(-1, 0, -0.5);
 			let diff = 0;
@@ -133,14 +132,14 @@ export function registerAudioDspSpec() {
 			ok(diff < 1e-6 && energy(rightR) > 0, `differs by ${diff}`);
 		});
 
-		androidTest('HRTF: a source straight ahead reaches both ears alike', async () => {
+		nativeTest('HRTF: a source straight ahead reaches both ears alike', async () => {
 			const [left, right] = await hrtf(0, 0, -1);
 			let diff = 0;
 			for (let i = 0; i < left.length; i++) diff = Math.max(diff, Math.abs(left[i] - right[i]));
 			ok(diff < 1e-6 && energy(left) > 0.1, `differs by ${diff}, energy ${energy(left)}`);
 		});
 
-		androidTest('HRTF: elevation changes the response', async () => {
+		nativeTest('HRTF: elevation changes the response', async () => {
 			const [levelL] = await hrtf(0, 0, -1);
 			const [aboveL] = await hrtf(0, 1, -0.2);
 			let diff = 0;
@@ -148,13 +147,13 @@ export function registerAudioDspSpec() {
 			ok(diff > 0.01, `differs by ${diff}`);
 		});
 
-		androidTest('HRTF: the response rings on after a one-frame input', async () => {
+		nativeTest('HRTF: the response rings on after a one-frame input', async () => {
 			const [left, right] = await hrtf(1, 0, 0);
 			ok(energy(right, Q, 2 * Q) + energy(left, Q, 2 * Q) > 0, 'second quantum');
 			ok(energy(right, 3 * Q) + energy(left, 3 * Q) === 0, 'silent after the tail');
 		});
 
-		androidTest('StereoPannerNode pans by pan alone, wherever the listener is', async () => {
+		nativeTest('StereoPannerNode pans by pan alone, wherever the listener is', async () => {
 			const context: any = new OfflineAudioContext(2, Q * 2, RATE);
 			context.listener.positionX.value = 5;
 			context.listener.positionZ.value = 3;
@@ -183,7 +182,7 @@ export function registerAudioDspSpec() {
 			return (await context.startRendering()).getChannelData(0);
 		}
 
-		androidTest('exponentialRampToValueAtTime follows the exponential curve', async () => {
+		nativeTest('exponentialRampToValueAtTime follows the exponential curve', async () => {
 			const end = (Q * 4) / RATE;
 			const got = await automate((g) => {
 				g.setValueAtTime(0.01, 0);
@@ -196,7 +195,7 @@ export function registerAudioDspSpec() {
 			closeTo(got[Q * 5], 1, 1e-6, 'after the ramp');
 		});
 
-		androidTest('setTargetAtTime approaches its target exponentially', async () => {
+		nativeTest('setTargetAtTime approaches its target exponentially', async () => {
 			const start = Q / RATE;
 			const tau = 0.002;
 			const got = await automate((g) => {
@@ -210,7 +209,7 @@ export function registerAudioDspSpec() {
 			}
 		});
 
-		androidTest('setValueCurveAtTime interpolates its values over the duration', async () => {
+		nativeTest('setValueCurveAtTime interpolates its values over the duration', async () => {
 			const curve = new Float32Array([0, 1, 0.5]);
 			const duration = (Q * 2) / RATE;
 			const got = await automate((g) => g.setValueCurveAtTime(curve, Q / RATE, duration));
@@ -221,7 +220,7 @@ export function registerAudioDspSpec() {
 			closeTo(got[Q * 4], 0.5, 1e-6, 'held after');
 		});
 
-		androidTest('a ramp with no event before it starts from the current value', async () => {
+		nativeTest('a ramp with no event before it starts from the current value', async () => {
 			const got = await automate((g) => {
 				g.value = 1;
 				g.linearRampToValueAtTime(0, (Q * 4) / RATE);
@@ -238,7 +237,7 @@ export function registerAudioDspSpec() {
 			return count;
 		}
 
-		androidTest('OscillatorNode.detune shifts the frequency by cents', async () => {
+		nativeTest('OscillatorNode.detune shifts the frequency by cents', async () => {
 			const context = new OfflineAudioContext(1, RATE / 10, RATE);
 			const oscillator: any = context.createOscillator({ frequency: 400 });
 			oscillator.detune.value = 1200;
@@ -249,7 +248,7 @@ export function registerAudioDspSpec() {
 			ok(Math.abs(count - 80) <= 1, `${count} cycles in 0.1s`);
 		});
 
-		androidTest('AudioBufferSourceNode.detune scales the playback rate', async () => {
+		nativeTest('AudioBufferSourceNode.detune scales the playback rate', async () => {
 			const context = new OfflineAudioContext(1, Q * 4, RATE);
 			const ramp = Float32Array.from({ length: Q * 8 }, (_, i) => i / (Q * 8));
 			const source: any = context.createBufferSource();
@@ -261,7 +260,7 @@ export function registerAudioDspSpec() {
 			closeTo(data[100], ramp[200], 1e-6, 'twice as fast');
 		});
 
-		androidTest('AudioBufferSourceNode loops between loopStart and loopEnd', async () => {
+		nativeTest('AudioBufferSourceNode loops between loopStart and loopEnd', async () => {
 			const context = new OfflineAudioContext(1, Q * 4, RATE);
 			const data = Float32Array.from({ length: Q }, (_, i) => i);
 			const source: any = context.createBufferSource();
@@ -278,7 +277,7 @@ export function registerAudioDspSpec() {
 			ok(bad < 0, `frame ${bad}: ${got[bad]}, want ${want(bad)}`);
 		});
 
-		androidTest('a custom PeriodicWave is normalized to a peak of 1 unless disabled', async () => {
+		nativeTest('a custom PeriodicWave is normalized to a peak of 1 unless disabled', async () => {
 			const peak = async (disableNormalization: boolean) => {
 				const context = new OfflineAudioContext(1, RATE / 10, RATE);
 				const wave = context.createPeriodicWave(new Float32Array([5, 0, 0]), new Float32Array([0, 3, 1]), { disableNormalization });
@@ -296,7 +295,7 @@ export function registerAudioDspSpec() {
 	});
 
 	suite('audio.dsp.nodes', () => {
-		androidTest("WaveShaperNode oversample '2x' and '4x' shape at a higher rate", async () => {
+		nativeTest("WaveShaperNode oversample '2x' and '4x' shape at a higher rate", async () => {
 			const render = async (oversample: string) => {
 				const context = new OfflineAudioContext(1, Q * 16, RATE);
 				const shaper = context.createWaveShaper();
@@ -322,7 +321,7 @@ export function registerAudioDspSpec() {
 			}
 		});
 
-		androidTest('DynamicsCompressorNode.reduction meters the gain reduction', async () => {
+		nativeTest('DynamicsCompressorNode.reduction meters the gain reduction', async () => {
 			const context = new OfflineAudioContext(1, RATE / 4, RATE);
 			const compressor: any = context.createDynamicsCompressor();
 			const source = context.createConstantSource({ offset: 1 });
@@ -334,8 +333,7 @@ export function registerAudioDspSpec() {
 			ok(compressor.reduction < -10, `reduction ${compressor.reduction}`);
 		});
 
-		// iOS uses the system's dynamics processor, not Chromium's compressor.
-		androidOnlyTest('DynamicsCompressorNode looks 6 ms ahead and applies makeup gain', async () => {
+		nativeTest('DynamicsCompressorNode looks 6 ms ahead and applies makeup gain', async () => {
 			const context = new OfflineAudioContext(1, Q * 8, RATE);
 			const compressor = context.createDynamicsCompressor();
 			const source = context.createConstantSource({ offset: 0.01 });
@@ -349,7 +347,7 @@ export function registerAudioDspSpec() {
 			closeTo(data[lookahead + Q], 0.01 * Math.pow(10, (0.6 * 22) / 20), 1e-5, 'made up');
 		});
 
-		androidTest('AnalyserNode windows with Blackman and converts bytes as the spec says', async () => {
+		nativeTest('AnalyserNode windows with Blackman and converts bytes as the spec says', async () => {
 			const context = new OfflineAudioContext(1, 4096, RATE);
 			const analyser = context.createAnalyser({ fftSize: 1024, smoothingTimeConstant: 0 });
 			// Bin 32 exactly, so the window's gain alone sets the peak.

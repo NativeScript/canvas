@@ -176,8 +176,8 @@ oscillators play band-limited waves and `PeriodicWave`s. A cycle plays only thro
 `DelayNode`, whose delay is then at least one quantum; it reads its input directly again once
 the cycle is broken. A connection that would close a cycle without one is not made.
 `node.connect(param)` adds the node's output, mixed down to mono, to the param every frame, for
-every param including the `PannerNode` and `AudioListener` ones. `DynamicsCompressorNode` uses
-the system's dynamics processor, and MediaStream nodes throw `NotSupportedError` (NativeScript
+every param including the `PannerNode` and `AudioListener` ones. `DynamicsCompressorNode` runs
+Chromium's compressor kernel (6 ms look-ahead, knee curve, makeup gain), and MediaStream nodes throw `NotSupportedError` (NativeScript
 has no `MediaStream`).
 
 On Android `node.connect(param)` adds the node's output, mixed down to mono, to the param every

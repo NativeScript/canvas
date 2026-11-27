@@ -593,7 +593,7 @@ declare class NSCDynamicsCompressorNode extends NSCAudioNode {
 
 	readonly ratioParam: NSCAudioParam;
 
-	readonly reductionParam: NSCAudioParam;
+	readonly reduction: number;
 
 	readonly releaseParam: NSCAudioParam;
 

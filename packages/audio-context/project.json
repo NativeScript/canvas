@@ -22,6 +22,11 @@
 						"output": "./platforms/"
 					},
 					{
+						"glob": "**/*",
+						"input": "packages/audio-context/src-native/common/",
+						"output": "./src-native/common/"
+					},
+					{
 						"glob": "Package.swift",
 						"input": "nativescript-v8/",
 						"output": "./platforms/ios/NativeScriptV8/"

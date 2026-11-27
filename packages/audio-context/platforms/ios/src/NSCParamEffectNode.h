@@ -12,6 +12,8 @@ typedef NS_ENUM(NSInteger, NSCParamEffectKind) {
     NSCParamEffectKindDelay = 1,
     /// params: frequency, Q, gain, detune.
     NSCParamEffectKindBiquad = 2,
+    /// params: threshold, knee, ratio, attack, release.
+    NSCParamEffectKindCompressor = 3,
 };
 
 /// A node whose inputs sum in a mixer feeding an audio unit that applies its params per frame:
@@ -34,6 +36,9 @@ typedef NS_ENUM(NSInteger, NSCParamEffectKind) {
 /// Undoes breakCycle once the delay is no longer on a cycle.
 - (void)healCycle;
 @property (nonatomic, readonly) BOOL isSplit;
+
+/// A compressor: the gain reduction in dB the last render applied.
+- (double)meteredReduction;
 
 /// The biquad's filter type, read by the render thread.
 - (void)setFilterType:(NSInteger)type;

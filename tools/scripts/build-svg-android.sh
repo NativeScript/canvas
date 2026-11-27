@@ -76,8 +76,10 @@ LINKER_ENV="CARGO_TARGET_$(echo "$TRIPLE_ENV" | tr '[:lower:]' '[:upper:]')_LINK
 # above. No bare CC/CXX: those would also apply to host build scripts.
 export ANDROID_NDK="$NDK"
 
+# cc-rs defaults to c++_shared on Android, which no AAR ships
 RUSTFLAGS="$RUSTFLAGS" \
 env "CC_${TRIPLE_ENV}=$CLANG" "CXX_${TRIPLE_ENV}=$CLANGXX" "AR_${TRIPLE_ENV}=$TOOLS/bin/llvm-ar" \
+    "CXXSTDLIB_${TRIPLE_ENV}=c++_static" \
     "${LINKER_ENV}=$CLANG" \
 cargo +"${CANVAS_RUST_TOOLCHAIN:-nightly}" build $EXTRA_ARGS --target $TARGET -p canvas-svg-android
 

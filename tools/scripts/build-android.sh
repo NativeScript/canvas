@@ -113,8 +113,10 @@ export ANDROID_NDK="$NDK"
 # Only the per-triple CC_<triple>/CXX_<triple>/AR_<triple> below -- a bare
 # CC/CXX also applies to *host* compilation (build scripts, proc macros, and
 # host-built C deps like zune-jpeg), and the Android clang cannot link those.
+# cc-rs defaults to c++_shared on Android, which no AAR ships
 RUSTFLAGS="$RUSTFLAGS" \
 env "CC_${TRIPLE_ENV}=$CLANG" "CXX_${TRIPLE_ENV}=$CLANGXX" "AR_${TRIPLE_ENV}=$TOOLS/bin/llvm-ar" \
+    "CXXSTDLIB_${TRIPLE_ENV}=c++_static" \
     "${LINKER_ENV}=$CLANG" \
 cargo +"${CANVAS_RUST_TOOLCHAIN:-nightly}" build $EXTRA_ARGS --target $TARGET -p canvas-android
 

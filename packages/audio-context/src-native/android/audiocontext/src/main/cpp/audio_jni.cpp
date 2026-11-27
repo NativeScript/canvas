@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <atomic>
 #include <chrono>
+#include <ctime>
 
 #ifdef HAS_OBOE
 
@@ -433,6 +434,7 @@ Java_org_nativescript_audiocontext_AudioContext_nativeReleaseGain(JNIEnv *env, j
     NativeEngine::Command cmd;
     cmd.type = NativeEngine::CMD_FREE_GAIN;
     cmd.id = gid ? gid : std::string();
+    NativeEngine::getInstance().forgetNode(cmd.id);
     NativeEngine::getInstance().enqueueCommand(std::move(cmd));
     if (gid) env->ReleaseStringUTFChars(jgainId, gid);
 }
@@ -1209,6 +1211,7 @@ Java_org_nativescript_audiocontext_AudioContext_nativeReleasePanner(JNIEnv *env,
     NativeEngine::Command cmd;
     cmd.type = NativeEngine::CMD_FREE_PANNER;
     cmd.id = pid ? pid : std::string();
+    NativeEngine::getInstance().forgetNode(cmd.id);
     NativeEngine::getInstance().enqueueCommand(std::move(cmd));
     if (pid) env->ReleaseStringUTFChars(jpannerId, pid);
 }
@@ -1772,11 +1775,10 @@ Java_org_nativescript_audiocontext_AudioContext_nativeGetMonotonicTimeNanos(JNIE
                                                                             jobject thiz) {
     (void) env;
     (void) thiz;
-    int64_t audioNs = g_audioTimeNanos.load(std::memory_order_relaxed);
-    if (audioNs != 0) return static_cast<jlong>(audioNs);
-    int64_t nowNs = std::chrono::duration_cast<std::chrono::nanoseconds>(
-            std::chrono::steady_clock::now().time_since_epoch()).count();
-    return static_cast<jlong>(nowNs);
+    // A context's clock starts on its first rendered quantum, so any base on this clock works.
+    timespec ts{};
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return static_cast<jlong>(ts.tv_sec) * 1000000000LL + static_cast<jlong>(ts.tv_nsec);
 }
 
 extern "C" JNIEXPORT void JNICALL
@@ -2008,4 +2010,39 @@ Java_org_nativescript_audiocontext_AudioContext_nativeReplaceSource(JNIEnv *env,
     cmd.targetId = jstr(env, jnew);
     if (cmd.id.empty()) return;
     NativeEngine::getInstance().enqueueCommand(std::move(cmd));
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_org_nativescript_audiocontext_AudioContext_nativeSuspendContext(JNIEnv *env, jobject thiz,
+                                                                     jstring jcontextId) {
+    NativeEngine::Scope scope__(engineFor(env, jcontextId));
+    NativeEngine::getInstance().suspendContext(jstringToStd(env, jcontextId));
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_org_nativescript_audiocontext_AudioContext_nativeResumeContext(JNIEnv *env, jobject thiz,
+                                                                    jstring jcontextId) {
+    NativeEngine::Scope scope__(engineFor(env, jcontextId));
+    NativeEngine::getInstance().resumeContext(jstringToStd(env, jcontextId));
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_org_nativescript_audiocontext_AudioContext_nativeSetNodeContext(JNIEnv *env, jobject thiz,
+                                                                     jstring jid, jstring jcontextId) {
+    NativeEngine::Scope scope__(engineFor(env, jcontextId));
+    NativeEngine::getInstance().setNodeContext(jstringToStd(env, jid), jstringToStd(env, jcontextId));
+}
+
+extern "C" JNIEXPORT jdouble JNICALL
+Java_org_nativescript_audiocontext_AudioContext_nativeParamComputedValue(JNIEnv *env, jobject thiz,
+                                                                         jstring jid, jint type) {
+    NativeEngine::Scope scope__(engineFor(env, jid));
+    return NativeEngine::getInstance().paramComputedValue(jstringToStd(env, jid), type);
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_org_nativescript_audiocontext_AudioContext_nativeHoldParamValue(JNIEnv *env, jobject thiz,
+                                                                     jstring jid, jint type, jdouble value) {
+    NativeEngine::Scope scope__(engineFor(env, jid));
+    NativeEngine::getInstance().holdParamValue(jstringToStd(env, jid), type, value);
 }

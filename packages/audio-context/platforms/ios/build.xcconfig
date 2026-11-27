@@ -13,5 +13,7 @@ CLANG_CXX_LANGUAGE_STANDARD = c++20
 AUDIO_CONTEXT_V8_HEADERS_NPM = $(SRCROOT)/../../node_modules/@nativescript/audio-context/platforms/ios/NativeScriptV8/Headers/include
 AUDIO_CONTEXT_V8_HEADERS_MONOREPO = $(SRCROOT)/../../../../nativescript-v8/Headers/include
 AUDIO_CONTEXT_V8_HEADER_FLAGS = -I"$(AUDIO_CONTEXT_V8_HEADERS_NPM)" -I"$(AUDIO_CONTEXT_V8_HEADERS_MONOREPO)"
-OTHER_CFLAGS = $(inherited) $(AUDIO_CONTEXT_V8_HEADER_FLAGS)
-OTHER_CPLUSPLUSFLAGS = $(inherited) $(AUDIO_CONTEXT_V8_HEADER_FLAGS)
+// The HRTF set in src-native/common, shared with the Android build.
+AUDIO_CONTEXT_COMMON_HEADER_FLAGS = -I"$(SRCROOT)/../../node_modules/@nativescript/audio-context/src-native/common"
+OTHER_CFLAGS = $(inherited) $(AUDIO_CONTEXT_V8_HEADER_FLAGS) $(AUDIO_CONTEXT_COMMON_HEADER_FLAGS)
+OTHER_CPLUSPLUSFLAGS = $(inherited) $(AUDIO_CONTEXT_V8_HEADER_FLAGS) $(AUDIO_CONTEXT_COMMON_HEADER_FLAGS)

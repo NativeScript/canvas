@@ -8,6 +8,10 @@
 @property (nonatomic, readwrite) AVAudioNode *avNode;
 @end
 
+@interface NSCAudioContext (NSCHealing)
+- (NSArray<NSCAudioNode *> *)allNodeWrappersForHealing;
+@end
+
 static void OnMain(void (^block)(void)) {
     if ([NSThread isMainThread]) block();
     else dispatch_sync(dispatch_get_main_queue(), block);
@@ -15,6 +19,15 @@ static void OnMain(void (^block)(void)) {
 
 static void WillConnect(NSCAudioContext *context) {
     if ([context isKindOfClass:[NSCOfflineAudioContext class]]) [(NSCOfflineAudioContext *)context willConnect];
+}
+
+// A running engine does not always allocate a unit connected upstream of a new connection.
+void NSCEnsureAllocated(AVAudioNode *node) {
+    if (![node isKindOfClass:[AVAudioUnit class]]) return;
+    AUAudioUnit *au = ((AVAudioUnit *)node).AUAudioUnit;
+    if (au.renderResourcesAllocated) return;
+    NSError *err = nil;
+    if (![au allocateRenderResourcesAndReturnError:&err]) NSCLogError(@"NSCAudioNode: could not allocate %@: %@", NSStringFromClass([au class]), err);
 }
 
 BOOL NSCConnectAdding(NSCAudioContext *context, AVAudioNode *src, AVAudioNodeBus fromBus, AVAudioNode *dst, AVAudioNodeBus toBus, AVAudioFormat *format) {
@@ -30,11 +43,25 @@ BOOL NSCConnectAdding(NSCAudioContext *context, AVAudioNode *src, AVAudioNodeBus
             }
         } @catch (NSException *e) {}
         [points addObject:[[AVAudioConnectionPoint alloc] initWithNode:dst bus:toBus]];
+        if (engine.isRunning) {
+            NSCEnsureAllocated(src);
+            NSCEnsureAllocated(dst);
+        }
         @try {
             [engine connect:src toConnectionPoints:points fromBus:fromBus format:format];
             ok = YES;
         } @catch (NSException *e) {
-            NSCLogError(@"NSCAudioNode: connect %@ -> %@ threw: %@", NSStringFromClass([src class]), NSStringFromClass([dst class]), e);
+            // A running engine only fans out to mixer nodes, and an allocated unit keeps its
+            // bus formats; a stopped engine takes either.
+            if (engine.isRunning) {
+                [context whileStopped:^{
+                    @try {
+                        [engine connect:src toConnectionPoints:points fromBus:fromBus format:format];
+                        ok = YES;
+                    } @catch (NSException *e2) {}
+                }];
+            }
+            if (!ok) NSCLogError(@"NSCAudioNode: connect %@ -> %@ (%@ -> %@, %u ch to bus %u) threw: %@", NSStringFromClass([src class]), NSStringFromClass([dst class]), [src isKindOfClass:[AVAudioUnit class]] ? NSStringFromClass([((AVAudioUnit *)src).AUAudioUnit class]) : @"-", [dst isKindOfClass:[AVAudioUnit class]] ? NSStringFromClass([((AVAudioUnit *)dst).AUAudioUnit class]) : @"-", format.channelCount, toBus, e);
         }
     });
     return ok;
@@ -99,13 +126,43 @@ static NSArray<AVAudioNode *> *DownstreamPath(AVAudioEngine *engine, NSArray<AVA
     return nil;
 }
 
+BOOL NSCHasPath(AVAudioEngine *engine, AVAudioNode *from, AVAudioNode *to) {
+    NSHashTable<AVAudioNode *> *targets = [NSHashTable hashTableWithOptions:NSPointerFunctionsObjectPointerPersonality];
+    [targets addObject:to];
+    return DownstreamPath(engine, @[ from ], targets) != nil;
+}
+
+static void HealCycles(NSCAudioContext *context) {
+    for (NSCAudioNode *node in [context allNodeWrappersForHealing]) {
+        if ([node isKindOfClass:[NSCParamEffectNode class]] && [(NSCParamEffectNode *)node isSplit]) [(NSCParamEffectNode *)node healCycle];
+    }
+}
+
 static BOOL BreakAt(NSCAudioNode *node) {
     return [node isKindOfClass:[NSCDelayNode class]] && [(NSCDelayNode *)node breakCycle];
 }
 
 @implementation NSCAudioNode {
     NSCChannelMixerNode *_stage;
+    NSMutableData *_logical;
 }
+
+- (const _Atomic UInt32 *)logicalChannelCellForOutput:(NSInteger)output {
+    if (_stage) return [_stage mixedChannels];
+    return _logical ? (const _Atomic UInt32 *)_logical.bytes : NULL;
+}
+
+- (void)setLogicalChannels:(NSInteger)channels {
+    if (!_logical) {
+        _logical = [NSMutableData dataWithLength:sizeof(_Atomic UInt32)];
+        atomic_init((_Atomic UInt32 *)_logical.mutableBytes, 0);
+    }
+    atomic_store((_Atomic UInt32 *)_logical.mutableBytes, (UInt32)MAX(0, channels));
+}
+
+- (NSCChannelMixerNode *)channelPort { return nil; }
+
+- (void)detachHelpers {}
 
 - (AVAudioNode *)outputAVNode {
     return _stage ? _stage.avNode : self.avNode;
@@ -141,7 +198,7 @@ static BOOL BreakAt(NSCAudioNode *node) {
 - (void)replaceAVNode:(AVAudioNode *)node {
     self.avNode = node;
     if (self.context) [self.context registerNodeWrapper:self];
-    if (_stage) [_stage connectMain:node bus:0 format:self.nativeFormat ?: self.context.format];
+    if (_stage) [_stage connectMain:node bus:0 format:self.nativeFormat ?: self.context.format logical:_logical ? (const _Atomic UInt32 *)_logical.bytes : NULL];
 }
 
 - (BOOL)usesOutputStage { return NO; }
@@ -159,7 +216,7 @@ static BOOL BreakAt(NSCAudioNode *node) {
     @try { points = [engine outputConnectionPointsForNode:node outputBus:0]; } @catch (NSException *e) {}
     AVAudioFormat *format = [self formatForOutput:0];
     if (points.count > 0) NSCDisconnectRemoving(ctx, node, @0, nil, nil);
-    [stage connectMain:node bus:0 format:self.nativeFormat ?: ctx.format];
+    [stage connectMain:node bus:0 format:self.nativeFormat ?: ctx.format logical:_logical ? (const _Atomic UInt32 *)_logical.bytes : NULL];
     _stage = stage;
     if (points.count > 0) {
         OnMain(^{
@@ -561,6 +618,7 @@ static BOOL BreakAt(NSCAudioNode *node) {
     [self eachOutputNode:nil block:^(AVAudioNode *node, NSNumber *bus) {
         NSCDisconnectRemoving(self.context, node, bus, nil, nil);
     }];
+    HealCycles(self.context);
 }
 
 - (void)disconnectOutput:(NSNumber *)output {
@@ -568,21 +626,21 @@ static BOOL BreakAt(NSCAudioNode *node) {
     [self eachOutputNode:output block:^(AVAudioNode *node, NSNumber *bus) {
         NSCDisconnectRemoving(self.context, node, bus, nil, nil);
     }];
+    HealCycles(self.context);
 }
 
 - (void)disconnectTo:(NSCAudioNode *)destination {
-    if (!destination) return;
-    [destination handleDisconnectFrom:self output:nil input:nil];
+    [self disconnectTo:destination output:nil input:nil];
 }
 
 - (void)disconnectTo:(NSCAudioNode *)destination output:(NSNumber *)output {
-    if (!destination) return;
-    [destination handleDisconnectFrom:self output:output input:nil];
+    [self disconnectTo:destination output:output input:nil];
 }
 
 - (void)disconnectTo:(NSCAudioNode *)destination output:(NSNumber *)output input:(NSNumber *)input {
     if (!destination) return;
     [destination handleDisconnectFrom:self output:output input:input];
+    HealCycles(self.context);
 }
 
 - (void)setChannelConfig:(NSInteger)count mode:(NSInteger)mode interpretation:(NSInteger)interpretation {
@@ -592,7 +650,9 @@ static BOOL BreakAt(NSCAudioNode *node) {
     [self channelConfigChanged];
 }
 
-- (void)channelConfigChanged {}
+- (void)channelConfigChanged {
+    [[self channelPort] configureCount:self.channelCount mode:self.channelCountMode discrete:self.channelInterpretation == 1];
+}
 
 - (void)applyAutomation {}
 

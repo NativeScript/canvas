@@ -221,7 +221,6 @@ NativeEngine::GraphNode *NativeEngine::ensureNode(const std::string &id, int kin
                 node->worklet = w->second;
                 node->inputs = w->second->inputs;
                 node->outputs = w->second->outputs;
-                node->countMode = COUNT_EXPLICIT;
             }
             break;
         }
@@ -441,6 +440,35 @@ void NativeEngine::rebuildOrder() {
         }
     }
 
+    // Each node's context clock; connections never cross contexts, so it spreads along them.
+    {
+        std::lock_guard<std::mutex> lock(contextMutex_);
+        for (GraphNode *n: nodes) {
+            auto it = nodeClocks_.find(n->id);
+            n->clock = it != nodeClocks_.end() ? it->second : nullptr;
+        }
+    }
+    std::vector<GraphNode *> spread;
+    for (GraphNode *n: nodes) {
+        if (n->clock) spread.push_back(n);
+    }
+    std::vector<std::vector<GraphNode *>> linked(nodes.size());
+    for (GraphNode *n: nodes) {
+        for (GraphNode *d: deps[static_cast<size_t>(n->index)]) {
+            linked[static_cast<size_t>(n->index)].push_back(d);
+            linked[static_cast<size_t>(d->index)].push_back(n);
+        }
+    }
+    while (!spread.empty()) {
+        GraphNode *n = spread.back();
+        spread.pop_back();
+        for (GraphNode *m: linked[static_cast<size_t>(n->index)]) {
+            if (m->clock) continue;
+            m->clock = n->clock;
+            spread.push_back(m);
+        }
+    }
+
     // Tarjan's strongly connected components: a cycle plays only through a DelayNode.
     int counter = 0;
     std::vector<GraphNode *> stack;
@@ -571,8 +599,8 @@ bool NativeEngine::mixInput(GraphNode &n, int input, int channels, int mode, int
 bool NativeEngine::evalParam(const std::string &id, int type, double fallback, int64_t startNs, double frameNs,
                              double *out) {
     bool constant;
+    std::lock_guard<std::mutex> lock(scheduledEventsMutex_);
     {
-        std::lock_guard<std::mutex> lock(scheduledEventsMutex_);
         const std::vector<ParamEvent> *ev = nullptr;
         if (type == kTargetGainParam) {
             auto it = scheduledGainEvents_.find(id);
@@ -601,6 +629,15 @@ bool NativeEngine::evalParam(const std::string &id, int type, double fallback, i
         for (int c = 0; c < b.channels; c++) ch[c] = b.channel(c);
         for (int f = 0; f < Q; f++) out[f] += monoAt(ch, b.channels, f);
         constant = false;
+    }
+    if (!paramSlots_.empty()) {
+        auto it = paramSlots_.find(id);
+        if (it != paramSlots_.end()) {
+            for (const auto &slot: it->second) {
+                if (slot->type != type || quantumStartNs_ < slot->holdNs.load(std::memory_order_relaxed)) continue;
+                slot->value.store(out[Q - 1], std::memory_order_relaxed);
+            }
+        }
     }
     return constant;
 }
@@ -1090,10 +1127,12 @@ void NativeEngine::renderWorklet(GraphNode &n, int64_t startNs, double frameNs) 
     }
     WorkletNode &w = *n.worklet;
     for (int i = 0; i < w.inputs && i < n.inputs; i++) {
-        const bool active = mixInput(n, i, w.inChannels[i], COUNT_EXPLICIT, n.interpretation);
+        // computedNumberOfChannels from this quantum's connections and the channel config.
+        const bool active = mixInput(n, i, std::min(n.channelCount, kWorkletMaxChannels), n.countMode, n.interpretation);
         w.inActive[i] = active;
         if (!active) continue;
         const Bus &in = n.inBus[static_cast<size_t>(i)];
+        w.inCount[i] = std::min(in.channels, w.mixChannels);
         for (int c = 0; c < std::min(in.channels, w.mixChannels); c++) {
             std::memcpy(w.inMix.data() + static_cast<size_t>((i * w.mixChannels + c) * Q), in.channel(c), Q * sizeof(float));
         }
@@ -1381,15 +1420,33 @@ void NativeEngine::renderConvolver(GraphNode &n) {
 void NativeEngine::renderQuantum(float *out, int64_t startNs) {
     const int channels = std::max(1, streamChannels_);
     const double frameNs = 1e9 / (streamSampleRate_ > 0 ? static_cast<double>(streamSampleRate_) : 48000.0);
+    if (clocksDirty_.exchange(false, std::memory_order_acquire)) orderDirty_ = true;
     if (orderDirty_) {
         rebuildOrder();
         orderDirty_ = false;
     }
     endedScratch_.clear();
-    for (GraphNode *n: order_) processNode(*n, startNs, frameNs);
+    // A suspended context's nodes hold still; the others render at their context's time.
+    auto paused = [](const GraphNode &n) {
+        return n.clock && n.clock->pausedAtNs.load(std::memory_order_relaxed) != 0;
+    };
+    auto nodeNs = [startNs](const GraphNode &n) {
+        return n.clock ? startNs - n.clock->offsetNs.load(std::memory_order_relaxed) : startNs;
+    };
+    for (GraphNode *n: order_) {
+        if (paused(*n)) {
+            for (auto &b: n->inBus) b.active = false;
+            for (auto &b: n->outBus) {
+                b.active = false;
+                b.silence();
+            }
+            continue;
+        }
+        processNode(*n, nodeNs(*n), frameNs);
+    }
     // A cycle's DelayNode takes its input once everything feeding it has rendered.
     for (GraphNode *n: order_) {
-        if (n->delayInCycle && !n->muted) renderDelay(*n, startNs, frameNs, true, false);
+        if (n->delayInCycle && !n->muted && !paused(*n)) renderDelay(*n, nodeNs(*n), frameNs, true, false);
     }
 
     std::fill(out, out + Q * channels, 0.0f);

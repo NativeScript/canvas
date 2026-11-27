@@ -8,7 +8,7 @@ declare const global: any;
 const RATE = 48000;
 const Q = 128;
 
-const androidTest = (name: string, body: TestBody) => (global.isAndroid ? test(name, body) : skip(name, 'not yet on this platform'));
+const nativeTest = (name: string, body: TestBody) => (global.isAndroid || global.isIOS ? test(name, body) : skip(name, 'not yet on this platform'));
 
 const offline = (channels = 1, length = Q): any => new OfflineAudioContext(channels, length, RATE);
 
@@ -26,7 +26,7 @@ function errorName(e: any) {
 
 export function registerAudioApiSpec() {
 	suite('audio.api', () => {
-		androidTest('nodes report numberOfInputs and numberOfOutputs', () => {
+		nativeTest('nodes report numberOfInputs and numberOfOutputs', () => {
 			const context = offline();
 			const io = (node: any) => `${node.numberOfInputs}/${node.numberOfOutputs}`;
 			equal(io(context.createConstantSource()), '0/1', 'constant source');
@@ -37,9 +37,11 @@ export function registerAudioApiSpec() {
 			equal(io(context.createGain()), '1/1', 'gain');
 			equal(io(context.createChannelSplitter({ numberOfOutputs: 3 })), '1/3', 'splitter');
 			equal(io(context.createChannelMerger({ numberOfInputs: 3 })), '3/1', 'merger');
+			equal(io(context.createChannelMerger(2)), '2/1', 'merger from a number');
+			equal(io(context.createChannelSplitter(2)), '1/2', 'splitter from a number');
 		});
 
-		androidTest('ChannelSplitterNode and ChannelMergerNode keep their channel config', () => {
+		nativeTest('ChannelSplitterNode and ChannelMergerNode keep their channel config', () => {
 			const context = offline();
 			const splitter = context.createChannelSplitter({ numberOfOutputs: 4 });
 			equal(splitter.channelCount, 4);
@@ -55,7 +57,7 @@ export function registerAudioApiSpec() {
 			throws(() => context.createChannelSplitter({ numberOfOutputs: 33 }), 'IndexSizeError');
 		});
 
-		androidTest('stereo-only nodes reject more than two channels and max mode', () => {
+		nativeTest('stereo-only nodes reject more than two channels and max mode', () => {
 			const context = offline();
 			for (const node of [context.createPanner(), context.createStereoPanner(), context.createConvolver(), context.createDynamicsCompressor()]) {
 				node.channelCount = 1;
@@ -66,7 +68,7 @@ export function registerAudioApiSpec() {
 			}
 		});
 
-		androidTest('channelCount 0 or above 32 is NotSupportedError', () => {
+		nativeTest('channelCount 0 or above 32 is NotSupportedError', () => {
 			const gain = offline().createGain();
 			throws(() => (gain.channelCount = 0), 'NotSupportedError');
 			throws(() => (gain.channelCount = 33), 'NotSupportedError');
@@ -74,7 +76,7 @@ export function registerAudioApiSpec() {
 			equal(gain.channelCount, 32);
 		});
 
-		androidTest('destination reports maxChannelCount and limits channelCount', () => {
+		nativeTest('destination reports maxChannelCount and limits channelCount', () => {
 			const context = offline(2);
 			equal(context.destination.maxChannelCount, 2);
 			throws(() => (context.destination.channelCount = 1), 'InvalidStateError', 'an offline destination is fixed');
@@ -87,7 +89,7 @@ export function registerAudioApiSpec() {
 			}
 		});
 
-		androidTest('start and stop validate their arguments and order', () => {
+		nativeTest('start and stop validate their arguments and order', () => {
 			const context = offline();
 			const source = context.createConstantSource();
 			throws(() => source.stop(), 'InvalidStateError', 'stop before start');
@@ -103,7 +105,7 @@ export function registerAudioApiSpec() {
 			source.stop(2);
 		});
 
-		androidTest('ended fires once, after the call to stop returns', async () => {
+		nativeTest('ended fires once, after the call to stop returns', async () => {
 			const context = offline();
 			const source = context.createConstantSource();
 			let ended = 0;
@@ -119,7 +121,7 @@ export function registerAudioApiSpec() {
 			equal(ended, 1, 'once');
 		});
 
-		androidTest('ended fires on a buffer source whose listener came before its buffer', async () => {
+		nativeTest('ended fires on a buffer source whose listener came before its buffer', async () => {
 			const context = offline(1, Q * 8);
 			const source = context.createBufferSource();
 			let ended = 0;
@@ -134,7 +136,7 @@ export function registerAudioApiSpec() {
 			equal(ended, 1, 'once');
 		});
 
-		androidTest('AudioBufferSourceNode.buffer can only be set once', () => {
+		nativeTest('AudioBufferSourceNode.buffer can only be set once', () => {
 			const context = offline();
 			const buffer = context.createBuffer(1, Q, RATE);
 			const source = context.createBufferSource({ buffer });
@@ -143,7 +145,7 @@ export function registerAudioApiSpec() {
 			throws(() => (source.buffer = buffer), 'InvalidStateError');
 		});
 
-		androidTest('OfflineAudioContext validates its arguments', () => {
+		nativeTest('OfflineAudioContext validates its arguments', () => {
 			throws(() => new OfflineAudioContext(0, Q, RATE), 'NotSupportedError', 'no channels');
 			throws(() => new OfflineAudioContext(33, Q, RATE), 'NotSupportedError', '33 channels');
 			throws(() => new OfflineAudioContext(1, 0, RATE), 'NotSupportedError', 'zero length');
@@ -152,7 +154,7 @@ export function registerAudioApiSpec() {
 			equal(new OfflineAudioContext(2, Q, 3000).length, Q);
 		});
 
-		androidTest('OfflineAudioContext fires complete with the rendered buffer', async () => {
+		nativeTest('OfflineAudioContext fires complete with the rendered buffer', async () => {
 			const context = offline();
 			let fromHandler: any = null;
 			let fromListener: any = null;
@@ -164,7 +166,7 @@ export function registerAudioApiSpec() {
 			equal(fromHandler.renderedBuffer, rendered, 'renderedBuffer is the resolved buffer');
 		});
 
-		androidTest('createBuffer takes numberOfChannels, length and sampleRate', () => {
+		nativeTest('createBuffer takes numberOfChannels, length and sampleRate', () => {
 			const context = offline();
 			const buffer = context.createBuffer(2, 100, 22050);
 			equal(buffer.numberOfChannels, 2);
@@ -173,7 +175,7 @@ export function registerAudioApiSpec() {
 			equal(context.createBuffer({ numberOfChannels: 1, length: 10, sampleRate: RATE }).length, 10, 'the options form still works');
 		});
 
-		androidTest('AudioBuffer validates its options and channel indices', () => {
+		nativeTest('AudioBuffer validates its options and channel indices', () => {
 			throws(() => new AudioBuffer({ numberOfChannels: 1, length: 0, sampleRate: RATE }), 'NotSupportedError', 'zero length');
 			throws(() => new AudioBuffer({ numberOfChannels: 0, length: 1, sampleRate: RATE }), 'NotSupportedError', 'no channels');
 			throws(() => new AudioBuffer({ numberOfChannels: 33, length: 1, sampleRate: RATE }), 'NotSupportedError', '33 channels');
@@ -185,12 +187,12 @@ export function registerAudioApiSpec() {
 			throws(() => buffer.copyToChannel(new Float32Array(4), 2), 'IndexSizeError');
 		});
 
-		androidTest('AudioContext validates sampleRate and latencyHint', () => {
+		nativeTest('AudioContext validates sampleRate and latencyHint', () => {
 			throws(() => new AudioContext({ sampleRate: 1000 }), 'NotSupportedError');
 			throws(() => new AudioContext({ latencyHint: 'fast' as any }), 'TypeError');
 		});
 
-		androidTest('a closed AudioContext rejects close, resume and suspend', async () => {
+		nativeTest('a closed AudioContext rejects close, resume and suspend', async () => {
 			const context: any = new AudioContext();
 			await context.close();
 			equal(errorName(await rejects(context.close())), 'InvalidStateError', 'close');
@@ -198,7 +200,7 @@ export function registerAudioApiSpec() {
 			equal(errorName(await rejects(context.suspend())), 'InvalidStateError', 'suspend');
 		});
 
-		androidTest('getOutputTimestamp returns contextTime and performanceTime', async () => {
+		nativeTest('getOutputTimestamp returns contextTime and performanceTime', async () => {
 			const context: any = new AudioContext();
 			try {
 				const stamp = context.getOutputTimestamp();
@@ -209,7 +211,7 @@ export function registerAudioApiSpec() {
 			}
 		});
 
-		androidTest('decodeAudioData failure is an EncodingError and reaches errorCallback', async () => {
+		nativeTest('decodeAudioData failure is an EncodingError and reaches errorCallback', async () => {
 			const context = offline();
 			let callbackError: any = null;
 			const error = await rejects(
@@ -221,14 +223,14 @@ export function registerAudioApiSpec() {
 			equal(errorName(callbackError), 'EncodingError');
 		});
 
-		androidTest('DelayNode maxDelayTime must be in (0, 180)', () => {
+		nativeTest('DelayNode maxDelayTime must be in (0, 180)', () => {
 			const context = offline();
 			throws(() => context.createDelay(0), 'NotSupportedError');
 			throws(() => context.createDelay(180), 'NotSupportedError');
 			equal(context.createDelay(10).maxDelayTime, 10);
 		});
 
-		androidTest('IIRFilterNode validates its coefficients', () => {
+		nativeTest('IIRFilterNode validates its coefficients', () => {
 			const context = offline();
 			throws(() => context.createIIRFilter([], [1]), 'NotSupportedError', 'empty feedforward');
 			throws(() => context.createIIRFilter(new Array(21).fill(1), [1]), 'NotSupportedError', '21 feedforward');
@@ -239,7 +241,7 @@ export function registerAudioApiSpec() {
 			throws(() => node.getFrequencyResponse(new Float32Array(2), new Float32Array(1), new Float32Array(2)), 'InvalidAccessError');
 		});
 
-		androidTest('AnalyserNode validates its attributes', () => {
+		nativeTest('AnalyserNode validates its attributes', () => {
 			const analyser = offline().createAnalyser();
 			throws(() => (analyser.fftSize = 1000), 'IndexSizeError', 'not a power of two');
 			throws(() => (analyser.fftSize = 16), 'IndexSizeError', 'too small');
@@ -252,7 +254,7 @@ export function registerAudioApiSpec() {
 			throws(() => offline().createAnalyser({ minDecibels: -10, maxDecibels: -20 }), 'IndexSizeError', 'options');
 		});
 
-		androidTest('PannerNode validates distance and cone attributes', () => {
+		nativeTest('PannerNode validates distance and cone attributes', () => {
 			const context = offline();
 			const panner = context.createPanner();
 			throws(() => (panner.refDistance = -1), 'RangeError');
@@ -264,13 +266,13 @@ export function registerAudioApiSpec() {
 			equal(panner.refDistance, 0);
 		});
 
-		androidTest('PeriodicWave real and imag must match and hold two terms', () => {
+		nativeTest('PeriodicWave real and imag must match and hold two terms', () => {
 			const context = offline();
 			throws(() => context.createPeriodicWave([0, 1], [0, 1, 0]), 'IndexSizeError', 'mismatch');
 			throws(() => context.createPeriodicWave([0], [0]), 'IndexSizeError', 'one term');
 		});
 
-		androidTest('WaveShaperNode.curve copies and needs two points', () => {
+		nativeTest('WaveShaperNode.curve copies and needs two points', () => {
 			const shaper = offline().createWaveShaper();
 			throws(() => (shaper.curve = new Float32Array(1)), 'InvalidStateError');
 			const curve = new Float32Array([-1, 0, 1]);
@@ -281,14 +283,14 @@ export function registerAudioApiSpec() {
 			equal(shaper.curve[1], 0, 'the getter copies');
 		});
 
-		androidTest('ConvolverNode.buffer must match the context sampleRate', () => {
+		nativeTest('ConvolverNode.buffer must match the context sampleRate', () => {
 			const context = offline();
 			const convolver = context.createConvolver();
 			throws(() => (convolver.buffer = new AudioBuffer({ numberOfChannels: 1, length: 4, sampleRate: 44100 })), 'NotSupportedError');
 			convolver.buffer = new AudioBuffer({ numberOfChannels: 1, length: 4, sampleRate: RATE });
 		});
 
-		androidTest("OscillatorNode type 'custom' comes only from a PeriodicWave", () => {
+		nativeTest("OscillatorNode type 'custom' comes only from a PeriodicWave", () => {
 			const context = offline();
 			const wave = context.createPeriodicWave([0, 1], [0, 0]);
 			const oscillator = context.createOscillator();
@@ -303,7 +305,7 @@ export function registerAudioApiSpec() {
 			throws(() => context.createOscillator({ type: 'custom' }), 'InvalidStateError', 'custom without a wave');
 		});
 
-		androidTest('BiquadFilterNode.getFrequencyResponse follows the filter', () => {
+		nativeTest('BiquadFilterNode.getFrequencyResponse follows the filter', () => {
 			const context = offline();
 			const filter = context.createBiquadFilter();
 			const nyquist = RATE / 2;
@@ -323,7 +325,7 @@ export function registerAudioApiSpec() {
 			throws(() => filter.getFrequencyResponse(freqs, new Float32Array(4), phase), 'InvalidAccessError');
 		});
 
-		androidTest('AudioParams report defaultValue, minValue and maxValue', () => {
+		nativeTest('AudioParams report defaultValue, minValue and maxValue', () => {
 			const context = offline();
 			const range = (p: any) => [p.defaultValue, p.minValue, p.maxValue].join(',');
 			const FLT = 3.4028234663852886e38;
@@ -346,7 +348,7 @@ export function registerAudioApiSpec() {
 			equal(range(compressor.release), '0.25,0,1', 'release');
 		});
 
-		androidTest('fixed k-rate params keep their automationRate', () => {
+		nativeTest('fixed k-rate params keep their automationRate', () => {
 			const context = offline();
 			const threshold = context.createDynamicsCompressor().threshold;
 			equal(threshold.automationRate, 'k-rate');
@@ -361,7 +363,7 @@ export function registerAudioApiSpec() {
 			if (playbackRate) equal(playbackRate.automationRate, 'k-rate', 'playbackRate');
 		});
 
-		androidTest('DynamicsCompressorNode.reduction is a number', () => {
+		nativeTest('DynamicsCompressorNode.reduction is a number', () => {
 			const reduction = offline().createDynamicsCompressor().reduction;
 			equal(typeof reduction, 'number');
 			equal(reduction, 0, 'idle');

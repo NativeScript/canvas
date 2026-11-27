@@ -90,11 +90,11 @@ public class AudioContextInstance {
 	}
 
 	public void resumeAsync(@androidx.annotation.Nullable AudioContext.AsyncCallback cb) {
-		AudioContext.getInstance().resumeAsync(cb);
+		AudioContext.getInstance().resumeAsync(id, cb);
 	}
 
 	public void suspendAsync(@androidx.annotation.Nullable AudioContext.AsyncCallback cb) {
-		AudioContext.getInstance().suspendAsync(cb);
+		AudioContext.getInstance().suspendAsync(id, cb);
 	}
 
 	public void closeAsync(@androidx.annotation.Nullable AudioContext.AsyncCallback cb) {

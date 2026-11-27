@@ -133,7 +133,7 @@ export function registerAudioWorkletSpec() {
 			fed.connect(context.destination);
 			const samples = (await context.startRendering()).getChannelData(0);
 			equal(samples[0], 0, 'empty until the source starts');
-			equal(samples[Q], 2, 'channelCount channels once it plays');
+			equal(samples[Q], 1, "the source's channels once it plays (channelCountMode 'max')");
 
 			const other = await offline(Q * 3);
 			const unconnected = new AudioWorkletNode(other, 'input-count', { outputChannelCount: [1] });
@@ -143,6 +143,26 @@ export function registerAudioWorkletSpec() {
 				none.every((v) => v === 0),
 				'empty with nothing connected',
 			);
+		});
+
+		test('an input has computedNumberOfChannels for its channelCountMode', async () => {
+			// [channelCountMode, channelCount, the source's channels, the input's channels]
+			const cases: [string, number, number, number][] = [
+				['max', 1, 2, 2],
+				['max', 2, 1, 1],
+				['clamped-max', 1, 2, 1],
+				['explicit', 4, 1, 4],
+			];
+			for (const [channelCountMode, channelCount, channels, expected] of cases) {
+				const context = await offline(Q * 2);
+				const node = new AudioWorkletNode(context, 'input-count', { channelCount, channelCountMode, outputChannelCount: [1] } as any);
+				const merger = context.createChannelMerger(channels);
+				for (let c = 0; c < channels; c++) constant(context, 1).connect(merger, 0, c);
+				merger.connect(node);
+				node.connect(context.destination);
+				const samples = (await context.startRendering()).getChannelData(0);
+				equal(samples[Q], expected, `${channelCountMode} ${channelCount} from ${channels} channels`);
+			}
 		});
 
 		test('feeds each input separately', async () => {
@@ -230,8 +250,7 @@ export function registerAudioWorkletSpec() {
 		}
 
 		// Mono up-mixes by copying and down-mixes by averaging, with no pan law.
-		test('a mono source plays at full level in a realtime context', () =>
-			realtimeLevel((context, analyser) => new AudioWorkletNode(context, 'constant', { numberOfInputs: 0, outputChannelCount: [1] }).connect(analyser), 0.25));
+		test('a mono source plays at full level in a realtime context', () => realtimeLevel((context, analyser) => new AudioWorkletNode(context, 'constant', { numberOfInputs: 0, outputChannelCount: [1] }).connect(analyser), 0.25));
 
 		test('processes an input in a realtime context', () =>
 			realtimeLevel((context, analyser) => {

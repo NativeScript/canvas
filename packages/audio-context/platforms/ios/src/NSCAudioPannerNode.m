@@ -1,692 +1,428 @@
-#import <objc/message.h>
-#import <QuartzCore/QuartzCore.h>
+#import <Accelerate/Accelerate.h>
+#import <stdatomic.h>
 #import "NSCAudioLog.h"
 #import "NSCAudioContext.h"
 #import "NSCChannelMixerNode.h"
-#import <stdatomic.h>
+#import "NSCHRTFKemar.h"
 
-//#ifdef NSCLogDebug
-//#undef NSCLogDebug
-//#endif
-//#define NSCLogDebug(...)
+@interface NSCAudioContext (NSCPannerNodes)
+- (NSArray<NSCAudioNode *> *)allNodeWrappers;
+@end
 
-static inline double NSCClampDouble(double value, double minValue, double maxValue) {
-    if (value < minValue) return minValue;
-    if (value > maxValue) return maxValue;
-    return value;
+typedef struct { double x, y, z; } V3;
+
+static inline V3 Sub(V3 a, V3 b) { return (V3){ a.x - b.x, a.y - b.y, a.z - b.z }; }
+static inline double Dot(V3 a, V3 b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
+static inline V3 Cross(V3 a, V3 b) { return (V3){ a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x }; }
+static inline double Len(V3 a) { return sqrt(Dot(a, a)); }
+static inline V3 Norm(V3 a) {
+    double l = Len(a);
+    return l > 0.0 ? (V3){ a.x / l, a.y / l, a.z / l } : a;
 }
 
-static inline void NSCNormalizeVector3(double *x, double *y, double *z,
-                                       double fallbackX, double fallbackY, double fallbackZ) {
-    double len = sqrt((*x) * (*x) + (*y) * (*y) + (*z) * (*z));
-    if (len <= 1e-12) {
-        *x = fallbackX;
-        *y = fallbackY;
-        *z = fallbackZ;
+#pragma mark - HRTF database
+
+// The KEMAR set resampled to the context rate, scaled so an ear averages half the input's power.
+typedef struct {
+    double rate;
+    int taps;
+    int positions;
+    float *data;
+    int offsets[NSC_HRIR_ELEVATIONS];
+} HRTFDatabase;
+
+static HRTFDatabase *HRTFDatabaseForRate(double rate) {
+    static NSMutableDictionary<NSNumber *, NSValue *> *cache;
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{ cache = [NSMutableDictionary dictionary]; });
+    @synchronized (cache) {
+        NSValue *found = cache[@(rate)];
+        if (found) return (HRTFDatabase *)found.pointerValue;
+        HRTFDatabase *db = calloc(1, sizeof(HRTFDatabase));
+        db->rate = rate;
+        double ratio = rate / NSCHRIRRate;
+        db->taps = (int)ceil(NSCHRIRTaps * ratio);
+        int positions = 0;
+        for (int e = 0; e < NSC_HRIR_ELEVATIONS; e++) {
+            db->offsets[e] = positions;
+            positions += NSCHRIRAzimuthCount[e];
+        }
+        db->positions = positions;
+        db->data = calloc((size_t)positions * 2 * db->taps, sizeof(float));
+        double energy = 0.0;
+        for (int p = 0; p < positions; p++) {
+            for (int ear = 0; ear < 2; ear++) {
+                const int16_t *src = NSCHRIRData + ((size_t)p * 2 + ear) * NSCHRIRTaps;
+                float *dst = db->data + ((size_t)p * 2 + ear) * db->taps;
+                for (int k = 0; k < db->taps; k++) {
+                    double at = k / ratio;
+                    int i = (int)at;
+                    double f = at - i;
+                    double a = i < NSCHRIRTaps ? src[i] : 0.0, b = i + 1 < NSCHRIRTaps ? src[i + 1] : 0.0;
+                    // Resampling up keeps the response's gain; down needs the rate ratio.
+                    dst[k] = (float)(((1.0 - f) * a + f * b) / 32768.0 * MIN(1.0, 1.0 / ratio));
+                    energy += (double)dst[k] * dst[k];
+                }
+            }
+        }
+        float scale = (float)sqrt(0.5 / (energy / (positions * 2)));
+        vDSP_vsmul(db->data, 1, &scale, db->data, 1, (vDSP_Length)positions * 2 * db->taps);
+        cache[@(rate)] = [NSValue valueWithPointer:db];
+        return db;
+    }
+}
+
+static const float *HRIR(HRTFDatabase *db, int position, int ear) {
+    return db->data + ((size_t)position * 2 + ear) * db->taps;
+}
+
+// Adds `weight` times the HRIR pair nearest azimuth `az` (0 to 180) at elevation row `e`, interpolated.
+static void AddRow(HRTFDatabase *db, int e, double az, double weight, BOOL swap, float *left, float *right) {
+    int count = NSCHRIRAzimuthCount[e], first = db->offsets[e];
+    double step = 360.0 / NSCHRIRCircle[e];
+    int lo = MAX(0, MIN((int)(az / step), count - 1));
+    int hi = MIN(lo + 1, count - 1);
+    double f = hi > lo ? MAX(0.0, MIN(1.0, az / step - lo)) : 0.0;
+    float wl = (float)(weight * (1.0 - f)), wh = (float)(weight * f);
+    vDSP_vsma(HRIR(db, first + lo, swap ? 1 : 0), 1, &wl, left, 1, left, 1, db->taps);
+    vDSP_vsma(HRIR(db, first + lo, swap ? 0 : 1), 1, &wl, right, 1, right, 1, db->taps);
+    if (wh > 0.0f) {
+        vDSP_vsma(HRIR(db, first + hi, swap ? 1 : 0), 1, &wh, left, 1, left, 1, db->taps);
+        vDSP_vsma(HRIR(db, first + hi, swap ? 0 : 1), 1, &wh, right, 1, right, 1, db->taps);
+    }
+}
+
+// The ear responses for a Web Audio azimuth (-180 to 180, right positive) and elevation.
+static void HRTFKernel(HRTFDatabase *db, double azimuth, double elevation, float *left, float *right) {
+    memset(left, 0, db->taps * sizeof(float));
+    memset(right, 0, db->taps * sizeof(float));
+    BOOL swap = azimuth < 0.0;
+    double az = fabs(azimuth);
+    double el = MAX(NSCHRIRElevation[0], MIN(elevation, NSCHRIRElevation[NSC_HRIR_ELEVATIONS - 1]));
+    int e = 0;
+    while (e + 1 < NSC_HRIR_ELEVATIONS && NSCHRIRElevation[e + 1] <= el) e++;
+    int e2 = MIN(e + 1, NSC_HRIR_ELEVATIONS - 1);
+    double span = NSCHRIRElevation[e2] - NSCHRIRElevation[e];
+    double f = span > 0.0 ? (el - NSCHRIRElevation[e]) / span : 0.0;
+    AddRow(db, e, az, 1.0 - f, swap, left, right);
+    if (f > 0.0) AddRow(db, e2, az, f, swap, left, right);
+}
+
+#pragma mark - Render state
+
+#define PAN_MAX_TAPS 512
+#define PAN_FRAMES 128
+
+enum { PX, PY, PZ, OX, OY, OZ, LPX, LPY, LPZ, LFX, LFY, LFZ, LUX, LUY, LUZ, PARAMS };
+
+// Owned by the render block; settings are written on the main thread.
+@interface NSCPannerState : NSObject {
+@public
+    NSCAudioParam *params[PARAMS];
+    double rate;
+    _Atomic int distanceModel;
+    _Atomic int panningModel;
+    _Atomic double refDistance, maxDistance, rolloffFactor;
+    _Atomic double coneInnerAngle, coneOuterAngle, coneOuterGain;
+    _Atomic double pan;
+    HRTFDatabase *hrtf;
+    // HRTF: the kernels in use, the ones being faded to, and input history per channel.
+    float kernel[2][PAN_MAX_TAPS], next[2][PAN_MAX_TAPS];
+    double kernelAzimuth, kernelElevation;
+    BOOL hasKernel;
+    float history[2][PAN_MAX_TAPS + PAN_FRAMES];
+}
+@end
+
+@implementation NSCPannerState
+@end
+
+// Spec: distance gain.
+static double DistanceGain(NSCPannerState *s, double distance) {
+    double ref = atomic_load_explicit(&s->refDistance, memory_order_relaxed);
+    double max = atomic_load_explicit(&s->maxDistance, memory_order_relaxed);
+    double rolloff = atomic_load_explicit(&s->rolloffFactor, memory_order_relaxed);
+    switch (atomic_load_explicit(&s->distanceModel, memory_order_relaxed)) {
+        case 1: {
+            double d = MAX(MIN(distance, max), ref);
+            rolloff = MIN(rolloff, 1.0);
+            return max == ref ? 1.0 - rolloff : 1.0 - rolloff * (d - ref) / (max - ref);
+        }
+        case 2:
+            return ref == 0.0 ? 0.0 : pow(MAX(distance, ref) / ref, -rolloff);
+        default:
+            return ref / (ref + rolloff * (MAX(distance, ref) - ref));
+    }
+}
+
+// Spec: cone gain.
+static double ConeGain(NSCPannerState *s, V3 source, V3 orientation, V3 listener) {
+    double inner = atomic_load_explicit(&s->coneInnerAngle, memory_order_relaxed);
+    double outer = atomic_load_explicit(&s->coneOuterAngle, memory_order_relaxed);
+    if ((orientation.x == 0.0 && orientation.y == 0.0 && orientation.z == 0.0) || (inner == 360.0 && outer == 360.0)) return 1.0;
+    V3 toListener = Norm(Sub(listener, source));
+    double angle = fabs(180.0 * acos(MAX(-1.0, MIN(1.0, Dot(toListener, Norm(orientation))))) / M_PI);
+    double absInner = fabs(inner) / 2.0, absOuter = fabs(outer) / 2.0;
+    double outerGain = atomic_load_explicit(&s->coneOuterGain, memory_order_relaxed);
+    if (angle <= absInner) return 1.0;
+    if (angle >= absOuter) return outerGain;
+    double x = (angle - absInner) / (absOuter - absInner);
+    return (1.0 - x) + outerGain * x;
+}
+
+// Spec: azimuth and elevation of the source as the listener hears it.
+static void AzimuthElevation(V3 source, V3 listener, V3 forward, V3 up, double *azimuth, double *elevation) {
+    V3 sl = Sub(source, listener);
+    if (sl.x == 0.0 && sl.y == 0.0 && sl.z == 0.0) {
+        *azimuth = 0.0;
+        *elevation = 0.0;
         return;
     }
-    *x /= len;
-    *y /= len;
-    *z /= len;
+    sl = Norm(sl);
+    V3 right = Norm(Cross(forward, up));
+    V3 f = Norm(forward);
+    V3 u = Cross(right, f);
+    double upProjection = Dot(sl, u);
+    V3 projected = Norm(Sub(sl, (V3){ u.x * upProjection, u.y * upProjection, u.z * upProjection }));
+    double az = 180.0 * acos(MAX(-1.0, MIN(1.0, Dot(projected, right)))) / M_PI;
+    if (Dot(projected, f) < 0.0) az = 360.0 - az;
+    az = az >= 0.0 && az <= 270.0 ? 90.0 - az : 450.0 - az;
+    double el = 90.0 - 180.0 * acos(MAX(-1.0, MIN(1.0, Dot(sl, u)))) / M_PI;
+    if (el > 90.0) el = 180.0 - el;
+    else if (el < -90.0) el = -180.0 - el;
+    *azimuth = az;
+    *elevation = el;
 }
 
-static inline double NSCWrapPannerAzimuthDegrees(double azimuth) {
-    azimuth = NSCClampDouble(azimuth, -180.0, 180.0);
+static void Spatial(NSCPannerState *s, double v[PARAMS], double *gain, double *azimuth, double *elevation) {
+    V3 source = { v[PX], v[PY], v[PZ] }, orientation = { v[OX], v[OY], v[OZ] };
+    V3 listener = { v[LPX], v[LPY], v[LPZ] }, forward = { v[LFX], v[LFY], v[LFZ] }, up = { v[LUX], v[LUY], v[LUZ] };
+    AzimuthElevation(source, listener, forward, up, azimuth, elevation);
+    double pan = atomic_load_explicit(&s->pan, memory_order_relaxed);
+    if (pan != 0.0) *azimuth = MAX(-1.0, MIN(1.0, pan)) * 90.0;
+    *gain = DistanceGain(s, Len(Sub(source, listener))) * ConeGain(s, source, orientation, listener);
+}
+
+static void EqualPower(double azimuth, double gain, BOOL mono, float inL, float inR, float *outL, float *outR) {
+    azimuth = MAX(-180.0, MIN(180.0, azimuth));
     if (azimuth < -90.0) azimuth = -180.0 - azimuth;
     else if (azimuth > 90.0) azimuth = 180.0 - azimuth;
-    return azimuth;
-}
-
-#pragma mark - The pan unit
-
-typedef struct {
-    _Atomic float gain;
-    // Azimuth in degrees, -90 to 90.
-    _Atomic float azimuth;
-    const UInt32 *inputChannels;
-    float *pulled;
-    // A mono output's right channel before the down-mix.
-    float *right;
-    UInt32 maxFrames;
-    AudioBufferList *pullList;
-} PanRender;
-
-static AVAudioFormat *pendingPanFormat;
-
-// Web Audio's equal-power panning of a mono or stereo input, times the distance and cone gain.
-@interface NSCPanUnit : AUAudioUnit
-@property (nonatomic, readonly) PanRender *render;
-@end
-
-@implementation NSCPanUnit {
-    AUAudioUnitBusArray *_inputBusses;
-    AUAudioUnitBusArray *_outputBusses;
-    PanRender *_render;
-}
-
-- (instancetype)initWithComponentDescription:(AudioComponentDescription)description options:(AudioComponentInstantiationOptions)options error:(NSError **)outError {
-    if (!(self = [super initWithComponentDescription:description options:options error:outError])) return nil;
-    AUAudioUnitBus *input = [[AUAudioUnitBus alloc] initWithFormat:pendingPanFormat error:outError];
-    AUAudioUnitBus *output = [[AUAudioUnitBus alloc] initWithFormat:pendingPanFormat error:outError];
-    if (!input || !output) return nil;
-    _inputBusses = [[AUAudioUnitBusArray alloc] initWithAudioUnit:self busType:AUAudioUnitBusTypeInput busses:@[ input ]];
-    _outputBusses = [[AUAudioUnitBusArray alloc] initWithAudioUnit:self busType:AUAudioUnitBusTypeOutput busses:@[ output ]];
-    _render = calloc(1, sizeof(PanRender));
-    _render->pullList = calloc(1, sizeof(AudioBufferList) + sizeof(AudioBuffer));
-    atomic_init(&_render->gain, 1.0f);
-    self.maximumFramesToRender = 4096;
-    return self;
-}
-
-- (AUAudioUnitBusArray *)inputBusses { return _inputBusses; }
-- (AUAudioUnitBusArray *)outputBusses { return _outputBusses; }
-- (BOOL)canProcessInPlace { return NO; }
-
-// Two channels in; one or two out, a mono output taking the down-mix.
-- (BOOL)shouldChangeToFormat:(AVAudioFormat *)format forBus:(AUAudioUnitBus *)bus {
-    if (bus.busType == AUAudioUnitBusTypeInput) return format.channelCount == 2;
-    return format.channelCount == 1 || format.channelCount == 2;
-}
-
-- (BOOL)allocateRenderResourcesAndReturnError:(NSError **)outError {
-    if (![super allocateRenderResourcesAndReturnError:outError]) return NO;
-    PanRender *r = _render;
-    UInt32 frames = MAX((UInt32)self.maximumFramesToRender, 128u);
-    if (frames > r->maxFrames) {
-        free(r->pulled);
-        free(r->right);
-        r->pulled = calloc((size_t)2 * frames, sizeof(float));
-        r->right = calloc(frames, sizeof(float));
-        r->maxFrames = frames;
+    if (mono) {
+        double x = (azimuth + 90.0) / 180.0;
+        *outL = (float)(inL * cos(x * M_PI_2) * gain);
+        *outR = (float)(inL * sin(x * M_PI_2) * gain);
+    } else if (azimuth <= 0.0) {
+        double x = (azimuth + 90.0) / 90.0;
+        *outL = (float)((inL + inR * cos(x * M_PI_2)) * gain);
+        *outR = (float)(inR * sin(x * M_PI_2) * gain);
+    } else {
+        double x = azimuth / 90.0;
+        *outL = (float)(inL * cos(x * M_PI_2) * gain);
+        *outR = (float)((inR + inL * sin(x * M_PI_2)) * gain);
     }
-    return r->pulled && r->right;
 }
 
-- (AUInternalRenderBlock)internalRenderBlock {
-    PanRender *r = _render;
-    return ^AUAudioUnitStatus(AudioUnitRenderActionFlags *flags, const AudioTimeStamp *ts, AUAudioFrameCount frames, NSInteger bus, AudioBufferList *out, const AURenderEvent *events, AURenderPullInputBlock pull) {
-        if (!r->pulled || frames > r->maxFrames || out->mNumberBuffers < 1) return kAudioUnitErr_TooManyFramesToProcess;
-        AudioBufferList *abl = r->pullList;
-        abl->mNumberBuffers = 2;
-        for (UInt32 c = 0; c < 2; c++) {
-            abl->mBuffers[c].mNumberChannels = 1;
-            abl->mBuffers[c].mData = r->pulled + c * r->maxFrames;
-            abl->mBuffers[c].mDataByteSize = frames * sizeof(float);
-        }
-        AudioUnitRenderActionFlags pullFlags = 0;
-        OSStatus status = pull ? pull(&pullFlags, ts, frames, 0, abl) : kAudioUnitErr_NoConnection;
-        BOOL monoOut = out->mNumberBuffers == 1;
-        float *outL = (float *)out->mBuffers[0].mData, *outR = monoOut ? r->right : (float *)out->mBuffers[1].mData;
-        if (!outL) outL = out->mBuffers[0].mData = r->pulled;
-        if (!outR) outR = out->mBuffers[1].mData = r->pulled + r->maxFrames;
-        for (UInt32 c = 0; c < out->mNumberBuffers; c++) out->mBuffers[c].mDataByteSize = frames * sizeof(float);
-        if (status != noErr || (pullFlags & kAudioUnitRenderAction_OutputIsSilence)) {
-            memset(outL, 0, frames * sizeof(float));
-            memset(outR, 0, frames * sizeof(float));
-            *flags |= kAudioUnitRenderAction_OutputIsSilence;
-            return noErr;
-        }
-        const float *inL = abl->mBuffers[0].mData ?: r->pulled, *inR = abl->mBuffers[1].mData ?: r->pulled + r->maxFrames;
-        float g = atomic_load_explicit(&r->gain, memory_order_relaxed);
-        double az = atomic_load_explicit(&r->azimuth, memory_order_relaxed);
-        // Sources here play at the context's channel count, so identical channels are taken as mono.
-        BOOL mono = r->inputChannels && *r->inputChannels == 1;
-        if (!mono) {
-            mono = YES;
-            for (AUAudioFrameCount k = 0; k < frames && mono; k++) mono = inL[k] == inR[k];
-        }
-        if (mono) {
-            double x = (az + 90.0) / 180.0;
-            float gl = (float)cos(x * M_PI_2) * g, gr = (float)sin(x * M_PI_2) * g;
-            for (AUAudioFrameCount k = 0; k < frames; k++) {
-                float m = inL[k];
-                outL[k] = m * gl;
-                outR[k] = m * gr;
-            }
-        } else if (az <= 0.0) {
-            double x = (az + 90.0) / 90.0;
-            float gl = (float)cos(x * M_PI_2), gr = (float)sin(x * M_PI_2);
-            for (AUAudioFrameCount k = 0; k < frames; k++) {
-                float l = inL[k], rr = inR[k];
-                outL[k] = (l + rr * gl) * g;
-                outR[k] = rr * gr * g;
-            }
-        } else {
-            double x = az / 90.0;
-            float gl = (float)cos(x * M_PI_2), gr = (float)sin(x * M_PI_2);
-            for (AUAudioFrameCount k = 0; k < frames; k++) {
-                float l = inL[k], rr = inR[k];
-                outL[k] = l * gl * g;
-                outR[k] = (rr + l * gr) * g;
+// Each ear convolves its input channel (both the mono one) with its HRIR; a kernel change fades
+// across the quantum. Chromium's HRTFPanner works the same way.
+static void RenderHRTF(NSCPannerState *s, UInt32 frames, float *const *in, UInt32 inChannels, float *const *out, const double *gain, double azimuth, double elevation) {
+    HRTFDatabase *db = s->hrtf;
+    int taps = MIN(db->taps, PAN_MAX_TAPS);
+    BOOL change = !s->hasKernel || fabs(azimuth - s->kernelAzimuth) > 1e-3 || fabs(elevation - s->kernelElevation) > 1e-3;
+    if (change) {
+        HRTFKernel(db, azimuth, elevation, s->next[0], s->next[1]);
+        if (!s->hasKernel) memcpy(s->kernel, s->next, sizeof(s->kernel));
+        s->kernelAzimuth = azimuth;
+        s->kernelElevation = elevation;
+        s->hasKernel = YES;
+    }
+    float a[PAN_FRAMES], b[PAN_FRAMES];
+    for (int ear = 0; ear < 2; ear++) {
+        float *h = s->history[ear];
+        memcpy(h + taps - 1, in[MIN((UInt32)ear, inChannels - 1)], frames * sizeof(float));
+        vDSP_conv(h, 1, s->kernel[ear] + taps - 1, -1, a, 1, frames, (vDSP_Length)taps);
+        if (change) {
+            vDSP_conv(h, 1, s->next[ear] + taps - 1, -1, b, 1, frames, (vDSP_Length)taps);
+            for (UInt32 k = 0; k < frames; k++) {
+                float x = (float)(k + 1) / frames;
+                a[k] = a[k] * (1.0f - x) + b[k] * x;
             }
         }
-        if (monoOut) for (AUAudioFrameCount k = 0; k < frames; k++) outL[k] = 0.5f * (outL[k] + outR[k]);
-        return noErr;
-    };
+        for (UInt32 k = 0; k < frames; k++) out[ear][k] = (float)(a[k] * gain[k]);
+        memmove(h, h + frames, (taps - 1) * sizeof(float));
+    }
+    if (change) memcpy(s->kernel, s->next, sizeof(s->kernel));
 }
 
-- (void)dealloc {
-    free(_render->pulled);
-    free(_render->right);
-    free(_render->pullList);
-    free(_render);
+#pragma mark - The listener's params
+
+// Owns the AudioListener params: audio connected to them renders before every panner.
+@interface NSCListenerOwner : NSCAudioNode
+@end
+
+@implementation NSCListenerOwner
+
+- (void)attachParamSink:(AVAudioNode *)sink {
+    for (NSCAudioNode *node in [self.context allNodeWrappers]) {
+        if ([node isKindOfClass:[NSCAudioPannerNode class]]) [((NSCAudioPannerNode *)node).port connectEarly:sink format:self.context.format];
+    }
 }
 
 @end
 
-static AudioComponentDescription PanDescription(void) {
-    AudioComponentDescription description = {0};
-    description.componentType = kAudioUnitType_Effect;
-    description.componentSubType = 'nscn';
-    description.componentManufacturer = 'NSCa';
-    return description;
+NSCAudioNode *NSCMakeListenerOwner(NSCAudioContext *context) {
+    return [[NSCListenerOwner alloc] initWithContext:context node:nil];
 }
+
+#pragma mark - The node
 
 @implementation NSCAudioPannerNode {
-    AVAudioUnitEffect *_unit;
-    // Connections into the panner mix here: clamped-max, two channels.
-    NSCChannelMixerNode *_input;
-    float _positionX, _positionY, _positionZ;
-    float _orientationX, _orientationY, _orientationZ;
-    float _pan;
-    int _distanceModel;
-    int _panningModel;
-    float _refDistance, _maxDistance, _rolloffFactor;
-    float _coneInnerAngle, _coneOuterAngle, _coneOuterGain;
-    dispatch_source_t _automationTimer;
-    CFTimeInterval _automationAnchorHostTime;
-    double _automationAnchorAudioTime;
-    BOOL _automationUsesHostTime;
+    NSCPannerState *_state;
 }
 
 - (instancetype)initWithContext:(NSCAudioContext *)context {
-    return [self initWithContext:context positionX:0.0 positionY:0.0 positionZ:0.0 panningModel:0];
-}
-
-- (instancetype)initWithContext:(NSCAudioContext *)context positionX:(double)positionX positionY:(double)positionY positionZ:(double)positionZ {
-    return [self initWithContext:context positionX:positionX positionY:positionY positionZ:positionZ panningModel:0];
-}
-
-- (instancetype)initWithContext:(NSCAudioContext *)context
-                      positionX:(double)positionX
-                      positionY:(double)positionY
-                      positionZ:(double)positionZ
-                   panningModel:(int)panningModel {
-    static dispatch_once_t once;
-    dispatch_once(&once, ^{
-        [AUAudioUnit registerSubclass:[NSCPanUnit class] asComponentDescription:PanDescription() name:@"NativeScript: panner" version:1];
-    });
-    double sr = context.sampleRate > 0 ? context.sampleRate : 44100.0;
-    AVAudioFormat *stereo = [[AVAudioFormat alloc] initStandardFormatWithSampleRate:sr channels:2];
-    pendingPanFormat = stereo;
-    // A registered in-process unit instantiates synchronously.
-    AVAudioUnitEffect *unit = [[AVAudioUnitEffect alloc] initWithAudioComponentDescription:PanDescription()];
-    pendingPanFormat = nil;
-    if (![unit.AUAudioUnit isKindOfClass:[NSCPanUnit class]]) return nil;
-    NSCChannelMixerNode *input = [[NSCChannelMixerNode alloc] initWithContext:context mode:NSCMixModeSum channels:2 discrete:NO];
-    if (!input) return nil;
-    [input setClamp:YES];
-    if ([context isKindOfClass:[NSCOfflineAudioContext class]]) [(NSCOfflineAudioContext *)context willConnect];
-    @try { [context.engine attachNode:unit]; } @catch (NSException *e) { return nil; }
-
-    if (self = [super initWithContext:context node:unit]) {
-        _unit = unit;
-        _input = input;
-        ((NSCPanUnit *)unit.AUAudioUnit).render->inputChannels = [input mixedChannels];
-        NSCConnectAdding(context, input.avNode, 0, unit, 0, stereo);
-        _positionX = (float)positionX; _positionY = (float)positionY; _positionZ = (float)positionZ;
-        _pan = 0.0f;
-        _positionXParam = [[NSCAudioParam alloc] initWithContext:context defaultValue:positionX];
-        _positionYParam = [[NSCAudioParam alloc] initWithContext:context defaultValue:positionY];
-        _positionZParam = [[NSCAudioParam alloc] initWithContext:context defaultValue:positionZ];
-        _orientationXParam = [[NSCAudioParam alloc] initWithContext:context defaultValue:1.0];
-        _orientationYParam = [[NSCAudioParam alloc] initWithContext:context defaultValue:0.0];
-        _orientationZParam = [[NSCAudioParam alloc] initWithContext:context defaultValue:0.0];
-        for (NSCAudioParam *param in @[ _positionXParam, _positionYParam, _positionZParam, _orientationXParam, _orientationYParam, _orientationZParam ]) param.owner = self;
-        _orientationX = 1.0f; _orientationY = 0.0f; _orientationZ = 0.0f;
-        _panningModel = panningModel == 1 ? 1 : 0;
-        _distanceModel = 0;
-        _refDistance = 1.0f;
-        _maxDistance = 10000.0f;
-        _rolloffFactor = 1.0f;
-        _coneInnerAngle = 360.0f;
-        _coneOuterAngle = 360.0f;
-        _coneOuterGain = 0.0f;
-        _automationAnchorHostTime = 0;
-        _automationAnchorAudioTime = 0.0;
-        _automationUsesHostTime = NO;
-
-        [self installAudioParamHooks];
-        [self applySpatial];
-    }
-    return self;
-}
-
-- (void)dealloc {
-    [self stopAutomationLink];
-    [self clearAudioParamHooks];
-    NSCAudioContext *ctx = self.context;
-    AVAudioEngine *engine = ctx.engine;
-    if (engine && _unit && [ctx isNode:_unit attachedToEngine:engine]) {
-        @try { [engine disconnectNodeOutput:_unit]; } @catch (NSException *e) {}
-        @try { [ctx detachNode:_unit fromEngine:engine]; } @catch (NSException *e) {}
-    }
+    return [self initWithContextAndParams:context :nil :nil :nil :nil :nil :nil :nil :nil :nil :nil :nil :nil :nil :nil :nil];
 }
 
 - (instancetype)initWithContextAndParams:(NSCAudioContext *)context
-                                                                                :(NSNumber *)positionX
-                                                                                :(NSNumber *)positionY
-                                                                                :(NSNumber *)positionZ
-                                                                                :(NSNumber *)orientationX
-                                                                                :(NSNumber *)orientationY
-                                                                                :(NSNumber *)orientationZ
-                                                                                :(NSNumber *)pan
-                                                                                :(NSNumber *)distanceModel
-                                                                                :(NSNumber *)panningModel
-                                                                                :(NSNumber *)refDistance
-                                                                                :(NSNumber *)maxDistance
-                                                                                :(NSNumber *)rolloffFactor
-                                                                                :(NSNumber *)coneInnerAngle
-                                                                                :(NSNumber *)coneOuterAngle
-                                                                                :(NSNumber *)coneOuterGain {
-    double px = positionX ? positionX.doubleValue : 0.0;
-    double py = positionY ? positionY.doubleValue : 0.0;
-    double pz = positionZ ? positionZ.doubleValue : 0.0;
-    int pm = panningModel ? panningModel.intValue : 0;
-    if (self = [self initWithContext:context positionX:px positionY:py positionZ:pz panningModel:pm]) {
-        if (orientationX || orientationY || orientationZ) {
-            [self setOrientation:orientationX :orientationY :orientationZ];
-        }
-        if (pan) [self setPan:pan];
-        if (distanceModel) [self setDistanceModel:distanceModel];
-        if (refDistance) [self setRefDistance:refDistance];
-        if (maxDistance) [self setMaxDistance:maxDistance];
-        if (rolloffFactor) [self setRolloffFactor:rolloffFactor];
-        if (coneInnerAngle) [self setConeInnerAngle:coneInnerAngle];
-        if (coneOuterAngle) [self setConeOuterAngle:coneOuterAngle];
-        if (coneOuterGain) [self setConeOuterGain:coneOuterGain];
-        [self applySpatial];
+                                        :(NSNumber *)positionX
+                                        :(NSNumber *)positionY
+                                        :(NSNumber *)positionZ
+                                        :(NSNumber *)orientationX
+                                        :(NSNumber *)orientationY
+                                        :(NSNumber *)orientationZ
+                                        :(NSNumber *)pan
+                                        :(NSNumber *)distanceModel
+                                        :(NSNumber *)panningModel
+                                        :(NSNumber *)refDistance
+                                        :(NSNumber *)maxDistance
+                                        :(NSNumber *)rolloffFactor
+                                        :(NSNumber *)coneInnerAngle
+                                        :(NSNumber *)coneOuterAngle
+                                        :(NSNumber *)coneOuterGain {
+    if (!(self = [super initWithContext:context outputChannels:2])) return nil;
+    NSCPannerState *s = [NSCPannerState new];
+    _state = s;
+    s->rate = context.sampleRate;
+    _positionXParam = [[NSCAudioParam alloc] initWithContext:context defaultValue:positionX ? positionX.doubleValue : 0.0];
+    _positionYParam = [[NSCAudioParam alloc] initWithContext:context defaultValue:positionY ? positionY.doubleValue : 0.0];
+    _positionZParam = [[NSCAudioParam alloc] initWithContext:context defaultValue:positionZ ? positionZ.doubleValue : 0.0];
+    _orientationXParam = [[NSCAudioParam alloc] initWithContext:context defaultValue:orientationX ? orientationX.doubleValue : 1.0];
+    _orientationYParam = [[NSCAudioParam alloc] initWithContext:context defaultValue:orientationY ? orientationY.doubleValue : 0.0];
+    _orientationZParam = [[NSCAudioParam alloc] initWithContext:context defaultValue:orientationZ ? orientationZ.doubleValue : 0.0];
+    NSArray<NSCAudioParam *> *own = @[ _positionXParam, _positionYParam, _positionZParam, _orientationXParam, _orientationYParam, _orientationZParam ];
+    NSArray<NSCAudioParam *> *listener = @[ [context getListenerPositionXParam], [context getListenerPositionYParam], [context getListenerPositionZParam],
+                                            [context getListenerForwardXParam], [context getListenerForwardYParam], [context getListenerForwardZParam],
+                                            [context getListenerUpXParam], [context getListenerUpYParam], [context getListenerUpZParam] ];
+    for (NSUInteger i = 0; i < own.count; i++) {
+        own[i].owner = self;
+        s->params[i] = own[i];
     }
+    for (NSUInteger i = 0; i < listener.count; i++) {
+        s->params[own.count + i] = listener[i];
+        if (listener[i].inputSink) [self.port connectEarly:(AVAudioNode *)listener[i].inputSink format:context.format];
+    }
+    atomic_init(&s->distanceModel, distanceModel ? distanceModel.intValue : 0);
+    atomic_init(&s->panningModel, panningModel && panningModel.intValue == 1 ? 1 : 0);
+    atomic_init(&s->refDistance, refDistance ? refDistance.doubleValue : 1.0);
+    atomic_init(&s->maxDistance, maxDistance ? maxDistance.doubleValue : 10000.0);
+    atomic_init(&s->rolloffFactor, rolloffFactor ? rolloffFactor.doubleValue : 1.0);
+    atomic_init(&s->coneInnerAngle, coneInnerAngle ? coneInnerAngle.doubleValue : 360.0);
+    atomic_init(&s->coneOuterAngle, coneOuterAngle ? coneOuterAngle.doubleValue : 360.0);
+    atomic_init(&s->coneOuterGain, coneOuterGain ? coneOuterGain.doubleValue : 0.0);
+    atomic_init(&s->pan, pan ? MAX(-1.0, MIN(1.0, pan.doubleValue)) : 0.0);
+    if (atomic_load(&s->panningModel) == 1) s->hrtf = HRTFDatabaseForRate(s->rate);
+    [self setChannelConfig:2 mode:1 interpretation:0];
+    [self setProcess:^UInt32(int64_t start, UInt32 total, float *const *inAll, UInt32 inChannels, float *const *outAll, UInt32 outChannels) {
+      for (UInt32 at = 0; at < total; at += PAN_FRAMES) {
+        UInt32 frames = MIN(total - at, (UInt32)PAN_FRAMES);
+        int64_t frame = start + at;
+        float *in[2] = { inAll[0] + at, inAll[MIN(1u, inChannels - 1)] + at };
+        float *out[2] = { outAll[0] + at, outAll[1] + at };
+        double values[PARAMS][frames];
+        BOOL automated = NO;
+        for (int p = 0; p < PARAMS; p++) automated |= [s->params[p] fillValuesFromFrame:(double)frame sampleRate:s->rate frameCount:frames into:values[p]];
+        double gains[frames], azimuth = 0.0, elevation = 0.0;
+        double v[PARAMS];
+        for (int p = 0; p < PARAMS; p++) v[p] = values[p][0];
+        Spatial(s, v, &gains[0], &azimuth, &elevation);
+        BOOL hrtf = atomic_load_explicit(&s->panningModel, memory_order_relaxed) == 1 && s->hrtf;
+        BOOL mono = inChannels == 1;
+        if (hrtf) {
+            // The HRIRs follow the source per quantum; distance and cone gain per frame.
+            for (UInt32 k = 1; k < frames; k++) {
+                if (!automated) { gains[k] = gains[0]; continue; }
+                double az, el;
+                for (int p = 0; p < PARAMS; p++) v[p] = values[p][k];
+                Spatial(s, v, &gains[k], &az, &el);
+            }
+            RenderHRTF(s, frames, in, inChannels, out, gains, azimuth, elevation);
+            continue;
+        }
+        double az = azimuth, gain = gains[0];
+        for (UInt32 k = 0; k < frames; k++) {
+            if (automated && k > 0) {
+                double el;
+                for (int p = 0; p < PARAMS; p++) v[p] = values[p][k];
+                Spatial(s, v, &gain, &az, &el);
+            }
+            EqualPower(az, gain, mono, in[0][k], in[mono ? 0 : 1][k], &out[0][k], &out[1][k]);
+        }
+      }
+        return 2;
+    }];
     return self;
-}
-
-#pragma mark - AudioParam hooks (param-driven automation)
-
-- (void)installAudioParamHooks {
-    __weak typeof(self) weakSelf = self;
-    void (^hook)(NSCAudioParam *) = ^(NSCAudioParam *p) {
-        __strong typeof(weakSelf) s = weakSelf;
-        if (!s) return;
-        [s applySpatial];
-        [s ensureAutomationLink];
-    };
-    _positionXParam.onScheduleChanged = hook;
-    _positionYParam.onScheduleChanged = hook;
-    _positionZParam.onScheduleChanged = hook;
-    _orientationXParam.onScheduleChanged = hook;
-    _orientationYParam.onScheduleChanged = hook;
-    _orientationZParam.onScheduleChanged = hook;
-}
-
-- (void)clearAudioParamHooks {
-    _positionXParam.onScheduleChanged = nil;
-    _positionYParam.onScheduleChanged = nil;
-    _positionZParam.onScheduleChanged = nil;
-    _orientationXParam.onScheduleChanged = nil;
-    _orientationYParam.onScheduleChanged = nil;
-    _orientationZParam.onScheduleChanged = nil;
-}
-
-- (BOOL)hasFutureAutomation {
-    double t = [self currentTimeForApply];
-    return [_positionXParam hasEventsAfter:t]
-        || [_positionYParam hasEventsAfter:t]
-        || [_positionZParam hasEventsAfter:t]
-        || [_orientationXParam hasEventsAfter:t]
-        || [_orientationYParam hasEventsAfter:t]
-        || [_orientationZParam hasEventsAfter:t];
-}
-
-- (void)ensureAutomationLink {
-    if (![NSThread isMainThread]) {
-        __weak typeof(self) weakSelf = self;
-        dispatch_async(dispatch_get_main_queue(), ^{ [weakSelf ensureAutomationLink]; });
-        return;
-    }
-    if (_automationTimer) return;
-    if (![self hasFutureAutomation]) return;
-    dispatch_source_t timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0,
-        dispatch_get_main_queue());
-    uint64_t intervalNs = (uint64_t)(NSEC_PER_SEC / 60.0);
-    uint64_t leewayNs = (uint64_t)(NSEC_PER_SEC / 240.0);
-    NSCAudioContext *ctx = self.context;
-    double now = ctx ? ctx.currentTime : 0.0;
-    if (now <= 0.0) {
-        _automationUsesHostTime = YES;
-        _automationAnchorHostTime = CACurrentMediaTime();
-        _automationAnchorAudioTime = 0.0;
-    } else {
-        _automationUsesHostTime = NO;
-        _automationAnchorHostTime = CACurrentMediaTime();
-        _automationAnchorAudioTime = now;
-    }
-    dispatch_source_set_timer(timer, dispatch_time(DISPATCH_TIME_NOW, 0), intervalNs, leewayNs);
-    __weak typeof(self) weakSelf = self;
-    dispatch_source_set_event_handler(timer, ^{
-        __strong typeof(weakSelf) s = weakSelf;
-        if (!s) return;
-        [s applySpatial];
-        if (![s hasFutureAutomation]) [s stopAutomationLink];
-    });
-    _automationTimer = timer;
-    dispatch_resume(timer);
-}
-
-- (void)stopAutomationLink {
-    if (_automationTimer) {
-        dispatch_source_cancel(_automationTimer);
-        _automationTimer = nil;
-    }
-    _automationUsesHostTime = NO;
-    _automationAnchorHostTime = 0;
-    _automationAnchorAudioTime = 0.0;
-}
-
-#pragma mark - Spatial state apply
-
-- (double)currentTimeForApply {
-    NSCAudioContext *ctx = self.context;
-    double t = ctx ? ctx.currentTime : 0.0;
-    if (t > 0.0) {
-        _automationUsesHostTime = NO;
-        _automationAnchorHostTime = CACurrentMediaTime();
-        _automationAnchorAudioTime = t;
-        return t;
-    }
-
-    if (!_automationTimer) return t;
-
-    double hostNow = CACurrentMediaTime();
-    if (!_automationUsesHostTime) {
-        _automationUsesHostTime = YES;
-        _automationAnchorHostTime = hostNow;
-        _automationAnchorAudioTime = 0.0;
-        return 0.0;
-    }
-
-    double synthetic = _automationAnchorAudioTime + (hostNow - _automationAnchorHostTime);
-    return synthetic >= 0.0 ? synthetic : 0.0;
-}
-
-- (void)readListenerStateAtTime:(double)t
-                      positionX:(double *)listenerX
-                      positionY:(double *)listenerY
-                      positionZ:(double *)listenerZ
-                       forwardX:(double *)forwardX
-                       forwardY:(double *)forwardY
-                       forwardZ:(double *)forwardZ
-                            upX:(double *)upX
-                            upY:(double *)upY
-                            upZ:(double *)upZ {
-    *listenerX = 0.0;
-    *listenerY = 0.0;
-    *listenerZ = 0.0;
-    *forwardX = 0.0;
-    *forwardY = 0.0;
-    *forwardZ = -1.0;
-    *upX = 0.0;
-    *upY = 1.0;
-    *upZ = 0.0;
-
-    NSCAudioContext *ctx = self.context;
-    if (!ctx) return;
-
-    *listenerX = [[ctx getListenerPositionXParam] valueAtTime:t];
-    *listenerY = [[ctx getListenerPositionYParam] valueAtTime:t];
-    *listenerZ = [[ctx getListenerPositionZParam] valueAtTime:t];
-    *forwardX = [[ctx getListenerForwardXParam] valueAtTime:t];
-    *forwardY = [[ctx getListenerForwardYParam] valueAtTime:t];
-    *forwardZ = [[ctx getListenerForwardZParam] valueAtTime:t];
-    *upX = [[ctx getListenerUpXParam] valueAtTime:t];
-    *upY = [[ctx getListenerUpYParam] valueAtTime:t];
-    *upZ = [[ctx getListenerUpZParam] valueAtTime:t];
-}
-
-- (double)coneAndDistanceGainForListenerX:(double)listenerX
-                                 listenerY:(double)listenerY
-                                 listenerZ:(double)listenerZ {
-    double dx = (double)_positionX - listenerX;
-    double dy = (double)_positionY - listenerY;
-    double dz = (double)_positionZ - listenerZ;
-    double dist = sqrt(dx * dx + dy * dy + dz * dz);
-
-    double ref = fmax(1e-6, (double)_refDistance);
-    double maxd = fmax(ref, (double)_maxDistance);
-    double rf = fmax(0.0, (double)_rolloffFactor);
-    double d = fmin(fmax(dist, ref), maxd);
-
-    double distGain = 1.0;
-    switch (_distanceModel) {
-        default:
-        case 0: // inverse
-            distGain = ref / (ref + rf * (d - ref));
-            break;
-        case 1: // linear
-            if (maxd <= ref) distGain = dist > maxd ? 0.0 : 1.0;
-            else distGain = 1.0 - rf * (d - ref) / (maxd - ref);
-            break;
-        case 2: // exponential
-            distGain = pow(d / ref, -rf);
-            break;
-    }
-    distGain = NSCClampDouble(distGain, 0.0, 1.0);
-
-    double sx = listenerX - (double)_positionX;
-    double sy = listenerY - (double)_positionY;
-    double sz = listenerZ - (double)_positionZ;
-    double slen = sqrt(sx * sx + sy * sy + sz * sz);
-    if (slen <= 1e-12) return distGain;
-
-    double ox = (double)_orientationX;
-    double oy = (double)_orientationY;
-    double oz = (double)_orientationZ;
-    NSCNormalizeVector3(&ox, &oy, &oz, 1.0, 0.0, 0.0);
-
-    double dot = (ox * sx + oy * sy + oz * sz) / slen;
-    dot = NSCClampDouble(dot, -1.0, 1.0);
-    double angDeg = acos(dot) * 180.0 / M_PI;
-
-    double inner = NSCClampDouble((double)_coneInnerAngle, 0.0, 360.0) * 0.5;
-    double outer = NSCClampDouble((double)_coneOuterAngle, 0.0, 360.0) * 0.5;
-    if (outer < inner) inner = outer;
-    double outGainV = NSCClampDouble((double)_coneOuterGain, 0.0, 1.0);
-
-    double coneGain = 1.0;
-    if (angDeg <= inner) {
-        coneGain = 1.0;
-    } else if (angDeg >= outer) {
-        coneGain = outGainV;
-    } else {
-        double denom = outer - inner;
-        if (denom <= 1e-12) coneGain = outGainV;
-        else {
-            double tt = (angDeg - inner) / denom;
-            coneGain = (1.0 - tt) + tt * outGainV;
-        }
-    }
-
-    return distGain * coneGain;
-}
-
-- (double)resolvedPanForListenerX:(double)listenerX
-                         listenerY:(double)listenerY
-                         listenerZ:(double)listenerZ
-                          forwardX:(double)forwardX
-                          forwardY:(double)forwardY
-                          forwardZ:(double)forwardZ
-                               upX:(double)upX
-                               upY:(double)upY
-                               upZ:(double)upZ {
-    if (fabs((double)_pan) > 1e-12) {
-        return NSCClampDouble((double)_pan, -1.0, 1.0);
-    }
-
-    double fx = forwardX;
-    double fy = forwardY;
-    double fz = forwardZ;
-    NSCNormalizeVector3(&fx, &fy, &fz, 0.0, 0.0, -1.0);
-
-    double ux = upX;
-    double uy = upY;
-    double uz = upZ;
-    NSCNormalizeVector3(&ux, &uy, &uz, 0.0, 1.0, 0.0);
-
-    double rxv = fy * uz - fz * uy;
-    double ryv = fz * ux - fx * uz;
-    double rzv = fx * uy - fy * ux;
-    NSCNormalizeVector3(&rxv, &ryv, &rzv, 1.0, 0.0, 0.0);
-
-    double relX = (double)_positionX - listenerX;
-    double relY = (double)_positionY - listenerY;
-    double relZ = (double)_positionZ - listenerZ;
-
-    double localX = relX * rxv + relY * ryv + relZ * rzv;
-    double localZ = relX * fx + relY * fy + relZ * fz;
-    double azimuth = NSCWrapPannerAzimuthDegrees(atan2(localX, localZ) * 180.0 / M_PI);
-    return NSCClampDouble(azimuth / 90.0, -1.0, 1.0);
-}
-
-- (void)applySpatial {
-    double t = [self currentTimeForApply];
-
-    _positionX = (float)[_positionXParam valueAtTime:t];
-    _positionY = (float)[_positionYParam valueAtTime:t];
-    _positionZ = (float)[_positionZParam valueAtTime:t];
-    _orientationX = (float)[_orientationXParam valueAtTime:t];
-    _orientationY = (float)[_orientationYParam valueAtTime:t];
-    _orientationZ = (float)[_orientationZParam valueAtTime:t];
-
-    double listenerX = 0.0;
-    double listenerY = 0.0;
-    double listenerZ = 0.0;
-    double forwardX = 0.0;
-    double forwardY = 0.0;
-    double forwardZ = -1.0;
-    double upX = 0.0;
-    double upY = 1.0;
-    double upZ = 0.0;
-    [self readListenerStateAtTime:t
-                        positionX:&listenerX
-                        positionY:&listenerY
-                        positionZ:&listenerZ
-                         forwardX:&forwardX
-                         forwardY:&forwardY
-                         forwardZ:&forwardZ
-                              upX:&upX
-                              upY:&upY
-                              upZ:&upZ];
-
-    double gain = [self coneAndDistanceGainForListenerX:listenerX
-                                              listenerY:listenerY
-                                              listenerZ:listenerZ];
-    double panVal = [self resolvedPanForListenerX:listenerX
-                                        listenerY:listenerY
-                                        listenerZ:listenerZ
-                                         forwardX:forwardX
-                                         forwardY:forwardY
-                                         forwardZ:forwardZ
-                                              upX:upX
-                                              upY:upY
-                                              upZ:upZ];
-
-    PanRender *r = ((NSCPanUnit *)_unit.AUAudioUnit).render;
-    atomic_store_explicit(&r->gain, (float)gain, memory_order_relaxed);
-    atomic_store_explicit(&r->azimuth, (float)(panVal * 90.0), memory_order_relaxed);
 }
 
 #pragma mark - Source attach / connect
 
 - (void)attachSource:(NSCAudioNode *)source output:(NSNumber *)output input:(NSNumber *)input {
-    [_input handleConnectFrom:source output:output input:nil];
+    [self handleConnectFrom:source output:output input:nil];
 }
 
 - (void)detachSource:(NSCAudioNode *)source {
-    [_input handleDisconnectFrom:source output:nil input:nil];
+    [self handleDisconnectFrom:source output:nil input:nil];
 }
 
 - (void)disconnectPanner {
     [self disconnect];
 }
 
-- (void)handleConnectFrom:(NSCAudioNode *)source output:(NSNumber *)output input:(NSNumber *)input {
-    [_input handleConnectFrom:source output:output input:nil];
-}
-
-- (void)handleDisconnectFrom:(NSCAudioNode *)source output:(NSNumber *)output input:(NSNumber *)input {
-    [_input handleDisconnectFrom:source output:output input:nil];
-}
-
 #pragma mark - Setters / getters
 
-- (void)setPan:(NSNumber *)p {
-    _pan = (float)NSCClampDouble([p doubleValue], -1.0, 1.0);
-    [self applySpatial];
-}
-
-- (void)setDistanceModel:(NSNumber *)v { _distanceModel = v.intValue; [self applySpatial]; }
-- (NSNumber *)getDistanceModel { return @(_distanceModel); }
+- (void)setPan:(NSNumber *)p { atomic_store(&_state->pan, MAX(-1.0, MIN(1.0, p.doubleValue))); }
+- (void)setDistanceModel:(NSNumber *)v { atomic_store(&_state->distanceModel, v.intValue); }
+- (NSNumber *)getDistanceModel { return @(atomic_load(&_state->distanceModel)); }
 
 - (void)setPanningModel:(NSNumber *)v {
-    int newPM = v.intValue == 1 ? 1 : 0;
-    if (newPM == _panningModel) return;
-
-    // HRTF renders as equalpower.
-    _panningModel = newPM;
-    [self applySpatial];
-    NSCLogDebug(@"NSCAudioPannerNode: setPanningModel -> %d", _panningModel);
+    int model = v.intValue == 1 ? 1 : 0;
+    if (model == 1 && !_state->hrtf) _state->hrtf = HRTFDatabaseForRate(_state->rate);
+    atomic_store(&_state->panningModel, model);
 }
-- (NSNumber *)getPanningModel { return @(_panningModel); }
+- (NSNumber *)getPanningModel { return @(atomic_load(&_state->panningModel)); }
 
-- (void)setRefDistance:(NSNumber *)v { _refDistance = [v floatValue]; [self applySpatial]; }
-- (NSNumber *)getRefDistance { return @((double)_refDistance); }
-- (void)setMaxDistance:(NSNumber *)v { _maxDistance = [v floatValue]; [self applySpatial]; }
-- (NSNumber *)getMaxDistance { return @((double)_maxDistance); }
-- (void)setRolloffFactor:(NSNumber *)v { _rolloffFactor = [v floatValue]; [self applySpatial]; }
-- (NSNumber *)getRolloffFactor { return @((double)_rolloffFactor); }
- 
-
- - (void)setConeInnerAngle:(NSNumber *)v { _coneInnerAngle = [v floatValue]; NSCLogDebug(@"NSCAudioPannerNode: setConeInnerAngle -> %f", _coneInnerAngle); [self applySpatial]; }
- - (NSNumber *)getConeInnerAngle { return @((double)_coneInnerAngle); }
- - (void)setConeOuterAngle:(NSNumber *)v { _coneOuterAngle = [v floatValue]; NSCLogDebug(@"NSCAudioPannerNode: setConeOuterAngle -> %f", _coneOuterAngle); [self applySpatial]; }
- - (NSNumber *)getConeOuterAngle { return @((double)_coneOuterAngle); }
- - (void)setConeOuterGain:(NSNumber *)v { _coneOuterGain = [v floatValue]; NSCLogDebug(@"NSCAudioPannerNode: setConeOuterGain -> %f", _coneOuterGain); [self applySpatial]; }
- - (NSNumber *)getConeOuterGain { return @((double)_coneOuterGain); }
+- (void)setRefDistance:(NSNumber *)v { atomic_store(&_state->refDistance, v.doubleValue); }
+- (NSNumber *)getRefDistance { return @(atomic_load(&_state->refDistance)); }
+- (void)setMaxDistance:(NSNumber *)v { atomic_store(&_state->maxDistance, v.doubleValue); }
+- (NSNumber *)getMaxDistance { return @(atomic_load(&_state->maxDistance)); }
+- (void)setRolloffFactor:(NSNumber *)v { atomic_store(&_state->rolloffFactor, v.doubleValue); }
+- (NSNumber *)getRolloffFactor { return @(atomic_load(&_state->rolloffFactor)); }
+- (void)setConeInnerAngle:(NSNumber *)v { atomic_store(&_state->coneInnerAngle, v.doubleValue); }
+- (NSNumber *)getConeInnerAngle { return @(atomic_load(&_state->coneInnerAngle)); }
+- (void)setConeOuterAngle:(NSNumber *)v { atomic_store(&_state->coneOuterAngle, v.doubleValue); }
+- (NSNumber *)getConeOuterAngle { return @(atomic_load(&_state->coneOuterAngle)); }
+- (void)setConeOuterGain:(NSNumber *)v { atomic_store(&_state->coneOuterGain, v.doubleValue); }
+- (NSNumber *)getConeOuterGain { return @(atomic_load(&_state->coneOuterGain)); }
 
 - (void)setPosition:(NSNumber *)x :(NSNumber *)y :(NSNumber *)z {
-    double now = self.context ? self.context.currentTime : 0.0;
-    [self.positionXParam setValueAtTime:x :@(now)];
-    [self.positionYParam setValueAtTime:y :@(now)];
-    [self.positionZParam setValueAtTime:z :@(now)];
-    NSCLogDebug(@"NSCAudioPannerNode: setPosition -> x=%f y=%f z=%f", [x doubleValue], [y doubleValue], [z doubleValue]);
-    [self applySpatial];
+    [self.positionXParam setValue:x];
+    [self.positionYParam setValue:y];
+    [self.positionZParam setValue:z];
 }
 
 - (void)setOrientation:(NSNumber *)x :(NSNumber *)y :(NSNumber *)z {
-    double now = self.context ? self.context.currentTime : 0.0;
-    [self.orientationXParam setValueAtTime:x :@(now)];
-    [self.orientationYParam setValueAtTime:y :@(now)];
-    [self.orientationZParam setValueAtTime:z :@(now)];
-    NSCLogDebug(@"NSCAudioPannerNode: setOrientation -> x=%f y=%f z=%f", [x doubleValue], [y doubleValue], [z doubleValue]);
-    [self applySpatial];
-}
-
-- (void)attachParamSink:(AVAudioNode *)sink {
-    [super attachParamSink:sink];
-    [self ensureAutomationLink];
-}
-
-- (void)applyAutomation {
-    [self applySpatial];
+    [self.orientationXParam setValue:x];
+    [self.orientationYParam setValue:y];
+    [self.orientationZParam setValue:z];
 }
 
 @end

@@ -183,10 +183,10 @@ bool NativeEngine::workletPush(WorkletNode &w, uint64_t frame, int64_t paramNs, 
     std::memcpy(slot, &frameValue, sizeof frameValue);
     words[ALIVE] = 1;
 
-    // The mixer already rendered each input at its own channelCount.
+    // The mixer already rendered each input at its computed channel count.
     const int stride = w.mixChannels;
     for (int i = 0; i < w.inputs; i++) {
-        const int want = w.inChannels[i];
+        const int want = w.inCount[i];
         const uint32_t count = withInputs && w.inActive[i] ? static_cast<uint32_t>(want) : 0u;
         words[w.inputCounts + i] = count;
         const float *mix = w.inMix.data() + static_cast<size_t>(i * stride * kQuantum);

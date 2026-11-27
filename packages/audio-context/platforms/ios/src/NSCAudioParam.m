@@ -3,13 +3,20 @@
 
 typedef NS_ENUM(NSInteger, ParamEventType) {
     ParamEventTypeSet = 0,
-    ParamEventTypeLinearRamp = 1
+    ParamEventTypeLinearRamp = 1,
+    ParamEventTypeExpRamp = 2,
+    // value: target, aux: time constant.
+    ParamEventTypeTarget = 3,
+    // curve values from time for aux seconds.
+    ParamEventTypeCurve = 4,
 };
 
 @interface ParamEvent : NSObject
 @property (nonatomic) ParamEventType type;
 @property (nonatomic) double time;
 @property (nonatomic) double value;
+@property (nonatomic) double aux;
+@property (nonatomic, strong) NSData *curve;
 - (instancetype)initWithType:(ParamEventType)type time:(double)time value:(double)value;
 @end
 
@@ -28,6 +35,9 @@ typedef struct {
     ParamEventType type;
     double time;
     double value;
+    double aux;
+    const float *curve;
+    NSUInteger curveLength;
 } NSCParamEventSnapshot;
 
 @implementation NSCAudioParam {
@@ -114,6 +124,43 @@ static inline void NSCAudioParam_insertSorted(NSMutableArray<ParamEvent *> *even
     [self notifyScheduleChanged];
 }
 
+- (void)exponentialRampToValueAtTime:(NSNumber *)value :(NSNumber *)time {
+    [_lock lock];
+    ParamEvent *ev = [[ParamEvent alloc] initWithType:ParamEventTypeExpRamp time:time.doubleValue value:value.doubleValue];
+    NSCAudioParam_insertSorted(_events, ev);
+    [_lock unlock];
+    [self notifyScheduleChanged];
+}
+
+- (void)setTargetAtTime:(NSNumber *)target :(NSNumber *)startTime :(NSNumber *)timeConstant {
+    [_lock lock];
+    ParamEvent *ev = [[ParamEvent alloc] initWithType:ParamEventTypeTarget time:startTime.doubleValue value:target.doubleValue];
+    ev.aux = timeConstant.doubleValue;
+    NSCAudioParam_insertSorted(_events, ev);
+    [_lock unlock];
+    [self notifyScheduleChanged];
+}
+
+- (void)setValueCurveAtTime:(NSData *)values :(NSNumber *)startTime :(NSNumber *)duration {
+    if (values.length < 2 * sizeof(float)) return;
+    [_lock lock];
+    const float *v = (const float *)values.bytes;
+    ParamEvent *ev = [[ParamEvent alloc] initWithType:ParamEventTypeCurve time:startTime.doubleValue value:v[values.length / sizeof(float) - 1]];
+    ev.aux = duration.doubleValue;
+    ev.curve = [values copy];
+    NSCAudioParam_insertSorted(_events, ev);
+    // The curve's last value holds from its end, as a set would.
+    ParamEvent *end = [[ParamEvent alloc] initWithType:ParamEventTypeSet time:startTime.doubleValue + duration.doubleValue value:ev.value];
+    NSCAudioParam_insertSorted(_events, end);
+    [_lock unlock];
+    [self notifyScheduleChanged];
+}
+
+- (double)computedValue {
+    double now = _context ? _context.currentTime : 0.0;
+    return [self valueAtTime:now];
+}
+
 - (void)cancelScheduledValues:(NSNumber *)time {
     [_lock lock];
     double t = time.doubleValue;
@@ -127,23 +174,30 @@ static inline void NSCAudioParam_insertSorted(NSMutableArray<ParamEvent *> *even
     [self notifyScheduleChanged];
 }
 
+// Holds the value automation reaches at `time`; a ramp running then ends there with it.
 - (void)cancelAndHoldAtTime:(NSNumber *)heldValue :(NSNumber *)time {
-
-    [_lock lock];
     double t = time.doubleValue;
-    double hv = heldValue.doubleValue;
+    double hv = [self scheduledValueAtTime:t];
+    [_lock lock];
+    ParamEventType cut = ParamEventTypeSet;
+    for (ParamEvent *e in _events) {
+        if (e.time >= t) { cut = e.type; break; }
+    }
     NSIndexSet *toRemove = [_events indexesOfObjectsPassingTest:^BOOL(ParamEvent *obj, NSUInteger idx, BOOL *stop) {
         return obj.time >= t;
     }];
-    if (toRemove.count > 0) {
-        [_events removeObjectsAtIndexes:toRemove];
-    }
-
-    ParamEvent *ev = [[ParamEvent alloc] initWithType:ParamEventTypeSet time:t value:hv];
-    [_events addObject:ev];
-    _currentValueInternal = hv;
+    if (toRemove.count > 0) [_events removeObjectsAtIndexes:toRemove];
+    ParamEventType held = cut == ParamEventTypeLinearRamp || cut == ParamEventTypeExpRamp ? cut : ParamEventTypeSet;
+    NSCAudioParam_insertSorted(_events, [[ParamEvent alloc] initWithType:held time:t value:hv]);
     [_lock unlock];
     [self notifyScheduleChanged];
+}
+
+- (double)scheduledValueAtTime:(double)t {
+    double v = 0.0;
+    double rate = _context ? _context.sampleRate : 0.0;
+    [self fillScheduled:t byFrame:NO sampleRate:(rate > 0.0 ? rate : 1.0) frameCount:1 into:&v];
+    return v;
 }
 
 - (NSMutableData *)inputData {
@@ -228,6 +282,69 @@ static BOOL AddInput(NSCParamInputBlock *in, int64_t first, NSInteger count, dou
     return AddInput(in, first, frameCount, outValues, kRate) || automated;
 }
 
+// The value at time t of the spec's automation timeline.
+static double EvaluateAt(const NSCParamEventSnapshot *e, NSUInteger count, double def, double t) {
+    // The last event at or before t, and the one after it.
+    NSInteger prev = -1;
+    NSUInteger lo = 0, hi = count;
+    while (lo < hi) {
+        NSUInteger mid = (lo + hi) >> 1;
+        if (e[mid].time <= t) lo = mid + 1; else hi = mid;
+    }
+    prev = (NSInteger)lo - 1;
+    NSUInteger next = lo;
+    // The value an event leaves behind, at its own time.
+    double base = def, baseTime = 0.0;
+    for (NSInteger k = 0; k <= prev; k++) {
+        const NSCParamEventSnapshot *ev = &e[k];
+        switch (ev->type) {
+            case ParamEventTypeTarget: {
+                // Settles from the value before it; the next event starts from wherever it got.
+                double endT = (NSUInteger)(k + 1) < count ? MIN(e[k + 1].time, t) : t;
+                double v0 = base;
+                base = ev->aux > 0.0 ? ev->value + (v0 - ev->value) * exp(-(endT - ev->time) / ev->aux) : ev->value;
+                baseTime = endT;
+                if ((NSUInteger)(k + 1) < count && e[k + 1].time <= t) continue;
+                return base;
+            }
+            case ParamEventTypeCurve: {
+                double dur = ev->aux;
+                double endT = ev->time + dur;
+                if (t < endT && k == prev) {
+                    NSUInteger n = ev->curveLength;
+                    double pos = dur > 0.0 ? (t - ev->time) / dur * (double)(n - 1) : (double)(n - 1);
+                    NSUInteger i0 = (NSUInteger)MAX(0.0, floor(pos));
+                    if (i0 >= n - 1) return ev->curve[n - 1];
+                    double f = pos - i0;
+                    return ev->curve[i0] + (ev->curve[i0 + 1] - ev->curve[i0]) * f;
+                }
+                base = ev->value;
+                baseTime = endT;
+                break;
+            }
+            default:
+                base = ev->value;
+                baseTime = ev->time;
+                break;
+        }
+    }
+    if (next < count) {
+        const NSCParamEventSnapshot *n = &e[next];
+        double t0 = prev >= 0 ? baseTime : 0.0, t1 = n->time;
+        if (prev >= 0 && e[prev].type == ParamEventTypeTarget) t0 = e[prev].time;
+        if (n->type == ParamEventTypeLinearRamp) {
+            double r = t1 <= t0 ? 1.0 : MAX(0.0, MIN(1.0, (t - t0) / (t1 - t0)));
+            return base + (n->value - base) * r;
+        }
+        if (n->type == ParamEventTypeExpRamp) {
+            if (base * n->value <= 0.0) return base;
+            double r = t1 <= t0 ? 1.0 : MAX(0.0, MIN(1.0, (t - t0) / (t1 - t0)));
+            return base * pow(n->value / base, r);
+        }
+    }
+    return base;
+}
+
 // byFrame: frame i is at (start + i) / sampleRate, so an event on a frame lands exactly on it.
 - (BOOL)fillScheduled:(double)start
               byFrame:(BOOL)byFrame
@@ -265,62 +382,21 @@ static BOOL AddInput(NSCParamInputBlock *in, int64_t first, NSInteger count, dou
         evts[i].type = e.type;
         evts[i].time = e.time;
         evts[i].value = e.value;
+        evts[i].aux = e.aux;
+        evts[i].curve = (const float *)e.curve.bytes;
+        evts[i].curveLength = e.curve.length / sizeof(float);
     }
     [_lock unlock];
     
+    // Curves and targets read their data, which the events keep; snapshot them under the lock.
     if (kRate) {
-        double v = def;
-        NSInteger firstAfter = (NSInteger)evtCount;
-        for (NSUInteger i = 0; i < evtCount; ++i) {
-            if (evts[i].time > startTime) { firstAfter = (NSInteger)i; break; }
-        }
-        if (firstAfter == 0) v = def;
-        else if (firstAfter >= (NSInteger)evtCount) v = evts[evtCount - 1].value;
-        else {
-            double prevT = evts[firstAfter - 1].time;
-            double prevV = evts[firstAfter - 1].value;
-            ParamEventType nextType = evts[firstAfter].type;
-            double nextT = evts[firstAfter].time;
-            double nextV = evts[firstAfter].value;
-            if (nextType == ParamEventTypeLinearRamp) {
-                double ratio = nextT <= prevT ? 1.0 : (startTime - prevT) / (nextT - prevT);
-                if (ratio < 0.0) ratio = 0.0; if (ratio > 1.0) ratio = 1.0;
-                v = prevV + (nextV - prevV) * ratio;
-            } else {
-                v = prevV;
-            }
-        }
+        double v = EvaluateAt(evts, evtCount, def, startTime);
         for (NSInteger i = 0; i < frameCount; ++i) outValues[i] = v;
-        if (evts != stackEvents) free(evts);
-        return YES;
-    }
-
-    NSInteger nextIdx = 0;
-    NSInteger prevIdx = -1;
-    for (NSInteger i = 0; i < frameCount; ++i) {
-        double t = byFrame ? (start + (double)i) / sampleRate : startTime + (double)i / sampleRate;
-        while (nextIdx < (NSInteger)evtCount && evts[nextIdx].time <= t) {
-            prevIdx = nextIdx;
-            nextIdx += 1;
+    } else {
+        for (NSInteger i = 0; i < frameCount; ++i) {
+            double t = byFrame ? (start + (double)i) / sampleRate : startTime + (double)i / sampleRate;
+            outValues[i] = EvaluateAt(evts, evtCount, def, t);
         }
-        double value;
-        if (prevIdx < 0) value = def;
-        else if (nextIdx >= (NSInteger)evtCount) value = evts[prevIdx].value;
-        else {
-            double prevT = evts[prevIdx].time;
-            double prevV = evts[prevIdx].value;
-            ParamEventType nextType = evts[nextIdx].type;
-            double nextT = evts[nextIdx].time;
-            double nextV = evts[nextIdx].value;
-            if (nextType == ParamEventTypeLinearRamp) {
-                double ratio = nextT <= prevT ? 1.0 : (t - prevT) / (nextT - prevT);
-                if (ratio < 0.0) ratio = 0.0; if (ratio > 1.0) ratio = 1.0;
-                value = prevV + (nextV - prevV) * ratio;
-            } else {
-                value = prevV;
-            }
-        }
-        outValues[i] = value;
     }
     if (evts != stackEvents) free(evts);
     return YES;

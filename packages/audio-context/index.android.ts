@@ -113,6 +113,9 @@ function makeAndroidHooks(native: org.nativescript.audiocontext.AudioParam): Aud
 		nativeGetValue() {
 			return native.getValue();
 		},
+		nativeComputedValue() {
+			return native.getComputedValue();
+		},
 		nativeSetAutomationRate(rate) {
 			native.setAutomationRate(rate);
 		},
@@ -1080,11 +1083,11 @@ export class OfflineAudioContext extends BaseAudioContext {
 	createDynamicsCompressor(options?: DynamicsCompressorOptions) {
 		return new DynamicsCompressorNode(this as never, options ?? {});
 	}
-	createChannelSplitter(options?: ChannelSplitterOptions) {
-		return new ChannelSplitterNode(this as never, options ?? {});
+	createChannelSplitter(numberOfOutputs?: number | ChannelSplitterOptions) {
+		return new ChannelSplitterNode(this as never, typeof numberOfOutputs === 'number' ? { numberOfOutputs } : (numberOfOutputs ?? {}));
 	}
-	createChannelMerger(options?: ChannelMergerOptions) {
-		return new ChannelMergerNode(this as never, options ?? {});
+	createChannelMerger(numberOfInputs?: number | ChannelMergerOptions) {
+		return new ChannelMergerNode(this as never, typeof numberOfInputs === 'number' ? { numberOfInputs } : (numberOfInputs ?? {}));
 	}
 	createPeriodicWave(real: Float32Array | number[], imag: Float32Array | number[], options?: { disableNormalization?: boolean }) {
 		return new PeriodicWave(this as never, { real, imag, disableNormalization: options?.disableNormalization });
@@ -1220,6 +1223,10 @@ export class AudioWorkletNode extends AudioNode {
 			throw domError('NotSupportedError', 'AudioWorkletNode: this runtime copies SharedArrayBuffers passed to native code');
 		}
 		this[native_] = native;
+		const config = options as any;
+		if (config.channelCount !== undefined) this.channelCount = config.channelCount;
+		if (config.channelCountMode !== undefined) this.channelCountMode = config.channelCountMode;
+		if (config.channelInterpretation !== undefined) this.channelInterpretation = config.channelInterpretation;
 		this._ring = ring;
 		this._numberOfInputs = numberOfInputs;
 		this._numberOfOutputs = numberOfOutputs;
@@ -1336,6 +1343,18 @@ export class AudioContext extends BaseAudioContext {
 		return new MediaElementAudioSourceNode(this, mediaElement);
 	}
 
+	createMediaStreamSource(_stream: any): never {
+		throw domError('NotSupportedError', 'AudioContext.createMediaStreamSource: NativeScript has no MediaStream');
+	}
+
+	createMediaStreamTrackSource(_track: any): never {
+		throw domError('NotSupportedError', 'AudioContext.createMediaStreamTrackSource: NativeScript has no MediaStream');
+	}
+
+	createMediaStreamDestination(_options?: any): never {
+		throw domError('NotSupportedError', 'AudioContext.createMediaStreamDestination: NativeScript has no MediaStream');
+	}
+
 	createSourceNodeFromPlayer(playerNative: any): MediaElementAudioSourceNode | null {
 		try {
 			const native: any = this.native;
@@ -1405,11 +1424,11 @@ export class AudioContext extends BaseAudioContext {
 	createDynamicsCompressor(options?: DynamicsCompressorOptions) {
 		return new DynamicsCompressorNode(this as never, options ?? {});
 	}
-	createChannelSplitter(options?: ChannelSplitterOptions) {
-		return new ChannelSplitterNode(this as never, options ?? {});
+	createChannelSplitter(numberOfOutputs?: number | ChannelSplitterOptions) {
+		return new ChannelSplitterNode(this as never, typeof numberOfOutputs === 'number' ? { numberOfOutputs } : (numberOfOutputs ?? {}));
 	}
-	createChannelMerger(options?: ChannelMergerOptions) {
-		return new ChannelMergerNode(this as never, options ?? {});
+	createChannelMerger(numberOfInputs?: number | ChannelMergerOptions) {
+		return new ChannelMergerNode(this as never, typeof numberOfInputs === 'number' ? { numberOfInputs } : (numberOfInputs ?? {}));
 	}
 	createPeriodicWave(real: Float32Array | number[], imag: Float32Array | number[], options?: { disableNormalization?: boolean }) {
 		return new PeriodicWave(this as never, { real, imag, disableNormalization: options?.disableNormalization });
@@ -1429,7 +1448,7 @@ export class AudioContext extends BaseAudioContext {
 		if (this._state === 'closed' || this._closing) return Promise.reject(domError('InvalidStateError', 'AudioContext.resume: the context is closed'));
 		return new Promise((resolve, reject) => {
 			const ref = new WeakRef(this);
-			AudioContext.getInstance().resumeAsync(
+			this.native.resumeAsync(
 				new org.nativescript.audiocontext.AudioContext.AsyncCallback({
 					onComplete(ok) {
 						if (ok) {
@@ -1451,7 +1470,7 @@ export class AudioContext extends BaseAudioContext {
 		if (this._state === 'closed' || this._closing) return Promise.reject(domError('InvalidStateError', 'AudioContext.suspend: the context is closed'));
 		return new Promise((resolve, reject) => {
 			const ref = new WeakRef(this);
-			AudioContext.getInstance().suspendAsync(
+			this.native.suspendAsync(
 				new org.nativescript.audiocontext.AudioContext.AsyncCallback({
 					onComplete(ok) {
 						if (ok) {

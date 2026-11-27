@@ -83,6 +83,10 @@ declare class NSCAudioBufferSourceNode extends NSCAudioScheduledSourceNode {
 
 	buffer: NSCAudioBuffer;
 
+	loopStart: number;
+
+	loopEnd: number;
+
 	loop: boolean;
 
 	constructor(o: { context: NSCAudioContext; buffer: NSCAudioBuffer });
@@ -427,6 +431,14 @@ declare class NSCAudioParam extends NSObject {
 
 	linearRampToValueAtTime(value: number, time: number): void;
 
+	exponentialRampToValueAtTime(value: number, time: number): void;
+
+	setTargetAtTime(target: number, startTime: number, timeConstant: number): void;
+
+	setValueCurveAtTime(values: NSData, startTime: number, duration: number): void;
+
+	computedValue(): number;
+
 	setValue(value: number): void;
 
 	setValueAtTime(value: number, time: number): void;
@@ -581,7 +593,7 @@ declare class NSCDynamicsCompressorNode extends NSCAudioNode {
 
 	readonly ratioParam: NSCAudioParam;
 
-	readonly reductionParam: NSCAudioParam;
+	readonly reduction: number;
 
 	readonly releaseParam: NSCAudioParam;
 

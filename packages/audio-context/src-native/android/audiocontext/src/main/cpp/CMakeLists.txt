@@ -38,6 +38,8 @@ target_include_directories(native-audio PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/thir
 find_library(log-lib log)
 
 target_include_directories(native-audio PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+# Shared with the iOS plugin (hrtf_kemar.h).
+target_include_directories(native-audio PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../common)
 
 if (HAS_OBOE)
     target_link_libraries(native-audio PRIVATE oboe ${log-lib} android)

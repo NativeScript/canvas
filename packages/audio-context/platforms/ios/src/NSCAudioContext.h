@@ -43,6 +43,7 @@ static inline double NSCContextFrame(double sampleTime, const double *timeline) 
 @property (nonatomic, strong, readonly) NSCAudioNode *destination;
 @property (nonatomic, readonly) double sampleRate;
 @property (nonatomic, readonly) double currentTime;
+@property (nonatomic, readonly) BOOL isOffline;
 @property (nonatomic, readonly) double baseLatency;
 @property (nonatomic, readonly) double outputLatency;
 @property (nonatomic, readonly) AVAudioFormat *format;
@@ -79,6 +80,8 @@ static inline double NSCContextFrame(double sampleTime, const double *timeline) 
 - (void)unregisterPendingNode:(NSCAudioBufferSourceNode *)node;
 - (void)resumeAllPendingNodes;
 - (void)ensureMainMixerConnectedToOutput;
+/// Runs `block` with the engine stopped, holding the realtime output for that long.
+- (void)whileStopped:(void (NS_NOESCAPE ^)(void))block;
 - (void)detachNode:(AVAudioNode *)node fromEngine:(AVAudioEngine *)engine;
 - (BOOL)isNode:(AVAudioNode *)node attachedToEngine:(AVAudioEngine *)engine;
 

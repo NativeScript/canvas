@@ -39,6 +39,10 @@ typedef struct {
     float *inQ;
     float *outQ;
     BOOL inSilent[16];
+    // Each input's computed channels this quantum, from its port's last mix (ports retained).
+    NSInteger inQuantum[16];
+    const _Atomic UInt32 *inMixed[16];
+    CFTypeRef inPortRefs[16];
     // One render call's pulled inputs and rendered outputs, `maxFrames` per channel.
     float *pulled;
     float *rendered;
@@ -76,7 +80,7 @@ static BOOL PushRequest(WorkletRender *r, uint64_t requestFrame, double time) {
     memcpy(slot + FRAME, &frame, sizeof frame);
     ((uint32_t *)slot)[ALIVE] = 1;
     for (NSInteger i = 0; i < r->inputs; i++) {
-        uint32_t count = r->inSilent[i] ? 0 : (uint32_t)r->inChannels[i];
+        uint32_t count = r->inSilent[i] ? 0 : (uint32_t)MAX(1, MIN(r->inQuantum[i], MAX_CHANNELS));
         ((uint32_t *)slot)[r->inputCounts + i] = count;
         for (uint32_t c = 0; c < count; c++) {
             memcpy(slot + r->inputData + (i * MAX_CHANNELS + c) * QUANTUM, InQ(r, i, c), QUANTUM * sizeof(float));
@@ -188,21 +192,19 @@ static void EndQuantum(WorkletRender *r) {
     }
     r->nextFrame += QUANTUM;
     r->position = 0;
-    for (NSInteger i = 0; i < r->inputs; i++) r->inSilent[i] = YES;
+    for (NSInteger i = 0; i < r->inputs; i++) {
+        r->inSilent[i] = YES;
+        r->inQuantum[i] = 0;
+    }
 }
 
-// Web Audio "speakers" mixing from the port's channels; AVAudioMixerNode pans equal-power instead.
+// The port mixed to the computed channels and fills the rest with silence.
 static void CopyInput(WorkletRender *r, NSInteger i, NSInteger at, NSInteger from, NSInteger n) {
-    NSInteger want = r->inChannels[i], have = r->inPort[i];
-    if (have == 2 && want == 1) {
-        float *dst = InQ(r, i, 0) + at;
-        const float *left = Pulled(r, i, 0) + from, *right = Pulled(r, i, 1) + from;
-        for (NSInteger k = 0; k < n; k++) dst[k] = 0.5f * (left[k] + right[k]);
-        return;
-    }
-    for (NSInteger c = 0; c < want; c++) {
-        memcpy(InQ(r, i, c) + at, Pulled(r, i, MIN(c, have - 1)) + from, n * sizeof(float));
-    }
+    for (NSInteger c = 0; c < r->inPort[i]; c++) memcpy(InQ(r, i, c) + at, Pulled(r, i, c) + from, n * sizeof(float));
+}
+
+static NSInteger MixedChannels(WorkletRender *r, NSInteger i) {
+    return r->inMixed[i] ? (NSInteger)atomic_load_explicit(r->inMixed[i], memory_order_acquire) : r->inChannels[i];
 }
 
 static void DownmixOutputs(WorkletRender *r, AUAudioFrameCount frames) {
@@ -247,8 +249,9 @@ static void Process(WorkletRender *r, const AudioTimeStamp *ts, AUAudioFrameCoun
         // The context renders one quantum per call; a short last one is padded.
         for (NSInteger i = 0; i < r->inputs; i++) {
             r->inSilent[i] = silent[i];
+            r->inQuantum[i] = MixedChannels(r, i);
             CopyInput(r, i, 0, 0, MIN(frames, QUANTUM));
-            for (NSInteger c = 0; c < r->inChannels[i]; c++) {
+            for (NSInteger c = 0; c < r->inPort[i]; c++) {
                 memset(InQ(r, i, c) + frames, 0, (QUANTUM - MIN(frames, QUANTUM)) * sizeof(float));
             }
         }
@@ -262,7 +265,10 @@ static void Process(WorkletRender *r, const AudioTimeStamp *ts, AUAudioFrameCoun
     while (done < frames) {
         AUAudioFrameCount n = (AUAudioFrameCount)MIN((NSInteger)(QUANTUM - r->position), (NSInteger)(frames - done));
         for (NSInteger i = 0; i < r->inputs; i++) {
-            if (!silent[i]) r->inSilent[i] = NO;
+            if (!silent[i]) {
+                r->inSilent[i] = NO;
+                r->inQuantum[i] = MAX(r->inQuantum[i], MixedChannels(r, i));
+            }
             CopyInput(r, i, r->position, done, n);
         }
         for (NSInteger o = 0; o < r->outputs; o++) {
@@ -370,6 +376,7 @@ static NSArray<AVAudioFormat *> *pendingOutputs;
     free(r->inQ);
     free(r->outQ);
     if (r->params) CFRelease(r->params);
+    for (NSInteger i = 0; i < MAX_PORTS; i++) if (r->inPortRefs[i]) CFRelease(r->inPortRefs[i]);
     free(r);
 }
 
@@ -525,8 +532,8 @@ static AudioComponentDescription TapDescription(void) {
     NSMutableArray<AVAudioFormat *> *outFormats = [NSMutableArray array];
     for (NSInteger i = 0; i < inputs; i++) {
         inCounts[i] = MAX(1, MIN(inputChannels[i].integerValue, MAX_CHANNELS));
-        // Each input's channel mixer gives it exactly channelCount channels.
-        [inFormats addObject:ChannelFormat(sampleRate, inCounts[i])];
+        // Wide enough for any computedNumberOfChannels; the port mixes per the channel config.
+        [inFormats addObject:ChannelFormat(sampleRate, MAX_CHANNELS)];
     }
     for (NSInteger o = 0; o < outputs; o++) {
         outCounts[o] = MAX(1, MIN(outputChannels[o].integerValue, MAX_CHANNELS));
@@ -586,7 +593,7 @@ static AudioComponentDescription TapDescription(void) {
     r->outQ = calloc((size_t)MAX(outputs, 1) * MAX_CHANNELS * QUANTUM, sizeof(float));
     r->position = 0;
     r->lowWater = UINT32_MAX;
-    r->offline = context.engine.isInManualRenderingMode;
+    r->offline = context.isOffline;
     r->sampleRate = sampleRate;
 
     NSMutableArray<NSCAudioParam *> *params = [NSMutableArray array];
@@ -607,10 +614,13 @@ static AudioComponentDescription TapDescription(void) {
     AVAudioEngine *engine = context.engine;
     if ([context isKindOfClass:[NSCOfflineAudioContext class]]) [(NSCOfflineAudioContext *)context willConnect];
     [engine attachNode:unit];
+    if (engine.isRunning) NSCEnsureAllocated(unit);
     NSMutableArray<NSCAudioNode *> *ports = [NSMutableArray array];
     for (NSInteger i = 0; i < inputs; i++) {
-        NSCChannelMixerNode *port = [[NSCChannelMixerNode alloc] initWithContext:context mode:NSCMixModeSum channels:inCounts[i] discrete:NO];
+        NSCChannelMixerNode *port = [[NSCChannelMixerNode alloc] initWithContext:context mode:NSCMixModeSum channels:MAX_CHANNELS discrete:NO];
         if (!port) continue;
+        r->inMixed[i] = [port mixedChannels];
+        r->inPortRefs[i] = CFBridgingRetain(port);
         @try {
             [engine connect:port.avNode to:unit fromBus:0 toBus:(AVAudioNodeBus)i format:inFormats[i]];
         } @catch (NSException *e) {
@@ -634,6 +644,7 @@ static AudioComponentDescription TapDescription(void) {
             tapUnit.render = r;
             tapUnit.output = o;
             [engine attachNode:tap];
+            if (engine.isRunning) NSCEnsureAllocated(tap);
             [taps addObject:tap];
             [points addObject:[[AVAudioConnectionPoint alloc] initWithNode:tap bus:0]];
         }
@@ -655,6 +666,7 @@ static AudioComponentDescription TapDescription(void) {
         _paramMixer = mixer;
         _paramFormat = paramFormat;
     }
+    [self channelConfigChanged];
     return self;
 }
 
@@ -693,6 +705,12 @@ static AudioComponentDescription TapDescription(void) {
     }
 }
 
+- (void)channelConfigChanged {
+    for (NSCChannelMixerNode *port in _inputPorts) {
+        [port configureCount:self.channelCount mode:self.channelCountMode discrete:self.channelInterpretation == 1];
+    }
+}
+
 - (void)handleConnectFrom:(NSCAudioNode *)source output:(NSNumber *)output input:(NSNumber *)input {
     NSInteger index = input ? input.integerValue : 0;
     if (index < 0 || index >= (NSInteger)_inputPorts.count) return;
@@ -712,7 +730,7 @@ static AudioComponentDescription TapDescription(void) {
 - (void)handleConnectedTo:(NSCAudioNode *)destination output:(NSNumber *)output input:(NSNumber *)input {
     [super handleConnectedTo:destination output:output input:input];
     NSCAudioContext *ctx = self.context;
-    if (!ctx || ctx.engine.isInManualRenderingMode) return;
+    if (!ctx || ctx.isOffline) return;
     if (!_active) {
         _active = YES;
         [ctx incrementActiveCount];

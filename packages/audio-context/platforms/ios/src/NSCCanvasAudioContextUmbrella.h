@@ -22,6 +22,7 @@
 #import "NSCConvolverNode.h"
 #import "NSCDynamicsCompressorNode.h"
 #import "NSCChannelMixerNode.h"
+#import "NSCProcessorNode.h"
 #import "NSCChannelSplitterNode.h"
 #import "NSCChannelMergerNode.h"
 #import "NSCPeriodicWave.h"

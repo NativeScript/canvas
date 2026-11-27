@@ -1,16 +1,15 @@
 #import <Foundation/Foundation.h>
-#import "NSCAudioNode.h"
+#import "NSCProcessorNode.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 @class NSCAudioContext;
 
-@interface NSCIIRFilterNode : NSCAudioNode
+@interface NSCIIRFilterNode : NSCProcessorNode
 
 - (instancetype)initWithContext:(NSCAudioContext *)context
                     feedforward:(NSArray<NSNumber *> *)feedforward
-                       feedback:(NSArray<NSNumber *> *)feedback NS_DESIGNATED_INITIALIZER;
-- (instancetype)initWithContext:(NSCAudioContext *)context node:(nullable AVAudioNode *)node NS_UNAVAILABLE;
+                       feedback:(NSArray<NSNumber *> *)feedback;
 
 - (void)getFrequencyResponse:(NSData *)frequencyHzData
                     magResponse:(NSMutableData *)magResponse

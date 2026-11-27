@@ -38,6 +38,10 @@ import {
 	unmarkMediaElementUsed,
 	resolveNativePlayer,
 	throwInvalidMediaElement,
+	applyConvolverOptions,
+	AudioNodeChannelOptions,
+	CHANNEL_RULES,
+	checkChannelSetting,
 } from './common';
 import { File, knownFolders } from '@nativescript/core';
 import { AUDIO_WORKLET_SCOPE } from './audio-worklet-scope';
@@ -89,8 +93,21 @@ function makeIOSHooks(native: NSCAudioParam): AudioParamHooks {
 		nativeCancelAndHold(v, t) {
 			native.cancelAndHoldAtTime(v, t);
 		},
+		nativeScheduleExpRamp(v, t) {
+			native.exponentialRampToValueAtTime(v, t);
+		},
+		nativeScheduleTarget(v, t, c) {
+			native.setTargetAtTime(v, t, c);
+		},
+		nativeScheduleCurve(values, t, d) {
+			const copy = values.slice();
+			native.setValueCurveAtTime(copy.buffer as never, t, d);
+		},
 		nativeGetValue() {
 			return native.value;
+		},
+		nativeComputedValue() {
+			return native.computedValue();
 		},
 		nativeSetAutomationRate(rate) {
 			native.automationRate = rate;
@@ -100,17 +117,52 @@ function makeIOSHooks(native: NSCAudioParam): AudioParamHooks {
 export class AudioParam extends AudioParamBase {
 	private [native_]: NSCAudioParam;
 
-	constructor(a?: any, b?: any) {
+	private _range: ParamRange;
+
+	constructor(a?: any, b?: any, range?: ParamRange) {
 		if (a !== nativeCtor_ || !(b instanceof NSCAudioParam)) {
 			throw new TypeError('Illegal constructor.');
 		}
 		super(makeIOSHooks(b), b.value);
 		this[native_] = b;
+		this._range = range ?? {};
+		if (this._range.fixedRate) super.automationRate = this._range.fixedRate;
 	}
 
 	get native() {
 		return this[native_];
 	}
+
+	get defaultValue(): number {
+		return this._range.defaultValue ?? this[native_].value;
+	}
+
+	get minValue(): number {
+		return this._range.min ?? -FLT_MAX;
+	}
+
+	get maxValue(): number {
+		return this._range.max ?? FLT_MAX;
+	}
+
+	get automationRate(): string {
+		return super.automationRate;
+	}
+
+	set automationRate(v: string) {
+		if (v !== 'a-rate' && v !== 'k-rate') return;
+		if (this._range.fixedRate && v !== this._range.fixedRate) throw domError('InvalidStateError', `this AudioParam is always ${this._range.fixedRate}`);
+		super.automationRate = v;
+	}
+}
+
+const FLT_MAX = 3.4028234663852886e38;
+
+interface ParamRange {
+	defaultValue?: number;
+	min?: number;
+	max?: number;
+	fixedRate?: 'a-rate' | 'k-rate';
 }
 
 const COUNT_MODES = ['max', 'clamped-max', 'explicit'];
@@ -123,6 +175,40 @@ export class AudioNode extends AudioNodeBase {
 
 	constructor(context: NativeBaseAudioContext) {
 		super(context);
+	}
+
+	get numberOfInputs(): number {
+		return this instanceof AudioScheduledSourceNode || this instanceof MediaElementAudioSourceNode ? 0 : 1;
+	}
+
+	get numberOfOutputs(): number {
+		return this instanceof AudioDestinationNode ? 0 : 1;
+	}
+
+	/** AudioNodeOptions, applied once the native node exists. */
+	protected _applyNodeOptions(options?: AudioNodeChannelOptions) {
+		if (!options) return;
+		if (options.channelCount !== undefined) this.channelCount = options.channelCount;
+		if (options.channelCountMode !== undefined) this.channelCountMode = options.channelCountMode;
+		if (options.channelInterpretation !== undefined) this.channelInterpretation = options.channelInterpretation;
+	}
+
+	private _checkChannel(prop: 'channelCount' | 'channelCountMode' | 'channelInterpretation', value: any) {
+		if (this instanceof AudioDestinationNode) {
+			if (prop === 'channelCount' && this.context instanceof OfflineAudioContext && value !== this.channelCount) throw domError('InvalidStateError', 'OfflineAudioContext destination channelCount cannot change');
+			if (prop === 'channelCount' && value > this.maxChannelCount) throw domError('IndexSizeError', `channelCount ${value} is above maxChannelCount`);
+		}
+		checkChannelSetting(this._channelRule(), prop, value, this.channelCount, domError);
+	}
+
+	private _channelRule() {
+		if (this instanceof PannerNode) return CHANNEL_RULES.PannerNode;
+		if (this instanceof StereoPannerNode) return CHANNEL_RULES.StereoPannerNode;
+		if (this instanceof ConvolverNode) return CHANNEL_RULES.ConvolverNode;
+		if (this instanceof DynamicsCompressorNode) return CHANNEL_RULES.DynamicsCompressorNode;
+		if (this instanceof ChannelSplitterNode) return CHANNEL_RULES.ChannelSplitterNode;
+		if (this instanceof ChannelMergerNode) return CHANNEL_RULES.ChannelMergerNode;
+		return undefined;
 	}
 
 	// The Web Audio defaults for this node's kind.
@@ -145,8 +231,8 @@ export class AudioNode extends AudioNodeBase {
 	}
 
 	set channelCount(value: number) {
-		const count = Math.floor(Number(value));
-		if (!(count >= 1 && count <= 32)) throw domError('NotSupportedError', `AudioNode.channelCount: ${value} is out of range`);
+		const count = Math.floor(value);
+		this._checkChannel('channelCount', count);
 		this._channelCount = count;
 		this._applyChannelConfig(count, -1, -1);
 	}
@@ -158,6 +244,7 @@ export class AudioNode extends AudioNodeBase {
 	set channelCountMode(value: string) {
 		const mode = COUNT_MODES.indexOf(value);
 		if (mode < 0) return;
+		this._checkChannel('channelCountMode', value);
 		this._channelCountMode = value;
 		this._applyChannelConfig(-1, mode, -1);
 	}
@@ -169,6 +256,7 @@ export class AudioNode extends AudioNodeBase {
 	set channelInterpretation(value: string) {
 		const interpretation = INTERPRETATIONS.indexOf(value);
 		if (interpretation < 0) return;
+		this._checkChannel('channelInterpretation', value);
 		this._channelInterpretation = value;
 		this._applyChannelConfig(-1, -1, interpretation);
 	}
@@ -227,9 +315,12 @@ export class AudioBuffer {
 			this[native_] = buffer;
 		} else {
 			const opts = options as { length: number; numberOfChannels?: number; sampleRate?: number };
-			const length = Math.max(0, opts.length | 0);
-			const ch = opts.numberOfChannels != null ? Math.max(1, opts.numberOfChannels | 0) : 1;
-			const sr = opts.sampleRate != null ? opts.sampleRate : 48000;
+			const length = opts.length | 0;
+			const ch = opts.numberOfChannels ?? 1;
+			const sr = opts.sampleRate ?? 48000;
+			if (!(ch >= 1 && ch <= 32)) throw domError('NotSupportedError', `AudioBuffer: numberOfChannels ${ch} is outside 1 to 32`);
+			if (!(length >= 1)) throw domError('NotSupportedError', `AudioBuffer: length ${opts.length} must be at least 1`);
+			if (!(sr >= 3000 && sr <= 768000)) throw domError('NotSupportedError', `AudioBuffer: sampleRate ${sr} is outside 3000 to 768000`);
 
 			this[native_] = NSCAudioBuffer.alloc().initWithLengthNumberOfChannelsSampleRate(length, ch, sr);
 		}
@@ -253,7 +344,7 @@ export class AudioBuffer {
 	}
 
 	getChannelData(channel: number): Float32Array | null {
-		if (channel < 0 || channel >= this.numberOfChannels) return null;
+		if (!(channel >= 0 && channel < this.numberOfChannels)) throw domError('IndexSizeError', `getChannelData: channel ${channel} is out of range`);
 		const native = this.native as any;
 		const audioModule = (globalThis as any)?.AudioModule;
 
@@ -276,6 +367,7 @@ export class AudioBuffer {
 
 	copyFromChannel(dest: Float32Array, channel: number, startInChannel: number | AudioBufferCopyOptions = 0) {
 		if (!dest) return;
+		if (!(channel >= 0 && channel < this.numberOfChannels)) throw domError('IndexSizeError', `copyFromChannel: channel ${channel} is out of range`);
 		const native = this.native;
 		const options = resolveAudioBufferCopyOptions(dest, startInChannel);
 		native.copyFromChannelWithByteOffsetByteLength(dest.buffer as any, channel, options.startInChannel, options.byteOffset, dest.byteLength);
@@ -283,6 +375,7 @@ export class AudioBuffer {
 
 	copyToChannel(source: Float32Array, channel: number, startInChannel: number | AudioBufferCopyOptions = 0) {
 		if (!source) return;
+		if (!(channel >= 0 && channel < this.numberOfChannels)) throw domError('IndexSizeError', `copyToChannel: channel ${channel} is out of range`);
 		const native = this.native;
 		const options = resolveAudioBufferCopyOptions(source, startInChannel);
 		native.copyToChannelWithByteOffsetByteLength(source.buffer as any, channel, options.startInChannel, options.byteOffset, source.byteLength);
@@ -300,6 +393,7 @@ export class GainNode extends AudioNode {
 		if (typeof options?.gain === 'number') {
 			this._native.gain = options.gain;
 		}
+		this._applyNodeOptions(options);
 	}
 	get native() {
 		return this._native;
@@ -308,7 +402,7 @@ export class GainNode extends AudioNode {
 		if (!this._gainParam) {
 			const gain = this._native.gainParam;
 			if (this._initialGain !== 1) gain.setValue(this._initialGain);
-			this._gainParam = new AudioParam(nativeCtor_, gain);
+			this._gainParam = new AudioParam(nativeCtor_, gain, { defaultValue: 1 });
 		}
 		return this._gainParam;
 	}
@@ -322,28 +416,30 @@ export class BiquadFilterNode extends AudioNode {
 	private _detuneParam!: AudioParam;
 	constructor(context: NativeBaseAudioContext, options: { type?: string; frequency?: number; Q?: number; gain?: number } = {}) {
 		super(context);
-		const initialFreq = typeof options?.frequency === 'number' ? options!.frequency! : 440;
+		const initialFreq = typeof options?.frequency === 'number' ? options!.frequency! : 350;
 		const initialQ = typeof options?.Q === 'number' ? options!.Q! : 1.0;
 		const initialGain = typeof options?.gain === 'number' ? options!.gain! : 0.0;
 		this[native_] = context.native.createBiquadNodeFrequencyQGain(options.type ?? 'lowpass', initialFreq, initialQ, initialGain);
+		if (typeof (options as any).detune === 'number') this.detune.value = (options as any).detune;
+		this._applyNodeOptions(options);
 	}
 	get native() {
 		return this[native_];
 	}
 	get frequency(): AudioParam {
-		if (!this._frequencyParam) this._frequencyParam = new AudioParam(nativeCtor_, this.native.frequencyParam);
+		if (!this._frequencyParam) this._frequencyParam = new AudioParam(nativeCtor_, this.native.frequencyParam, { defaultValue: 350, min: 0, max: this.context.sampleRate / 2 });
 		return this._frequencyParam;
 	}
 	get Q(): AudioParam {
-		if (!this._qParam) this._qParam = new AudioParam(nativeCtor_, this.native.qParam);
+		if (!this._qParam) this._qParam = new AudioParam(nativeCtor_, this.native.qParam, { defaultValue: 1 });
 		return this._qParam;
 	}
 	get gain(): AudioParam {
-		if (!this._gainParam) this._gainParam = new AudioParam(nativeCtor_, this.native.gainParam);
+		if (!this._gainParam) this._gainParam = new AudioParam(nativeCtor_, this.native.gainParam, { defaultValue: 0 });
 		return this._gainParam;
 	}
 	get detune(): AudioParam {
-		if (!this._detuneParam) this._detuneParam = new AudioParam(nativeCtor_, this.native.detuneParam);
+		if (!this._detuneParam) this._detuneParam = new AudioParam(nativeCtor_, this.native.detuneParam, { defaultValue: 0 });
 		return this._detuneParam;
 	}
 	set type(v: string) {
@@ -352,6 +448,84 @@ export class BiquadFilterNode extends AudioNode {
 	get type(): string {
 		return this.native.getType();
 	}
+
+	/** The filter's response at the params' current values, as the render computes it. */
+	getFrequencyResponse(frequencyHz: Float32Array, magResponse: Float32Array, phaseResponse: Float32Array) {
+		if (magResponse.length !== frequencyHz.length || phaseResponse.length !== frequencyHz.length) throw domError('InvalidAccessError', 'getFrequencyResponse: the arrays differ in length');
+		const rate = this.context.sampleRate;
+		const [b0, b1, b2, a1, a2] = biquadCoefficients(this.type, this.frequency.value, this.Q.value, this.gain.value, this.detune.value, rate);
+		for (let i = 0; i < frequencyHz.length; i++) {
+			const f = frequencyHz[i];
+			if (!(f >= 0 && f <= rate / 2)) {
+				magResponse[i] = NaN;
+				phaseResponse[i] = NaN;
+				continue;
+			}
+			const w = (2 * Math.PI * f) / rate;
+			const c1 = Math.cos(w), s1 = Math.sin(w), c2 = Math.cos(2 * w), s2 = Math.sin(2 * w);
+			const nr = b0 + b1 * c1 + b2 * c2, ni = -(b1 * s1 + b2 * s2);
+			const dr = 1 + a1 * c1 + a2 * c2, di = -(a1 * s1 + a2 * s2);
+			magResponse[i] = Math.hypot(nr, ni) / Math.hypot(dr, di);
+			phaseResponse[i] = Math.atan2(ni, nr) - Math.atan2(di, dr);
+		}
+	}
+}
+
+// Chromium's biquad coefficients (the Audio EQ Cookbook with its limits), normalized: b0, b1, b2, a1, a2.
+function biquadCoefficients(type: string, frequency: number, Q: number, gain: number, detune: number, rate: number): number[] {
+	const n = (b0: number, b1: number, b2: number, a0: number, a1: number, a2: number) => [b0 / a0, b1 / a0, b2 / a0, a1 / a0, a2 / a0];
+	let f = (frequency * Math.pow(2, detune / 1200)) / (rate / 2);
+	f = Number.isFinite(f) ? Math.max(0, Math.min(f, 1)) : 0;
+	const A = Math.pow(10, gain / 40);
+	const w0 = Math.PI * f, cw = Math.cos(w0), sw = Math.sin(w0);
+	const inside = f > 0 && f < 1;
+	const q = Math.max(0, Q);
+	switch (type) {
+		case 'lowpass': {
+			if (f === 1) return n(1, 0, 0, 1, 0, 0);
+			if (f === 0) return n(0, 0, 0, 1, 0, 0);
+			const alpha = 0.5 * sw * Math.pow(10, -0.05 * Q);
+			return n(0.5 * (1 - cw), 1 - cw, 0.5 * (1 - cw), 1 + alpha, -2 * cw, 1 - alpha);
+		}
+		case 'highpass': {
+			if (f === 1) return n(0, 0, 0, 1, 0, 0);
+			if (f === 0) return n(1, 0, 0, 1, 0, 0);
+			const alpha = 0.5 * sw * Math.pow(10, -0.05 * Q);
+			return n(0.5 * (1 + cw), -(1 + cw), 0.5 * (1 + cw), 1 + alpha, -2 * cw, 1 - alpha);
+		}
+		case 'bandpass': {
+			if (!inside || q <= 0) return n(inside ? 1 : 0, 0, 0, 1, 0, 0);
+			const alpha = sw / (2 * q);
+			return n(alpha, 0, -alpha, 1 + alpha, -2 * cw, 1 - alpha);
+		}
+		case 'lowshelf': {
+			if (f === 1) return n(A * A, 0, 0, 1, 0, 0);
+			if (f === 0) return n(1, 0, 0, 1, 0, 0);
+			const s = 2 * Math.sqrt(A) * 0.5 * sw * Math.SQRT2;
+			return n(A * (A + 1 - (A - 1) * cw + s), 2 * A * (A - 1 - (A + 1) * cw), A * (A + 1 - (A - 1) * cw - s), A + 1 + (A - 1) * cw + s, -2 * (A - 1 + (A + 1) * cw), A + 1 + (A - 1) * cw - s);
+		}
+		case 'highshelf': {
+			if (f === 1) return n(1, 0, 0, 1, 0, 0);
+			if (f === 0) return n(A * A, 0, 0, 1, 0, 0);
+			const s = 2 * Math.sqrt(A) * 0.5 * sw * Math.SQRT2;
+			return n(A * (A + 1 + (A - 1) * cw + s), -2 * A * (A - 1 + (A + 1) * cw), A * (A + 1 + (A - 1) * cw - s), A + 1 - (A - 1) * cw + s, 2 * (A - 1 - (A + 1) * cw), A + 1 - (A - 1) * cw - s);
+		}
+		case 'peaking': {
+			if (!inside || q <= 0) return n(inside ? A * A : 1, 0, 0, 1, 0, 0);
+			const alpha = sw / (2 * q);
+			return n(1 + alpha * A, -2 * cw, 1 - alpha * A, 1 + alpha / A, -2 * cw, 1 - alpha / A);
+		}
+		case 'notch': {
+			if (!inside || q <= 0) return n(inside ? 0 : 1, 0, 0, 1, 0, 0);
+			const alpha = sw / (2 * q);
+			return n(1, -2 * cw, 1, 1 + alpha, -2 * cw, 1 - alpha);
+		}
+		default: {
+			if (!inside || q <= 0) return n(inside ? -1 : 1, 0, 0, 1, 0, 0);
+			const alpha = sw / (2 * q);
+			return n(1 - alpha, -2 * cw, 1 + alpha, 1 + alpha, -2 * cw, 1 - alpha);
+		}
+	}
 }
 
 export class PannerNode extends AudioNode {
@@ -359,8 +533,11 @@ export class PannerNode extends AudioNode {
 
 	constructor(context: NativeBaseAudioContext, options: PannerOptions = {}) {
 		super(context);
+		if ((options.refDistance ?? 1) < 0 || (options.maxDistance ?? 1) <= 0 || (options.rolloffFactor ?? 1) < 0) throw new RangeError('PannerNode: refDistance, maxDistance or rolloffFactor out of range');
+		if (!((options.coneOuterGain ?? 0) >= 0 && (options.coneOuterGain ?? 0) <= 1)) throw domError('InvalidStateError', 'PannerNode: coneOuterGain is outside 0 to 1');
 		const p = resolvePannerOptions(options);
 		this[native_] = NSCAudioPannerNode.alloc().initWithContextAndParams(context.native, p.positionX, p.positionY, p.positionZ, p.orientationX, p.orientationY, p.orientationZ, p.pan, p.distanceModel, p.panningModel, p.refDistance, p.maxDistance, p.rolloffFactor, p.coneInnerAngle, p.coneOuterAngle, p.coneOuterGain);
+		this._applyNodeOptions(options);
 	}
 
 	get native() {
@@ -375,22 +552,22 @@ export class PannerNode extends AudioNode {
 	private _orientationZ!: AudioParam;
 
 	get positionX() {
-		return this._positionX || (this._positionX = new AudioParam(nativeCtor_, this.native.positionXParam));
+		return this._positionX || (this._positionX = new AudioParam(nativeCtor_, this.native.positionXParam, { defaultValue: 0 }));
 	}
 	get positionY() {
-		return this._positionY || (this._positionY = new AudioParam(nativeCtor_, this.native.positionYParam));
+		return this._positionY || (this._positionY = new AudioParam(nativeCtor_, this.native.positionYParam, { defaultValue: 0 }));
 	}
 	get positionZ() {
-		return this._positionZ || (this._positionZ = new AudioParam(nativeCtor_, this.native.positionZParam));
+		return this._positionZ || (this._positionZ = new AudioParam(nativeCtor_, this.native.positionZParam, { defaultValue: 0 }));
 	}
 	get orientationX() {
-		return this._orientationX || (this._orientationX = new AudioParam(nativeCtor_, this.native.orientationXParam));
+		return this._orientationX || (this._orientationX = new AudioParam(nativeCtor_, this.native.orientationXParam, { defaultValue: 1 }));
 	}
 	get orientationY() {
-		return this._orientationY || (this._orientationY = new AudioParam(nativeCtor_, this.native.orientationYParam));
+		return this._orientationY || (this._orientationY = new AudioParam(nativeCtor_, this.native.orientationYParam, { defaultValue: 0 }));
 	}
 	get orientationZ() {
-		return this._orientationZ || (this._orientationZ = new AudioParam(nativeCtor_, this.native.orientationZParam));
+		return this._orientationZ || (this._orientationZ = new AudioParam(nativeCtor_, this.native.orientationZParam, { defaultValue: 0 }));
 	}
 
 	get distanceModel(): DistanceModelType {
@@ -409,18 +586,21 @@ export class PannerNode extends AudioNode {
 		return this.native.getRefDistance();
 	}
 	set refDistance(v: number) {
+		if (v < 0) throw new RangeError(`PannerNode.refDistance: ${v} is out of range`);
 		this.native.setRefDistance(v);
 	}
 	get maxDistance() {
 		return this.native.getMaxDistance();
 	}
 	set maxDistance(v: number) {
+		if (v <= 0) throw new RangeError(`PannerNode.maxDistance: ${v} is out of range`);
 		this.native.setMaxDistance(v);
 	}
 	get rolloffFactor() {
 		return this.native.getRolloffFactor();
 	}
 	set rolloffFactor(v: number) {
+		if (v < 0) throw new RangeError(`PannerNode.rolloffFactor: ${v} is out of range`);
 		this.native.setRolloffFactor(v);
 	}
 	get coneInnerAngle() {
@@ -439,6 +619,7 @@ export class PannerNode extends AudioNode {
 		return this.native.getConeOuterGain();
 	}
 	set coneOuterGain(v: number) {
+		if (!(v >= 0 && v <= 1)) throw domError('InvalidStateError', `PannerNode.coneOuterGain: ${v} is outside 0 to 1`);
 		this.native.setConeOuterGain(v);
 	}
 
@@ -452,6 +633,14 @@ export class PannerNode extends AudioNode {
 
 export class AudioDestinationNode extends AudioNode {
 	[native_]: NSCAudioNode;
+	get maxChannelCount(): number {
+		if (this.context instanceof OfflineAudioContext) return this.channelCount;
+		try {
+			return Math.max(2, AVAudioSession.sharedInstance().maximumOutputNumberOfChannels);
+		} catch (e) {
+			return 2;
+		}
+	}
 	constructor(context: NativeBaseAudioContext, node: NSCAudioNode) {
 		super(context);
 		if (!(node instanceof NSCAudioNode)) throw new TypeError('Illegal constructor.');
@@ -467,6 +656,7 @@ export class AudioScheduledSourceNode extends AudioNode {
 	private _onended: ((ev: { type: 'ended' }) => void) | null = null;
 	private _nativeEndedWired = false;
 	private _endedFired = false;
+	private _started = false;
 
 	constructor(context: NativeBaseAudioContext, node: NSCAudioScheduledSourceNode) {
 		super(context);
@@ -507,6 +697,10 @@ export class AudioScheduledSourceNode extends AudioNode {
 	}
 
 	start(when?: number, offset?: number, duration?: number) {
+		if (this._started) throw domError('InvalidStateError', `${this.constructor.name}.start: already started`);
+		if ([when, offset, duration].some((v) => typeof v === 'number' && !Number.isFinite(v))) throw new TypeError(`${this.constructor.name}.start: arguments must be finite`);
+		if ((typeof when === 'number' && when < 0) || (typeof offset === 'number' && offset < 0) || (typeof duration === 'number' && duration < 0)) throw new RangeError(`${this.constructor.name}.start: arguments must be >= 0`);
+		this._started = true;
 		this._endedFired = false;
 		const at = typeof when === 'number' && Number.isFinite(when) && when > 0 ? when : 0;
 		if (at > 0) this._ensureNativeEndedWired();
@@ -527,6 +721,8 @@ export class AudioScheduledSourceNode extends AudioNode {
 	}
 
 	stop(when?: number) {
+		if (!this._started) throw domError('InvalidStateError', `${this.constructor.name}.stop: not started`);
+		if (typeof when === 'number' && when < 0) throw new RangeError(`${this.constructor.name}.stop: when must be >= 0`);
 		const now = (this.context as any)?.currentTime ?? 0;
 		if (typeof when === 'number' && Number.isFinite(when) && when > now) {
 			this._ensureNativeEndedWired();
@@ -539,10 +735,14 @@ export class AudioScheduledSourceNode extends AudioNode {
 }
 
 export class OscillatorNode extends AudioScheduledSourceNode {
-	constructor(context: NativeBaseAudioContext, options: { type?: string; frequency?: number } = {}) {
+	constructor(context: NativeBaseAudioContext, options: { type?: string; frequency?: number; detune?: number; periodicWave?: PeriodicWave } & AudioNodeChannelOptions = {}) {
 		const type = options?.type || 'sine';
+		if (type === 'custom' && !options.periodicWave) throw domError('InvalidStateError', "OscillatorNode: type 'custom' needs a periodicWave");
 		const freq = typeof options?.frequency === 'number' ? options.frequency : 440;
-		super(context, context.native.createOscillatorNodeFrequency(type, freq));
+		super(context, context.native.createOscillatorNodeFrequency(type === 'custom' ? 'sine' : type, freq));
+		if (typeof options.detune === 'number') this.detune.value = options.detune;
+		if (options.periodicWave) this.setPeriodicWave(options.periodicWave);
+		this._applyNodeOptions(options);
 	}
 
 	get native() {
@@ -554,18 +754,20 @@ export class OscillatorNode extends AudioScheduledSourceNode {
 	}
 
 	set type(v: string) {
+		if (v === 'custom') throw domError('InvalidStateError', "OscillatorNode.type: use setPeriodicWave for 'custom'");
+		if (!['sine', 'square', 'sawtooth', 'triangle'].includes(v)) return;
 		this.native.type = v;
 	}
 
 	private _frequencyParam!: AudioParam;
 	get frequency(): AudioParam {
-		if (!this._frequencyParam) this._frequencyParam = new AudioParam(nativeCtor_, this.native.frequencyParam);
+		if (!this._frequencyParam) this._frequencyParam = new AudioParam(nativeCtor_, this.native.frequencyParam, { defaultValue: 440, min: -this.context.sampleRate / 2, max: this.context.sampleRate / 2 });
 		return this._frequencyParam;
 	}
 
 	private _detuneParam!: AudioParam;
 	get detune(): AudioParam {
-		if (!this._detuneParam) this._detuneParam = new AudioParam(nativeCtor_, this.native.detuneParam);
+		if (!this._detuneParam) this._detuneParam = new AudioParam(nativeCtor_, this.native.detuneParam, { defaultValue: 0 });
 		return this._detuneParam;
 	}
 
@@ -582,12 +784,13 @@ export class StereoPannerNode extends AudioNode {
 		super(context);
 		const pan = typeof options.pan === 'number' ? options.pan : 0;
 		this[native_] = context.native.createStereoPannerNode(pan);
+		this._applyNodeOptions(options);
 	}
 	get native() {
 		return this[native_];
 	}
 	get pan(): AudioParam {
-		if (!this._panParam) this._panParam = new AudioParam(nativeCtor_, this.native.panParam);
+		if (!this._panParam) this._panParam = new AudioParam(nativeCtor_, this.native.panParam, { defaultValue: 0, min: -1, max: 1 });
 		return this._panParam;
 	}
 }
@@ -599,7 +802,9 @@ export class DelayNode extends AudioNode {
 		super(context);
 		const delay = typeof options.delayTime === 'number' ? options.delayTime : 0;
 		const max = typeof options.maxDelayTime === 'number' ? options.maxDelayTime : 1.0;
+		if (!(max > 0 && max < 180)) throw domError('NotSupportedError', `DelayNode: maxDelayTime ${max} must be above 0 and below 180`);
 		this[native_] = context.native.createDelayNodeMaxDelayTime(delay, max);
+		this._applyNodeOptions(options);
 	}
 	get native() {
 		return this[native_];
@@ -607,7 +812,7 @@ export class DelayNode extends AudioNode {
 	get delayTime(): AudioParamBase {
 		if (!this._delayTimeParam) {
 			const n = this.native;
-			this._delayTimeParam = new AudioParam(nativeCtor_, n.delayTimeParam);
+			this._delayTimeParam = new AudioParam(nativeCtor_, n.delayTimeParam, { defaultValue: 0, min: 0, max: n.maxDelayTime });
 		}
 		return this._delayTimeParam;
 	}
@@ -621,6 +826,7 @@ export class ConstantSourceNode extends AudioScheduledSourceNode {
 	constructor(context: NativeBaseAudioContext, options: ConstantSourceOptions = {}) {
 		const offset = typeof options.offset === 'number' ? options.offset : 1.0;
 		super(context, context.native.createConstantSourceNode(offset) as NSCAudioScheduledSourceNode);
+		this._applyNodeOptions(options as any);
 	}
 	get native() {
 		return this[native_] as NSCConstantSourceNode;
@@ -628,7 +834,7 @@ export class ConstantSourceNode extends AudioScheduledSourceNode {
 	get offset(): AudioParamBase {
 		if (!this._offsetParam) {
 			const n = this.native;
-			this._offsetParam = new AudioParam(nativeCtor_, n.offsetParam);
+			this._offsetParam = new AudioParam(nativeCtor_, n.offsetParam, { defaultValue: 1 });
 		}
 		return this._offsetParam;
 	}
@@ -639,10 +845,14 @@ export class AnalyserNode extends AudioNode {
 	constructor(context: NativeBaseAudioContext, options: AnalyserOptions = {}) {
 		super(context);
 		this[native_] = context.native.createAnalyserNode();
-		if (typeof options.fftSize === 'number') this.native.fftSize = options.fftSize;
-		if (typeof options.smoothingTimeConstant === 'number') this.native.smoothingTimeConstant = options.smoothingTimeConstant;
-		if (typeof options.minDecibels === 'number') this.native.minDecibels = options.minDecibels;
-		if (typeof options.maxDecibels === 'number') this.native.maxDecibels = options.maxDecibels;
+		if (typeof options.fftSize === 'number') this.fftSize = options.fftSize;
+		if (typeof options.smoothingTimeConstant === 'number') this.smoothingTimeConstant = options.smoothingTimeConstant;
+		const min = options.minDecibels ?? this.minDecibels;
+		const max = options.maxDecibels ?? this.maxDecibels;
+		if (min >= max) throw domError('IndexSizeError', 'AnalyserNode: minDecibels must be below maxDecibels');
+		this.native.minDecibels = min;
+		this.native.maxDecibels = max;
+		this._applyNodeOptions(options);
 	}
 	get native() {
 		return this[native_];
@@ -651,6 +861,7 @@ export class AnalyserNode extends AudioNode {
 		return this.native.fftSize;
 	}
 	set fftSize(v: number) {
+		if (!(v >= 32 && v <= 32768 && (v & (v - 1)) === 0)) throw domError('IndexSizeError', `AnalyserNode.fftSize: ${v} must be a power of two from 32 to 32768`);
 		this.native.fftSize = v;
 	}
 	get frequencyBinCount() {
@@ -660,18 +871,21 @@ export class AnalyserNode extends AudioNode {
 		return this.native.smoothingTimeConstant;
 	}
 	set smoothingTimeConstant(v: number) {
+		if (!(v >= 0 && v <= 1)) throw domError('IndexSizeError', `AnalyserNode.smoothingTimeConstant: ${v} is outside 0 to 1`);
 		this.native.smoothingTimeConstant = v;
 	}
 	get minDecibels() {
 		return this.native.minDecibels;
 	}
 	set minDecibels(v: number) {
+		if (v >= this.maxDecibels) throw domError('IndexSizeError', 'AnalyserNode.minDecibels must be below maxDecibels');
 		this.native.minDecibels = v;
 	}
 	get maxDecibels() {
 		return this.native.maxDecibels;
 	}
 	set maxDecibels(v: number) {
+		if (v <= this.minDecibels) throw domError('IndexSizeError', 'AnalyserNode.maxDecibels must be above minDecibels');
 		this.native.maxDecibels = v;
 	}
 	getFloatTimeDomainData(dest: Float32Array) {
@@ -686,8 +900,9 @@ export class AnalyserNode extends AudioNode {
 	}
 	getByteTimeDomainData(dest: Uint8Array) {
 		if (!dest || dest.length === 0) return;
-		const native = this.native;
-		native.getByteTimeDomainData(dest as never);
+		const data = new Float32Array(Math.min(dest.length, this.fftSize));
+		this.getFloatTimeDomainData(data);
+		for (let i = 0; i < data.length; i++) dest[i] = Math.max(0, Math.min(255, Math.floor(128 * (1 + data[i]))));
 	}
 	getFloatFrequencyData(dest: Float32Array) {
 		if (!dest || dest.length === 0) return;
@@ -701,8 +916,10 @@ export class AnalyserNode extends AudioNode {
 	}
 	getByteFrequencyData(dest: Uint8Array) {
 		if (!dest || dest.length === 0) return;
-		const native = this.native;
-		native.getByteFrequencyData(dest as never);
+		const data = new Float32Array(Math.min(dest.length, this.frequencyBinCount));
+		this.getFloatFrequencyData(data);
+		const min = this.minDecibels, scale = 255 / (this.maxDecibels - min);
+		for (let i = 0; i < data.length; i++) dest[i] = Math.max(0, Math.min(255, Math.floor(scale * (data[i] - min))));
 	}
 }
 
@@ -714,14 +931,17 @@ export class WaveShaperNode extends AudioNode {
 		this[native_] = context.native.createWaveShaperNode();
 		if (options.curve) this.curve = options.curve instanceof Float32Array ? options.curve : Float32Array.from(options.curve);
 		if (options.oversample) this.oversample = options.oversample;
+		this._applyNodeOptions(options);
 	}
 	get native() {
 		return this[native_];
 	}
 	get curve(): Float32Array | null {
-		return this._curve;
+		return this._curve ? this._curve.slice() : null;
 	}
-	set curve(v: Float32Array | null) {
+	set curve(input: Float32Array | null) {
+		if (input && input.length < 2) throw domError('InvalidStateError', 'WaveShaperNode.curve needs at least 2 values');
+		const v = input ? Float32Array.from(input) : null;
 		this._curve = v;
 		if (!v) {
 			this.native.setCurveFromData(null as never);
@@ -752,14 +972,18 @@ export class IIRFilterNode extends AudioNode {
 		super(context);
 		const ff = options?.feedforward ?? [];
 		const fb = options?.feedback ?? [];
-		if (!ff.length || !fb.length) throw new TypeError('IIRFilterNode: feedforward and feedback are required');
+		if (!ff.length || !fb.length || ff.length > 20 || fb.length > 20) throw domError('NotSupportedError', 'IIRFilterNode: feedforward and feedback need 1 to 20 coefficients');
+		if (ff.every((v) => v === 0)) throw domError('InvalidStateError', 'IIRFilterNode: feedforward is all zero');
+		if (fb[0] === 0) throw domError('InvalidStateError', 'IIRFilterNode: feedback[0] is zero');
 		this[native_] = context.native.createIIRFilterNodeFeedback(ff as never, fb as never);
+		this._applyNodeOptions(options as any);
 	}
 	get native() {
 		return this[native_];
 	}
 	getFrequencyResponse(frequencyHz: Float32Array, magResponse: Float32Array, phaseResponse: Float32Array) {
 		if (!frequencyHz || !magResponse || !phaseResponse) return;
+		if (magResponse.length !== frequencyHz.length || phaseResponse.length !== frequencyHz.length) throw domError('InvalidAccessError', 'getFrequencyResponse: the arrays differ in length');
 		const native: any = this.native;
 		const frequencyHzByteOffset = normalizeCopyByteOffset(frequencyHz);
 		const magResponseByteOffset = normalizeCopyByteOffset(magResponse);
@@ -777,17 +1001,26 @@ export class ConvolverNode extends AudioNode {
 	constructor(context: NativeBaseAudioContext, options: ConvolverOptions = {}) {
 		super(context);
 		this[native_] = context.native.createConvolverNode();
-		this.native.normalize = !options.disableNormalization;
+		applyConvolverOptions(this, options);
+		this._applyNodeOptions(options as any);
 	}
 	get native() {
 		return this[native_];
 	}
+	private _buffer: AudioBuffer | null = null;
 	get buffer(): AudioBuffer | null {
-		const b = this.native.buffer;
-		return b ? new AudioBuffer(nativeCtor_, b) : null;
+		return this._buffer;
 	}
 	set buffer(v: AudioBuffer | null) {
+		this._checkBuffer(v);
+		this._buffer = v;
 		this.native.buffer = v?.native ?? (null as never);
+	}
+	private _checkBuffer(v: AudioBuffer | null) {
+		if (v) {
+			if (![1, 2, 4].includes(v.numberOfChannels)) throw domError('NotSupportedError', `ConvolverNode.buffer: ${v.numberOfChannels} channels; it takes 1, 2 or 4`);
+			if (v.sampleRate !== (this.context as any).sampleRate) throw domError('NotSupportedError', "ConvolverNode.buffer: the buffer's sampleRate differs from the context's");
+		}
 	}
 
 	get normalize() {
@@ -805,7 +1038,6 @@ export class DynamicsCompressorNode extends AudioNode {
 	private _ratio: AudioParam | null = null;
 	private _attack: AudioParam | null = null;
 	private _release: AudioParam | null = null;
-	private _reduction: AudioParam | null = null;
 
 	constructor(context: NativeBaseAudioContext, options: DynamicsCompressorOptions = {}) {
 		super(context);
@@ -816,6 +1048,7 @@ export class DynamicsCompressorNode extends AudioNode {
 		if (typeof options.ratio === 'number') this.ratio.value = options.ratio;
 		if (typeof options.attack === 'number') this.attack.value = options.attack;
 		if (typeof options.release === 'number') this.release.value = options.release;
+		this._applyNodeOptions(options as any);
 	}
 
 	get native() {
@@ -823,27 +1056,28 @@ export class DynamicsCompressorNode extends AudioNode {
 	}
 
 	get threshold() {
-		return this._threshold || (this._threshold = new AudioParam(nativeCtor_, this.native.thresholdParam));
+		return this._threshold || (this._threshold = new AudioParam(nativeCtor_, this.native.thresholdParam, { defaultValue: -24, min: -100, max: 0, fixedRate: 'k-rate' }));
 	}
 
 	get knee() {
-		return this._knee || (this._knee = new AudioParam(nativeCtor_, this.native.kneeParam));
+		return this._knee || (this._knee = new AudioParam(nativeCtor_, this.native.kneeParam, { defaultValue: 30, min: 0, max: 40, fixedRate: 'k-rate' }));
 	}
 
 	get ratio() {
-		return this._ratio || (this._ratio = new AudioParam(nativeCtor_, this.native.ratioParam));
+		return this._ratio || (this._ratio = new AudioParam(nativeCtor_, this.native.ratioParam, { defaultValue: 12, min: 1, max: 20, fixedRate: 'k-rate' }));
 	}
 
 	get attack() {
-		return this._attack || (this._attack = new AudioParam(nativeCtor_, this.native.attackParam));
+		return this._attack || (this._attack = new AudioParam(nativeCtor_, this.native.attackParam, { defaultValue: 0.003, min: 0, max: 1, fixedRate: 'k-rate' }));
 	}
 
 	get release() {
-		return this._release || (this._release = new AudioParam(nativeCtor_, this.native.releaseParam));
+		return this._release || (this._release = new AudioParam(nativeCtor_, this.native.releaseParam, { defaultValue: 0.25, min: 0, max: 1, fixedRate: 'k-rate' }));
 	}
 
-	get reduction() {
-		return this._reduction || (this._reduction = new AudioParam(nativeCtor_, this.native.reductionParam));
+	/** The gain reduction in dB the compressor last applied. */
+	get reduction(): number {
+		return this.native.reduction;
 	}
 }
 
@@ -853,8 +1087,11 @@ export class ChannelSplitterNode extends AudioNode {
 
 	constructor(context: NativeBaseAudioContext, options: ChannelSplitterOptions = {}) {
 		super(context);
-		this._numberOfOutputs = Math.max(1, options.numberOfOutputs ?? 6);
+		const outputs = options.numberOfOutputs ?? 6;
+		if (!(outputs >= 1 && outputs <= 32)) throw domError('IndexSizeError', `ChannelSplitterNode: numberOfOutputs ${outputs} is outside 1 to 32`);
+		this._numberOfOutputs = outputs;
 		this[native_] = context.native.createChannelSplitterNode(this._numberOfOutputs);
+		this._applyNodeOptions(options as any);
 	}
 
 	get native() {
@@ -874,8 +1111,11 @@ export class ChannelMergerNode extends AudioNode {
 
 	constructor(context: NativeBaseAudioContext, options: ChannelMergerOptions = {}) {
 		super(context);
-		this._numberOfInputs = Math.max(1, options.numberOfInputs ?? 6);
+		const inputs = options.numberOfInputs ?? 6;
+		if (!(inputs >= 1 && inputs <= 32)) throw domError('IndexSizeError', `ChannelMergerNode: numberOfInputs ${inputs} is outside 1 to 32`);
+		this._numberOfInputs = inputs;
 		this[native_] = context.native.createChannelMergerNode(this._numberOfInputs);
+		this._applyNodeOptions(options as any);
 	}
 
 	get native() {
@@ -894,6 +1134,7 @@ export class PeriodicWave {
 	constructor(_context: NativeBaseAudioContext, options: PeriodicWaveOptions = {}) {
 		const real = options.real ? (options.real instanceof Float32Array ? options.real : Float32Array.from(options.real)) : new Float32Array(2);
 		const imag = options.imag ? (options.imag instanceof Float32Array ? options.imag : Float32Array.from(options.imag)) : new Float32Array(real.length);
+		if (real.length !== imag.length || real.length < 2) throw domError('IndexSizeError', 'PeriodicWave: real and imag need the same length, at least 2');
 		const realByteOffset = normalizeCopyByteOffset(real);
 		const imagByteOffset = normalizeCopyByteOffset(imag);
 
@@ -915,9 +1156,32 @@ export class PeriodicWave {
 
 export class AudioBufferSourceNode extends AudioScheduledSourceNode {
 	private _playbackRateParam: AudioParam | null = null;
-	constructor(context: NativeBaseAudioContext, options: { buffer?: AudioBuffer } = {}) {
+	constructor(context: NativeBaseAudioContext, options: { buffer?: AudioBuffer; loop?: boolean; loopStart?: number; loopEnd?: number; playbackRate?: number; detune?: number } & AudioNodeChannelOptions = {}) {
 		const param: NSCAudioBuffer | null = options?.buffer != null ? options.buffer.native : null;
 		super(context, context.native.createBufferSourceNode(param as never));
+		if (options.buffer) {
+			this._bufferSet = true;
+			this._buffer = options.buffer;
+		}
+		if (options.loop) this.loop = true;
+		if (typeof options.loopStart === 'number') this.loopStart = options.loopStart;
+		if (typeof options.loopEnd === 'number') this.loopEnd = options.loopEnd;
+		if (typeof options.playbackRate === 'number') this.playbackRate.value = options.playbackRate;
+		if (typeof options.detune === 'number') this.detune.value = options.detune;
+		this._applyNodeOptions(options);
+	}
+
+	get loopStart(): number {
+		return this.native.loopStart;
+	}
+	set loopStart(v: number) {
+		this.native.loopStart = v;
+	}
+	get loopEnd(): number {
+		return this.native.loopEnd;
+	}
+	set loopEnd(v: number) {
+		this.native.loopEnd = v;
 	}
 
 	get native() {
@@ -935,23 +1199,27 @@ export class AudioBufferSourceNode extends AudioScheduledSourceNode {
 		return this.native.loop;
 	}
 
+	private _buffer: AudioBuffer | null = null;
 	get buffer(): AudioBuffer | null {
-		const b = this.native.buffer;
-		return b ? new AudioBuffer(nativeCtor_, b) : null;
+		return this._buffer;
 	}
 	set buffer(v: AudioBuffer | null) {
+		if (v && this._bufferSet) throw domError('InvalidStateError', 'AudioBufferSourceNode.buffer can only be set once');
+		if (v) this._bufferSet = true;
+		this._buffer = v;
 		this.native.buffer = v?.native ?? (null as never);
 	}
+	private _bufferSet = false;
 
 	get playbackRate(): AudioParam | null {
 		if (this._playbackRateParam) return this._playbackRateParam;
-		this._playbackRateParam = new AudioParam(nativeCtor_, this.native.getPlaybackRateParam());
+		this._playbackRateParam = new AudioParam(nativeCtor_, this.native.getPlaybackRateParam(), { defaultValue: 1, fixedRate: 'k-rate' });
 		return this._playbackRateParam;
 	}
 
 	private _detuneParam: AudioParam | null = null;
 	get detune(): AudioParam {
-		if (!this._detuneParam) this._detuneParam = new AudioParam(nativeCtor_, this.native.detuneParam);
+		if (!this._detuneParam) this._detuneParam = new AudioParam(nativeCtor_, this.native.detuneParam, { defaultValue: 0, fixedRate: 'k-rate' });
 		return this._detuneParam;
 	}
 }
@@ -1141,6 +1409,7 @@ export class AudioWorkletNode extends AudioNode {
 			defaults,
 		);
 		if (!this._native) throw domError('NotSupportedError', 'AudioWorkletNode: the audio unit could not be created');
+		this._applyNodeOptions(options as any);
 		const params = this._native.params;
 		this.parameters = new AudioParamMap(new Map(descriptors.map((d, i) => [d.name, new AudioParam(nativeCtor_, params.objectAtIndex(i))])));
 		const id = nextWorkletNode++;
@@ -1205,9 +1474,13 @@ export class AudioContext extends BaseAudioContext {
 
 	constructor(options?: AudioContextOptions) {
 		super();
-		const sampleRate = options?.sampleRate ?? 48000;
-		const latencyHint = resolveLatencyHint(options?.latencyHint);
+		const sampleRate = options?.sampleRate ?? 0;
+		if (options?.sampleRate !== undefined && !(sampleRate >= 3000 && sampleRate <= 768000)) throw domError('NotSupportedError', `AudioContext: sampleRate ${sampleRate} is out of range`);
+		const hint = options?.latencyHint;
+		if (typeof hint === 'string' && !['interactive', 'balanced', 'playback'].includes(hint)) throw new TypeError(`AudioContext: latencyHint '${hint}' is not a valid AudioContextLatencyCategory`);
+		const latencyHint = resolveLatencyHint(hint);
 		this[native_] = NSCAudioContext.alloc().initWithSampleRateLatencyHint(sampleRate, latencyHint);
+		this._sampleRate = this[native_].sampleRate;
 		try {
 			const nd = this[native_].destination;
 			this._destination = nd ? new AudioDestinationNode(this, nd) : null;
@@ -1255,8 +1528,8 @@ export class AudioContext extends BaseAudioContext {
 	createOscillator(options?: { type?: string; frequency?: number }) {
 		return new OscillatorNode(this, options ?? {});
 	}
-	createBuffer(options: { length: number; numberOfChannels: number; sampleRate: number }) {
-		return new AudioBuffer(options);
+	createBuffer(options: { length: number; numberOfChannels: number; sampleRate: number } | number, length?: number, sampleRate?: number) {
+		return new AudioBuffer(typeof options === 'number' ? { numberOfChannels: options, length, sampleRate } : options);
 	}
 	createBufferSource(options?: { buffer?: AudioBuffer }) {
 		return new AudioBufferSourceNode(this, options ?? {});
@@ -1264,8 +1537,8 @@ export class AudioContext extends BaseAudioContext {
 	createStereoPanner(options?: StereoPannerOptions) {
 		return new StereoPannerNode(this, options ?? {});
 	}
-	createDelay(options?: DelayOptions) {
-		return new DelayNode(this, options ?? {});
+	createDelay(options?: DelayOptions | number) {
+		return new DelayNode(this, typeof options === 'number' ? { maxDelayTime: options } : (options ?? {}));
 	}
 	createConstantSource(options?: ConstantSourceOptions) {
 		return new ConstantSourceNode(this, options ?? {});
@@ -1285,11 +1558,11 @@ export class AudioContext extends BaseAudioContext {
 	createDynamicsCompressor(options?: DynamicsCompressorOptions) {
 		return new DynamicsCompressorNode(this, options ?? {});
 	}
-	createChannelSplitter(options?: ChannelSplitterOptions) {
-		return new ChannelSplitterNode(this, options ?? {});
+	createChannelSplitter(numberOfOutputs?: number | ChannelSplitterOptions) {
+		return new ChannelSplitterNode(this, typeof numberOfOutputs === 'number' ? { numberOfOutputs } : (numberOfOutputs ?? {}));
 	}
-	createChannelMerger(options?: ChannelMergerOptions) {
-		return new ChannelMergerNode(this, options ?? {});
+	createChannelMerger(numberOfInputs?: number | ChannelMergerOptions) {
+		return new ChannelMergerNode(this, typeof numberOfInputs === 'number' ? { numberOfInputs } : (numberOfInputs ?? {}));
 	}
 	createPeriodicWave(real: Float32Array | number[], imag: Float32Array | number[], options?: { disableNormalization?: boolean }) {
 		return new PeriodicWave(this, { real, imag, disableNormalization: options?.disableNormalization });
@@ -1298,8 +1571,10 @@ export class AudioContext extends BaseAudioContext {
 	get native() {
 		return this[native_];
 	}
+	private _sampleRate = 0;
+	private _closedTime = 0;
 	get sampleRate(): number {
-		return this.native.sampleRate;
+		return this._sampleRate;
 	}
 	get baseLatency(): number {
 		if (typeof this.native.baseLatency === 'number') return this.native.baseLatency;
@@ -1320,11 +1595,30 @@ export class AudioContext extends BaseAudioContext {
 		}
 	}
 	get currentTime(): number {
-		return this.native.currentTime;
+		return this.native ? this.native.currentTime : this._closedTime;
+	}
+
+	/** The context time last sent to the output, and when (performance.now()). */
+	getOutputTimestamp(): { contextTime: number; performanceTime: number } {
+		if (!this.native || this._state !== 'running') return { contextTime: this.currentTime, performanceTime: 0 };
+		const contextTime = Math.max(0, this.currentTime - this.outputLatency);
+		return { contextTime, performanceTime: performance.now() - (this.currentTime - contextTime) * 1000 };
+	}
+
+	createMediaStreamSource(_stream: any): never {
+		throw domError('NotSupportedError', 'AudioContext.createMediaStreamSource: NativeScript has no MediaStream');
+	}
+
+	createMediaStreamTrackSource(_track: any): never {
+		throw domError('NotSupportedError', 'AudioContext.createMediaStreamTrackSource: NativeScript has no MediaStream');
+	}
+
+	createMediaStreamDestination(_options?: any): never {
+		throw domError('NotSupportedError', 'AudioContext.createMediaStreamDestination: NativeScript has no MediaStream');
 	}
 
 	resume(): Promise<void> {
-		if (this._state === 'closed') return Promise.reject(new Error('AudioContext is closed'));
+		if (this._state === 'closed') return Promise.reject(domError('InvalidStateError', 'AudioContext is closed'));
 		const native = this.native;
 		if (!native) return Promise.reject(new Error('AudioContext: native engine unavailable'));
 		return new Promise((resolve, reject) => {
@@ -1340,7 +1634,7 @@ export class AudioContext extends BaseAudioContext {
 	}
 
 	suspend(): Promise<void> {
-		if (this._state === 'closed') return Promise.reject(new Error('AudioContext is closed'));
+		if (this._state === 'closed') return Promise.reject(domError('InvalidStateError', 'AudioContext is closed'));
 		const native = this.native;
 		if (!native) return Promise.reject(new Error('AudioContext: native engine unavailable'));
 		return new Promise((resolve, reject) => {
@@ -1356,7 +1650,7 @@ export class AudioContext extends BaseAudioContext {
 	}
 
 	close(): Promise<void> {
-		if (this._state === 'closed') return Promise.resolve();
+		if (this._state === 'closed') return Promise.reject(domError('InvalidStateError', 'AudioContext is already closed'));
 		this._audioWorklet?._scope(false)?.close();
 		connectedWorkletNodes.forEach((node) => {
 			if (node.context === this) connectedWorkletNodes.delete(node);
@@ -1364,6 +1658,7 @@ export class AudioContext extends BaseAudioContext {
 		const native = this.native;
 		return new Promise((resolve) => {
 			const finish = () => {
+				this._closedTime = native?.currentTime ?? 0;
 				this[native_] = null as any;
 				this._destination = null;
 				this._listener = null;
@@ -1402,20 +1697,20 @@ export class AudioContext extends BaseAudioContext {
 					if (!isBase64Source(source)) {
 						const filePath = normalizeSourcePath(source);
 						this.native.decodeAudioDataFromFileAsync(filePath, (wrapper) => {
-							if (!wrapper) return reject(new Error('decodeAudioData failed'));
+							if (!wrapper) return reject(domError('EncodingError', 'decodeAudioData: the data could not be decoded'));
 							resolve(new AudioBuffer(nativeCtor_, wrapper));
 						});
 						return;
 					}
 					this.native.decodeAudioDataAsync(source, (wrapper) => {
-						if (!wrapper) return reject(new Error('decodeAudioData failed'));
+						if (!wrapper) return reject(domError('EncodingError', 'decodeAudioData: the data could not be decoded'));
 						resolve(new AudioBuffer(nativeCtor_, wrapper));
 					});
 					return;
 				}
 
 				this.native.decodeAudioDataFromDataAsync(source as never, (wrapper) => {
-					if (!wrapper) return reject(new Error('decodeAudioData failed'));
+					if (!wrapper) return reject(domError('EncodingError', 'decodeAudioData: the data could not be decoded'));
 					resolve(new AudioBuffer(nativeCtor_, wrapper));
 				});
 			} catch (e) {
@@ -1449,8 +1744,12 @@ export class OfflineAudioContext extends BaseAudioContext {
 	constructor(numberOfChannels: number | { numberOfChannels?: number; length: number; sampleRate: number }, lengthInFrames?: number, sampleRate?: number) {
 		super();
 		const options = typeof numberOfChannels === 'object' ? numberOfChannels : { numberOfChannels, length: lengthInFrames, sampleRate };
+		const channels = options.numberOfChannels ?? 1;
+		if (!(channels >= 1 && channels <= 32)) throw domError('NotSupportedError', `OfflineAudioContext: numberOfChannels ${channels} is outside 1 to 32`);
+		if (!(options.length >= 1)) throw domError('NotSupportedError', `OfflineAudioContext: length ${options.length} must be at least 1`);
+		if (!(options.sampleRate >= 3000 && options.sampleRate <= 768000)) throw domError('NotSupportedError', `OfflineAudioContext: sampleRate ${options.sampleRate} is outside 3000 to 768000`);
 		this[native_] = NSCOfflineAudioContext.new();
-		this[native_].configure(Math.max(1, (options.numberOfChannels ?? 1) | 0), Math.max(0, options.length | 0), options.sampleRate && Number.isFinite(options.sampleRate) ? options.sampleRate : 48000);
+		this[native_].configure(channels | 0, options.length | 0, options.sampleRate);
 		try {
 			const nd = this[native_].destination;
 			this.destination = nd ? new AudioDestinationNode(this, nd) : null;
@@ -1509,8 +1808,8 @@ export class OfflineAudioContext extends BaseAudioContext {
 		return this._audioWorklet ?? undefined;
 	}
 
-	createBuffer(options: { length: number; numberOfChannels: number; sampleRate: number }) {
-		return new AudioBuffer(options);
+	createBuffer(options: { length: number; numberOfChannels: number; sampleRate: number } | number, length?: number, sampleRate?: number) {
+		return new AudioBuffer(typeof options === 'number' ? { numberOfChannels: options, length, sampleRate } : options);
 	}
 
 	createGain(options?: { gain?: number }) {
@@ -1531,8 +1830,8 @@ export class OfflineAudioContext extends BaseAudioContext {
 	createStereoPanner(options?: StereoPannerOptions) {
 		return new StereoPannerNode(this, options ?? {});
 	}
-	createDelay(options?: DelayOptions) {
-		return new DelayNode(this, options ?? {});
+	createDelay(options?: DelayOptions | number) {
+		return new DelayNode(this, typeof options === 'number' ? { maxDelayTime: options } : (options ?? {}));
 	}
 	createConstantSource(options?: ConstantSourceOptions) {
 		return new ConstantSourceNode(this, options ?? {});
@@ -1552,11 +1851,11 @@ export class OfflineAudioContext extends BaseAudioContext {
 	createDynamicsCompressor(options?: DynamicsCompressorOptions) {
 		return new DynamicsCompressorNode(this, options ?? {});
 	}
-	createChannelSplitter(options?: ChannelSplitterOptions) {
-		return new ChannelSplitterNode(this, options ?? {});
+	createChannelSplitter(numberOfOutputs?: number | ChannelSplitterOptions) {
+		return new ChannelSplitterNode(this, typeof numberOfOutputs === 'number' ? { numberOfOutputs } : (numberOfOutputs ?? {}));
 	}
-	createChannelMerger(options?: ChannelMergerOptions) {
-		return new ChannelMergerNode(this, options ?? {});
+	createChannelMerger(numberOfInputs?: number | ChannelMergerOptions) {
+		return new ChannelMergerNode(this, typeof numberOfInputs === 'number' ? { numberOfInputs } : (numberOfInputs ?? {}));
 	}
 	createPeriodicWave(real: Float32Array | number[], imag: Float32Array | number[], options?: { disableNormalization?: boolean }) {
 		return new PeriodicWave(this, { real, imag, disableNormalization: options?.disableNormalization });
@@ -1569,20 +1868,20 @@ export class OfflineAudioContext extends BaseAudioContext {
 					if (!isBase64Source(source)) {
 						const filePath = normalizeSourcePath(source);
 						this.native.decodeAudioDataFromFileAsyncOffline(filePath, (wrapper) => {
-							if (!wrapper) return reject(new Error('decodeAudioData failed'));
+							if (!wrapper) return reject(domError('EncodingError', 'decodeAudioData: the data could not be decoded'));
 							resolve(new AudioBuffer(nativeCtor_, wrapper));
 						});
 						return;
 					}
 					this.native.decodeAudioDataAsync(source, (wrapper) => {
-						if (!wrapper) return reject(new Error('decodeAudioData failed'));
+						if (!wrapper) return reject(domError('EncodingError', 'decodeAudioData: the data could not be decoded'));
 						resolve(new AudioBuffer(nativeCtor_, wrapper));
 					});
 					return;
 				}
 
 				this.native.decodeAudioDataFromDataAsync(source as never, (wrapper) => {
-					if (!wrapper) return reject(new Error('decodeAudioData failed'));
+					if (!wrapper) return reject(domError('EncodingError', 'decodeAudioData: the data could not be decoded'));
 					resolve(new AudioBuffer(nativeCtor_, wrapper));
 				});
 			} catch (e) {
@@ -1594,6 +1893,16 @@ export class OfflineAudioContext extends BaseAudioContext {
 		if (errorCallback) ret.catch(errorCallback);
 
 		return ret;
+	}
+
+	private _oncomplete: ((ev: any) => void) | null = null;
+	get oncomplete() {
+		return this._oncomplete;
+	}
+	set oncomplete(cb: ((ev: any) => void) | null) {
+		if (this._oncomplete) this.removeEventListener('complete', this._oncomplete);
+		this._oncomplete = typeof cb === 'function' ? cb : null;
+		if (this._oncomplete) this.addEventListener('complete', this._oncomplete);
 	}
 
 	startRendering(): Promise<AudioBuffer> {
@@ -1608,7 +1917,9 @@ export class OfflineAudioContext extends BaseAudioContext {
 				this._setState('closed');
 				this._suspends.rejectAll(() => domError('InvalidStateError', 'OfflineAudioContext: rendering finished before the suspend'));
 				if (!wrapper) return reject(new Error('startRendering failed'));
-				resolve(new AudioBuffer(nativeCtor_, wrapper));
+				const rendered = new AudioBuffer(nativeCtor_, wrapper);
+				resolve(rendered);
+				setTimeout(() => this.dispatchEvent({ type: 'complete', renderedBuffer: rendered, target: this }));
 			});
 		});
 		return this._rendering;

@@ -8,7 +8,7 @@
 
 #define MAX_CHANNELS 32
 #define MAX_FRAMES 4096
-#define MAX_PARAMS 4
+#define MAX_PARAMS 5
 
 // Renders a param's inputs into its input block, outputting silence; not a public kind.
 static const NSCParamEffectKind KindSink = (NSCParamEffectKind)99;
@@ -42,6 +42,12 @@ typedef struct EffectRender {
     // Biquad: x1, x2, y1, y2 per channel.
     double *state;
     _Atomic NSInteger filterType;
+    // Compressor: the look-ahead line per channel, and the reduction in dB.
+    float *preDelay;
+    int lookahead;
+    int preDelayPos;
+    double reduction;
+    _Atomic float meter;
     // The context's timeline cell (retained).
     CFTypeRef timelineCell;
     const double *timeline;
@@ -234,6 +240,47 @@ static void ProcessBiquad(EffectRender *r, AUAudioFrameCount frames) {
     }
 }
 
+// Chromium's DynamicsCompressorKernel, as on Android: one envelope for every channel, k-rate params.
+static double CompressorReduction(double level, double t, double k, double ratio) {
+    double over = level - t, compressed = level;
+    if (k > 0.0) {
+        double half = 0.5 * k;
+        if (over >= half) compressed = t + over / ratio;
+        else if (over > -half) compressed = level + (1.0 / ratio - 1.0) * (over + half) * (over + half) / (2.0 * k);
+    } else if (over > 0.0) {
+        compressed = t + over / ratio;
+    }
+    return MAX(0.0, level - compressed);
+}
+
+static void ProcessCompressor(EffectRender *r, AUAudioFrameCount frames) {
+    double sr = r->sampleRate;
+    double t = r->values[0][0], k = MAX(0.0, r->values[1][0]), ratio = MAX(1.0, r->values[2][0]);
+    double attackCoeff = exp(-1.0 / (MAX(r->values[3][0], 1.0 / sr) * sr));
+    double releaseCoeff = exp(-1.0 / (MAX(r->values[4][0], 1.0 / sr) * sr));
+    // The spec's makeup gain: 0.6 of the reduction at 0 dB.
+    double makeup = pow(10.0, 0.6 * CompressorReduction(0.0, t, k, ratio) / 20.0);
+    int lookahead = r->lookahead;
+    double current = r->reduction;
+    for (AUAudioFrameCount f = 0; f < frames; f++) {
+        double peak = 0.0;
+        for (UInt32 c = 0; c < r->channels; c++) peak = MAX(peak, fabs((double)r->pulled[c * r->maxFrames + f]));
+        double target = CompressorReduction(20.0 * log10(MAX(1.0e-12, peak)), t, k, ratio);
+        double coeff = target > current ? attackCoeff : releaseCoeff;
+        current = coeff * current + (1.0 - coeff) * target;
+        float gain = (float)(makeup * pow(10.0, -current / 20.0));
+        for (UInt32 c = 0; c < r->channels; c++) {
+            float *slot = r->preDelay + c * lookahead + r->preDelayPos;
+            float delayed = *slot;
+            *slot = r->pulled[c * r->maxFrames + f];
+            r->rendered[c * r->maxFrames + f] = delayed * gain;
+        }
+        if (++r->preDelayPos == lookahead) r->preDelayPos = 0;
+    }
+    r->reduction = current;
+    atomic_store_explicit(&r->meter, (float)-current, memory_order_relaxed);
+}
+
 static void WriteParamInput(EffectRender *r, const AudioTimeStamp *ts, AUAudioFrameCount frames, BOOL silent) {
     NSCParamInputBlock *in = r->input;
     if (!in || !ts || !(ts->mFlags & kAudioTimeStampSampleTimeValid)) return;
@@ -285,6 +332,11 @@ static AVAudioFormat *pendingFormat;
 - (AUAudioUnitBusArray *)outputBusses { return _outputBusses; }
 - (BOOL)canProcessInPlace { return NO; }
 
+// Connecting re-sets a bus's format; an allocated unit keeps its channel count.
+- (BOOL)shouldChangeToFormat:(AVAudioFormat *)format forBus:(AUAudioUnitBus *)bus {
+    return !self.renderResourcesAllocated || format.channelCount == bus.format.channelCount;
+}
+
 // The delay line outlives render resources: an offline context stops the engine to connect.
 - (BOOL)allocateRenderResourcesAndReturnError:(NSError **)outError {
     if (![super allocateRenderResourcesAndReturnError:outError]) return NO;
@@ -319,12 +371,22 @@ static AVAudioFormat *pendingFormat;
         free(r->state);
         r->state = calloc((size_t)channels * 4, sizeof(double));
     }
+    if (r->kind == NSCParamEffectKindCompressor) {
+        int lookahead = MAX(1, (int)lround(0.006 * rate));
+        if (!r->preDelay || lookahead != r->lookahead || channels != r->channels) {
+            free(r->preDelay);
+            r->preDelay = calloc((size_t)channels * lookahead, sizeof(float));
+            r->lookahead = lookahead;
+            r->preDelayPos = 0;
+        }
+    }
     r->channels = channels;
     r->sampleRate = rate;
     r->pullList->mNumberBuffers = channels;
     for (UInt32 c = 0; c < channels; c++) r->pullList->mBuffers[c].mNumberChannels = 1;
     if (!r->pulled || !r->rendered || !r->values[MAX_PARAMS - 1]) return NO;
     if ((r->kind == NSCParamEffectKindDelay && !r->line) || (r->kind == NSCParamEffectKindBiquad && !r->state)) return NO;
+    if (r->kind == NSCParamEffectKindCompressor && !r->preDelay) return NO;
     return YES;
 }
 
@@ -381,6 +443,7 @@ static AVAudioFormat *pendingFormat;
         if (split && r->line) ProcessSplitDelay(r, (int64_t)llround(frame), frames);
         else if (r->kind == NSCParamEffectKindDelay && r->line) ProcessDelay(r, frames);
         else if (r->kind == NSCParamEffectKindBiquad && r->state && r->paramCount == 4) ProcessBiquad(r, frames);
+        else if (r->kind == NSCParamEffectKindCompressor && r->preDelay && r->paramCount == 5) ProcessCompressor(r, frames);
         else ProcessGain(r, frames);
 
         for (UInt32 c = 0; c < out->mNumberBuffers; c++) {
@@ -401,6 +464,7 @@ static AVAudioFormat *pendingFormat;
     for (NSInteger p = 0; p < MAX_PARAMS; p++) free(r->values[p]);
     free(r->line);
     free(r->state);
+    free(r->preDelay);
     free(r->pullList);
     for (NSInteger p = 0; p < r->paramCount; p++) CFRelease(r->params[p]);
     if (r->timelineCell) CFRelease(r->timelineCell);
@@ -466,20 +530,18 @@ NSCAudioNode *NSCMakeParamInput(NSCAudioContext *context, NSCAudioParam *param) 
     NSMutableData *data = [param inputData];
     au.render->inputData = CFBridgingRetain(data);
     au.render->input = (NSCParamInputBlock *)data.mutableBytes;
-    AVAudioMixerNode *mixer = [[AVAudioMixerNode alloc] init];
     if ([context isKindOfClass:[NSCOfflineAudioContext class]]) [(NSCOfflineAudioContext *)context willConnect];
-    [engine attachNode:mixer];
     [engine attachNode:sink];
-    @try {
-        [engine connect:mixer to:sink format:format];
-    } @catch (NSException *e) {
-        NSCLogError(@"NSCParamEffectNode: the param input did not connect: %@", e);
+    if (engine.isRunning) NSCEnsureAllocated(sink);
+    // Audio into a param mixes to mono with the speakers rules.
+    NSCChannelMixerNode *port = [[NSCChannelMixerNode alloc] initWithContext:context mode:NSCMixModeSum channels:format.channelCount discrete:NO];
+    [port setMixChannels:1];
+    if (!port || !NSCConnectAdding(context, port.avNode, 0, sink, 0, format)) {
         [engine detachNode:sink];
-        [engine detachNode:mixer];
         return nil;
     }
     param.inputSink = sink;
-    param.inputNode = [[NSCAudioNode alloc] initWithContext:context node:mixer];
+    param.inputNode = port;
     return param.inputNode;
 }
 
@@ -487,15 +549,10 @@ NSCAudioNode *NSCMakeParamInput(NSCAudioContext *context, NSCAudioParam *param) 
 
 @implementation NSCParamEffectNode {
     AVAudioUnitEffect *_unit;
-    AVAudioMixerNode *_mixer;
-    // Connections into this node go to this wrapper of its mixer.
-    NSCAudioNode *_input;
-    // clamped-max or explicit: new connections mix to channelCount here first.
+    // Connections mix here, per channelCount, channelCountMode and channelInterpretation.
     NSCChannelMixerNode *_port;
-    NSMutableArray<NSCChannelMixerNode *> *_ports;
-    // A delay in a cycle: its input mixer feeds this instead of _unit.
+    // A delay in a cycle: its input port feeds this instead of _unit, which plays _silence.
     AVAudioUnitEffect *_writer;
-    // ...and _unit takes silence, as the engine skips an effect with no input.
     AVAudioSourceNode *_silence;
 }
 
@@ -519,16 +576,11 @@ NSCAudioNode *NSCMakeParamInput(NSCAudioContext *context, NSCAudioParam *param) 
     for (NSCAudioParam *param in params) param.owner = self;
     AVAudioEngine *engine = context.engine;
     if ([context isKindOfClass:[NSCOfflineAudioContext class]]) [(NSCOfflineAudioContext *)context willConnect];
-    AVAudioMixerNode *mixer = [[AVAudioMixerNode alloc] init];
     [engine attachNode:unit];
-    [engine attachNode:mixer];
-    @try {
-        [engine connect:mixer to:unit format:format];
-    } @catch (NSException *e) {
-        NSCLogError(@"NSCParamEffectNode: the input mixer did not connect: %@", e);
-    }
-    _mixer = mixer;
-    _input = [[NSCAudioNode alloc] initWithContext:context node:mixer];
+    if (engine.isRunning) NSCEnsureAllocated(unit);
+    _port = [[NSCChannelMixerNode alloc] initWithContext:context mode:NSCMixModeSum channels:format.channelCount discrete:NO];
+    if (_port) NSCConnectAdding(context, _port.avNode, 0, unit, 0, format);
+    [self channelConfigChanged];
     return self;
 }
 
@@ -548,68 +600,76 @@ NSCAudioNode *NSCMakeParamInput(NSCAudioContext *context, NSCAudioParam *param) 
     wu.render->sharedOwner = CFBridgingRetain(au);
     if ([context isKindOfClass:[NSCOfflineAudioContext class]]) [(NSCOfflineAudioContext *)context willConnect];
     [engine attachNode:writer];
-    NSCDisconnectRemoving(context, _mixer, @0, _unit, nil);
+    if (engine.isRunning) NSCEnsureAllocated(writer);
+    NSCDisconnectRemoving(context, _port.avNode, @0, _unit, nil);
     EffectRender *r = au.render;
     if (r->line) memset(r->line, 0, (size_t)r->channels * (size_t)r->lineLength * sizeof(float));
     atomic_store_explicit(&r->split, 1, memory_order_release);
-    AVAudioSourceNode *silence = [[AVAudioSourceNode alloc] initWithFormat:format renderBlock:^OSStatus(BOOL *isSilence, const AudioTimeStamp *ts, AVAudioFrameCount frames, AudioBufferList *out) {
+    // The engine skips an effect with no input.
+    _silence = [[AVAudioSourceNode alloc] initWithFormat:format renderBlock:^OSStatus(BOOL *isSilence, const AudioTimeStamp *ts, AVAudioFrameCount frames, AudioBufferList *out) {
         for (UInt32 c = 0; c < out->mNumberBuffers; c++) memset(out->mBuffers[c].mData, 0, out->mBuffers[c].mDataByteSize);
         *isSilence = YES;
         return noErr;
     }];
-    [engine attachNode:silence];
-    NSCConnectAdding(context, silence, 0, _unit, 0, format);
-    _silence = silence;
-    NSCConnectAdding(context, _mixer, 0, writer, 0, format);
+    [engine attachNode:_silence];
+    NSCConnectAdding(context, _silence, 0, _unit, 0, format);
+    NSCConnectAdding(context, _port.avNode, 0, writer, 0, format);
     // The main mixer pulls the writer every render.
     NSCConnectAdding(context, writer, 0, main, main.nextAvailableInputBus, format);
     _writer = writer;
     return YES;
 }
 
+// Undoes breakCycle once no path leads from this delay back to its input.
+- (void)healCycle {
+    if (!_writer) return;
+    NSCAudioContext *context = self.context;
+    AVAudioEngine *engine = context.engine;
+    if (!engine || NSCHasPath(engine, _unit, _port.avNode)) return;
+    AVAudioFormat *format = EffectFormat(context);
+    NSCParamEffectUnit *au = (NSCParamEffectUnit *)_unit.AUAudioUnit;
+    NSCDisconnectRemoving(context, _port.avNode, @0, _writer, nil);
+    @try { [engine disconnectNodeOutput:_writer]; } @catch (NSException *e) {}
+    @try { [engine disconnectNodeOutput:_silence]; } @catch (NSException *e) {}
+    [context detachNode:_writer fromEngine:engine];
+    [context detachNode:_silence fromEngine:engine];
+    _writer = nil;
+    _silence = nil;
+    atomic_store_explicit(&au.render->split, 0, memory_order_release);
+    NSCConnectAdding(context, _port.avNode, 0, _unit, 0, format);
+}
+
+- (BOOL)isSplit { return _writer != nil; }
+
 - (void)setFilterType:(NSInteger)type {
     NSCParamEffectUnit *au = (NSCParamEffectUnit *)_unit.AUAudioUnit;
     if ([au isKindOfClass:[NSCParamEffectUnit class]]) atomic_store_explicit(&au.render->filterType, type, memory_order_relaxed);
 }
 
-// The sink feeds silence into this node's input mixer, so it renders before this unit reads the param.
+// The sink renders early in this node's input port, before this unit reads the param.
 - (void)attachParamSink:(AVAudioNode *)sink {
-    NSCAudioContext *context = self.context;
-    AVAudioEngine *engine = context.engine;
-    if ([context isKindOfClass:[NSCOfflineAudioContext class]]) [(NSCOfflineAudioContext *)context willConnect];
-    @try {
-        [engine connect:sink to:_mixer fromBus:0 toBus:_mixer.nextAvailableInputBus format:EffectFormat(context)];
-    } @catch (NSException *e) {
-        NSCLogError(@"NSCParamEffectNode: the param input did not connect: %@", e);
-    }
+    [_port connectEarly:sink format:EffectFormat(self.context)];
 }
 
-- (void)channelConfigChanged {
-    if (self.channelCountMode == 0) {
-        _port = nil;
-        return;
-    }
-    NSInteger count = MAX(1, MIN(self.channelCount, (NSInteger)8));
-    if (!_port || _port.channels != count) {
-        NSCAudioContext *context = self.context;
-        NSCChannelMixerNode *port = [[NSCChannelMixerNode alloc] initWithContext:context mode:NSCMixModeSum channels:count discrete:NO];
-        if (!port || !NSCConnectAdding(context, port.avNode, 0, _mixer, _mixer.nextAvailableInputBus, EffectFormat(context))) return;
-        if (!_ports) _ports = [NSMutableArray array];
-        [_ports addObject:port];
-        _port = port;
-    }
-    [_port setDiscrete:self.channelInterpretation == 1];
-    [_port setClamp:self.channelCountMode == 1];
+- (double)meteredReduction {
+    NSCParamEffectUnit *au = (NSCParamEffectUnit *)_unit.AUAudioUnit;
+    if (![au isKindOfClass:[NSCParamEffectUnit class]]) return 0.0;
+    return atomic_load_explicit(&au.render->meter, memory_order_relaxed);
+}
+
+- (NSCChannelMixerNode *)channelPort { return _port; }
+
+- (const _Atomic UInt32 *)logicalChannelCellForOutput:(NSInteger)output {
+    return [_port mixedChannels];
 }
 
 // Each connection takes the mixer's next free bus, so inputs sum.
 - (void)handleConnectFrom:(NSCAudioNode *)source output:(NSNumber *)output input:(NSNumber *)input {
-    [(_port ?: _input) handleConnectFrom:source output:output input:nil];
+    [_port handleConnectFrom:source output:output input:nil];
 }
 
 - (void)handleDisconnectFrom:(NSCAudioNode *)source output:(NSNumber *)output input:(NSNumber *)input {
-    [_input handleDisconnectFrom:source output:output input:nil];
-    for (NSCChannelMixerNode *port in _ports) [port handleDisconnectFrom:source output:output input:nil];
+    [_port handleDisconnectFrom:source output:output input:nil];
 }
 
 @end

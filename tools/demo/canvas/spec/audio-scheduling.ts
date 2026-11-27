@@ -55,6 +55,32 @@ const loud = (rms: number) => rms > 0.5;
 
 export function registerAudioSchedulingSpec() {
 	suite('audio.scheduling', () => {
+		// The analyser holds the last 32768 frames, so it sees the whole short burst.
+		for (const kind of ['constant', 'buffer', 'oscillator']) {
+			test(`${kind} source stopped 20 ms after start plays 20 ms`, async () => {
+				const { context, analyser } = await runningContext();
+				analyser.fftSize = 32768;
+				const source: any = kind === 'constant' ? context.createConstantSource({ offset: 1 }) : kind === 'buffer' ? context.createBufferSource() : context.createOscillator({ type: 'square', frequency: 50 });
+				if (kind === 'buffer') {
+					source.buffer = squareBuffer(context, 1);
+				}
+				source.connect(analyser);
+				const t0 = context.currentTime;
+				source.start();
+				source.stop(t0 + 0.02);
+				await until(context, t0 + 0.3);
+				const data = new Float32Array(32768);
+				analyser.getFloatTimeDomainData(data);
+				const rate = context.sampleRate;
+				await context.close();
+				let loudFrames = 0;
+				for (let i = 0; i < data.length; i++) if (Math.abs(data[i]) > 0.5) loudFrames++;
+				const expected = 0.02 * rate;
+				// Up to a render call either side: start() takes effect at the next one.
+				ok(loudFrames > expected * 0.4 && loudFrames < expected + 1100, `${loudFrames} loud frames, expected about ${expected}`);
+			});
+		}
+
 		test('buffer source sounds only between start(when) and stop(when)', async () => {
 			const { context, analyser } = await runningContext();
 			const source: any = context.createBufferSource();
@@ -302,6 +328,58 @@ export function registerAudioSchedulingSpec() {
 			const rms = rmsOf(analyser);
 			await context.close();
 			ok(quiet(rms), `silent in the next context, rms ${rms}`);
+		});
+
+		test('suspend and resume act on one realtime context, not the others', async () => {
+			const watch = (context: AudioContext) => {
+				const analyser = context.createAnalyser({ fftSize: FFT });
+				const oscillator = context.createOscillator({ frequency: 441 });
+				oscillator.connect(analyser).connect(context.destination);
+				oscillator.start();
+				return analyser;
+			};
+			const snapshot = (analyser: any) => {
+				const data = new Float32Array(FFT);
+				analyser.getFloatTimeDomainData(data);
+				return data;
+			};
+			const same = (a: Float32Array, b: Float32Array) => a.every((v, i) => v === b[i]);
+			const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+			const a = new AudioContext();
+			const b = new AudioContext();
+			try {
+				const outA = watch(a);
+				const outB = watch(b);
+				await Promise.all([a.resume(), b.resume()]);
+				await until(a, a.currentTime + 0.1);
+				await until(b, b.currentTime + 0.1);
+
+				await a.suspend();
+				const [frozenA, runningB, heardA, heardB] = [a.currentTime, b.currentTime, snapshot(outA), snapshot(outB)];
+				await wait(300);
+				ok(a.state === 'suspended' && b.state === 'running', `states ${a.state}, ${b.state}`);
+				ok(a.currentTime === frozenA, `the suspended clock moved from ${frozenA} to ${a.currentTime}`);
+				ok(b.currentTime > runningB + 0.15, `the other clock went from ${runningB} to ${b.currentTime}`);
+				ok(same(heardA, snapshot(outA)), 'the suspended context renders nothing');
+				ok(!same(heardB, snapshot(outB)), 'the other context keeps rendering');
+
+				await a.resume();
+				const resumedA = a.currentTime;
+				await wait(300);
+				ok(a.currentTime > resumedA + 0.15, `the resumed clock went from ${resumedA} to ${a.currentTime}`);
+
+				await Promise.all([a.suspend(), b.suspend()]);
+				const [heldA, heldB] = [a.currentTime, b.currentTime];
+				await wait(300);
+				ok(a.currentTime === heldA && b.currentTime === heldB, `held clocks moved: ${heldA} to ${a.currentTime}, ${heldB} to ${b.currentTime}`);
+
+				await Promise.all([a.resume(), b.resume()]);
+				const [againA, againB] = [a.currentTime, b.currentTime];
+				await wait(300);
+				ok(a.currentTime > againA + 0.15 && b.currentTime > againB + 0.15, `both clocks resume: ${againA} to ${a.currentTime}, ${againB} to ${b.currentTime}`);
+			} finally {
+				await Promise.all([a.close(), b.close()]);
+			}
 		});
 
 		test('oscillator sounds only between start(when) and stop(when)', async () => {

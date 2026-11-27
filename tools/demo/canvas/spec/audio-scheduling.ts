@@ -347,37 +347,39 @@ export function registerAudioSchedulingSpec() {
 			const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 			const a = new AudioContext();
 			const b = new AudioContext();
-			const outA = watch(a);
-			const outB = watch(b);
-			await Promise.all([a.resume(), b.resume()]);
-			await until(a, a.currentTime + 0.1);
-			await until(b, b.currentTime + 0.1);
+			try {
+				const outA = watch(a);
+				const outB = watch(b);
+				await Promise.all([a.resume(), b.resume()]);
+				await until(a, a.currentTime + 0.1);
+				await until(b, b.currentTime + 0.1);
 
-			await a.suspend();
-			const [frozenA, runningB, heardA, heardB] = [a.currentTime, b.currentTime, snapshot(outA), snapshot(outB)];
-			await wait(300);
-			ok(a.state === 'suspended' && b.state === 'running', `states ${a.state}, ${b.state}`);
-			ok(a.currentTime === frozenA, `the suspended clock moved from ${frozenA} to ${a.currentTime}`);
-			ok(b.currentTime > runningB + 0.15, `the other clock went from ${runningB} to ${b.currentTime}`);
-			ok(same(heardA, snapshot(outA)), 'the suspended context renders nothing');
-			ok(!same(heardB, snapshot(outB)), 'the other context keeps rendering');
+				await a.suspend();
+				const [frozenA, runningB, heardA, heardB] = [a.currentTime, b.currentTime, snapshot(outA), snapshot(outB)];
+				await wait(300);
+				ok(a.state === 'suspended' && b.state === 'running', `states ${a.state}, ${b.state}`);
+				ok(a.currentTime === frozenA, `the suspended clock moved from ${frozenA} to ${a.currentTime}`);
+				ok(b.currentTime > runningB + 0.15, `the other clock went from ${runningB} to ${b.currentTime}`);
+				ok(same(heardA, snapshot(outA)), 'the suspended context renders nothing');
+				ok(!same(heardB, snapshot(outB)), 'the other context keeps rendering');
 
-			await a.resume();
-			const resumedA = a.currentTime;
-			await wait(300);
-			ok(a.currentTime > resumedA + 0.15, `the resumed clock went from ${resumedA} to ${a.currentTime}`);
+				await a.resume();
+				const resumedA = a.currentTime;
+				await wait(300);
+				ok(a.currentTime > resumedA + 0.15, `the resumed clock went from ${resumedA} to ${a.currentTime}`);
 
-			await Promise.all([a.suspend(), b.suspend()]);
-			const [heldA, heldB] = [a.currentTime, b.currentTime];
-			await wait(300);
-			ok(a.currentTime === heldA && b.currentTime === heldB, `held clocks moved: ${heldA} to ${a.currentTime}, ${heldB} to ${b.currentTime}`);
+				await Promise.all([a.suspend(), b.suspend()]);
+				const [heldA, heldB] = [a.currentTime, b.currentTime];
+				await wait(300);
+				ok(a.currentTime === heldA && b.currentTime === heldB, `held clocks moved: ${heldA} to ${a.currentTime}, ${heldB} to ${b.currentTime}`);
 
-			await Promise.all([a.resume(), b.resume()]);
-			const [againA, againB] = [a.currentTime, b.currentTime];
-			await wait(300);
-			const advanced = a.currentTime > againA + 0.15 && b.currentTime > againB + 0.15;
-			await Promise.all([a.close(), b.close()]);
-			ok(advanced, `both clocks resume: ${againA} to ${a.currentTime}, ${againB} to ${b.currentTime}`);
+				await Promise.all([a.resume(), b.resume()]);
+				const [againA, againB] = [a.currentTime, b.currentTime];
+				await wait(300);
+				ok(a.currentTime > againA + 0.15 && b.currentTime > againB + 0.15, `both clocks resume: ${againA} to ${a.currentTime}, ${againB} to ${b.currentTime}`);
+			} finally {
+				await Promise.all([a.close(), b.close()]);
+			}
 		});
 
 		test('oscillator sounds only between start(when) and stop(when)', async () => {

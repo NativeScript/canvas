@@ -221,7 +221,6 @@ NativeEngine::GraphNode *NativeEngine::ensureNode(const std::string &id, int kin
                 node->worklet = w->second;
                 node->inputs = w->second->inputs;
                 node->outputs = w->second->outputs;
-                node->countMode = COUNT_EXPLICIT;
             }
             break;
         }

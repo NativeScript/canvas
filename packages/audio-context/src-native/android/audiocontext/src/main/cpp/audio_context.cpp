@@ -153,9 +153,8 @@ void NativeEngine::suspendContext(const std::string &contextId) {
     cmd.type = CMD_CONTEXT_SUSPEND;
     cmd.clock = clock;
     enqueueCommand(std::move(cmd));
-    if (!all) return;
 #ifdef HAS_OBOE
-    // With every context stopped, the stream stops once the render thread has taken the suspend.
+    // Resolves once the render thread has taken the suspend, so currentTime has stopped.
     for (int i = 0; i < 250; i++) {
         {
             std::lock_guard<std::mutex> cl(commandMutex_);
@@ -163,6 +162,7 @@ void NativeEngine::suspendContext(const std::string &contextId) {
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
+    if (!all) return;
     std::lock_guard<std::recursive_mutex> lock(mutex_);
     stopStream();
 #endif

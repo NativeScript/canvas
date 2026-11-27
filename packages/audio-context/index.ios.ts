@@ -49,7 +49,7 @@ import { SHARED_RING_BRIDGE, createWorkletRing, workletRingLayout } from './audi
 import { AudioParamMap, AudioWorkletNodeOptions, AudioWorkletPort, WorkletHost, closeWithContext, domError, isWorkerSupported, loadWorkletModule, resolveWorkletNodeOptions } from './audio-worklet-host';
 export { AudioWorkletNodeOptions };
 
-type NativeBaseAudioContext = BaseAudioContext & { native: NSCAudioContext };
+type NativeBaseAudioContext = BaseAudioContext & { native: NSCAudioContext; readonly sampleRate: number };
 
 function normalizeCopyByteOffset(view: ArrayBufferView, byteOffset?: number): number {
 	let offset = typeof byteOffset === 'number' && Number.isFinite(byteOffset) ? byteOffset : view.byteOffset;
@@ -186,7 +186,8 @@ export class AudioNode extends AudioNodeBase {
 	}
 
 	/** AudioNodeOptions, applied once the native node exists. */
-	protected _applyNodeOptions(options?: AudioNodeChannelOptions) {
+	protected _applyNodeOptions(opts?: object) {
+		const options = opts as AudioNodeChannelOptions | undefined;
 		if (!options) return;
 		if (options.channelCount !== undefined) this.channelCount = options.channelCount;
 		if (options.channelCountMode !== undefined) this.channelCountMode = options.channelCountMode;
@@ -427,7 +428,7 @@ export class BiquadFilterNode extends AudioNode {
 		return this[native_];
 	}
 	get frequency(): AudioParam {
-		if (!this._frequencyParam) this._frequencyParam = new AudioParam(nativeCtor_, this.native.frequencyParam, { defaultValue: 350, min: 0, max: this.context.sampleRate / 2 });
+		if (!this._frequencyParam) this._frequencyParam = new AudioParam(nativeCtor_, this.native.frequencyParam, { defaultValue: 350, min: 0, max: (this.context as NativeBaseAudioContext).sampleRate / 2 });
 		return this._frequencyParam;
 	}
 	get Q(): AudioParam {
@@ -452,7 +453,7 @@ export class BiquadFilterNode extends AudioNode {
 	/** The filter's response at the params' current values, as the render computes it. */
 	getFrequencyResponse(frequencyHz: Float32Array, magResponse: Float32Array, phaseResponse: Float32Array) {
 		if (magResponse.length !== frequencyHz.length || phaseResponse.length !== frequencyHz.length) throw domError('InvalidAccessError', 'getFrequencyResponse: the arrays differ in length');
-		const rate = this.context.sampleRate;
+		const rate = (this.context as NativeBaseAudioContext).sampleRate;
 		const [b0, b1, b2, a1, a2] = biquadCoefficients(this.type, this.frequency.value, this.Q.value, this.gain.value, this.detune.value, rate);
 		for (let i = 0; i < frequencyHz.length; i++) {
 			const f = frequencyHz[i];
@@ -761,7 +762,7 @@ export class OscillatorNode extends AudioScheduledSourceNode {
 
 	private _frequencyParam!: AudioParam;
 	get frequency(): AudioParam {
-		if (!this._frequencyParam) this._frequencyParam = new AudioParam(nativeCtor_, this.native.frequencyParam, { defaultValue: 440, min: -this.context.sampleRate / 2, max: this.context.sampleRate / 2 });
+		if (!this._frequencyParam) this._frequencyParam = new AudioParam(nativeCtor_, this.native.frequencyParam, { defaultValue: 440, min: -(this.context as NativeBaseAudioContext).sampleRate / 2, max: (this.context as NativeBaseAudioContext).sampleRate / 2 });
 		return this._frequencyParam;
 	}
 

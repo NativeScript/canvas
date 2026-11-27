@@ -268,8 +268,8 @@ export declare class AudioContext extends BaseAudioContext {
 	createIIRFilter(feedforward: number[], feedback: number[]): IIRFilterNode;
 	createConvolver(options?: ConvolverOptions): ConvolverNode;
 	createDynamicsCompressor(options?: DynamicsCompressorOptions): DynamicsCompressorNode;
-	createChannelSplitter(options?: ChannelSplitterOptions): ChannelSplitterNode;
-	createChannelMerger(options?: ChannelMergerOptions): ChannelMergerNode;
+	createChannelSplitter(numberOfOutputs?: number | ChannelSplitterOptions): ChannelSplitterNode;
+	createChannelMerger(numberOfInputs?: number | ChannelMergerOptions): ChannelMergerNode;
 	createPeriodicWave(real: Float32Array | number[], imag: Float32Array | number[], options?: { disableNormalization?: boolean }): PeriodicWave;
 	createMediaElementSource(mediaElement: MediaElementLike): MediaElementAudioSourceNode;
 
@@ -326,8 +326,8 @@ export declare class OfflineAudioContext extends BaseAudioContext {
 	createIIRFilter(feedforward: number[], feedback: number[]): IIRFilterNode;
 	createConvolver(options?: ConvolverOptions): ConvolverNode;
 	createDynamicsCompressor(options?: DynamicsCompressorOptions): DynamicsCompressorNode;
-	createChannelSplitter(options?: ChannelSplitterOptions): ChannelSplitterNode;
-	createChannelMerger(options?: ChannelMergerOptions): ChannelMergerNode;
+	createChannelSplitter(numberOfOutputs?: number | ChannelSplitterOptions): ChannelSplitterNode;
+	createChannelMerger(numberOfInputs?: number | ChannelMergerOptions): ChannelMergerNode;
 	createPeriodicWave(real: Float32Array | number[], imag: Float32Array | number[], options?: { disableNormalization?: boolean }): PeriodicWave;
 
 	decodeAudioData(source: string | ArrayBuffer | ArrayBufferView, successCallback?: (buffer: AudioBuffer) => void, errorCallback?: (error: Error) => void): Promise<AudioBuffer>;

@@ -37,6 +37,8 @@ export function registerAudioApiSpec() {
 			equal(io(context.createGain()), '1/1', 'gain');
 			equal(io(context.createChannelSplitter({ numberOfOutputs: 3 })), '1/3', 'splitter');
 			equal(io(context.createChannelMerger({ numberOfInputs: 3 })), '3/1', 'merger');
+			equal(io(context.createChannelMerger(2)), '2/1', 'merger from a number');
+			equal(io(context.createChannelSplitter(2)), '1/2', 'splitter from a number');
 		});
 
 		nativeTest('ChannelSplitterNode and ChannelMergerNode keep their channel config', () => {

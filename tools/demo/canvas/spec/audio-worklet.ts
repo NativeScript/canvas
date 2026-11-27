@@ -156,12 +156,9 @@ export function registerAudioWorkletSpec() {
 			for (const [channelCountMode, channelCount, channels, expected] of cases) {
 				const context = await offline(Q * 2);
 				const node = new AudioWorkletNode(context, 'input-count', { channelCount, channelCountMode, outputChannelCount: [1] } as any);
-				const source = context.createBufferSource();
-				const data = context.createBuffer(channels, Q * 2, RATE);
-				for (let c = 0; c < channels; c++) data.getChannelData(c).fill(1);
-				source.buffer = data;
-				source.connect(node);
-				source.start(0);
+				const merger = context.createChannelMerger(channels);
+				for (let c = 0; c < channels; c++) constant(context, 1).connect(merger, 0, c);
+				merger.connect(node);
 				node.connect(context.destination);
 				const samples = (await context.startRendering()).getChannelData(0);
 				equal(samples[Q], expected, `${channelCountMode} ${channelCount} from ${channels} channels`);

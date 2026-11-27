@@ -1558,11 +1558,11 @@ export class AudioContext extends BaseAudioContext {
 	createDynamicsCompressor(options?: DynamicsCompressorOptions) {
 		return new DynamicsCompressorNode(this, options ?? {});
 	}
-	createChannelSplitter(options?: ChannelSplitterOptions) {
-		return new ChannelSplitterNode(this, options ?? {});
+	createChannelSplitter(numberOfOutputs?: number | ChannelSplitterOptions) {
+		return new ChannelSplitterNode(this, typeof numberOfOutputs === 'number' ? { numberOfOutputs } : (numberOfOutputs ?? {}));
 	}
-	createChannelMerger(options?: ChannelMergerOptions) {
-		return new ChannelMergerNode(this, options ?? {});
+	createChannelMerger(numberOfInputs?: number | ChannelMergerOptions) {
+		return new ChannelMergerNode(this, typeof numberOfInputs === 'number' ? { numberOfInputs } : (numberOfInputs ?? {}));
 	}
 	createPeriodicWave(real: Float32Array | number[], imag: Float32Array | number[], options?: { disableNormalization?: boolean }) {
 		return new PeriodicWave(this, { real, imag, disableNormalization: options?.disableNormalization });
@@ -1851,11 +1851,11 @@ export class OfflineAudioContext extends BaseAudioContext {
 	createDynamicsCompressor(options?: DynamicsCompressorOptions) {
 		return new DynamicsCompressorNode(this, options ?? {});
 	}
-	createChannelSplitter(options?: ChannelSplitterOptions) {
-		return new ChannelSplitterNode(this, options ?? {});
+	createChannelSplitter(numberOfOutputs?: number | ChannelSplitterOptions) {
+		return new ChannelSplitterNode(this, typeof numberOfOutputs === 'number' ? { numberOfOutputs } : (numberOfOutputs ?? {}));
 	}
-	createChannelMerger(options?: ChannelMergerOptions) {
-		return new ChannelMergerNode(this, options ?? {});
+	createChannelMerger(numberOfInputs?: number | ChannelMergerOptions) {
+		return new ChannelMergerNode(this, typeof numberOfInputs === 'number' ? { numberOfInputs } : (numberOfInputs ?? {}));
 	}
 	createPeriodicWave(real: Float32Array | number[], imag: Float32Array | number[], options?: { disableNormalization?: boolean }) {
 		return new PeriodicWave(this, { real, imag, disableNormalization: options?.disableNormalization });

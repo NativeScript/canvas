@@ -1083,11 +1083,11 @@ export class OfflineAudioContext extends BaseAudioContext {
 	createDynamicsCompressor(options?: DynamicsCompressorOptions) {
 		return new DynamicsCompressorNode(this as never, options ?? {});
 	}
-	createChannelSplitter(options?: ChannelSplitterOptions) {
-		return new ChannelSplitterNode(this as never, options ?? {});
+	createChannelSplitter(numberOfOutputs?: number | ChannelSplitterOptions) {
+		return new ChannelSplitterNode(this as never, typeof numberOfOutputs === 'number' ? { numberOfOutputs } : (numberOfOutputs ?? {}));
 	}
-	createChannelMerger(options?: ChannelMergerOptions) {
-		return new ChannelMergerNode(this as never, options ?? {});
+	createChannelMerger(numberOfInputs?: number | ChannelMergerOptions) {
+		return new ChannelMergerNode(this as never, typeof numberOfInputs === 'number' ? { numberOfInputs } : (numberOfInputs ?? {}));
 	}
 	createPeriodicWave(real: Float32Array | number[], imag: Float32Array | number[], options?: { disableNormalization?: boolean }) {
 		return new PeriodicWave(this as never, { real, imag, disableNormalization: options?.disableNormalization });
@@ -1424,11 +1424,11 @@ export class AudioContext extends BaseAudioContext {
 	createDynamicsCompressor(options?: DynamicsCompressorOptions) {
 		return new DynamicsCompressorNode(this as never, options ?? {});
 	}
-	createChannelSplitter(options?: ChannelSplitterOptions) {
-		return new ChannelSplitterNode(this as never, options ?? {});
+	createChannelSplitter(numberOfOutputs?: number | ChannelSplitterOptions) {
+		return new ChannelSplitterNode(this as never, typeof numberOfOutputs === 'number' ? { numberOfOutputs } : (numberOfOutputs ?? {}));
 	}
-	createChannelMerger(options?: ChannelMergerOptions) {
-		return new ChannelMergerNode(this as never, options ?? {});
+	createChannelMerger(numberOfInputs?: number | ChannelMergerOptions) {
+		return new ChannelMergerNode(this as never, typeof numberOfInputs === 'number' ? { numberOfInputs } : (numberOfInputs ?? {}));
 	}
 	createPeriodicWave(real: Float32Array | number[], imag: Float32Array | number[], options?: { disableNormalization?: boolean }) {
 		return new PeriodicWave(this as never, { real, imag, disableNormalization: options?.disableNormalization });
